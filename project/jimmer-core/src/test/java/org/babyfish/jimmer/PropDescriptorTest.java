@@ -28,7 +28,7 @@ public class PropDescriptorTest {
                             .build();
                 });
         Assertions.assertEquals(
-                "Illegal property \"id\", it cannot be decorated by both " +
+                "it cannot be decorated by both " +
                         "@org.babyfish.jimmer.sql.Id and @org.babyfish.jimmer.sql.Version",
                 ex.getMessage()
         );
@@ -55,7 +55,7 @@ public class PropDescriptorTest {
                             .build();
                 });
         Assertions.assertEquals(
-                "Illegal property \"name\", it cannot be decorated by both " +
+                "it cannot be decorated by both " +
                         "@org.babyfish.jimmer.sql.Column and @org.babyfish.jimmer.sql.JoinColumn",
                 ex.getMessage()
         );
@@ -82,7 +82,7 @@ public class PropDescriptorTest {
                             .build();
                 });
         Assertions.assertEquals(
-                "Illegal property \"store\", it cannot be decorated by both " +
+                "it cannot be decorated by both " +
                         "@org.babyfish.jimmer.sql.JoinColumn and @org.babyfish.jimmer.sql.JoinTable",
                 ex.getMessage()
         );
@@ -108,8 +108,7 @@ public class PropDescriptorTest {
                             .build();
                 });
         Assertions.assertEquals(
-                "Illegal property \"store\", " +
-                        "there are not enough annotations to determine that the current property " +
+                "there are not enough annotations to determine that the current property " +
                         "belongs to one of the following types: [one-to-one, many-to-one, many-to-many]",
                 ex.getMessage()
         );
@@ -136,7 +135,7 @@ public class PropDescriptorTest {
                             .build();
                 });
         Assertions.assertEquals(
-                "Illegal property \"authors\", the many-to-many property cannot be " +
+                "the many-to-many property cannot be " +
                         "decorated by @org.babyfish.jimmer.sql.JoinColumn",
                 ex.getMessage()
         );
