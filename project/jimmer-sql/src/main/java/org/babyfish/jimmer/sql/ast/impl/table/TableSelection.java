@@ -6,6 +6,9 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
+/**
+ * Selection based on real table implementation except table wrapper
+ */
 public interface TableSelection {
 
     ImmutableType getImmutableType();

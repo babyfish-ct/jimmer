@@ -39,16 +39,13 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 class JSqlClientImpl implements JSqlClient {
 
@@ -73,6 +70,8 @@ class JSqlClientImpl implements JSqlClient {
     private final int defaultBatchSize;
 
     private final int defaultListBatchSize;
+
+    private final int minOffsetForIdOnlyScanMode;
 
     private final EntitiesImpl entities;
 
@@ -112,6 +111,7 @@ class JSqlClientImpl implements JSqlClient {
             DefaultScalarProvider defaultScalarProvider,
             int defaultBatchSize,
             int defaultListBatchSize,
+            int minOffsetForIdOnlyScanMode,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -147,6 +147,7 @@ class JSqlClientImpl implements JSqlClient {
         this.defaultScalarProvider = defaultScalarProvider;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
+        this.minOffsetForIdOnlyScanMode = minOffsetForIdOnlyScanMode;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -237,6 +238,11 @@ class JSqlClientImpl implements JSqlClient {
     @Override
     public int getDefaultListBatchSize() {
         return defaultListBatchSize;
+    }
+
+    @Override
+    public int getMinOffsetForIdOnlyScanMode() {
+        return minOffsetForIdOnlyScanMode;
     }
 
     @Override
@@ -387,6 +393,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
+                minOffsetForIdOnlyScanMode,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -423,6 +430,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
+                minOffsetForIdOnlyScanMode,
                 entities,
                 entityManager,
                 caches,
@@ -454,6 +462,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
+                minOffsetForIdOnlyScanMode,
                 entities,
                 entityManager,
                 caches,
@@ -540,6 +549,8 @@ class JSqlClientImpl implements JSqlClient {
         private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
+
+        private int minOffsetForIdOnlyScanMode = Integer.MAX_VALUE;
 
         private EntityManager entityManager;
 
@@ -771,6 +782,15 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setMinOffsetForIdOnlyScanMode(int minOffset) {
+            if (minOffset <= 0) {
+                throw new IllegalArgumentException("`minOffset` must be greater than 0");
+            }
+            minOffsetForIdOnlyScanMode = minOffset;
+            return null;
+        }
+
+        @Override
         @OldChain
         public Builder setEntityManager(EntityManager entityManager) {
             if (this.entityManager != null && this.entityManager != entityManager) {
@@ -977,6 +997,7 @@ class JSqlClientImpl implements JSqlClient {
                     new DefaultScalarProvider(defaultEnumStrategy),
                     defaultBatchSize,
                     defaultListBatchSize,
+                    minOffsetForIdOnlyScanMode,
                     null,
                     entityManager,
                     caches,

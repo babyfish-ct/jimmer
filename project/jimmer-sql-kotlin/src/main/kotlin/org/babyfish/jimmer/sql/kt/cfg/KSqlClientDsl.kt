@@ -164,6 +164,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setDatabaseValidationCatalog(catalog)
     }
 
+    fun setMinOffsetForIdOnlyScanMode(minOffset: Int) {
+        javaBuilder.setMinOffsetForIdOnlyScanMode(minOffset)
+    }
+
     fun setMicroServiceName(microServiceName: String) {
         javaBuilder.setMicroServiceName(microServiceName)
     }

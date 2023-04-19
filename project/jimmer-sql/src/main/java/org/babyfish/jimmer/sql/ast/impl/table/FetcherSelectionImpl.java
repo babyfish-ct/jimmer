@@ -16,13 +16,17 @@ import org.jetbrains.annotations.NotNull;
 
 public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
-    private final Table<?> table;
+    private final Table<T> table;
 
     private final Fetcher<?> fetcher;
 
     public FetcherSelectionImpl(Table<T> table, Fetcher<T> fetcher) {
         this.table = table;
         this.fetcher = fetcher;
+    }
+
+    public Table<T> getTable() {
+        return table;
     }
 
     @Override

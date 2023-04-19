@@ -4,6 +4,13 @@ import kotlin.annotation.AnnotationTarget;
 
 import java.lang.annotation.*;
 
+/**
+ * In general, developers should use {@link ManyToMany} to map many-to-many associations,
+ * and the corresponding middle table should only have two foreign key fields.
+ *
+ * However, if developer want to add more business fields to the middle table,
+ * {@link ManyToMany} is no longer applicable and this annotation is unique choice.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)

@@ -27,11 +27,9 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.*;
 
-import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public interface JSqlClient extends SubQueryProvider {
 
@@ -58,6 +56,8 @@ public interface JSqlClient extends SubQueryProvider {
     int getDefaultBatchSize();
 
     int getDefaultListBatchSize();
+
+    int getMinOffsetForIdOnlyScanMode();
 
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
 
@@ -213,6 +213,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setDefaultListBatchSize(int size);
+
+        @OldChain
+        Builder setMinOffsetForIdOnlyScanMode(int minOffset);
 
         @OldChain
         Builder setEntityManager(EntityManager scanner);

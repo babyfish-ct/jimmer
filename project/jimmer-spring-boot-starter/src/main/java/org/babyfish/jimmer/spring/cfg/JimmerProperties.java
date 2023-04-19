@@ -41,6 +41,8 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
+    private final int minOffsetForIdOnlyScanMode;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -61,6 +63,7 @@ public class JimmerProperties {
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
+            @Nullable Integer minOffsetForIdOnlyScanMode,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable Client client,
@@ -143,6 +146,10 @@ public class JimmerProperties {
                 defaultListBatchSize != null ?
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
+        this.minOffsetForIdOnlyScanMode =
+                minOffsetForIdOnlyScanMode != null ?
+                        minOffsetForIdOnlyScanMode :
+                        Integer.MIN_VALUE;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -194,6 +201,29 @@ public class JimmerProperties {
     }
 
     /**
+     * For RDBMS, pagination is slow if `offset` is large, especially for MySQL.
+     *
+     * If `offset` >= $thisArgument
+     *
+     * <pre>{@code
+     *  select t.* from Table t ... limit ? offset ?
+     * }</pre>
+     *
+     * will be automatically changed to
+     *
+     * <pre>{@code
+     *  select t.* from Table where t.id in (
+     *      select t.id from Table t ... limit ? offset ?
+     *  )
+     * }</pre>
+     *
+     * @return An integer which is greater than 0
+     */
+    public int getMinOffsetForIdOnlyScanMode() {
+        return minOffsetForIdOnlyScanMode;
+    }
+
+    /**
      * If this option is configured, when jimmer calls back
      * `org.babyfish.jimmer.sql.runtime.Executor.execute` before executing SQL,
      * it will check the stack trace information of the current thread.
@@ -232,9 +262,14 @@ public class JimmerProperties {
                 "language='" + language + '\'' +
                 ", dialect=" + dialect +
                 ", showSql=" + showSql +
+                ", databaseValidation=" + databaseValidation +
                 ", triggerType=" + triggerType +
+                ", defaultEnumStrategy=" + defaultEnumStrategy +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
+                ", minOffsetForIdOnlyScanMode=" + minOffsetForIdOnlyScanMode +
+                ", executorContextPrefixes=" + executorContextPrefixes +
+                ", microServiceName='" + microServiceName + '\'' +
                 ", client=" + client +
                 ", clients=" + clients +
                 '}';

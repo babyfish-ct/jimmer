@@ -2,8 +2,13 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,23 +17,32 @@ class TypedQueryData {
 
     private static final Package TUPLE_PACKAGE = Tuple2.class.getPackage();
 
-    private List<Selection<?>> selections;
+    private final List<Selection<?>> selections;
 
-    private List<Selection<?>> oldSelections;
+    private final List<Selection<?>> oldSelections;
 
-    private boolean distinct;
+    private final boolean distinct;
 
-    private int limit;
+    private final int limit;
 
-    private int offset;
+    private final int offset;
 
-    private boolean withoutSortingAndPaging;
+    private final boolean withoutSortingAndPaging;
 
-    private boolean forUpdate;
+    private final boolean forUpdate;
+
+    private PropExpressionImplementor<?> idOnlyExpression;
+
+    private boolean idOnlyExpressionResolved;
 
     public TypedQueryData(List<Selection<?>> selections) {
         this.selections = processSelections(selections);
+        oldSelections = null;
+        distinct = false;
         limit = Integer.MAX_VALUE;
+        offset = 0;
+        withoutSortingAndPaging = false;
+        forUpdate = false;
     }
 
     private TypedQueryData(
@@ -135,6 +149,30 @@ class TypedQueryData {
                 withoutSortingAndPaging,
                 true
         );
+    }
+
+    public PropExpressionImplementor<?> getIdOnlyExpression() {
+        if (idOnlyExpressionResolved) {
+            return idOnlyExpression;
+        }
+        List<Selection<?>> selections = this.selections;
+        if (selections.size() == 1) {
+            Selection<?> selection = selections.get(0);
+            Table<?> table = null;
+            if (selection instanceof FetcherSelection<?>) {
+                Fetcher<?> fetcher = ((FetcherSelection<?>) selection).getFetcher();
+                if (fetcher.getFieldMap().size() > 1) {
+                    table = ((FetcherSelectionImpl<?>) selection).getTable();
+                }
+            } else if (selection instanceof Table<?>){
+                table = (Table<?>) selection;
+            }
+            if (table != null && table.getImmutableType().getSelectableProps().size() > 1) {
+                idOnlyExpression = table.get(table.getImmutableType().getIdProp().getName());
+            }
+        }
+        idOnlyExpressionResolved = true;
+        return idOnlyExpression;
     }
 
     private static List<Selection<?>> processSelections(List<Selection<?>> selections) {

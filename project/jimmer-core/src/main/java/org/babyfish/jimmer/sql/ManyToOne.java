@@ -4,6 +4,28 @@ import kotlin.annotation.AnnotationTarget;
 
 import java.lang.annotation.*;
 
+/**
+ * This annotation decorate many-to-one association.
+ *
+ * When any of the following occurs, the associated property must be nullable:
+ * <ul>
+ *  <li>The foreign key in the database is null</li>
+ *  <li>
+ *      The foreign key is fake, that means it is not a real foreign key constraint in the database,
+ *      but rather a convention that exists only in the developer's subjective consciousness.
+ *      (In this case, it is necessary to use @JoinColumn(name = "...", foreignKey = false))
+ *  </li>
+ *  <li>The current association is based on middle table, not on foreign key</li>
+ *  <li>
+ *      The current association is a remote association, that means
+ *      the microservice names of the declaring entity and target entity are different
+ *  </li>
+ *  <li>
+ *      There are some global filters whose generic type is the target entity type,
+ *      even if all the global filters
+ *  </li>
+ * </ul>
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)

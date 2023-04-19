@@ -294,6 +294,7 @@ public class EntitiesImpl implements Entities {
                         con,
                         Collections.singletonList(
                                 new FetcherSelection<E>() {
+
                                     @Override
                                     public Fetcher<?> getFetcher() {
                                         return fetcher;
