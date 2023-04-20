@@ -126,18 +126,24 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             javaGetter = declaringType.getJavaClass().getDeclaredMethod(name);
         } catch (NoSuchMethodException ignored) {
         }
-        try {
-            javaGetter = declaringType.getJavaClass().getDeclaredMethod(
-                    "get" + name.substring(0, 1).toUpperCase() + name.substring(1));
-        } catch (NoSuchMethodException ignored) {
-        }
-        try {
-            javaGetter = declaringType.getJavaClass().getDeclaredMethod(
-                    "is" + name.substring(0, 1).toUpperCase() + name.substring(1));
-            if (javaGetter.getReturnType() != boolean.class) {
-                javaGetter = null;
+        
+        if (javaGetter == null) {
+            try {
+                javaGetter = declaringType.getJavaClass().getDeclaredMethod(
+                        "get" + name.substring(0, 1).toUpperCase() + name.substring(1));
+            } catch (NoSuchMethodException ignored) {
             }
-        } catch (NoSuchMethodException ignored) {
+        }
+        
+        if (javaGetter == null) {
+            try {
+                javaGetter = declaringType.getJavaClass().getDeclaredMethod(
+                        "is" + name.substring(0, 1).toUpperCase() + name.substring(1));
+                if (javaGetter.getReturnType() != boolean.class) {
+                    javaGetter = null;
+                }
+            } catch (NoSuchMethodException ignored) {
+            }
         }
         if (javaGetter == null) {
             throw new AssertionError(
