@@ -12,10 +12,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,7 +52,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         AstContext astContext = visitor.getAstContext();
         astContext.pushStatement(getBaseQuery());
         try {
-            Selection<?> idOnlySelection = idOnlyExpressionByOffset();
+            Selection<?> idOnlySelection = idOnlyPropExprByOffset();
             if (idOnlySelection != null) {
                 baseQuery.accept(visitor, Collections.singletonList(idOnlySelection), false);
             } else {
@@ -77,51 +74,22 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             if (data.isWithoutSortingAndPaging() || data.getLimit() == Integer.MAX_VALUE) {
                 renderWithoutPaging(builder, null);
             } else {
-                PropExpressionImplementor<?> idOnlyExpression = idOnlyExpressionByOffset();
-                if (idOnlyExpression != null) {
-                    IdOnlyQueryWrapperWriter wrapperWriter = new IdOnlyQueryWrapperWriter(idOnlyExpression, builder);
-                    TableImplementor<?> tableImplementor = TableProxies.resolve(
-                            idOnlyExpression.getTable(),
-                            builder.getAstContext()
-                    );
-                    builder.sql("select ");
-                    if (data.getSelections().get(0) instanceof FetcherSelection<?>) {
-                        for (Field field : ((FetcherSelection<?>)data.getSelections().get(0)).getFetcher().getFieldMap().values()) {
-                            wrapperWriter.prop(field.getProp(), false);
-                        }
-                    } else {
-                        for (ImmutableProp prop : tableImplementor.getImmutableType().getProps().values()) {
-                            wrapperWriter.prop(prop, false);
-                        }
-                    }
-                    builder.sql(" from ").sql(tableImplementor.getImmutableType().getTableName());
-                    if (wrapperWriter.getAlias() != null) {
-                        builder.sql(" as ").sql(wrapperWriter.getAlias());
-                    }
-                    builder.sql(" where ");
-                    wrapperWriter.resetComma();
-                    wrapperWriter.prop(tableImplementor.getImmutableType().getIdProp(), true);
-                    builder.sql(" in(");
-                }
-                SqlBuilder subBuilder = builder.createChildBuilder();
-                renderWithoutPaging(
-                        subBuilder,
-                        idOnlyExpression != null ?
-                                Collections.singletonList(idOnlyExpression) :
-                                null
-                );
-                subBuilder.build(result -> {
-                    PaginationContextImpl ctx = new PaginationContextImpl(
-                            data.getLimit(),
-                            data.getOffset(),
-                            result.get_1(),
-                            result.get_2()
-                    );
-                    baseQuery.getSqlClient().getDialect().paginate(ctx);
-                    return ctx.build();
-                });
-                if (idOnlyExpression != null) {
-                    builder.sql(")");
+                PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
+                if (idPropExpr != null) {
+                    renderIdOnlyQuery(idPropExpr, builder);
+                } else {
+                    SqlBuilder subBuilder = builder.createChildBuilder();
+                    renderWithoutPaging(subBuilder, null);
+                    subBuilder.build(result -> {
+                        PaginationContextImpl ctx = new PaginationContextImpl(
+                                data.getLimit(),
+                                data.getOffset(),
+                                result.get_1(),
+                                result.get_2()
+                        );
+                        baseQuery.getSqlClient().getDialect().paginate(ctx);
+                        return ctx.build();
+                    });
                 }
             }
             if (data.isForUpdate()) {
@@ -132,41 +100,51 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         }
     }
 
-    private void renderWithoutPaging(SqlBuilder builder, List<Selection<?>> overrideSelections) {
+    private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {
         builder.sql("select ");
         if (data.isDistinct()) {
             builder.sql("distinct ");
         }
-        renderSelections(overrideSelections != null ? overrideSelections : data.getSelections(), builder);
+        if (idPropExpr != null) {
+            TableImplementor<?> tableImplementor = TableProxies.resolve(
+                    idPropExpr.getTable(),
+                    builder.getAstContext()
+            );
+            tableImplementor.renderSelection(
+                    tableImplementor.getImmutableType().getIdProp(),
+                    builder,
+                    null,
+                    true,
+                    IdOnlyQueryWrapperWriter::idAlias
+            );
+        } else {
+            String separator = "";
+            for (Selection<?> selection : data.getSelections()) {
+                builder.sql(separator);
+                if (selection instanceof TableSelection) {
+                    TableSelection tableSelection = (TableSelection) selection;
+                    renderAllProps(tableSelection, builder);
+                } else if (selection instanceof Table<?>) {
+                    TableSelection tableSelection = TableProxies.resolve(
+                            (Table<?>) selection,
+                            builder.getAstContext()
+                    );
+                    renderAllProps(tableSelection, builder);
+                } else {
+                    Ast ast = Ast.from(selection, builder.getAstContext());
+                    if (ast instanceof PropExpressionImplementor<?>) {
+                        ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
+                    } else {
+                        ast.renderTo(builder);
+                    }
+                }
+                separator = ", ";
+            }
+        }
         baseQuery.renderTo(builder, data.isWithoutSortingAndPaging());
     }
 
-    private static void renderSelections(List<Selection<?>> selections, SqlBuilder builder) {
-        String separator = "";
-        for (Selection<?> selection : selections) {
-            builder.sql(separator);
-            if (selection instanceof TableSelection) {
-                TableSelection tableSelection = (TableSelection) selection;
-                renderAllProps(tableSelection, builder);
-            } else if (selection instanceof Table<?>) {
-                TableSelection tableSelection = TableProxies.resolve(
-                        (Table<? extends Object>) selection,
-                        builder.getAstContext()
-                );
-                renderAllProps(tableSelection, builder);
-            } else {
-                Ast ast = Ast.from(selection, builder.getAstContext());
-                if (ast instanceof PropExpressionImplementor<?>) {
-                    ((PropExpressionImplementor<?>) ast).renderTo(builder, true);
-                } else {
-                    ast.renderTo(builder);
-                }
-            }
-            separator = ", ";
-        }
-    }
-
-    private PropExpressionImplementor<?> idOnlyExpressionByOffset() {
+    private PropExpressionImplementor<?> idOnlyPropExprByOffset() {
         if (data.getOffset() >= baseQuery.getSqlClient().getMinOffsetForIdOnlyScanMode()) {
             return data.getIdOnlyExpression();
         }
@@ -185,29 +163,87 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         }
     }
 
+    private void renderIdOnlyQuery(PropExpressionImplementor<?> idPropExpr, SqlBuilder builder) {
+        IdOnlyQueryWrapperWriter writer = new IdOnlyQueryWrapperWriter(builder);
+        TableImplementor<?> tableImplementor = TableProxies.resolve(
+                idPropExpr.getTable(),
+                builder.getAstContext()
+        );
+        builder.sql("select ");
+        if (data.getSelections().get(0) instanceof FetcherSelection<?>) {
+            for (Field field : ((FetcherSelection<?>)data.getSelections().get(0)).getFetcher().getFieldMap().values()) {
+                writer.prop(field.getProp(), IdOnlyQueryWrapperWriter.ALIAS, false);
+            }
+        } else {
+            for (ImmutableProp prop : tableImplementor.getImmutableType().getProps().values()) {
+                writer.prop(prop, IdOnlyQueryWrapperWriter.ALIAS, false);
+            }
+        }
+        builder.sql(" from (");
+        SqlBuilder subBuilder = builder.createChildBuilder();
+        renderWithoutPaging(subBuilder, idPropExpr);
+        subBuilder.build(result -> {
+            PaginationContextImpl ctx = new PaginationContextImpl(
+                    data.getLimit(),
+                    data.getOffset(),
+                    result.get_1(),
+                    result.get_2()
+            );
+            baseQuery.getSqlClient().getDialect().paginate(ctx);
+            return ctx.build();
+        });
+        writer.resetComma();
+        builder.sql(") ")
+                .sql(IdOnlyQueryWrapperWriter.CORE_ALIAS)
+                .sql(" inner join ")
+                .sql(tableImplementor.getImmutableType().getTableName())
+                .sql(" as ")
+                .sql(IdOnlyQueryWrapperWriter.ALIAS)
+                .sql(" where ");
+        writer.prop(
+                tableImplementor.getImmutableType().getIdProp(),
+                IdOnlyQueryWrapperWriter.ALIAS,
+                true
+        );
+        builder.sql(" = ");
+        int size = tableImplementor.getImmutableType().getIdProp().<ColumnDefinition>getStorage().size();
+        if (size == 1) {
+            builder.sql(IdOnlyQueryWrapperWriter.CORE_ALIAS).sql(".");
+            builder.sql(IdOnlyQueryWrapperWriter.idAlias(0));
+        } else {
+            builder.sql("(");
+            for (int i = 0; i < size; i++) {
+                if (i != 0) {
+                    builder.sql(", ");
+                }
+                builder.sql(IdOnlyQueryWrapperWriter.CORE_ALIAS).sql(".");
+                builder.sql(IdOnlyQueryWrapperWriter.idAlias(i));
+            }
+            builder.sql(")");
+        }
+    }
+
     private static class IdOnlyQueryWrapperWriter {
 
-        private static final String ALIAS = "tb_pagination_wrapper__";
+        private static final String ALIAS = "optimize_";
 
-        private final PropExpressionImplementor<?> idOnlyExpression;
+        private static final String CORE_ALIAS = "optimize_core_";
+
+        private static final String CORE_ID_ALIAS = "optimize_core_id_";
 
         private final SqlBuilder builder;
 
         private boolean addComma;
 
-        private boolean alias;
-
-        IdOnlyQueryWrapperWriter(PropExpressionImplementor<?> idOnlyExpression, SqlBuilder builder) {
-            this.idOnlyExpression = idOnlyExpression;
+        IdOnlyQueryWrapperWriter(SqlBuilder builder) {
             this.builder = builder;
         }
 
-        public void prop(ImmutableProp prop, boolean multiColumnsAsTuple) {
+        public void prop(ImmutableProp prop, String alias, boolean multiColumnsAsTuple) {
             SqlTemplate template = prop.getSqlTemplate();
             if (template instanceof FormulaTemplate) {
                 appendComma();
-                builder.sql(((FormulaTemplate)template).toSql(ALIAS));
-                alias = true;
+                builder.sql(((FormulaTemplate)template).toSql(alias));
                 return;
             }
             Storage storage = prop.getStorage();
@@ -216,29 +252,21 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 int size = definition.size();
                 if (size == 1) {
                     appendComma();
-                    builder.sql(definition.name(0));
+                    builder.sql(alias).sql(".").sql(definition.name(0));
                 } else if (multiColumnsAsTuple) {
                     builder.enterTuple();
                     for (int i = 0; i < size; i++) {
                         appendComma();
-                        builder.sql(definition.name(i));
+                        builder.sql(alias).sql(".").sql(definition.name(i));
                     }
                     builder.leaveTuple();
                 } else {
                     for (int i = 0; i < size; i++) {
                         appendComma();
-                        builder.sql(definition.name(i));
+                        builder.sql(alias).sql(".").sql(definition.name(i));
                     }
                 }
             }
-        }
-
-        public String getAlias() {
-            return alias ? ALIAS : null;
-        }
-
-        public void resetComma() {
-            addComma = false;
         }
 
         private void appendComma() {
@@ -247,6 +275,14 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             } else {
                 addComma = true;
             }
+        }
+
+        public static String idAlias(int index) {
+            return index == 0 ? CORE_ID_ALIAS : CORE_ID_ALIAS + index + '_';
+        }
+
+        public void resetComma() {
+            addComma = false;
         }
     }
 }

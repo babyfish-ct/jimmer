@@ -787,7 +787,7 @@ class JSqlClientImpl implements JSqlClient {
                 throw new IllegalArgumentException("`minOffset` must be greater than 0");
             }
             minOffsetForIdOnlyScanMode = minOffset;
-            return null;
+            return this;
         }
 
         @Override

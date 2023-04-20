@@ -46,20 +46,28 @@ public class SqlBuilder {
     }
 
     public SqlBuilder sql(String tableAlias, ColumnDefinition definition) {
+        return sql(tableAlias, definition, null);
+    }
+
+    public SqlBuilder sql(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
         if (tableAlias == null || tableAlias.isEmpty()) {
             return sql(definition);
         }
         if (definition instanceof SingleColumn) {
             builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
+            if (asBlock != null) {
+                builder.append(" as ").append(asBlock.apply(0));
+            }
         } else {
-            boolean addComma = false;
-            for (String columnName : definition) {
-                if (addComma) {
+            int size = definition.size();
+            for (int i = 0; i < size; i++) {
+                if (i != 0) {
                     builder.append(", ");
-                } else {
-                    addComma = true;
                 }
-                builder.append(tableAlias).append('.').append(columnName);
+                builder.append(tableAlias).append('.').append(definition.name(i));
+                if (asBlock != null) {
+                    builder.append(" as ").append(asBlock.apply(i));
+                }
             }
         }
         return this;
