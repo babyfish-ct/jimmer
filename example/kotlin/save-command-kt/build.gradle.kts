@@ -3,7 +3,7 @@ plugins {
     id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
-val jimmerVersion = "0.7.39"
+val jimmerVersion = "0.7.43"
 
 group = "org.babyfish.jimmer.example.save"
 version = jimmerVersion
