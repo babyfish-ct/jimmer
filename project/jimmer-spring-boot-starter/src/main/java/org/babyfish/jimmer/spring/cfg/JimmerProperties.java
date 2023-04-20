@@ -212,11 +212,13 @@ public class JimmerProperties {
      * will be automatically changed to
      *
      * <pre>{@code
-     *  select t.* from Table where t.id in (
-     *      select t.id as optimized_core_id_ from Table t ... limit ? offset ?
+     *  select t.* from (
+     *      select
+     *          t.id as optimized_core_id_
+     *      from Table t ... limit ? offset ?
      *  ) optimized_core_
-     *  inner join Table as optimized_core
-     *      on optimized_core_.optimized_core_id_
+     *  inner join Table as optimized_
+     *      on optimized_.optimized_core_id_ = optimized_core_.optimized_core_id_
      * }</pre>
      *
      * @return An integer which is greater than 0
