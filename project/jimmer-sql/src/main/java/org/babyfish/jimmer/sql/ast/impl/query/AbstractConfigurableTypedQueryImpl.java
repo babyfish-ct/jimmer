@@ -199,7 +199,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 .sql(tableImplementor.getImmutableType().getTableName())
                 .sql(" as ")
                 .sql(IdOnlyQueryWrapperWriter.ALIAS)
-                .sql(" where ");
+                .sql(" on ");
         writer.prop(
                 tableImplementor.getImmutableType().getIdProp(),
                 IdOnlyQueryWrapperWriter.ALIAS,

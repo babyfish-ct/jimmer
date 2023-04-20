@@ -72,7 +72,7 @@ public class MinOffsetTest extends AbstractQueryTest {
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
                                     "inner join BOOK as optimize_ " +
-                                    "where optimize_.ID = optimize_core_.optimize_core_id_"
+                                    "--->on optimize_.ID = optimize_core_.optimize_core_id_"
                     );
                     ctx.rows(
                             "[" +
@@ -143,7 +143,7 @@ public class MinOffsetTest extends AbstractQueryTest {
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
                                     "inner join BOOK as optimize_ " +
-                                    "where optimize_.ID = optimize_core_.optimize_core_id_"
+                                    "--->on optimize_.ID = optimize_core_.optimize_core_id_"
                     );
                     ctx.statement(1).sql(
                             "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
@@ -237,7 +237,7 @@ public class MinOffsetTest extends AbstractQueryTest {
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
                                     "inner join BOOK_STORE as optimize_ " +
-                                    "where optimize_.ID = optimize_core_.optimize_core_id_"
+                                    "--->on optimize_.ID = optimize_core_.optimize_core_id_"
                     );
                     ctx.rows(
                             "[" +
@@ -285,12 +285,12 @@ public class MinOffsetTest extends AbstractQueryTest {
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
                                     "inner join ORDER_ITEM as optimize_ " +
-                                    "where " +
-                                    "--->(" +
-                                    "--->--->optimize_.ORDER_ITEM_A, optimize_.ORDER_ITEM_B, optimize_.ORDER_ITEM_C" +
-                                    "--->) = (" +
-                                    "--->--->optimize_core_.optimize_core_id_, optimize_core_.optimize_core_id_1_, optimize_core_.optimize_core_id_2_" +
-                                    "--->)"
+                                    "--->on " +
+                                    "--->--->(" +
+                                    "--->--->--->optimize_.ORDER_ITEM_A, optimize_.ORDER_ITEM_B, optimize_.ORDER_ITEM_C" +
+                                    "--->--->) = (" +
+                                    "--->--->--->optimize_core_.optimize_core_id_, optimize_core_.optimize_core_id_1_, optimize_core_.optimize_core_id_2_" +
+                                    "--->--->)"
                     );
                     ctx.rows(
                             "[" +
