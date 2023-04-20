@@ -41,7 +41,7 @@ public class JimmerProperties {
 
     private final int defaultListBatchSize;
 
-    private final int minOffsetForIdOnlyScanMode;
+    private final int offsetOptimizingThreshold;
 
     private final Collection<String> executorContextPrefixes;
 
@@ -63,7 +63,7 @@ public class JimmerProperties {
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
-            @Nullable Integer minOffsetForIdOnlyScanMode,
+            @Nullable Integer offsetOptimizingThreshold,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable Client client,
@@ -146,10 +146,10 @@ public class JimmerProperties {
                 defaultListBatchSize != null ?
                         defaultListBatchSize :
                         JSqlClient.Builder.DEFAULT_LIST_BATCH_SIZE;
-        this.minOffsetForIdOnlyScanMode =
-                minOffsetForIdOnlyScanMode != null ?
-                        minOffsetForIdOnlyScanMode :
-                        Integer.MIN_VALUE;
+        this.offsetOptimizingThreshold =
+                offsetOptimizingThreshold != null ?
+                        offsetOptimizingThreshold :
+                        Integer.MAX_VALUE;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -223,8 +223,8 @@ public class JimmerProperties {
      *
      * @return An integer which is greater than 0
      */
-    public int getMinOffsetForIdOnlyScanMode() {
-        return minOffsetForIdOnlyScanMode;
+    public int getOffsetOptimizingThreshold() {
+        return offsetOptimizingThreshold;
     }
 
     /**
@@ -271,7 +271,7 @@ public class JimmerProperties {
                 ", defaultEnumStrategy=" + defaultEnumStrategy +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
-                ", minOffsetForIdOnlyScanMode=" + minOffsetForIdOnlyScanMode +
+                ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +
                 ", client=" + client +

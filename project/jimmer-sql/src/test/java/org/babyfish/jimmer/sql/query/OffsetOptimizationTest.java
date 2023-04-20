@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.embedded.OrderItemTable;
 import org.junit.jupiter.api.Test;
 
-public class MinOffsetTest extends AbstractQueryTest {
+public class OffsetOptimizationTest extends AbstractQueryTest {
 
     @Test
     public void testBySelfWithIdOnly() {
@@ -15,7 +15,7 @@ public class MinOffsetTest extends AbstractQueryTest {
         BookTable book = BookTable.$;
 
         executeAndExpect(
-                getSqlClient(cfg -> cfg.setMinOffsetForIdOnlyScanMode(1))
+                getSqlClient(cfg -> cfg.setOffsetOptimizingThreshold(1))
                         .createQuery(book)
                         .where(book.store().name().eq("O'REILLY"))
                         .orderBy(book.name().asc(), book.edition().desc())
@@ -53,7 +53,7 @@ public class MinOffsetTest extends AbstractQueryTest {
         BookTable book = BookTable.$;
 
         executeAndExpect(
-                getSqlClient(cfg -> cfg.setMinOffsetForIdOnlyScanMode(1))
+                getSqlClient(cfg -> cfg.setOffsetOptimizingThreshold(1))
                         .createQuery(book)
                         .where(book.store().name().eq("O'REILLY"))
                         .orderBy(book.name().asc(), book.edition().desc())
@@ -115,7 +115,7 @@ public class MinOffsetTest extends AbstractQueryTest {
         BookTable book = BookTable.$;
 
         executeAndExpect(
-                getSqlClient(cfg -> cfg.setMinOffsetForIdOnlyScanMode(1))
+                getSqlClient(cfg -> cfg.setOffsetOptimizingThreshold(1))
                         .createQuery(book)
                         .where(book.store().name().eq("O'REILLY"))
                         .orderBy(book.name().asc(), book.edition().desc())
@@ -222,7 +222,7 @@ public class MinOffsetTest extends AbstractQueryTest {
         BookTable book = BookTable.$;
 
         executeAndExpect(
-                getSqlClient(cfg -> cfg.setMinOffsetForIdOnlyScanMode(1))
+                getSqlClient(cfg -> cfg.setOffsetOptimizingThreshold(1))
                         .createQuery(book)
                         .orderBy(book.name().asc(), book.edition().desc())
                         .select(book.store())
@@ -263,7 +263,7 @@ public class MinOffsetTest extends AbstractQueryTest {
     public void testByEmbeddedId() {
         OrderItemTable table = OrderItemTable.$;
         executeAndExpect(
-                getSqlClient(cfg -> cfg.setMinOffsetForIdOnlyScanMode(1))
+                getSqlClient(cfg -> cfg.setOffsetOptimizingThreshold(1))
                         .createQuery(table)
                         .orderBy(table.name())
                         .select(table)

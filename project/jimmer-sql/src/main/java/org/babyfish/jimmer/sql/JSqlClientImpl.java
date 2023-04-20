@@ -71,7 +71,7 @@ class JSqlClientImpl implements JSqlClient {
 
     private final int defaultListBatchSize;
 
-    private final int minOffsetForIdOnlyScanMode;
+    private final int offsetOptimizingThreshold;
 
     private final EntitiesImpl entities;
 
@@ -111,7 +111,7 @@ class JSqlClientImpl implements JSqlClient {
             DefaultScalarProvider defaultScalarProvider,
             int defaultBatchSize,
             int defaultListBatchSize,
-            int minOffsetForIdOnlyScanMode,
+            int offsetOptimizingThreshold,
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
@@ -147,7 +147,7 @@ class JSqlClientImpl implements JSqlClient {
         this.defaultScalarProvider = defaultScalarProvider;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
-        this.minOffsetForIdOnlyScanMode = minOffsetForIdOnlyScanMode;
+        this.offsetOptimizingThreshold = offsetOptimizingThreshold;
         this.entities =
                 entities != null ?
                         entities.forSqlClient(this) :
@@ -241,8 +241,8 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public int getMinOffsetForIdOnlyScanMode() {
-        return minOffsetForIdOnlyScanMode;
+    public int getOffsetOptimizingThreshold() {
+        return offsetOptimizingThreshold;
     }
 
     @Override
@@ -393,7 +393,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
-                minOffsetForIdOnlyScanMode,
+                offsetOptimizingThreshold,
                 entities,
                 entityManager,
                 new CachesImpl((CachesImpl) caches, cfg),
@@ -430,7 +430,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
-                minOffsetForIdOnlyScanMode,
+                offsetOptimizingThreshold,
                 entities,
                 entityManager,
                 caches,
@@ -462,7 +462,7 @@ class JSqlClientImpl implements JSqlClient {
                 defaultScalarProvider,
                 defaultBatchSize,
                 defaultListBatchSize,
-                minOffsetForIdOnlyScanMode,
+                offsetOptimizingThreshold,
                 entities,
                 entityManager,
                 caches,
@@ -550,7 +550,7 @@ class JSqlClientImpl implements JSqlClient {
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
 
-        private int minOffsetForIdOnlyScanMode = Integer.MAX_VALUE;
+        private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
         private EntityManager entityManager;
 
@@ -782,11 +782,11 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
-        public Builder setMinOffsetForIdOnlyScanMode(int minOffset) {
-            if (minOffset <= 0) {
-                throw new IllegalArgumentException("`minOffset` must be greater than 0");
+        public Builder setOffsetOptimizingThreshold(int threshold) {
+            if (threshold <= 0) {
+                throw new IllegalArgumentException("`threshold` must be greater than 0");
             }
-            minOffsetForIdOnlyScanMode = minOffset;
+            offsetOptimizingThreshold = threshold;
             return this;
         }
 
@@ -997,7 +997,7 @@ class JSqlClientImpl implements JSqlClient {
                     new DefaultScalarProvider(defaultEnumStrategy),
                     defaultBatchSize,
                     defaultListBatchSize,
-                    minOffsetForIdOnlyScanMode,
+                    offsetOptimizingThreshold,
                     null,
                     entityManager,
                     caches,

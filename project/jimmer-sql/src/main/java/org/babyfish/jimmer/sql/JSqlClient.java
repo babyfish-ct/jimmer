@@ -57,7 +57,7 @@ public interface JSqlClient extends SubQueryProvider {
 
     int getDefaultListBatchSize();
 
-    int getMinOffsetForIdOnlyScanMode();
+    int getOffsetOptimizingThreshold();
 
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
 
@@ -215,7 +215,7 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setDefaultListBatchSize(int size);
 
         @OldChain
-        Builder setMinOffsetForIdOnlyScanMode(int minOffset);
+        Builder setOffsetOptimizingThreshold(int threshold);
 
         @OldChain
         Builder setEntityManager(EntityManager scanner);

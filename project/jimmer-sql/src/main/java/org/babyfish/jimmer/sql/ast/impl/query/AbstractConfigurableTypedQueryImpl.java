@@ -145,7 +145,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
     }
 
     private PropExpressionImplementor<?> idOnlyPropExprByOffset() {
-        if (data.getOffset() >= baseQuery.getSqlClient().getMinOffsetForIdOnlyScanMode()) {
+        if (data.getOffset() >= baseQuery.getSqlClient().getOffsetOptimizingThreshold()) {
             return data.getIdOnlyExpression();
         }
         return null;

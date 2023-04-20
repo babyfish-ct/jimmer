@@ -25,6 +25,7 @@ spring:
 jimmer:
   language: kotlin
   dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
+  min-offset-for-id-only-scan-mode: 10
   database-validation-mode: ERROR
   show-sql: true
   executor-context-prefixes:
