@@ -483,24 +483,26 @@ class Saver {
             if (prop.getStorage() instanceof ColumnDefinition && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
+                ScalarProvider<Object, Object> scalarProvider;
                 if (value != null) {
                     if (prop.isReference(TargetLevel.ENTITY)) {
                         value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
+                        scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
                     } else {
-                        ScalarProvider<Object, Object> scalarProvider = data.getSqlClient().getScalarProvider(prop);
-                        if (scalarProvider != null) {
-                            try {
-                                value = scalarProvider.toSql(value);
-                            } catch (Exception ex) {
-                                throw new ExecutionException(
-                                        "Cannot convert the value of \"" +
-                                                prop +
-                                                "\" by the scalar provider \"" +
-                                                scalarProvider.getClass().getName() +
-                                                "\"",
-                                        ex
-                                );
-                            }
+                        scalarProvider = data.getSqlClient().getScalarProvider(prop);
+                    }
+                    if (scalarProvider != null) {
+                        try {
+                            value = scalarProvider.toSql(value);
+                        } catch (Exception ex) {
+                            throw new ExecutionException(
+                                    "Cannot convert the value of \"" +
+                                            prop +
+                                            "\" by the scalar provider \"" +
+                                            scalarProvider.getClass().getName() +
+                                            "\"",
+                                    ex
+                            );
                         }
                     }
                 }
@@ -626,7 +628,27 @@ class Saver {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
                     if (value != null && prop.isReference(TargetLevel.ENTITY)) {
-                        value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
+                        ScalarProvider<Object, Object> scalarProvider;
+                        if (prop.isReference(TargetLevel.ENTITY)) {
+                            value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
+                            scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
+                        } else {
+                            scalarProvider = data.getSqlClient().getScalarProvider(prop);
+                        }
+                        if (scalarProvider != null) {
+                            try {
+                                value = scalarProvider.toSql(value);
+                            } catch (Exception ex) {
+                                throw new ExecutionException(
+                                        "Cannot convert the value of \"" +
+                                                prop +
+                                                "\" by the scalar provider \"" +
+                                                scalarProvider.getClass().getName() +
+                                                "\"",
+                                        ex
+                                );
+                            }
+                        }
                     }
                     updatedValues.add(value);
                 }

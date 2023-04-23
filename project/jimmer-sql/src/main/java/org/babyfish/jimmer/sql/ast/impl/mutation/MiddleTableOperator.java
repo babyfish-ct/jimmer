@@ -205,17 +205,38 @@ class MiddleTableOperator {
                 .sql(middleTable.getColumnDefinition())
                 .sql(", ")
                 .sql(middleTable.getTargetColumnDefinition())
-                .sql(") values ");
-        String separator = "";
-        while (reader.read()) {
-            builder.sql(separator);
-            separator = ", ";
-            builder
-                    .enterTuple()
-                    .variable(reader.sourceId())
-                    .sql(", ")
-                    .variable(reader.targetId())
-                    .leaveTuple();
+                .sql(")");
+        if (sqlClient.getDialect().isMultiInsertionSupported()) {
+            builder.sql(" values ");
+            String separator = "";
+            while (reader.read()) {
+                builder.sql(separator);
+                separator = ", ";
+                builder
+                        .enterTuple()
+                        .variable(reader.sourceId())
+                        .sql(", ")
+                        .variable(reader.targetId())
+                        .leaveTuple();
+            }
+        } else {
+            String fromConstant = sqlClient.getDialect().getConstantTableName();
+            if (fromConstant != null) {
+                fromConstant = " from " + fromConstant;
+            }
+            String separator = " ";
+            while (reader.read()) {
+                builder.sql(separator);
+                separator = " union all ";
+                builder
+                        .sql("select ")
+                        .variable(reader.sourceId())
+                        .sql(", ")
+                        .variable(reader.targetId());
+                if (fromConstant != null) {
+                    builder.sql(fromConstant);
+                }
+            }
         }
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(

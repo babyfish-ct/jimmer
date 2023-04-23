@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
+import org.jetbrains.annotations.Nullable;
+
 public class OracleDialect implements Dialect {
 
     @Override
@@ -29,6 +31,16 @@ public class OracleDialect implements Dialect {
     @Override
     public String getSelectIdFromSequenceSql(String sequenceName) {
         return "select " + sequenceName + ".nextval from dual";
+    }
+
+    @Override
+    public boolean isMultiInsertionSupported() {
+        return false;
+    }
+
+    @Override
+    public @Nullable String getConstantTableName() {
+        return "dual";
     }
 
     @Override
