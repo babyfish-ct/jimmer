@@ -1,11 +1,7 @@
 spring:
   datasource:
-#    driver-class-name: org.h2.Driver
-#    url: jdbc:h2:mem:jimmer-sql;database_to_upper=true
-    driver-class-name: oracle.jdbc.driver.OracleDriver
-    url: jdbc:oracle:thin:@//DESKTOP-O2AON5I:1521/orcl
-    username: system
-    password: Fly100%%
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:jimmer-sql;database_to_upper=true
 
 # You can download the typescript files generated for the client via
 #  http://localhost:8080/ts.zip.
@@ -27,7 +23,7 @@ spring:
 # generated TypeScript code contain the DTO model hidden by jimmer backend
 
 jimmer:
-  dialect: org.babyfish.jimmer.sql.dialect.OracleDialect
+  dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
   show-sql: true
   offset-optimizing-threshold: 10
   database-validation-mode: ERROR
