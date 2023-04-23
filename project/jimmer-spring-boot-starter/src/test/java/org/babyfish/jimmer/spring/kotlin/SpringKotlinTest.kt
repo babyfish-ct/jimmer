@@ -154,7 +154,7 @@ open class SpringKotlinTest : AbstractTest() {
         );
         assertSQLs(
             """select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID 
-                |from TREE_NODE as tb_1_ 
+                |from TREE_NODE tb_1_ 
                 |where tb_1_.NODE_ID = ?""".trimMargin()
         )
         Assertions.assertEquals(
@@ -163,7 +163,7 @@ open class SpringKotlinTest : AbstractTest() {
         );
         assertSQLs(
             """select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID 
-                |from TREE_NODE as tb_1_ 
+                |from TREE_NODE tb_1_ 
                 |where tb_1_.PARENT_ID is null""".trimMargin()
         )
     }
@@ -173,7 +173,7 @@ open class SpringKotlinTest : AbstractTest() {
         treeNodeRepository.findByParentIsNullAndNameOrderByIdAsc(null, null)
         assertSQLs(
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                "from TREE_NODE as tb_1_ " +
+                "from TREE_NODE tb_1_ " +
                 "where tb_1_.PARENT_ID is null " +
                 "order by tb_1_.NODE_ID asc"
         )
@@ -181,7 +181,7 @@ open class SpringKotlinTest : AbstractTest() {
         treeNodeRepository.findByParentIsNullAndNameOrderByIdAsc("X", null)
         assertSQLs(
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                "from TREE_NODE as tb_1_ " +
+                "from TREE_NODE tb_1_ " +
                 "where tb_1_.PARENT_ID is null " +
                 "and tb_1_.NAME = ? " +
                 "order by tb_1_.NODE_ID asc"
@@ -193,7 +193,7 @@ open class SpringKotlinTest : AbstractTest() {
         val treeNode = treeNodeRepository.findByNameAndParentId("Food", 1L)
         assertSQLs(
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                "from TREE_NODE as tb_1_ " +
+                "from TREE_NODE tb_1_ " +
                 "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
         )
         Assertions.assertEquals(
@@ -204,7 +204,7 @@ open class SpringKotlinTest : AbstractTest() {
         val treeNode2 = treeNodeRepository.findByNameAndParentId("Food", 2L)
         assertSQLs(
             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                "from TREE_NODE as tb_1_ " +
+                "from TREE_NODE tb_1_ " +
                 "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
         )
         Assertions.assertNull(treeNode2)

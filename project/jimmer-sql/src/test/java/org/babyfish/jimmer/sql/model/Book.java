@@ -26,7 +26,7 @@ public interface Book {
     @Positive
     BigDecimal price();
 
-    @Null
+    @Nullable
     @ManyToOne
     BookStore store();
 

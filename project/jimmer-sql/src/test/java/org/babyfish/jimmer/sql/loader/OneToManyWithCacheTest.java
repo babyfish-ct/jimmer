@@ -23,7 +23,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.STORE_ID, tb_1_.ID " +
-                                            "from BOOK as tb_1_ " +
+                                            "from BOOK tb_1_ " +
                                             "where tb_1_.STORE_ID in (?, ?)"
                             ).variables(oreillyId, manningId);
                         }
@@ -75,7 +75,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.STORE_ID, tb_1_.ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.STORE_ID in (?, ?) " +
                                         "and tb_1_.EDITION = ?"
                         ).variables(oreillyId, manningId, 3);
@@ -118,12 +118,12 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.STORE_ID, tb_1_.ID " +
-                                            "from BOOK as tb_1_ " +
+                                            "from BOOK tb_1_ " +
                                             "where tb_1_.STORE_ID in (?, ?)"
                             ).variables(oreillyId, manningId);
                             ctx.statement(1).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                            "from BOOK as tb_1_ " +
+                                            "from BOOK tb_1_ " +
                                             "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                             ).variables(
                                     learningGraphQLId1, learningGraphQLId2, learningGraphQLId3,
@@ -218,7 +218,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.STORE_ID in (?, ?) " +
                                         "and tb_1_.EDITION = ?"
                         ).variables(oreillyId, manningId, 3);

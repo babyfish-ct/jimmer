@@ -197,7 +197,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 .sql(IdOnlyQueryWrapperWriter.CORE_ALIAS)
                 .sql(" inner join ")
                 .sql(tableImplementor.getImmutableType().getTableName())
-                .sql(" as ")
+                .sql(" ")
                 .sql(IdOnlyQueryWrapperWriter.ALIAS)
                 .sql(" on ");
         writer.prop(

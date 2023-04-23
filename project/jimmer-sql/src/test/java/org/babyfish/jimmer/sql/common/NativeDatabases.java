@@ -12,8 +12,16 @@ public class NativeDatabases {
 
     public static void assumeNativeDatabase() {
 
+        String nativeDb = System.getenv("jimmer-sql-test-native-database");
         Assumptions.assumeTrue(
-                "true".equals(System.getenv("jimmer-sql-test-native-database"))
+                nativeDb != null && !nativeDb.isEmpty() && !"false".equals(nativeDb)
+        );
+    }
+
+    public static void assumeOracleDatabase() {
+
+        Assumptions.assumeTrue(
+                "oracle".equals(System.getenv("jimmer-sql-test-native-database"))
         );
     }
 
@@ -24,6 +32,14 @@ public class NativeDatabases {
                     new org.postgresql.Driver(),
                     "jdbc:postgresql://localhost:5432/db",
                     "sa",
+                    "123456"
+            );
+
+    public static final DataSource ORACLE_DATA_SOURCE =
+            new SimpleDriverDataSource(
+                    new oracle.jdbc.driver.OracleDriver(),
+                    "jdbc:oracle:thin:@//DESKTOP-O2AON5I:1521/orcl",
+                    "jimmer",
                     "123456"
             );
 

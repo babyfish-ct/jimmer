@@ -71,11 +71,11 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_"
+                                    "from BOOK tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?)"
                     );
                 }
@@ -96,16 +96,16 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.STORE_ID, tb_1_.ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID in (?, ?)"
                     );
                     it.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                 }
@@ -152,7 +152,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_"
+                                    "from BOOK tb_1_"
                     );
                 }
         );
@@ -171,14 +171,14 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 it -> {
                     it.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION from BOOK_STORE as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION from BOOK_STORE tb_1_"
                     );
                     it.statement(1).sql(
-                            "select tb_1_.ID from BOOK as tb_1_ where tb_1_.STORE_ID = ?"
+                            "select tb_1_.ID from BOOK tb_1_ where tb_1_.STORE_ID = ?"
                     );
                     it.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                 }
@@ -201,16 +201,16 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 it -> {
                     it.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                     it.statement(2).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?, ?, ?)"
                     );
                 }
@@ -231,16 +231,16 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_"
+                                    "from AUTHOR tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
                     );
                     it.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                 }
@@ -273,11 +273,11 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 it -> {
                     it.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.BOOK_ID = ?"
                     ).variables(graphQLInActionId3);
                 }
@@ -298,11 +298,11 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_"
+                                    "from AUTHOR tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.AUTHOR_ID = ?"
                     ).variables(danId);
                 }
@@ -325,16 +325,16 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 it -> {
                     it.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                     it.statement(2).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?, ?, ?)"
                     );
                 }
@@ -355,16 +355,16 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_"
+                                    "from AUTHOR tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
                     );
                     it.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                 }
@@ -397,11 +397,11 @@ public class MutateCacheTest extends AbstractQueryTest {
                 }),
                 it -> {
                     it.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE from BOOK tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.BOOK_ID = ?"
                     ).variables(graphQLInActionId3);
                 }
@@ -422,11 +422,11 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_"
+                                    "from AUTHOR tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.AUTHOR_ID = ?"
                     ).variables(danId);
                 }
@@ -449,18 +449,18 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.NODE_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.PARENT_ID is null"
                     );
                     it.statement(1).sql(
                             "select tb_1_.NODE_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.PARENT_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     );
                     it.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.NODE_ID in (?, ?)"
                     ).variables(2L, 9L);
                 }
@@ -479,7 +479,7 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.NODE_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.PARENT_ID is null"
                     );
                 }
@@ -509,18 +509,18 @@ public class MutateCacheTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.NODE_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.PARENT_ID is null"
                     );
                     it.statement(1).sql(
                             "select tb_1_.NODE_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.PARENT_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     );
                     it.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                    "from TREE_NODE as tb_1_ " +
+                                    "from TREE_NODE tb_1_ " +
                                     "where tb_1_.NODE_ID = ?"
                     ).variables(9L);
                 }

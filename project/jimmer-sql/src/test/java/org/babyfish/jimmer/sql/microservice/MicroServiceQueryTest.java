@@ -35,7 +35,7 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.ORDER_ID " +
-                                    "from MS_ORDER_ITEM as tb_1_"
+                                    "from MS_ORDER_ITEM tb_1_"
                     );
                     ctx.rows(
                             "[" +
@@ -101,7 +101,7 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from MS_ORDER as tb_1_"
+                                    "from MS_ORDER tb_1_"
                     );
                     ctx.rows(
                             "[" +
@@ -163,11 +163,11 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from MS_ORDER_ITEM as tb_1_"
+                                    "from MS_ORDER_ITEM tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ORDER_ITEM_ID, tb_1_.PRODUCT_ID " +
-                                    "from MS_ORDER_ITEM_PRODUCT_MAPPING as tb_1_ " +
+                                    "from MS_ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
                                     "where tb_1_.ORDER_ITEM_ID in (?, ?, ?, ?)"
                     );
                     ctx.rows(
@@ -262,7 +262,7 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from MS_PRODUCT as tb_1_"
+                                    "from MS_PRODUCT tb_1_"
                     );
                     ctx.rows(
                             "[" +

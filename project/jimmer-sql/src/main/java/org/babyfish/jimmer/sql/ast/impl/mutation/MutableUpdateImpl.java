@@ -288,7 +288,7 @@ public class MutableUpdateImpl
                 builder
                         .sql(" from ")
                         .sql(table.getImmutableType().getTableName())
-                        .sql(" as ")
+                        .sql(" ")
                         .sql(table.getAlias())
                         .sql(" where ")
                         .sql(table.getAlias(), table.getImmutableType().getIdProp().getStorage(), true)

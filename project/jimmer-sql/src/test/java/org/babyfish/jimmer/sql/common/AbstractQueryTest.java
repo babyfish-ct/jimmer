@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.Consumer;
@@ -35,6 +36,27 @@ public class AbstractQueryTest extends AbstractTest {
         rows = null;
         maxStatementIndex = -1;
         jdbc(con -> {
+            if (rows == null) {
+                rows = query.execute(con);
+            }
+        });
+        block.accept(new QueryTestContext<>(0));
+        Assertions.assertEquals(
+                maxStatementIndex + 1,
+                getExecutions().size(),
+                "statement count"
+        );
+    }
+
+    protected <R> void executeAndExpect(
+            DataSource dataSource,
+            TypedRootQuery<R> query,
+            Consumer<QueryTestContext<R>> block
+    ) {
+        clearExecutions();
+        rows = null;
+        maxStatementIndex = -1;
+        jdbc(dataSource, true, con -> {
             if (rows == null) {
                 rows = query.execute(con);
             }

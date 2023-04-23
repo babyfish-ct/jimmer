@@ -32,14 +32,14 @@ class SubQueryTest : AbstractQueryTest() {
                     |--->tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE, 
                     |--->(
                     |--->--->select count(tb_2_.ID) 
-                    |--->--->from BOOK as tb_2_ 
+                    |--->--->from BOOK tb_2_ 
                     |--->--->where 
                     |--->--->--->tb_2_.STORE_ID = tb_1_.ID
                     |--->) 
-                    |from BOOK_STORE as tb_1_ 
+                    |from BOOK_STORE tb_1_ 
                     |order by (
                     |--->select count(tb_2_.ID) 
-                    |--->from BOOK as tb_2_ 
+                    |--->from BOOK tb_2_ 
                     |--->where 
                     |--->--->tb_2_.STORE_ID = tb_1_.ID
                     |) asc""".trimMargin()
@@ -88,10 +88,10 @@ class SubQueryTest : AbstractQueryTest() {
             sql(
                 """select 
                     |tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID in (
                     |--->select tb_3_.ID 
-                    |--->from BOOK_STORE as tb_3_ 
+                    |--->from BOOK_STORE tb_3_ 
                     |--->where tb_3_.NAME like ?
                     |)""".trimMargin()
             )
@@ -138,10 +138,10 @@ class SubQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where (tb_1_.NAME, tb_1_.EDITION) in (
                     |--->select tb_2_.NAME, max(tb_2_.EDITION) 
-                    |--->from BOOK as tb_2_ 
+                    |--->from BOOK tb_2_ 
                     |--->group by tb_2_.NAME
                     |)""".trimMargin()
             )
@@ -197,10 +197,10 @@ class SubQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where (tb_1_.NAME, tb_1_.EDITION) = any(
                     |--->select tb_2_.NAME, max(tb_2_.EDITION) 
-                    |--->from BOOK as tb_2_ 
+                    |--->from BOOK tb_2_ 
                     |--->group by tb_2_.NAME
                     |)""".trimMargin()
             )
@@ -259,10 +259,10 @@ class SubQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_ 
+                    |from BOOK_STORE tb_1_ 
                     |where not exists(
                     |--->select 1 
-                    |--->from BOOK as tb_2_ 
+                    |--->from BOOK tb_2_ 
                     |--->where 
                     |--->--->tb_2_.STORE_ID = tb_1_.ID 
                     |--->and (
@@ -301,10 +301,10 @@ class SubQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_ 
+                    |from BOOK_STORE tb_1_ 
                     |where not exists(
                     |--->select 1 
-                    |--->from BOOK as tb_2_ 
+                    |--->from BOOK tb_2_ 
                     |--->where 
                     |--->--->tb_2_.STORE_ID = tb_1_.ID 
                     |--->and (

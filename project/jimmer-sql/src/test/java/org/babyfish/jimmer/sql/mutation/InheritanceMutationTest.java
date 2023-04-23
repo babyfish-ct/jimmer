@@ -72,7 +72,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ROLE as tb_1_ " +
+                                        "from ROLE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                     });
@@ -85,7 +85,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from PERMISSION as tb_1_ " +
+                                        "from PERMISSION tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                     });
@@ -98,7 +98,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from PERMISSION as tb_1_ " +
+                                        "from PERMISSION tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                     });
@@ -169,7 +169,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ROLE as tb_1_ where tb_1_.NAME = ?"
+                                        "from ROLE tb_1_ where tb_1_.NAME = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -181,7 +181,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from PERMISSION as tb_1_ " +
+                                        "from PERMISSION tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                     });

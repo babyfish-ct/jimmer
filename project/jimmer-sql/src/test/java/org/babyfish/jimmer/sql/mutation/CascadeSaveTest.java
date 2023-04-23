@@ -46,7 +46,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.NAME = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
                     });
@@ -57,7 +57,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? " +
                                         "and tb_1_.EDITION = ?"
                         );
@@ -119,7 +119,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(learningGraphQLId1);
                     });
@@ -179,7 +179,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
@@ -191,7 +191,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("SQL Cookbook", 1);
@@ -203,7 +203,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning SQL", 1);
@@ -277,7 +277,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
@@ -289,7 +289,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
@@ -301,7 +301,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("GraphQL in Action", 3);
@@ -380,7 +380,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Kotlin in Action", 1);
@@ -392,7 +392,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Andrey", "Breslav");
@@ -404,7 +404,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Pierre-Yves", "Saumont");
@@ -470,7 +470,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
@@ -482,7 +482,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Dan", "Vanderkam");
@@ -494,7 +494,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Boris", "Cherny");
@@ -573,7 +573,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Jim", "Green");
@@ -585,7 +585,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning SQL", 1);
@@ -599,7 +599,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("SQL Cookbook", 1);
@@ -663,7 +663,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?"
                         );
                         it.variables("Eve", "Procello");
@@ -675,7 +675,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
@@ -687,7 +687,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("GraphQL in Action", 3);
@@ -766,7 +766,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME from " +
-                                        "ADMINISTRATOR as tb_1_ " +
+                                        "ADMINISTRATOR tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("a_5");
@@ -781,7 +781,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("am_5");
@@ -849,7 +849,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ADMINISTRATOR as tb_1_ " +
+                                        "from ADMINISTRATOR tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("a_4");
@@ -865,7 +865,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("am_4");
@@ -942,7 +942,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.PARENT_ID is null"
                         );
                         it.variables("Parent");
@@ -954,7 +954,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
                         );
                         it.variables("Child-1", 100L);
@@ -966,7 +966,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
                         );
                         it.variables("Child-2", 100L);
@@ -1043,7 +1043,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -1054,7 +1054,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                     });
@@ -1067,7 +1067,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                     });
@@ -1130,7 +1130,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setAppendOnlyAll().setAutoAttachingAll(),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID from DEPARTMENT as tb_1_ where tb_1_.ID = ?");
+                        it.sql("select tb_1_.ID from DEPARTMENT tb_1_ where tb_1_.ID = ?");
                         it.variables(1L);
                     });
                     ctx.statement(it -> {

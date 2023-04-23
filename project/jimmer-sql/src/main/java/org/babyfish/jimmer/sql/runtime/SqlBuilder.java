@@ -56,7 +56,7 @@ public class SqlBuilder {
         if (definition instanceof SingleColumn) {
             builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
             if (asBlock != null) {
-                builder.append(" as ").append(asBlock.apply(0));
+                builder.append(" ").append(asBlock.apply(0));
             }
         } else {
             int size = definition.size();
@@ -66,7 +66,7 @@ public class SqlBuilder {
                 }
                 builder.append(tableAlias).append('.').append(definition.name(i));
                 if (asBlock != null) {
-                    builder.append(" as ").append(asBlock.apply(i));
+                    builder.append(" ").append(asBlock.apply(i));
                 }
             }
         }

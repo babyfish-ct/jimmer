@@ -28,13 +28,13 @@ public class SingleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.NAME = ? " +
                                     "order by tb_1_.EDITION asc"
                     ).variables("GraphQL in Action");
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(manningId);
                     ctx.rows(
@@ -77,17 +77,17 @@ public class SingleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "order by tb_1_.NAME asc");
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc limit ? offset ?"
                     ).variables(manningId, 3, 1);
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc limit ? offset ?"
                     ).variables(oreillyId, 3, 1);
@@ -117,30 +117,30 @@ public class SingleTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.NAME = ? " +
                                     "order by tb_1_.EDITION asc"
                     ).variables("Learning GraphQL");
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID = ? " +
                                     "order by tb_1_.FIRST_NAME asc " +
                                     "limit ?"
                     ).variables(learningGraphQLId1, 1);
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID = ? " +
                                     "order by tb_1_.FIRST_NAME asc " +
                                     "limit ?"
                     ).variables(learningGraphQLId2, 1);
                     ctx.statement(3).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID = ? " +
                                     "order by tb_1_.FIRST_NAME asc " +
                                     "limit ?"
@@ -169,22 +169,22 @@ public class SingleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(borisId, sammerId);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID = ? " +
                                     "order by tb_1_.EDITION " +
                                     "desc limit ?"
                     ).variables(borisId, 2);
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID = ? " +
                                     "order by tb_1_.EDITION " +
                                     "desc limit ?"

@@ -23,7 +23,7 @@ class PrimitiveTest : AbstractQueryTest() {
                     |tb_1_.LONG_VALUE, tb_1_.LONG_REF, 
                     |tb_1_.FLOAT_VALUE, tb_1_.FLOAT_REF, 
                     |tb_1_.DOUBLE_VALUE, tb_1_.DOUBLE_REF 
-                    |from PRIMITIVE as tb_1_""".trimMargin()
+                    |from PRIMITIVE tb_1_""".trimMargin()
             )
             rows("""[
                 |--->{

@@ -12,7 +12,7 @@ public class IdInSuperTypeTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient().createQuery(animal).select(animal),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from ANIMAL as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.NAME from ANIMAL tb_1_");
                     ctx.rows("[{\"id\":1,\"name\":\"Trigger\"},{\"id\":2,\"name\":\"Lion\"}]");
                 }
         );

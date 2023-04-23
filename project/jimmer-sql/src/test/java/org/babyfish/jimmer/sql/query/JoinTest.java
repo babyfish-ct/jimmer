@@ -25,7 +25,7 @@ public class JoinTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_"
+                                    "from BOOK tb_1_"
                     );
                 }
         );
@@ -41,7 +41,7 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                 }
         );
@@ -54,7 +54,7 @@ public class JoinTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_"
+                                    "from BOOK tb_1_"
                     );
                 }
         );
@@ -85,10 +85,10 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
-                                    "inner join AUTHOR as tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
+                                    "inner join AUTHOR tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID " +
                                     "where tb_2_.PRICE >= ? and tb_2_.PRICE <= ? and lower(tb_4_.FIRST_NAME) like ?"
                     );
                     ctx.variables(
@@ -129,10 +129,10 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                    "inner join BOOK as tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
-                                    "inner join BOOK_STORE as tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "inner join BOOK tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
+                                    "inner join BOOK_STORE tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
                                     "where tb_3_.PRICE >= ? and tb_3_.PRICE <= ? and lower(tb_4_.NAME) like ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30), "%manning%");
@@ -151,7 +151,7 @@ public class JoinTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select 1 from BOOK as tb_1_ where tb_1_.STORE_ID in (?, ?)"
+                            "select 1 from BOOK tb_1_ where tb_1_.STORE_ID in (?, ?)"
                     );
                     ctx.variables(oreillyId, manningId);
                 }
@@ -174,8 +174,8 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?)"
                     );
                     ctx.variables(alexId, borisId);
@@ -199,8 +199,8 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?)"
                     );
                     ctx.variables(learningGraphQLId1, learningGraphQLId2);
@@ -224,8 +224,8 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_2_.ID in (?, ?)"
                     );
                     ctx.variables(learningGraphQLId1, learningGraphQLId2);
@@ -247,8 +247,8 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select 1 " +
-                                    "from BOOK as tb_1_ " +
-                                    "left join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.STORE_ID is not null " +
                                     "or lower(tb_2_.NAME) like ?"
                     );
@@ -268,7 +268,7 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                 }
@@ -285,8 +285,8 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join AUTHOR as tb_2_ on exists(" +
+                                    "from BOOK tb_1_ " +
+                                    "inner join AUTHOR tb_2_ on exists(" +
                                     "--->select * from book_author_mapping " +
                                     "--->where book_id = tb_1_.ID and author_id = tb_2_.ID" +
                                     ") " +
@@ -330,8 +330,8 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join AUTHOR as tb_2_ on exists(" +
+                                    "from BOOK tb_1_ " +
+                                    "inner join AUTHOR tb_2_ on exists(" +
                                     "--->select * from book_author_mapping " +
                                     "--->where book_id = tb_1_.ID and author_id = tb_2_.ID" +
                                     ") " +

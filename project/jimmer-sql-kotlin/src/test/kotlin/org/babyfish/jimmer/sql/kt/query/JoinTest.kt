@@ -27,7 +27,7 @@ class JoinTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_""".trimMargin()
+                    |from BOOK tb_1_""".trimMargin()
             )
         }
     }
@@ -42,8 +42,8 @@ class JoinTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
-                    |inner join AUTHOR as tb_2_ on exists(
+                    |from BOOK tb_1_ 
+                    |inner join AUTHOR tb_2_ on exists(
                     |--->select * from book_author_mapping 
                     |--->where book_id = tb_1_.ID and author_id = tb_2_.ID
                     |) 
@@ -94,8 +94,8 @@ class JoinTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
-                    |inner join AUTHOR as tb_2_ on exists(
+                    |from BOOK tb_1_ 
+                    |inner join AUTHOR tb_2_ on exists(
                     |--->select * from book_author_mapping 
                     |--->where book_id = tb_1_.ID and author_id = tb_2_.ID
                     |) 

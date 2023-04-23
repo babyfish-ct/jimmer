@@ -30,7 +30,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                     ctx.variables(manningId);
@@ -73,7 +73,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?)"
                     );
                     ctx.variables(manningId, oreillyId);
@@ -124,7 +124,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.EDITION desc " +
                                     "limit ?"
@@ -178,7 +178,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                             "select " +
                                     "tb_1_.STORE_ID, " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID in (?, ?) " +
                                     "and tb_1_.EDITION = ?"
                     );
@@ -243,8 +243,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID = ?"
                     );
                     ctx.variables(learningGraphQLId3);
@@ -294,8 +294,8 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     );

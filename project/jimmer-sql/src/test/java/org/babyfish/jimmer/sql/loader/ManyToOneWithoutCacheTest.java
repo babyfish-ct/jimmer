@@ -22,7 +22,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
             ctx -> {
                 ctx.sql(
                         "select tb_1_.ID, tb_1_.STORE_ID " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.ID in (?, ?) " +
                                 "and tb_1_.STORE_ID is not null"
                 ).variables(learningGraphQLId2, graphQLInActionId2);
@@ -64,14 +64,14 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID from " +
-                                    "BOOK_STORE as tb_1_ " +
+                                    "BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "and tb_1_.NAME like ?"
                     ).variables(oreillyId, manningId, "M%");
                     ctx.statement(1).sql(
                             "select tb_2_.ID, tb_1_.ID " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_2_.ID in (?, ?) " +
                                     "and tb_1_.NAME like ?"
                     ).variables(learningGraphQLId2, graphQLInActionId2, "M%");
@@ -109,13 +109,13 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?)"
                     ).variables(oreillyId, manningId);
                     ctx.statement(1).sql(
                             "select tb_2_.ID, tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_2_.ID in (?, ?)"
                     ).variables(learningGraphQLId2, graphQLInActionId2);
                     ctx.rows(1);
@@ -168,14 +168,14 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "and tb_1_.NAME like ?"
                     ).variables(oreillyId, manningId, "M%");
                     ctx.statement(1).sql(
                             "select tb_2_.ID, tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_2_.ID in (?, ?) " +
                                     "and tb_1_.NAME like ?"
                     ).variables(learningGraphQLId2, graphQLInActionId2, "M%");

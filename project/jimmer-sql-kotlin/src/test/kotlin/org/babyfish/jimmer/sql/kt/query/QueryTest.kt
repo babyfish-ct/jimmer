@@ -19,7 +19,7 @@ class QueryTest : AbstractQueryTest() {
                 select(table)
             }
         ) {
-            sql("select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE from BOOK_STORE as tb_1_")
+            sql("select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE from BOOK_STORE tb_1_")
             rows(
                 """[
                     |--->{
@@ -49,7 +49,7 @@ class QueryTest : AbstractQueryTest() {
                 )
             }
         ) {
-            sql("select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE from BOOK_STORE as tb_1_")
+            sql("select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE from BOOK_STORE tb_1_")
             rows {
                 expect("[Tuple3(_1=1, _2=O'REILLY, _3=null), Tuple3(_1=2, _2=MANNING, _3=null)]") {
                     it.toString()
@@ -70,8 +70,8 @@ class QueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
-                    |inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
+                    |from BOOK tb_1_ 
+                    |inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
                     |where tb_2_.NAME = ? 
                     |order by tb_1_.NAME asc, tb_1_.EDITION desc""".trimMargin()
             )
@@ -111,8 +111,8 @@ class QueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_2_.NAME, count(tb_1_.ID) 
-                    |from BOOK as tb_1_ 
-                    |inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
+                    |from BOOK tb_1_ 
+                    |inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
                     |group by tb_2_.NAME""".trimMargin()
             )
             rows {
@@ -144,7 +144,7 @@ class QueryTest : AbstractQueryTest() {
                     |tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, 
                     |rank() over(order by tb_1_.PRICE desc), 
                     |rank() over(partition by tb_1_.STORE_ID order by tb_1_.PRICE desc) 
-                    |from BOOK as tb_1_""".trimMargin()
+                    |from BOOK tb_1_""".trimMargin()
             )
             rows {
                 contentEquals(
@@ -297,7 +297,7 @@ class QueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_""".trimMargin()
+                    |from BOOK_STORE tb_1_""".trimMargin()
             )
         }
     }
@@ -312,8 +312,8 @@ class QueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_ 
-                    |inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
+                    |from BOOK_STORE tb_1_ 
+                    |inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
                     |where lower(tb_2_.NAME) like ?""".trimMargin()
             )
         }
@@ -329,7 +329,7 @@ class QueryTest : AbstractQueryTest() {
         ) {
             statement(0).sql(
                 """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
-                    |from AUTHOR as tb_1_ 
+                    |from AUTHOR tb_1_ 
                     |where concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) = ?""".trimMargin()
             )
             rows("[{\"id\":2,\"firstName\":\"Alex\",\"lastName\":\"Banks\",\"gender\":\"MALE\"}]")

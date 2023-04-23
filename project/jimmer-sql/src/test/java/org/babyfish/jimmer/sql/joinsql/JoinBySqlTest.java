@@ -21,8 +21,8 @@ public class JoinBySqlTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.NAME " +
-                                    "from POST as tb_1_ " +
-                                    "inner join CATEGORY as tb_2_ " +
+                                    "from POST tb_1_ " +
+                                    "inner join CATEGORY tb_2_ " +
                                     "--->on contains_id(tb_1_.category_ids, tb_2_.id) " +
                                     "where tb_2_.NAME = ?"
                     );
@@ -45,8 +45,8 @@ public class JoinBySqlTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.NAME " +
-                                    "from CATEGORY as tb_1_ " +
-                                    "inner join POST as tb_2_ " +
+                                    "from CATEGORY tb_1_ " +
+                                    "inner join POST tb_2_ " +
                                     "--->on contains_id(tb_2_.category_ids, tb_1_.id) " +
                                     "where tb_2_.NAME = ?"
                     );
@@ -69,8 +69,8 @@ public class JoinBySqlTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.NAME " +
-                                    "from POST as tb_1_ " +
-                                    "inner join CATEGORY as tb_2_ " +
+                                    "from POST tb_1_ " +
+                                    "inner join CATEGORY tb_2_ " +
                                     "--->on contains_id(tb_1_.category_ids, tb_2_.id) " +
                                     "where tb_2_.ID = ?"
                     );
@@ -93,8 +93,8 @@ public class JoinBySqlTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.NAME " +
-                                    "from CATEGORY as tb_1_ " +
-                                    "inner join POST as tb_2_ " +
+                                    "from CATEGORY tb_1_ " +
+                                    "inner join POST tb_2_ " +
                                     "--->on contains_id(tb_2_.category_ids, tb_1_.id) " +
                                     "where tb_2_.ID = ?"
                     );

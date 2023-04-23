@@ -28,12 +28,12 @@ public class TransientResolverTest extends AbstractQueryTest {
                 it -> {
                     it.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     it.statement(1).sql(
                             "select tb_1_.ID, coalesce(avg(tb_2_.PRICE), ?) " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "left join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "group by tb_1_.ID"
                     ).variables(BigDecimal.ZERO, oreillyId, manningId);
@@ -75,13 +75,13 @@ public class TransientResolverTest extends AbstractQueryTest {
                                     "tb_1_.NAME, " +
                                     "tb_1_.WEBSITE, " +
                                     "tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_3_.AUTHOR_ID, count(tb_2_.ID) " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "group by tb_1_.ID, tb_3_.AUTHOR_ID " +
                                     "order by count(tb_3_.AUTHOR_ID) desc, tb_3_.AUTHOR_ID asc"
@@ -135,25 +135,25 @@ public class TransientResolverTest extends AbstractQueryTest {
                                     "tb_1_.NAME, " +
                                     "tb_1_.WEBSITE, " +
                                     "tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_3_.AUTHOR_ID, count(tb_2_.ID) " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "group by tb_1_.ID, tb_3_.AUTHOR_ID " +
                                     "order by count(tb_3_.AUTHOR_ID) desc, tb_3_.AUTHOR_ID asc"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ where tb_1_.ID in (?, ?)"
+                                    "from AUTHOR tb_1_ where tb_1_.ID in (?, ?)"
                     );
                     ctx.statement(3).sql(
                             "select tb_2_.AUTHOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?)"
                     );
                     ctx.rows(
@@ -235,22 +235,22 @@ public class TransientResolverTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_2_.ID " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where (tb_2_.NAME, tb_2_.EDITION) in (" +
                                     "--->select tb_3_.NAME, max(tb_3_.EDITION) " +
-                                    "--->from BOOK as tb_3_ " +
+                                    "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.STORE_ID in (?, ?) " +
                                     "--->group by tb_3_.NAME" +
                                     ")"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                                    "from BOOK as tb_1_ where tb_1_.ID in (?, ?, ?, ?)"
+                                    "from BOOK tb_1_ where tb_1_.ID in (?, ?, ?, ?)"
                     );
                     ctx.rows(
                             "[" +
@@ -316,22 +316,22 @@ public class TransientResolverTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_2_.ID " +
-                                    "from BOOK_STORE as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                    "from BOOK_STORE tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "where (tb_2_.NAME, tb_2_.EDITION) in (" +
                                     "--->select tb_3_.NAME, max(tb_3_.EDITION) " +
-                                    "--->from BOOK as tb_3_ " +
+                                    "--->from BOOK tb_3_ " +
                                     "--->where tb_3_.STORE_ID in (?, ?) " +
                                     "--->group by tb_3_.NAME" +
                                     ")"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                                    "from BOOK as tb_1_ where tb_1_.ID in (?, ?, ?, ?) " +
+                                    "from BOOK tb_1_ where tb_1_.ID in (?, ?, ?, ?) " +
                                     "order by tb_1_.NAME asc"
                     );
                     ctx.rows(

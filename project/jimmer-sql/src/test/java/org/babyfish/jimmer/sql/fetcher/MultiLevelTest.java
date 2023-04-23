@@ -56,12 +56,12 @@ public class MultiLevelTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "order by tb_1_.NAME asc"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID in (?, ?) " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     ).variables(manningId, oreillyId);
@@ -69,8 +69,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(
@@ -81,8 +81,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(
@@ -94,8 +94,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(programmingTypeScriptId2, programmingTypeScriptId3);
@@ -103,8 +103,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.AUTHOR_ID, " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?, ?) " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     ).variables(danId, sammerId, alexId);
@@ -112,15 +112,15 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.AUTHOR_ID, " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?) " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     ).variables(borisId, eveId);
                     ctx.statement(7).sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.NAME asc"
                     ).variables(oreillyId, manningId);
@@ -197,15 +197,15 @@ public class MultiLevelTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "order by tb_1_.FIRST_NAME asc"
                     );
                     ctx.statement(1).sql(
                             "select " +
                                     "tb_2_.AUTHOR_ID, " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?, ?) " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     ).variables(alexId, borisId, danId);
@@ -213,14 +213,14 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.AUTHOR_ID, " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?) " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     ).variables(eveId, sammerId);
                     ctx.statement(3).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.NAME asc"
                     ).variables(oreillyId, manningId);
@@ -228,7 +228,7 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_1_.STORE_ID, " +
                                     "tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID in (?, ?) " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     ).variables(manningId, oreillyId);
@@ -236,8 +236,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(
@@ -248,8 +248,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(
@@ -261,8 +261,8 @@ public class MultiLevelTest extends AbstractQueryTest {
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?) " +
                                     "order by tb_1_.FIRST_NAME asc"
                     ).variables(programmingTypeScriptId2, programmingTypeScriptId3);

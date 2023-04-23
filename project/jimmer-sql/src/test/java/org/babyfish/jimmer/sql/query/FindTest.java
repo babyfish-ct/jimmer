@@ -22,7 +22,7 @@ public class FindTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                            "from BOOK_STORE as tb_1_ " +
+                            "from BOOK_STORE tb_1_ " +
                             "order by tb_1_.NAME desc"
             );
             it.rows(
@@ -54,12 +54,12 @@ public class FindTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                            "from BOOK_STORE as tb_1_ " +
+                            "from BOOK_STORE tb_1_ " +
                             "order by tb_1_.NAME desc"
             );
             it.statement(1).sql(
                     "select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.STORE_ID in (?, ?) and tb_1_.EDITION = ?"
             );
             it.rows(
@@ -119,7 +119,7 @@ public class FindTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME like ? and tb_1_.EDITION = ? " +
                             "order by tb_1_.NAME asc"
             );
@@ -159,12 +159,12 @@ public class FindTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.STORE_ID = ? order by tb_1_.NAME desc"
             ).variables(Constants.manningId);
             it.statement(1).sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                            "from BOOK_STORE as tb_1_ " +
+                            "from BOOK_STORE tb_1_ " +
                             "where tb_1_.ID = ?"
             );
             it.rows(
@@ -223,7 +223,7 @@ public class FindTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) = ?"
                     );
                     ctx.rows("[{\"id\":\"1e93da94-af84-44f4-82d1-d8a9fd52ea94\",\"fullName2\":\"Alex Banks\"}]");

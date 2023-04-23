@@ -27,7 +27,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_"""
+                """select tb_1_.ID, tb_1_.NAME from ROLE tb_1_"""
             )
             rows(
                 """[{"name":"r_1","id":100},{"name":"r_2","id":200}]"""
@@ -48,11 +48,11 @@ class InheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_"""
+                """select tb_1_.ID, tb_1_.NAME from ROLE tb_1_"""
             )
             statement(1).sql(
                 """select tb_1_.ROLE_ID, tb_1_.ID 
-                    |from PERMISSION as tb_1_ 
+                    |from PERMISSION tb_1_ 
                     |where tb_1_.ROLE_ID in (?, ?)""".trimMargin()
             )
             rows(
@@ -79,11 +79,11 @@ class InheritanceQueryTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_"""
+                """select tb_1_.ID, tb_1_.NAME from ROLE tb_1_"""
             )
             statement(1).sql(
                 """select tb_1_.ROLE_ID, tb_1_.ID, tb_1_.NAME 
-                    |from PERMISSION as tb_1_ 
+                    |from PERMISSION tb_1_ 
                     |where tb_1_.ROLE_ID in (?, ?)""".trimMargin()
             )
             rows(
@@ -123,7 +123,7 @@ class InheritanceQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
-                    |from ROLE as tb_1_ 
+                    |from ROLE tb_1_ 
                     |where tb_1_.CREATED_TIME between ? and ?""".trimMargin()
             )
             rows(

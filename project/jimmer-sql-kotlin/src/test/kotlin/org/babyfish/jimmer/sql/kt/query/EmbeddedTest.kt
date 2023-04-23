@@ -19,7 +19,7 @@ class EmbeddedTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, 
                     |tb_1_.BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
-                    |from TRANSFORM as tb_1_ 
+                    |from TRANSFORM tb_1_ 
                     |where tb_1_.`LEFT` = ?""".trimMargin()
             )
             variables(100L)
@@ -41,7 +41,7 @@ class EmbeddedTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, 
                     |tb_1_.BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
-                    |from TRANSFORM as tb_1_ 
+                    |from TRANSFORM tb_1_ 
                     |where (tb_1_.`LEFT`, tb_1_.TOP) = (?, ?)""".trimMargin()
             )
             variables(100L, 120L)
@@ -69,7 +69,7 @@ class EmbeddedTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, 
                     |tb_1_.BOTTOM, tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
-                    |from TRANSFORM as tb_1_ 
+                    |from TRANSFORM tb_1_ 
                     |where (tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM) = (?, ?, ?, ?)""".trimMargin()
             )
             variables(100L, 120L, 400L, 320L)
@@ -91,7 +91,7 @@ class EmbeddedTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
                     |tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
-                    |from TRANSFORM as tb_1_""".trimMargin()
+                    |from TRANSFORM tb_1_""".trimMargin()
             )
             rows(
                 """[
@@ -127,7 +127,7 @@ class EmbeddedTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
                     |tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
-                    |from TRANSFORM as tb_1_""".trimMargin()
+                    |from TRANSFORM tb_1_""".trimMargin()
             )
             rows(
                 """[
@@ -163,7 +163,7 @@ class EmbeddedTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, 
                     |tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM 
-                    |from TRANSFORM as tb_1_""".trimMargin()
+                    |from TRANSFORM tb_1_""".trimMargin()
             )
             rows(
                 """[

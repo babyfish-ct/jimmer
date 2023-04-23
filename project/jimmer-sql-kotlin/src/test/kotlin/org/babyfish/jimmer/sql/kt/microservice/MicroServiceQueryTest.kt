@@ -31,7 +31,7 @@ class MicroServiceQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.ORDER_ID 
-                    |from MS_ORDER_ITEM as tb_1_""".trimMargin()
+                    |from MS_ORDER_ITEM tb_1_""".trimMargin()
             )
             rows(
                 """[

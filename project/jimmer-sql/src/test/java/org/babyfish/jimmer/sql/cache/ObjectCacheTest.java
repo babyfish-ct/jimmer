@@ -66,7 +66,7 @@ public class ObjectCacheTest extends AbstractQueryTest {
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                            "from BOOK_STORE as tb_1_ " +
+                                            "from BOOK_STORE tb_1_ " +
                                             "where tb_1_.ID = ?"
                             );
                             ctx.variables(oreillyId);
@@ -105,10 +105,10 @@ public class ObjectCacheTest extends AbstractQueryTest {
                                     )
                             ),
                     ctx -> {
-                        ctx.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION from BOOK_STORE as tb_1_");
+                        ctx.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION from BOOK_STORE tb_1_");
                         if (useSql) {
-                            ctx.statement(1).sql("select tb_1_.ID, tb_2_.ID from BOOK_STORE as tb_1_ inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID where (tb_2_.NAME, tb_2_.EDITION) in (select tb_3_.NAME, max(tb_3_.EDITION) from BOOK as tb_3_ where tb_3_.STORE_ID in (?, ?) group by tb_3_.NAME)");
-                            ctx.statement(2).sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK as tb_1_ where tb_1_.ID in (?, ?, ?, ?)");
+                            ctx.statement(1).sql("select tb_1_.ID, tb_2_.ID from BOOK_STORE tb_1_ inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID where (tb_2_.NAME, tb_2_.EDITION) in (select tb_3_.NAME, max(tb_3_.EDITION) from BOOK tb_3_ where tb_3_.STORE_ID in (?, ?) group by tb_3_.NAME)");
+                            ctx.statement(2).sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK tb_1_ where tb_1_.ID in (?, ?, ?, ?)");
                         }
                     }
             );

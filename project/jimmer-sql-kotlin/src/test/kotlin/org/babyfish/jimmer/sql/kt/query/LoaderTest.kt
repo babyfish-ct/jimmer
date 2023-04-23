@@ -25,7 +25,7 @@ class LoaderTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID = ?""".trimMargin()
             )
             variables(2L)
@@ -72,7 +72,7 @@ class LoaderTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID = ? and tb_1_.EDITION <> ? 
                     |order by tb_1_.EDITION desc""".trimMargin()
             )
@@ -117,7 +117,7 @@ class LoaderTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.STORE_ID, coalesce(avg(tb_1_.PRICE), ?) 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID in (?, ?) 
                     |group by tb_1_.STORE_ID""".trimMargin()
             )

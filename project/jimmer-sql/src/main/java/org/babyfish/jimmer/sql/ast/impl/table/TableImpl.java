@@ -484,7 +484,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             sqlBuilder
                     .sql(" from ")
                     .sql(immutableType.getTableName())
-                    .sql(" as ")
+                    .sql(" ")
                     .sql(alias);
         }
     }
@@ -500,7 +500,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         .sql(joinType.name().toLowerCase())
                         .sql(" join ")
                         .sql(immutableType.getTableName())
-                        .sql(" as ")
+                        .sql(" ")
                         .sql(alias)
                         .sql(" on ");
                 if (predicate == null) {
@@ -648,14 +648,14 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                             .sql(joinType.name().toLowerCase())
                             .sql(" join ")
                             .sql(immutableType.getTableName())
-                            .sql(" as ")
+                            .sql(" ")
                             .sql(alias)
                             .sql(" on ");
                     break;
                 case FROM_ONLY:
                     builder
                             .sql(immutableType.getTableName())
-                            .sql(" as ")
+                            .sql(" ")
                             .sql(alias);
                     break;
             }
@@ -689,14 +689,14 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         .sql(joinType.name().toLowerCase())
                         .sql(" join ")
                         .sql(newTableName)
-                        .sql(" as ")
+                        .sql(" ")
                         .sql(newAlias)
                         .sql(" on ");
                 break;
             case FROM_ONLY:
                 sqlBuilder
                         .sql(newTableName)
-                        .sql(" as ")
+                        .sql(" ")
                         .sql(newAlias);
                 break;
         }
@@ -761,7 +761,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         }
                         builder.sql(parentColumnName);
                         if (asBlock != null) {
-                            builder.sql(" as ").sql(asBlock.apply(i));
+                            builder.sql(" ").sql(asBlock.apply(i));
                         }
                     }
                 }
@@ -785,7 +785,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         }
                         builder.sql(parentColumnName);
                         if (asBlock != null) {
-                            builder.sql(" as ").sql(asBlock.apply(i));
+                            builder.sql(" ").sql(asBlock.apply(i));
                         }
                     }
                 }
@@ -796,7 +796,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         if (template instanceof FormulaTemplate) {
             builder.sql(((FormulaTemplate)template).toSql(alias));
             if (asBlock != null) {
-                builder.sql(" as ").sql(asBlock.apply(0));
+                builder.sql(" ").sql(asBlock.apply(0));
             }
         } else {
             ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();

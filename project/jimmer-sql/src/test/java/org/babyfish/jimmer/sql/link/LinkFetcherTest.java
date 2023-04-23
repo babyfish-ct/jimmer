@@ -30,17 +30,17 @@ public class LinkFetcherTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from STUDENT as tb_1_"
+                                    "from STUDENT tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.STUDENT_ID, tb_1_.ID, tb_1_.COURSE_ID " +
-                                    "from LEARNING_LINK as tb_1_ " +
-                                    "inner join COURSE as tb_3_ on tb_1_.COURSE_ID = tb_3_.ID " +
+                                    "from LEARNING_LINK tb_1_ " +
+                                    "inner join COURSE tb_3_ on tb_1_.COURSE_ID = tb_3_.ID " +
                                     "where tb_1_.STUDENT_ID in (?, ?) " +
                                     "order by tb_3_.NAME desc"
                     );
                     ctx.statement(2).sql(
-                            "select tb_1_.ID, tb_1_.NAME from COURSE as tb_1_ " +
+                            "select tb_1_.ID, tb_1_.NAME from COURSE tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?)"
                     );
                     ctx.rows(
@@ -102,16 +102,16 @@ public class LinkFetcherTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from STUDENT as tb_1_"
+                                    "from STUDENT tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.STUDENT_ID, tb_1_.ID, tb_1_.SCORE, tb_1_.COURSE_ID " +
-                                    "from LEARNING_LINK as tb_1_ " +
+                                    "from LEARNING_LINK tb_1_ " +
                                     "where tb_1_.STUDENT_ID in (?, ?)"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from COURSE as tb_1_ " +
+                                    "from COURSE tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?)"
                     );
                     ctx.rows(
@@ -213,16 +213,16 @@ public class LinkFetcherTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from STUDENT as tb_1_"
+                                    "from STUDENT tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.STUDENT_ID, tb_1_.ID, tb_1_.SCORE, tb_1_.COURSE_ID " +
-                                    "from LEARNING_LINK as tb_1_ " +
+                                    "from LEARNING_LINK tb_1_ " +
                                     "where tb_1_.STUDENT_ID in (?, ?)"
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.ACADEMIC_CREDIT " +
-                                    "from COURSE as tb_1_ " +
+                                    "from COURSE tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?)"
                     );
                     ctx.rows(

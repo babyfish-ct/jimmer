@@ -237,7 +237,7 @@ public class SpringJavaTest extends AbstractTest {
         Assertions.assertEquals(12, bookRepository.findAll(BookProps.NAME.desc()).size());
         assertSQLs(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "order by tb_1_.NAME desc"
         );
         assertTransactionEvents("connect");
@@ -245,9 +245,9 @@ public class SpringJavaTest extends AbstractTest {
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(0, 10, BookProps.NAME.desc());
         assertSQLs(
-                "select count(tb_1_.ID) from BOOK as tb_1_",
+                "select count(tb_1_.ID) from BOOK tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "order by tb_1_.NAME desc " +
                         "limit ?"
         );
@@ -274,15 +274,15 @@ public class SpringJavaTest extends AbstractTest {
                 Assertions.assertEquals(12, bookRepository.findAll(BookProps.NAME.desc()).size());
                 assertSQLs(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "order by tb_1_.NAME desc"
                 );
 
                 Page<Book> page = bookRepository.findAll(0, 10, BookProps.NAME.desc());
                 assertSQLs(
-                        "select count(tb_1_.ID) from BOOK as tb_1_",
+                        "select count(tb_1_.ID) from BOOK tb_1_",
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "order by tb_1_.NAME desc " +
                                 "limit ?"
                 );
@@ -311,7 +311,7 @@ public class SpringJavaTest extends AbstractTest {
         Assertions.assertEquals(12, bookRepository.findAll(sort).size());
         assertSQLs(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc"
         );
         assertTransactionEvents("connect");
@@ -319,9 +319,9 @@ public class SpringJavaTest extends AbstractTest {
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(0, 10, sort);
         assertSQLs(
-                "select count(tb_1_.ID) from BOOK as tb_1_",
+                "select count(tb_1_.ID) from BOOK tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                         "limit ?"
         );
@@ -347,9 +347,9 @@ public class SpringJavaTest extends AbstractTest {
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(pageable);
         assertSQLs(
-                "select count(tb_1_.ID) from BOOK as tb_1_",
+                "select count(tb_1_.ID) from BOOK tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "order by tb_1_.NAME desc " +
                         "limit ?"
         );
@@ -376,10 +376,10 @@ public class SpringJavaTest extends AbstractTest {
         );
         assertSQLs(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "where tb_1_.NAME = ? " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc",
-                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
+                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.ID = ?"
         );
         assertJson(
                 "[" +
@@ -432,20 +432,20 @@ public class SpringJavaTest extends AbstractTest {
         );
         assertSQLs(
                 "select count(tb_1_.ID) " +
-                        "from BOOK as tb_1_ " +
-                        "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                        "from BOOK tb_1_ " +
+                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                         "where lower(tb_1_.NAME) like ? " +
                         "and tb_2_.NAME = ?",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                        "from BOOK as tb_1_ " +
-                        "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                        "from BOOK tb_1_ " +
+                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                         "where lower(tb_1_.NAME) like ? " +
                         "and tb_2_.NAME = ? " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                         "limit ?",
                 "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                        "from AUTHOR as tb_1_ " +
-                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                        "from AUTHOR tb_1_ " +
+                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                         "where tb_2_.BOOK_ID in (?, ?)"
         );
         assertJson(
@@ -498,19 +498,19 @@ public class SpringJavaTest extends AbstractTest {
     public void testFindDistinctPriceByPriceBetween() {
         bookRepository.findDistinctPriceByPriceBetween(null, null);
         assertSQLs(
-                "select distinct tb_1_.PRICE from BOOK as tb_1_"
+                "select distinct tb_1_.PRICE from BOOK tb_1_"
         );
         bookRepository.findDistinctPriceByPriceBetween(new BigDecimal(40), null);
         assertSQLs(
-                "select distinct tb_1_.PRICE from BOOK as tb_1_ where tb_1_.PRICE >= ?"
+                "select distinct tb_1_.PRICE from BOOK tb_1_ where tb_1_.PRICE >= ?"
         );
         bookRepository.findDistinctPriceByPriceBetween(null, new BigDecimal(50));
         assertSQLs(
-                "select distinct tb_1_.PRICE from BOOK as tb_1_ where tb_1_.PRICE <= ?"
+                "select distinct tb_1_.PRICE from BOOK tb_1_ where tb_1_.PRICE <= ?"
         );
         bookRepository.findDistinctPriceByPriceBetween(new BigDecimal(40), new BigDecimal(50));
         assertSQLs(
-                "select distinct tb_1_.PRICE from BOOK as tb_1_ where tb_1_.PRICE between ? and ?"
+                "select distinct tb_1_.PRICE from BOOK tb_1_ where tb_1_.PRICE between ? and ?"
         );
     }
 
@@ -528,22 +528,22 @@ public class SpringJavaTest extends AbstractTest {
                         )
         );
         assertSQLs(
-                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_",
+                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_",
                 "select tb_1_.ID, tb_2_.ID " +
-                        "from BOOK_STORE as tb_1_ " +
-                        "inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                        "from BOOK_STORE tb_1_ " +
+                        "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                         "where (tb_2_.NAME, tb_2_.EDITION) in (" +
                         "--->select tb_3_.NAME, max(tb_3_.EDITION) " +
-                        "--->from BOOK as tb_3_ " +
+                        "--->from BOOK tb_3_ " +
                         "--->where tb_3_.STORE_ID in (?, ?) " +
                         "--->group by tb_3_.NAME" +
                         ")",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
-                        "from BOOK as tb_1_ " +
+                        "from BOOK tb_1_ " +
                         "where tb_1_.ID in (?, ?, ?, ?)",
                 "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                        "from AUTHOR as tb_1_ " +
-                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                        "from AUTHOR tb_1_ " +
+                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                         "where tb_2_.BOOK_ID in (?, ?, ?, ?)"
         );
         assertJson(

@@ -30,7 +30,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME from ROLE tb_1_"
                     );
                     ctx.rows(
                             "[" +
@@ -56,11 +56,11 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME from ROLE tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ROLE_ID, tb_1_.ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID in (?, ?)"
                     );
                     ctx.rows(
@@ -101,10 +101,10 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from ROLE as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.NAME from ROLE tb_1_");
                     ctx.statement(1).sql(
                             "select tb_1_.ROLE_ID, tb_1_.ID, tb_1_.NAME " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID in (?, ?)"
                     );
                     ctx.rows(
@@ -145,7 +145,7 @@ public class InheritanceQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.CREATED_TIME " +
                                     "between ? and ?"
                     );

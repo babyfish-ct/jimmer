@@ -41,12 +41,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(100L, false);
@@ -88,12 +88,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(100L, false);
@@ -137,11 +137,11 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
-                            "select tb_1_.ID from ROLE as tb_1_ " +
+                            "select tb_1_.ID from ROLE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(100L, 200L, false);
@@ -188,12 +188,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?"
                     ).variables(100L, 200L, false);
                     ctx.rows(
@@ -241,13 +241,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ADMINISTRATOR as tb_1_ " +
+                                    "from ADMINISTRATOR tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_2_.ADMINISTRATOR_ID, tb_1_.ID " +
-                                    "from ROLE as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
+                                    "from ROLE tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
                                     "where tb_2_.ADMINISTRATOR_ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(1L, 3L, false);
@@ -298,13 +298,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ADMINISTRATOR as tb_1_ " +
+                                    "from ADMINISTRATOR tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_2_.ADMINISTRATOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
+                                    "from ROLE tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
                                     "where tb_2_.ADMINISTRATOR_ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(1L, 3L, false);
@@ -363,13 +363,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID " +
-                                    "from ADMINISTRATOR as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "from ADMINISTRATOR tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
                     ).variables(100L, false);
                     ctx.rows(
@@ -411,13 +411,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(false);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ADMINISTRATOR as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "from ADMINISTRATOR tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
                     ).variables(100L, false);
                     ctx.rows(
@@ -466,12 +466,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_1_.ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?"
                     ).variables(200L, true);
                     ctx.rows(
@@ -512,12 +512,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?"
                     ).variables(200L, true);
                     ctx.rows(
@@ -560,11 +560,11 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
-                            "select tb_1_.ID from ROLE as tb_1_ " +
+                            "select tb_1_.ID from ROLE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(100L, 200L, true);
@@ -610,12 +610,12 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?"
                     ).variables(100L, 200L, true);
                     ctx.rows(
@@ -663,13 +663,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ADMINISTRATOR as tb_1_ " +
+                                    "from ADMINISTRATOR tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_2_.ADMINISTRATOR_ID, tb_1_.ID " +
-                                    "from ROLE as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
+                                    "from ROLE tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
                                     "where tb_2_.ADMINISTRATOR_ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(2L, 4L, true);
@@ -720,13 +720,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ADMINISTRATOR as tb_1_ " +
+                                    "from ADMINISTRATOR tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_2_.ADMINISTRATOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
+                                    "from ROLE tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
                                     "where tb_2_.ADMINISTRATOR_ID in (?, ?) " +
                                     "and tb_1_.DELETED = ?"
                     ).variables(2L, 4L, true);
@@ -785,13 +785,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_1_.ID " +
-                                    "from ADMINISTRATOR as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "from ADMINISTRATOR tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
                     ).variables(200L, true);
                     ctx.rows(
@@ -833,13 +833,13 @@ public class GlobalFilterTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ROLE as tb_1_ " +
+                                    "from ROLE tb_1_ " +
                                     "where tb_1_.DELETED = ?"
                     ).variables(true);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                    "from ADMINISTRATOR as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "from ADMINISTRATOR tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
                     ).variables(200L, true);
                     ctx.rows(

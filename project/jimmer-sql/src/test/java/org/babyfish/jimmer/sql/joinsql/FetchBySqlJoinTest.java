@@ -28,12 +28,12 @@ public class FetchBySqlJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from POST as tb_1_"
+                                    "from POST tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_2_.ID, tb_1_.ID, tb_1_.NAME " +
-                                    "from CATEGORY as tb_1_ " +
-                                    "inner join POST as tb_2_ " +
+                                    "from CATEGORY tb_1_ " +
+                                    "inner join POST tb_2_ " +
                                     "--->on contains_id(tb_2_.category_ids, tb_1_.id) " +
                                     "where tb_2_.ID in (?, ?, ?, ?)"
                     );
@@ -120,12 +120,12 @@ public class FetchBySqlJoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from CATEGORY as tb_1_"
+                                    "from CATEGORY tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_2_.ID, tb_1_.ID, tb_1_.NAME " +
-                                    "from POST as tb_1_ " +
-                                    "inner join CATEGORY as tb_2_ " +
+                                    "from POST tb_1_ " +
+                                    "inner join CATEGORY tb_2_ " +
                                     "--->on contains_id(tb_1_.category_ids, tb_2_.id) " +
                                     "where tb_2_.ID in (?, ?, ?)"
                     );

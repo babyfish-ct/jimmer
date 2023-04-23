@@ -25,7 +25,7 @@ public class MicroServiceDSLTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.ORDER_ID " +
-                                    "from MS_ORDER_ITEM as tb_1_ " +
+                                    "from MS_ORDER_ITEM tb_1_ " +
                                     "where tb_1_.ORDER_ID = ?"
                     );
                     ctx.rows(
@@ -55,8 +55,8 @@ public class MicroServiceDSLTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.ID " +
-                                    "from MS_ORDER_ITEM as tb_1_ " +
-                                    "inner join MS_ORDER_ITEM_PRODUCT_MAPPING as tb_2_ " +
+                                    "from MS_ORDER_ITEM tb_1_ " +
+                                    "inner join MS_ORDER_ITEM_PRODUCT_MAPPING tb_2_ " +
                                     "--->on tb_1_.ID = tb_2_.ORDER_ITEM_ID " +
                                     "where tb_2_.PRODUCT_ID = ?"
                     );

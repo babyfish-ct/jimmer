@@ -21,7 +21,7 @@ public class SimpleTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME from BOOK as tb_1_"
+                            "select tb_1_.ID, tb_1_.NAME from BOOK tb_1_"
                     );
                     ctx.rows(books -> {
                         Assertions.assertEquals(12, books.size());
@@ -55,12 +55,12 @@ public class SimpleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION asc"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK_STORE as tb_1_ " +
+                                    "from BOOK_STORE tb_1_ " +
                                     "where tb_1_.ID in (?, ?) " +
                                     "order by tb_1_.NAME asc"
                     ).variables(oreillyId, manningId);
@@ -90,12 +90,12 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_");
                     ctx.statement(1).sql(
                             "select " +
                                     "tb_1_.STORE_ID, " +
                                     "tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID in (?, ?)"
                     );
                     ctx.rows(stores -> {
@@ -126,10 +126,10 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK tb_1_");
                     ctx.statement(1).sql(
                             "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.BOOK_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                     ctx.rows(books -> {
@@ -160,21 +160,21 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.NAME from BOOK tb_1_");
                     ctx.statement(1).sql(
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?, ?)"
                     );
                     ctx.statement(2).sql(
                             "select " +
                                     "tb_2_.BOOK_ID, " +
                                     "tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?, ?, ?, ?)"
                     );
                     ctx.rows(books -> {
@@ -203,10 +203,10 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR tb_1_");
                     ctx.statement(1).sql(
                             "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.AUTHOR_ID in (?, ?, ?, ?, ?)"
                     );
                     ctx.rows(authors -> {
@@ -237,13 +237,13 @@ public class SimpleTest extends AbstractQueryTest {
                     );
                 }),
                 ctx -> {
-                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR as tb_1_");
+                    ctx.sql("select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME from AUTHOR tb_1_");
                     ctx.statement(1).sql(
                             "select " +
                                     "tb_2_.AUTHOR_ID, " +
                                     "tb_1_.ID, tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
                                     "where tb_2_.AUTHOR_ID in (?, ?, ?, ?, ?)"
                     );
                     ctx.rows(authors -> {
@@ -273,7 +273,7 @@ public class SimpleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                     ctx.rows(
@@ -303,7 +303,7 @@ public class SimpleTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID = ?");
                     ctx.rows(
                             "[" +
@@ -334,10 +334,10 @@ public class SimpleTest extends AbstractQueryTest {
                         ),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK as tb_1_ where tb_1_.ID = ?"
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK tb_1_ where tb_1_.ID = ?"
                     );
                     ctx.statement(1).sql(
-                            "select tb_1_.AUTHOR_ID from BOOK_AUTHOR_MAPPING as tb_1_ where tb_1_.BOOK_ID = ?"
+                            "select tb_1_.AUTHOR_ID from BOOK_AUTHOR_MAPPING tb_1_ where tb_1_.BOOK_ID = ?"
                     );
                     ctx.rows(
                             "[" +

@@ -25,7 +25,7 @@ class FindTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_ order by tb_1_.NAME desc""".trimMargin()
+                    |from BOOK_STORE tb_1_ order by tb_1_.NAME desc""".trimMargin()
             )
             rows(
                 """[
@@ -57,12 +57,12 @@ class FindTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_ 
+                    |from BOOK_STORE tb_1_ 
                     |order by tb_1_.NAME asc""".trimMargin()
             )
             statement(1).sql(
                 """select tb_1_.STORE_ID, tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID in (?, ?) and tb_1_.EDITION = ?""".trimMargin()
             )
             rows(
@@ -110,7 +110,7 @@ class FindTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.NAME like ? and tb_1_.EDITION = ? 
                     |order by tb_1_.NAME asc""".trimMargin()
             )
@@ -157,13 +157,13 @@ class FindTest : AbstractQueryTest() {
         }) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID = ? 
                     |order by tb_1_.NAME desc""".trimMargin()
             )
             statement(1).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_ 
+                    |from BOOK_STORE tb_1_ 
                     |where tb_1_.ID = ?""".trimMargin()
             )
             rows(

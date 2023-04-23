@@ -21,15 +21,15 @@ public class JoinTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
-                                    "from ORDER_ as tb_1_ " +
-                                    "inner join ORDER_ITEM as tb_2_ on " +
+                                    "from ORDER_ tb_1_ " +
+                                    "inner join ORDER_ITEM tb_2_ on " +
                                     "--->tb_1_.ORDER_X = tb_2_.FK_ORDER_X and " +
                                     "--->tb_1_.ORDER_Y = tb_2_.FK_ORDER_Y " +
-                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_3_ on " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_3_ on " +
                                     "--->tb_2_.ORDER_ITEM_A = tb_3_.FK_ORDER_ITEM_A and " +
                                     "--->tb_2_.ORDER_ITEM_B = tb_3_.FK_ORDER_ITEM_B and " +
                                     "--->tb_2_.ORDER_ITEM_C = tb_3_.FK_ORDER_ITEM_C " +
-                                    "inner join PRODUCT as tb_4_ on " +
+                                    "inner join PRODUCT tb_4_ on " +
                                     "--->tb_3_.FK_PRODUCT_ALPHA = tb_4_.PRODUCT_ALPHA and " +
                                     "--->tb_3_.FK_PRODUCT_BETA = tb_4_.PRODUCT_BETA " +
                                     "where tb_2_.NAME = ? and tb_4_.NAME = ?"
@@ -49,15 +49,15 @@ public class JoinTest extends AbstractQueryTest {
                         .select(product),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, tb_1_.NAME from PRODUCT as tb_1_ " +
-                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_2_ on " +
+                            "select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, tb_1_.NAME from PRODUCT tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_2_ on " +
                                     "--->tb_1_.PRODUCT_ALPHA = tb_2_.FK_PRODUCT_ALPHA and " +
                                     "--->tb_1_.PRODUCT_BETA = tb_2_.FK_PRODUCT_BETA " +
-                                    "inner join ORDER_ITEM as tb_3_ on " +
+                                    "inner join ORDER_ITEM tb_3_ on " +
                                     "--->tb_2_.FK_ORDER_ITEM_A = tb_3_.ORDER_ITEM_A and " +
                                     "--->tb_2_.FK_ORDER_ITEM_B = tb_3_.ORDER_ITEM_B and " +
                                     "--->tb_2_.FK_ORDER_ITEM_C = tb_3_.ORDER_ITEM_C " +
-                                    "inner join ORDER_ as tb_4_ on " +
+                                    "inner join ORDER_ tb_4_ on " +
                                     "--->tb_3_.FK_ORDER_X = tb_4_.ORDER_X and " +
                                     "--->tb_3_.FK_ORDER_Y = tb_4_.ORDER_Y " +
                                     "where tb_3_.NAME = ? and tb_4_.NAME = ?"
@@ -83,7 +83,7 @@ public class JoinTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where (tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) in ((?, ?), (?, ?))"
                     );
                 }
@@ -103,7 +103,7 @@ public class JoinTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where tb_1_.FK_ORDER_X in (?, ?)"
                     );
                 }
@@ -127,8 +127,8 @@ public class JoinTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
-                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_2_ on " +
+                                    "from ORDER_ITEM tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_2_ on " +
                                     "--->tb_1_.ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
                                     "--->tb_1_.ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
                                     "--->tb_1_.ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +
@@ -151,8 +151,8 @@ public class JoinTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
-                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_2_ on " +
+                                    "from ORDER_ITEM tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_2_ on " +
                                     "--->tb_1_.ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
                                     "--->tb_1_.ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
                                     "--->tb_1_.ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +

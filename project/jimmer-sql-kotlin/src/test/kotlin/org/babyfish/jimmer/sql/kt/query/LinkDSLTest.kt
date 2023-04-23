@@ -26,10 +26,10 @@ class LinkDSLTest : AbstractQueryTest() {
         ) {
             sql(
                 "select tb_3_.ID, tb_3_.NAME, tb_3_.ACADEMIC_CREDIT " +
-                    "from STUDENT as tb_1_ " +
-                    "inner join LEARNING_LINK as tb_2_ " +
+                    "from STUDENT tb_1_ " +
+                    "inner join LEARNING_LINK tb_2_ " +
                     "--->on tb_1_.ID = tb_2_.STUDENT_ID " +
-                    "inner join COURSE as tb_3_ " +
+                    "inner join COURSE tb_3_ " +
                     "--->on tb_2_.COURSE_ID = tb_3_.ID " +
                     "where " +
                     "--->tb_3_.NAME = ? " +
@@ -38,12 +38,12 @@ class LinkDSLTest : AbstractQueryTest() {
             )
             statement(1).sql(
                 "select tb_1_.ID, tb_1_.STUDENT_ID " +
-                    "from LEARNING_LINK as tb_1_ " +
+                    "from LEARNING_LINK tb_1_ " +
                     "where tb_1_.COURSE_ID = ?"
             )
             statement(2).sql(
                 ("select tb_1_.ID, tb_1_.NAME " +
-                    "from STUDENT as tb_1_ " +
+                    "from STUDENT tb_1_ " +
                     "where tb_1_.ID in (?, ?)")
             )
             rows(

@@ -32,7 +32,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
-                        |from BOOK as tb_1_ 
+                        |from BOOK tb_1_ 
                         |where tb_1_.NAME = ? 
                         |and tb_1_.EDITION = ?""".trimMargin()
                 )
@@ -80,7 +80,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
-                        |from BOOK as tb_1_ 
+                        |from BOOK tb_1_ 
                         |where tb_1_.NAME = ? 
                         |and tb_1_.EDITION = ?""".trimMargin()
                 )
@@ -175,7 +175,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
-                        |from BOOK_STORE as tb_1_ 
+                        |from BOOK_STORE tb_1_ 
                         |where tb_1_.NAME = ?""".trimMargin()
                 )
                 variables("TURING")
@@ -190,7 +190,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION 
-                        |from BOOK as tb_1_ 
+                        |from BOOK tb_1_ 
                         |where 
                         |--->tb_1_.NAME = ? 
                         |and 
@@ -208,7 +208,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """select 
                         |tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
-                        |from AUTHOR as tb_1_ 
+                        |from AUTHOR tb_1_ 
                         |where 
                         |--->tb_1_.FIRST_NAME = ? 
                         |and 
@@ -227,7 +227,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """select 
                         |tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
-                        |from AUTHOR as tb_1_ 
+                        |from AUTHOR tb_1_ 
                         |where 
                         |--->tb_1_.FIRST_NAME = ? 
                         |and 

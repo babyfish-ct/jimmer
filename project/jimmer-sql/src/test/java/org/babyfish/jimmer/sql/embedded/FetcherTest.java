@@ -27,13 +27,13 @@ public class FetcherTest extends AbstractQueryTest {
                                 )
                         ),
                 ctx -> {
-                    ctx.sql("select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME from ORDER_ as tb_1_");
+                    ctx.sql("select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME from ORDER_ tb_1_");
                     ctx.statement(1).sql(
                             "select " +
                                     "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y, " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where (" +
                                     "--->tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y" +
                                     "--->) in (" +
@@ -45,8 +45,8 @@ public class FetcherTest extends AbstractQueryTest {
                                     "--->tb_2_.FK_ORDER_ITEM_A, tb_2_.FK_ORDER_ITEM_B, tb_2_.FK_ORDER_ITEM_C, " +
                                     "--->tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, " +
                                     "--->tb_1_.NAME " +
-                                    "from PRODUCT as tb_1_ " +
-                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_2_ on " +
+                                    "from PRODUCT tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_2_ on " +
                                     "--->tb_1_.PRODUCT_ALPHA = tb_2_.FK_PRODUCT_ALPHA and " +
                                     "--->tb_1_.PRODUCT_BETA = tb_2_.FK_PRODUCT_BETA " +
                                     "where (" +
@@ -145,14 +145,14 @@ public class FetcherTest extends AbstractQueryTest {
                                 )
                         ),
                 ctx -> {
-                    ctx.sql("select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, tb_1_.NAME from PRODUCT as tb_1_");
+                    ctx.sql("select tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, tb_1_.NAME from PRODUCT tb_1_");
                     ctx.statement(1).sql(
                             "select " +
                                     "--->tb_2_.FK_PRODUCT_ALPHA, tb_2_.FK_PRODUCT_BETA, " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
-                                    "inner join ORDER_ITEM_PRODUCT_MAPPING as tb_2_ on " +
+                                    "from ORDER_ITEM tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_2_ on " +
                                     "--->tb_1_.ORDER_ITEM_A = tb_2_.FK_ORDER_ITEM_A and " +
                                     "--->tb_1_.ORDER_ITEM_B = tb_2_.FK_ORDER_ITEM_B and " +
                                     "--->tb_1_.ORDER_ITEM_C = tb_2_.FK_ORDER_ITEM_C " +
@@ -164,7 +164,7 @@ public class FetcherTest extends AbstractQueryTest {
                     );
                     ctx.statement(2).sql(
                             "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
-                                    "from ORDER_ as tb_1_ " +
+                                    "from ORDER_ tb_1_ " +
                                     "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) in ((?, ?), (?, ?))"
                     );
                     ctx.rows(
@@ -270,11 +270,11 @@ public class FetcherTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_"
+                                    "from ORDER_ITEM tb_1_"
                     );
                     ctx.statement(1).sql(
                             "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
-                                    "from ORDER_ as tb_1_ " +
+                                    "from ORDER_ tb_1_ " +
                                     "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) in ((?, ?), (?, ?))"
                     );
                     ctx.rows(

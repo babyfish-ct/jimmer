@@ -42,7 +42,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
-                        |from ROLE as tb_1_ 
+                        |from ROLE tb_1_ 
                         |where tb_1_.NAME = ?""".trimMargin()
                 )
             }
@@ -55,7 +55,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
-                        |from PERMISSION as tb_1_ 
+                        |from PERMISSION tb_1_ 
                         |where tb_1_.NAME = ?""".trimMargin()
                 )
             }
@@ -68,7 +68,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
-                        |from PERMISSION as tb_1_ 
+                        |from PERMISSION tb_1_ 
                         |where tb_1_.NAME = ?""".trimMargin()
                 )
             }
@@ -127,7 +127,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
-                        |from ROLE as tb_1_ 
+                        |from ROLE tb_1_ 
                         |where tb_1_.NAME = ?""".trimMargin()
                 )
             }
@@ -140,7 +140,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
-                        |from PERMISSION as tb_1_ 
+                        |from PERMISSION tb_1_ 
                         |where tb_1_.NAME = ?""".trimMargin()
                 )
             }

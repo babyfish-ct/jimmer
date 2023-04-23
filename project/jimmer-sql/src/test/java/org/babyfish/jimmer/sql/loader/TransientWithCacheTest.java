@@ -25,8 +25,8 @@ public class TransientWithCacheTest extends AbstractCachedLoaderTest {
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.ID, coalesce(avg(tb_2_.PRICE), ?) " +
-                                            "from BOOK_STORE as tb_1_ " +
-                                            "left join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
+                                            "from BOOK_STORE tb_1_ " +
+                                            "left join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                             "where tb_1_.ID in (?, ?) " +
                                             "group by tb_1_.ID"
                             );

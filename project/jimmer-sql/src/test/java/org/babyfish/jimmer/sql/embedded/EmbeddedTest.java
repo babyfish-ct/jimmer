@@ -36,7 +36,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(1L);
                     ctx.rows(ROWS);
@@ -57,7 +57,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where tb_1_.ID = ?"
                     ).variables(2L);
                     ctx.rows(
@@ -89,7 +89,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where tb_1_.`LEFT` = ?"
                     ).variables(100L);
                     ctx.rows(ROWS);
@@ -111,7 +111,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where (tb_1_.`LEFT`, tb_1_.TOP) = (?, ?)"
                     ).variables(100L, 120L);
                     ctx.rows(ROWS);
@@ -137,7 +137,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where (tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM) = (?, ?, ?, ?)"
                     ).variables(100L, 120L, 400L, 320L);
                     ctx.rows(ROWS);
@@ -162,7 +162,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                     ctx.rows(
@@ -203,7 +203,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                     ctx.rows(
@@ -244,7 +244,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select tb_1_.ID, " +
                                     "tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                     "tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                    "from TRANSFORM as tb_1_ " +
+                                    "from TRANSFORM tb_1_ " +
                                     "where tb_1_.ID = ?"
                     );
                     ctx.rows(
@@ -281,7 +281,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                     ctx.sql(
                             "select tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where (" +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
                                     ") in (" +
@@ -305,7 +305,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where tb_1_.FK_ORDER_X is null and tb_1_.FK_ORDER_Y is null"
                     );
                 }
@@ -325,7 +325,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where tb_1_.FK_ORDER_X is null"
                     );
                 }
@@ -345,7 +345,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where tb_1_.FK_ORDER_X is not null and tb_1_.FK_ORDER_Y is not null"
                     );
                 }
@@ -365,7 +365,7 @@ public class EmbeddedTest extends AbstractQueryTest {
                             "select " +
                                     "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                     "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                    "from ORDER_ITEM as tb_1_ " +
+                                    "from ORDER_ITEM tb_1_ " +
                                     "where tb_1_.FK_ORDER_X is not null"
                     );
                 }

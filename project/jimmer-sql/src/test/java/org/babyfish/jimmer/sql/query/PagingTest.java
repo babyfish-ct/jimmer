@@ -35,7 +35,7 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select count(tb_1_.ID) " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.PRICE between ? and ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30));
@@ -47,8 +47,8 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "left join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
                                     "order by tb_2_.NAME asc, tb_1_.NAME asc " +
                                     "limit ? " +
@@ -78,8 +78,8 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select count(tb_1_.ID) " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30));
@@ -91,8 +91,8 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
                                     "order by tb_2_.NAME asc, tb_1_.NAME asc " +
                                     "limit ? " +
@@ -122,7 +122,7 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select count(tb_1_.ID) " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.PRICE between ? and ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30));
@@ -136,8 +136,8 @@ public class PagingTest extends AbstractQueryTest {
                             "select " +
                                         "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
                                         "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
-                                    "from BOOK as tb_1_ " +
-                                    "left join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
                                     "order by tb_1_.NAME asc " +
                                     "limit ? " +
@@ -167,8 +167,8 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select count(tb_1_.ID) " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30));
@@ -182,8 +182,8 @@ public class PagingTest extends AbstractQueryTest {
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
                                     "tb_1_.STORE_ID, tb_2_.NAME, tb_2_.WEBSITE, tb_2_.VERSION " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ? " +
                                     "order by tb_1_.NAME asc " +
                                     "limit ? " +
@@ -250,7 +250,7 @@ public class PagingTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "order by tb_1_.NAME asc " +
                                     "limit ?, ?"
                     );
@@ -272,7 +272,7 @@ public class PagingTest extends AbstractQueryTest {
 //                ctx -> {
 //                    ctx.sql(
 //                            "select distinct tb_1_.NAME " +
-//                                    "from BOOK as tb_1_ " +
+//                                    "from BOOK tb_1_ " +
 //                                    "order by tb_1_.NAME asc " +
 //                                    "offset ? rows fetch next ? rows only"
 //                    );
@@ -297,7 +297,7 @@ public class PagingTest extends AbstractQueryTest {
                                         "select core__.*, rownum rn__ " +
                                         "from (" +
                                             "select distinct tb_1_.NAME " +
-                                            "from BOOK as tb_1_ " +
+                                            "from BOOK tb_1_ " +
                                             "order by tb_1_.NAME asc" +
                                         ") core__ where rownum <= ?" +
                                     ") limited__ where rn__ > ?"
@@ -321,7 +321,7 @@ public class PagingTest extends AbstractQueryTest {
                     ctx.sql(
                             "select core__.* from (" +
                                     "select distinct tb_1_.NAME " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "order by tb_1_.NAME asc" +
                                     ") core__ where rownum <= ?"
                     );

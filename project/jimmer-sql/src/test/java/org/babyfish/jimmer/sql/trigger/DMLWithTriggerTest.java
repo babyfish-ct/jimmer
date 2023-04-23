@@ -32,7 +32,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("GraphQL in Action");
@@ -51,7 +51,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?, ?)"
                         );
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
@@ -165,9 +165,9 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
-                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
                                         "where tb_3_.FIRST_NAME = ?"
                         );
                         it.variables("Alex");
@@ -175,8 +175,8 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK tb_1_ " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
-                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
                                         "set tb_1_.PRICE = tb_1_.PRICE + ? " +
                                         "where tb_1_.ID in (?, ?, ?)"
                         );
@@ -190,7 +190,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?, ?)"
                         );
                         it.unorderedVariables(
@@ -294,9 +294,9 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
-                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
                                         "where tb_3_.FIRST_NAME = ?"
                         );
                         it.variables("Alex");
@@ -304,8 +304,8 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update BOOK tb_1_ set PRICE = tb_1_.PRICE + ? " +
-                                        "from BOOK_AUTHOR_MAPPING as tb_2_ " +
-                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "from BOOK_AUTHOR_MAPPING tb_2_ " +
+                                        "inner join AUTHOR tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
                                         "where tb_1_.ID in (?, ?, ?) " +
                                         "and tb_1_.ID = tb_2_.BOOK_ID"
                         );
@@ -317,7 +317,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?, ?)"
                         );
                         it.unorderedVariables(
@@ -407,7 +407,7 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select " +
                                         "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("GraphQL in Action");
@@ -567,8 +567,8 @@ public class DMLWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
-                                        "inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
+                                        "from BOOK tb_1_ inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID " +
+                                        "inner join AUTHOR tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID " +
                                         "where tb_3_.FIRST_NAME = ?"
                         );
                         it.variables("Alex");

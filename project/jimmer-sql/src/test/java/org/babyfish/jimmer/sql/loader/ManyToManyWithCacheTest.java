@@ -25,7 +25,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
-                                            "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                            "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                             "where tb_1_.BOOK_ID in (?, ?)"
                             ).variables(learningGraphQLId3, graphQLInActionId3);
                         }
@@ -63,8 +63,8 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_2_.BOOK_ID, tb_1_.ID " +
-                                        "from AUTHOR as tb_1_ " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                        "from AUTHOR tb_1_ " +
+                                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                         "where tb_2_.BOOK_ID in (?, ?) " +
                                         "and tb_1_.FIRST_NAME like ?"
                         ).variables(learningGraphQLId3, graphQLInActionId3, "A%");
@@ -95,12 +95,12 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
                                     "where tb_1_.BOOK_ID in (?, ?)"
                     ).variables(learningGraphQLId3, graphQLInActionId3);
                     ctx.statement(1).sql(
                             "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
+                                    "from AUTHOR tb_1_ " +
                                     "where tb_1_.ID in (?, ?, ?)"
                     ).variables(alexId, eveId, sammerId);
                     ctx.rows(1);
@@ -148,8 +148,8 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?) " +
                                     "and tb_1_.FIRST_NAME like ?"
                     ).variables(learningGraphQLId3, graphQLInActionId3, "A%");

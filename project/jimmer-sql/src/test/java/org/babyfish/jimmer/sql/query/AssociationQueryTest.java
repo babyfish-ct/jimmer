@@ -28,9 +28,9 @@ public class AssociationQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.BOOK_ID, tb_1_.AUTHOR_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join BOOK as tb_2_ on tb_1_.BOOK_ID = tb_2_.ID " +
-                                    "inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                    "inner join BOOK tb_2_ on tb_1_.BOOK_ID = tb_2_.ID " +
+                                    "inner join AUTHOR tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID " +
                                     "where tb_2_.NAME = ? " +
                                     "and tb_3_.FIRST_NAME = ?"
                     );
@@ -64,9 +64,9 @@ public class AssociationQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.AUTHOR_ID, tb_1_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_1_ " +
-                                    "inner join AUTHOR as tb_2_ on tb_1_.AUTHOR_ID = tb_2_.ID " +
-                                    "inner join BOOK as tb_3_ on tb_1_.BOOK_ID = tb_3_.ID " +
+                                    "from BOOK_AUTHOR_MAPPING tb_1_ " +
+                                    "inner join AUTHOR tb_2_ on tb_1_.AUTHOR_ID = tb_2_.ID " +
+                                    "inner join BOOK tb_3_ on tb_1_.BOOK_ID = tb_3_.ID " +
                                     "where tb_2_.FIRST_NAME = ? " +
                                     "and tb_3_.NAME = ?"
                     );
@@ -119,11 +119,11 @@ public class AssociationQueryTest extends AbstractQueryTest {
                     ctx.sql(
                             "select " +
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where tb_1_.ID in (" +
                                     "select tb_2_.BOOK_ID " +
-                                    "from BOOK_AUTHOR_MAPPING as tb_2_ " +
-                                    "inner join AUTHOR as tb_3_ " +
+                                    "from BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "inner join AUTHOR tb_3_ " +
                                     "on tb_2_.AUTHOR_ID = tb_3_.ID " +
                                     "where tb_3_.FIRST_NAME = ?" +
                                     ")"

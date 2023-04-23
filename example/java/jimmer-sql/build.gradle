@@ -36,6 +36,8 @@ dependencies {
     runtimeOnly 'mysql:mysql-connector-java:8.0.30'
     runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
     runtimeOnly 'com.github.ben-manes.caffeine:caffeine:2.9.1'
+
+    runtimeOnly(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 
 java {

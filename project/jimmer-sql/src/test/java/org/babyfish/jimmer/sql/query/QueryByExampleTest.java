@@ -22,7 +22,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_"
+                            "from BOOK tb_1_"
             ).variables();
         });
 
@@ -36,7 +36,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables("X");
         });
@@ -51,7 +51,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables("");
         });
@@ -69,7 +69,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_"
+                            "from BOOK tb_1_"
             ).variables();
         });
 
@@ -83,7 +83,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.STORE_ID is null"
             ).variables();
         });
@@ -101,7 +101,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables(" X ");
         });
@@ -115,7 +115,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables("X");
         });
@@ -133,7 +133,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_"
+                            "from BOOK tb_1_"
             ).variables();
         });
 
@@ -147,7 +147,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables("X");
         });
@@ -162,7 +162,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables("");
         });
@@ -180,7 +180,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_"
+                            "from BOOK tb_1_"
             ).variables();
         });
 
@@ -194,7 +194,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.STORE_ID is null"
             ).variables();
         });
@@ -212,7 +212,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables(" X ");
         });
@@ -226,7 +226,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME = ?"
             ).variables("X");
         });
@@ -244,7 +244,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.EDITION = ?"
             ).variables(0);
         });
@@ -258,7 +258,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_"
+                            "from BOOK tb_1_"
             ).variables();
         });
     }
@@ -275,7 +275,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where tb_1_.NAME like ?"
             ).variables("G%");
         });
@@ -290,7 +290,7 @@ public class QueryByExampleTest extends AbstractQueryTest {
         }, it -> {
             it.sql(
                     "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                            "from BOOK as tb_1_ " +
+                            "from BOOK tb_1_ " +
                             "where lower(tb_1_.NAME) like ?"
             ).variables("g%");
         });

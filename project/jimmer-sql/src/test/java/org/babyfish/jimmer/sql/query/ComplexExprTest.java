@@ -38,7 +38,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                                     "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, " +
                                     "rank() over(order by tb_1_.PRICE desc), " +
                                     "rank() over(partition by tb_1_.STORE_ID order by tb_1_.PRICE desc) " +
-                                    "from BOOK as tb_1_"
+                                    "from BOOK tb_1_"
                     );
                     ctx.variables();
                     ctx.rows(list -> {
@@ -78,7 +78,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                 }),
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER from AUTHOR as tb_1_ where regexp_like(tb_1_.FIRST_NAME, ?)"
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER from AUTHOR tb_1_ where regexp_like(tb_1_.FIRST_NAME, ?)"
                     );
                     ctx.variables("^Ste(v|ph)en$");
                 }
@@ -102,7 +102,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK as tb_1_ " +
+                                    "from BOOK tb_1_ " +
                                     "where (tb_1_.NAME, tb_1_.EDITION) in ((?, ?), (?, ?))"
                     );
                     ctx.variables("Learning GraphQL", 3, "Effective TypeScript", 2);
@@ -131,7 +131,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                                     "when ? then ? " +
                                     "else ? " +
                                     "end " +
-                                    "from BOOK_STORE as tb_1_"
+                                    "from BOOK_STORE tb_1_"
                     );
                     ctx.variables(
                             "O'REILLY",
@@ -164,7 +164,7 @@ public class ComplexExprTest extends AbstractQueryTest {
                                     "when tb_1_.PRICE < ? then ? " +
                                     "else ? " +
                                     "end " +
-                                    "from BOOK as tb_1_"
+                                    "from BOOK tb_1_"
                     );
                 }
         );

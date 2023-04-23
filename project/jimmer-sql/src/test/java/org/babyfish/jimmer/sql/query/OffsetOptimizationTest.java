@@ -28,8 +28,8 @@ public class OffsetOptimizationTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID " +
-                                    "from BOOK as tb_1_ " +
-                                    "inner join BOOK_STORE as tb_2_ " +
+                                    "from BOOK tb_1_ " +
+                                    "inner join BOOK_STORE tb_2_ " +
                                     "--->on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_2_.NAME = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
@@ -63,15 +63,15 @@ public class OffsetOptimizationTest extends AbstractQueryTest {
                     ctx.sql(
                             "select optimize_.ID, optimize_.NAME, optimize_.EDITION, optimize_.PRICE, optimize_.STORE_ID " +
                                     "from (" +
-                                    "--->select tb_1_.ID as optimize_core_id_ " +
-                                    "--->from BOOK as tb_1_ " +
-                                    "--->inner join BOOK_STORE as tb_2_ " +
+                                    "--->select tb_1_.ID optimize_core_id_ " +
+                                    "--->from BOOK tb_1_ " +
+                                    "--->inner join BOOK_STORE tb_2_ " +
                                     "--->--->on tb_1_.STORE_ID = tb_2_.ID " +
                                     "--->where tb_2_.NAME = ? " +
                                     "--->order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
-                                    "inner join BOOK as optimize_ " +
+                                    "inner join BOOK optimize_ " +
                                     "--->on optimize_.ID = optimize_core_.optimize_core_id_"
                     );
                     ctx.rows(
@@ -134,21 +134,21 @@ public class OffsetOptimizationTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select optimize_.ID, optimize_.NAME, optimize_.EDITION from (" +
-                                    "--->select tb_1_.ID as optimize_core_id_ " +
-                                    "--->from BOOK as tb_1_ " +
-                                    "--->inner join BOOK_STORE as tb_2_ " +
+                                    "--->select tb_1_.ID optimize_core_id_ " +
+                                    "--->from BOOK tb_1_ " +
+                                    "--->inner join BOOK_STORE tb_2_ " +
                                     "--->--->on tb_1_.STORE_ID = tb_2_.ID " +
                                     "--->where tb_2_.NAME = ? " +
                                     "--->order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
-                                    "inner join BOOK as optimize_ " +
+                                    "inner join BOOK optimize_ " +
                                     "--->on optimize_.ID = optimize_core_.optimize_core_id_"
                     );
                     ctx.statement(1).sql(
                             "select tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                    "from AUTHOR as tb_1_ " +
-                                    "inner join BOOK_AUTHOR_MAPPING as tb_2_ " +
+                                    "from AUTHOR tb_1_ " +
+                                    "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
                                     "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "where tb_2_.BOOK_ID in (?, ?, ?)"
                     );
@@ -231,12 +231,12 @@ public class OffsetOptimizationTest extends AbstractQueryTest {
                     ctx.sql(
                             "select optimize_.ID, optimize_.NAME, optimize_.WEBSITE, optimize_.VERSION " +
                                     "from (" +
-                                    "--->select tb_1_.STORE_ID as optimize_core_id_ " +
-                                    "--->from BOOK as tb_1_ " +
+                                    "--->select tb_1_.STORE_ID optimize_core_id_ " +
+                                    "--->from BOOK tb_1_ " +
                                     "--->order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
-                                    "inner join BOOK_STORE as optimize_ " +
+                                    "inner join BOOK_STORE optimize_ " +
                                     "--->on optimize_.ID = optimize_core_.optimize_core_id_"
                     );
                     ctx.rows(
@@ -277,14 +277,14 @@ public class OffsetOptimizationTest extends AbstractQueryTest {
                                     "--->optimize_.FK_ORDER_Y " +
                                     "from (" +
                                     "--->select " +
-                                    "--->--->tb_1_.ORDER_ITEM_A as optimize_core_id_, " +
-                                    "--->--->tb_1_.ORDER_ITEM_B as optimize_core_id_1_, " +
-                                    "--->--->tb_1_.ORDER_ITEM_C as optimize_core_id_2_ " +
-                                    "--->from ORDER_ITEM as tb_1_ " +
+                                    "--->--->tb_1_.ORDER_ITEM_A optimize_core_id_, " +
+                                    "--->--->tb_1_.ORDER_ITEM_B optimize_core_id_1_, " +
+                                    "--->--->tb_1_.ORDER_ITEM_C optimize_core_id_2_ " +
+                                    "--->from ORDER_ITEM tb_1_ " +
                                     "--->order by tb_1_.NAME asc " +
                                     "--->limit ? offset ?" +
                                     ") optimize_core_ " +
-                                    "inner join ORDER_ITEM as optimize_ " +
+                                    "inner join ORDER_ITEM optimize_ " +
                                     "--->on " +
                                     "--->--->(" +
                                     "--->--->--->optimize_.ORDER_ITEM_A, optimize_.ORDER_ITEM_B, optimize_.ORDER_ITEM_C" +

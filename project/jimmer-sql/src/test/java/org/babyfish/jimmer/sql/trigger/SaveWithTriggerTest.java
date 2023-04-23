@@ -32,7 +32,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(newId);
                     });
@@ -77,7 +77,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
                     });
@@ -165,7 +165,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ where tb_1_.ID = ?"
+                                        "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
                         );
                         it.variables(oreillyId);
                     });
@@ -213,7 +213,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
@@ -257,7 +257,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
@@ -318,7 +318,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Kotlin in Action", 1);
@@ -391,7 +391,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.NAME = ? and tb_1_.EDITION = ?"
                         );
                         it.variables("Learning GraphQL", 3);
@@ -483,7 +483,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("TURING");
@@ -495,7 +495,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?)");
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2);
                     });
@@ -645,7 +645,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                         it.variables("O'REILLY");
@@ -657,7 +657,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?, ?, ?)"
                         );
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3, graphQLInActionId1);
@@ -669,7 +669,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.STORE_ID = ? " +
                                         "and tb_1_.ID not in (?, ?, ?, ?)"
                         );
@@ -996,7 +996,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? " +
                                 "and tb_1_.EDITION = ?"
                         );
@@ -1092,7 +1092,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? " +
                                 "and tb_1_.EDITION = ?");
                         it.variables("Learning GraphQL", 3);
@@ -1212,7 +1212,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and " +
                                         "tb_1_.LAST_NAME = ?"
                         );
@@ -1310,7 +1310,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.FIRST_NAME = ? and " +
                                         "tb_1_.LAST_NAME = ?"
                         );
@@ -1436,7 +1436,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.NAME = ?"
                         );
                     });

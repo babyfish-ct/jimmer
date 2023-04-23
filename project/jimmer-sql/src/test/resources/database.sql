@@ -71,10 +71,10 @@ alter table book_store
 ;
 
 create table book(
+    id uuid not null,
     name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
-    id uuid not null,
     store_id uuid
 );
 alter table book

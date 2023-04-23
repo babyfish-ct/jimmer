@@ -41,8 +41,8 @@ public class FluentDMLTest extends AbstractMutationTest {
                                         "set PRICE = tb_1_.PRICE + ? " +
                                         "where tb_1_.ID in (" +
                                         "--->select tb_3_.BOOK_ID " +
-                                        "--->from AUTHOR as tb_2_ " +
-                                        "--->inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "--->from AUTHOR tb_2_ " +
+                                        "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
                                         "--->where tb_2_.FIRST_NAME = ?" +
                                         ")");
                     });
@@ -87,9 +87,9 @@ public class FluentDMLTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "update AUTHOR tb_1_ " +
-                                        "inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
-                                        "inner join BOOK as tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
-                                        "inner join BOOK_STORE as tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
+                                        "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                        "inner join BOOK tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
+                                        "inner join BOOK_STORE tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
                                         "set " +
                                         "tb_1_.FIRST_NAME = concat(tb_1_.FIRST_NAME, ?), " +
                                         "tb_3_.NAME = concat(tb_3_.NAME, ?), " +
@@ -121,9 +121,9 @@ public class FluentDMLTest extends AbstractMutationTest {
                         it.sql(
                                 "update AUTHOR tb_1_ " +
                                         "set FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) " +
-                                        "from BOOK_AUTHOR_MAPPING as tb_2_ " +
-                                        "inner join BOOK as tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
-                                        "inner join BOOK_STORE as tb_4_ on " +
+                                        "from BOOK_AUTHOR_MAPPING tb_2_ " +
+                                        "inner join BOOK tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
+                                        "inner join BOOK_STORE tb_4_ on " +
                                         "tb_3_.STORE_ID = tb_4_.ID " +
                                         "where " +
                                         "tb_1_.ID = tb_2_.AUTHOR_ID " +
@@ -184,11 +184,11 @@ public class FluentDMLTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from BOOK as tb_1_ " +
+                                "delete from BOOK tb_1_ " +
                                         "where tb_1_.ID in (" +
                                         "--->select tb_3_.BOOK_ID " +
-                                        "--->from AUTHOR as tb_2_ " +
-                                        "--->inner join BOOK_AUTHOR_MAPPING as tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                                        "--->from AUTHOR tb_2_ " +
+                                        "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
                                         "--->where tb_2_.FIRST_NAME = ?" +
                                         ")"
                         );
@@ -209,8 +209,8 @@ public class FluentDMLTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select distinct tb_1_.ID " +
-                                        "from BOOK as tb_1_ " +
-                                        "inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                                        "from BOOK tb_1_ " +
+                                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                         "where tb_2_.NAME = ?"
                         );
                         it.variables("MANNING");

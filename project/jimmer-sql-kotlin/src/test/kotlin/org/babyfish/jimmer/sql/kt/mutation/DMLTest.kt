@@ -51,7 +51,7 @@ class DMLTest : AbstractMutationTest() {
             }
         ) {
             statement {
-                sql("""delete from BOOK as tb_1_ where tb_1_.ID = ?""")
+                sql("""delete from BOOK tb_1_ where tb_1_.ID = ?""")
                 variables(12L)
                 rowCount(1)
             }
@@ -68,9 +68,9 @@ class DMLTest : AbstractMutationTest() {
             statement {
                 sql(
                     """select distinct tb_1_.ID 
-                    |from BOOK as tb_1_ 
-                    |inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID 
-                    |inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID 
+                    |from BOOK tb_1_ 
+                    |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.BOOK_ID 
+                    |inner join AUTHOR tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID 
                     |where tb_3_.FIRST_NAME = ?""".trimMargin()
                 )
                 variables("Dan")

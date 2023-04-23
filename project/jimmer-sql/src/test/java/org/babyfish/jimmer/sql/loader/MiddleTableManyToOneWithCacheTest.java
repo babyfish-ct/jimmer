@@ -24,7 +24,7 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.AUTHOR_ID, tb_1_.COUNTRY_CODE " +
-                                            "from AUTHOR_COUNTRY_MAPPING as tb_1_ " +
+                                            "from AUTHOR_COUNTRY_MAPPING tb_1_ " +
                                             "where tb_1_.AUTHOR_ID in (?, ?)"
                             ).variables(alexId, danId);
                         }
@@ -59,8 +59,8 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
                     ctx -> {
                         ctx.sql(
                                 "select tb_2_.AUTHOR_ID, tb_1_.CODE " +
-                                        "from COUNTRY as tb_1_ " +
-                                        "inner join AUTHOR_COUNTRY_MAPPING as tb_2_ on tb_1_.CODE = tb_2_.COUNTRY_CODE " +
+                                        "from COUNTRY tb_1_ " +
+                                        "inner join AUTHOR_COUNTRY_MAPPING tb_2_ on tb_1_.CODE = tb_2_.COUNTRY_CODE " +
                                         "where tb_2_.AUTHOR_ID in (?, ?) " +
                                         "and tb_1_.CODE = ?"
                         ).variables(alexId, danId, "UK");
@@ -94,12 +94,12 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
                         if (useSql) {
                             ctx.sql(
                                     "select tb_1_.AUTHOR_ID, tb_1_.COUNTRY_CODE " +
-                                            "from AUTHOR_COUNTRY_MAPPING as tb_1_ " +
+                                            "from AUTHOR_COUNTRY_MAPPING tb_1_ " +
                                             "where tb_1_.AUTHOR_ID in (?, ?)"
                             ).variables(alexId, danId);
                             ctx.statement(1).sql(
                                     "select tb_1_.CODE, tb_1_.NAME " +
-                                            "from COUNTRY as tb_1_ " +
+                                            "from COUNTRY tb_1_ " +
                                             "where tb_1_.CODE = ?"
                             ).variables("USA");
                         }

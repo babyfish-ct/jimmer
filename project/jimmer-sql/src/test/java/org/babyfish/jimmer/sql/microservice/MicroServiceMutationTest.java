@@ -32,7 +32,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select tb_1_.ID from MS_ORDER_ITEM as tb_1_ " +
+                                "select tb_1_.ID from MS_ORDER_ITEM tb_1_ " +
                                         "where tb_1_.ID = ?"
                         );
                     });
@@ -150,7 +150,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID " +
-                                        "from MS_ORDER_ITEM as tb_1_ " +
+                                        "from MS_ORDER_ITEM tb_1_ " +
                                         "where tb_1_.ID = ?"
                         );
                     });

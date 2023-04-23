@@ -34,7 +34,7 @@ class ComplexExprTest : AbstractQueryTest() {
                     |--->--->when ? then ? 
                     |--->--->else ? 
                     |--->end 
-                    |from BOOK_STORE as tb_1_""".trimMargin()
+                    |from BOOK_STORE tb_1_""".trimMargin()
             )
             variables("O'REILLY", "O", "MANNING", "M", "-")
             rows("""["M","O"]""")
@@ -65,7 +65,7 @@ class ComplexExprTest : AbstractQueryTest() {
                     |--->--->when tb_1_.PRICE > ? then ? 
                     |--->--->else ? 
                     |--->end 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where 
                     |--->lower(tb_1_.NAME) like ? 
                     |order by 
@@ -97,7 +97,7 @@ class ComplexExprTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select coalesce(tb_1_.WEBSITE, ?) from BOOK_STORE as tb_1_"""
+                """select coalesce(tb_1_.WEBSITE, ?) from BOOK_STORE tb_1_"""
             )
             variables("DEFAULT_URL")
             rows("""["DEFAULT_URL","DEFAULT_URL"]""")

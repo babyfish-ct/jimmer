@@ -105,19 +105,19 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                        "from ROLE as tb_1_ " +
+                                        "from ROLE tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ID " +
-                                            "from PERMISSION as tb_1_ " +
+                                            "from PERMISSION tb_1_ " +
                                             "where tb_1_.ROLE_ID = ? " +
                                             "and tb_1_.DELETED = ?"
                             ).variables(100L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
-                                            "from PERMISSION as tb_1_ " +
+                                            "from PERMISSION tb_1_ " +
                                             "where tb_1_.ID = ?"
                             ).variables(1000L);
                         }
@@ -161,19 +161,19 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                        "from ROLE as tb_1_ " +
+                                        "from ROLE tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ID " +
-                                            "from PERMISSION as tb_1_ " +
+                                            "from PERMISSION tb_1_ " +
                                             "where tb_1_.ROLE_ID = ? " +
                                             "and tb_1_.DELETED = ?"
                             ).variables(200L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
-                                            "from PERMISSION as tb_1_ " +
+                                            "from PERMISSION tb_1_ " +
                                             "where tb_1_.ID = ?"
                             ).variables(4000L);
                         }
@@ -224,21 +224,21 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
-                                        "from PERMISSION as tb_1_ " +
+                                        "from PERMISSION tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ID, tb_1_.ROLE_ID " +
-                                            "from PERMISSION as tb_1_ " +
-                                            "inner join ROLE as tb_2_ on tb_1_.ROLE_ID = tb_2_.ID " +
+                                            "from PERMISSION tb_1_ " +
+                                            "inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID " +
                                             "where tb_1_.ID in (?, ?) " +
                                             "and tb_1_.ROLE_ID is not null " +
                                             "and tb_2_.DELETED = ?"
                             ).variables(1000L, 3000L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE as tb_1_ " +
+                                            "from ROLE tb_1_ " +
                                             "where tb_1_.ID = ?"
                             ).variables(100L);
                         }
@@ -287,21 +287,21 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
-                                        "from PERMISSION as tb_1_ " +
+                                        "from PERMISSION tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ID, tb_1_.ROLE_ID " +
-                                            "from PERMISSION as tb_1_ " +
-                                            "inner join ROLE as tb_2_ on tb_1_.ROLE_ID = tb_2_.ID " +
+                                            "from PERMISSION tb_1_ " +
+                                            "inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID " +
                                             "where tb_1_.ID in (?, ?) " +
                                             "and tb_1_.ROLE_ID is not null " +
                                             "and tb_2_.DELETED = ?"
                             ).variables(2000L, 4000L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE as tb_1_ " +
+                                            "from ROLE tb_1_ " +
                                             "where tb_1_.ID = ?"
                             ).variables(200L);
                         }
@@ -357,19 +357,19 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                        "from ADMINISTRATOR as tb_1_ " +
+                                        "from ADMINISTRATOR tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID " +
-                                            "from ADMINISTRATOR_ROLE_MAPPING as tb_1_ " +
-                                            "inner join ROLE as tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
+                                            "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
+                                            "inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
                                             "where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_3_.DELETED = ?"
                             ).variables(1L, 3L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE as tb_1_ " +
+                                            "from ROLE tb_1_ " +
                                             "where tb_1_.ID = ?"
                             ).variables(100L);
                         }
@@ -428,19 +428,19 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                        "from ADMINISTRATOR as tb_1_ " +
+                                        "from ADMINISTRATOR tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID " +
-                                            "from ADMINISTRATOR_ROLE_MAPPING as tb_1_ " +
-                                            "inner join ROLE as tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
+                                            "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
+                                            "inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
                                             "where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_3_.DELETED = ?"
                             ).variables(2L, 4L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE as tb_1_ " +
+                                            "from ROLE tb_1_ " +
                                             "where tb_1_.ID = ?"
                             ).variables(200L);
                         }
@@ -506,19 +506,19 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                        "from ROLE as tb_1_ " +
+                                        "from ROLE tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(false);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID " +
-                                            "from ADMINISTRATOR_ROLE_MAPPING as tb_1_ " +
-                                            "inner join ADMINISTRATOR as tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
+                                            "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
+                                            "inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
                                             "where tb_1_.ROLE_ID = ? and tb_3_.DELETED = ?"
                             ).variables(100L, false);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ADMINISTRATOR as tb_1_ " +
+                                            "from ADMINISTRATOR tb_1_ " +
                                             "where tb_1_.ID in (?, ?)"
                             ).variables(1L, 3L);
                         }
@@ -568,19 +568,19 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                     ctx -> {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
-                                        "from ROLE as tb_1_ " +
+                                        "from ROLE tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID " +
-                                            "from ADMINISTRATOR_ROLE_MAPPING as tb_1_ " +
-                                            "inner join ADMINISTRATOR as tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
+                                            "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
+                                            "inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
                                             "where tb_1_.ROLE_ID = ? and tb_3_.DELETED = ?"
                             ).variables(200L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ADMINISTRATOR as tb_1_ " +
+                                            "from ADMINISTRATOR tb_1_ " +
                                             "where tb_1_.ID in (?, ?)"
                             ).variables(2L, 4L);
                         }

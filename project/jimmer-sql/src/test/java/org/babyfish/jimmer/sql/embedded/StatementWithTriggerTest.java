@@ -38,7 +38,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                 "select " +
                                         "--->tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                         "--->tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                        "from TRANSFORM as tb_1_ " +
+                                        "from TRANSFORM tb_1_ " +
                                         "where tb_1_.ID = ?"
                         );
                         it.variables(1L);
@@ -56,7 +56,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                 "select " +
                                         "--->tb_1_.ID, tb_1_.`LEFT`, tb_1_.TOP, tb_1_.`RIGHT`, tb_1_.BOTTOM, " +
                                         "--->tb_1_.TARGET_LEFT, tb_1_.TARGET_TOP, tb_1_.TARGET_RIGHT, tb_1_.TARGET_BOTTOM " +
-                                        "from TRANSFORM as tb_1_ " +
+                                        "from TRANSFORM tb_1_ " +
                                         "where tb_1_.ID in (?)"
                         );
                         it.variables(1L);
@@ -107,7 +107,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                        "from ORDER_ITEM as tb_1_ " +
+                                        "from ORDER_ITEM tb_1_ " +
                                         "where (tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C) = (?, ?, ?)"
                         );
                         it.variables(1, 1, 1);
@@ -128,7 +128,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                        "from ORDER_ITEM as tb_1_ " +
+                                        "from ORDER_ITEM tb_1_ " +
                                         "where (" +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
                                         ") in (" +
@@ -172,7 +172,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ORDER_X, tb_1_.ORDER_Y, tb_1_.NAME " +
-                                        "from ORDER_ as tb_1_ " +
+                                        "from ORDER_ tb_1_ " +
                                         "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
@@ -220,7 +220,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                        "from ORDER_ITEM as tb_1_ " +
+                                        "from ORDER_ITEM tb_1_ " +
                                         "where (" +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
                                         ") in ((?, ?, ?), (?, ?, ?))"
@@ -373,8 +373,8 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                                 "select " +
                                         "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
                                         "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                        "from ORDER_ITEM as tb_1_ " +
-                                        "inner join ORDER_ as tb_2_ on " +
+                                        "from ORDER_ITEM tb_1_ " +
+                                        "inner join ORDER_ tb_2_ on " +
                                         "--->tb_1_.FK_ORDER_X = tb_2_.ORDER_X and " +
                                         "--->tb_1_.FK_ORDER_Y = tb_2_.ORDER_Y " +
                                         "where tb_2_.NAME = ?"

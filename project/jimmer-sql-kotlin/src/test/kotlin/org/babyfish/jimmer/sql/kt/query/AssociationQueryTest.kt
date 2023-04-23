@@ -23,8 +23,8 @@ class AssociationQueryTest : AbstractQueryTest() {
             sql(
                 """select 
                     |--->tb_1_.BOOK_ID, tb_1_.AUTHOR_ID 
-                    |from BOOK_AUTHOR_MAPPING as tb_1_ 
-                    |inner join AUTHOR as tb_2_ 
+                    |from BOOK_AUTHOR_MAPPING tb_1_ 
+                    |inner join AUTHOR tb_2_ 
                     |--->on tb_1_.AUTHOR_ID = tb_2_.ID 
                     |where tb_2_.FIRST_NAME = ?""".trimMargin()
             )
@@ -54,9 +54,9 @@ class AssociationQueryTest : AbstractQueryTest() {
                 """select 
                         |--->tb_1_.BOOK_ID, tb_3_.NAME, tb_3_.EDITION, tb_3_.PRICE, tb_3_.STORE_ID, 
                         |--->tb_1_.AUTHOR_ID, tb_2_.FIRST_NAME, tb_2_.LAST_NAME, tb_2_.GENDER 
-                        |from BOOK_AUTHOR_MAPPING as tb_1_ 
-                        |inner join AUTHOR as tb_2_ on tb_1_.AUTHOR_ID = tb_2_.ID 
-                        |inner join BOOK as tb_3_ on tb_1_.BOOK_ID = tb_3_.ID 
+                        |from BOOK_AUTHOR_MAPPING tb_1_ 
+                        |inner join AUTHOR tb_2_ on tb_1_.AUTHOR_ID = tb_2_.ID 
+                        |inner join BOOK tb_3_ on tb_1_.BOOK_ID = tb_3_.ID 
                         |where tb_2_.FIRST_NAME = ?""".trimMargin()
             )
             variables("Alex")
@@ -135,11 +135,11 @@ class AssociationQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where exists(
                     |--->select 1 
-                    |--->from BOOK_AUTHOR_MAPPING as tb_2_ 
-                    |--->inner join AUTHOR as tb_4_ on tb_2_.AUTHOR_ID = tb_4_.ID 
+                    |--->from BOOK_AUTHOR_MAPPING tb_2_ 
+                    |--->inner join AUTHOR tb_4_ on tb_2_.AUTHOR_ID = tb_4_.ID 
                     |--->where 
                     |--->--->tb_2_.BOOK_ID = tb_1_.ID 
                     |--->and 
@@ -192,11 +192,11 @@ class AssociationQueryTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where exists(
                     |--->select 1 
-                    |--->from BOOK_AUTHOR_MAPPING as tb_2_ 
-                    |--->inner join AUTHOR as tb_4_ on tb_2_.AUTHOR_ID = tb_4_.ID 
+                    |--->from BOOK_AUTHOR_MAPPING tb_2_ 
+                    |--->inner join AUTHOR tb_4_ on tb_2_.AUTHOR_ID = tb_4_.ID 
                     |--->where 
                     |--->--->tb_2_.BOOK_ID = tb_1_.ID 
                     |--->and 

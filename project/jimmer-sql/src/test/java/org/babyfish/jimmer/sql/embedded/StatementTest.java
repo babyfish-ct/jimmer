@@ -80,7 +80,7 @@ public class StatementTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "delete from ORDER_ as tb_1_ " +
+                                "delete from ORDER_ tb_1_ " +
                                         "where (tb_1_.ORDER_X, tb_1_.ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
@@ -101,8 +101,8 @@ public class StatementTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select distinct tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C " +
-                                        "from ORDER_ITEM as tb_1_ " +
-                                        "inner join ORDER_ as tb_2_ on " +
+                                        "from ORDER_ITEM tb_1_ " +
+                                        "inner join ORDER_ tb_2_ on " +
                                         "--->tb_1_.FK_ORDER_X = tb_2_.ORDER_X and " +
                                         "--->tb_1_.FK_ORDER_Y = tb_2_.ORDER_Y " +
                                         "where tb_2_.NAME = ?"

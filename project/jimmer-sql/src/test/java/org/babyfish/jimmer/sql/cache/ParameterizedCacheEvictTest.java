@@ -101,13 +101,13 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.ID " +
-                                    "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                    "from ADMINISTRATOR_METADATA tb_1_ " +
                                     "where tb_1_.ADMINISTRATOR_ID = ?"
                     );
                     ctx.statement(1).sql(
                             "select distinct tb_1_.ID " +
-                                    "from ROLE as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
+                                    "from ROLE tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
                                     "where tb_2_.ADMINISTRATOR_ID = ?"
                     ).variables(1L);
                 }
@@ -139,13 +139,13 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select distinct tb_1_.ID " +
-                                    "from ADMINISTRATOR as tb_1_ " +
-                                    "inner join ADMINISTRATOR_ROLE_MAPPING as tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                    "from ADMINISTRATOR tb_1_ " +
+                                    "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
                                     "where tb_2_.ROLE_ID = ?"
                     ).variables(100L);
                     ctx.statement(1).sql(
                             "select distinct tb_1_.ID " +
-                                    "from PERMISSION as tb_1_ " +
+                                    "from PERMISSION tb_1_ " +
                                     "where tb_1_.ROLE_ID = ?"
                     ).variables(100L);
                 }

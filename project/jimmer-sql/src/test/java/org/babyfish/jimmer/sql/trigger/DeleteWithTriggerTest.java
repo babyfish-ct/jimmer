@@ -56,7 +56,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.STORE_ID = ?"
                         );
                         it.variables(manningId);
@@ -68,7 +68,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.ID in (?)"
                         );
                         it.variables(manningId);
@@ -231,7 +231,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?, ?)"
                         );
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
@@ -243,7 +243,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
-                                        "from BOOK_STORE as tb_1_ " +
+                                        "from BOOK_STORE tb_1_ " +
                                         "where tb_1_.ID in (?)"
                         );
                         it.variables(manningId);
@@ -422,7 +422,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?, ?, ?)"
                         );
                         it.variables(learningGraphQLId1, learningGraphQLId2, nonExistingId);
@@ -577,7 +577,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
-                                        "from AUTHOR as tb_1_ " +
+                                        "from AUTHOR tb_1_ " +
                                         "where tb_1_.ID in (?)"
                         );
                         it.variables(alexId);
@@ -688,7 +688,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
@@ -697,7 +697,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
@@ -706,7 +706,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NODE_ID in (?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
@@ -715,7 +715,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NODE_ID in (?, ?)");
                     });
                     ctx.statement(it -> {
@@ -724,7 +724,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE as tb_1_ " +
+                                        "from TREE_NODE tb_1_ " +
                                         "where tb_1_.NODE_ID in (?)");
                     });
                     ctx.statement(it -> {
@@ -1337,7 +1337,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK as tb_1_ " +
+                                        "from BOOK tb_1_ " +
                                         "where tb_1_.ID in (?)"
                         );
                         it.variables(illegalId);
@@ -1358,7 +1358,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
-                                        "from ADMINISTRATOR_METADATA as tb_1_ " +
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
                                         "where tb_1_.ID in (?)"
                         );
                         it.variables(10L);

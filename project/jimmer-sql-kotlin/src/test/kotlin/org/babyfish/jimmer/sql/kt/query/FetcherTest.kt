@@ -36,14 +36,14 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.ID = ?""".trimMargin()
             )
             variables(1L)
             statement(1).apply {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                        |from BOOK_STORE as tb_1_ 
+                        |from BOOK_STORE tb_1_ 
                         |where tb_1_.ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -51,8 +51,8 @@ class FetcherTest : AbstractQueryTest() {
             statement(2).apply {
                 sql(
                     """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
-                        |from AUTHOR as tb_1_ 
-                        |inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
+                        |from AUTHOR tb_1_ 
+                        |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
                         |where tb_2_.BOOK_ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -124,7 +124,7 @@ class FetcherTest : AbstractQueryTest() {
                 """select 
                     |tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID, 
                     |tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.ID = ?""".trimMargin()
             )
             variables(1L)
@@ -132,7 +132,7 @@ class FetcherTest : AbstractQueryTest() {
                 sql(
                     """select 
                         |tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                        |from BOOK_STORE as tb_1_ 
+                        |from BOOK_STORE tb_1_ 
                         |where tb_1_.ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -141,8 +141,8 @@ class FetcherTest : AbstractQueryTest() {
                 sql(
                     """select 
                         |tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
-                        |from AUTHOR as tb_1_ 
-                        |inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
+                        |from AUTHOR tb_1_ 
+                        |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
                         |where tb_2_.BOOK_ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -151,7 +151,7 @@ class FetcherTest : AbstractQueryTest() {
                 sql(
                     """select 
                         |tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                        |from BOOK_STORE as tb_1_ 
+                        |from BOOK_STORE tb_1_ 
                         |where tb_1_.ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -159,8 +159,8 @@ class FetcherTest : AbstractQueryTest() {
             statement(4).apply {
                 sql(
                     """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
-                        |from AUTHOR as tb_1_ 
-                        |inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
+                        |from AUTHOR tb_1_ 
+                        |inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID 
                         |where 
                         |--->tb_2_.BOOK_ID = ? 
                         |and 
@@ -244,13 +244,13 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.NODE_ID, tb_1_.NAME 
-                    |from TREE_NODE as tb_1_ 
+                    |from TREE_NODE tb_1_ 
                     |where tb_1_.PARENT_ID is null""".trimMargin()
             )
             statement(1).apply {
                 sql(
                     """select tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -260,7 +260,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?)""".trimMargin()
                 )
                 variables(setOf(2L, 9L))
@@ -312,13 +312,13 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.NODE_ID, tb_1_.NAME 
-                    |from TREE_NODE as tb_1_ 
+                    |from TREE_NODE tb_1_ 
                     |where tb_1_.PARENT_ID is null""".trimMargin()
             )
             statement(1).apply {
                 sql(
                     """select tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -328,7 +328,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?)""".trimMargin()
                 )
                 variables(setOf(2L, 9L))
@@ -338,7 +338,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?, ?, ?)""".trimMargin()
                 )
                 variables(setOf(3L, 6L, 10L, 18L))
@@ -348,7 +348,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)""".trimMargin()
                 )
                 variables(setOf(4L, 5L, 7L, 8L, 11L, 15L, 19L, 22L))
@@ -358,7 +358,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)""".trimMargin()
                 )
                 variables(setOf(12L, 13L, 14L, 16L, 17L, 20L, 21L, 23, 24L))
@@ -510,13 +510,13 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.NODE_ID, tb_1_.NAME 
-                    |from TREE_NODE as tb_1_ 
+                    |from TREE_NODE tb_1_ 
                     |where tb_1_.PARENT_ID is null""".trimMargin()
             )
             statement(1).apply {
                 sql(
                     """select tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID = ?""".trimMargin()
                 )
                 variables(1L)
@@ -525,7 +525,7 @@ class FetcherTest : AbstractQueryTest() {
                 sql(
                     """select 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID = ?""".trimMargin()
                 )
                 variables(setOf(2L))
@@ -535,7 +535,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?)""".trimMargin()
                 )
                 variables(setOf(3L, 6L))
@@ -545,7 +545,7 @@ class FetcherTest : AbstractQueryTest() {
                     """select 
                         |--->tb_1_.PARENT_ID, 
                         |--->tb_1_.NODE_ID, tb_1_.NAME 
-                        |from TREE_NODE as tb_1_ 
+                        |from TREE_NODE tb_1_ 
                         |where tb_1_.PARENT_ID in (?, ?, ?, ?)""".trimMargin()
                 )
                 variables(setOf(4L, 5L, 7L, 8L))
@@ -612,11 +612,11 @@ class FetcherTest : AbstractQueryTest() {
             }
         ) {
             sql(
-                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE from BOOK_STORE as tb_1_"""
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE from BOOK_STORE tb_1_"""
             )
             statement(1).sql(
                 """select tb_1_.STORE_ID, coalesce(avg(tb_1_.PRICE), ?) 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID in (?, ?) 
                     |group by tb_1_.STORE_ID""".trimMargin()
             )
@@ -654,7 +654,7 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             statement(0).sql(
                 """select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME 
-                    |from AUTHOR as tb_1_ 
+                    |from AUTHOR tb_1_ 
                     |where tb_1_.FIRST_NAME = ?""".trimMargin()
             )
             rows(
@@ -682,7 +682,7 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             statement(0).sql(
                 """select tb_1_.ID, concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) 
-                    |from AUTHOR as tb_1_ 
+                    |from AUTHOR tb_1_ 
                     |where tb_1_.FIRST_NAME = ?""".trimMargin()
             )
             rows("[{\"id\":2,\"fullName2\":\"Alex Banks\"}]")
@@ -706,12 +706,12 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.ID = ?""".trimMargin()
             )
             statement(1).sql(
                 """select tb_1_.AUTHOR_ID 
-                    |from BOOK_AUTHOR_MAPPING as tb_1_ 
+                    |from BOOK_AUTHOR_MAPPING tb_1_ 
                     |where tb_1_.BOOK_ID = ?""".trimMargin()
             )
             rows(
@@ -743,22 +743,22 @@ class FetcherTest : AbstractQueryTest() {
         ) {
             statement(0).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
-                    |from BOOK_STORE as tb_1_""".trimMargin()
+                    |from BOOK_STORE tb_1_""".trimMargin()
             )
             statement(1).sql(
                 """select tb_1_.ID, tb_2_.ID 
-                    |from BOOK_STORE as tb_1_ 
-                    |inner join BOOK as tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
+                    |from BOOK_STORE tb_1_ 
+                    |inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID 
                     |where (tb_2_.NAME, tb_2_.EDITION) in (
                     |--->select tb_3_.NAME, max(tb_3_.EDITION) 
-                    |--->from BOOK as tb_3_ 
+                    |--->from BOOK tb_3_ 
                     |--->where tb_3_.STORE_ID in (?, ?) 
                     |--->group by tb_3_.NAME
                     |)""".trimMargin()
             )
             statement(2).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
-                    |from BOOK as tb_1_ 
+                    |from BOOK tb_1_ 
                     |where tb_1_.ID in (?, ?, ?, ?)""".trimMargin()
             )
             rows(
