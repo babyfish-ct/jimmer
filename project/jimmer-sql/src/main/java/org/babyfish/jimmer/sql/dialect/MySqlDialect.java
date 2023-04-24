@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.sql.dialect;
 
+/**
+ * For MySQL or TiDB
+ */
 public class MySqlDialect implements Dialect {
 
     @Override

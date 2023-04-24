@@ -90,7 +90,12 @@ public class OracleMutationTest extends AbstractMutationTest {
                         it.sql("insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER) values(?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) select ?, ? from dual union all select ?, ? from dual");
+                        it.sql(
+                                "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
+                                        "select ?, ? from dual " +
+                                        "union all " +
+                                        "select ?, ? from dual"
+                        );
                     });
                     ctx.entity(it -> {
                         it.original(
