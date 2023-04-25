@@ -1,5 +1,6 @@
 HELP.md
 *.log
+*.hprof
 .gradle
 .DS_Store
 build/
