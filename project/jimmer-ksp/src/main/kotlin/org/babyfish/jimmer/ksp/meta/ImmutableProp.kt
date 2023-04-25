@@ -13,6 +13,7 @@ import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
+import org.babyfish.jimmer.meta.impl.ViewUtils
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
@@ -375,10 +376,7 @@ class ImmutableProp(
         val idView = annotation(IdView::class) ?: return
         var base: String = idView[IdView::value] ?: ""
         if (base.isEmpty()) {
-            if (!isList && name.length > 2 && !name[name.length - 3].isUpperCase() && name.endsWith("Id")) {
-                base = name.substring(0, name.length - 2)
-            } else {
-                throw MetaException(
+            base = ViewUtils.defaultBasePropName(isList, name) ?: throw MetaException(
                     propDeclaration,
                     "it is decorated by \"@" +
                         IdView::class.java.name +
@@ -386,7 +384,6 @@ class ImmutableProp(
                         "the base property name cannot be determined automatically, " +
                         "please specify the argument of that annotation"
                 )
-            }
         }
         if (base == name) {
             throw MetaException(

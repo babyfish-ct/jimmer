@@ -31,6 +31,6 @@ public interface Book {
     @IdView
     Long storeId();
 
-    @IdView("authors")
+    @IdView
     List<Long> authorIds();
 }

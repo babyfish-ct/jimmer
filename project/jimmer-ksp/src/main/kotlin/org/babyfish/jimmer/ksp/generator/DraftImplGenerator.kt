@@ -203,14 +203,23 @@ class DraftImplGenerator(
                                         .apply {
                                             val idViewBaseProp = prop.idViewBaseProp
                                             if (idViewBaseProp !== null) {
-                                                addStatement(
-                                                    "%N = %L%L%N { %M(it) }",
-                                                    idViewBaseProp.name,
-                                                    prop.name,
-                                                    if (idViewBaseProp.isNullable) "?." else ".",
-                                                    if (idViewBaseProp.isList) "map" else "let",
-                                                    MAKE_ID_ONLY
-                                                )
+                                                if (idViewBaseProp.isList || idViewBaseProp.isNullable) {
+                                                    addStatement(
+                                                        "%N = %L%L%N { %M(it) }",
+                                                        idViewBaseProp.name,
+                                                        prop.name,
+                                                        if (idViewBaseProp.isNullable) "?." else ".",
+                                                        if (idViewBaseProp.isList) "map" else "let",
+                                                        MAKE_ID_ONLY
+                                                    )
+                                                } else {
+                                                    addStatement(
+                                                        "%N = %M(%L)",
+                                                        idViewBaseProp.name,
+                                                        MAKE_ID_ONLY,
+                                                        prop.name
+                                                    )
+                                                }
                                             } else {
                                                 ValidationGenerator(prop, this).generate()
                                                 addStatement("val __tmpModified = %L", MODIFIED)

@@ -476,7 +476,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             }
             String basePropName;
             if (idView.value().isEmpty()) {
-                if (name.length() < 3 || !name.endsWith("Id") || Character.isUpperCase(name.charAt(name.length() - 3))) {
+                basePropName = ViewUtils.defaultBasePropName(isReferenceList(TargetLevel.OBJECT) || isScalarList(), name);
+                if (basePropName == null) {
                     throw new ModelException(
                             "Illegal property \"" +
                                     this +
@@ -485,7 +486,6 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                     "\" but the base property name cannot be determined automatically"
                     );
                 }
-                basePropName = name.substring(0, name.length() - 2);
             } else {
                 basePropName = idView.value();
             }

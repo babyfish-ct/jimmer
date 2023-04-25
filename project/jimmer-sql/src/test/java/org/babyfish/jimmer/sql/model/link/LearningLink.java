@@ -10,15 +10,19 @@ public interface LearningLink {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
-    @Nullable
-    @ManyToOne(inputNotNull = true)
+    @ManyToOne
     @OnDissociate(DissociateAction.DELETE)
     Student student();
 
-    @Nullable
-    @ManyToOne(inputNotNull = true)
+    @ManyToOne
     @OnDissociate(DissociateAction.DELETE)
     Course course();
 
     Integer score();
+
+    @IdView
+    long studentId();
+
+    @IdView
+    long courseId();
 }

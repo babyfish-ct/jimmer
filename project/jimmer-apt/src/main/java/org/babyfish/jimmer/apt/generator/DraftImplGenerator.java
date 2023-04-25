@@ -335,7 +335,7 @@ public class DraftImplGenerator {
                 builder.addStatement(
                         prop.isNullable() ?
                                 "return __target != null ? __target.$L() : null" :
-                                "__target.$L()",
+                                "return __target.$L()",
                         baseProp.getTargetType().getIdProp().getGetterName()
                 );
             }
@@ -438,7 +438,9 @@ public class DraftImplGenerator {
 
         ImmutableProp baseProp = prop.getIdViewBaseProp();
         if (baseProp != null) {
-            builder.beginControlFlow("if ($L != null)", prop.getName());
+            if (!prop.getReturnType().getKind().isPrimitive()) {
+                builder.beginControlFlow("if ($L != null)", prop.getName());
+            }
             if (prop.isList()) {
                 builder.addStatement(
                         "$T<$T> __targets = new $T($L.size())",
@@ -468,13 +470,15 @@ public class DraftImplGenerator {
                         prop.getName()
                 );
             }
-            builder.nextControlFlow("else");
-            if (prop.isList()) {
-                builder.addStatement("$L($T.emptyList())", baseProp.getSetterName(), COLLECTIONS_CLASS_NAME);
-            } else {
-                builder.addStatement("$L(null)", baseProp.getSetterName());
+            if (!prop.getReturnType().getKind().isPrimitive()) {
+                builder.nextControlFlow("else");
+                if (prop.isList()) {
+                    builder.addStatement("$L($T.emptyList())", baseProp.getSetterName(), COLLECTIONS_CLASS_NAME);
+                } else {
+                    builder.addStatement("$L(null)", baseProp.getSetterName());
+                }
+                builder.endControlFlow();
             }
-            builder.endControlFlow();
         } else {
 
             new ValidationGenerator(prop, prop.getName(), builder).generate();

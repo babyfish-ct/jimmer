@@ -128,7 +128,7 @@ public class ImplGenerator {
                 builder.addStatement(
                         prop.isNullable() ?
                         "return __target != null ? __target.$L() : null" :
-                        "__target.$L()",
+                        "return __target.$L()",
                         idViewBaseProp.getTargetType().getIdProp().getGetterName()
                 );
             }

@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.meta.impl.ViewUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -620,9 +621,8 @@ public class ImmutableProp {
         }
         String base = idView.value();
         if (base.isEmpty()) {
-            if (!isList && name.length() > 2 && !Character.isUpperCase(name.charAt(name.length() - 3)) && name.endsWith("Id")) {
-                base = name.substring(0, name.length() - 2);
-            } else {
+            base = ViewUtils.defaultBasePropName(isList, name);
+            if (base == null) {
                 throw new MetaException(
                         executableElement,
                         "it is decorated by \"@" +

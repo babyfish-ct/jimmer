@@ -17,4 +17,10 @@ interface LearningLink {
     val course: Course
 
     val score: Int?
+
+    @IdView
+    val studentId: Long
+
+    @IdView
+    val courseId: Long
 }
