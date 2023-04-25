@@ -287,6 +287,18 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         return elementClass;
     }
 
+    @NotNull
+    @Override
+    public Class<?> getReturnClass() {
+        return javaGetter.getReturnType();
+    }
+
+    @NotNull
+    @Override
+    public Type getGenericType() {
+        return javaGetter.getGenericReturnType();
+    }
+
     @Override
     public boolean isEmbedded(EmbeddedLevel level) {
         ImmutableType targetType = getTargetType();

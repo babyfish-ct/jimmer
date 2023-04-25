@@ -23,6 +23,8 @@ dependencies {
     implementation("org.jetbrains:annotations:23.0.0")
     implementation("org.apache.commons:commons-lang3:3.12.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
+    compileOnly("org.postgresql:postgresql:42.3.6")
+    compileOnly("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
     antlr("org.antlr:antlr4:4.9.3")
 
     testAnnotationProcessor(project(":jimmer-apt"))
@@ -36,7 +38,7 @@ dependencies {
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
     testImplementation("org.postgresql:postgresql:42.3.6")
-    //testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
+    // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 
 tasks.getByName<Test>("test") {

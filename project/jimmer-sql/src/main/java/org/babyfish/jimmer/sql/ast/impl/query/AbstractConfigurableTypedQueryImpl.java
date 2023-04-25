@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.*;
@@ -85,7 +86,8 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                                 data.getLimit(),
                                 data.getOffset(),
                                 result.get_1(),
-                                result.get_2()
+                                result.get_2(),
+                                false
                         );
                         baseQuery.getSqlClient().getDialect().paginate(ctx);
                         return ctx.build();
@@ -115,7 +117,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     builder,
                     null,
                     true,
-                    IdOnlyQueryWrapperWriter::idAlias
+                    OffsetOptimizationWriter::idAlias
             );
         } else {
             String separator = "";
@@ -164,7 +166,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
     }
 
     private void renderIdOnlyQuery(PropExpressionImplementor<?> idPropExpr, SqlBuilder builder) {
-        IdOnlyQueryWrapperWriter writer = new IdOnlyQueryWrapperWriter(builder);
+        OffsetOptimizationWriter writer = new OffsetOptimizationWriter(builder);
         TableImplementor<?> tableImplementor = TableProxies.resolve(
                 idPropExpr.getTable(),
                 builder.getAstContext()
@@ -172,11 +174,11 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         builder.sql("select ");
         if (data.getSelections().get(0) instanceof FetcherSelection<?>) {
             for (Field field : ((FetcherSelection<?>)data.getSelections().get(0)).getFetcher().getFieldMap().values()) {
-                writer.prop(field.getProp(), IdOnlyQueryWrapperWriter.ALIAS, false);
+                writer.prop(field.getProp(), OffsetOptimizationWriter.ALIAS, false);
             }
         } else {
             for (ImmutableProp prop : tableImplementor.getImmutableType().getProps().values()) {
-                writer.prop(prop, IdOnlyQueryWrapperWriter.ALIAS, false);
+                writer.prop(prop, OffsetOptimizationWriter.ALIAS, false);
             }
         }
         builder.sql(" from (");
@@ -187,43 +189,50 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     data.getLimit(),
                     data.getOffset(),
                     result.get_1(),
-                    result.get_2()
+                    result.get_2(),
+                    true
             );
             baseQuery.getSqlClient().getDialect().paginate(ctx);
             return ctx.build();
         });
         writer.resetComma();
         builder.sql(") ")
-                .sql(IdOnlyQueryWrapperWriter.CORE_ALIAS)
+                .sql(OffsetOptimizationWriter.CORE_ALIAS)
                 .sql(" inner join ")
                 .sql(tableImplementor.getImmutableType().getTableName())
                 .sql(" ")
-                .sql(IdOnlyQueryWrapperWriter.ALIAS)
+                .sql(OffsetOptimizationWriter.ALIAS)
                 .sql(" on ");
         writer.prop(
                 tableImplementor.getImmutableType().getIdProp(),
-                IdOnlyQueryWrapperWriter.ALIAS,
+                OffsetOptimizationWriter.ALIAS,
                 true
         );
         builder.sql(" = ");
         int size = tableImplementor.getImmutableType().getIdProp().<ColumnDefinition>getStorage().size();
         if (size == 1) {
-            builder.sql(IdOnlyQueryWrapperWriter.CORE_ALIAS).sql(".");
-            builder.sql(IdOnlyQueryWrapperWriter.idAlias(0));
+            builder.sql(OffsetOptimizationWriter.CORE_ALIAS).sql(".");
+            builder.sql(OffsetOptimizationWriter.idAlias(0));
         } else {
             builder.sql("(");
             for (int i = 0; i < size; i++) {
                 if (i != 0) {
                     builder.sql(", ");
                 }
-                builder.sql(IdOnlyQueryWrapperWriter.CORE_ALIAS).sql(".");
-                builder.sql(IdOnlyQueryWrapperWriter.idAlias(i));
+                builder.sql(OffsetOptimizationWriter.CORE_ALIAS).sql(".");
+                builder.sql(OffsetOptimizationWriter.idAlias(i));
             }
             builder.sql(")");
         }
+        if (getBaseQuery().getSqlClient().getDialect().getOffsetOptimizationNumField() != null) {
+            builder.sql(" order by ")
+                    .sql(OffsetOptimizationWriter.CORE_ALIAS)
+                    .sql(".")
+                    .sql(OffsetOptimizationWriter.ROW_NUMBER_ALIAS);
+        }
     }
 
-    private static class IdOnlyQueryWrapperWriter {
+    private static class OffsetOptimizationWriter {
 
         private static final String ALIAS = "optimize_";
 
@@ -231,11 +240,13 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
         private static final String CORE_ID_ALIAS = "optimize_core_id_";
 
+        private static final String ROW_NUMBER_ALIAS = OracleDialect.OPTIMIZE_CORE_ROW_NUMBER_ALIAS;
+
         private final SqlBuilder builder;
 
         private boolean addComma;
 
-        IdOnlyQueryWrapperWriter(SqlBuilder builder) {
+        OffsetOptimizationWriter(SqlBuilder builder) {
             this.builder = builder;
         }
 

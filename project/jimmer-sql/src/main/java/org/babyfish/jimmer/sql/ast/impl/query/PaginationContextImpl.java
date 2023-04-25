@@ -8,30 +8,33 @@ import java.util.List;
 
 public class PaginationContextImpl implements PaginationContext {
     
-    private int limit;
+    private final int limit;
     
-    private int offset;
+    private final int offset;
     
-    private String originSql;
+    private final String originSql;
     
-    private List<Object> originVariables;
+    private final List<Object> originVariables;
 
-    private StringBuilder builder = new StringBuilder();
+    private final boolean idOnly;
 
-    private List<Object> variables = new ArrayList<>();
+    private final StringBuilder builder = new StringBuilder();
+
+    private final List<Object> variables = new ArrayList<>();
 
     private boolean originApplied = false;
 
     public PaginationContextImpl(
-            int limit, 
-            int offset, 
-            String originSql, 
-            List<Object> originVariables
-    ) {
+            int limit,
+            int offset,
+            String originSql,
+            List<Object> originVariables,
+            boolean idOnly) {
         this.limit = limit;
         this.offset = offset;
         this.originSql = originSql;
         this.originVariables = originVariables;
+        this.idOnly = idOnly;
     }
 
     @Override
@@ -42,6 +45,11 @@ public class PaginationContextImpl implements PaginationContext {
     @Override
     public int getOffset() {
         return offset;
+    }
+
+    @Override
+    public boolean isIdOnly() {
+        return idOnly;
     }
 
     @Override

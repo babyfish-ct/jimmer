@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.Scalar
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
@@ -60,6 +61,8 @@ class ImmutableProp(
     val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {
+                annotations { true }.any { isExplicitScalar(it, mutableSetOf()) } ->
+                    false
                 isAssociation && ctx.mapType.isAssignableFrom(starType) ->
                     throw MetaException(propDeclaration, "it cannot be map")
                 ctx.collectionType.isAssignableFrom(starType) ->
@@ -580,6 +583,24 @@ class ImmutableProp(
             }
             this._isVisibilityControllable = true
             this._dependencies = props
+        }
+    }
+
+    companion object {
+
+        fun isExplicitScalar(anno: KSAnnotation, handledQualifiedNames: MutableSet<String>): Boolean {
+            if (!handledQualifiedNames.add(anno.fullName)) {
+                return false
+            }
+            if (anno.fullName == Scalar::class.qualifiedName) {
+                return true
+            }
+            for (deeperAnno in anno.annotationType.resolve().declaration.annotations { true }) {
+                if (isExplicitScalar(deeperAnno, handledQualifiedNames)) {
+                    return true
+                }
+            }
+            return false
         }
     }
 }

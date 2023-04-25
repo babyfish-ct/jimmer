@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta.impl;
 
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.sql.*;
 
 import java.lang.annotation.Annotation;
@@ -532,7 +533,7 @@ public class PropDescriptor {
             families.put(Type.VERSION, setOf(Column.class));
             families.put(Type.LOGICAL_DELETED, setOf(LogicalDeleted.class, Column.class));
             families.put(Type.FORMULA, setOf(Formula.class));
-            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class));
+            families.put(Type.BASIC, setOf(Key.class, Column.class, PropOverrides.class, PropOverride.class, Scalar.class, Serialized.class));
             families.put(Type.ONE_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.MANY_TO_ONE, setOf(Key.class, OnDissociate.class, JoinColumns.class, JoinColumn.class, JoinTable.class));
             families.put(Type.ONE_TO_MANY, setOf());

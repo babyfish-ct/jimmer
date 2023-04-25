@@ -22,6 +22,18 @@ public class ScalarProviderTest extends AbstractJsonTest {
                     draft.setPoint(new Point(3, 4));
                     draft.setTags(Arrays.asList("java", "kotlin"));
                     draft.setScores(Collections.singletonMap(1L, 100));
+                    draft.setComplexList(
+                            Arrays.asList(
+                                    Arrays.asList("1-1", "1-2"),
+                                    Arrays.asList("2-1", "2-2")
+                            )
+                    );
+                    draft.setComplexMap(
+                            Collections.singletonMap(
+                                    "key",
+                                    Collections.singletonMap("nested-key", "value")
+                            )
+                    );
                 })
         );
         JsonWrapper wrapper = sqlClient().getEntities().findById(JsonWrapper.class, 1L);
@@ -30,7 +42,10 @@ public class ScalarProviderTest extends AbstractJsonTest {
                         "\"id\":1," +
                         "\"point\":{\"x\":3,\"y\":4}," +
                         "\"tags\":[\"java\",\"kotlin\"]," +
-                        "\"scores\":{\"1\":100}}",
+                        "\"scores\":{\"1\":100}," +
+                        "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]]," +
+                        "\"complexMap\":{\"key\":{\"nested-key\":\"value\"}}" +
+                        "}",
                 wrapper.toString()
         );
 
@@ -48,7 +63,10 @@ public class ScalarProviderTest extends AbstractJsonTest {
                         "\"id\":1," +
                         "\"point\":{\"x\":4,\"y\":3}," +
                         "\"tags\":[\"kotlin\",\"java\"]," +
-                        "\"scores\":{\"1\":100}}",
+                        "\"scores\":{\"1\":100}," +
+                        "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]]," +
+                        "\"complexMap\":{\"key\":{\"nested-key\":\"value\"}}" +
+                        "}",
                 wrapper.toString()
         );
 
@@ -65,7 +83,10 @@ public class ScalarProviderTest extends AbstractJsonTest {
                         "\"id\":1," +
                         "\"point\":{\"x\":4,\"y\":3}," +
                         "\"tags\":[\"java\",\"kotlin\",\"scala\"]," +
-                        "\"scores\":{\"1\":100}}",
+                        "\"scores\":{\"1\":100}," +
+                        "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]]," +
+                        "\"complexMap\":{\"key\":{\"nested-key\":\"value\"}}" +
+                        "}",
                 wrapper.toString()
         );
 
@@ -87,7 +108,9 @@ public class ScalarProviderTest extends AbstractJsonTest {
                         "\"id\":1," +
                         "\"point\":{\"x\":4,\"y\":3}," +
                         "\"tags\":[\"java\",\"kotlin\",\"scala\"]," +
-                        "\"scores\":{\"2\":200}}",
+                        "\"scores\":{\"2\":200}," +
+                        "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]],\"complexMap\":{\"key\":{\"nested-key\":\"value\"}}" +
+                        "}",
                 wrapper.toString()
         );
     }

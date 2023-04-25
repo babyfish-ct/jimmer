@@ -2,13 +2,13 @@ package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.util.List;
 
 public interface ImmutableProp {
@@ -26,6 +26,12 @@ public interface ImmutableProp {
 
     @NotNull
     Class<?> getElementClass();
+
+    @NotNull
+    Class<?> getReturnClass();
+
+    @NotNull
+    Type getGenericType();
 
     boolean isEmbedded(EmbeddedLevel level);
 

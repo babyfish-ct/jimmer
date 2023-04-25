@@ -17,4 +17,12 @@ interface JsonWrapper {
 
     @Column(name = "json_3")
     val scores: Map<Long, Int>
+
+    @Column(name = "json_4")
+    @Serialized
+    val complexList: List<List<String>>
+
+    @Column(name = "json_5")
+    @Serialized
+    val complexMap: Map<String, Map<String, String>>
 }

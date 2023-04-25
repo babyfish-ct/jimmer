@@ -59,13 +59,9 @@ class JSqlClientImpl implements JSqlClient {
 
     private final List<String> executorContextPrefixes;
 
-    private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap;
-
-    private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap;
-
     private final Map<Class<?>, IdGenerator> idGeneratorMap;
 
-    private final DefaultScalarProvider defaultScalarProvider;
+    private final ScalarProviderManager scalarProviderManager;
 
     private final int defaultBatchSize;
 
@@ -105,10 +101,8 @@ class JSqlClientImpl implements JSqlClient {
             Dialect dialect,
             Executor executor,
             List<String> executorContextPrefixes,
-            Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap,
-            Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap,
             Map<Class<?>, IdGenerator> idGeneratorMap,
-            DefaultScalarProvider defaultScalarProvider,
+            ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
             int defaultListBatchSize,
             int offsetOptimizingThreshold,
@@ -141,10 +135,8 @@ class JSqlClientImpl implements JSqlClient {
                 executorContextPrefixes != null ?
                         Collections.unmodifiableList(executorContextPrefixes) :
                         null;
-        this.scalarProviderMap = scalarProviderMap;
-        this.propScalarProviderMap = propScalarProviderMap;
         this.idGeneratorMap = idGeneratorMap;
-        this.defaultScalarProvider = defaultScalarProvider;
+        this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
         this.defaultListBatchSize = defaultListBatchSize;
         this.offsetOptimizingThreshold = offsetOptimizingThreshold;
@@ -199,23 +191,12 @@ class JSqlClientImpl implements JSqlClient {
     @SuppressWarnings("unchecked")
     @Override
     public <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType) {
-        ScalarProvider<T, S> provider = (ScalarProvider<T, S>) scalarProviderMap.get(scalarType);
-        return provider != null ?
-            provider :
-            (ScalarProvider<T, S>) defaultScalarProvider.getProvider(scalarType);
+        return (ScalarProvider<T, S>) scalarProviderManager.getProvider(scalarType);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop) {
-        ScalarProvider<T, S> provider = (ScalarProvider<T, S>) propScalarProviderMap.get(prop);
-        if (provider != null) {
-            return provider;
-        }
-        if (prop.isScalar(TargetLevel.ENTITY)) {
-            return getScalarProvider((Class<T>)prop.getElementClass());
-        }
-        return null;
+        return (ScalarProvider<T, S>) scalarProviderManager.getProvider(prop);
     }
 
     @Override
@@ -387,10 +368,8 @@ class JSqlClientImpl implements JSqlClient {
                 dialect,
                 executor,
                 executorContextPrefixes,
-                scalarProviderMap,
-                propScalarProviderMap,
                 idGeneratorMap,
-                defaultScalarProvider,
+                scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
@@ -424,10 +403,8 @@ class JSqlClientImpl implements JSqlClient {
                 dialect,
                 executor,
                 executorContextPrefixes,
-                scalarProviderMap,
-                propScalarProviderMap,
                 idGeneratorMap,
-                defaultScalarProvider,
+                scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
@@ -456,10 +433,8 @@ class JSqlClientImpl implements JSqlClient {
                 dialect,
                 executor,
                 executorContextPrefixes,
-                scalarProviderMap,
-                propScalarProviderMap,
                 idGeneratorMap,
-                defaultScalarProvider,
+                scalarProviderManager,
                 defaultBatchSize,
                 defaultListBatchSize,
                 offsetOptimizingThreshold,
@@ -538,7 +513,7 @@ class JSqlClientImpl implements JSqlClient {
 
         private TransientResolverProvider transientResolverProvider;
 
-        private final Map<Class<?>, ScalarProvider<?, ?>> scalarProviderMap = new HashMap<>();
+        private final Map<Class<?>, ScalarProvider<?, ?>> typeScalarProviderMap = new HashMap<>();
 
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
@@ -717,7 +692,7 @@ class JSqlClientImpl implements JSqlClient {
                                     "please use property-specific scalar provider"
                     );
                 }
-                if (scalarProviderMap.containsKey(scalarType)) {
+                if (typeScalarProviderMap.containsKey(scalarType)) {
                     throw new IllegalStateException(
                             "Cannot set scalar provider for scalar type \"" +
                                     scalarType +
@@ -735,7 +710,7 @@ class JSqlClientImpl implements JSqlClient {
                                     "please use property-specific scalar provider"
                     );
                 }
-                scalarProviderMap.put((Class<?>) scalarType, scalarProvider);
+                typeScalarProviderMap.put((Class<?>) scalarType, scalarProvider);
             } else {
                 if (!prop.isScalar(TargetLevel.ENTITY) && !prop.isScalarList()) {
                     throw new IllegalStateException(
@@ -991,10 +966,8 @@ class JSqlClientImpl implements JSqlClient {
                     dialect,
                     executor,
                     executorContextPrefixes,
-                    scalarProviderMap,
-                    propScalarProviderMap,
                     idGeneratorMap,
-                    new DefaultScalarProvider(defaultEnumStrategy),
+                    new ScalarProviderManager(typeScalarProviderMap, propScalarProviderMap, defaultEnumStrategy, dialect),
                     defaultBatchSize,
                     defaultListBatchSize,
                     offsetOptimizingThreshold,

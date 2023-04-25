@@ -171,7 +171,7 @@ public class MutableDeleteImpl
     private void renderDirectly(SqlBuilder builder) {
         TableImplementor<?> table = getTableImplementor();
         builder.sql("delete");
-        if (getSqlClient().getDialect().needDeletedAlias()) {
+        if (getSqlClient().getDialect().isDeletedAliasRequired()) {
             builder.sql(" ");
             builder.sql(table.getAlias());
         }

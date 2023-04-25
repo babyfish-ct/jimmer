@@ -60,7 +60,7 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @AliasFor("findByIds")
     @NotNull
     @Override
-    default Iterable<E> findAllById(@NotNull Iterable<ID> ids) {
+    default List<E> findAllById(@NotNull Iterable<ID> ids) {
         return findByIds(ids);
     }
 

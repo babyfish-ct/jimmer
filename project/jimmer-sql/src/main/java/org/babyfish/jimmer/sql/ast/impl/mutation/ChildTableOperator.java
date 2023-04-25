@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
-import org.babyfish.jimmer.sql.dialect.PaginationContext;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
@@ -95,7 +94,8 @@ class ChildTableOperator {
                     1,
                     0,
                     result.get_1(),
-                    result.get_2()
+                    result.get_2(),
+                    false
             );
             sqlClient.getDialect().paginate(ctx);
             return ctx.build();

@@ -421,6 +421,15 @@ class ImmutableTypeImpl implements ImmutableType {
             strategyFromSequenceName = GenerationType.SEQUENCE;
         }
 
+        if (strategy == GenerationType.USER && strategyFromGeneratorType != GenerationType.USER) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            idProp +
+                            "\", its generator strategy is explicitly specified to \"USER\"," +
+                            "but its generator type does not implement " +
+                            UserIdGenerator.class.getName()
+            );
+        }
         if (strategy != GenerationType.AUTO &&
                 strategyFromGeneratorType != GenerationType.AUTO &&
                 strategy != strategyFromGeneratorType) {

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
 import org.babyfish.jimmer.sql.Id;
+import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
@@ -97,9 +98,11 @@ public class ImplGenerator {
         if (prop.isBeanStyle()) {
             builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
         }
+        if (prop.isNullable()) {
+            builder.addAnnotation(Nullable.class);
+        }
 
         ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
-        ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
         if (idViewBaseProp != null) {
             if (idViewBaseProp.isList()) {
                 builder.addStatement(

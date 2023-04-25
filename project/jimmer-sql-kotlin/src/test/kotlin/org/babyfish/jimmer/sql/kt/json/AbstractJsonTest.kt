@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.json
 
+import org.babyfish.jimmer.sql.dialect.PostgresDialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.kt.model.pg.PointProvider
@@ -22,7 +23,11 @@ abstract class AbstractJsonTest {
 
     @BeforeTest
     fun initialize() {
-        Assume.assumeTrue("true" == System.getenv("jimmer-sql-test-native-database"))
+        Assume.assumeTrue(
+            (System.getenv("jimmer-sql-test-native-database") ?: "").let {
+                it.isNotEmpty() && it != "false"
+            }
+        )
         con = POSTGRES_DATA_SOURCE.connection
         con?.autoCommit = false
         _sqlClient = newKSqlClient {
@@ -30,6 +35,7 @@ abstract class AbstractJsonTest {
             setConnectionManager {
                 proceed(con!!)
             }
+            setDialect(PostgresDialect())
             addScalarProvider(PointProvider())
             addScalarProvider(TagsProvider())
             addScalarProvider(ScoresProvider())

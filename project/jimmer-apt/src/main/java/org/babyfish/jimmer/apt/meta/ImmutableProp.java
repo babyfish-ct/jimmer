@@ -4,6 +4,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
+import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
@@ -139,7 +140,7 @@ public class ImmutableProp {
         loadedStateName = "__" + name + "Loaded";
         visibleName = "__" + name + "Visible";
 
-        if (context.isCollection(returnType)) {
+        if (context.isCollection(returnType) && !isExplicitScalar()) {
             if (!context.isListStrictly(returnType)) {
                 throw new MetaException(
                         executableElement,
@@ -150,11 +151,29 @@ public class ImmutableProp {
             if (typeArguments.isEmpty()) {
                 throw new MetaException(
                         executableElement,
-                        "Its return type must be generic type"
+                        "its return type must be generic type"
                 );
             }
             isList = true;
             elementType = typeArguments.get(0);
+            boolean isElementTypeValid = false;
+            if (elementType.getKind().isPrimitive()) {
+                isElementTypeValid = true;
+            } else if (elementType instanceof DeclaredType) {
+                isElementTypeValid = ((DeclaredType)elementType).getTypeArguments().isEmpty();
+            }
+            if (!isElementTypeValid) {
+                throw new MetaException(
+                        executableElement,
+                        "its list whose elements are neither primitive type nor class/interface without generic parameters, " +
+                                "whether to forcibly treat the current property as a non-list property " +
+                                "(such as a JSON serialized field)?. if so, please decorate the current property with @" +
+                                Scalar.class.getName() +
+                                " or any other scalar-decorated annotations (such as @" +
+                                Serialized.class +
+                                ")"
+                );
+            }
         } else {
             isList = false;
             elementType = returnType;
@@ -495,6 +514,32 @@ public class ImmutableProp {
             this.remote = remote;
         }
         return remote;
+    }
+
+    private boolean isExplicitScalar() {
+        for (AnnotationMirror mirror : executableElement.getAnnotationMirrors()) {
+            if (isExplicitScalar(mirror, new HashSet<>())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isExplicitScalar(AnnotationMirror mirror, Set<String> handledQualifiedNames) {
+        TypeElement element = (TypeElement)mirror.getAnnotationType().asElement();
+        String qualifiedName = element.getQualifiedName().toString();
+        if (!handledQualifiedNames.add(qualifiedName)) {
+            return false;
+        }
+        if (qualifiedName.equals(Scalar.class.getName())) {
+            return true;
+        }
+        for (AnnotationMirror deeperMirror : element.getAnnotationMirrors()) {
+            if (isExplicitScalar(deeperMirror, handledQualifiedNames)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean resolve(Context context, int step) {

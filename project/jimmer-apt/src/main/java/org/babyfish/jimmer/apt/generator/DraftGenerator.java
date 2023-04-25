@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.lang.OldChain;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -110,6 +111,8 @@ public class DraftGenerator {
         builder.modifiers.add(Modifier.ABSTRACT);
         if (autoCreate) {
             builder.addParameter(boolean.class, "autoCreate");
+        } else if (prop.isNullable()) {
+            builder.addAnnotation(Nullable.class);
         }
         builder.returns(prop.getDraftTypeName(autoCreate));
         typeBuilder.addMethod(builder.build());

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
+import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import javax.validation.constraints.Email;
@@ -303,6 +304,9 @@ public class DraftImplGenerator {
                 .returns(prop.getDraftTypeName(false));
         if (prop.isBeanStyle()) {
             builder.addAnnotation(JSON_IGNORE_CLASS_NAME);
+        }
+        if (prop.isNullable()) {
+            builder.addAnnotation(Nullable.class);
         }
 
         ImmutableProp baseProp = prop.getIdViewBaseProp();

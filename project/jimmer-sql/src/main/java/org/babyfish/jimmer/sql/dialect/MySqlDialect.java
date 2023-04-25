@@ -21,7 +21,7 @@ public class MySqlDialect implements Dialect {
     }
 
     @Override
-    public boolean needDeletedAlias() {
+    public boolean isDeletedAliasRequired() {
         return true;
     }
 }

@@ -233,7 +233,7 @@ public class OracleQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select optimize_.ID, optimize_.NAME, optimize_.EDITION, optimize_.PRICE, optimize_.STORE_ID from (" +
-                                    "--->select * from (" +
+                                    "--->select limited__.*, rownum optimize_rn__ from (" +
                                     "--->--->select core__.*, rownum rn__ from (" +
                                     "--->--->--->select tb_1_.ID optimize_core_id_ " +
                                     "--->--->--->from BOOK tb_1_ " +
@@ -244,7 +244,8 @@ public class OracleQueryTest extends AbstractQueryTest {
                                     "--->limited__ where rn__ > ?" +
                                     ") optimize_core_ " +
                                     "inner join BOOK optimize_ " +
-                                    "--->on optimize_.ID = optimize_core_.optimize_core_id_"
+                                    "--->on optimize_.ID = optimize_core_.optimize_core_id_ " +
+                                    "order by optimize_core_.optimize_rn__"
                     ).variables(7, 2);
                     ctx.rows(
                             "[" +

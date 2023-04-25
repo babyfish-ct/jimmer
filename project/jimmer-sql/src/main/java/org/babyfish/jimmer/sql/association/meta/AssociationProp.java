@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,6 +30,18 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public @NotNull ImmutablePropCategory getCategory() {
         return ImmutablePropCategory.REFERENCE;
+    }
+
+    @NotNull
+    @Override
+    public Class<?> getReturnClass() {
+        return getElementClass();
+    }
+
+    @NotNull
+    @Override
+    public Type getGenericType() {
+        return getElementClass();
     }
 
     @Override

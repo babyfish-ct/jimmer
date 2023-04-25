@@ -102,7 +102,9 @@ public class EntityManager {
         Set<Class<?>> classes = new LinkedHashSet<>();
         for (EntityManager entityManager : entityManagers) {
             for (ImmutableType type : entityManager.getAllTypes(null)) {
-                classes.add(type.getJavaClass());
+                if (type.isEntity()) {
+                    classes.add(type.getJavaClass());
+                }
             }
         }
         return new EntityManager(classes);
