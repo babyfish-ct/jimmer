@@ -33,30 +33,6 @@ public class JimmerAutoConfiguration {
         return new ImmutableModule();
     }
 
-    @ConditionalOnProperty("jimmer.client.ts.path")
-    @ConditionalOnMissingBean(TypeScriptController.class)
-    @Bean
-    public TypeScriptController typeScriptController(Metadata metadata, JimmerProperties properties) {
-        return new TypeScriptController(metadata, properties);
-    }
-
-    @ConditionalOnProperty("jimmer.client.java-feign.path")
-    @ConditionalOnMissingBean(JavaFeignController.class)
-    @Bean
-    public JavaFeignController javaFeignController(Metadata metadata, JimmerProperties properties) {
-        return new JavaFeignController(metadata, properties);
-    }
-
-    @Conditional(MetadataCondition.class)
-    @ConditionalOnMissingBean(Metadata.class)
-    @Bean
-    public MetadataFactoryBean metadataFactoryBean(
-            ApplicationContext ctx,
-            @Autowired(required = false) ParameterNameDiscoverer parameterNameDiscoverer
-    ) {
-        return new MetadataFactoryBean(ctx, parameterNameDiscoverer);
-    }
-
     @Conditional(MicroServiceCondition.class)
     @ConditionalOnMissingBean(MicroServiceExporterController.class)
     @Bean
