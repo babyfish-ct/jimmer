@@ -195,6 +195,12 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
+    public <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop) {
+        return (ScalarProvider<T, S>) scalarProviderManager.getProvider(prop.unwrap());
+    }
+
+    @SuppressWarnings("unchecked")
     public <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop) {
         return (ScalarProvider<T, S>) scalarProviderManager.getProvider(prop);
     }
@@ -724,6 +730,16 @@ class JSqlClientImpl implements JSqlClient {
                             "Cannot set scalar provider for property type \"" +
                                     prop +
                                     "\" twice"
+                    );
+                }
+                ImmutableProp originalProp = prop.toOriginal();
+                if (originalProp != prop) {
+                    throw new IllegalArgumentException(
+                            "\"" +
+                                    prop +
+                                    "\" hides \"" +
+                                    originalProp +
+                                    "\", please add scalar provider for that hidden property"
                     );
                 }
                 propScalarProviderMap.put(prop, scalarProvider);

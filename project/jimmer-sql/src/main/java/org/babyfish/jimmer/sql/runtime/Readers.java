@@ -1,13 +1,17 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
@@ -124,8 +128,13 @@ class Readers {
             }
             return new ObjectReader(type, idReader, nonIdReaderMap);
         }
-        return sqlClient.getReader(
-                AbstractTypedEmbeddedPropExpression.<ExpressionImplementor<?>>unwrap(selection).getType()
-        );
+        ExpressionImplementor<?> unwrapped = AbstractTypedEmbeddedPropExpression.<ExpressionImplementor<?>>unwrap(selection);
+        if (unwrapped instanceof PropExpression<?>) {
+            ImmutableProp prop = ((PropExpressionImplementor<?>) unwrapped).getProp();
+            if (prop.isScalar(TargetLevel.ENTITY) && !prop.isEmbedded(EmbeddedLevel.SCALAR)) {
+                return sqlClient.getReader(prop);
+            }
+        }
+        return sqlClient.getReader(unwrapped.getType());
     }
 }

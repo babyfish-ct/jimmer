@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.json;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple4;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple5;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapper;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapperDraft;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapperTable;
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class ScalarProviderTest extends AbstractJsonTest {
 
@@ -49,6 +53,30 @@ public class ScalarProviderTest extends AbstractJsonTest {
                 wrapper.toString()
         );
 
+        JsonWrapperTable table = JsonWrapperTable.$;
+
+        Tuple5<Point, List<String>, Map<Long, Integer>, List<List<String>>, Map<String, Map<String, String>>> tuple =
+                sqlClient()
+                        .createQuery(table)
+                        .where(table.id().eq(1L))
+                        .select(
+                                table.point(),
+                                table.tags(),
+                                table.scores(),
+                                table.complexList(),
+                                table.complexMap()
+                        )
+                        .fetchOne();
+        Assertions.assertEquals(
+                "Tuple5(" +
+                        "_1=Point{x=3, y=4}, " +
+                        "_2=[java, kotlin], " +
+                        "_3={1=100}, " +
+                        "_4=[[1-1, 1-2], [2-1, 2-2]], " +
+                        "_5={key={nested-key=value}}" +
+                        ")",
+                tuple.toString()
+        );
 
         sqlClient().getEntities().save(
                 JsonWrapperDraft.$.produce(draft -> {
@@ -69,8 +97,6 @@ public class ScalarProviderTest extends AbstractJsonTest {
                         "}",
                 wrapper.toString()
         );
-
-        JsonWrapperTable table = JsonWrapperTable.$;
 
         sqlClient()
                 .createUpdate(table)

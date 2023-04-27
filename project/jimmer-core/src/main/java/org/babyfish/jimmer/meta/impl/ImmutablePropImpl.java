@@ -55,7 +55,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final DissociateAction dissociateAction;
 
-    private final ImmutableProp base;
+    private final ImmutablePropImpl original;
 
     private Converter<?> converter;
 
@@ -224,38 +224,41 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             dissociateAction = DissociateAction.NONE;
         }
 
-        this.base = null;
+        this.original = null;
     }
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
-            ImmutablePropImpl base
+            ImmutablePropImpl original
     ) {
-        if (!base.getDeclaringType().isAssignableFrom(declaringType)) {
+        if (!original.getDeclaringType().isAssignableFrom(declaringType)) {
             throw new IllegalArgumentException(
                     "The new declaring type \"" +
                             declaringType +
                             "\" is illegal, it is not derived type of original declaring type \"" +
-                            base.getDeclaringType() +
+                            original.getDeclaringType() +
                             "\""
             );
         }
+        while (original.original != null) {
+            original = original.original;
+        }
         this.declaringType = declaringType;
-        this.id = base.id;
-        this.name = base.name;
-        this.category = base.category;
-        this.elementClass = base.elementClass;
-        this.nullable = base.nullable;
-        this.inputNotNull = base.inputNotNull;
-        this.kotlinProp = base.kotlinProp;
-        this.javaGetter = base.javaGetter;
-        this.associationAnnotation = base.associationAnnotation;
-        this.isTransient = base.isTransient;
-        this.isFormula = base.isFormula;
-        this.sqlTemplate = base.sqlTemplate;
-        this.hasTransientResolver = base.hasTransientResolver;
-        this.dissociateAction = base.dissociateAction;
-        this.base = base.base != null ? base.base : base;
+        this.id = original.id;
+        this.name = original.name;
+        this.category = original.category;
+        this.elementClass = original.elementClass;
+        this.nullable = original.nullable;
+        this.inputNotNull = original.inputNotNull;
+        this.kotlinProp = original.kotlinProp;
+        this.javaGetter = original.javaGetter;
+        this.associationAnnotation = original.associationAnnotation;
+        this.isTransient = original.isTransient;
+        this.isFormula = original.isFormula;
+        this.sqlTemplate = original.sqlTemplate;
+        this.hasTransientResolver = original.hasTransientResolver;
+        this.dissociateAction = original.dissociateAction;
+        this.original = original;
     }
 
     @NotNull
@@ -807,18 +810,18 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     @Override
     public boolean isId() {
-        return this == declaringType.getIdProp() || (base != null && base.isId());
+        return this == declaringType.getIdProp() || (original != null && original.isId());
     }
 
     @Override
     public boolean isVersion() {
-        return this == declaringType.getVersionProp() || (base != null && base.isVersion());
+        return this == declaringType.getVersionProp() || (original != null && original.isVersion());
     }
 
     @Override
     public boolean isLogicalDeleted() {
         LogicalDeletedInfo info = declaringType.getLogicalDeletedInfo();
-        return info != null && info.getProp() == this || (base != null && base.isLogicalDeleted());
+        return info != null && info.getProp() == this || (original != null && original.isLogicalDeleted());
     }
 
     @Override
@@ -1059,6 +1062,11 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         return remote;
     }
 
+    @Override
+    public ImmutableProp toOriginal() {
+        return original != null ? original : this;
+    }
+
     private List<Dependency> getDependenciesImpl(LinkedList<ImmutableProp> stack) {
         List<Dependency> list = dependencies;
         if (list == null) {
@@ -1137,13 +1145,13 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         return list;
     }
 
-    ImmutableProp getBase() {
-        return base;
+    ImmutableProp getOriginal() {
+        return original;
     }
 
     @Override
     public int hashCode() {
-        return System.identityHashCode(base != null ? base : this);
+        return declaringType.hashCode() ^ System.identityHashCode(original != null ? original : this);
     }
 
     @Override
@@ -1152,7 +1160,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             return false;
         }
         ImmutablePropImpl prop = (ImmutablePropImpl) o;
-        return (base != null ? base : this) == (prop.base != null ? prop.base : prop);
+        return declaringType == prop.declaringType &&
+                (original != null ? original : this) == (prop.original != null ? prop.original : prop);
     }
 
     @Override

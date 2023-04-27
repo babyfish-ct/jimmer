@@ -101,4 +101,6 @@ public interface ImmutableProp {
     List<Dependency> getDependencies();
 
     boolean isRemote();
+
+    ImmutableProp toOriginal();
 }

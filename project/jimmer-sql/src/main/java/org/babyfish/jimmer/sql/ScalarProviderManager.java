@@ -47,7 +47,7 @@ class ScalarProviderManager {
     }
 
     public ScalarProvider<?, ?> getProvider(ImmutableProp prop) {
-        return propScalarProviderCache.get(prop);
+        return propScalarProviderCache.get(prop.toOriginal());
     }
 
     public ScalarProvider<?, ?> getProvider(Class<?> type) {
@@ -56,7 +56,6 @@ class ScalarProviderManager {
 
     @SuppressWarnings("unchecked")
     private ScalarProvider<?, ?> createProvider(ImmutableProp prop) {
-
         ScalarProvider<?, ?> provider = customizedPropScalarProviderMap.get(prop);
         if (provider != null) {
             return provider;

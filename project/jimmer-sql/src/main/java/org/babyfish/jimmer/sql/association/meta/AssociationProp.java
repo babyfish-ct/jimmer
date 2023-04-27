@@ -185,6 +185,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public ImmutableProp toOriginal() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         return declaringType + "." + getName();
     }

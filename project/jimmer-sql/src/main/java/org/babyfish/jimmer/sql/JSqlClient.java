@@ -49,6 +49,8 @@ public interface JSqlClient extends SubQueryProvider {
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 
+    <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop);
+
     <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop);
 
     IdGenerator getIdGenerator(Class<?> entityType);

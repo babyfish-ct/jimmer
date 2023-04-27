@@ -267,7 +267,7 @@ class ImmutableTypeImpl implements ImmutableType {
                 props = new LinkedHashMap<>(superType.getProps());
                 for (ImmutableProp declaredProp : declaredProps.values()) {
                     ImmutableProp conflictProp = props.put(declaredProp.getName(), declaredProp);
-                    if (conflictProp != null && conflictProp != ((ImmutablePropImpl)declaredProp).getBase()) {
+                    if (conflictProp != null && conflictProp != ((ImmutablePropImpl)declaredProp).getOriginal()) {
                         throw new ModelException(
                                 "The property \"" +
                                         declaredProp +
