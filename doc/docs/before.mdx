@@ -94,13 +94,15 @@ If conditions permit, binlog triggers should be used in preference to Intra-tran
 <td><a href="https://github.com/immerjs/immer">immer</a></td>
 <td>
 
--   Allow developers to use the intuitive method of directly modifying mutable objects to complete the "copy construction" of immutable objects. This is espeically suitable for deep-level immutable objects.
-
--   Reason: The java record, or the kotlin data class with `copy` function, is designed for simple immutable objects. it is difficult to handle complex deep-level immutable objects in a concise manner. Therefore, a sufficiently powerful solution is required to be ported.
+Unlike traditional ORM, all entity objects in Jimmer are immutable objects.
 
 :::note
-This framework is named Jimmer, paying homage to [immer](https://github.com/immerjs/immer).
+This is very important. If mutable objects are used as entity objects, it actually condones developers to arbitrarily construct `circular references`, which will be a problem with endless consequences. 
 :::
+
+Unfortunately, the Java record and `copy()` function of Kotlin data class is designed for simple immutable objects, and it is difficult to handle complex deep immutable object copying and construction in a concise manner, and deep and complex data structures are exactly what the ORM framework has to face.
+
+Therefore, Jimmer has ported [immer](https://github.com/immerjs/immer) for Java/Kotlin. This is a powerful immutable object solution. This framework is named Jimmer, paying tribute to [immer](https://github.com/immerjs/immer).
 
 </td>
 </tr>
