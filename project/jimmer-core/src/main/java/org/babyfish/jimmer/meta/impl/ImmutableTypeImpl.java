@@ -783,7 +783,7 @@ class ImmutableTypeImpl implements ImmutableType {
                 throw new IllegalStateException(
                         "Cannot set version property for type \"" +
                                 javaClass.getName() +
-                                "\" because there is an id property in the super type \"" +
+                                "\" because there is an version property in the super type \"" +
                                 superType.getJavaClass().getName() +
                                 "\""
                 );
@@ -818,7 +818,7 @@ class ImmutableTypeImpl implements ImmutableType {
                                 "\" which is not entity or mapped super class"
                 );
             }
-            if (superType != null && superType.getIdProp() != null) {
+            if (superType != null && superType.getLogicalDeletedInfo() != null) {
                 throw new IllegalStateException(
                         "Cannot set logical deleted property for type \"" +
                                 javaClass.getName() +
