@@ -29,8 +29,8 @@ If you want more details on using jimmer in a non-spring environment, you can co
 ```groovy title="build.gradle"
 depdencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.7.47'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.7.47'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.7.49'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.7.49'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -44,7 +44,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql</artifactId>
-        <version>0.7.47</version>
+        <version>0.7.49</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -65,7 +65,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.7.47</version>
+                        <version>0.7.49</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -87,10 +87,10 @@ plugins {
 depdencies {
     
     // Step2: Add jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.7.47")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.7.49")
 
     // Step3: Apply ksp plugin
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.7.47")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.7.49")
 
     runtimeOnly("com.h2database:h2:2.1.212")
 
@@ -114,7 +114,7 @@ kotlin {
 <dependency>
     <groupId>org.babyfish.jimmer</groupId>
     <artifactId>jimmer-sql-kotlin</artifactId>
-    <version>0.7.47</version>
+    <version>0.7.49</version>
 </dependency>
 <dependency>
     <groupId>com.h2database</groupId>
@@ -162,7 +162,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.7.47</version>
+                    <version>0.7.49</version>
                 </dependency>
             </dependencies>
         </plugin>
