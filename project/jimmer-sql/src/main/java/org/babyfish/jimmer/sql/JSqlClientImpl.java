@@ -533,7 +533,9 @@ class JSqlClientImpl implements JSqlClient {
 
         private int offsetOptimizingThreshold = Integer.MAX_VALUE;
 
-        private EntityManager entityManager;
+        private EntityManager userEntityManager;
+
+        private EntityManager defaultEntityManager;
 
         private Caches caches;
 
@@ -784,12 +786,17 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public Builder setEntityManager(EntityManager entityManager) {
-            if (this.entityManager != null && this.entityManager != entityManager) {
+            if (this.userEntityManager != null && this.userEntityManager != entityManager) {
                 throw new IllegalStateException(
                         "The EntityManager of SqlBuilder.Builder can only be set once"
                 );
             }
-            this.entityManager = entityManager;
+            if (caches != null) {
+                throw new IllegalStateException(
+                        "The EntityManager cannot be changed after caches is set"
+                );
+            }
+            this.userEntityManager = entityManager;
             return this;
         }
 
@@ -800,7 +807,7 @@ class JSqlClientImpl implements JSqlClient {
                 throw new IllegalStateException("caches cannot be set twice");
             }
             createTriggersIfNecessary();
-            caches = CachesImpl.of(triggers, entityManager, microServiceName, block);
+            caches = CachesImpl.of(triggers, entityManager(), microServiceName, block);
             return this;
         }
 
@@ -952,9 +959,6 @@ class JSqlClientImpl implements JSqlClient {
                     );
                 }
             }
-            if (entityManager == null) {
-                entityManager = EntityManager.fromResources(null, null);
-            }
             if (!microServiceName.isEmpty() && microServiceExchange == null) {
                 throw new IllegalStateException(
                         "The `microServiceExchange` must be configured when `microServiceName` is configured"
@@ -965,7 +969,7 @@ class JSqlClientImpl implements JSqlClient {
             createTriggersIfNecessary();
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
-                    entityManager,
+                    entityManager(),
                     binLogParser,
                     triggers,
                     microServiceName
@@ -988,7 +992,7 @@ class JSqlClientImpl implements JSqlClient {
                     defaultListBatchSize,
                     offsetOptimizingThreshold,
                     null,
-                    entityManager,
+                    entityManager(),
                     caches,
                     triggers,
                     transactionTriggers,
@@ -1040,7 +1044,7 @@ class JSqlClientImpl implements JSqlClient {
             }
             List<Filter<?>> mergedFilters = new ArrayList<>(filters);
             List<Filter<?>> mergedDisabledFilters = new ArrayList<>(disabledFilters);
-            for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
+            for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
                 Filter<?> notDeletedFilter = builtInFilters.getDeclaredNotDeletedFilter(type);
                 Filter<?> alreadyDeletedFilter = builtInFilters.getDeclaredAlreadyDeletedFilter(type);
                 if (notDeletedFilter != null) {
@@ -1055,7 +1059,7 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         private void validateAssociations(FilterManager filterManager) {
-            for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
+            for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
                 if (type.isEntity()) {
                     for (ImmutableProp prop : type.getProps().values()) {
                         if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
@@ -1091,7 +1095,7 @@ class JSqlClientImpl implements JSqlClient {
                 }
                 DatabaseValidationException validationException = cm.execute(con -> {
                     try {
-                        return DatabaseValidators.validate(entityManager, microServiceName, databaseValidationCatalog, con);
+                        return DatabaseValidators.validate(entityManager(), microServiceName, databaseValidationCatalog, con);
                     } catch (SQLException ex) {
                         throw new ExecutionException(
                                 "Cannot validate the database because of SQL exception",
@@ -1106,6 +1110,18 @@ class JSqlClientImpl implements JSqlClient {
                     LOGGER.warn(validationException.getMessage(), validationException);
                 }
             }
+        }
+
+        private EntityManager entityManager() {
+            EntityManager em = this.userEntityManager;
+            if (em == null) {
+                em = this.defaultEntityManager;
+                if (em == null) {
+                    em = EntityManager.fromResources(null, null);
+                    this.defaultEntityManager = em;
+                }
+            }
+            return em;
         }
     }
 }
