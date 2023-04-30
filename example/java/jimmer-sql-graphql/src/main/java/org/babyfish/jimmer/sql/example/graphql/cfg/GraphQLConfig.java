@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.example.graphql.cfg;
 
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.*;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +36,7 @@ public class GraphQLConfig {
                     .build();
 
     @Bean
-    public RuntimeWiringConfigurer runtimeWiringConfigurer(EntityManager entityManager) {
+    public RuntimeWiringConfigurer runtimeWiringConfigurer() {
         return wiringBuilder -> {
             wiringBuilder
                     .scalar(ExtendedScalars.GraphQLLong)

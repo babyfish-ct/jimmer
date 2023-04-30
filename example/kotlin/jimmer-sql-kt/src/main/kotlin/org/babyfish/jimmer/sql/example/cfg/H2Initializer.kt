@@ -25,7 +25,7 @@ class H2Initializer(
 
     private fun initH2() {
         dataSource.connection.use { con: Connection ->
-            val inputStream = JimmerConfig::class.java
+            val inputStream = H2Initializer::class.java
                 .classLoader
                 .getResourceAsStream("h2-database.sql") ?: throw RuntimeException("no h2-database.sql")
             val sql = InputStreamReader(inputStream).use { reader ->

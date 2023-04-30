@@ -39,7 +39,7 @@ public class H2Initializer implements Initializer {
 
     private void initH2() {
         try (Connection con = dataSource.getConnection()) {
-            InputStream inputStream = JimmerConfig.class
+            InputStream inputStream = H2Initializer.class
                     .getClassLoader()
                     .getResourceAsStream("h2-database.sql");
             if (inputStream == null) {

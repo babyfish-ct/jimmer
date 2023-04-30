@@ -2,7 +2,6 @@ package org.babyfish.jimmer.example.kt.graphql.cfg
 
 import graphql.scalars.ExtendedScalars
 import graphql.schema.*
-import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.graphql.execution.RuntimeWiringConfigurer
@@ -12,7 +11,7 @@ import java.time.LocalDateTime
 class GraphQLConfig {
 
     @Bean
-    fun runtimeWiringConfigurer(entityManager: EntityManager): RuntimeWiringConfigurer =
+    fun runtimeWiringConfigurer(): RuntimeWiringConfigurer =
         RuntimeWiringConfigurer {
             it
                 .scalar(ExtendedScalars.GraphQLLong)

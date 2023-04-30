@@ -22,7 +22,7 @@ public class DatabaseInitializer implements Initializer {
     @Override
     public void initialize(JSqlClient sqlClient) throws Exception {
         try (Connection con = dataSource.getConnection()) {
-            InputStream inputStream = JimmerConfig.class
+            InputStream inputStream = DatabaseInitializer.class
                     .getClassLoader()
                     .getResourceAsStream("author.sql");
             if (inputStream == null) {

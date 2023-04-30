@@ -11,7 +11,7 @@ class DatabaseInitializer(private val dataSource: DataSource) : KInitializer {
 
     override fun initialize(dsl: KSqlClient) {
         dataSource.connection.use { con ->
-            val inputStream = JimmerConfig::class.java
+            val inputStream = DatabaseInitializer::class.java
                 .classLoader
                 .getResourceAsStream("book.sql") ?: throw RuntimeException("no `book.sql`")
             InputStreamReader(inputStream).use { reader ->

@@ -12,7 +12,7 @@ import javax.sql.DataSource
  * Initialize H2 in-memory database if the application is started by default profile.
  */
 @Component
-class H2Customizer(
+class H2Initializer(
     private val dataSource: DataSource,
     @Value("\${spring.datasource.url}") private val url: String
 ) : KInitializer {
@@ -25,7 +25,7 @@ class H2Customizer(
 
     private fun initH2() {
         dataSource.connection.use { con: Connection ->
-            val inputStream = JimmerConfig::class.java
+            val inputStream = H2Initializer::class.java
                 .classLoader
                 .getResourceAsStream("h2-database.sql") ?: throw RuntimeException("no h2-database.sql")
             val sql = InputStreamReader(inputStream).use { reader ->
