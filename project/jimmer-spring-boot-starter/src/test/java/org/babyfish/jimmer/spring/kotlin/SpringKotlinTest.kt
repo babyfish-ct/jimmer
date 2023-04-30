@@ -75,10 +75,6 @@ open class SpringKotlinTest : AbstractTest() {
         }
 
         @Bean
-        open fun entityManage(): EntityManager =
-            ENTITY_MANAGER
-
-        @Bean
         open fun executor(): Executor? {
             return object : Executor {
                 override fun <R> execute(

@@ -36,7 +36,10 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private Messager messager;
 
-    private boolean processed;
+    private final Set<TypeElement> processedTypeElements =
+            new TreeSet<>(Comparator.comparing(it -> it.getQualifiedName().toString()));
+
+    private boolean jimmerModuleGenerated;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -63,17 +66,22 @@ public class ImmutableProcessor extends AbstractProcessor {
             Set<? extends TypeElement> annotations,
             RoundEnvironment roundEnv
     ) {
-        if (!processed) {
-            processed = true;
-        } else {
+        boolean go = false;
+        for (Element element : roundEnv.getRootElements()) {
+            if (element instanceof TypeElement) {
+                if (processedTypeElements.add((TypeElement) element)) {
+                    go = true;
+                }
+            }
+        }
+        if (!go) {
             return true;
         }
 
         try {
             Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
             generateJimmerTypes(
-                    roundEnv
-                            .getRootElements()
+                    roundEnv.getRootElements()
                             .stream()
                             .filter(it -> it instanceof TypeElement)
                             .map(immutableTypeMap::get)
@@ -200,76 +208,18 @@ public class ImmutableProcessor extends AbstractProcessor {
                 ).generate();
             }
         }
-        PackageCollector packageCollector = new PackageCollector();
-        for (Element element : roundEnv.getElementsAnnotatedWith(Entity.class)) {
-            packageCollector.accept((TypeElement) element);
+        if (!jimmerModuleGenerated) {
+            new JimmerModuleGenerator(
+                    processedTypeElements,
+                    filer
+            ).generate();
+            jimmerModuleGenerated = true;
         }
-        new JimmerModuleGenerator(
-                packageCollector.toString(),
-                packageCollector.getTypeElements(),
-                filer
-        ).generate();
     }
 
     private void generateErrorType(List<TypeElement> typeElements) {
         for (TypeElement typeElement : typeElements) {
             new ErrorGenerator(typeElement, filer).generate();
-        }
-    }
-
-    private static class PackageCollector {
-
-        private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
-
-        private List<String> paths;
-
-        private String str;
-
-        private final List<TypeElement> typeElements = new ArrayList<>();
-
-        public void accept(TypeElement typeElement) {
-            typeElements.add(typeElement);
-            if (paths != null && paths.isEmpty()) {
-                return;
-            }
-            str = null;
-            List<String> newPaths = Collections.emptyList();
-            for (Element parent = typeElement.getEnclosingElement(); parent != null; parent = parent.getEnclosingElement()) {
-                if (parent instanceof PackageElement) {
-                    String packageName = ((PackageElement) parent).getQualifiedName().toString();
-                    newPaths = new ArrayList<>(Arrays.asList(DOT_PATTERN.split(packageName)));
-                    break;
-                }
-            }
-            if (paths == null) {
-                paths = newPaths;
-            } else {
-                int len = Math.min(paths.size(), newPaths.size());
-                int index = 0;
-                while (index < len) {
-                    if (!paths.get(index).equals(newPaths.get(index))) {
-                        break;
-                    }
-                    index++;
-                }
-                if (index < paths.size()) {
-                    paths.subList(index, paths.size()).clear();
-                }
-            }
-        }
-
-        public List<TypeElement> getTypeElements() {
-            return Collections.unmodifiableList(typeElements);
-        }
-
-        @Override
-        public String toString() {
-            String s = str;
-            if (s == null) {
-                List<String> ps = paths;
-                str = s = ps == null || ps.isEmpty() ? "" : String.join(".", ps);
-            }
-            return s;
         }
     }
 }

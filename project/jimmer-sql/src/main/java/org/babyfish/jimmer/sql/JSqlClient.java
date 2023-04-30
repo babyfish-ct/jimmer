@@ -219,8 +219,13 @@ public interface JSqlClient extends SubQueryProvider {
         @OldChain
         Builder setOffsetOptimizingThreshold(int threshold);
 
+        /**
+         * Under normal circumstances, users do not need to set the entity manager.
+         *
+         * This configuration is for compatibility with version 0.7.47 and earlier.
+         */
         @OldChain
-        Builder setEntityManager(EntityManager scanner);
+        Builder setEntityManager(EntityManager entityManager);
 
         @OldChain
         Builder setCaches(Consumer<CacheConfig> block);

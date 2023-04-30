@@ -94,6 +94,11 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addScalarProvider(prop, scalarProvider)
     }
 
+    /**
+     * Under normal circumstances, users do not need to set the entity manager.
+     *
+     * This configuration is for compatibility with version 0.7.47 and earlier.
+     */
     fun setEntityManager(entityManager: EntityManager) {
         javaBuilder.setEntityManager(entityManager)
     }

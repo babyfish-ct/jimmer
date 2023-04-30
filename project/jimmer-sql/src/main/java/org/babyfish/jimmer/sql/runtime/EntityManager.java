@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import jdk.internal.reflect.Reflection;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
@@ -10,7 +11,13 @@ import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class EntityManager {
 
@@ -106,6 +113,51 @@ public class EntityManager {
                     classes.add(type.getJavaClass());
                 }
             }
+        }
+        return new EntityManager(classes);
+    }
+
+    public static EntityManager fromResources(
+            @Nullable ClassLoader classLoader,
+            @Nullable Predicate<Class<?>> predicate
+    ) {
+        if (classLoader == null) {
+            classLoader = EntityManager.class.getClassLoader();
+        }
+
+        Set<Class<?>> classes = new LinkedHashSet<>();
+        try {
+            Enumeration<URL> urls = classLoader.getResources("META-INF/jimmer/entities");
+            while (urls.hasMoreElements()) {
+                URL url = urls.nextElement();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                    while (true) {
+                        String className = reader.readLine();
+                        if (className == null) {
+                            break;
+                        }
+                        className = className.trim();
+                        if (!className.isEmpty()) {
+                            Class<?> clazz;
+                            try {
+                                clazz = Class.forName(className, true, classLoader);
+                            } catch (ClassNotFoundException ex) {
+                                throw new IllegalStateException(
+                                        "Cannot parse class name \"" +
+                                                className +
+                                                "\" in \"META-INF/jimmer/entities\"",
+                                        ex
+                                );
+                            }
+                            if (predicate == null || predicate.test(clazz)) {
+                                classes.add(clazz);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to load resources \"META-INF/jimmer/entities\"", ex);
         }
         return new EntityManager(classes);
     }

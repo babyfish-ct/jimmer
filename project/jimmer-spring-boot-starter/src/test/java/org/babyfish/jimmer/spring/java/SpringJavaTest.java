@@ -134,11 +134,6 @@ public class SpringJavaTest extends AbstractTest {
         }
 
         @Bean
-        public EntityManager entityManager() {
-            return JimmerModule.ENTITY_MANAGER;
-        }
-
-        @Bean
         public Executor executor() {
             return new Executor() {
                 @Override

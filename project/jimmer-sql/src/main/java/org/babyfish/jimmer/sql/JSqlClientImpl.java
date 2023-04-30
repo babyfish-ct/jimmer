@@ -953,7 +953,7 @@ class JSqlClientImpl implements JSqlClient {
                 }
             }
             if (entityManager == null) {
-                throw new IllegalStateException("The `entityManager` of SqlClient has not been configured");
+                entityManager = EntityManager.fromResources(null, null);
             }
             if (!microServiceName.isEmpty() && microServiceExchange == null) {
                 throw new IllegalStateException(
