@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import jdk.internal.reflect.Reflection;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
