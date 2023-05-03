@@ -3,13 +3,11 @@ package org.babyfish.jimmer.jackson;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.fasterxml.jackson.databind.type.SimpleType;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.OffsetDateTimeSerializer;
@@ -21,16 +19,18 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 
 public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
 
     private final ImmutableType immutableType;
 
+    private final PropNameConverter propNameConverter;
+
     @SuppressWarnings("unchecked")
-    public ImmutableSerializer(ImmutableType immutableType) {
+    public ImmutableSerializer(ImmutableType immutableType, PropNameConverter propNameConverter) {
         super((Class<ImmutableSpi>)immutableType.getJavaClass());
         this.immutableType = immutableType;
+        this.propNameConverter = propNameConverter;
     }
 
     @Override
@@ -69,10 +69,10 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
                     value = ((Converter<Object>)prop.getConverter()).output(value);
                 }
                 if (value == null) {
-                    provider.defaultSerializeField(prop.getName(), null, gen);
+                    provider.defaultSerializeField(propNameConverter.fieldName(prop), null, gen);
                 } else if (prop.isAssociation(TargetLevel.OBJECT) || prop.isScalarList()) {
                     TypeSerializer typeSer = null;
-                    gen.writeFieldName(prop.getName());
+                    gen.writeFieldName(propNameConverter.fieldName(prop));
                     if (!prop.isReferenceList(TargetLevel.OBJECT) &&
                             value instanceof ImmutableSpi &&
                             ((ImmutableSpi)value).__type() != immutableType) {
@@ -84,7 +84,7 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
                         provider.findValueSerializer(PropUtils.getJacksonType(prop)).serialize(value, gen, provider);
                     }
                 } else {
-                    gen.writeFieldName(prop.getName());
+                    gen.writeFieldName(propNameConverter.fieldName(prop));
                     JsonSerializer<?> serializer = provider.findTypedValueSerializer(
                             prop.getElementClass(),
                             true,

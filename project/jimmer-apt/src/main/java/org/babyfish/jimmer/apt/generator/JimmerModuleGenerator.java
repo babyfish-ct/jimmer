@@ -79,16 +79,15 @@ public class JimmerModuleGenerator {
             } catch (IOException ex) {
                 throw new GeneratorException("Cannot write \"" + jimmerEntitiesFile + "\"", ex);
             }
-        }
-
-        try {
-            JavaFile
-                    .builder(packageName, typeSpec())
-                    .indent("    ")
-                    .build()
-                    .writeTo(filer);
-        } catch (IOException ex) {
-            throw new GeneratorException("Cannot generate `EntityManagers`", ex);
+            try {
+                JavaFile
+                        .builder(packageName, typeSpec())
+                        .indent("    ")
+                        .build()
+                        .writeTo(filer);
+            } catch (IOException ex) {
+                throw new GeneratorException("Cannot generate `EntityManagers`", ex);
+            }
         }
     }
 

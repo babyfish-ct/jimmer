@@ -64,7 +64,7 @@ public interface BookService {
     );
 
     @GetMapping("/books/complex2")
-    List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooksByArguments(
+    ResponseEntity<List<@FetchBy("COMPLEX_FETCHER") Book>> findComplexBooksByArguments(
             FindBookArguments arguments
     );
 

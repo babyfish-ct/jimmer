@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.client.meta;
 
+import kotlin.jvm.JvmClassMappingKt;
+import kotlin.reflect.KFunction;
+import kotlin.reflect.KType;
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
 import org.babyfish.jimmer.client.java.service.FindBookArguments;
@@ -9,8 +12,7 @@ import org.babyfish.jimmer.client.meta.common.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.lang.reflect.Parameter;
 
 public class Constants {
@@ -44,6 +46,23 @@ public class Constants {
                         return new String[] { "arguments" };
                     }
                     return null;
+                }
+
+                @Override
+                public KType kotlinType(KFunction<?> function) {
+                    KType type = function.getReturnType();
+                    if (JvmClassMappingKt.getKotlinClass(ResponseEntity.class).equals(type.getClassifier())) {
+                        return type.getArguments().get(0).getType();
+                    }
+                    return type;
+                }
+
+                @Override
+                public AnnotatedType javaType(Method method) {
+                    if (method.getReturnType() == ResponseEntity.class) {
+                        return ((AnnotatedParameterizedType)method.getAnnotatedReturnType()).getAnnotatedActualTypeArguments()[0];
+                    }
+                    return method.getAnnotatedReturnType();
                 }
             };
 

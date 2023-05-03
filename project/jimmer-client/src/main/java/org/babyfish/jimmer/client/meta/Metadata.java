@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta;
 
+import kotlin.reflect.KFunction;
+import kotlin.reflect.KType;
 import org.babyfish.jimmer.client.meta.impl.MetadataBuilder;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -7,6 +9,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
@@ -75,6 +78,14 @@ public interface Metadata {
 
         default String[] getParameterNames(Method method) {
             return null;
+        }
+
+        default KType kotlinType(KFunction<?> function) {
+            return function.getReturnType();
+        }
+
+        default AnnotatedType javaType(Method method) {
+            return method.getAnnotatedReturnType();
         }
     }
 

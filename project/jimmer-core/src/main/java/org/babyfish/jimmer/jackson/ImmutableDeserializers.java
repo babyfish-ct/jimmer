@@ -17,7 +17,10 @@ public class ImmutableDeserializers extends Deserializers.Base {
     ) {
         ImmutableType immutableType = ImmutableType.tryGet(type.getRawClass());
         if (immutableType != null) {
-            return new ImmutableDeserializer(immutableType);
+            return new ImmutableDeserializer(
+                    immutableType,
+                    PropNameConverter.of(config, immutableType)
+            );
         }
         return null;
     }

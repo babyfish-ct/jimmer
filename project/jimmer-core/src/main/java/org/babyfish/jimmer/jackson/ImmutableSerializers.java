@@ -18,7 +18,10 @@ public class ImmutableSerializers extends Serializers.Base {
         Class<?> javaClass = type.getRawClass();
         ImmutableType immutableType = ImmutableType.tryGet(javaClass);
         if (immutableType != null) {
-            return new ImmutableSerializer(immutableType);
+            return new ImmutableSerializer(
+                    immutableType,
+                    PropNameConverter.of(config, immutableType)
+            );
         }
         return null;
     }

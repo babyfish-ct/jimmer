@@ -7,12 +7,14 @@ import java.util.Objects;
 
 public class Point {
 
+    @JsonProperty("_x")
     private final int x;
 
+    @JsonProperty("_y")
     private final int y;
 
     @JsonCreator
-    public Point(@JsonProperty("x") int x, @JsonProperty("y") int y) {
+    public Point(@JsonProperty("_x") int x, @JsonProperty("_y") int y) {
         this.x = x;
         this.y = y;
     }

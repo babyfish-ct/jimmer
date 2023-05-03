@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple4;
@@ -44,7 +46,7 @@ public class ScalarProviderTest extends AbstractJsonTest {
         Assertions.assertEquals(
                 "{" +
                         "\"id\":1," +
-                        "\"point\":{\"x\":3,\"y\":4}," +
+                        "\"point\":{\"_x\":3,\"_y\":4}," +
                         "\"tags\":[\"java\",\"kotlin\"]," +
                         "\"scores\":{\"1\":100}," +
                         "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]]," +
@@ -89,7 +91,7 @@ public class ScalarProviderTest extends AbstractJsonTest {
         Assertions.assertEquals(
                 "{" +
                         "\"id\":1," +
-                        "\"point\":{\"x\":4,\"y\":3}," +
+                        "\"point\":{\"_x\":4,\"_y\":3}," +
                         "\"tags\":[\"kotlin\",\"java\"]," +
                         "\"scores\":{\"1\":100}," +
                         "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]]," +
@@ -107,7 +109,7 @@ public class ScalarProviderTest extends AbstractJsonTest {
         Assertions.assertEquals(
                 "{" +
                         "\"id\":1," +
-                        "\"point\":{\"x\":4,\"y\":3}," +
+                        "\"point\":{\"_x\":4,\"_y\":3}," +
                         "\"tags\":[\"java\",\"kotlin\",\"scala\"]," +
                         "\"scores\":{\"1\":100}," +
                         "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]]," +
@@ -132,7 +134,7 @@ public class ScalarProviderTest extends AbstractJsonTest {
         Assertions.assertEquals(
                 "{" +
                         "\"id\":1," +
-                        "\"point\":{\"x\":4,\"y\":3}," +
+                        "\"point\":{\"_x\":4,\"_y\":3}," +
                         "\"tags\":[\"java\",\"kotlin\",\"scala\"]," +
                         "\"scores\":{\"2\":200}," +
                         "\"complexList\":[[\"1-1\",\"1-2\"],[\"2-1\",\"2-2\"]],\"complexMap\":{\"key\":{\"nested-key\":\"value\"}}" +

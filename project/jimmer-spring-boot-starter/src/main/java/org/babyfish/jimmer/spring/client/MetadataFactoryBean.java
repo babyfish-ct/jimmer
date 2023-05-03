@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.spring.client;
 
+import kotlin.jvm.JvmClassMappingKt;
+import kotlin.reflect.KFunction;
+import kotlin.reflect.KType;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -10,6 +13,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,9 +21,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -106,6 +108,23 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                             public String[] getParameterNames(Method method) {
                                 return parameterNameDiscoverer.getParameterNames(method);
                             }
+
+                            @Override
+                            public KType kotlinType(KFunction<?> function) {
+                                KType type = function.getReturnType();
+                                if (JvmClassMappingKt.getKotlinClass(ResponseEntity.class).equals(type.getClassifier())) {
+                                    return type.getArguments().get(0).getType();
+                                }
+                                return type;
+                            }
+
+                            @Override
+                            public AnnotatedType javaType(Method method) {
+                                if (method.getReturnType() == ResponseEntity.class) {
+                                    return ((AnnotatedParameterizedType)method.getAnnotatedReturnType()).getAnnotatedActualTypeArguments()[0];
+                                }
+                                return method.getAnnotatedReturnType();
+                            }
                         }
                 )
                 .setParameterParser(
@@ -117,7 +136,10 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
                                 if (requestParam == null) {
                                     return null;
                                 }
-                                return new Tuple2<>(notEmpty(requestParam.value(), requestParam.name()), !requestParam.required());
+                                return new Tuple2<>(
+                                        notEmpty(requestParam.value(), requestParam.name()),
+                                        !requestParam.required() || !requestParam.defaultValue().equals(ValueConstants.DEFAULT_NONE)
+                                );
                             }
 
                             @Nullable

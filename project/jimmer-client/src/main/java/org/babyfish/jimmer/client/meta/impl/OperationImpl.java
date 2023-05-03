@@ -152,10 +152,17 @@ class OperationImpl implements Operation {
         }
         Context subContext = ctx.locate(new OperationLocation(rawMethod, httpMethod));
         JetBrainsMetadata jetBrainsMetadata = ctx.getJetBrainsMetadata(rawMethod.getDeclaringClass());
+
         Type type =
                 jetBrainsMetadata.isKotlinClass() ?
-                        subContext.parseKotlinType(jetBrainsMetadata.toKFunction(rawMethod).getReturnType()) :
-                        subContext.parseType(rawMethod.getAnnotatedReturnType());
+                        subContext.parseKotlinType(
+                                ctx.getOperationParser().kotlinType(
+                                        jetBrainsMetadata.toKFunction(rawMethod)
+                                )
+                        ) :
+                        subContext.parseType(
+                                ctx.getOperationParser().javaType(rawMethod)
+                        );
         if (jetBrainsMetadata.isNullable(rawMethod)) {
             type = NullableTypeImpl.of(type);
         }

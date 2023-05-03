@@ -256,6 +256,9 @@ public class Deleter {
         ImmutableProp prop = info.getProp();
         Object deletedValue = info.getValue();
         ids = prepareLogicEvents(type, ids, prop.getId(), deletedValue);
+        if (ids.isEmpty()) {
+            return;
+        }
 
         ColumnDefinition definition = type.getIdProp().getStorage();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
