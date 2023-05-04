@@ -189,16 +189,16 @@ class ImplGenerator(
                         .apply {
                             add("return ")
                             beginControlFlow("when (prop)")
+                            val appender = CaseAppender(this, type, argType)
                             for (prop in type.propsOrderById) {
-                                val arg = if (argType == Int::class) prop.id else "\"${prop.name}\""
                                 val idViewBaseProp = prop.idViewBaseProp
                                 val manyToManyViewBaseProp = prop.manyToManyViewBaseProp
+                                appender.addCase(prop)
                                 when {
                                     idViewBaseProp !== null ->
                                         if (prop.isList) {
                                             addStatement(
-                                                "%L -> __isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
-                                                arg,
+                                                "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
                                                 idViewBaseProp.id,
                                                 idViewBaseProp.name,
                                                 IMMUTABLE_SPI_CLASS_NAME,
@@ -206,8 +206,7 @@ class ImplGenerator(
                                             )
                                         } else {
                                             addStatement(
-                                                "%L -> __isLoaded(%L) && (%L as %T)%L__isLoaded(%L) ?: true",
-                                                arg,
+                                                "__isLoaded(%L) && (%L as %T)%L__isLoaded(%L) ?: true",
                                                 idViewBaseProp.id,
                                                 idViewBaseProp.name,
                                                 IMMUTABLE_SPI_CLASS_NAME.copy(nullable = idViewBaseProp.isNullable),
@@ -217,15 +216,13 @@ class ImplGenerator(
                                         }
                                     manyToManyViewBaseProp !== null ->
                                         addStatement(
-                                            "%L -> __isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
-                                            arg,
+                                            "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
                                             manyToManyViewBaseProp.id,
                                             manyToManyViewBaseProp.name,
                                             IMMUTABLE_SPI_CLASS_NAME,
                                             prop.manyToManyViewBaseDeeperProp!!.id
                                         )
                                     prop.isKotlinFormula -> {
-                                        add("%L ->", arg)
                                         indent()
                                         var first = true
                                         for (dependency in prop.dependencies) {
@@ -241,7 +238,7 @@ class ImplGenerator(
                                     }
                                     else -> {
                                         val cond = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
-                                        addStatement("%L -> %L", arg, cond)
+                                        addStatement("%L", cond)
                                     }
                                 }
                             }
@@ -268,11 +265,12 @@ class ImplGenerator(
                             if (type.properties.values.any { it.visibleFieldName !== null}) {
                                 add("return ")
                                 beginControlFlow("when (prop)")
+                                val appender = CaseAppender(this, type, argType)
                                 for (prop in type.propsOrderById) {
                                     if (prop.visibleFieldName !== null) {
+                                        appender.addCase(prop)
                                         addStatement(
-                                            "%L -> %L",
-                                            if (argType == Int::class) prop.id else "\"${prop.name}\"",
+                                            "%L",
                                             prop.visibleFieldName
                                         )
                                     }

@@ -325,13 +325,9 @@ class DraftImplGenerator(
                         .builder()
                         .apply {
                             beginControlFlow("when (prop)")
+                            val appender = CaseAppender(this, type, argType)
                             for (prop in type.propsOrderById) {
-                                if (argType == Int::class) {
-                                    add(prop.id.toString())
-                                } else {
-                                    add("%S", prop.name)
-                                }
-                                add(" ->")
+                                appender.addCase(prop)
                                 indent()
                                 when {
                                     prop.baseProp !== null ->
@@ -366,23 +362,20 @@ class DraftImplGenerator(
                         .builder()
                         .apply {
                             beginControlFlow("when (prop)")
+                            val appender = CaseAppender(this, type, argType)
                             for (prop in type.propsOrderById) {
-                                if (argType == Int::class) {
-                                    add(prop.id.toString())
-                                } else {
-                                    add("%S", prop.name)
-                                }
+                                appender.addCase(prop)
                                 if (prop.isKotlinFormula || prop.manyToManyViewBaseProp != null) {
-                                    add(" -> return //%L is readonly, ignore\n", prop.name)
+                                    add("return //%L is readonly, ignore\n", prop.name)
                                 } else {
                                     add(
-                                        " -> this.%L = value as %T?",
+                                        "this.%L = value as %T?",
                                         prop.name,
                                         prop.typeName(overrideNullable = false)
                                     )
                                     if (!prop.isNullable) {
                                         add(
-                                            "\n    ?: throw IllegalArgumentException(%S)",
+                                            "\n\t?: throw IllegalArgumentException(%S)",
                                             "'${prop.name} cannot be null"
                                         )
                                     }
@@ -411,14 +404,11 @@ class DraftImplGenerator(
                         .apply {
                             if (type.properties.values.any { it.visibleFieldName !== null }) {
                                 beginControlFlow("when (prop)")
+                                val appender = CaseAppender(this, type, argType)
                                 for (prop in type.propsOrderById) {
                                     if (prop.visibleFieldName != null) {
-                                        if (argType == Int::class) {
-                                            add(prop.id.toString())
-                                        } else {
-                                            add("%S", prop.name)
-                                        }
-                                        add(" -> %L\n.%L = visible\n", MODIFIED, prop.visibleFieldName)
+                                        appender.addCase(prop)
+                                        add("%L\n.%L = visible\n", MODIFIED, prop.visibleFieldName)
                                     }
                                 }
                                 add("else -> throw IllegalArgumentException(\n")

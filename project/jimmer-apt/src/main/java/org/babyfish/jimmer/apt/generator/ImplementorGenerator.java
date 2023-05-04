@@ -52,16 +52,16 @@ public class ImplementorGenerator {
                 .addParameter(argType, "prop")
                 .returns(Object.class);
         builder.beginControlFlow("switch (prop)");
+        CaseAppender appender = new CaseAppender(builder, type, argType);
         for (ImmutableProp prop : type.getPropsOrderById()) {
+            appender.addCase(prop);
             if (prop.getBoxType() != null) {
-                builder.addStatement("case $L: return ($T)$L()",
-                        argType == int.class ? prop.getId() : '"' + prop.getName() + '"',
+                builder.addStatement("return ($T)$L()",
                         prop.getBoxType(),
                         prop.getGetterName()
                 );
             } else {
-                builder.addStatement("case $L: return $L()",
-                        argType == int.class ? prop.getId() : '"' + prop.getName() + '"',
+                builder.addStatement("return $L()",
                         prop.getGetterName()
                 );
             }

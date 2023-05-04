@@ -18,6 +18,7 @@ class ProducerGenerator(
                 .apply {
                     addTypeProp()
                     addProduceFun()
+                    addSlots()
                     ImplementorGenerator(type, this).generate()
                     ImplGenerator(type, this).generate()
                     DraftImplGenerator(type, this).generate()
@@ -199,5 +200,20 @@ class ProducerGenerator(
                 )
                 .build()
         )
+    }
+
+    private fun TypeSpec.Builder.addSlots() {
+        for (prop in type.declaredProperties.values) {
+            addProperty(
+                PropertySpec
+                    .builder(
+                        "SLOT_${upper(prop.name)}",
+                        INT,
+                        KModifier.CONST
+                    )
+                    .initializer(prop.id.toString())
+                    .build()
+            )
+        }
     }
 }

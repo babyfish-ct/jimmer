@@ -563,21 +563,20 @@ public class DraftImplGenerator {
                 .addParameter(argType, "prop")
                 .addParameter(Object.class, "value");
         builder.beginControlFlow("switch (prop)");
+        CaseAppender appender = new CaseAppender(builder, type, argType);
         for (ImmutableProp prop : type.getPropsOrderById()) {
-            Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
             Object castTo = prop.getBoxType();
             if (castTo == null) {
                 castTo = prop.getTypeName();
             }
+            appender.addCase(prop);
             if (prop.isJavaFormula() || prop.getManyToManyViewBaseProp() != null) {
-                builder.addStatement("case $L: break", arg);
+                builder.addStatement("break");
             } else if (prop.getTypeName().isPrimitive()) {
                 builder.addStatement(
-                        "case $L: \n" +
-                                "if (value == null) throw new $T($S);\n" +
+                        "if (value == null) throw new $T($S);\n" +
                                 "$L(($T)value);\n" +
                                 "break",
-                        arg,
                         IllegalArgumentException.class,
                         "'" + prop.getName() + "' cannot be null",
                         prop.getSetterName(),
@@ -585,8 +584,7 @@ public class DraftImplGenerator {
                 );
             } else {
                 builder.addStatement(
-                        "case $L: $L(($T)value);break",
-                        arg,
+                        "$L(($T)value);break",
                         prop.getSetterName(),
                         castTo
                 );
@@ -611,12 +609,12 @@ public class DraftImplGenerator {
                 .addParameter(argType, "prop")
                 .addParameter(TypeName.BOOLEAN, "visible");
         builder.beginControlFlow("switch (prop)");
+        CaseAppender appender = new CaseAppender(builder, type, argType);
         for (ImmutableProp prop : type.getPropsOrderById()) {
             if (prop.isVisibilityControllable()) {
-                Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
+                appender.addCase(prop);
                 builder.addStatement(
-                        "case $L: $L().$L = visible;break",
-                        arg,
+                        "$L().$L = visible;break",
                         DRAFT_FIELD_MODIFIED,
                         prop.getVisibleName()
                 );
@@ -641,27 +639,25 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop");
         builder.beginControlFlow("switch (prop)");
+        CaseAppender appender = new CaseAppender(builder, type, argType);
         for (ImmutableProp prop : type.getPropsOrderById()) {
-            Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
+            appender.addCase(prop);
             if (prop.getBaseProp() != null) {
                 builder.addStatement(
-                        "case $L: __unload($L);break",
-                        arg,
+                        "__unload($L);break",
                         prop.getBaseProp().getId()
                 );
             } else if (prop.isJavaFormula()) {
-                builder.addStatement("case $L: break", arg);
+                builder.addStatement("break");
             } else if (prop.isLoadedStateRequired()) {
                 builder.addStatement(
-                        "case $L: $L().$L = false;break",
-                        arg,
+                        "$L().$L = false;break",
                         DRAFT_FIELD_MODIFIED,
                         prop.getLoadedStateName()
                 );
             } else {
                 builder.addStatement(
-                        "case $L: $L().$L = null;break",
-                        arg,
+                        "$L().$L = null;break",
                         DRAFT_FIELD_MODIFIED,
                         prop.getName()
                 );

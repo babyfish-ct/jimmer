@@ -173,9 +173,9 @@ public class ImplGenerator {
                 .addParameter(argType, "prop")
                 .returns(boolean.class);
         builder.beginControlFlow("switch (prop)");
+        CaseAppender appender = new CaseAppender(builder, type, argType);
         for (ImmutableProp prop : type.getPropsOrderById()) {
-            Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
-            builder.addCode("case $L: ", arg);
+            appender.addCase(prop);
             ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
             ImmutableProp manyToManyViewBaseProp = prop.getManyToManyViewBaseProp();
             if (idViewBaseProp != null) {
@@ -243,12 +243,11 @@ public class ImplGenerator {
                 .returns(boolean.class);
         if (type.getProps().values().stream().anyMatch(ImmutableProp::isVisibilityControllable)) {
             builder.beginControlFlow("switch (prop)");
+            CaseAppender appender = new CaseAppender(builder, type, argType);
             for (ImmutableProp prop : type.getPropsOrderById()) {
-                Object arg = argType == int.class ? prop.getId() : '"' + prop.getName() + '"';
                 if (prop.isVisibilityControllable()) {
-                    builder
-                            .addCode("case $L: ", arg)
-                            .addStatement("return $L", prop.getVisibleName());
+                    appender.addCase(prop);
+                    builder.addStatement("return $L", prop.getVisibleName());
                 }
             }
             builder.addStatement("default: return true");

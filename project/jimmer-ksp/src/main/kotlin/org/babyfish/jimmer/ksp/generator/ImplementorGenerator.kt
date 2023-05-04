@@ -43,12 +43,10 @@ class ImplementorGenerator(
                         .builder()
                         .beginControlFlow("return when (prop)")
                         .apply {
+                            val appender = CaseAppender(this, type, argType)
                             for (prop in type.propsOrderById) {
-                                if (argType == Int::class) {
-                                    addStatement("%L -> %L", prop.id, prop.name)
-                                } else {
-                                    addStatement("%S -> %L", prop.name, prop.name)
-                                }
+                                appender.addCase(prop)
+                                addStatement(prop.name)
                             }
                             addElseForNonExistingProp(type, argType)
                         }

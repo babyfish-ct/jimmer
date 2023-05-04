@@ -30,6 +30,7 @@ public class ProducerGenerator {
         typeBuilder.modifiers.add(Modifier.STATIC);
         addInstance();
         addType();
+        addSlots();
         addConstructor();
         addProduce(false);
         addProduce(true);
@@ -187,6 +188,23 @@ public class ProducerGenerator {
                         .initializer(builder.build())
                         .build()
         );
+    }
+
+    private void addSlots() {
+        for (ImmutableProp prop : type.getDeclaredProps().values()) {
+            typeBuilder.addField(
+                    FieldSpec
+                            .builder(
+                                    TypeName.INT,
+                                    "SLOT_" + Strings.upper(prop.getName()),
+                                    Modifier.PUBLIC,
+                                    Modifier.STATIC,
+                                    Modifier.FINAL
+                            )
+                            .initializer(Integer.toString(prop.getId()))
+                            .build()
+            );
+        }
     }
 
     private void addConstructor() {
