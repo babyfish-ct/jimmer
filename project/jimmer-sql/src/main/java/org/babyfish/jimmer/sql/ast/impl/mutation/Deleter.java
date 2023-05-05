@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.*;
 
@@ -145,7 +146,7 @@ public class Deleter {
                 ImmutableProp mappedByProp = prop.getMappedBy();
                 if (mappedByProp != null &&
                         mappedByProp.isReference(TargetLevel.PERSISTENT) &&
-                        mappedByProp.getStorage() instanceof ColumnDefinition
+                        mappedByProp.isColumnDefinition()
                 ) {
                     DissociateAction dissociateAction = data.getDissociateAction(mappedByProp);
                     if (dissociateAction == DissociateAction.SET_NULL) {
@@ -172,14 +173,15 @@ public class Deleter {
     private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
         ImmutableProp manyToOneProp = prop.getMappedBy();
         ImmutableType childType = manyToOneProp.getDeclaringType();
-        ColumnDefinition definition = manyToOneProp.getStorage();
+        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
+        ColumnDefinition definition = metadata.getStorage(manyToOneProp);
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
         builder
                 .sql("select ")
-                .sql(childType.getIdProp().<ColumnDefinition>getStorage())
+                .sql(metadata.<ColumnDefinition>getStorage(childType.getIdProp()))
                 .sql(" from ")
-                .sql(childType.getTableName())
+                .sql(metadata.getTableName(childType))
                 .sql(" where ")
                 .sql(null, definition, true)
                 .sql(" in (");
@@ -260,12 +262,13 @@ public class Deleter {
             return;
         }
 
-        ColumnDefinition definition = type.getIdProp().getStorage();
+        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
+        ColumnDefinition definition = metadata.getStorage(type.getIdProp());
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("update ");
-        builder.sql(type.getTableName());
+        builder.sql(metadata.getTableName(type));
         builder.sql(" set ");
-        builder.sql(info.getProp().<SingleColumn>getStorage().name(0));
+        builder.sql(metadata.<SingleColumn>getStorage(info.getProp()).name(0));
         builder.sql(" = ");
         if (deletedValue != null) {
             builder.variable(deletedValue);
@@ -308,10 +311,11 @@ public class Deleter {
             return;
         }
 
-        ColumnDefinition definition = type.getIdProp().getStorage();
+        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
+        ColumnDefinition definition = metadata.getStorage(type.getIdProp());
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("delete from ");
-        builder.sql(type.getTableName());
+        builder.sql(metadata.getTableName(type));
         builder.sql(" where ");
         builder.sql(null, definition, true);
         builder.sql(" in (");

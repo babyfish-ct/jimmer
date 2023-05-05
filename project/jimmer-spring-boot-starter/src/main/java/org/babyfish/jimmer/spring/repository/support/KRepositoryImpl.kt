@@ -186,13 +186,15 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             val content = query
                 .limit(pageSize, offset)
                 .execute()
+            val queryImplementor = query as KConfigurableRootQueryImplementor<*, *>
             return PageImpl(
                 content,
                 PageRequest.of(
                     pageIndex,
                     pageSize,
                     Utils.toSort(
-                        (query as KConfigurableRootQueryImplementor<*, *>).javaOrders
+                        queryImplementor.javaOrders,
+                        queryImplementor.javaSqlClient.databaseMetadata
                     )
                 ),
                 total.toLong()

@@ -20,7 +20,7 @@ public class FetchingCache {
 
     public Object createKey(Field field, ImmutableSpi owner) {
         ImmutableProp prop = field.getProp();
-        if (prop.getStorage() instanceof ColumnDefinition) {
+        if (prop.isColumnDefinition()) {
             Object fk = Ids.idOf((ImmutableSpi) owner.__get(prop.getId()));
             DraftContext ctx = owner instanceof DraftSpi ?
                     ((DraftSpi) owner).__draftContext() :

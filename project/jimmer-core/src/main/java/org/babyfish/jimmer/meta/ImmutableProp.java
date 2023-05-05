@@ -3,7 +3,6 @@ package org.babyfish.jimmer.meta;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,8 +80,11 @@ public interface ImmutableProp {
     @NotNull
     DissociateAction getDissociateAction();
 
-    @SuppressWarnings("unchecked")
-    <S extends Storage> S getStorage();
+    boolean hasStorage();
+
+    boolean isColumnDefinition();
+
+    boolean isMiddleTableDefinition();
 
     boolean isId();
 
@@ -97,6 +99,11 @@ public interface ImmutableProp {
     ImmutableProp getMappedBy();
 
     ImmutableProp getOpposite();
+
+    /**
+     * @return {@code mappedBy != null ? mappedBy : this}
+     */
+    ImmutableProp getReal();
 
     List<Dependency> getDependencies();
 

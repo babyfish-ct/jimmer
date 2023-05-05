@@ -5,11 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
-import org.babyfish.jimmer.meta.impl.PropChains;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.impl.util.StaticCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,8 +20,6 @@ public class AssociationType implements ImmutableType {
     private static final StaticCache<ImmutableProp, AssociationType> CACHE =
             new StaticCache<>(AssociationType::new, false);
 
-    private MiddleTable middleTable;
-
     private final ImmutableProp baseProp;
 
     private final ImmutableType sourceType;
@@ -36,8 +31,6 @@ public class AssociationType implements ImmutableType {
     private final AssociationProp targetProp;
 
     private final Map<String, ImmutableProp> props;
-
-    private final Map<String, List<ImmutableProp>> chainMap;
 
     public static AssociationType of(ImmutableProp prop) {
         return CACHE.get(prop);
@@ -52,22 +45,8 @@ public class AssociationType implements ImmutableType {
         this.baseProp = baseProp;
 
         ImmutableProp mappedBy = baseProp.getMappedBy();
-
-        if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
-            if (baseProp.isRemote()) {
-                throw new IllegalArgumentException(
-                        "The property \"" +
-                                baseProp +
-                                "\", reversed association(with mappedBy) cannot be remote association(" +
-                                "micro service name of source side and micro service name of target side are different)"
-                );
-            }
-            middleTable = mappedBy.<MiddleTable>getStorage().getInverse();
-        } else if (baseProp.getStorage() instanceof MiddleTable){
-            middleTable = baseProp.getStorage();
-        }
-
-        if (middleTable == null) {
+        
+        if (!(mappedBy != null ? mappedBy : baseProp).isMiddleTableDefinition()) {
             throw new IllegalArgumentException(
                     "\"" +
                             baseProp +
@@ -84,20 +63,10 @@ public class AssociationType implements ImmutableType {
         map.put(sourceProp.getName(), sourceProp);
         map.put(targetProp.getName(), targetProp);
         props = Collections.unmodifiableMap(map);
-
-        Map<String, List<ImmutableProp>> chainMap = new LinkedHashMap<>();
-        for (ImmutableProp prop : props.values()) {
-            PropChains.addInto(prop, chainMap);
-        }
-        this.chainMap = Collections.unmodifiableMap(chainMap);
     }
 
     public ImmutableProp getBaseProp() {
         return baseProp;
-    }
-
-    public MiddleTable getMiddleTable() {
-        return middleTable;
     }
 
     public ImmutableType getSourceType() {
@@ -146,12 +115,6 @@ public class AssociationType implements ImmutableType {
     @Override
     public Annotation getImmutableAnnotation() { return null; }
 
-    @Nullable
-    @Override
-    public String getTableName() {
-        return middleTable.getTableName();
-    }
-
     @NotNull
     @Override
     public Map<String, ImmutableProp> getDeclaredProps() {
@@ -161,6 +124,16 @@ public class AssociationType implements ImmutableType {
     @NotNull
     @Override
     public Map<String, ImmutableProp> getProps() {
+        return props;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableProps() {
+        return props;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableReferenceProps() {
         return props;
     }
 
@@ -189,34 +162,6 @@ public class AssociationType implements ImmutableType {
                     "There is no property whose id is " + id + " in \"" + this + "\""
                 );
         }
-    }
-
-    @NotNull
-    @Override
-    public List<ImmutableProp> getPropChainByColumnName(String columnName) {
-        List<ImmutableProp> chain = chainMap.get(DatabaseIdentifiers.comparableIdentifier(columnName));
-        if (chain == null) {
-            throw new IllegalArgumentException(
-                    "There is no property whose column name is \"" +
-                            columnName +
-                            "\" in type \"" +
-                            this +
-                            "\""
-            );
-        }
-        return chain;
-    }
-
-    @NotNull
-    @Override
-    public Map<String, ImmutableProp> getSelectableProps() {
-        return props;
-    }
-
-    @NotNull
-    @Override
-    public Map<String, ImmutableProp> getSelectableReferenceProps() {
-        return props;
     }
 
     @NotNull
@@ -263,12 +208,6 @@ public class AssociationType implements ImmutableType {
     @Override
     public Set<ImmutableProp> getKeyProps() {
         return Collections.emptySet();
-    }
-
-    @Nullable
-    @Override
-    public IdGenerator getIdGenerator() {
-        return null;
     }
 
     @Override

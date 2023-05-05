@@ -4,7 +4,6 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
-import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.junit.jupiter.api.Test;

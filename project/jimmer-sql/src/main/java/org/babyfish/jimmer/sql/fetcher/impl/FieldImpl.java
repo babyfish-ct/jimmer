@@ -128,7 +128,7 @@ class FieldImpl implements Field {
     }
 
     private boolean determineIsSimpleField() {
-        if (prop.getStorage() instanceof ColumnDefinition) {
+        if (prop.isColumnDefinition()) {
             return childFetcher == null || childFetcher.getFieldMap().size() == 1;
         }
         if (prop.getSqlTemplate() instanceof FormulaTemplate) {

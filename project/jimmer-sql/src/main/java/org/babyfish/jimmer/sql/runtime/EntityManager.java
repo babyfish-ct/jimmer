@@ -21,9 +21,6 @@ public class EntityManager {
 
     private final Map<ImmutableType, ImmutableTypeInfo> map;
 
-    // Map<MicroServiceName, Map<UpperCase(TableName), *>>
-    private final Map<String, Map<String, ImmutableType>> tableNameTypeMap;
-
     public EntityManager(Class<?> ... classes) {
         this(Arrays.asList(classes));
     }
@@ -69,15 +66,15 @@ public class EntityManager {
                         }
                     }
                 }
-                for (ImmutableProp prop : entityProps(type)) {
+                for (ImmutableProp prop : type.getProps().values()) {
                     ImmutableType targetType = prop.getTargetType();
-                    if (targetType != null && targetType.isEntity()) {
+                    if (targetType != null && targetType.isEntity() && !prop.isRemote()) {
                         ImmutableTypeInfo targetInfo = map.get(targetType);
                         if (targetInfo == null) {
                             throw new IllegalArgumentException(
                                     "The target type \"" +
                                             targetType +
-                                            "\" of the property \"" +
+                                            "\" of the non-remote property \"" +
                                             prop +
                                             "\" is not manged by the current entity manager"
                             );
@@ -94,7 +91,6 @@ public class EntityManager {
             info.backProps = Collections.unmodifiableList(info.backProps);
         }
         this.map = Collections.unmodifiableMap(map);
-        this.tableNameTypeMap = createTableNameTypeMap();
     }
 
     public static EntityManager combine(EntityManager ... entityManagers) {
@@ -191,31 +187,6 @@ public class EntityManager {
         return info(type).backProps;
     }
 
-    @Nullable
-    public ImmutableType getTypeByTableName(String microServiceName, String tableName) {
-        Map<String, ImmutableType> subMap = tableNameTypeMap.get(microServiceName);
-        if (subMap == null) {
-            return null;
-        }
-        String standardTableName = DatabaseIdentifiers.comparableIdentifier(tableName);
-        return subMap.get(standardTableName);
-    }
-
-    @NotNull
-    public ImmutableType getNonNullTypeByTableName(String microServiceName, String tableName) {
-        ImmutableType type = getTypeByTableName(microServiceName, tableName);
-        if (type == null) {
-            throw new IllegalArgumentException(
-                    "The table \"" +
-                            tableName +
-                            "\" of micro service \"" +
-                            microServiceName +
-                            "\" is not managed by current EntityManager"
-            );
-        }
-        return type;
-    }
-
     private ImmutableTypeInfo info(ImmutableType type) {
         ImmutableTypeInfo info = map.get(type);
         if (info == null) {
@@ -237,78 +208,6 @@ public class EntityManager {
             return false;
         }
         return type.getSuperType().isMappedSuperclass();
-    }
-
-    private Map<String, Map<String, ImmutableType>> createTableNameTypeMap() {
-        Map<String, Map<String, ImmutableType>> tableNameTypeMap = new HashMap<>();
-        for (ImmutableType type : map.keySet()) {
-            if (!type.isEntity()) {
-                continue;
-            }
-            Map<String, ImmutableType> subMap = tableNameTypeMap.computeIfAbsent(
-                    type.getMicroServiceName(),
-                    it -> new HashMap<>()
-            );
-            String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName());
-            ImmutableType oldType = subMap.put(tableName, type);
-            if (oldType != null) {
-                tableSharedBy(tableName, oldType, type);
-            }
-            subMap.put(tableName, type);
-            for (ImmutableProp prop : entityProps(type)) {
-                if (prop.getStorage() instanceof MiddleTable) {
-                    AssociationType associationType = AssociationType.of(prop);
-                    String associationTableName = DatabaseIdentifiers.comparableIdentifier(associationType.getTableName());
-                    oldType = subMap.put(associationTableName, associationType);
-                    if (oldType != null && !oldType.equals(associationType)) {
-                        tableSharedBy(tableName, oldType, associationType);
-                    }
-                    subMap.put(associationTableName, associationType);
-                }
-            }
-        }
-        return tableNameTypeMap;
-    }
-
-    private static void tableSharedBy(String tableName, ImmutableType type1, ImmutableType type2) {
-        if (type1 instanceof AssociationType && type2 instanceof AssociationType) {
-            AssociationType associationType1 = (AssociationType) type1;
-            AssociationType associationType2 = (AssociationType) type2;
-            if (associationType1.getSourceType() == associationType2.getTargetType() &&
-                    associationType1.getTargetType() == associationType2.getSourceType()) {
-                throw new IllegalArgumentException(
-                        "Illegal entity manager, the table \"" +
-                                tableName +
-                                "\" is shared by both \"" +
-                                type1 +
-                                "\" and \"" +
-                                type2 +
-                                "\". These two associations seem to form a bidirectional association, " +
-                                "if so, please make one of them real (using @" +
-                                JoinTable.class +
-                                ") and the other image (specify `mappedBy` of @" +
-                                ManyToOne.class +
-                                ")"
-                );
-            }
-        }
-        throw new IllegalArgumentException(
-                "Illegal entity manager, the table \"" +
-                        tableName +
-                        "\" is shared by both \"" +
-                        type1 +
-                        "\" and \"" +
-                        type2 +
-                        "\""
-        );
-    }
-
-    private static Collection<ImmutableProp> entityProps(ImmutableType type) {
-        ImmutableType superType = type.getSuperType();
-        if (superType != null && superType.isMappedSuperclass()) {
-            return type.getProps().values();
-        }
-        return type.getDeclaredProps().values();
     }
 
     private static class ImmutableTypeInfo {

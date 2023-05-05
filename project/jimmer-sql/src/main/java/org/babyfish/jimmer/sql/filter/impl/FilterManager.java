@@ -21,6 +21,7 @@ import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.impl.util.StaticCache;
@@ -605,9 +606,10 @@ public class FilterManager implements Filters {
         if (!(sqlClient.getCaches().getPropertyCache(prop) instanceof Cache.Parameterized<?, ?>)) {
             return;
         }
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
         if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             ImmutableProp mappedBy = prop.getMappedBy();
-            if (mappedBy != null && mappedBy.getStorage() instanceof ColumnDefinition) {
+            if (mappedBy != null && metadata.getStorage(mappedBy) instanceof ColumnDefinition) {
                 if (e.getUnchangedFieldRef(mappedBy) == null) {
                     return;
                 }
@@ -629,7 +631,7 @@ public class FilterManager implements Filters {
     private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
         Triggers triggers = sqlClient.getTriggers();
         ImmutableProp mappedBy = prop.getMappedBy();
-        if (mappedBy != null && mappedBy.getStorage() instanceof ColumnDefinition) {
+        if (mappedBy != null && sqlClient.getDatabaseMetadata().getStorage(mappedBy) instanceof ColumnDefinition) {
             Ref<Object> ref = e.getUnchangedFieldRef(mappedBy);
             if (ref != null) {
                 ImmutableSpi source = (ImmutableSpi) ref.getValue();

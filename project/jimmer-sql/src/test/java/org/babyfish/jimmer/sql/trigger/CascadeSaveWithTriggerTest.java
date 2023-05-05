@@ -5,7 +5,6 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.*;

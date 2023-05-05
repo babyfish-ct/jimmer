@@ -2,8 +2,10 @@ package org.babyfish.jimmer.sql.util;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.inheritance.*;
+import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,21 +59,26 @@ public class EntityManagerTest {
 
     @Test
     public void testTableName() {
+        DatabaseMetadata metadata = new DatabaseMetadata(
+                DefaultDatabaseNamingStrategy.UPPER_CASE,
+                JimmerModule.ENTITY_MANAGER,
+                ""
+        );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "`roLE`")
+                metadata.getTypeByTableName("`roLE`")
         );
         Assertions.assertEquals(
                 ImmutableType.get(Permission.class),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "[PerMission]")
+                metadata.getTypeByTableName("[PerMission]")
         );
         Assertions.assertEquals(
                 ImmutableType.get(Administrator.class),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "\"Administrator\"")
+                metadata.getTypeByTableName("\"Administrator\"")
         );
         Assertions.assertEquals(
                 AssociationType.of(AdministratorProps.ROLES),
-                JimmerModule.ENTITY_MANAGER.getTypeByTableName("", "`Administrator_Role_Mapping`")
+                metadata.getTypeByTableName("`Administrator_Role_Mapping`")
         );
     }
 }

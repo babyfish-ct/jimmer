@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
@@ -41,4 +42,7 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
 
     override val javaOrders: List<Order>
         get() = (javaQuery as ConfigurableRootQueryImplementor<*, *>).orders
+
+    override val javaSqlClient: JSqlClient
+        get() = (javaQuery as ConfigurableRootQueryImplementor<*, *>).sqlClient
 }

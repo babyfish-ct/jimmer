@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -90,12 +91,14 @@ public class BinLogParser {
         Object sourceId = null;
         Object targetId = null;
 
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
+
         if (sourceIdProp.isEmbedded(EmbeddedLevel.SCALAR)) {
             sourceId = Internal.produce(sourceIdProp.getTargetType(), null, draft -> {
                 Iterator<Map.Entry<String, JsonNode>> itr = data.fields();
                 while (itr.hasNext()) {
                     Map.Entry<String, JsonNode> e = itr.next();
-                    List<ImmutableProp> chain = associationType.getPropChainByColumnName(e.getKey());
+                    List<ImmutableProp> chain = metadata.getPropChainByColumnName(associationType, e.getKey());
                     if (chain.get(0) == sourceProp) {
                         ValueParser.addEntityProp(
                                 (DraftSpi) draft,
@@ -120,7 +123,7 @@ public class BinLogParser {
                 Iterator<Map.Entry<String, JsonNode>> itr = data.fields();
                 while (itr.hasNext()) {
                     Map.Entry<String, JsonNode> e = itr.next();
-                    List<ImmutableProp> chain = associationType.getPropChainByColumnName(e.getKey());
+                    List<ImmutableProp> chain = metadata.getPropChainByColumnName(associationType, e.getKey());
                     if (chain.get(0) == targetProp) {
                         ValueParser.addEntityProp(
                                 (DraftSpi) draft,
@@ -144,7 +147,7 @@ public class BinLogParser {
             Iterator<Map.Entry<String, JsonNode>> itr = data.fields();
             while (itr.hasNext()) {
                 Map.Entry<String, JsonNode> e = itr.next();
-                List<ImmutableProp> chain = associationType.getPropChainByColumnName(e.getKey());
+                List<ImmutableProp> chain = metadata.getPropChainByColumnName(associationType, e.getKey());
                 ImmutableProp prop = chain.get(0);
                 if (prop == sourceProp) {
                     sourceId = ValueParser.parseSingleValue(

@@ -20,6 +20,8 @@ import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
@@ -108,6 +110,8 @@ public interface JSqlClient extends SubQueryProvider {
      * @return Trigger
      */
     Triggers getTriggers(boolean transaction);
+
+    DatabaseMetadata getDatabaseMetadata();
 
     BinLog getBinLog();
 
@@ -209,6 +213,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
+
+        @OldChain
+        Builder setDatabaseNamingStrategy(DatabaseNamingStrategy strategy);
 
         @OldChain
         Builder setDefaultBatchSize(int size);

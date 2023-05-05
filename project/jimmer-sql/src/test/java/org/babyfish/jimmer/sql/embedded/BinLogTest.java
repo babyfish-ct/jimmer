@@ -18,7 +18,7 @@ import static org.babyfish.jimmer.sql.common.Constants.learningGraphQLId1;
 
 public class BinLogTest {
 
-    private final JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(new EntityManager()).build();
+    private final JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
 
     @Test
     public void testTransform() {

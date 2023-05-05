@@ -88,7 +88,7 @@ class KExample<E: Any> internal constructor(
         val predicates = mutableListOf<Predicate?>()
         for (prop in spi.__type().props.values) {
             if (spi.__isLoaded(prop.id) &&
-                (prop.getStorage<Storage>() is ColumnDefinition || prop.sqlTemplate is FormulaTemplate)) {
+                (prop.isColumnDefinition || prop.sqlTemplate is FormulaTemplate)) {
                 val value = valueOf(spi, prop)
                 val expr = expressionOf(table, prop, value == null)
                 val data = propDataMap[prop]

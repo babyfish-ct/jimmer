@@ -119,7 +119,7 @@ class Saver {
 
         for (ImmutableProp prop : currentType.getProps().values()) {
             if (prop.isAssociation(TargetLevel.ENTITY) &&
-                    prop.getStorage() instanceof ColumnDefinition == forParent &&
+                    prop.isColumnDefinition() == forParent &&
                     currentDraftSpi.__isLoaded(prop.getId())
             ) {
                 ImmutableType targetType = prop.getTargetType();
@@ -152,7 +152,7 @@ class Saver {
 
                 ImmutableProp mappedBy = prop.getMappedBy();
                 ChildTableOperator childTableOperator = null;
-                if (!prop.isRemote() && mappedBy != null && mappedBy.getStorage() instanceof ColumnDefinition) {
+                if (!prop.isRemote() && mappedBy != null && mappedBy.isColumnDefinition()) {
                     childTableOperator = new ChildTableOperator(
                             data.getSqlClient(),
                             con,
@@ -480,7 +480,7 @@ class Saver {
         List<ImmutableProp> props = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         for (ImmutableProp prop : draftSpi.__type().getProps().values()) {
-            if (prop.getStorage() instanceof ColumnDefinition && draftSpi.__isLoaded(prop.getId())) {
+            if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
                 ScalarProvider<Object, Object> scalarProvider;
@@ -519,15 +519,16 @@ class Saver {
             );
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
+        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
         builder
                 .sql("insert into ")
-                .sql(type.getTableName())
+                .sql(metadata.getTableName(type))
                 .sql("(");
         String separator = "";
         for (ImmutableProp prop : props) {
             builder.sql(separator);
             separator = ", ";
-            builder.sql(prop.<ColumnDefinition>getStorage());
+            builder.sql(metadata.<ColumnDefinition>getStorage(prop));
         }
         builder.sql(")");
         if (id != null && idGenerator instanceof IdentityIdGenerator) {
@@ -555,7 +556,7 @@ class Saver {
         if (generateKeys) {
             Dialect dialect = data.getSqlClient().getDialect();
             if (dialect instanceof PostgresDialect) {
-                builder.sql(" returning ").sql(type.getIdProp().<SingleColumn>getStorage().getName());
+                builder.sql(" returning ").sql(metadata.<SingleColumn>getStorage(type.getIdProp()).getName());
             } else if (dialect instanceof OracleDialect) {
                 throw new ExecutionException(
                         "\"" +
@@ -621,7 +622,7 @@ class Saver {
         Integer version = null;
 
         for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.getStorage() instanceof ColumnDefinition && draftSpi.__isLoaded(prop.getId())) {
+            if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
                 if (prop.isVersion()) {
                     version = (Integer) draftSpi.__get(prop.getId());
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
@@ -669,9 +670,10 @@ class Saver {
             return false;
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
+        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
         builder
                 .sql("update ")
-                .sql(type.getTableName())
+                .sql(metadata.getTableName(type))
                 .sql(" set ");
 
         String separator = "";
@@ -681,8 +683,9 @@ class Saver {
             separator = ", ";
             builder.assignment(updatedProps.get(i), updatedValues.get(i));
         }
+        String versionColumName = null;
         if (version != null) {
-            String versionColumName = type.getVersionProp().<SingleColumn>getStorage().getName();
+            versionColumName = metadata.<SingleColumn>getStorage(type.getVersionProp()).getName();
             builder
                     .sql(separator)
                     .sql(versionColumName)
@@ -693,13 +696,13 @@ class Saver {
         builder.sql(" where ");
 
         builder.
-                sql(null, type.getIdProp().getStorage(), true)
+                sql(null, metadata.getStorage(type.getIdProp()), true)
                 .sql(" = ")
                 .variable(draftSpi.__get(type.getIdProp().getId()));
-        if (version != null) {
+        if (versionColumName != null) {
             builder
                     .sql(" and ")
-                    .sql(type.getVersionProp().<SingleColumn>getStorage().getName())
+                    .sql(versionColumName)
                     .sql(" = ")
                     .variable(version);
         }

@@ -37,6 +37,8 @@ import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
@@ -79,6 +81,8 @@ class JSqlClientImpl implements JSqlClient {
 
     private final Triggers transactionTriggers;
 
+    private final DatabaseMetadata databaseMetadata;
+
     private final BinLog binLog;
 
     private final TransientResolverManager transientResolverManager;
@@ -111,6 +115,7 @@ class JSqlClientImpl implements JSqlClient {
             Caches caches,
             Triggers triggers,
             Triggers transactionTriggers,
+            DatabaseMetadata databaseMetadata,
             BinLog binLog,
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
@@ -157,6 +162,7 @@ class JSqlClientImpl implements JSqlClient {
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
+        this.databaseMetadata = databaseMetadata;
     }
 
     @Override
@@ -211,7 +217,7 @@ class JSqlClientImpl implements JSqlClient {
         if (userIdGenerator == null) {
             userIdGenerator = idGeneratorMap.get(null);
             if (userIdGenerator == null) {
-                userIdGenerator = ImmutableType.get(entityType).getIdGenerator();
+                userIdGenerator = databaseMetadata.getIdGenerator(ImmutableType.get(entityType));
             }
         }
         return userIdGenerator;
@@ -318,8 +324,9 @@ class JSqlClientImpl implements JSqlClient {
         return triggers;
     }
 
-    public Triggers tryGetTransactionTriggers() {
-        return transactionTriggers;
+    @Override
+    public DatabaseMetadata getDatabaseMetadata() {
+        return databaseMetadata;
     }
 
     @Override
@@ -384,6 +391,7 @@ class JSqlClientImpl implements JSqlClient {
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
                 transactionTriggers,
+                databaseMetadata,
                 binLog,
                 filterManager,
                 transientResolverManager,
@@ -419,6 +427,7 @@ class JSqlClientImpl implements JSqlClient {
                 caches,
                 triggers,
                 transactionTriggers,
+                databaseMetadata,
                 binLog,
                 cfg.getFilterManager(),
                 transientResolverManager,
@@ -449,6 +458,7 @@ class JSqlClientImpl implements JSqlClient {
                 caches,
                 triggers,
                 transactionTriggers,
+                databaseMetadata,
                 binLog,
                 filterManager,
                 transientResolverManager,
@@ -527,6 +537,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
 
+        private DatabaseNamingStrategy databaseNamingStrategy = DefaultDatabaseNamingStrategy.UPPER_CASE;
+
         private int defaultBatchSize = DEFAULT_BATCH_SIZE;
 
         private int defaultListBatchSize = DEFAULT_LIST_BATCH_SIZE;
@@ -555,9 +567,9 @@ class JSqlClientImpl implements JSqlClient {
 
         private ObjectMapper binLogObjectMapper;
 
-        private Set<Customizer> customizers = new LinkedHashSet<>();
+        private final Set<Customizer> customizers = new LinkedHashSet<>();
 
-        private Set<Initializer> initializers = new LinkedHashSet<>();
+        private final Set<Initializer> initializers = new LinkedHashSet<>();
 
         private DatabaseValidationMode databaseValidationMode = DatabaseValidationMode.NONE;
 
@@ -751,6 +763,12 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         public Builder setDefaultEnumStrategy(EnumType.Strategy strategy) {
             this.defaultEnumStrategy = strategy != null ? strategy : EnumType.Strategy.NAME;
+            return this;
+        }
+
+        @Override
+        public Builder setDatabaseNamingStrategy(DatabaseNamingStrategy strategy) {
+            this.databaseNamingStrategy = strategy != null ? strategy : DefaultDatabaseNamingStrategy.UPPER_CASE;
             return this;
         }
 
@@ -967,12 +985,17 @@ class JSqlClientImpl implements JSqlClient {
             FilterManager filterManager = createFilterManager();
             validateAssociations(filterManager);
             createTriggersIfNecessary();
+            DatabaseMetadata databaseMetadata =
+                    new DatabaseMetadata(
+                            databaseNamingStrategy,
+                            entityManager(),
+                            microServiceName
+                    );
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
-                    entityManager(),
+                    databaseMetadata,
                     binLogParser,
-                    triggers,
-                    microServiceName
+                    triggers
             );
             TransientResolverManager transientResolverManager =
                     new TransientResolverManager(
@@ -996,6 +1019,7 @@ class JSqlClientImpl implements JSqlClient {
                     caches,
                     triggers,
                     transactionTriggers,
+                    databaseMetadata,
                     binLog,
                     filterManager,
                     transientResolverManager,
@@ -1016,7 +1040,7 @@ class JSqlClientImpl implements JSqlClient {
                     );
                 }
             }
-            validateDatabase();
+            validateDatabase(databaseMetadata);
             return sqlClient;
         }
 
@@ -1085,7 +1109,7 @@ class JSqlClientImpl implements JSqlClient {
             }
         }
 
-        private void validateDatabase() {
+        private void validateDatabase(DatabaseMetadata databaseMetadata) {
             if (databaseValidationMode != DatabaseValidationMode.NONE) {
                 ConnectionManager cm = connectionManager;
                 if (cm == null) {
@@ -1095,7 +1119,7 @@ class JSqlClientImpl implements JSqlClient {
                 }
                 DatabaseValidationException validationException = cm.execute(con -> {
                     try {
-                        return DatabaseValidators.validate(entityManager(), microServiceName, databaseValidationCatalog, con);
+                        return DatabaseValidators.validate(databaseMetadata, databaseValidationCatalog, con);
                     } catch (SQLException ex) {
                         throw new ExecutionException(
                                 "Cannot validate the database because of SQL exception",

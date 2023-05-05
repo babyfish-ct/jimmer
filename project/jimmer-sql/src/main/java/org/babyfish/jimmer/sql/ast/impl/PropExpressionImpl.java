@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -94,7 +95,7 @@ public class PropExpressionImpl<T>
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
-        if (!(prop.getStorage() instanceof ColumnDefinition) && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
+        if (!prop.isColumnDefinition() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
             throw new IllegalArgumentException("prop is not selectable");
         }
         this.table = table;
@@ -126,9 +127,9 @@ public class PropExpressionImpl<T>
     }
 
     @Override
-    public EmbeddedColumns.Partial getPartial() {
+    public EmbeddedColumns.Partial getPartial(DatabaseMetadata metadata) {
         if (base != null || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            return ((EmbeddedColumns)prop.getStorage()).partial(path);
+            return metadata.<EmbeddedColumns>getStorage(prop).partial(path);
         }
         return null;
     }
@@ -146,7 +147,7 @@ public class PropExpressionImpl<T>
     @Override
     public void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple) {
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
-        EmbeddedColumns.Partial partial = getPartial();
+        EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getDatabaseMetadata());
         if (partial != null) {
             if (ignoreEmbeddedTuple || partial.size() == 1) {
                 tableImplementor.renderSelection(prop, builder, path != null ? partial : null);

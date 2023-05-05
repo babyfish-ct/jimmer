@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -53,8 +54,8 @@ class ChildTableOperator {
         this.sqlClient = sqlClient;
         this.con = con;
         this.parentProp = parentProp;
-        this.fkDefinition = parentProp.getStorage();
-        this.pkDefinition = parentProp.getDeclaringType().getIdProp().getStorage();
+        this.fkDefinition = sqlClient.getDatabaseMetadata().getStorage(parentProp);
+        this.pkDefinition = sqlClient.getDatabaseMetadata().getStorage(parentProp.getDeclaringType().getIdProp());
         this.pkReader = (Reader<Object>) sqlClient.getReader(parentProp.getDeclaringType().getIdProp());
         this.pessimisticLockRequired = pessimisticLockRequired;
         if (trigger != null) {
@@ -69,17 +70,18 @@ class ChildTableOperator {
     public boolean exists(Object parentId, Collection<Object> retainedChildIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         SqlBuilder subBuilder = builder.createChildBuilder();
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
         subBuilder
                 .sql("select 1 from ")
-                .sql(parentProp.getDeclaringType().getTableName())
+                .sql(metadata.getTableName(parentProp.getDeclaringType()))
                 .sql(" where ")
-                .sql(parentProp.<ColumnDefinition>getStorage())
+                .sql(metadata.<ColumnDefinition>getStorage(parentProp))
                 .sql(" = ")
                 .variable(parentId);
         if (!retainedChildIds.isEmpty()) {
             subBuilder
                     .sql(" and ")
-                    .sql(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage())
+                    .sql(metadata.<ColumnDefinition>getStorage(parentProp.getDeclaringType().getIdProp()))
                     .sql(" not in(");
             String separator = "";
             for (Object retainedChildId : retainedChildIds) {
@@ -154,11 +156,12 @@ class ChildTableOperator {
 
     private int setParentImpl(Object parentId, Collection<Object> childIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
         builder
                 .sql("update ")
-                .sql(parentProp.getDeclaringType().getTableName())
+                .sql(metadata.getTableName(parentProp.getDeclaringType()))
                 .sql(" set ");
-        ColumnDefinition definition = parentProp.getStorage();
+        ColumnDefinition definition = metadata.getStorage(parentProp);
         if (definition instanceof SingleColumn) {
             builder.sql(((SingleColumn)definition).getName()).sql(" = ");
             if (parentId == null) {
@@ -268,13 +271,14 @@ class ChildTableOperator {
     private int unsetParentImpl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
         
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
         builder
                 .sql("update ")
-                .sql(parentProp.getDeclaringType().getTableName())
+                .sql(metadata.getTableName(parentProp.getDeclaringType()))
                 .sql(" set ");
-        ColumnDefinition definition = parentProp.getStorage();
+        ColumnDefinition definition = metadata.getStorage(parentProp);
         if (definition instanceof SingleColumn) {
-            builder.sql(parentProp.<SingleColumn>getStorage().getName()).sql(" = null");
+            builder.sql(((SingleColumn)definition).getName()).sql(" = null");
         } else {
             boolean addComma = false;
             for (String columName : definition) {
@@ -302,12 +306,13 @@ class ChildTableOperator {
 
     public List<Object> getDetachedChildIds(Object parentId, Collection<Object> retainedChildIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
         ImmutableProp idProp = parentProp.getDeclaringType().getIdProp();
         builder
                 .sql("select ")
-                .sql(idProp.<ColumnDefinition>getStorage())
+                .sql(metadata.<ColumnDefinition>getStorage(idProp))
                 .sql(" from ")
-                .sql(parentProp.getDeclaringType().getTableName());
+                .sql(metadata.getTableName(parentProp.getDeclaringType()));
         addDetachConditions(builder, Collections.singleton(parentId), retainedChildIds);
         if (pessimisticLockRequired) {
             builder.sql(" for update");

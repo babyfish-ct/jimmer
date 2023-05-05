@@ -11,7 +11,9 @@ import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.JoinTemplate;
+import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,9 +63,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private boolean converterResolved;
 
-    private Storage storage;
-
-    private boolean storageResolved;
+    private int storageType; // 1: NONE, 2: COLUMN_DEFINITION, 3: MIDDLE_TABLE
 
     private ImmutableTypeImpl targetType;
 
@@ -785,27 +785,41 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         return dissociateAction;
     }
 
-    @SuppressWarnings("unchecked")
-    public <S extends Storage> S getStorage() {
-        if (storageResolved) {
-            return (S)storage;
+    @Override
+    public boolean hasStorage() {
+        return getStorageType() > 1;
+    }
+
+    @Override
+    public boolean isColumnDefinition() {
+        return getStorageType() == 2;
+    }
+
+    @Override
+    public boolean isMiddleTableDefinition() {
+        return getStorageType() == 3;
+    }
+
+    private int getStorageType() {
+        int type = storageType;
+        if (type == 0) {
+            int result;
+            if (isTransient() ||
+                    isFormula() ||
+                    !getDependencies().isEmpty() ||
+                    getDeclaringType().isEmbeddable() ||
+                    getSqlTemplate() instanceof JoinTemplate ||
+                    getMappedBy() != null
+            ) {
+                result = 1;
+            } else if (!(associationAnnotation instanceof ManyToMany) && getAnnotation(JoinTable.class) == null) {
+                result = 2;
+            } else {
+                result = 3;
+            }
+            storageType = type = result;
         }
-        validateDeclaringEntity("storage");
-        storage = Storages.of(this);
-        storageResolved = true;
-        if (!nullable &&
-                storage instanceof ColumnDefinition &&
-                isReference(TargetLevel.ENTITY) &&
-                !((ColumnDefinition) storage).isForeignKey()
-        ) {
-            throw new ModelException(
-                "Illegal reference association property \"" +
-                        this +
-                        "\", it is based on fake foreign key(`foreignKey` = false), " +
-                        "so that it must be nullable"
-            );
-        }
-        return (S)storage;
+        return type;
     }
 
     @Override
@@ -939,13 +953,13 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                     "\""
                     );
                 }
-                if (resolved.getStorage() == null && !(resolved.getSqlTemplate() instanceof JoinTemplate)) {
+                if (!resolved.hasStorage() && !(resolved.getSqlTemplate() instanceof JoinTemplate)) {
                     throw new ModelException(
                             "The property \"" +
                                     resolved +
                                     "\" is illegal, it's not persistence property so that " +
                                     "\"" +
-                                    "this" +
+                                    this +
                                     "\" cannot reference it by \"mappedBy\""
                     );
                 }
@@ -1030,6 +1044,12 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     }
 
     @Override
+    public ImmutableProp getReal() {
+        ImmutableProp mappedBy = getMappedBy();
+        return mappedBy != null ? mappedBy : this;
+    }
+
+    @Override
     public List<Dependency> getDependencies() {
         List<Dependency> list = dependencies;
         if (list == null) {
@@ -1102,7 +1122,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
                                 );
                             }
                             boolean isValid = prop.isFormula() || (
-                                    prop.getStorage() != null && !prop.isReference(TargetLevel.PERSISTENT)
+                                    prop.hasStorage() && !prop.isReference(TargetLevel.PERSISTENT)
                             );
                             if (!isValid) {
                                 throw new ModelException(

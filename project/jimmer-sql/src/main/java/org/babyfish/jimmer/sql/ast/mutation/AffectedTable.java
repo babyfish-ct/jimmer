@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Objects;
@@ -60,7 +59,7 @@ public interface AffectedTable {
 
         @Override
         public String toString() {
-            return type.getTableName() + '(' + type + ')';
+            return "TableOf(" + type + ')';
         }
     }
 
@@ -73,7 +72,7 @@ public interface AffectedTable {
             ImmutableProp storageProp = prop.getMappedBy() != null ?
                     prop.getMappedBy() :
                     prop;
-            if (!(storageProp.getStorage() instanceof MiddleTable)) {
+            if (!storageProp.isMiddleTableDefinition()) {
                 throw new IllegalArgumentException(
                         "\"" + prop + "\" is neither middle table property nor inverse property of middle table property"
                 );
@@ -100,7 +99,7 @@ public interface AffectedTable {
 
         @Override
         public String toString() {
-            return prop.<MiddleTable>getStorage().getTableName() + '(' + prop + ')';
+            return "Middle table of(" + prop + ')';
         }
     }
 }

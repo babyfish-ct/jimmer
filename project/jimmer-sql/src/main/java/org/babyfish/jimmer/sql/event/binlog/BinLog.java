@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.Triggers;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,19 +14,16 @@ public class BinLog {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BinLog.class);
 
-    private final EntityManager entityManager;
+    private final DatabaseMetadata databaseMetadata;
 
     private final BinLogParser binLogParser;
 
     private final Triggers triggers;
 
-    private final String microServiceName;
-
-    public BinLog(EntityManager entityManager, BinLogParser binLogParser, Triggers triggers, String microServiceName) {
-        this.entityManager = entityManager;
+    public BinLog(DatabaseMetadata databaseMetadata, BinLogParser binLogParser, Triggers triggers) {
+        this.databaseMetadata = databaseMetadata;
         this.binLogParser = binLogParser;
         this.triggers = triggers;
-        this.microServiceName = microServiceName;
     }
 
     public void accept(String tableName, JsonNode oldData, JsonNode newData) {
@@ -38,12 +36,12 @@ public class BinLog {
         if (isOldNull && isNewNull) {
             return;
         }
-        ImmutableType type = entityManager.getTypeByTableName(microServiceName, tableName);
+        ImmutableType type = databaseMetadata.getTypeByTableName(tableName);
         if (type == null) {
             LOGGER.warn(
                     "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
                     tableName,
-                    microServiceName
+                    databaseMetadata.getMicroServiceName()
             );
             return;
         }

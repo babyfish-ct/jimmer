@@ -8,7 +8,7 @@ import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.spi.KNullablePropExpressionImplementor
-import org.babyfish.jimmer.sql.kt.ast.expression.sql
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KProperty1
@@ -46,6 +46,6 @@ internal class NullablePropExpressionImpl<T: Any>(
     override fun getProp(): ImmutableProp =
         javaPropExpression.prop
 
-    override fun getPartial(): EmbeddedColumns.Partial? =
-        javaPropExpression.partial
+    override fun getPartial(metadata: DatabaseMetadata): EmbeddedColumns.Partial? =
+        javaPropExpression.getPartial(metadata)
 }

@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 
 import java.sql.Connection;
 import java.util.Collection;

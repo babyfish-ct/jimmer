@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.kt.ast.expression.or
 import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
@@ -23,7 +22,7 @@ class SortDsl<E: Any>(
         if (!immutableProp.isScalar(TargetLevel.OBJECT)) {
             throw IllegalArgumentException("\"$immutableProp\" is not scalar property")
         }
-        if (immutableProp.getStorage<Storage>() == null) {
+        if (!immutableProp.hasStorage()) {
             throw IllegalArgumentException("\"$immutableProp\" is not mapped by database columns")
         }
         orders += Order(immutableProp, OrderMode.ASC, nullOrderMode)
@@ -34,7 +33,7 @@ class SortDsl<E: Any>(
         if (!immutableProp.isScalar(TargetLevel.OBJECT)) {
             throw IllegalArgumentException("\"$immutableProp\" is not scalar property")
         }
-        if (immutableProp.getStorage<Storage>() == null) {
+        if (!immutableProp.hasStorage()) {
             throw IllegalArgumentException("\"$immutableProp\" is not mapped by database columns")
         }
         orders += Order(immutableProp, OrderMode.DESC, nullOrderMode)

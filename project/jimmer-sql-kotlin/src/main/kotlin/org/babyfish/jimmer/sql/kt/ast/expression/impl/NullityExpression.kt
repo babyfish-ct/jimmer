@@ -19,7 +19,7 @@ internal abstract class NullityPredicate(
 
     override fun renderTo(builder: SqlBuilder) {
         if (expression is PropExpressionImplementor<*>) {
-            val partial = expression.partial
+            val partial = expression.getPartial(builder.astContext.sqlClient.databaseMetadata)
             if (partial != null) {
                 val table = expression.table as TableImplementor<*>
                 val prop = expression.prop
@@ -30,7 +30,9 @@ internal abstract class NullityPredicate(
                     } else {
                         addSeparator = true
                     }
-                    table.renderSelection(prop, builder, SingleColumn(column, false))
+                    table.renderSelection(prop, builder,
+                        SingleColumn(column, false)
+                    )
                     if (isNegative()) {
                         builder.sql(" is not null")
                     } else {

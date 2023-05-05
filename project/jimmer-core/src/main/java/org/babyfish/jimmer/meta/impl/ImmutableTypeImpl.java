@@ -2,20 +2,15 @@ package org.babyfish.jimmer.meta.impl;
 
 import kotlin.jvm.internal.ClassBasedDeclarationContainer;
 import kotlin.reflect.KClass;
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
-import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -51,8 +46,6 @@ class ImmutableTypeImpl implements ImmutableType {
 
     private ImmutableProp[] propArr;
 
-    private Map<String, List<ImmutableProp>> chainMap;
-
     private Map<String, ImmutableProp> selectableProps;
 
     private Map<String, ImmutableProp> selectableReferenceProps;
@@ -66,10 +59,6 @@ class ImmutableTypeImpl implements ImmutableType {
     private LogicalDeletedInfo logicalDeletedInfo;
 
     private Set<ImmutableProp> keyProps = Collections.emptySet();
-
-    private IdGenerator idGenerator;
-
-    private String tableName;
 
     private final String microServiceName;
 
@@ -137,12 +126,6 @@ class ImmutableTypeImpl implements ImmutableType {
                                 MappedSuperclass.class.getName()
                 );
             }
-        }
-
-        Table table = javaClass.getAnnotation(Table.class);
-        tableName = table != null ? table.name() : "";
-        if (tableName.isEmpty()) {
-            tableName = DatabaseIdentifiers.databaseIdentifier(javaClass.getSimpleName());
         }
 
         if (isEntity) {
@@ -252,12 +235,6 @@ class ImmutableTypeImpl implements ImmutableType {
 
     @NotNull
     @Override
-    public String getTableName() {
-        return tableName;
-    }
-
-    @NotNull
-    @Override
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
         if (props == null) {
@@ -318,72 +295,33 @@ class ImmutableTypeImpl implements ImmutableType {
         return arr;
     }
 
-    @NotNull
-    @Override
-    public List<ImmutableProp> getPropChainByColumnName(String columnName) {
-        String cmpName = DatabaseIdentifiers.comparableIdentifier(columnName);
-        List<ImmutableProp> chain = getChainMap().get(cmpName);
-        if (chain == null) {
-            throw new IllegalArgumentException(
-                    "There is no property chain whose column name is \"" +
-                            columnName +
-                            "\" in type \"" +
-                            this +
-                            "\""
-            );
-        }
-        return chain;
-    }
-
-    private Map<String, List<ImmutableProp>> getChainMap() {
-        Map<String, List<ImmutableProp>> map = chainMap;
+    public Map<String, ImmutableProp> getSelectableProps() {
+        Map<String, ImmutableProp> map = selectableProps;
         if (map == null) {
-            validateEntity();
             map = new LinkedHashMap<>();
+            map.put(idProp.getName(), idProp);
             for (ImmutableProp prop : getProps().values()) {
-                PropChains.addInto(prop, map);
+                if (!prop.isId() && prop.isColumnDefinition()) {
+                    map.put(prop.getName(), prop);
+                }
             }
-            chainMap = map;
+            selectableProps = map = Collections.unmodifiableMap(map);
         }
         return map;
     }
 
-    @NotNull
-    @Override
-    public Map<String, ImmutableProp> getSelectableProps() {
-        Map<String, ImmutableProp> selectableProps = this.selectableProps;
-        if (selectableProps == null) {
-            selectableProps = new LinkedHashMap<>();
-            for (ImmutableProp prop : getProps().values()) {
-                if (prop.isId() && prop.getStorage() instanceof ColumnDefinition) {
-                    selectableProps.put(prop.getName(), prop);
-                }
-            }
-            for (ImmutableProp prop : getProps().values()) {
-                if (!prop.isId() && prop.getStorage() instanceof ColumnDefinition) {
-                    selectableProps.put(prop.getName(), prop);
-                }
-            }
-            this.selectableProps = Collections.unmodifiableMap(selectableProps);
-        }
-        return selectableProps;
-    }
-
-    @NotNull
-    @Override
     public Map<String, ImmutableProp> getSelectableReferenceProps() {
-        Map<String, ImmutableProp> selectableReferenceProps = this.selectableReferenceProps;
-        if (selectableReferenceProps == null) {
-            validateEntity();
-            selectableReferenceProps = new LinkedHashMap<>();
+        Map<String, ImmutableProp> map = selectableReferenceProps;
+        if (map == null) {
+            map = new LinkedHashMap<>();
             for (ImmutableProp prop : getProps().values()) {
-                if (prop.isReference(TargetLevel.PERSISTENT) && prop.getStorage() instanceof ColumnDefinition) {
-                    selectableReferenceProps.put(prop.getName(), prop);
+                if (prop.isReference(TargetLevel.PERSISTENT) && prop.isColumnDefinition()) {
+                    map.put(prop.getName(), prop);
                 }
             }
-            this.selectableReferenceProps = Collections.unmodifiableMap(selectableReferenceProps);
+            selectableReferenceProps = map = Collections.unmodifiableMap(map);
         }
-        return selectableReferenceProps;
+        return map;
     }
 
     void setDeclaredProps(Map<String, ImmutableProp> map) {
@@ -398,167 +336,6 @@ class ImmutableTypeImpl implements ImmutableType {
             validateEmbeddedIdType(idProp.getTargetType(), null);
         }
         this.idProp = idProp;
-        GeneratedValue generatedValue = idProp.getAnnotation(GeneratedValue.class);
-        if (generatedValue == null) {
-            return;
-        }
-
-        Class<? extends IdGenerator> generatorType = generatedValue.generatorType();
-
-        GenerationType strategy = generatedValue.strategy();
-        GenerationType strategyFromGeneratorType = GenerationType.AUTO;
-        GenerationType strategyFromSequenceName = GenerationType.AUTO;
-
-        if (UserIdGenerator.class.isAssignableFrom(generatorType)) {
-            strategyFromGeneratorType = GenerationType.USER;
-        } else if (IdentityIdGenerator.class.isAssignableFrom(generatorType)) {
-            strategyFromGeneratorType = GenerationType.IDENTITY;
-        } else if (SequenceIdGenerator.class.isAssignableFrom(generatorType)) {
-            strategyFromGeneratorType = GenerationType.SEQUENCE;
-        }
-
-        if (!generatedValue.sequenceName().isEmpty()) {
-            strategyFromSequenceName = GenerationType.SEQUENCE;
-        }
-
-        if (strategy == GenerationType.USER && strategyFromGeneratorType != GenerationType.USER) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            idProp +
-                            "\", its generator strategy is explicitly specified to \"USER\"," +
-                            "but its generator type does not implement " +
-                            UserIdGenerator.class.getName()
-            );
-        }
-        if (strategy != GenerationType.AUTO &&
-                strategyFromGeneratorType != GenerationType.AUTO &&
-                strategy != strategyFromGeneratorType) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            idProp +
-                            "\", it's decorated by the annotation @" +
-                            GeneratedValue.class.getName() +
-                            " but that annotation has conflict attributes 'strategy' and 'generatorType'"
-            );
-        }
-        if (strategy != GenerationType.AUTO &&
-                strategyFromSequenceName != GenerationType.AUTO &&
-                strategy != strategyFromSequenceName) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            idProp +
-                            "\", it's decorated by the annotation @" +
-                            GeneratedValue.class.getName() +
-                            " but that annotation has conflict attributes 'strategy' and 'sequenceName'"
-            );
-        }
-        if (strategyFromGeneratorType != GenerationType.AUTO &&
-                strategyFromSequenceName != GenerationType.AUTO &&
-                strategyFromGeneratorType != strategyFromSequenceName) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            idProp +
-                            "\", it's decorated by the annotation @" +
-                            GeneratedValue.class.getName() +
-                            " but that annotation has conflict attributes 'generatorType' and 'sequenceName'"
-            );
-        }
-
-        if (strategy == GenerationType.AUTO) {
-            strategy = strategyFromGeneratorType;
-        }
-        if (strategy == GenerationType.AUTO) {
-            strategy = strategyFromSequenceName;
-        }
-        if (strategy == GenerationType.AUTO) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            idProp +
-                            "\", it's decorated by the annotation @" +
-                            GeneratedValue.class.getName() +
-                            " but that annotation does not have any attributes"
-            );
-        }
-
-        if ((strategy == GenerationType.IDENTITY || strategy == GenerationType.SEQUENCE)) {
-            Class<?> returnType = idProp.getElementClass();
-            if (!returnType.isPrimitive() && !Number.class.isAssignableFrom(returnType)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                idProp +
-                                "\", it's id generation strategy is \"" +
-                                strategy +
-                                "\", but that the type of id is not numeric"
-                );
-            }
-        } else if (strategy == GenerationType.USER) {
-            Class<?> returnType = idProp.getElementClass();
-            Map<?, Type> typeArguments = TypeUtils.getTypeArguments(generatorType, UserIdGenerator.class);
-            Class<?> parsedType = null;
-            if (!typeArguments.isEmpty()) {
-                Type type = typeArguments.values().iterator().next();
-                if (type instanceof Class<?>) {
-                    parsedType = (Class<?>) type;
-                }
-            }
-            if (parsedType == null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                idProp +
-                                "\", the generator type is \"" +
-                                generatorType.getName() +
-                                "\" does support type argument for \"" +
-                                UserIdGenerator.class +
-                                "\""
-                );
-            }
-            if (!Classes.matches(parsedType, returnType)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                idProp +
-                                "\", the generator type is \"" +
-                                generatorType.getName() +
-                                "\" generates id whose type is \"" +
-                                parsedType.getName() +
-                                "\" but the property returns \"" +
-                                returnType.getName() +
-                                "\""
-                );
-            }
-        }
-
-        if (strategy == GenerationType.USER) {
-            IdGenerator idGenerator = null;
-            String error = null;
-            Throwable errorCause = null;
-            if (generatorType == IdGenerator.None.class) {
-                error = "'generatorType' must be specified when 'strategy' is 'GenerationType.USER'";
-            }
-            try {
-                idGenerator = generatorType.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
-                error = "cannot create the instance of \"" + generatorType.getName() + "\"";
-                errorCause = ex;
-            } catch (InvocationTargetException ex) {
-                error = "cannot create the instance of \"" + generatorType.getName() + "\"";
-                errorCause = ex.getTargetException();
-            }
-            if (error != null) {
-                throw new ModelException(
-                        "Illegal property \"" + idProp + "\" with the annotation @GeneratedValue, " + error,
-                        errorCause
-                );
-            }
-            this.idGenerator = idGenerator;
-        } else if (strategy == GenerationType.IDENTITY) {
-            this.idGenerator = IdentityIdGenerator.INSTANCE;
-        } else if (strategy == GenerationType.SEQUENCE) {
-            String sequenceName = generatedValue.sequenceName();
-            if (sequenceName.isEmpty()) {
-                sequenceName = tableName + "_ID_SEQ";
-            }
-            idGenerator = new SequenceIdGenerator(sequenceName);
-        }
     }
 
     void setVersionProp(ImmutableProp versionProp) {
@@ -596,11 +373,6 @@ class ImmutableTypeImpl implements ImmutableType {
             set.add(keyProp);
         }
         this.keyProps = Collections.unmodifiableSet(set);
-    }
-
-    @Override
-    public IdGenerator getIdGenerator() {
-        return idGenerator;
     }
 
     @Override

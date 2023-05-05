@@ -79,9 +79,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         this.joinType = joinType;
 
         if (joinProp != null) {
-            if (joinProp.getStorage() instanceof MiddleTable) {
+            if (joinProp.isMiddleTableDefinition()) {
                 middleTableAlias = statement.getContext().allocateTableAlias();
-            } else if (joinProp.getSqlTemplate() == null && joinProp.getStorage() == null) {
+            } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
                 throw new AssertionError("Internal bug: Join property has not storage");
             }
         }
@@ -483,7 +483,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         } else {
             sqlBuilder
                     .sql(" from ")
-                    .sql(immutableType.getTableName())
+                    .sql(sqlBuilder.getAstContext().getSqlClient().getDatabaseMetadata().getTableName(immutableType))
                     .sql(" ")
                     .sql(alias);
         }
@@ -492,6 +492,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     @SuppressWarnings("unchecked")
     private void renderJoin(SqlBuilder builder, RenderMode mode) {
 
+        DatabaseMetadata metadata = builder.getAstContext().getSqlClient().getDatabaseMetadata();
+
         if (weakJoinHandle != null) {
             if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
                 Predicate predicate = weakJoinHandle.createPredicate(parent, this);
@@ -499,7 +501,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         .sql(" ")
                         .sql(joinType.name().toLowerCase())
                         .sql(" join ")
-                        .sql(immutableType.getTableName())
+                        .sql(metadata.getTableName(immutableType))
                         .sql(" ")
                         .sql(alias)
                         .sql(" on ");
@@ -523,10 +525,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         builder,
                         joinType,
                         parent.alias,
-                        joinProp.getStorage(),
-                        immutableType.getTableName(),
+                        metadata.getStorage(joinProp),
+                        metadata.getTableName(immutableType),
                         alias,
-                        immutableType.getIdProp().getStorage(),
+                        metadata.getStorage(immutableType.getIdProp()),
                         mode
                 );
             }
@@ -536,8 +538,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         TableImpl<?> parent = this.parent;
         JoinType joinType = this.joinType;
         MiddleTable middleTable = null;
-        if (joinProp.getStorage() instanceof MiddleTable) {
-            middleTable = joinProp.getStorage();
+        if (joinProp.isMiddleTableDefinition()) {
+            middleTable = metadata.getMiddleTable(joinProp);
         }
 
         if (middleTable != null) {
@@ -545,7 +547,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     builder,
                     joinType,
                     parent.alias,
-                    parent.immutableType.getIdProp().getStorage(),
+                    metadata.getStorage(parent.immutableType.getIdProp()),
                     middleTable.getTableName(),
                     middleTableAlias,
                     middleTable.getColumnDefinition(),
@@ -560,9 +562,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         joinType,
                         middleTableAlias,
                         middleTable.getTargetColumnDefinition(),
-                        immutableType.getTableName(),
+                        metadata.getTableName(immutableType),
                         alias,
-                        immutableType.getIdProp().getStorage(),
+                        metadata.getStorage(immutableType.getIdProp()),
                         RenderMode.NORMAL
                 );
             }
@@ -571,10 +573,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     builder,
                     joinType,
                     parent.alias,
-                    joinProp.getStorage(),
-                    immutableType.getTableName(),
+                    metadata.getStorage(joinProp),
+                    metadata.getTableName(immutableType),
                     alias,
-                    immutableType.getIdProp().getStorage(),
+                    metadata.getStorage(immutableType.getIdProp()),
                     mode
             );
         }
@@ -582,6 +584,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     private void renderInverseJoin(SqlBuilder sqlBuilder, RenderMode mode) {
 
+        DatabaseMetadata metadata = sqlBuilder.getAstContext().getSqlClient().getDatabaseMetadata();
         TableImpl<?> parent = this.parent;
         JoinType joinType = this.joinType;
 
@@ -591,8 +594,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
 
         MiddleTable middleTable = null;
-        if (joinProp.getStorage() instanceof MiddleTable) {
-            middleTable = joinProp.getStorage();
+        if (joinProp.isMiddleTableDefinition()) {
+            middleTable = metadata.getMiddleTable(joinProp);
         }
 
         if (middleTable != null) {
@@ -600,7 +603,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     sqlBuilder,
                     joinType,
                     parent.alias,
-                    parent.immutableType.getIdProp().getStorage(),
+                    metadata.getStorage(parent.immutableType.getIdProp()),
                     middleTable.getTableName(),
                     middleTableAlias,
                     middleTable.getTargetColumnDefinition(),
@@ -615,9 +618,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         joinType,
                         middleTableAlias,
                         middleTable.getColumnDefinition(),
-                        immutableType.getTableName(),
+                        metadata.getTableName(immutableType),
                         alias,
-                        immutableType.getIdProp().getStorage(),
+                        metadata.getStorage(immutableType.getIdProp()),
                         RenderMode.NORMAL
                 );
             }
@@ -626,10 +629,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                     sqlBuilder,
                     joinType,
                     parent.alias,
-                    parent.immutableType.getIdProp().getStorage(),
-                    immutableType.getTableName(),
+                    metadata.getStorage(parent.immutableType.getIdProp()),
+                    metadata.getTableName(immutableType),
                     alias,
-                    joinProp.getStorage(),
+                    metadata.getStorage(joinProp),
                     mode
             );
         }
@@ -641,20 +644,21 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             RenderMode mode
     ) {
         if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
+            DatabaseMetadata metadata = builder.getAstContext().getSqlClient().getDatabaseMetadata();
             switch (mode) {
                 case NORMAL:
                     builder
                             .sql(" ")
                             .sql(joinType.name().toLowerCase())
                             .sql(" join ")
-                            .sql(immutableType.getTableName())
+                            .sql(metadata.getTableName(immutableType))
                             .sql(" ")
                             .sql(alias)
                             .sql(" on ");
                     break;
                 case FROM_ONLY:
                     builder
-                            .sql(immutableType.getTableName())
+                            .sql(metadata.getTableName(immutableType))
                             .sql(" ")
                             .sql(alias);
                     break;
@@ -729,10 +733,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
+        DatabaseMetadata metadata = builder.getAstContext().getSqlClient().getDatabaseMetadata();
         if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate)) {
             MiddleTable middleTable;
-            if (joinProp.getStorage() instanceof MiddleTable) {
-                middleTable = joinProp.getStorage();
+            if (joinProp.isMiddleTableDefinition()) {
+                middleTable = metadata.getMiddleTable(joinProp);
             } else {
                 middleTable = null;
             }
@@ -745,7 +750,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         builder.sql(withPrefix ? middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
                     }
                 } else {
-                    ColumnDefinition fullDefinition = prop.getStorage();
+                    ColumnDefinition fullDefinition = metadata.getStorage(prop);
                     ColumnDefinition parentDefinition = isInverse ?
                             middleTable.getColumnDefinition() :
                             middleTable.getTargetColumnDefinition();
@@ -769,10 +774,13 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             }
             if (!isInverse) {
                 if (optionalDefinition == null) {
-                    builder.sql(withPrefix ? parent.alias : null, joinProp.getStorage(), asBlock);
+                    if (metadata.getStorage(joinProp) == null) {
+                        System.out.println(joinProp);
+                    }
+                    builder.sql(withPrefix ? parent.alias : null, metadata.getStorage(joinProp), asBlock);
                 } else {
-                    ColumnDefinition fullDefinition = prop.getStorage();
-                    ColumnDefinition parentDefinition = joinProp.getStorage();
+                    ColumnDefinition fullDefinition = metadata.getStorage(prop);
+                    ColumnDefinition parentDefinition = metadata.getStorage(joinProp);
                     int size = optionalDefinition.size();
                     for (int i = 0; i < size; i++) {
                         if (i != 0) {
@@ -799,7 +807,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 builder.sql(" ").sql(asBlock.apply(0));
             }
         } else {
-            ColumnDefinition definition = optionalDefinition != null ? optionalDefinition : prop.getStorage();
+            ColumnDefinition definition = optionalDefinition != null ?
+                    optionalDefinition :
+                    metadata.getStorage(prop);
             builder.sql(withPrefix ? alias : null, definition, asBlock);
         }
     }

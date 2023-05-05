@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.TriggerType;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.Selectors;
@@ -132,9 +133,10 @@ class AssociationExecutable implements Executable<Integer> {
 
     private List<Tuple2<Object, Object>> find(Connection con) {
 
+        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
         MiddleTable middleTable = reversed ?
-                associationType.getMiddleTable().getInverse() :
-                associationType.getMiddleTable();
+                metadata.getMiddleTable(associationType).getInverse() :
+                metadata.getMiddleTable(associationType);
         Tuple2<Expression<?>, Expression<?>> expressionPair = getExpressionPair();
 
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -144,7 +146,7 @@ class AssociationExecutable implements Executable<Integer> {
                 .sql(", ")
                 .sql(middleTable.getTargetColumnDefinition())
                 .sql(" from ")
-                .sql(associationType.getTableName())
+                .sql(sqlClient.getDatabaseMetadata().getTableName(associationType))
                 .sql(" where ")
                 .enterTuple()
                 .sql(middleTable.getColumnDefinition())

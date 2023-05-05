@@ -361,12 +361,16 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                     query
                             .limit(pageSize, offset)
                             .execute();
+            ConfigurableRootQueryImplementor<?, ?> queryImplementor = (ConfigurableRootQueryImplementor<?, ?>) query;
             return new PageImpl<>(
                     content,
                     PageRequest.of(
                             pageIndex,
                             pageSize,
-                            Utils.toSort(((ConfigurableRootQueryImplementor<?, ?>)query).getOrders())
+                            Utils.toSort(
+                                    queryImplementor.getOrders(),
+                                    queryImplementor.getSqlClient().getDatabaseMetadata()
+                            )
                     ),
                     total
             );

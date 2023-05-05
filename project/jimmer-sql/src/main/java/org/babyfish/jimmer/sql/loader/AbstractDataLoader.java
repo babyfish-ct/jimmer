@@ -34,7 +34,6 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -61,6 +60,8 @@ public abstract class AbstractDataLoader {
     private final Connection con;
 
     private final ImmutableProp prop;
+
+    private final Storage storage;
 
     private final boolean remote;
     
@@ -140,6 +141,7 @@ public abstract class AbstractDataLoader {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
+        this.storage = sqlClient.getDatabaseMetadata().getStorage(prop);
         this.remote = prop.isRemote();
         this.sourceIdProp = prop.getDeclaringType().getIdProp();
         this.targetIdProp = prop.getTargetType() != null ? prop.getTargetType().getIdProp() : null;
@@ -197,7 +199,7 @@ public abstract class AbstractDataLoader {
         if (resolver != null) {
             return loadTransients(sources);
         }
-        if (prop.getStorage() instanceof ColumnDefinition) {
+        if (storage instanceof ColumnDefinition) {
             return (Map<ImmutableSpi, Object>)(Map<?, ?>) loadParents(sources);
         }
         if (prop.isReferenceList(TargetLevel.ENTITY)) {
@@ -294,7 +296,7 @@ public abstract class AbstractDataLoader {
         );
         Collection<Object> missedFkSourceIds;
         missedFkSourceIds = new ArrayList<>();
-        if (globalFiler != null || propFilter != null || !prop.<ColumnDefinition>getStorage().isForeignKey()) {
+        if (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey()) {
             missedFkSourceIds = toSourceIds(sources);
         } else {
             for (ImmutableSpi source : sources) {
@@ -360,7 +362,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
-            if (globalFiler != null || propFilter != null || !prop.<ColumnDefinition>getStorage().isForeignKey()) {
+            if (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey()) {
                 map1 = Utils.joinMaps(
                         fkMap,
                         Utils.toMap(
@@ -380,7 +382,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (globalFiler != null || propFilter != null || !prop.<ColumnDefinition>getStorage().isForeignKey() ||
+            if (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey() ||
                     fetcher.getFieldMap().size() > 1) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
@@ -603,40 +605,27 @@ public abstract class AbstractDataLoader {
     }
 
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
-
-        if (propFilter == null) {
-            boolean useMiddleTable = false;
-            Storage storage = prop.getStorage();
-            if (storage != null) {
-                useMiddleTable = storage instanceof MiddleTable;
-            } else {
-                ImmutableProp mappedBy = prop.getMappedBy();
-                if (mappedBy != null && mappedBy.getStorage() instanceof MiddleTable) {
-                    useMiddleTable = true;
-                }
-            }
-            if (useMiddleTable) {
-                if (sourceIds.size() == 1) {
-                    Object sourceId = sourceIds.iterator().next();
-                    List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
-                        Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
-                        Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
-                        q.where(sourceIdExpr.eq(sourceId));
-                        applyPropFilter(q, association.target(), sourceIds);
-                        applyGlobalFilter(q, association.target());
-                        return q.select(targetIdExpr);
-                    }).limit(limit, offset).execute(con);
-                    return Utils.toTuples(sourceId, targetIds);
-                }
-                return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
+        if (propFilter == null && prop.getReal().isMiddleTableDefinition()) {
+            if (sourceIds.size() == 1) {
+                Object sourceId = sourceIds.iterator().next();
+                List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
                     Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
-                    q.where(sourceIdExpr.in(sourceIds));
+                    q.where(sourceIdExpr.eq(sourceId));
                     applyPropFilter(q, association.target(), sourceIds);
                     applyGlobalFilter(q, association.target());
-                    return q.select(sourceIdExpr, targetIdExpr);
-                }).execute(con);
+                    return q.select(targetIdExpr);
+                }).limit(limit, offset).execute(con);
+                return Utils.toTuples(sourceId, targetIds);
             }
+            return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
+                Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
+                Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
+                q.where(sourceIdExpr.in(sourceIds));
+                applyPropFilter(q, association.target(), sourceIds);
+                applyGlobalFilter(q, association.target());
+                return q.select(sourceIdExpr, targetIdExpr);
+            }).execute(con);
         }
         return executeTupleQuery(sourceIds, target -> target.get(targetIdProp.getName()));
     }

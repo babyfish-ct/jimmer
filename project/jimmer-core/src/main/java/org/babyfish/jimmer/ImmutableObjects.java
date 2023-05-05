@@ -12,7 +12,6 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -219,7 +218,7 @@ public class ImmutableObjects {
             ImmutableType type = spi.__type();
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(prop.getId())) {
-                    if (prop.getStorage() instanceof ColumnDefinition) {
+                    if (prop.isColumnDefinition()) {
                         ImmutableSpi target = (ImmutableSpi) spi.__get(prop.getId());
                         if (target != null && !isIdOnly(target)) {
                             return false;
@@ -244,7 +243,7 @@ public class ImmutableObjects {
             for (ImmutableProp prop : type.getProps().values()) {
                 int propId = prop.getId();
                 if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(propId)) {
-                    if (prop.getStorage() instanceof ColumnDefinition) {
+                    if (prop.isColumnDefinition()) {
                         ImmutableSpi target = (ImmutableSpi) spi.__get(propId);
                         if (target != null) {
                             ImmutableType targetType = prop.getTargetType();

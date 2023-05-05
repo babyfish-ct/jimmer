@@ -174,7 +174,7 @@ public class ExampleImpl<E> implements Example<E> {
     public Predicate toPredicate(Table<?> table) {
         List<Predicate> predicates = new ArrayList<>();
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (spi.__isLoaded(prop.getId()) && prop.getStorage() instanceof ColumnDefinition) {
+            if (spi.__isLoaded(prop.getId()) && prop.isColumnDefinition()) {
                 Object value = valueOf(spi, prop);
                 Expression<Object> expr = expressionOf(table, prop, value == null ? JoinType.LEFT : JoinType.INNER);
                 Predicate predicate = null;

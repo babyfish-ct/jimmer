@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
+import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class DatabaseValidators {
 
-    private final String microServiceName;
+    private final DatabaseMetadata metadata;
 
     private final String catalog;
 
@@ -30,29 +31,28 @@ public class DatabaseValidators {
 
     @Nullable
     public static DatabaseValidationException validate(
-            EntityManager entityManager,
-            String microServiceName,
+            DatabaseMetadata metadata,
             String catalog,
             Connection con
     ) throws SQLException {
-        return new DatabaseValidators(microServiceName, catalog, con).validate(entityManager);
+        return new DatabaseValidators(metadata, catalog, con).validate();
     }
 
-    private DatabaseValidators(String microServiceName, String catalog, Connection con) {
-        this.microServiceName = microServiceName;
+    private DatabaseValidators(DatabaseMetadata metadata, String catalog, Connection con) {
+        this.metadata = metadata;
         this.catalog = catalog;
         this.con = con;
         this.items = new ArrayList<>();
     }
 
-    private DatabaseValidationException validate(EntityManager entityManager) throws SQLException {
-        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
-            if (type.isEntity() && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+    private DatabaseValidationException validate() throws SQLException {
+        for (ImmutableType type : metadata.getEntityTypes()) {
+            if (!(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateSelf(type);
             }
         }
-        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
-            if (type.isEntity() && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+        for (ImmutableType type : metadata.getEntityTypes()) {
+            if (!(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateForeignKey(type);
             }
         }
@@ -67,8 +67,8 @@ public class DatabaseValidators {
         if (table == null) {
             return;
         }
-        if (type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) != null) {
-            ColumnDefinition idColumnDefinition = type.getIdProp().getStorage();
+        if (!(type instanceof AssociationType) && type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) != null) {
+            ColumnDefinition idColumnDefinition = metadata.getStorage(type.getIdProp());
             Set<String> idColumnNames = new LinkedHashSet<>((idColumnDefinition.size() * 4 + 2) / 3);
             for (int i = 0; i < idColumnDefinition.size(); i++) {
                 idColumnNames.add(
@@ -81,7 +81,7 @@ public class DatabaseValidators {
                                 type,
                                 null,
                                 "Expected primary key columns are " +
-                                        type.getIdProp().<ColumnDefinition>getStorage().toColumnNames() +
+                                        metadata.<ColumnDefinition>getStorage(type.getIdProp()).toColumnNames() +
                                         ", but actual primary key columns are " +
                                         table.primaryKeyColumns
                         )
@@ -92,7 +92,7 @@ public class DatabaseValidators {
             if (prop.getAnnotation(DatabaseValidationIgnore.class) != null) {
                 continue;
             }
-            Storage storage = prop.getStorage();
+            Storage storage = metadata.getStorage(prop);
             if (storage instanceof ColumnDefinition) {
                 ColumnDefinition columnDefinition = (ColumnDefinition)storage;
                 for (int i = 0; i < columnDefinition.size(); i++) {
@@ -151,24 +151,26 @@ public class DatabaseValidators {
                 continue;
             }
             ForeignKeyContext ctx = new ForeignKeyContext(this, type, prop);
-            Storage storage = prop.getStorage();
+            Storage storage = metadata.getStorage(prop);
             if (storage instanceof MiddleTable) {
                 Table middleTable = middleTableOf(prop);
-                MiddleTable middleTableMeta = (MiddleTable) storage;
-                if (middleTableMeta.getColumnDefinition().isForeignKey()) {
-                    ForeignKey thisForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getColumnDefinition());
-                    if (thisForeignKey != null) {
-                        thisForeignKey.assertReferencedColumns(ctx, type);
+                if (middleTable != null) {
+                    MiddleTable middleTableMeta = (MiddleTable) storage;
+                    if (middleTableMeta.getColumnDefinition().isForeignKey()) {
+                        ForeignKey thisForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getColumnDefinition());
+                        if (thisForeignKey != null) {
+                            thisForeignKey.assertReferencedColumns(ctx, type);
+                        }
                     }
-                }
-                if (middleTableMeta.getTargetColumnDefinition().isForeignKey()) {
-                    ForeignKey targetForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getTargetColumnDefinition());
-                    if (targetForeignKey != null) {
-                        targetForeignKey.assertReferencedColumns(ctx, prop.getTargetType());
+                    if (middleTableMeta.getTargetColumnDefinition().isForeignKey()) {
+                        ForeignKey targetForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getTargetColumnDefinition());
+                        if (targetForeignKey != null) {
+                            targetForeignKey.assertReferencedColumns(ctx, prop.getTargetType());
+                        }
                     }
                 }
             } else if (storage != null && prop.isReference(TargetLevel.PERSISTENT)) {
-                ColumnDefinition columnDefinition = prop.getStorage();
+                ColumnDefinition columnDefinition = metadata.getStorage(prop);
                 if (columnDefinition.isForeignKey()) {
                     ForeignKey foreignKey = table.getForeignKey(ctx, columnDefinition);
                     if (foreignKey != null) {
@@ -182,14 +184,14 @@ public class DatabaseValidators {
     private Table tableOf(ImmutableType type) throws SQLException {
         org.babyfish.jimmer.lang.Ref<Table> tableRef = tableRefMap.get(type);
         if (tableRef == null) {
-            Set<Table> tables = tablesOf(type.getTableName());
+            Set<Table> tables = tablesOf(metadata.getTableName(type));
             if (tables.isEmpty()) {
                 items.add(
                         new DatabaseValidationException.Item(
                                 type,
                                 null,
                                 "There is no table \"" +
-                                        type.getTableName() +
+                                        metadata.getTableName(type) +
                                         "\""
                         )
                 );
@@ -216,7 +218,7 @@ public class DatabaseValidators {
     private Table middleTableOf(ImmutableProp prop) throws SQLException {
         Ref<Table> tableRef = middleTableRefMap.get(prop);
         if (tableRef == null) {
-            Storage storage = prop.getStorage();
+            Storage storage = metadata.getStorage(prop);
             if (storage instanceof MiddleTable) {
                 MiddleTable middleTable = (MiddleTable) storage;
                 Set<Table> tables = tablesOf(middleTable.getTableName());
@@ -559,7 +561,9 @@ public class DatabaseValidators {
                 ForeignKeyContext ctx,
                 ImmutableType referencedType
         ) {
-            if (!referencedType.getIdProp().<ColumnDefinition>getStorage().toColumnNames().equals(referenceColumNames)) {
+            if (!ctx.databaseValidators.metadata.<ColumnDefinition>getStorage(referencedType.getIdProp())
+                    .toColumnNames()
+                    .equals(referenceColumNames)) {
                 ctx.databaseValidators.items.add(
                         new DatabaseValidationException.Item(
                                 ctx.type,
@@ -569,7 +573,7 @@ public class DatabaseValidators {
                                         "\", expected referenced columns are " +
                                         referenceColumNames +
                                         ", but actual referenced columns are " +
-                                        referencedType.getIdProp().<ColumnDefinition>getStorage().toColumnNames()
+                                        ctx.databaseValidators.metadata.<ColumnDefinition>getStorage(referencedType.getIdProp()).toColumnNames()
                         )
                 );
             }

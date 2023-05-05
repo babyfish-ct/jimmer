@@ -245,6 +245,11 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return getBaseQuery().getOrders();
     }
 
+    @Override
+    public JSqlClient getSqlClient() {
+        return getBaseQuery().getSqlClient();
+    }
+
     private static class ReselectValidator extends AstVisitor {
 
         ReselectValidator(AstContext astContext) {

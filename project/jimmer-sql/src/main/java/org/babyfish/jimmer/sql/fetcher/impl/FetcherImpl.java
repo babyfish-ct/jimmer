@@ -483,7 +483,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     private static FetcherImpl<?> standardChildFetcher(FieldConfigImpl<?, Table<?>> loaderImpl) {
         FetcherImpl<?> childFetcher = loaderImpl.getChildFetcher();
-        if (!(loaderImpl.getProp().getStorage() instanceof ColumnDefinition)) {
+        if (!(loaderImpl.getProp().isColumnDefinition())) {
             return childFetcher;
         }
         RecursionStrategy<?> strategy = loaderImpl.getRecursionStrategy();

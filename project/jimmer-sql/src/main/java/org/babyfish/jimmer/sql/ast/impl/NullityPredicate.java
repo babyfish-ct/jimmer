@@ -31,7 +31,7 @@ class NullityPredicate extends AbstractPredicate {
     public void renderTo(@NotNull SqlBuilder builder) {
         if (expression instanceof PropExpressionImplementor<?>) {
             PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>)expression;
-            EmbeddedColumns.Partial partial = propExpr.getPartial();
+            EmbeddedColumns.Partial partial = propExpr.getPartial(builder.getAstContext().getSqlClient().getDatabaseMetadata());
             if (partial != null) {
                 TableImplementor<?> tableImplementor = TableProxies.resolve(
                         propExpr.getTable(),

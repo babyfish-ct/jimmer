@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -73,13 +74,13 @@ public class MutableUpdateImpl
     @Override
     public <X> MutableUpdate set(PropExpression<X> path, Expression<X> value) {
         validateMutable();
-        Target target = Target.of(path);
+        Target target = Target.of(path, getSqlClient().getDatabaseMetadata());
         if (target.table != this.getTable() && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
             );
         }
-        if (!(target.prop.getStorage() instanceof ColumnDefinition)) {
+        if (!(target.prop.isColumnDefinition())) {
             throw new IllegalArgumentException("The assigned prop expression must be mapped by database columns");
         }
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
@@ -248,7 +249,7 @@ public class MutableUpdateImpl
             this.accept(new VisitorImpl(builder.getAstContext(), dialect));
             builder
                     .sql("update ")
-                    .sql(table.getImmutableType().getTableName())
+                    .sql(getSqlClient().getDatabaseMetadata().getTableName(table.getImmutableType()))
                     .sql(" ")
                     .sql(table.getAlias());
 
@@ -274,6 +275,7 @@ public class MutableUpdateImpl
         try {
             accept(new VisitorImpl(builder.getAstContext(), null), false);
             TableImplementor<?> table = getTableImplementor();
+            DatabaseMetadata metadata = getSqlClient().getDatabaseMetadata();
             builder.sql("select ");
             boolean addComma = false;
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
@@ -282,16 +284,16 @@ public class MutableUpdateImpl
                 } else {
                     addComma = true;
                 }
-                builder.sql(table.getAlias(), prop.getStorage());
+                builder.sql(table.getAlias(), metadata.getStorage(prop));
             }
             if (ids != null) {
                 builder
                         .sql(" from ")
-                        .sql(table.getImmutableType().getTableName())
+                        .sql(metadata.getTableName(table.getImmutableType()))
                         .sql(" ")
                         .sql(table.getAlias())
                         .sql(" where ")
-                        .sql(table.getAlias(), table.getImmutableType().getIdProp().getStorage(), true)
+                        .sql(table.getAlias(), metadata.getStorage(table.getImmutableType().getIdProp()), true)
                         .sql(" in (");
                 addComma = false;
                 for (Object id : ids) {
@@ -331,7 +333,12 @@ public class MutableUpdateImpl
 
     private void renderTarget(SqlBuilder builder, Target target, boolean withPrefix) {
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
-        impl.renderSelection(target.prop, builder, target.expr.getPartial(), withPrefix);
+        impl.renderSelection(
+                target.prop,
+                builder,
+                target.expr.getPartial(builder.getAstContext().getSqlClient().getDatabaseMetadata()),
+                withPrefix
+        );
     }
 
     private void renderTables(SqlBuilder builder) {
@@ -373,7 +380,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             ImmutableProp idProp = table.getImmutableType().getIdProp();
             builder.sql(separator)
-                    .sql(table.getAlias(), idProp.getStorage(), true)
+                    .sql(table.getAlias(), getSqlClient().getDatabaseMetadata().getStorage(idProp), true)
                     .sql(" in (");
             boolean addComma = false;
             for (Object id : ids) {
@@ -421,9 +428,9 @@ public class MutableUpdateImpl
             this.expr = (PropExpressionImplementor)expr;
         }
 
-        static Target of(PropExpression<?> expr) {
+        static Target of(PropExpression<?> expr, DatabaseMetadata metadata) {
             PropExpressionImplementor<?> implementor = (PropExpressionImplementor<?>) expr;
-            EmbeddedColumns.Partial partial = implementor.getPartial();
+            EmbeddedColumns.Partial partial = implementor.getPartial(metadata);
             if (partial != null && partial.isEmbedded()) {
                 throw new IllegalArgumentException(
                         "The property \"" +

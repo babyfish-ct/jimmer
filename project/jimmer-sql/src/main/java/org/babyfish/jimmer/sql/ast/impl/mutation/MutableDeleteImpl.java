@@ -176,7 +176,7 @@ public class MutableDeleteImpl
             builder.sql(table.getAlias());
         }
         builder.sql(" from ");
-        builder.sql(table.getImmutableType().getTableName());
+        builder.sql(getSqlClient().getDatabaseMetadata().getTableName(table.getImmutableType()));
         builder.sql(" ");
         builder.sql(table.getAlias());
         Predicate predicate = deleteQuery.getPredicate();

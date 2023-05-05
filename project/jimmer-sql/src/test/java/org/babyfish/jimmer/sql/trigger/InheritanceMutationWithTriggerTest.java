@@ -4,7 +4,6 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
-import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.jetbrains.annotations.NotNull;

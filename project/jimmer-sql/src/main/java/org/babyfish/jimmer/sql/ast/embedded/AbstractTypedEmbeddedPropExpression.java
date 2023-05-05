@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -104,8 +105,8 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
-    public EmbeddedColumns.Partial getPartial() {
-        return ((PropExpressionImplementor<?>)raw).getPartial();
+    public EmbeddedColumns.Partial getPartial(DatabaseMetadata metadata) {
+        return ((PropExpressionImplementor<?>)raw).getPartial(metadata);
     }
 
     @Override

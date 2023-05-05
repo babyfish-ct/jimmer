@@ -7,10 +7,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
-import org.babyfish.jimmer.sql.meta.Storage;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +35,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     public void accept(@NotNull AstVisitor visitor) {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
-            if (prop.getStorage() instanceof ColumnDefinition || prop.getSqlTemplate() instanceof FormulaTemplate) {
+            if (prop.isColumnDefinition() || prop.getSqlTemplate() instanceof FormulaTemplate) {
                 visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
             }
         }
@@ -47,10 +44,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
         String separator = "";
+        DatabaseMetadata metadata = builder.getAstContext().getSqlClient().getDatabaseMetadata();
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             String alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
-            Storage storage = prop.getStorage();
+            Storage storage = metadata.getStorage(prop);
             SqlTemplate template = prop.getSqlTemplate();
             if (storage instanceof ColumnDefinition) {
                 builder.sql(separator);
