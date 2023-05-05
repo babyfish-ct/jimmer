@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -16,7 +15,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;

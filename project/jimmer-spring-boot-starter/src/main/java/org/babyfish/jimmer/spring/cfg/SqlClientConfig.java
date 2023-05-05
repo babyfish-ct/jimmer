@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.cfg.KInitializer;
 import org.babyfish.jimmer.sql.kt.cfg.KInitializerKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
+import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ public class SqlClientConfig {
             @Autowired(required = false) SpringConnectionManager connectionManager,
             @Autowired(required = false) SpringTransientResolverProvider transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
+            @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) CacheFactory cacheFactory,
@@ -93,6 +95,7 @@ public class SqlClientConfig {
                 connectionManager,
                 transientResolverProvider,
                 entityManager,
+                databaseNamingStrategy,
                 dialect,
                 executor,
                 cacheFactory,
@@ -119,6 +122,7 @@ public class SqlClientConfig {
             @Autowired(required = false) SpringConnectionManager connectionManager,
             @Autowired(required = false) SpringTransientResolverProvider transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
+            @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) CacheFactory cacheFactory,
@@ -159,6 +163,7 @@ public class SqlClientConfig {
                     connectionManager,
                     transientResolverProvider,
                     entityManager,
+                    databaseNamingStrategy,
                     dialect,
                     executor,
                     cacheFactory,
@@ -192,6 +197,7 @@ public class SqlClientConfig {
             SpringConnectionManager connectionManager,
             SpringTransientResolverProvider transientResolverProvider,
             EntityManager entityManager,
+            DatabaseNamingStrategy databaseNamingStrategy,
             Dialect dialect,
             Executor executor,
             CacheFactory cacheFactory,
@@ -212,9 +218,11 @@ public class SqlClientConfig {
         } else {
             builder.setTransientResolverProvider(new SpringTransientResolverProvider(ctx));
         }
-
         if (entityManager != null) {
             builder.setEntityManager(entityManager);
+        }
+        if (databaseNamingStrategy != null) {
+            builder.setDatabaseNamingStrategy(databaseNamingStrategy);
         }
 
         builder.setDialect(dialect != null ? dialect : properties.getDialect());

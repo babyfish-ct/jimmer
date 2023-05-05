@@ -6,7 +6,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 
 import java.util.HashMap;
 import java.util.Map;

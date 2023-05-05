@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;

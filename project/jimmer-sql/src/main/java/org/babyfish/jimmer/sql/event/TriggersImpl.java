@@ -4,8 +4,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 
 import java.sql.Connection;
 import java.util.ArrayList;

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.meta;
 
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -59,7 +58,7 @@ public abstract class MultipleColumns implements ColumnDefinition {
     public Set<String> toColumnNames() {
         Set<String> set = new LinkedHashSet<>((arr.length * 4 + 2) / 3);
         for (String name : arr) {
-            set.add(DatabaseIdentifiers.comparableIdentifier(name));
+            set.add(DatabaseMetadata.comparableIdentifier(name));
         }
         return set;
     }

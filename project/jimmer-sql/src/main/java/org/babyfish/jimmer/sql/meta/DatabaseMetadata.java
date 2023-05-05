@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.meta;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
@@ -107,7 +106,7 @@ public class DatabaseMetadata {
         List<ImmutableProp> chain = null;
         Map<String, List<ImmutableProp>> chainMap = propChainsMap.get(type);
         if (chainMap != null) {
-            String cmpName = DatabaseIdentifiers.comparableIdentifier(columnName);
+            String cmpName = comparableIdentifier(columnName);
             chain = chainMap.get(cmpName);
         }
         if (chain == null) {
@@ -998,7 +997,7 @@ public class DatabaseMetadata {
             if (type instanceof AssociationType && ((AssociationType)type).getBaseProp().getMappedBy() != null) {
                 continue;
             }
-            String tableName = DatabaseIdentifiers.comparableIdentifier(e.getValue());
+            String tableName = comparableIdentifier(e.getValue());
             ImmutableType oldType = typeMap.put(tableName, type);
             if (oldType != null && !oldType.equals(type)) {
                 tableSharedBy(tableName, oldType, type);
@@ -1006,7 +1005,7 @@ public class DatabaseMetadata {
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isMiddleTableDefinition()) {
                     AssociationType associationType = AssociationType.of(prop);
-                    String associationTableName = DatabaseIdentifiers.comparableIdentifier(
+                    String associationTableName = comparableIdentifier(
                             ((MiddleTable)lazyGetStorage(prop)).getTableName()
                     );
                     oldType = typeMap.put(associationTableName, associationType);
@@ -1087,7 +1086,7 @@ public class DatabaseMetadata {
                     EmbeddedColumns.Partial partial = e.getValue();
                     if (!partial.isEmbedded()) {
                         ImmutableProp partProp = prop;
-                        String cmpName = DatabaseIdentifiers.comparableIdentifier(partial.name(0));
+                        String cmpName = comparableIdentifier(partial.name(0));
                         String path = e.getKey();
                         List<ImmutableProp> chain = new ArrayList<>(baseChain);
                         chain.add(partProp);
@@ -1103,7 +1102,7 @@ public class DatabaseMetadata {
                             int index = multipleJoinColumns.size() - 1;
                             while (index >= 0) {
                                 String referencedName = multipleJoinColumns.referencedName(index);
-                                if (DatabaseIdentifiers.comparableIdentifier(referencedName).equals(cmpName)) {
+                                if (comparableIdentifier(referencedName).equals(cmpName)) {
                                     map.put(multipleJoinColumns.name(index), Collections.unmodifiableList(chain));
                                     break;
                                 }
@@ -1120,7 +1119,7 @@ public class DatabaseMetadata {
                     }
                 }
             } else if (storage instanceof SingleColumn) {
-                String cmpName = DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName());
+                String cmpName = comparableIdentifier(((SingleColumn)storage).getName());
                 map.put(cmpName, Collections.singletonList(prop));
             }
         }

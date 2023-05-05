@@ -2,12 +2,6 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
-import org.babyfish.jimmer.sql.JoinTable;
-import org.babyfish.jimmer.sql.ManyToOne;
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;

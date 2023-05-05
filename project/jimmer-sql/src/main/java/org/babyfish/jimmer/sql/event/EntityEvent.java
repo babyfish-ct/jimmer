@@ -6,9 +6,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

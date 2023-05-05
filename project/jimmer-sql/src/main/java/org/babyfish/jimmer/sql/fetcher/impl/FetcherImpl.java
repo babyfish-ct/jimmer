@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.ManyToManyView;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.*;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
 import java.util.*;

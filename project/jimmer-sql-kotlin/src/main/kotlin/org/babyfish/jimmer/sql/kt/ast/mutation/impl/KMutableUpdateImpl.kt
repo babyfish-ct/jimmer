@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.kt.ast.mutation.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
-import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.*

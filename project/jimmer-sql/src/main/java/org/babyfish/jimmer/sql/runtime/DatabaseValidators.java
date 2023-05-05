@@ -4,7 +4,6 @@ import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -72,7 +71,7 @@ public class DatabaseValidators {
             Set<String> idColumnNames = new LinkedHashSet<>((idColumnDefinition.size() * 4 + 2) / 3);
             for (int i = 0; i < idColumnDefinition.size(); i++) {
                 idColumnNames.add(
-                        DatabaseIdentifiers.comparableIdentifier(idColumnDefinition.name(i))
+                        DatabaseMetadata.comparableIdentifier(idColumnDefinition.name(i))
                 );
             }
             if (!idColumnNames.equals(table.primaryKeyColumns)) {
@@ -97,7 +96,7 @@ public class DatabaseValidators {
                 ColumnDefinition columnDefinition = (ColumnDefinition)storage;
                 for (int i = 0; i < columnDefinition.size(); i++) {
                     Column column = table.columnMap.get(
-                            DatabaseIdentifiers.comparableIdentifier(columnDefinition.name(i))
+                            DatabaseMetadata.comparableIdentifier(columnDefinition.name(i))
                     );
                     if (column == null) {
                         items.add(
@@ -116,7 +115,7 @@ public class DatabaseValidators {
             }
             if (storage instanceof SingleColumn) {
                 Column column = table.columnMap.get(
-                        DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName())
+                        DatabaseMetadata.comparableIdentifier(((SingleColumn)storage).getName())
                 );
                 if (column != null) {
                     boolean nullable = prop.isNullable() && !prop.isInputNotNull();

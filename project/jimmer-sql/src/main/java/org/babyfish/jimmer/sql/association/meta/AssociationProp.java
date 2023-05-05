@@ -4,7 +4,6 @@ import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.jetbrains.annotations.NotNull;
 

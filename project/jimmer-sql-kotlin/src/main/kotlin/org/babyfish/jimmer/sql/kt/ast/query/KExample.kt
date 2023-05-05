@@ -13,9 +13,7 @@ import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.Predicate
 import org.babyfish.jimmer.sql.ast.StringExpression
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.meta.ColumnDefinition
 import org.babyfish.jimmer.sql.meta.FormulaTemplate
-import org.babyfish.jimmer.sql.meta.Storage
 import kotlin.reflect.KProperty1
 
 fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> {

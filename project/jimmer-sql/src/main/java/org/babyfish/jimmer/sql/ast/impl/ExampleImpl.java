@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

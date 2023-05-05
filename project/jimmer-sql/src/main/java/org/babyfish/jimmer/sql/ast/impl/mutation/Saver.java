@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -407,7 +406,7 @@ class Saver {
                 guide = "call `setAutoAttaching(" +
                         path.getProp().getDeclaringType().getJavaClass().getSimpleName() +
                         "Props." +
-                        DatabaseIdentifiers.databaseIdentifier(path.getProp().getName()) +
+                        DatabaseMetadata.comparableIdentifier(path.getProp().getName()) +
                         ")` or `setAutoAttachingAll()` of the save command";
             }
             throw new SaveException(

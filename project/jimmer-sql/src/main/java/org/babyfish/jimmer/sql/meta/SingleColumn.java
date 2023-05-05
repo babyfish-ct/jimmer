@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.meta;
 
-import org.babyfish.jimmer.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -53,7 +52,7 @@ public class SingleColumn implements ColumnDefinition {
 
     @Override
     public Set<String> toColumnNames() {
-        return Collections.singleton(DatabaseIdentifiers.comparableIdentifier(name));
+        return Collections.singleton(DatabaseMetadata.comparableIdentifier(name));
     }
 
     @NotNull
