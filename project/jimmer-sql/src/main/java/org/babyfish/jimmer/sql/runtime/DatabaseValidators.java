@@ -482,7 +482,11 @@ public class DatabaseValidators {
                         new DatabaseValidationException.Item(
                                 ctx.type,
                                 ctx.prop,
-                                "No foreign key for columns: " + columnDefinition.toColumnNames()
+                                "No foreign key for columns: " + columnDefinition.toColumnNames() +
+                                        ". If this column is a real foreign key, " +
+                                        "please add foreign key constraint in database" +
+                                        "; If this column is a fake foreign key, " +
+                                        "please use `@JoinColumn(foreignKey = false, ...)`"
                         )
                 );
             }
