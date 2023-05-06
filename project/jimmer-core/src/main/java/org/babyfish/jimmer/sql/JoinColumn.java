@@ -45,5 +45,5 @@ public @interface JoinColumn {
      * constraint in database but a concept only in the minds of developers</li>
      * </ul>
      */
-    boolean foreignKey() default true;
+    ForeignKeyType foreignKeyType() default ForeignKeyType.AUTO;
 }

@@ -2,10 +2,10 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -18,7 +18,7 @@ class FetcherContext {
 
     private static final ThreadLocal<FetcherContext> FETCHER_CONTEXT_LOCAL = new ThreadLocal<>();
 
-    private JSqlClient sqlClient;
+    private JSqlClientImplementor sqlClient;
 
     private Connection con;
 
@@ -27,7 +27,7 @@ class FetcherContext {
     private Map<Field, FetcherTask> taskMap = new LinkedHashMap<>();
 
     public static void using(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             BiConsumer<FetcherContext, Boolean> block
     ) {
@@ -45,7 +45,7 @@ class FetcherContext {
         }
     }
 
-    private FetcherContext(JSqlClient sqlClient, Connection con) {
+    private FetcherContext(JSqlClientImplementor sqlClient, Connection con) {
         this.sqlClient = sqlClient;
         this.con = con;
     }

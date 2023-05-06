@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.sql.event.binlog;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 class BinLogModule extends SimpleModule {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
-    BinLogModule(JSqlClient sqlClient) {
+    BinLogModule(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
     }
 

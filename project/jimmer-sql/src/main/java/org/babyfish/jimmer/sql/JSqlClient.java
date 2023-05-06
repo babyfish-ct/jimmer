@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.query.*;
@@ -20,7 +19,6 @@ import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
@@ -30,7 +28,6 @@ import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Consumer;
 
 public interface JSqlClient extends SubQueryProvider {
@@ -38,30 +35,6 @@ public interface JSqlClient extends SubQueryProvider {
     static Builder newBuilder() {
         return new JSqlClientImpl.BuilderImpl();
     }
-
-    ConnectionManager getConnectionManager();
-
-    ConnectionManager getSlaveConnectionManager(boolean forUpdate);
-
-    Dialect getDialect();
-
-    Executor getExecutor();
-
-    List<String> getExecutorContextPrefixes();
-
-    <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
-
-    <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop);
-
-    <T, S> ScalarProvider<T, S> getScalarProvider(ImmutableProp prop);
-
-    IdGenerator getIdGenerator(Class<?> entityType);
-
-    int getDefaultBatchSize();
-
-    int getDefaultListBatchSize();
-
-    int getOffsetOptimizingThreshold();
 
     <T extends TableProxy<?>> MutableRootQuery<T> createQuery(T table);
 
@@ -75,8 +48,6 @@ public interface JSqlClient extends SubQueryProvider {
     );
 
     Entities getEntities();
-
-    TriggerType getTriggerType();
 
     /**
      * This method is equivalent to `getTriggers(false)`
@@ -111,10 +82,6 @@ public interface JSqlClient extends SubQueryProvider {
      */
     Triggers getTriggers(boolean transaction);
 
-    DatabaseMetadata getDatabaseMetadata();
-
-    BinLog getBinLog();
-
     Associations getAssociations(TypedProp.Association<?, ?> prop);
 
     Associations getAssociations(ImmutableProp immutableProp);
@@ -123,9 +90,11 @@ public interface JSqlClient extends SubQueryProvider {
 
     Loaders getLoaders();
 
-    EntityManager getEntityManager();
-
     Caches getCaches();
+
+    Filters getFilters();
+
+    BinLog getBinLog();
 
     @NewChain
     JSqlClient caches(Consumer<CacheDisableConfig> block);
@@ -135,24 +104,6 @@ public interface JSqlClient extends SubQueryProvider {
 
     @NewChain
     JSqlClient disableSlaveConnectionManager();
-
-    TransientResolver<?, ?> getResolver(ImmutableProp prop);
-
-    Class<? extends TransientResolverProvider> getResolverProviderClass();
-
-    Filters getFilters();
-
-    DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
-
-    Reader<?> getReader(Class<?> type);
-
-    Reader<?> getReader(ImmutableType type);
-
-    Reader<?> getReader(ImmutableProp prop);
-
-    String getMicroServiceName();
-
-    MicroServiceExchange getMicroServiceExchange();
 
     interface Builder {
 
@@ -223,6 +174,29 @@ public interface JSqlClient extends SubQueryProvider {
         @OldChain
         Builder setDefaultListBatchSize(int size);
 
+        /**
+         * For RDBMS, pagination is slow if `offset` is large, especially for MySQL.
+         *
+         * If `offset` >= $thisArgument
+         *
+         * <pre>{@code
+         *  select t.* from Table t ... limit ? offset ?
+         * }</pre>
+         *
+         * will be automatically changed to
+         *
+         * <pre>{@code
+         *  select t.* from (
+         *      select
+         *          t.id as optimized_core_id_
+         *      from Table t ... limit ? offset ?
+         *  ) optimized_core_
+         *  inner join Table as optimized_
+         *      on optimized_.optimized_core_id_ = optimized_core_.optimized_core_id_
+         * }</pre>
+         *
+         * @return An integer which is greater than 0
+         */
         @OldChain
         Builder setOffsetOptimizingThreshold(int threshold);
 
@@ -266,6 +240,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setBinLogObjectMapper(ObjectMapper mapper);
+
+        @OldChain
+        Builder setForeignKeyEnabledByDefault(boolean enabled);
 
         @OldChain
         Builder addCustomizers(Customizer ... customizers);

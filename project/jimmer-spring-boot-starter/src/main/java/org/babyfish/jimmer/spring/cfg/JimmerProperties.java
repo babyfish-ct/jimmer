@@ -43,6 +43,8 @@ public class JimmerProperties {
 
     private final int offsetOptimizingThreshold;
 
+    private final boolean isForeignKeyEnabledByDefault;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -64,6 +66,7 @@ public class JimmerProperties {
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
             @Nullable Integer offsetOptimizingThreshold,
+            @Nullable Boolean isForeignKeyEnabledByDefault,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable Client client,
@@ -78,7 +81,7 @@ public class JimmerProperties {
             this.language = language;
         }
         if (dialect == null) {
-            this.dialect = new DefaultDialect();
+            this.dialect = DefaultDialect.INSTANCE;
         } else {
             Class<?> clazz;
             try {
@@ -150,6 +153,10 @@ public class JimmerProperties {
                 offsetOptimizingThreshold != null ?
                         offsetOptimizingThreshold :
                         Integer.MAX_VALUE;
+        this.isForeignKeyEnabledByDefault =
+                isForeignKeyEnabledByDefault != null ?
+                        isForeignKeyEnabledByDefault :
+                        true;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -225,6 +232,24 @@ public class JimmerProperties {
      */
     public int getOffsetOptimizingThreshold() {
         return offsetOptimizingThreshold;
+    }
+
+    /**
+     * This configuration is only useful for {@link org.babyfish.jimmer.sql.JoinColumn}
+     * of local associations (not remote associations across microservice boundaries)
+     * whose `foreignKeyType` is specified as `AUTO`.Its value indicates whether the
+     * foreign key is real, that is, whether there is a foreign key constraint in the database.
+     *
+     * <p>In general, you should ignore this configuration (defaults to true) or set it to true.</p>
+     *
+     * In some cases, you need to set it to false, such as
+     * <ul>
+     *  <li>Using database/table sharding technology, such as sharding-jdbc</li>
+     *  <li>Using database that does not support foreign key, such as TiDB</li>
+     * </ul>
+     */
+    public boolean isForeignKeyEnabledByDefault() {
+        return isForeignKeyEnabledByDefault;
     }
 
     /**

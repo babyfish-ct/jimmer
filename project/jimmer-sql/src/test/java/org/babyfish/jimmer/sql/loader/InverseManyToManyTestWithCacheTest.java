@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.Author;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.BookFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -18,7 +19,7 @@ public class InverseManyToManyTestWithCacheTest extends AbstractCachedLoaderTest
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor)getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                     ctx -> {
                         if (useSql) {
@@ -63,7 +64,7 @@ public class InverseManyToManyTestWithCacheTest extends AbstractCachedLoaderTest
                 );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                     ctx -> {
                         ctx.sql(
@@ -102,7 +103,7 @@ public class InverseManyToManyTestWithCacheTest extends AbstractCachedLoaderTest
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor)getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                     ctx -> {
                         if (useSql) {
@@ -174,7 +175,7 @@ public class InverseManyToManyTestWithCacheTest extends AbstractCachedLoaderTest
                         )
                 );
         connectAndExpect(
-                con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor)getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(

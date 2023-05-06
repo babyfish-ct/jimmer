@@ -49,7 +49,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
 
-class JSqlClientImpl implements JSqlClient {
+class JSqlClientImpl implements JSqlClientImplementor {
 
     private final ConnectionManager connectionManager;
 
@@ -128,10 +128,7 @@ class JSqlClientImpl implements JSqlClient {
                         connectionManager :
                         ConnectionManager.ILLEGAL;
         this.slaveConnectionManager = slaveConnectionManager;
-        this.dialect =
-                dialect != null ?
-                    dialect :
-                    new DefaultDialect();
+        this.dialect = dialect;
         this.executor =
                 executor != null ?
                         executor :
@@ -369,7 +366,7 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public JSqlClient caches(Consumer<CacheDisableConfig> block) {
+    public JSqlClientImplementor caches(Consumer<CacheDisableConfig> block) {
         if (block == null) {
             throw new IllegalArgumentException("block cannot be null");
         }
@@ -402,7 +399,7 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public JSqlClient filters(Consumer<FilterConfig> block) {
+    public JSqlClientImplementor filters(Consumer<FilterConfig> block) {
         if (block == null) {
             throw new IllegalArgumentException("block cannot be null");
         }
@@ -438,7 +435,7 @@ class JSqlClientImpl implements JSqlClient {
     }
 
     @Override
-    public JSqlClient disableSlaveConnectionManager() {
+    public JSqlClientImplementor disableSlaveConnectionManager() {
         if (slaveConnectionManager == null) {
             return this;
         }
@@ -521,7 +518,7 @@ class JSqlClientImpl implements JSqlClient {
 
         private ConnectionManager slaveConnectionManager;
 
-        private Dialect dialect;
+        private Dialect dialect = DefaultDialect.INSTANCE;
 
         private Executor executor;
 
@@ -567,6 +564,8 @@ class JSqlClientImpl implements JSqlClient {
 
         private ObjectMapper binLogObjectMapper;
 
+        private boolean isForeignKeyEnabledByDefault = true;
+
         private final Set<Customizer> customizers = new LinkedHashSet<>();
 
         private final Set<Initializer> initializers = new LinkedHashSet<>();
@@ -598,7 +597,7 @@ class JSqlClientImpl implements JSqlClient {
         @Override
         @OldChain
         public JSqlClient.Builder setDialect(Dialect dialect) {
-            this.dialect = dialect;
+            this.dialect = dialect != null ? dialect : DefaultDialect.INSTANCE;
             return this;
         }
 
@@ -899,6 +898,12 @@ class JSqlClientImpl implements JSqlClient {
         }
 
         @Override
+        public Builder setForeignKeyEnabledByDefault(boolean enabled) {
+            this.isForeignKeyEnabledByDefault = enabled;
+            return this;
+        }
+
+        @Override
         public Builder addCustomizers(Customizer... customizers) {
             for (Customizer customizer : customizers) {
                 if (customizer != null) {
@@ -985,11 +990,20 @@ class JSqlClientImpl implements JSqlClient {
             FilterManager filterManager = createFilterManager();
             validateAssociations(filterManager);
             createTriggersIfNecessary();
+            DatabaseMetadata.AutoForeignKeyPolicy autoForeignKeyPolicy;
+            if (!dialect.isForeignKeySupported()) {
+                autoForeignKeyPolicy = DatabaseMetadata.AutoForeignKeyPolicy.FORCED_FAKE;
+            } else if (isForeignKeyEnabledByDefault) {
+                autoForeignKeyPolicy = DatabaseMetadata.AutoForeignKeyPolicy.REAL;
+            } else {
+                autoForeignKeyPolicy = DatabaseMetadata.AutoForeignKeyPolicy.FAKE;
+            }
             DatabaseMetadata databaseMetadata =
                     new DatabaseMetadata(
                             databaseNamingStrategy,
                             entityManager(),
-                            microServiceName
+                            microServiceName,
+                            autoForeignKeyPolicy
                     );
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
@@ -1003,7 +1017,7 @@ class JSqlClientImpl implements JSqlClient {
                                     transientResolverProvider :
                                     DefaultTransientResolverProvider.INSTANCE
                     );
-            JSqlClient sqlClient = new JSqlClientImpl(
+            JSqlClientImplementor sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
                     dialect,

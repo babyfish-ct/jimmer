@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -12,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.util.ArrayList;
@@ -33,14 +33,14 @@ public abstract class AbstractMutableQueryImpl
 
     @SuppressWarnings("unchecked")
     protected AbstractMutableQueryImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType immutableType
     ) {
         super(sqlClient, immutableType);
     }
 
     protected AbstractMutableQueryImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             TableProxy<?> table
     ) {
         super(sqlClient, table);

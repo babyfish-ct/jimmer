@@ -42,31 +42,3 @@ fun KMutableQuery<*>.orderByIf(condition: Boolean, sort: Sort?) {
         orderBy(sort)
     }
 }
-
-fun <E: Any> Sort?.toSortDslBlock(immutableType: ImmutableType): (SortDsl<E>.() -> Unit)? {
-    if (this === null) {
-        return null
-    }
-    val orders = mutableListOf<SortDsl.Order>()
-    for (order in this) {
-        orders += SortDsl.Order(
-            immutableType.getProp(order.property),
-            if (order.isDescending) {
-                OrderMode.DESC
-            } else {
-                OrderMode.ASC
-            },
-            when (order.nullHandling) {
-                Sort.NullHandling.NULLS_FIRST -> NullOrderMode.NULLS_FIRST
-                Sort.NullHandling.NULLS_LAST -> NullOrderMode.NULLS_LAST
-                else -> NullOrderMode.UNSPECIFIED
-            }
-        )
-    }
-    if (orders.isEmpty()) {
-        return null
-    }
-    return {
-        this += orders
-    }
-}

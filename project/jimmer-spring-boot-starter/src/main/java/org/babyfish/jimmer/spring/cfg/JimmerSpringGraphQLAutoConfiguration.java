@@ -13,6 +13,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.dataloader.DataLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -33,7 +34,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
             @Autowired(required = false) JSqlClient jSqlClient,
             @Autowired(required = false) KSqlClient kSqlClient
     ) {
-        JSqlClient sqlClient = jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient();
+        JSqlClientImplementor sqlClient = sqlClient(jSqlClient, kSqlClient);
         for (ImmutableType type : sqlClient.getEntityManager().getAllTypes(sqlClient.getMicroServiceName())) {
             if (type.isEntity()) {
                 for (ImmutableProp prop : type.getProps().values()) {
@@ -82,7 +83,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
             @Autowired(required = false) JSqlClient jSqlClient,
             @Autowired(required = false) KSqlClient kSqlClient
     ) {
-        JSqlClient sqlClient = jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient();
+        JSqlClientImplementor sqlClient = sqlClient(jSqlClient, kSqlClient);
         return wiringBuilder -> {
             registerJimmerDataFetchers(wiringBuilder, sqlClient);
         };
@@ -90,7 +91,7 @@ public class JimmerSpringGraphQLAutoConfiguration {
 
     private static void registerJimmerDataFetchers(
             RuntimeWiring.Builder wiringBuilder,
-            JSqlClient sqlClient
+            JSqlClientImplementor sqlClient
     ) {
         for (ImmutableType type : sqlClient.getEntityManager().getAllTypes(sqlClient.getMicroServiceName())) {
             if (type.isEntity()) {
@@ -106,6 +107,17 @@ public class JimmerSpringGraphQLAutoConfiguration {
                 wiringBuilder.type(typeBuilder);
             }
         }
+    }
+
+    private static JSqlClientImplementor sqlClient(
+            JSqlClient jSqlClient,
+            KSqlClient kSqlClient
+    ) {
+        return (JSqlClientImplementor) (
+                jSqlClient != null ?
+                        jSqlClient :
+                        kSqlClient.getJavaClient()
+        );
     }
 
     private static class JimmerSimpleFetcher implements DataFetcher<Object> {

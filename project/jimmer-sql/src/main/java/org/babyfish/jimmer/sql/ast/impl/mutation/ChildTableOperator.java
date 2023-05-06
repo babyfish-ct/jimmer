@@ -13,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.*;
 
@@ -24,7 +23,7 @@ import java.util.*;
 
 class ChildTableOperator {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
 
@@ -44,7 +43,7 @@ class ChildTableOperator {
 
     @SuppressWarnings("unchecked")
     public ChildTableOperator(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp parentProp,
             boolean pessimisticLockRequired,

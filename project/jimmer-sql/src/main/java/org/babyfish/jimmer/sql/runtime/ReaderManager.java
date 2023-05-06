@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
@@ -27,7 +26,7 @@ public class ReaderManager {
 
     private static final Map<Class<?>, Reader<?>> BASE_READER_MAP;
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private StaticCache<ImmutableType, Reader<?>> typeReaderCache =
             new StaticCache<>(this::createTypeReader, true);
@@ -35,7 +34,7 @@ public class ReaderManager {
     private StaticCache<ImmutableProp, Reader<?>> propReaderCache =
             new StaticCache<>(this::createPropReader, true);
 
-    public ReaderManager(JSqlClient sqlClient) {
+    public ReaderManager(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
     }
 

@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -38,12 +37,12 @@ public class MutableUpdateImpl
 
     private Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
 
-    public MutableUpdateImpl(JSqlClient sqlClient, ImmutableType immutableType) {
+    public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
     }
 
-    public MutableUpdateImpl(JSqlClient sqlClient, TableProxy<?> table) {
+    public MutableUpdateImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
         this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
     }

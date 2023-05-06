@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.type.*;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -16,7 +17,7 @@ public class TypeTest extends AbstractQueryTest {
     @Test
     public void addScalarProviderForSuperProp() {
         ScalarProvider<?, ?> provider = new AnnotationsProvider();
-        JSqlClient sqlClient = getSqlClient(cfg -> {
+        JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient(cfg -> {
             cfg.addScalarProvider(AnnotatedProps.ANNOTATIONS, provider);
         });
         Assertions.assertSame(

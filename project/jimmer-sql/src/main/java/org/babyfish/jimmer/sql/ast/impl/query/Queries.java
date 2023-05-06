@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.query.*;
@@ -10,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -20,7 +20,7 @@ public class Queries {
     private Queries() {}
 
     public static <T extends Table<?>, R> ConfigurableRootQuery<T, R> createQuery(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Class<T> tableType,
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, R>> block
     ) {
@@ -38,7 +38,7 @@ public class Queries {
     }
 
     public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType immutableType,
             BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
@@ -46,7 +46,7 @@ public class Queries {
     }
 
     public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType immutableType,
             ExecutionPurpose purpose,
             boolean ignoreFilter,
@@ -63,7 +63,7 @@ public class Queries {
 
     public static <SE, ST extends Table<SE>, TE, TT extends Table<TE>, R>
     ConfigurableRootQuery<AssociationTable<SE, ST, TE, TT>, R> createAssociationQuery(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Class<ST> sourceTableType,
             Function<ST, TT> targetTableGetter,
             BiFunction<
@@ -86,7 +86,7 @@ public class Queries {
 
     public static <R>
     ConfigurableRootQuery<AssociationTable<?, ?, ?, ?>, R> createAssociationQuery(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             AssociationType associationType,
             ExecutionPurpose purpose,
             BiFunction<

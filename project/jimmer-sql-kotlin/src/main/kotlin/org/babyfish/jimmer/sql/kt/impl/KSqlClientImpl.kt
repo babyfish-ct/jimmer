@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
@@ -25,12 +24,12 @@ import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.kt.loader.impl.KLoadersImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
-import java.sql.Connection
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal class KSqlClientImpl(
-    private val sqlClient: JSqlClient
+    override val javaClient: JSqlClientImplementor
 ) : KSqlClient {
 
     // Override it for performance optimization
@@ -40,7 +39,7 @@ internal class KSqlClientImpl(
         block: KMutableRootQuery<E>.() -> KConfigurableRootQuery<E, R>
     ): KConfigurableRootQuery<E, R> {
         val query = MutableRootQueryImpl<Table<*>>(
-            sqlClient,
+            javaClient,
             ImmutableType.get(entityType.java),
             ExecutionPurpose.QUERY,
             false
@@ -54,7 +53,7 @@ internal class KSqlClientImpl(
         entityType: KClass<E>,
         block: KMutableUpdate<E>.() -> Unit
     ): KExecutable<Int> {
-        val update = MutableUpdateImpl(sqlClient, ImmutableType.get(entityType.java))
+        val update = MutableUpdateImpl(javaClient, ImmutableType.get(entityType.java))
         block(KMutableUpdateImpl(update))
         update.freeze()
         return KExecutableImpl(update)
@@ -64,26 +63,26 @@ internal class KSqlClientImpl(
         entityType: KClass<E>,
         block: KMutableDelete<E>.() -> Unit
     ): KExecutable<Int> {
-        val delete = MutableDeleteImpl(sqlClient, ImmutableType.get(entityType.java))
+        val delete = MutableDeleteImpl(javaClient, ImmutableType.get(entityType.java))
         block(KMutableDeleteImpl(delete))
         delete.freeze()
         return KExecutableImpl(delete)
     }
 
     override val queries: KQueries =
-        KQueriesImpl(sqlClient)
+        KQueriesImpl(javaClient)
 
     override val entities: KEntities =
-        KEntitiesImpl(sqlClient.entities)
+        KEntitiesImpl(javaClient.entities)
 
     override val caches: KCaches =
-        KCachesImpl(sqlClient.caches)
+        KCachesImpl(javaClient.caches)
 
     override val triggers: KTriggers =
-        KTriggersImpl(sqlClient.triggers)
+        KTriggersImpl(javaClient.triggers)
 
     override fun getTriggers(transaction: Boolean): KTriggers =
-        KTriggersImpl(sqlClient.getTriggers(transaction))
+        KTriggersImpl(javaClient.getTriggers(transaction))
 
     override val filters: KFilters
         get() = KFiltersImpl(javaClient.filters)
@@ -94,18 +93,11 @@ internal class KSqlClientImpl(
     override fun getAssociations(
         prop: KProperty1<*, *>
     ): KAssociations =
-        sqlClient.getAssociations(
+        javaClient.getAssociations(
             prop.toImmutableProp()
         ).let {
             KAssociationsImpl(it)
         }
-
-    override fun <R> executeNativeSql(master: Boolean, block: (Connection) -> R): R =
-        if (master) {
-            javaClient.connectionManager
-        } else {
-            javaClient.getSlaveConnectionManager(false)
-        }.execute(block)
 
     override fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient =
         javaClient
@@ -143,11 +135,8 @@ internal class KSqlClientImpl(
         }
 
     override val entityManager: EntityManager
-        get() = sqlClient.entityManager
+        get() = javaClient.entityManager
 
     override val binLog: BinLog
-        get() = sqlClient.binLog
-
-    override val javaClient: JSqlClient
-        get() = sqlClient
+        get() = javaClient.binLog
 }

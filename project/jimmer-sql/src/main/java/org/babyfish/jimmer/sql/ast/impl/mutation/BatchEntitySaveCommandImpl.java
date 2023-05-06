@@ -3,8 +3,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.*;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
@@ -18,7 +18,7 @@ public class BatchEntitySaveCommandImpl<E>
 
     private final ImmutableType type;
 
-    public BatchEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Collection<E> entities) {
+    public BatchEntitySaveCommandImpl(JSqlClientImplementor sqlClient, Connection con, Collection<E> entities) {
         super(sqlClient, con, null);
         ImmutableType type = null;
         for (E entity : entities) {

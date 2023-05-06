@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Role;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +13,8 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 
 public class BinLogTest {
 
-    private final JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
+    private final JSqlClientImplementor sqlClient =
+            (JSqlClientImplementor) JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
 
     @Test
     public void testTreeNode() {

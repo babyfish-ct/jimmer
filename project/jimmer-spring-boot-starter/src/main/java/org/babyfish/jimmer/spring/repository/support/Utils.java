@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
@@ -38,22 +39,23 @@ public class Utils {
         return list;
     }
 
-    public static void validateSqlClient(JSqlClient sqlClient) {
-        if (!(sqlClient.getConnectionManager() instanceof SpringConnectionManager)) {
+    public static JSqlClientImplementor validateSqlClient(JSqlClient sqlClient) {
+        JSqlClientImplementor implementor = (JSqlClientImplementor) sqlClient;
+        if (!(implementor.getConnectionManager() instanceof SpringConnectionManager)) {
             throw new IllegalArgumentException(
                     "The connection manager of sql client must be instance of \"" +
                             SpringConnectionManager.class.getName() +
                             "\""
             );
         }
-        if (!SpringTransientResolverProvider.class.isAssignableFrom(sqlClient.getResolverProviderClass())) {
+        if (!SpringTransientResolverProvider.class.isAssignableFrom(implementor.getResolverProviderClass())) {
             throw new IllegalArgumentException(
                     "The transient resolver provider of sql client must be instance of \"" +
                             SpringConnectionManager.class.getName() +
                             "\""
             );
         }
-        ConnectionManager slaveConnectionManager = sqlClient.getSlaveConnectionManager(false);
+        ConnectionManager slaveConnectionManager = implementor.getSlaveConnectionManager(false);
         if (slaveConnectionManager != null && !(slaveConnectionManager instanceof SpringConnectionManager)) {
             throw new IllegalArgumentException(
                     "The slave connection manager of sql client must be null or instance of \"" +
@@ -61,6 +63,7 @@ public class Utils {
                             "\""
             );
         }
+        return implementor;
     }
 
     public static Sort toSort(List<Order> orders, DatabaseMetadata metadata) {

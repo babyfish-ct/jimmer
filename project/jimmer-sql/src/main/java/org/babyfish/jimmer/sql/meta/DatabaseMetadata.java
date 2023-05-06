@@ -25,6 +25,8 @@ public class DatabaseMetadata {
     private final EntityManager entityManager;
 
     private final String microServiceName;
+
+    private final AutoForeignKeyPolicy autoForeignKeyPolicy;
     
     private final Map<ImmutableType, String> tableNameMap = new HashMap<>();
 
@@ -37,13 +39,26 @@ public class DatabaseMetadata {
     private final Map<ImmutableType, Map<String, List<ImmutableProp>>> propChainsMap = new HashMap<>();
 
     public DatabaseMetadata(
-            DatabaseNamingStrategy databaseNamingStrategy,
-            EntityManager entityManager,
-            String microServiceName
-    ) {
-        this.databaseNamingStrategy = databaseNamingStrategy;
-        this.entityManager = entityManager;
-        this.microServiceName = microServiceName;
+            @NotNull DatabaseNamingStrategy databaseNamingStrategy,
+            @NotNull EntityManager entityManager,
+            @NotNull String microServiceName,
+            @NotNull AutoForeignKeyPolicy autoForeignKeyPolicy) {
+        this.databaseNamingStrategy = Objects.requireNonNull(
+                databaseNamingStrategy,
+                "`databaseNamingStrategy` cannot be null"
+        );
+        this.entityManager = Objects.requireNonNull(
+                entityManager,
+                "`entityManager` cannot be null"
+        );
+        this.microServiceName = Objects.requireNonNull(
+                microServiceName,
+                "`microServiceName` cannot be null"
+        );
+        this.autoForeignKeyPolicy = Objects.requireNonNull(
+                autoForeignKeyPolicy,
+                "`autoForeignKeyPolicy` cannot be null"
+        );
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
             if (!type.isEntity()) {
                 continue;
@@ -384,15 +399,11 @@ public class DatabaseMetadata {
             return null;
         }
         JoinColumnObj[] columns = joinColumns != null ?
-                JoinColumnObj.array(joinColumns.value()) :
-                JoinColumnObj.array(joinColumn);
+                JoinColumnObj.array(prop, false, joinColumns.value(), autoForeignKeyPolicy) :
+                JoinColumnObj.array(prop, false, joinColumn, autoForeignKeyPolicy);
         ColumnDefinition definition;
         try {
-            definition= joinDefinition(
-                    columns,
-                    prop.getTargetType(),
-                    prop.isEmbedded(EmbeddedLevel.REFERENCE)
-            );
+            definition= joinDefinition(columns, prop.getTargetType());
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
                     "Illegal property \"" +
@@ -450,7 +461,10 @@ public class DatabaseMetadata {
         if (definition != null) {
             return definition;
         }
-        return new SingleColumn(databaseNamingStrategy.foreignKeyColumnName(prop), true);
+        return new SingleColumn(
+                databaseNamingStrategy.foreignKeyColumnName(prop),
+                isForeignKey(prop, false, ForeignKeyType.AUTO, autoForeignKeyPolicy)
+        );
     }
 
     private MiddleTable middleTable(
@@ -463,7 +477,7 @@ public class DatabaseMetadata {
             return null;
         }
         JoinColumnObj[] joinColumns;
-        JoinColumnObj[] referencedColumns;
+        JoinColumnObj[] inverseJoinColumns;
         if (joinTable != null) {
             if (!joinTable.joinColumnName().isEmpty() && joinTable.joinColumns().length != 0) {
                 throw new ModelException(
@@ -483,17 +497,17 @@ public class DatabaseMetadata {
                                 "` cannot be specified at the same time"
                 );
             }
-            joinColumns = JoinColumnObj.array(joinTable.joinColumnName());
+            joinColumns = JoinColumnObj.array(prop, true, joinTable.joinColumnName(), autoForeignKeyPolicy);
             if (joinColumns == null) {
-                joinColumns = JoinColumnObj.array(joinTable.joinColumns());
+                joinColumns = JoinColumnObj.array(prop, true, joinTable.joinColumns(), autoForeignKeyPolicy);
             }
-            referencedColumns = JoinColumnObj.array(joinTable.inverseJoinColumnName());
-            if (referencedColumns == null) {
-                referencedColumns = JoinColumnObj.array(joinTable.inverseColumns());
+            inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseJoinColumnName(), autoForeignKeyPolicy);
+            if (inverseJoinColumns == null) {
+                inverseJoinColumns = JoinColumnObj.array(prop, false, joinTable.inverseColumns(), autoForeignKeyPolicy);
             }
         } else {
             joinColumns = null;
-            referencedColumns = null;
+            inverseJoinColumns = null;
         }
         ColumnDefinition definition;
         ColumnDefinition targetDefinition;
@@ -501,14 +515,12 @@ public class DatabaseMetadata {
         try {
             definition = joinDefinition(
                     joinColumns,
-                    prop.getDeclaringType(),
-                    prop.getDeclaringType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)
+                    prop.getDeclaringType()
             );
             leftParsed = true;
             targetDefinition = joinDefinition(
-                    referencedColumns,
-                    prop.getTargetType(),
-                    prop.getTargetType().getIdProp().isEmbedded(EmbeddedLevel.SCALAR)
+                    inverseJoinColumns,
+                    prop.getTargetType()
             );
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
@@ -528,7 +540,7 @@ public class DatabaseMetadata {
             throw new ModelException(
                     "Illegal property \"" +
                             prop +
-                            "\", the `referencedColumns` of `" +
+                            "\", the `inverseJoinColumns` of `" +
                             (leftParsed ? "inverseColumns" : "joinColumns") +
                             "` must be specified when multiple `" +
                             (leftParsed ? "inverseColumns" : "joinColumns") +
@@ -583,13 +595,13 @@ public class DatabaseMetadata {
         if (definition == null) {
             definition = new SingleColumn(
                     databaseNamingStrategy.middleTableBackRefColumnName(prop),
-                    true
+                    isForeignKey(prop, true, ForeignKeyType.AUTO, autoForeignKeyPolicy)
             );
         }
         if (targetDefinition == null) {
             targetDefinition = new SingleColumn(
                     databaseNamingStrategy.middleTableTargetRefColumnName(prop),
-                    true
+                    isForeignKey(prop, false, ForeignKeyType.AUTO, autoForeignKeyPolicy)
             );
         }
         return new MiddleTable(tableName, definition, targetDefinition);
@@ -597,8 +609,7 @@ public class DatabaseMetadata {
 
     private ColumnDefinition joinDefinition(
             JoinColumnObj[] joinColumns,
-            ImmutableType targetType,
-            boolean isEmbedded
+            ImmutableType targetType
     ) throws IllegalJoinColumnCount, NoReference, ReferenceNothing, TargetConflict, SourceConflict, ForeignKeyConflict {
         if (joinColumns == null || joinColumns.length == 0) {
             ColumnDefinition definition = (ColumnDefinition) lazyGetStorage(targetType.getIdProp());
@@ -611,7 +622,7 @@ public class DatabaseMetadata {
         for (JoinColumnObj joinColumn : joinColumns) {
             if (firstJoinColumn == null) {
                 firstJoinColumn = joinColumn;
-            } else if (firstJoinColumn.foreignKey != joinColumn.foreignKey) {
+            } else if (firstJoinColumn.isForeignKey != joinColumn.isForeignKey) {
                 throw new ForeignKeyConflict(firstJoinColumn.name, joinColumn.name);
             }
         }
@@ -627,7 +638,10 @@ public class DatabaseMetadata {
             if (!ref.isEmpty() && !ref.equals(targetIdDefinition.name(0))) {
                 throw new ReferenceNothing(ref);
             }
-            return new SingleColumn(joinColumns[0].name, joinColumns[0].foreignKey);
+            return new SingleColumn(
+                    joinColumns[0].name,
+                    joinColumns[0].isForeignKey
+            );
         }
         Map<String, String> columnMap = new HashMap<>();
         for (JoinColumnObj joinColumn : joinColumns) {
@@ -649,7 +663,11 @@ public class DatabaseMetadata {
                 throw new SourceConflict(name);
             }
         }
-        return new MultipleJoinColumns(referencedColumnMap, isEmbedded, joinColumns[0].foreignKey);
+        return new MultipleJoinColumns(
+                referencedColumnMap,
+                targetType.getIdProp().isEmbedded(EmbeddedLevel.SCALAR),
+                joinColumns[0].isForeignKey
+        );
     }
 
     private static class JoinColumnObj {
@@ -658,30 +676,38 @@ public class DatabaseMetadata {
 
         final String referencedColumnName;
 
-        final boolean foreignKey;
+        final boolean isForeignKey;
 
-        JoinColumnObj(String name, String referencedColumnName, boolean foreignKey) {
+        JoinColumnObj(String name, String referencedColumnName, boolean isForeignKey) {
             this.name = name;
             this.referencedColumnName = referencedColumnName;
-            this.foreignKey = foreignKey;
+            this.isForeignKey = isForeignKey;
         }
 
-        JoinColumnObj(JoinColumn joinColumn) {
-            this.name = joinColumn.name();
-            this.referencedColumnName = joinColumn.referencedColumnName();
-            this.foreignKey = joinColumn.foreignKey();
-        }
-
-        static JoinColumnObj[] array(String name) {
+        static JoinColumnObj[] array(
+                ImmutableProp prop,
+                boolean backRef,
+                String name,
+                AutoForeignKeyPolicy autoForeignKeyPolicy
+        ) {
             if (name.isEmpty()) {
                 return null;
             }
             return new JoinColumnObj[] {
-                    new JoinColumnObj(name, "", true)
+                    new JoinColumnObj(
+                            name,
+                            "",
+                            isForeignKey(prop, backRef, ForeignKeyType.AUTO, autoForeignKeyPolicy)
+                    )
             };
         }
 
-        static JoinColumnObj[] array(JoinColumn joinColumn) {
+        static JoinColumnObj[] array(
+                ImmutableProp prop,
+                boolean backRef,
+                JoinColumn joinColumn,
+                AutoForeignKeyPolicy autoForeignKeyPolicy
+        ) {
             if (joinColumn == null) {
                 return null;
             }
@@ -689,16 +715,27 @@ public class DatabaseMetadata {
                     new JoinColumnObj(
                             joinColumn.name(),
                             joinColumn.referencedColumnName(),
-                            joinColumn.foreignKey()
+                            isForeignKey(prop, backRef, joinColumn.foreignKeyType(), autoForeignKeyPolicy)
                     )
             };
         }
 
-        static JoinColumnObj[] array(JoinColumn[] arr) {
+        static JoinColumnObj[] array(
+                ImmutableProp prop,
+                boolean backRef,
+                JoinColumn[] arr,
+                AutoForeignKeyPolicy autoForeignKeyPolicy
+        ) {
             if (arr.length == 0) {
                 return null;
             }
-            return Arrays.stream(arr).map(JoinColumnObj::new).toArray(JoinColumnObj[]::new);
+            return Arrays.stream(arr).map(it ->
+                new JoinColumnObj(
+                        it.name(),
+                        it.referencedColumnName(),
+                        isForeignKey(prop, backRef, it.foreignKeyType(), autoForeignKeyPolicy)
+                )
+            ).toArray(JoinColumnObj[]::new);
         }
     }
 
@@ -1050,6 +1087,39 @@ public class DatabaseMetadata {
         );
     }
 
+    private static boolean isForeignKey(
+            ImmutableProp prop,
+            boolean backRef,
+            ForeignKeyType foreignKeyType,
+            AutoForeignKeyPolicy autoForeignKeyPolicy
+    ) {
+        switch (foreignKeyType) {
+            case REAL:
+                if (autoForeignKeyPolicy == AutoForeignKeyPolicy.FORCED_FAKE) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    prop +
+                                    "\", the `foreignKeyType` of any @JoinColumn " +
+                                    "cannot be `REAL` because this current database dialect " +
+                                    "does not support foreign key constraint"
+                    );
+                }
+                if (!backRef && prop.isRemote()) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    prop +
+                                    "\", the `foreignKeyType` of the @JoinColumn pointing to target type " +
+                                    "cannot be `REAL` because this property is remote association across microservices"
+                    );
+                }
+                return true;
+            case FAKE:
+                return false;
+            default:
+                return autoForeignKeyPolicy == AutoForeignKeyPolicy.REAL && (backRef || !prop.isRemote());
+        }
+    }
+
     public static String comparableIdentifier(String identifier) {
         if (identifier == null) {
             return null;
@@ -1123,5 +1193,11 @@ public class DatabaseMetadata {
                 map.put(cmpName, Collections.singletonList(prop));
             }
         }
+    }
+
+    public enum AutoForeignKeyPolicy {
+        REAL,
+        FAKE,
+        FORCED_FAKE
     }
 }

@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.function.BiConsumer;
 
@@ -14,7 +14,7 @@ public class Mutations {
     private Mutations() {}
 
     public static <T extends Table<?>> Executable<Integer> createUpdate(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Class<T> tableType,
             BiConsumer<MutableUpdate, T> block
     ) {
@@ -27,7 +27,7 @@ public class Mutations {
     }
 
     public static Executable<Integer> createUpdate(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType type,
             BiConsumer<MutableUpdate, Table<?>> block
     ) {
@@ -40,7 +40,7 @@ public class Mutations {
     }
 
     public static <T extends Table<?>> Executable<Integer> createDelete(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Class<T> tableType,
             BiConsumer<MutableDelete, T> block
     ) {
@@ -53,7 +53,7 @@ public class Mutations {
     }
 
     public static <T extends Table<?>> Executable<Integer> createDelete(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType type,
             BiConsumer<MutableDelete, T> block
     ) {

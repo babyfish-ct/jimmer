@@ -4,17 +4,17 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.loader.graphql.*;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.function.Function;
 
 public class LoadersImpl implements Loaders {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
-    public LoadersImpl(JSqlClient sqlClient) {
+    public LoadersImpl(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
     }
 

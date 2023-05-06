@@ -4,7 +4,6 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.embedded.AbstractTypedEmbeddedPropExpression;
@@ -24,7 +23,7 @@ class Readers {
 
     private Readers() {}
 
-    public static Reader<?> createReader(JSqlClient sqlClient, List<Selection<?>> selections) {
+    public static Reader<?> createReader(JSqlClientImplementor sqlClient, List<Selection<?>> selections) {
         switch (selections.size()) {
             case 1:
                 return createSingleReader(sqlClient, selections.get(0));
@@ -101,7 +100,7 @@ class Readers {
         }
     }
 
-    private static Reader<?> createSingleReader(JSqlClient sqlClient, Selection<?> selection) {
+    private static Reader<?> createSingleReader(JSqlClientImplementor sqlClient, Selection<?> selection) {
         if (selection instanceof TableSelection) {
             ImmutableType immutableType =
                     ((TableSelection)selection).getImmutableType();

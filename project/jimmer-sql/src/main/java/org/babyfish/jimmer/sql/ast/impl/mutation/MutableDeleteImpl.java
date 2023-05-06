@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
@@ -21,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.ExecutorContext;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 import java.sql.Connection;
@@ -35,7 +35,7 @@ public class MutableDeleteImpl
 
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
-    public MutableDeleteImpl(JSqlClient sqlClient, ImmutableType immutableType) {
+    public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
                 new StatementContext(ExecutionPurpose.QUERY, false),
@@ -44,7 +44,7 @@ public class MutableDeleteImpl
         );
     }
 
-    public MutableDeleteImpl(JSqlClient sqlClient, TableProxy<?> table) {
+    public MutableDeleteImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
         deleteQuery = new MutableRootQueryImpl<>(
                 new StatementContext(ExecutionPurpose.QUERY, false),
@@ -100,7 +100,7 @@ public class MutableDeleteImpl
     private Integer executeImpl(Connection con) {
         freeze();
 
-        JSqlClient sqlClient = getSqlClient();
+        JSqlClientImplementor sqlClient = getSqlClient();
         TableImplementor<?> table = getTableImplementor();
 
         AstContext astContext = new AstContext(sqlClient);

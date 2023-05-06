@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -17,7 +18,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
     public void loadTargetIds() {
         Fetcher<Book> fetcher = BookFetcher.$.authors();
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -52,7 +53,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor)getSqlClient(), con, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -83,7 +84,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                 AuthorFetcher.$.firstName().lastName()
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -132,7 +133,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(

@@ -45,4 +45,8 @@ public interface Dialect {
     default Object baseValueToJson(Object baseValue, JavaType javaType) throws Exception {
         return JsonUtils.OBJECT_MAPPER.readValue((String) baseValue, javaType);
     }
+
+    default boolean isForeignKeySupported() {
+        return true;
+    }
 }

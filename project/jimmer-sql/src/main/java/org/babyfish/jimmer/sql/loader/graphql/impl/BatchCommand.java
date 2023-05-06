@@ -2,10 +2,10 @@ package org.babyfish.jimmer.sql.loader.graphql.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 class BatchCommand<S, T> implements Executable<Map<S, T>> {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
 
@@ -28,7 +28,7 @@ class BatchCommand<S, T> implements Executable<Map<S, T>> {
     private final T defaultValue;
 
     public BatchCommand(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
             FieldFilter<Table<ImmutableSpi>> filter,

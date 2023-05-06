@@ -18,10 +18,10 @@ import java.util.Objects;
 
 public class MicroServiceExporter {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     public MicroServiceExporter(JSqlClient sqlClient) {
-        this.sqlClient = Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
+        this.sqlClient = (JSqlClientImplementor) Objects.requireNonNull(sqlClient, "sqlClient cannot be null");
     }
 
     @SuppressWarnings("unchecked")

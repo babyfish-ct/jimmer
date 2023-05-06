@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.Author;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.CountryFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -16,7 +17,7 @@ public class MiddleTableManyToOneWithoutCacheTest extends AbstractQueryTest {
     public void loadTargetIds() {
         Fetcher<Author> fetcher = AuthorFetcher.$.country();
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("country"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("country"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
@@ -48,7 +49,7 @@ public class MiddleTableManyToOneWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("country"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("country"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
@@ -79,7 +80,7 @@ public class MiddleTableManyToOneWithoutCacheTest extends AbstractQueryTest {
                 CountryFetcher.$.allScalarFields()
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("country"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("country"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(

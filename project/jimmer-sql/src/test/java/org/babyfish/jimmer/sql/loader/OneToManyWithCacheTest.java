@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.BookStoreFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -17,7 +18,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         if (useSql) {
@@ -70,7 +71,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         ctx.sql(
@@ -112,7 +113,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         if (useSql) {
@@ -213,7 +214,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         ctx.sql(

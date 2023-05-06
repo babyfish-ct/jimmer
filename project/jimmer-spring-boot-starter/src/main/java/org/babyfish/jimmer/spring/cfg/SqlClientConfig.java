@@ -107,7 +107,7 @@ public class SqlClientConfig {
                 javaInitializers
         );
         JSqlClient sqlClient = builder.build();
-        postCreateSqlClient(sqlClient, publisher);
+        postCreateSqlClient((JSqlClientImplementor)sqlClient, publisher);
         return sqlClient;
     }
 
@@ -185,7 +185,7 @@ public class SqlClientConfig {
             );
             return Unit.INSTANCE;
         });
-        postCreateSqlClient(sqlClient.getJavaClient(), publisher);
+        postCreateSqlClient((JSqlClientImplementor) sqlClient.getJavaClient(), publisher);
         return sqlClient;
     }
 
@@ -231,6 +231,7 @@ public class SqlClientConfig {
         builder.setDefaultBatchSize(properties.getDefaultBatchSize());
         builder.setDefaultListBatchSize(properties.getDefaultListBatchSize());
         builder.setOffsetOptimizingThreshold(properties.getOffsetOptimizingThreshold());
+        builder.setForeignKeyEnabledByDefault(properties.isForeignKeyEnabledByDefault());
         builder.setExecutorContextPrefixes(properties.getExecutorContextPrefixes());
         if (properties.isShowSql()) {
             builder.setExecutor(Executor.log(executor));
@@ -271,7 +272,7 @@ public class SqlClientConfig {
     }
 
     private static void postCreateSqlClient(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ApplicationEventPublisher publisher
     ) {
         if (!(sqlClient.getConnectionManager() instanceof SpringConnectionManager)) {

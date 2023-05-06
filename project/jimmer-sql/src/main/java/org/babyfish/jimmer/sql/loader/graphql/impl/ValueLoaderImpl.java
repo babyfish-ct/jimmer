@@ -2,9 +2,9 @@ package org.babyfish.jimmer.sql.loader.graphql.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.loader.graphql.ValueLoader;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -12,21 +12,21 @@ import java.util.Map;
 
 class ValueLoaderImpl<S, V> implements ValueLoader<S, V> {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
 
     private final ImmutableProp prop;
 
     public ValueLoaderImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableProp prop
     ) {
         this(sqlClient, null, prop);
     }
 
     public ValueLoaderImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop
     ) {

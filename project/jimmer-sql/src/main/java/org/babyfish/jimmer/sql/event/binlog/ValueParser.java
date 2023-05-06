@@ -9,8 +9,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 
 import java.math.BigDecimal;
@@ -46,7 +46,7 @@ class ValueParser {
             DraftSpi spi,
             List<ImmutableProp> chain,
             JsonNode jsonNode,
-            JSqlClient sqlClient
+            JSqlClientImplementor sqlClient
     ) {
         ImmutableProp entityProp = chain.get(0);
         if (entityProp.isEmbedded(EmbeddedLevel.BOTH)) {
@@ -107,7 +107,7 @@ class ValueParser {
 
     @SuppressWarnings("unchecked")
     public static Object parseSingleValue(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             JsonNode jsonNode,
             Class<?> javaType,
             boolean useScalarProvider

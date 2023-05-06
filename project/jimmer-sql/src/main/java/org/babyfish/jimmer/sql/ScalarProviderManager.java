@@ -43,7 +43,7 @@ class ScalarProviderManager {
         this.customizedTypeScalarProviderMap = customizedTypeScalarProviderMap;
         this.customizedPropScalarProviderMap = customizedPropScalarProviderMap;
         this.defaultEnumStrategy = defaultEnumStrategy;
-        this.dialect = dialect != null ? dialect : new DefaultDialect();
+        this.dialect = dialect;
     }
 
     public ScalarProvider<?, ?> getProvider(ImmutableProp prop) {

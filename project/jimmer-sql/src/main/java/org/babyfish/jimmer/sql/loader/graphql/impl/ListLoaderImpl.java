@@ -3,10 +3,10 @@ package org.babyfish.jimmer.sql.loader.graphql.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.loader.graphql.FilterableListLoader;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoader<SE, TE, TT> {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private Connection con;
 
@@ -25,12 +25,12 @@ class ListLoaderImpl<SE, TE, TT extends Table<TE>> implements FilterableListLoad
 
     private final FieldFilter<?> filter;
 
-    public ListLoaderImpl(JSqlClient sqlClient, ImmutableProp prop) {
+    public ListLoaderImpl(JSqlClientImplementor sqlClient, ImmutableProp prop) {
         this(sqlClient, null, prop, null);
     }
 
     private ListLoaderImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
             FieldFilter<?> filter

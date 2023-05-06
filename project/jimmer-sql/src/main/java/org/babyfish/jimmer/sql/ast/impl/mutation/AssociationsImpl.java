@@ -1,19 +1,19 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.Associations;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
 
 public class AssociationsImpl implements Associations {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
     
     private final Connection con;
 
@@ -22,7 +22,7 @@ public class AssociationsImpl implements Associations {
     private final boolean reversed;
 
     public AssociationsImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con, 
             AssociationType associationType
     ) {
@@ -30,7 +30,7 @@ public class AssociationsImpl implements Associations {
     }
 
     private AssociationsImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             AssociationType associationType,
             boolean reversed

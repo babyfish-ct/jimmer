@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.util;
 
-import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.model.JimmerModule;
@@ -19,7 +18,8 @@ public class DatabaseValidatorTest extends AbstractTest {
                     new DatabaseMetadata(
                             DefaultDatabaseNamingStrategy.UPPER_CASE,
                             JimmerModule.ENTITY_MANAGER,
-                            ""
+                            "",
+                            DatabaseMetadata.AutoForeignKeyPolicy.REAL
                     ),
                     "",
                     con

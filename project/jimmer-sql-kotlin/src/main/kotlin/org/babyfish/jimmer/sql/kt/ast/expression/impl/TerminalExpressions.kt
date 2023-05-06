@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.PropExpression
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor
@@ -12,6 +11,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.runtime.ExecutionException
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.ScalarProvider
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
@@ -114,7 +114,7 @@ internal class LiteralExpression<T: Any>(
         }
 
         @JvmStatic
-        fun convert(literals: Collection<*>, expression: KExpression<*>, sqlClient: JSqlClient): Collection<*> {
+        fun convert(literals: Collection<*>, expression: KExpression<*>, sqlClient: JSqlClientImplementor): Collection<*> {
             if (literals.isEmpty()) {
                 return literals
             }

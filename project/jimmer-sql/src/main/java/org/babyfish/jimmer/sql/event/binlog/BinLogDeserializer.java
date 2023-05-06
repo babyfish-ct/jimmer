@@ -9,21 +9,21 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.io.IOException;
 import java.util.*;
 
 class BinLogDeserializer extends StdDeserializer<Object> {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final ImmutableType immutableType;
 
     public BinLogDeserializer(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType immutableType
     ) {
         super(immutableType.getJavaClass());

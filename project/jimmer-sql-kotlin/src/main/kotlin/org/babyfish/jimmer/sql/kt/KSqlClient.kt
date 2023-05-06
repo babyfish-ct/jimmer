@@ -11,8 +11,10 @@ import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
+import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.runtime.EntityManager
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -79,8 +81,6 @@ interface KSqlClient {
 
     fun getAssociations(prop: KProperty1<*, *>): KAssociations
 
-    fun <R> executeNativeSql(master: Boolean = false, block: (Connection) -> R): R
-
     @NewChain
     fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient
 
@@ -94,7 +94,7 @@ interface KSqlClient {
 
     val binLog: BinLog
 
-    val javaClient: JSqlClient
+    val javaClient: JSqlClientImplementor
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
@@ -103,3 +103,6 @@ fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
     dsl.block()
     return dsl.buildKSqlClient()
 }
+
+fun JSqlClient.toKSqlClient(): KSqlClient =
+    KSqlClientImpl(this as JSqlClientImplementor)

@@ -7,7 +7,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
@@ -25,6 +24,7 @@ import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -52,7 +52,7 @@ public class FilterManager implements Filters {
 
     private final BuiltInFilters builtIns;
 
-    private JSqlClient sqlClient;
+    private JSqlClientImplementor sqlClient;
 
     public FilterManager(
             BuiltInFilters builtIns,
@@ -235,7 +235,7 @@ public class FilterManager implements Filters {
         return disable(allFilters);
     }
 
-    public void initialize(JSqlClient sqlClient) {
+    public void initialize(JSqlClientImplementor sqlClient) {
         if (this.sqlClient != null) {
             throw new IllegalStateException("The filter manager has been initialized");
         }

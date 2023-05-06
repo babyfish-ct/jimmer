@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -19,7 +20,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
                             .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                     ctx -> {
                         if (useSql) {
@@ -58,7 +59,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
                             .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                     ctx -> {
                         ctx.sql(
@@ -90,7 +91,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 AuthorFetcher.$.firstName().lastName()
         );
         connectAndExpect(
-                con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -143,7 +144,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(

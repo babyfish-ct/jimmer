@@ -7,9 +7,9 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
@@ -17,13 +17,13 @@ import java.util.function.Consumer;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
 
-    final JSqlClient sqlClient;
+    final JSqlClientImplementor sqlClient;
 
     final Connection con;
 
     final Data data;
 
-    AbstractEntitySaveCommandImpl(JSqlClient sqlClient, Connection con, Data data) {
+    AbstractEntitySaveCommandImpl(JSqlClientImplementor sqlClient, Connection con, Data data) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
@@ -43,7 +43,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
     static class Data implements Cfg {
 
-        private final JSqlClient sqlClient;
+        private final JSqlClientImplementor sqlClient;
 
         private final Triggers triggers;
 
@@ -71,7 +71,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private boolean pessimisticLock;
 
-        Data(JSqlClient sqlClient) {
+        Data(JSqlClientImplementor sqlClient) {
             this.sqlClient = sqlClient;
             this.triggers = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
                     null :
@@ -102,7 +102,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.pessimisticLock = base.pessimisticLock;
         }
 
-        public JSqlClient getSqlClient() {
+        public JSqlClientImplementor getSqlClient() {
             return sqlClient;
         }
 

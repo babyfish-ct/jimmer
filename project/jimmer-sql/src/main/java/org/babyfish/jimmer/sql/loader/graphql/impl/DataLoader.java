@@ -3,19 +3,19 @@ package org.babyfish.jimmer.sql.loader.graphql.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 
 class DataLoader extends AbstractDataLoader {
 
     public DataLoader(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
             FieldFilter<?> filter
@@ -30,7 +30,7 @@ class DataLoader extends AbstractDataLoader {
     }
 
     public DataLoader(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
             FieldFilter<?> filter,

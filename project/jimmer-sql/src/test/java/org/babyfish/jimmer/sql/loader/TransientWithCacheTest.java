@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.BookStoreFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,7 @@ public class TransientWithCacheTest extends AbstractCachedLoaderTest {
             boolean useSql = i == 0;
             connectAndExpect(
                     con -> {
-                        return new DataLoader(getCachedSqlClient(), con, fetcher.getFieldMap().get("avgPrice"))
+                        return new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("avgPrice"))
                                 .load(Entities.BOOK_STORES);
                     },
                     ctx -> {

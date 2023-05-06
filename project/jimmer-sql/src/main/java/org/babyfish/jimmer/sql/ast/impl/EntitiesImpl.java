@@ -8,7 +8,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.Entities;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.BatchEntitySaveCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteCommandImpl;
@@ -28,6 +27,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 public class EntitiesImpl implements Entities {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final boolean forUpdate;
 
@@ -44,18 +44,18 @@ public class EntitiesImpl implements Entities {
 
     private final ExecutionPurpose purpose;
 
-    public EntitiesImpl(JSqlClient sqlClient) {
+    public EntitiesImpl(JSqlClientImplementor sqlClient) {
         this(sqlClient, false, null, ExecutionPurpose.QUERY);
     }
 
-    public EntitiesImpl(JSqlClient sqlClient, boolean forUpdate, Connection con, ExecutionPurpose purpose) {
+    public EntitiesImpl(JSqlClientImplementor sqlClient, boolean forUpdate, Connection con, ExecutionPurpose purpose) {
         this.sqlClient = sqlClient;
         this.forUpdate = forUpdate;
         this.con = con;
         this.purpose = purpose;
     }
 
-    public JSqlClient getSqlClient() {
+    public JSqlClientImplementor getSqlClient() {
         return sqlClient;
     }
 
@@ -63,7 +63,7 @@ public class EntitiesImpl implements Entities {
         return con;
     }
 
-    public EntitiesImpl forSqlClient(JSqlClient sqlClient) {
+    public EntitiesImpl forSqlClient(JSqlClientImplementor sqlClient) {
         if (this.sqlClient == sqlClient) {
             return this;
         }

@@ -6,7 +6,6 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.spring.repository.parser.*;
 import org.babyfish.jimmer.spring.repository.parser.Predicate;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
@@ -16,6 +15,7 @@ import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +31,7 @@ public class QueryExecutors {
 
     @SuppressWarnings("unchecked")
     public static Object execute(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType type,
             QueryMethod queryMethod,
             Pageable pageable,

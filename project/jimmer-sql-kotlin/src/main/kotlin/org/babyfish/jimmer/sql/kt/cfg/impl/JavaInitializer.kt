@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.cfg.impl
 
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KInitializer
-import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
+import org.babyfish.jimmer.sql.kt.toKSqlClient
 import org.babyfish.jimmer.sql.runtime.Initializer
 
 internal class JavaInitializer(
@@ -10,6 +10,6 @@ internal class JavaInitializer(
 ) : Initializer {
 
     override fun initialize(sqlClient: JSqlClient) {
-        initializer.initialize(KSqlClientImpl(sqlClient))
+        initializer.initialize(sqlClient.toKSqlClient())
     }
 }

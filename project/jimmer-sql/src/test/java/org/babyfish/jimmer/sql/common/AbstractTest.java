@@ -220,10 +220,10 @@ public class AbstractTest {
 
     protected static class LambdaClient {
 
-        private final JSqlClient sqlClient;
+        private final JSqlClientImplementor sqlClient;
 
         public LambdaClient(JSqlClient sqlClient) {
-            this.sqlClient = sqlClient;
+            this.sqlClient = (JSqlClientImplementor) sqlClient;
         }
 
         public Entities getEntities() {

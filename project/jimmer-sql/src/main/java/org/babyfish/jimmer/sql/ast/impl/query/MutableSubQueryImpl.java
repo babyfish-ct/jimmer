@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -13,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,14 +43,14 @@ public class MutableSubQueryImpl
     }
 
     public MutableSubQueryImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType immutableType
     ) {
         super(sqlClient, immutableType);
     }
 
     public MutableSubQueryImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             TableProxy<?> table
     ) {
         super(sqlClient, table);

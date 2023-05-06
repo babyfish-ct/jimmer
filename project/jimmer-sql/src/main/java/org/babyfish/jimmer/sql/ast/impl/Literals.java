@@ -1,10 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +54,7 @@ public class Literals {
     }
 
     @SuppressWarnings("unchecked")
-    public static Collection<?> convert(Collection<?> literals, Expression<?> expression, JSqlClient sqlClient) {
+    public static Collection<?> convert(Collection<?> literals, Expression<?> expression, JSqlClientImplementor sqlClient) {
         if (literals == null || literals.isEmpty()) {
             return literals;
         }

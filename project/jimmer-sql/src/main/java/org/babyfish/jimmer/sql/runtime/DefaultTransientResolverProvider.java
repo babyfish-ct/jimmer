@@ -80,7 +80,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
         if (kSqlClientClass != null) {
             try {
                 kSqlClientImplClass = Class.forName("org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl");
-                kSqlClientImplConstructor = kSqlClientImplClass.getConstructor(JSqlClient.class);
+                kSqlClientImplConstructor = kSqlClientImplClass.getConstructor(JSqlClientImplementor.class);
             } catch (ClassNotFoundException | NoSuchMethodException ex) {
                 throw new AssertionError("Internal bug", ex);
             }

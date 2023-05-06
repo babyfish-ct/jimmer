@@ -8,7 +8,6 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -37,6 +36,7 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +55,7 @@ public abstract class AbstractDataLoader {
     private static final SortedMap<String, Object> ILLEGAL_PARAMETERS =
             Collections.unmodifiableSortedMap(new TreeMap<>());
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
 
@@ -83,7 +83,7 @@ public abstract class AbstractDataLoader {
 
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType entityType,
             ImmutableProp prop,
@@ -296,7 +296,7 @@ public abstract class AbstractDataLoader {
         );
         Collection<Object> missedFkSourceIds;
         missedFkSourceIds = new ArrayList<>();
-        if (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey()) {
+        if (isUnreliableParentId()) {
             missedFkSourceIds = toSourceIds(sources);
         } else {
             for (ImmutableSpi source : sources) {
@@ -362,7 +362,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map1 = null;
         if (!fkMap.isEmpty()) {
-            if (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey()) {
+            if (isUnreliableParentId()) {
                 map1 = Utils.joinMaps(
                         fkMap,
                         Utils.toMap(
@@ -382,8 +382,7 @@ public abstract class AbstractDataLoader {
         }
         Map<Object, ImmutableSpi> map2 = null;
         if (!missedFkSourceIds.isEmpty()) {
-            if (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey() ||
-                    fetcher.getFieldMap().size() > 1) {
+            if (isUnreliableParentId() || fetcher.getFieldMap().size() > 1) {
                 map2 = Tuple2.toMap(
                         querySourceTargetPairs(missedFkSourceIds)
                 );
@@ -961,6 +960,10 @@ public abstract class AbstractDataLoader {
             }
         }
         return fetchedMap;
+    }
+
+    private boolean isUnreliableParentId() {
+        return !remote && (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey());
     }
 
     public static Connection transientResolverConnection() {

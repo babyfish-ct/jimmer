@@ -85,11 +85,10 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         }
 
     override fun findAll(fetcher: Fetcher<E>?, sort: Sort): List<E> =
-        if (fetcher !== null) {
-            sql.entities.findAll(fetcher, sort.toSortDslBlock(type))
-        } else {
-            sql.entities.findAll(entityType, sort.toSortDslBlock(type))
-        }
+        sql.createQuery(entityType) {
+            orderBy(sort)
+            select(table.fetch(fetcher))
+        }.execute()
 
     override fun findAll(
         pageIndex: Int,

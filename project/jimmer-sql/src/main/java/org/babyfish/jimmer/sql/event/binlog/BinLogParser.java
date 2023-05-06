@@ -10,12 +10,12 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -27,13 +27,13 @@ public class BinLogParser {
 
     private ObjectMapper mapper;
 
-    private JSqlClient sqlClient;
+    private JSqlClientImplementor sqlClient;
 
-    public BinLogParser initialize(JSqlClient sqlClient) {
+    public BinLogParser initialize(JSqlClientImplementor sqlClient) {
         return initialize(sqlClient, null);
     }
 
-    public BinLogParser initialize(JSqlClient sqlClient, ObjectMapper mapper) {
+    public BinLogParser initialize(JSqlClientImplementor sqlClient, ObjectMapper mapper) {
         if (sqlClient == null) {
             throw new IllegalArgumentException("`sqlClient` cannot be null");
         }

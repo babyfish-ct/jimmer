@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
@@ -10,6 +9,7 @@ import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, TypedQueryImplementor {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final String operator;
 
@@ -35,7 +35,7 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     private final boolean isForUpdate;
 
     public MergedTypedRootQueryImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             String operator,
             TypedRootQuery<R> left,
             TypedRootQuery<R> right) {

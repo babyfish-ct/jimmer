@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.function.Consumer;
@@ -15,7 +15,7 @@ public class SimpleEntitySaveCommandImpl<E>
     private final E entity;
 
     public SimpleEntitySaveCommandImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             E entity
     ) {

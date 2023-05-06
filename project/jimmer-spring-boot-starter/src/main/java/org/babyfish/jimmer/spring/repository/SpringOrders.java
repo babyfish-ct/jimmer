@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.repository;
 
-import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -37,22 +36,5 @@ public class SpringOrders {
             astOrders.add(astOrder);
         }
         return astOrders.toArray(EMPTY_ORDERS);
-    }
-
-    public static TypedProp.Scalar<?, ?>[] toTypedProps(Class<?> type, Sort sort) {
-        ImmutableType immutableType = ImmutableType.get(type);
-        List<TypedProp.Scalar<?, ?>> props = new ArrayList<>();
-        for (Sort.Order order : sort) {
-            if (order.getProperty().contains(".")) {
-                throw new IllegalArgumentException(
-                        "The property \"" +
-                                order.getProperty() +
-                                "\", `Sorts.toTypedProps()` does not support property chain name contains '.'"
-                );
-            }
-            TypedProp.Scalar<?, ?> prop = TypedProp.scalar(immutableType.getProp(order.getProperty()));
-            props.add(order.isDescending() ? prop.desc() : prop);
-        }
-        return props.toArray(EMPTY_PROPS);
     }
 }

@@ -12,18 +12,20 @@ import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.NoRepositoryBean;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,7 +35,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     private static final TypedProp.Scalar<?, ?>[] EMPTY_SORTED_PROPS = new TypedProp.Scalar[0];
 
-    protected final JSqlClient sqlClient;
+    protected final JSqlClientImplementor sqlClient;
 
     protected final Class<E> entityType;
 
@@ -45,8 +47,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @SuppressWarnings("unchecked")
     public JRepositoryImpl(JSqlClient sqlClient, Class<E> entityType) {
-        Utils.validateSqlClient(sqlClient);
-        this.sqlClient = sqlClient;
+        this.sqlClient = Utils.validateSqlClient(sqlClient);
         if (entityType != null) {
             this.entityType = entityType;
         } else {
@@ -159,15 +160,21 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public List<E> findAll(@NotNull Sort sort) {
-        return sqlClient.getEntities().findAll(entityType, SpringOrders.toTypedProps(entityType, sort));
+        return findAll(null, sort);
     }
 
     @Override
     public List<E> findAll(Fetcher<E> fetcher, Sort sort) {
-        if (fetcher == null) {
-            return findAll(sort);
-        }
-        return sqlClient.getEntities().findAll(fetcher, SpringOrders.toTypedProps(entityType, sort));
+        MutableRootQueryImpl<Table<E>> query =
+                new MutableRootQueryImpl<>(
+                        sqlClient,
+                        immutableType,
+                        ExecutionPurpose.QUERY,
+                        false
+                );
+        Table<E> table = query.getTable();
+        query.orderBy(SpringOrders.toOrders(table, sort));
+        return query.select(table.fetch(fetcher)).execute();
     }
 
     @Override
@@ -208,8 +215,17 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public Page<E> findAll(Pageable pageable, Fetcher<E> fetcher) {
+        MutableRootQueryImpl<Table<E>> query =
+                new MutableRootQueryImpl<>(
+                        sqlClient,
+                        immutableType,
+                        ExecutionPurpose.QUERY,
+                        false
+                );
+        Table<E> table = query.getTable();
+        query.orderBy(SpringOrders.toOrders(table, pageable.getSort()));
         return pager(pageable).execute(
-                createQuery(fetcher, SpringOrders.toTypedProps(entityType, pageable.getSort()))
+                query.select(table.fetch(fetcher))
         );
     }
 

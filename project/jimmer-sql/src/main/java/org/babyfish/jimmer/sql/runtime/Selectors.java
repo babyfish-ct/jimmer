@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 
@@ -16,7 +15,7 @@ public class Selectors {
 
     @SuppressWarnings("unchecked")
     public static <R> List<R> select(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             String sql,
             List<Object> variables,
@@ -40,7 +39,7 @@ public class Selectors {
 
     @SuppressWarnings("unchecked")
     public static <R> void forEach(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             String sql,
             List<Object> variables,

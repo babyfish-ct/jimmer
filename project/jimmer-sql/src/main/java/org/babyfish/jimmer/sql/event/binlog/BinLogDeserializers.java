@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 class BinLogDeserializers extends Deserializers.Base {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
-    BinLogDeserializers(JSqlClient sqlClient) {
+    BinLogDeserializers(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
     }
 

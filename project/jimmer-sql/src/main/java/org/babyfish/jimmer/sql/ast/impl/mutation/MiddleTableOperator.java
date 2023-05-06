@@ -3,14 +3,10 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.Storage;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.ExecutorContext;
-import org.babyfish.jimmer.sql.runtime.Selectors;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,7 +14,7 @@ import java.util.*;
 
 class MiddleTableOperator {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
 
@@ -33,7 +29,7 @@ class MiddleTableOperator {
     private final MutationTrigger trigger;
 
     private MiddleTableOperator(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
             MiddleTable middleTable,
@@ -49,7 +45,7 @@ class MiddleTableOperator {
     }
 
     public static MiddleTableOperator tryGet(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
             MutationTrigger trigger

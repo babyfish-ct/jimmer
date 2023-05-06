@@ -26,7 +26,7 @@ public class KotlinMethodCodeWriter extends MethodCodeWriter {
                 Opcodes.INVOKEINTERFACE,
                 K_SQL_CLIENT_INTERNAL_NAME,
                 "getJavaClient",
-                "()" + J_SQL_CLIENT_DESCRIPTOR,
+                "()" + J_SQL_CLIENT_IMPLEMENTOR_DESCRIPTOR,
                 true
         );
     }

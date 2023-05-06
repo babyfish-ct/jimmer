@@ -10,13 +10,14 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
 
 class MutationCache {
 
-    private final JSqlClient sqlClientWithoutCache;
+    private final JSqlClientImplementor sqlClientWithoutCache;
 
     private final boolean pessimisticLockRequired;
 
@@ -26,7 +27,7 @@ class MutationCache {
 
     private final IdentityHashMap<Object, Object> savedMap = new IdentityHashMap<>();
 
-    public MutationCache(JSqlClient sqlClient, boolean pessimisticLockRequired) {
+    public MutationCache(JSqlClientImplementor sqlClient, boolean pessimisticLockRequired) {
         this.sqlClientWithoutCache = sqlClient.caches(CacheDisableConfig::disableAll);
         this.pessimisticLockRequired = pessimisticLockRequired;
     }

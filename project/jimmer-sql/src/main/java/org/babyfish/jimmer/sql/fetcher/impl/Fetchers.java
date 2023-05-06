@@ -3,16 +3,13 @@ package org.babyfish.jimmer.sql.fetcher.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
-import java.util.function.Function;
 
 public class Fetchers {
 
@@ -20,7 +17,7 @@ public class Fetchers {
 
     @SuppressWarnings("unchecked")
     public static void fetch(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             List<Selection<?>> selections,
             List<?> rows
@@ -90,7 +87,7 @@ public class Fetchers {
     }
 
     private static void fetch(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             Fetcher<?> fetcher,
             List<DraftSpi> drafts
@@ -103,7 +100,7 @@ public class Fetchers {
         });
     }
 
-    private static boolean hasReferenceFilter(ImmutableType type, JSqlClient sqlClient) {
+    private static boolean hasReferenceFilter(ImmutableType type, JSqlClientImplementor sqlClient) {
         for (ImmutableProp prop : type.getSelectableReferenceProps().values()) {
             if (sqlClient.getFilters().getTargetFilter(prop) != null) {
                 return true;

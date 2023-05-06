@@ -44,7 +44,7 @@ public class ExecutorContext {
 
     @Nullable
     public static ExecutorContext create(JSqlClient sqlClient) {
-        List<String> prefixes = sqlClient.getExecutorContextPrefixes();
+        List<String> prefixes = ((JSqlClientImplementor)sqlClient).getExecutorContextPrefixes();
         if (prefixes == null) {
             return null;
         }

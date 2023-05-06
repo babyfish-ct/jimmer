@@ -4,12 +4,12 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteCommand;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.Converters;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 
 public class DeleteCommandImpl implements DeleteCommand {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
 
@@ -28,7 +28,7 @@ public class DeleteCommandImpl implements DeleteCommand {
     private final Data data;
 
     public DeleteCommandImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType immutableType,
             Collection<?> ids,
@@ -112,7 +112,7 @@ public class DeleteCommandImpl implements DeleteCommand {
 
     static class Data implements Cfg {
 
-        private final JSqlClient sqlClient;
+        private final JSqlClientImplementor sqlClient;
 
         private DeleteMode mode;
 
@@ -120,13 +120,13 @@ public class DeleteCommandImpl implements DeleteCommand {
 
         private boolean frozen;
 
-        Data(JSqlClient sqlClient, DeleteMode deleteMode) {
+        Data(JSqlClientImplementor sqlClient, DeleteMode deleteMode) {
             this.sqlClient = sqlClient;
             this.mode = deleteMode;
             this.dissociateActionMap = new LinkedHashMap<>();
         }
 
-        Data(JSqlClient sqlClient, DeleteMode mode, Map<ImmutableProp, DissociateAction> dissociateActionMap) {
+        Data(JSqlClientImplementor sqlClient, DeleteMode mode, Map<ImmutableProp, DissociateAction> dissociateActionMap) {
             this.sqlClient = sqlClient;
             this.mode = mode;
             if (dissociateActionMap != null) {
@@ -142,7 +142,7 @@ public class DeleteCommandImpl implements DeleteCommand {
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
         }
 
-        public JSqlClient getSqlClient() {
+        public JSqlClientImplementor getSqlClient() {
             return sqlClient;
         }
 

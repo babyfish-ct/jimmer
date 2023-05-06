@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.cfg
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
@@ -18,6 +19,7 @@ import org.babyfish.jimmer.sql.kt.cfg.impl.JavaInitializer
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
+import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
@@ -36,6 +38,10 @@ class KSqlClientDsl internal constructor(
 
     fun setDefaultEnumStrategy(strategy: EnumType.Strategy) {
         javaBuilder.setDefaultEnumStrategy(strategy)
+    }
+
+    fun setDatabaseNamingStrategy(strategy: DatabaseNamingStrategy) {
+        javaBuilder.setDatabaseNamingStrategy(strategy)
     }
 
     fun setDefaultBatchSize(size: Int) {
@@ -64,6 +70,28 @@ class KSqlClientDsl internal constructor(
 
     fun setExecutor(executor: Executor?) {
         javaBuilder.setExecutor(executor)
+    }
+
+    /**
+     * If this option is configured, when jimmer calls back
+     * `org.babyfish.jimmer.sql.runtime.Executor.execute` before executing SQL,
+     * it will check the stack trace information of the current thread.
+     *
+     * However, these stack traces have too much information, including
+     * infrastructure call frames represented by jdk, jdbc driver, jimmer, and spring,
+     * and the business-related information you care about will be submerged in the ocean of information.
+     *
+     * Through this configuration, you can specify multiple package or class prefixes, and jimmer will
+     * judge whether there are some call frames in the stack trace whose class names start with some
+     * of these prefixes. If the judgment is true, jimmer believes that the current callback is related
+     * to your business, and the `ctx` parameter of `org.babyfish.jimmer.sql.runtime.Executor.execute`
+     * will be passed as non-null.
+     *
+     * If the SQL logging configuration is enabled at the same time, when a SQL statement is caused by
+     * the business you care about, the business call frame will be printed together with the SQL log.
+     */
+    fun setExecutorContextPrefixes(prefixes: Collection<String>) {
+        javaBuilder.setExecutorContextPrefixes(prefixes)
     }
 
     fun setExecutor(block: ExecutorDsl.() -> Unit) {
@@ -145,11 +173,33 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDraftInterceptors(interceptor)
     }
 
-    fun addCustomers(vararg customers: KCustomizer) {
+    fun setBinLogObjectMapper(mapper: ObjectMapper) {
+        javaBuilder.setBinLogObjectMapper(mapper)
+    }
+
+    /**
+     * This configuration is only useful for {@link org.babyfish.jimmer.sql.JoinColumn}
+     * of local associations (not remote associations across microservice boundaries)
+     * whose `foreignKeyType` is specified as `AUTO`.Its value indicates whether the
+     * foreign key is real, that is, whether there is a foreign key constraint in the database.
+     *
+     * <p>In general, you should ignore this configuration (defaults to true) or set it to true.</p>
+     *
+     * In some cases, you need to set it to false, such as
+     * <ul>
+     *  <li>Using database/table sharding technology, such as sharding-jdbc</li>
+     *  <li>Using database that does not support foreign key, such as TiDB</li>
+     * </ul>
+     */
+    fun setForeignKeyEnabledByDefault(enabled: Boolean) {
+        javaBuilder.setForeignKeyEnabledByDefault(enabled)
+    }
+
+    fun addCustomizers(vararg customers: KCustomizer) {
         javaBuilder.addCustomizers(customers.map { JavaCustomizer(it) })
     }
 
-    fun addCustomers(customers: Collection<KCustomizer>) {
+    fun addCustomizers(customers: Collection<KCustomizer>) {
         javaBuilder.addCustomizers(customers.map { JavaCustomizer(it) })
     }
 
@@ -169,6 +219,29 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setDatabaseValidationCatalog(catalog)
     }
 
+    /**
+     * For RDBMS, pagination is slow if `offset` is large, especially for MySQL.
+     *
+     * If `offset` >= $thisArgument
+     *
+     * <pre>{@code
+     *  select t.* from Table t ... limit ? offset ?
+     * }</pre>
+     *
+     * will be automatically changed to
+     *
+     * <pre>{@code
+     *  select t.* from (
+     *      select
+     *          t.id as optimized_core_id_
+     *      from Table t ... limit ? offset ?
+     *  ) optimized_core_
+     *  inner join Table as optimized_
+     *      on optimized_.optimized_core_id_ = optimized_core_.optimized_core_id_
+     * }</pre>
+     *
+     * @return An integer which is greater than 0
+     */
     fun setOffsetOptimizingThreshold(threshold: Int) {
         javaBuilder.setOffsetOptimizingThreshold(threshold)
     }
@@ -304,5 +377,5 @@ class KSqlClientDsl internal constructor(
     }
 
     internal fun buildKSqlClient(): KSqlClient =
-        KSqlClientImpl(javaBuilder.build())
+        KSqlClientImpl(javaBuilder.build() as JSqlClientImplementor)
 }

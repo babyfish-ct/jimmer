@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.fetcher.impl.DataLoader;
 import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.BookStore;
 import org.babyfish.jimmer.sql.model.BookStoreFetcher;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Test;
 
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -16,7 +17,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
     public void loadChildIds() {
         Fetcher<BookStore> fetcher = BookStoreFetcher.$.books();
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
                         .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
@@ -65,7 +66,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
                         .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
@@ -104,7 +105,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                 BookFetcher.$.name().edition()
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
                         .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(
@@ -191,7 +192,7 @@ public class OneToManyWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader(getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
                         .load(Entities.BOOK_STORES),
                 ctx -> {
                     ctx.sql(

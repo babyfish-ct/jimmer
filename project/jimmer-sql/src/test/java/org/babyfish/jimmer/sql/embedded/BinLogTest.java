@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.model.embedded.OrderItemProps;
 import org.babyfish.jimmer.sql.model.embedded.ProductProps;
 import org.babyfish.jimmer.sql.model.embedded.Transform;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,8 @@ import static org.babyfish.jimmer.sql.common.Constants.learningGraphQLId1;
 
 public class BinLogTest {
 
-    private final JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
+    private final JSqlClientImplementor sqlClient =
+            (JSqlClientImplementor) JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
 
     @Test
     public void testTransform() {

@@ -17,7 +17,7 @@ public class JavaMethodCodeWriter extends MethodCodeWriter {
                 Opcodes.GETFIELD,
                 parent.getImplInternalName(),
                 "sqlClient",
-                J_SQL_CLIENT_DESCRIPTOR
+                J_SQL_CLIENT_IMPLEMENTOR_DESCRIPTOR
         );
     }
 }

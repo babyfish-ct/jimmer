@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -14,12 +13,13 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.*;
 
 public abstract class AbstractMutableStatementImpl implements FilterableImplementor {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private final ImmutableType type;
 
@@ -32,7 +32,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     private boolean frozen;
 
     public AbstractMutableStatementImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             ImmutableType type
     ) {
         if (!type.isEntity()) {
@@ -55,7 +55,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     }
 
     public AbstractMutableStatementImpl(
-            JSqlClient sqlClient,
+            JSqlClientImplementor sqlClient,
             TableProxy<?> table
     ) {
         if (table.__unwrap() != null) {
@@ -143,7 +143,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         }
     }
 
-    public JSqlClient getSqlClient() {
+    public JSqlClientImplementor getSqlClient() {
         return sqlClient;
     }
 

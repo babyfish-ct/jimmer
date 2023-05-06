@@ -62,7 +62,8 @@ public class EntityManagerTest {
         DatabaseMetadata metadata = new DatabaseMetadata(
                 DefaultDatabaseNamingStrategy.UPPER_CASE,
                 JimmerModule.ENTITY_MANAGER,
-                ""
+                "",
+                DatabaseMetadata.AutoForeignKeyPolicy.REAL
         );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),

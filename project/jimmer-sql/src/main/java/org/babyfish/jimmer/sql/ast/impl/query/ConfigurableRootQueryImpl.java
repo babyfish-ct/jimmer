@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -9,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -153,7 +153,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (data.getLimit() == 0) {
             return Collections.emptyList();
         }
-        JSqlClient sqlClient = getBaseQuery().getSqlClient();
+        JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         return Selectors.select(
                 sqlClient,
@@ -181,7 +181,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (data.getLimit() == 0) {
             return;
         }
-        JSqlClient sqlClient = getBaseQuery().getSqlClient();
+        JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
         int finalBatchSize = batchSize > 0 ? batchSize : sqlClient.getDefaultBatchSize();
         if (con != null) {
             forEachImpl(con, finalBatchSize, consumer);
@@ -194,7 +194,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
-        JSqlClient sqlClient = getBaseQuery().getSqlClient();
+        JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
         Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
         Selectors.forEach(
                 sqlClient,
@@ -246,7 +246,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
-    public JSqlClient getSqlClient() {
+    public JSqlClientImplementor getSqlClient() {
         return getBaseQuery().getSqlClient();
     }
 

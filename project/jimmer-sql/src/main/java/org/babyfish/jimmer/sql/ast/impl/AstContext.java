@@ -8,19 +8,20 @@ import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
 public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>, TableUsedState> implements RootTableResolver {
 
-    private final JSqlClient sqlClient;
+    private final JSqlClientImplementor sqlClient;
 
     private StackFrame frame;
 
-    public AstContext(JSqlClient sqlClient) {
+    public AstContext(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
     }
 
-    public JSqlClient getSqlClient() {
+    public JSqlClientImplementor getSqlClient() {
         return sqlClient;
     }
 
