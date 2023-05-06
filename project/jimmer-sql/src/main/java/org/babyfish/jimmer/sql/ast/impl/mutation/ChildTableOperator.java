@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -50,11 +51,12 @@ class ChildTableOperator {
             MutationCache cache,
             MutationTrigger trigger
     ) {
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         this.sqlClient = sqlClient;
         this.con = con;
         this.parentProp = parentProp;
-        this.fkDefinition = sqlClient.getDatabaseMetadata().getStorage(parentProp);
-        this.pkDefinition = sqlClient.getDatabaseMetadata().getStorage(parentProp.getDeclaringType().getIdProp());
+        this.fkDefinition = parentProp.getStorage(strategy);
+        this.pkDefinition = parentProp.getDeclaringType().getIdProp().getStorage(strategy);
         this.pkReader = (Reader<Object>) sqlClient.getReader(parentProp.getDeclaringType().getIdProp());
         this.pessimisticLockRequired = pessimisticLockRequired;
         if (trigger != null) {
@@ -69,18 +71,18 @@ class ChildTableOperator {
     public boolean exists(Object parentId, Collection<Object> retainedChildIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         SqlBuilder subBuilder = builder.createChildBuilder();
-        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         subBuilder
                 .sql("select 1 from ")
-                .sql(metadata.getTableName(parentProp.getDeclaringType()))
+                .sql(parentProp.getDeclaringType().getTableName(strategy))
                 .sql(" where ")
-                .sql(metadata.<ColumnDefinition>getStorage(parentProp))
+                .sql(parentProp.<ColumnDefinition>getStorage(strategy))
                 .sql(" = ")
                 .variable(parentId);
         if (!retainedChildIds.isEmpty()) {
             subBuilder
                     .sql(" and ")
-                    .sql(metadata.<ColumnDefinition>getStorage(parentProp.getDeclaringType().getIdProp()))
+                    .sql(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage(strategy))
                     .sql(" not in(");
             String separator = "";
             for (Object retainedChildId : retainedChildIds) {
@@ -155,12 +157,12 @@ class ChildTableOperator {
 
     private int setParentImpl(Object parentId, Collection<Object> childIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         builder
                 .sql("update ")
-                .sql(metadata.getTableName(parentProp.getDeclaringType()))
+                .sql(parentProp.getDeclaringType().getTableName(strategy))
                 .sql(" set ");
-        ColumnDefinition definition = metadata.getStorage(parentProp);
+        ColumnDefinition definition = parentProp.getStorage(strategy);
         if (definition instanceof SingleColumn) {
             builder.sql(((SingleColumn)definition).getName()).sql(" = ");
             if (parentId == null) {
@@ -270,12 +272,12 @@ class ChildTableOperator {
     private int unsetParentImpl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
         
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         builder
                 .sql("update ")
-                .sql(metadata.getTableName(parentProp.getDeclaringType()))
+                .sql(parentProp.getDeclaringType().getTableName(strategy))
                 .sql(" set ");
-        ColumnDefinition definition = metadata.getStorage(parentProp);
+        ColumnDefinition definition = parentProp.getStorage(strategy);
         if (definition instanceof SingleColumn) {
             builder.sql(((SingleColumn)definition).getName()).sql(" = null");
         } else {
@@ -305,13 +307,13 @@ class ChildTableOperator {
 
     public List<Object> getDetachedChildIds(Object parentId, Collection<Object> retainedChildIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         ImmutableProp idProp = parentProp.getDeclaringType().getIdProp();
         builder
                 .sql("select ")
-                .sql(metadata.<ColumnDefinition>getStorage(idProp))
+                .sql(idProp.<ColumnDefinition>getStorage(strategy))
                 .sql(" from ")
-                .sql(metadata.getTableName(parentProp.getDeclaringType()));
+                .sql(parentProp.getDeclaringType().getTableName(strategy));
         addDetachConditions(builder, Collections.singleton(parentId), retainedChildIds);
         if (pessimisticLockRequired) {
             builder.sql(" for update");

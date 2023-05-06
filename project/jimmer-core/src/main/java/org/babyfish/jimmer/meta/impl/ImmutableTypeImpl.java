@@ -7,6 +7,11 @@ import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
+import org.babyfish.jimmer.sql.meta.impl.PropChains;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +20,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-class ImmutableTypeImpl implements ImmutableType {
+class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @SuppressWarnings("unchecked")
     private static final Class<? extends Annotation>[] SQL_ANNOTATION_TYPES = new Class[] {
@@ -23,6 +28,8 @@ class ImmutableTypeImpl implements ImmutableType {
             MappedSuperclass.class,
             Embeddable.class
     };
+
+    private static final IdGenerator NIL_ID_GENERATOR = new IdGenerator() {};
 
     private final Class<?> javaClass;
 
@@ -61,6 +68,10 @@ class ImmutableTypeImpl implements ImmutableType {
     private Set<ImmutableProp> keyProps = Collections.emptySet();
 
     private final String microServiceName;
+
+    private final Map<MetadataStrategy, String> tableNameMap = new HashMap<>();
+
+    private final Map<MetadataStrategy, IdGenerator> idGeneratorMap = new HashMap<>();
 
     ImmutableTypeImpl(
             Class<?> javaClass,
@@ -378,6 +389,32 @@ class ImmutableTypeImpl implements ImmutableType {
     @Override
     public String getMicroServiceName() {
         return microServiceName;
+    }
+
+    @Override
+    public String getTableName(MetadataStrategy strategy) {
+        return tableNameMap.computeIfAbsent(strategy, this::getTableName0);
+    }
+
+    private String getTableName0(MetadataStrategy strategy) {
+        Table table = javaClass.getAnnotation(Table.class);
+        String tableName = table != null ? table.name() : "";
+        if (tableName.isEmpty()) {
+            return strategy.getNamingStrategy().tableName(this);
+        }
+        return tableName;
+    }
+
+    @Override
+    public IdGenerator getIdGenerator(MetadataStrategy strategy) {
+        IdGenerator generator = idGeneratorMap.computeIfAbsent(
+                strategy,
+                it -> {
+                    IdGenerator g = IdGenerators.of(this, it.getNamingStrategy());
+                    return g != null ? g : NIL_ID_GENERATOR;
+                }
+        );
+        return generator == NIL_ID_GENERATOR ? null : generator;
     }
 
     @Override

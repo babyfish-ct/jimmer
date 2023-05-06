@@ -6,6 +6,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
@@ -15,19 +16,20 @@ import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
-import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public interface JSqlClient extends SubQueryProvider {
@@ -104,6 +106,61 @@ public interface JSqlClient extends SubQueryProvider {
 
     @NewChain
     JSqlClient disableSlaveConnectionManager();
+
+    @Nullable
+    default <E> E findById(Class<E> entityType, Object id) {
+        return getEntities().findById(entityType, id);
+    }
+
+    @Nullable
+    default <E> E findById(Fetcher<E> fetcher, Object id) {
+        return getEntities().findById(fetcher, id);
+    }
+
+    @Nullable
+    default <K, V> Map<K, V> findByIds(Class<V> entityType, Collection<K> ids) {
+        return getEntities().findMapByIds(entityType, ids);
+    }
+
+    @Nullable
+    default <K, V> Map<K, V> findByIds(Fetcher<V> entityType, Collection<K> ids) {
+        return getEntities().findMapByIds(entityType, ids);
+    }
+
+    default <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {
+        return getEntities().saveCommand(entity)
+                .setMode(mode)
+                .setAutoAttachingAll()
+                .execute();
+    }
+
+    default <E> SimpleSaveResult<E> save(E entity) {
+        return save(entity, SaveMode.UPSERT);
+    }
+
+    default <E> SimpleSaveResult<E> insert(E entity) {
+        return save(entity, SaveMode.INSERT_ONLY);
+    }
+
+    default <E> SimpleSaveResult<E> update(E entity) {
+        return save(entity, SaveMode.UPDATE_ONLY);
+    }
+
+    default DeleteResult deleteById(Class<?> entityType, Object id, DeleteMode mode) {
+        return getEntities().delete(entityType, id, mode);
+    }
+
+    default DeleteResult deleteById(Class<?> entityType, Object id) {
+        return getEntities().delete(entityType, id, DeleteMode.AUTO);
+    }
+
+    default DeleteResult deleteByIds(Class<?> entityType, Collection<?> ids, DeleteMode mode) {
+        return getEntities().batchDelete(entityType, ids, mode);
+    }
+
+    default DeleteResult deleteByIds(Class<?> entityType, Collection<?> ids) {
+        return getEntities().batchDelete(entityType, ids, DeleteMode.AUTO);
+    }
 
     interface Builder {
 

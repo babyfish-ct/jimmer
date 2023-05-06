@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.springframework.data.domain.Sort;
@@ -66,7 +68,7 @@ public class Utils {
         return implementor;
     }
 
-    public static Sort toSort(List<Order> orders, DatabaseMetadata metadata) {
+    public static Sort toSort(List<Order> orders, MetadataStrategy strategy) {
         if (orders == null || orders.isEmpty()) {
             return Sort.unsorted();
         }
@@ -75,9 +77,8 @@ public class Utils {
             if (order.getExpression() instanceof PropExpression<?>) {
                 PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>) order.getExpression();
                 String prefix = prefix(propExpr.getTable());
-                String path = propExpr.getPartial(metadata) != null ?
-                        propExpr.getPartial(metadata).path() :
-                        propExpr.getProp().getName();
+                EmbeddedColumns.Partial partial = propExpr.getPartial(strategy);
+                String path = partial != null ? partial.path() : propExpr.getProp().getName();
                 if (prefix != null) {
                     path = prefix + '.' + path;
                 }

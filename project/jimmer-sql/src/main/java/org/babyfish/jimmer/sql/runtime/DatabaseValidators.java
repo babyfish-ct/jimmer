@@ -16,7 +16,11 @@ import java.util.stream.Collectors;
 
 public class DatabaseValidators {
 
-    private final DatabaseMetadata metadata;
+    private final EntityManager entityManager;
+
+    private final String microServiceName;
+
+    private final MetadataStrategy strategy;
 
     private final String catalog;
 
@@ -30,28 +34,38 @@ public class DatabaseValidators {
 
     @Nullable
     public static DatabaseValidationException validate(
-            DatabaseMetadata metadata,
+            EntityManager entityManager,
+            String microServiceName,
+            MetadataStrategy strategy,
             String catalog,
             Connection con
     ) throws SQLException {
-        return new DatabaseValidators(metadata, catalog, con).validate();
+        return new DatabaseValidators(entityManager, microServiceName, strategy, catalog, con).validate();
     }
 
-    private DatabaseValidators(DatabaseMetadata metadata, String catalog, Connection con) {
-        this.metadata = metadata;
+    private DatabaseValidators(
+            EntityManager entityManager,
+            String microServiceName,
+            MetadataStrategy strategy,
+            String catalog,
+            Connection con
+    ) {
+        this.entityManager = entityManager;
+        this.microServiceName = microServiceName;
+        this.strategy = strategy;
         this.catalog = catalog;
         this.con = con;
         this.items = new ArrayList<>();
     }
 
     private DatabaseValidationException validate() throws SQLException {
-        for (ImmutableType type : metadata.getEntityTypes()) {
-            if (!(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
+            if (type.isEntity() && !(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateSelf(type);
             }
         }
-        for (ImmutableType type : metadata.getEntityTypes()) {
-            if (!(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
+        for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {
+            if (type.isEntity() && !(type instanceof AssociationType) && !type.getJavaClass().isAnnotationPresent(DatabaseValidationIgnore.class)) {
                 validateForeignKey(type);
             }
         }
@@ -67,7 +81,7 @@ public class DatabaseValidators {
             return;
         }
         if (!(type instanceof AssociationType) && type.getIdProp().getAnnotation(DatabaseValidationIgnore.class) != null) {
-            ColumnDefinition idColumnDefinition = metadata.getStorage(type.getIdProp());
+            ColumnDefinition idColumnDefinition = type.getIdProp().getStorage(strategy);
             Set<String> idColumnNames = new LinkedHashSet<>((idColumnDefinition.size() * 4 + 2) / 3);
             for (int i = 0; i < idColumnDefinition.size(); i++) {
                 idColumnNames.add(
@@ -80,7 +94,7 @@ public class DatabaseValidators {
                                 type,
                                 null,
                                 "Expected primary key columns are " +
-                                        metadata.<ColumnDefinition>getStorage(type.getIdProp()).toColumnNames() +
+                                        type.getIdProp().<ColumnDefinition>getStorage(strategy).toColumnNames() +
                                         ", but actual primary key columns are " +
                                         table.primaryKeyColumns
                         )
@@ -91,7 +105,7 @@ public class DatabaseValidators {
             if (prop.getAnnotation(DatabaseValidationIgnore.class) != null) {
                 continue;
             }
-            Storage storage = metadata.getStorage(prop);
+            Storage storage = prop.getStorage(strategy);
             if (storage instanceof ColumnDefinition) {
                 ColumnDefinition columnDefinition = (ColumnDefinition)storage;
                 for (int i = 0; i < columnDefinition.size(); i++) {
@@ -150,7 +164,7 @@ public class DatabaseValidators {
                 continue;
             }
             ForeignKeyContext ctx = new ForeignKeyContext(this, type, prop);
-            Storage storage = metadata.getStorage(prop);
+            Storage storage = prop.getStorage(strategy);
             if (storage instanceof MiddleTable) {
                 Table middleTable = middleTableOf(prop);
                 if (middleTable != null) {
@@ -169,7 +183,7 @@ public class DatabaseValidators {
                     }
                 }
             } else if (storage != null && prop.isReference(TargetLevel.PERSISTENT)) {
-                ColumnDefinition columnDefinition = metadata.getStorage(prop);
+                ColumnDefinition columnDefinition = prop.getStorage(strategy);
                 if (columnDefinition.isForeignKey()) {
                     ForeignKey foreignKey = table.getForeignKey(ctx, columnDefinition);
                     if (foreignKey != null) {
@@ -183,14 +197,14 @@ public class DatabaseValidators {
     private Table tableOf(ImmutableType type) throws SQLException {
         org.babyfish.jimmer.lang.Ref<Table> tableRef = tableRefMap.get(type);
         if (tableRef == null) {
-            Set<Table> tables = tablesOf(metadata.getTableName(type));
+            Set<Table> tables = tablesOf(type.getTableName(strategy));
             if (tables.isEmpty()) {
                 items.add(
                         new DatabaseValidationException.Item(
                                 type,
                                 null,
                                 "There is no table \"" +
-                                        metadata.getTableName(type) +
+                                        type.getTableName(strategy) +
                                         "\""
                         )
                 );
@@ -217,7 +231,7 @@ public class DatabaseValidators {
     private Table middleTableOf(ImmutableProp prop) throws SQLException {
         Ref<Table> tableRef = middleTableRefMap.get(prop);
         if (tableRef == null) {
-            Storage storage = metadata.getStorage(prop);
+            Storage storage = prop.getStorage(strategy);
             if (storage instanceof MiddleTable) {
                 MiddleTable middleTable = (MiddleTable) storage;
                 Set<Table> tables = tablesOf(middleTable.getTableName());
@@ -564,7 +578,9 @@ public class DatabaseValidators {
                 ForeignKeyContext ctx,
                 ImmutableType referencedType
         ) {
-            if (!ctx.databaseValidators.metadata.<ColumnDefinition>getStorage(referencedType.getIdProp())
+            if (!referencedType
+                    .getIdProp()
+                    .<ColumnDefinition>getStorage(ctx.databaseValidators.strategy)
                     .toColumnNames()
                     .equals(referenceColumNames)) {
                 ctx.databaseValidators.items.add(
@@ -576,7 +592,10 @@ public class DatabaseValidators {
                                         "\", expected referenced columns are " +
                                         referenceColumNames +
                                         ", but actual referenced columns are " +
-                                        ctx.databaseValidators.metadata.<ColumnDefinition>getStorage(referencedType.getIdProp()).toColumnNames()
+                                        referencedType
+                                                .getIdProp()
+                                                .<ColumnDefinition>getStorage(ctx.databaseValidators.strategy)
+                                                .toColumnNames()
                         )
                 );
             }

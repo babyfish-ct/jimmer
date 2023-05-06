@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.spi.KNonNullPropExpressionImplementor
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns
+import org.babyfish.jimmer.sql.meta.MetadataStrategy
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KProperty1
 
@@ -46,6 +47,6 @@ internal class NonNullPropExpressionImpl<T: Any>(
     override fun getProp(): ImmutableProp =
         javaPropExpression.prop
 
-    override fun getPartial(metadata: DatabaseMetadata): EmbeddedColumns.Partial? =
-        javaPropExpression.getPartial(metadata)
+    override fun getPartial(strategy: MetadataStrategy): EmbeddedColumns.Partial? =
+        javaPropExpression.getPartial(strategy)
 }

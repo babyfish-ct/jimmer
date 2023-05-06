@@ -5,9 +5,13 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +19,7 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
 
-public class AssociationType implements ImmutableType {
+public class AssociationType extends AbstractImmutableTypeImpl {
 
     private static final StaticCache<ImmutableProp, AssociationType> CACHE =
             new StaticCache<>(AssociationType::new, false);
@@ -83,6 +87,14 @@ public class AssociationType implements ImmutableType {
 
     public AssociationProp getTargetProp() {
         return targetProp;
+    }
+
+    public MiddleTable getMiddleTable(MetadataStrategy strategy) {
+        ImmutableProp mappedBy = baseProp.getMappedBy();
+        if (mappedBy != null) {
+            return mappedBy.<MiddleTable>getStorage(strategy).getInverse();
+        }
+        return baseProp.getStorage(strategy);
     }
 
     @NotNull
@@ -213,6 +225,16 @@ public class AssociationType implements ImmutableType {
     @Override
     public String getMicroServiceName() {
         return baseProp.getDeclaringType().getMicroServiceName();
+    }
+
+    @Override
+    public String getTableName(MetadataStrategy strategy) {
+        return getMiddleTable(strategy).getTableName();
+    }
+
+    @Override
+    public IdGenerator getIdGenerator(MetadataStrategy strategy) {
+        return null;
     }
 
     @Override

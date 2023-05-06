@@ -385,7 +385,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                             pageSize,
                             Utils.toSort(
                                     queryImplementor.getOrders(),
-                                    queryImplementor.getSqlClient().getDatabaseMetadata()
+                                    queryImplementor.getSqlClient().getMetadataStrategy()
                             )
                     ),
                     total

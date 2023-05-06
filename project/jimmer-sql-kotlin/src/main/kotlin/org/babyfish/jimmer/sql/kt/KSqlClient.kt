@@ -2,10 +2,12 @@ package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode
 import org.babyfish.jimmer.sql.event.binlog.BinLog
+import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableDelete
-import org.babyfish.jimmer.sql.kt.ast.mutation.KMutableUpdate
+import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
@@ -95,6 +97,49 @@ interface KSqlClient {
     val binLog: BinLog
 
     val javaClient: JSqlClientImplementor
+
+    fun <E: Any> findById(entityType: KClass<E>, id: Any): E? =
+        entities.findById(entityType, id)
+
+    fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
+        entities.findById(fetcher, id)
+
+    fun <K, V: Any> findByIds(entityType: KClass<V>, ids: Collection<K>): Map<K, V> =
+        entities.findMapByIds(entityType, ids)
+
+    fun <K, V: Any> findByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
+        entities.findMapByIds(fetcher, ids)
+
+    fun <E: Any> save(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+        entities.save(entity) {
+            setMode(mode)
+            setAutoAttachingAll()
+        }
+
+    fun <E: Any> save(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        entities.save(entity, block = block)
+
+    fun <E: Any> insert(entity: E): KSimpleSaveResult<E> =
+        save(entity, SaveMode.INSERT_ONLY)
+
+    fun <E: Any> update(entity: E): KSimpleSaveResult<E> =
+        save(entity, SaveMode.UPDATE_ONLY)
+
+    fun <E: Any> deleteById(entityType: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+        entities.delete(entityType, id) {
+            setMode(mode)
+        }
+
+    fun <E: Any> deleteById(entityType: KClass<E>, id: Any, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+        entities.delete(entityType, id, block = block)
+
+    fun <E: Any> deleteByIds(entityType: KClass<E>, ids: Collection<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+        entities.batchDelete(entityType, ids) {
+            setMode(mode)
+        }
+
+    fun <E: Any> deleteByIds(entityType: KClass<E>, ids: Collection<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+        entities.batchDelete(entityType, ids, block = block)
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {

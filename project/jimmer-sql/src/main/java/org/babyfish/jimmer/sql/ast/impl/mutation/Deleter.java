@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.*;
 
@@ -173,15 +174,15 @@ public class Deleter {
     private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
         ImmutableProp manyToOneProp = prop.getMappedBy();
         ImmutableType childType = manyToOneProp.getDeclaringType();
-        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
-        ColumnDefinition definition = metadata.getStorage(manyToOneProp);
+        MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
+        ColumnDefinition definition = manyToOneProp.getStorage(strategy);
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
         builder
                 .sql("select ")
-                .sql(metadata.<ColumnDefinition>getStorage(childType.getIdProp()))
+                .sql(childType.getIdProp().<ColumnDefinition>getStorage(strategy))
                 .sql(" from ")
-                .sql(metadata.getTableName(childType))
+                .sql(childType.getTableName(strategy))
                 .sql(" where ")
                 .sql(null, definition, true)
                 .sql(" in (");
@@ -262,13 +263,13 @@ public class Deleter {
             return;
         }
 
-        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
-        ColumnDefinition definition = metadata.getStorage(type.getIdProp());
+        MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
+        ColumnDefinition definition = type.getIdProp().getStorage(strategy);
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("update ");
-        builder.sql(metadata.getTableName(type));
+        builder.sql(type.getTableName(strategy));
         builder.sql(" set ");
-        builder.sql(metadata.<SingleColumn>getStorage(info.getProp()).name(0));
+        builder.sql(info.getProp().<SingleColumn>getStorage(strategy).getName());
         builder.sql(" = ");
         if (deletedValue != null) {
             builder.variable(deletedValue);
@@ -311,11 +312,11 @@ public class Deleter {
             return;
         }
 
-        DatabaseMetadata metadata = data.getSqlClient().getDatabaseMetadata();
-        ColumnDefinition definition = metadata.getStorage(type.getIdProp());
+        MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
+        ColumnDefinition definition = type.getIdProp().getStorage(strategy);
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         builder.sql("delete from ");
-        builder.sql(metadata.getTableName(type));
+        builder.sql(type.getTableName(strategy));
         builder.sql(" where ");
         builder.sql(null, definition, true);
         builder.sql(" in (");

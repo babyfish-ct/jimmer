@@ -22,6 +22,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -72,7 +73,7 @@ public class MutableUpdateImpl
     @Override
     public <X> MutableUpdate set(PropExpression<X> path, Expression<X> value) {
         validateMutable();
-        Target target = Target.of(path, getSqlClient().getDatabaseMetadata());
+        Target target = Target.of(path, getSqlClient().getMetadataStrategy());
         if (target.table != this.getTable() && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
@@ -247,7 +248,7 @@ public class MutableUpdateImpl
             this.accept(new VisitorImpl(builder.getAstContext(), dialect));
             builder
                     .sql("update ")
-                    .sql(getSqlClient().getDatabaseMetadata().getTableName(table.getImmutableType()))
+                    .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
                     .sql(" ")
                     .sql(table.getAlias());
 
@@ -273,7 +274,7 @@ public class MutableUpdateImpl
         try {
             accept(new VisitorImpl(builder.getAstContext(), null), false);
             TableImplementor<?> table = getTableImplementor();
-            DatabaseMetadata metadata = getSqlClient().getDatabaseMetadata();
+            MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
             builder.sql("select ");
             boolean addComma = false;
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
@@ -282,16 +283,16 @@ public class MutableUpdateImpl
                 } else {
                     addComma = true;
                 }
-                builder.sql(table.getAlias(), metadata.getStorage(prop));
+                builder.sql(table.getAlias(), prop.getStorage(strategy));
             }
             if (ids != null) {
                 builder
                         .sql(" from ")
-                        .sql(metadata.getTableName(table.getImmutableType()))
+                        .sql(table.getImmutableType().getTableName(strategy))
                         .sql(" ")
                         .sql(table.getAlias())
                         .sql(" where ")
-                        .sql(table.getAlias(), metadata.getStorage(table.getImmutableType().getIdProp()), true)
+                        .sql(table.getAlias(), table.getImmutableType().getIdProp().getStorage(strategy), true)
                         .sql(" in (");
                 addComma = false;
                 for (Object id : ids) {
@@ -334,7 +335,7 @@ public class MutableUpdateImpl
         impl.renderSelection(
                 target.prop,
                 builder,
-                target.expr.getPartial(builder.getAstContext().getSqlClient().getDatabaseMetadata()),
+                target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy()),
                 withPrefix
         );
     }
@@ -378,7 +379,7 @@ public class MutableUpdateImpl
         if (ids != null) {
             ImmutableProp idProp = table.getImmutableType().getIdProp();
             builder.sql(separator)
-                    .sql(table.getAlias(), getSqlClient().getDatabaseMetadata().getStorage(idProp), true)
+                    .sql(table.getAlias(), idProp.getStorage(getSqlClient().getMetadataStrategy()), true)
                     .sql(" in (");
             boolean addComma = false;
             for (Object id : ids) {
@@ -426,9 +427,9 @@ public class MutableUpdateImpl
             this.expr = (PropExpressionImplementor)expr;
         }
 
-        static Target of(PropExpression<?> expr, DatabaseMetadata metadata) {
+        static Target of(PropExpression<?> expr, MetadataStrategy strategy) {
             PropExpressionImplementor<?> implementor = (PropExpressionImplementor<?>) expr;
-            EmbeddedColumns.Partial partial = implementor.getPartial(metadata);
+            EmbeddedColumns.Partial partial = implementor.getPartial(strategy);
             if (partial != null && partial.isEmbedded()) {
                 throw new IllegalArgumentException(
                         "The property \"" +

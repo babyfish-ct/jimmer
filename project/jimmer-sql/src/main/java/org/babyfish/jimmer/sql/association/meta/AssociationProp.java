@@ -4,7 +4,7 @@ import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
+import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -256,6 +256,12 @@ public abstract class AssociationProp implements ImmutableProp {
             return GETTER.getAnnotations();
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public ColumnDefinition getStorage(MetadataStrategy strategy) {
+            return declaringType.getMiddleTable(strategy).getColumnDefinition();
+        }
+
         static {
             try {
                 GETTER = Association.class.getMethod("source");
@@ -306,6 +312,12 @@ public abstract class AssociationProp implements ImmutableProp {
         @Override
         public Annotation[] getAnnotations() {
             return GETTER.getAnnotations();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public ColumnDefinition getStorage(MetadataStrategy strategy) {
+            return declaringType.getMiddleTable(strategy).getTargetColumnDefinition();
         }
 
         static {

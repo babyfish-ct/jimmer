@@ -193,7 +193,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
                     pageSize,
                     Utils.toSort(
                         queryImplementor.javaOrders,
-                        queryImplementor.javaSqlClient.databaseMetadata
+                        queryImplementor.javaSqlClient.metadataStrategy
                     )
                 ),
                 total.toLong()

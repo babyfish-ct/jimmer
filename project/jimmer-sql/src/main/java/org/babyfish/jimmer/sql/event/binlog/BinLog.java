@@ -5,7 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,14 +14,26 @@ public class BinLog {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BinLog.class);
 
-    private final DatabaseMetadata databaseMetadata;
+    private final EntityManager entityManager;
+
+    private final String microServiceName;
+
+    private final MetadataStrategy strategy;
 
     private final BinLogParser binLogParser;
 
     private final Triggers triggers;
 
-    public BinLog(DatabaseMetadata databaseMetadata, BinLogParser binLogParser, Triggers triggers) {
-        this.databaseMetadata = databaseMetadata;
+    public BinLog(
+            EntityManager entityManager,
+            String microServiceName,
+            MetadataStrategy strategy,
+            BinLogParser binLogParser,
+            Triggers triggers
+    ) {
+        this.entityManager = entityManager;
+        this.microServiceName = microServiceName;
+        this.strategy = strategy;
         this.binLogParser = binLogParser;
         this.triggers = triggers;
     }
@@ -36,12 +48,12 @@ public class BinLog {
         if (isOldNull && isNewNull) {
             return;
         }
-        ImmutableType type = databaseMetadata.getTypeByTableName(tableName);
+        ImmutableType type = entityManager.getTypeByServiceAndTable(microServiceName, tableName, strategy);
         if (type == null) {
             LOGGER.warn(
                     "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
                     tableName,
-                    databaseMetadata.getMicroServiceName()
+                    microServiceName
             );
             return;
         }

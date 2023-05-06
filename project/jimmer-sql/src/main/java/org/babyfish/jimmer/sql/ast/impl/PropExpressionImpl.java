@@ -11,8 +11,10 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
@@ -125,10 +127,11 @@ public class PropExpressionImpl<T>
         return prop;
     }
 
+    @Nullable
     @Override
-    public EmbeddedColumns.Partial getPartial(DatabaseMetadata metadata) {
+    public EmbeddedColumns.Partial getPartial(MetadataStrategy strategy) {
         if (base != null || prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            return metadata.<EmbeddedColumns>getStorage(prop).partial(path);
+            return prop.<EmbeddedColumns>getStorage(strategy).partial(path);
         }
         return null;
     }
@@ -146,7 +149,7 @@ public class PropExpressionImpl<T>
     @Override
     public void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple) {
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
-        EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getDatabaseMetadata());
+        EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         if (partial != null) {
             if (ignoreEmbeddedTuple || partial.size() == 1) {
                 tableImplementor.renderSelection(prop, builder, path != null ? partial : null);

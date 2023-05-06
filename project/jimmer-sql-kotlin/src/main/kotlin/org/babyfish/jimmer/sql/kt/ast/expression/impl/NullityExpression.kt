@@ -19,7 +19,7 @@ internal abstract class NullityPredicate(
 
     override fun renderTo(builder: SqlBuilder) {
         if (expression is PropExpressionImplementor<*>) {
-            val partial = expression.getPartial(builder.astContext.sqlClient.databaseMetadata)
+            val partial = expression.getPartial(builder.astContext.sqlClient.metadataStrategy)
             if (partial != null) {
                 val table = expression.table as TableImplementor<*>
                 val prop = expression.prop

@@ -54,7 +54,7 @@ public class ReaderManager {
     @SuppressWarnings("unchecked")
     private Reader<?> createPropReader(ImmutableProp prop) {
 
-        Storage storage = sqlClient.getDatabaseMetadata().getStorage(prop);
+        Storage storage = prop.getStorage(sqlClient.getMetadataStrategy());
         if (storage instanceof ColumnDefinition) {
             if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
                 return new EmbeddedReader(prop.getTargetType(), this);

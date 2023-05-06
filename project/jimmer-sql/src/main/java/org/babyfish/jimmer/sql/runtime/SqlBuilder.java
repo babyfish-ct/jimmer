@@ -102,7 +102,7 @@ public class SqlBuilder {
     }
 
     public SqlBuilder assignment(ImmutableProp prop, Object value) {
-        ColumnDefinition definition = ctx.getSqlClient().getDatabaseMetadata().getStorage(prop);
+        ColumnDefinition definition = prop.getStorage(getAstContext().getSqlClient().getMetadataStrategy());
         if (definition instanceof SingleColumn) {
             builder.append(((SingleColumn)definition).getName()).append(" = ");
             if (value != null) {

@@ -44,11 +44,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
         String separator = "";
-        DatabaseMetadata metadata = builder.getAstContext().getSqlClient().getDatabaseMetadata();
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             String alias = TableProxies.resolve(table, builder.getAstContext()).getAlias();
-            Storage storage = metadata.getStorage(prop);
+            Storage storage = prop.getStorage(strategy);
             SqlTemplate template = prop.getSqlTemplate();
             if (storage instanceof ColumnDefinition) {
                 builder.sql(separator);

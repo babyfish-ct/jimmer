@@ -37,9 +37,7 @@ import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
-import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +79,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final Triggers transactionTriggers;
 
-    private final DatabaseMetadata databaseMetadata;
+    private final MetadataStrategy metadataStrategy;
 
     private final BinLog binLog;
 
@@ -115,7 +113,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Caches caches,
             Triggers triggers,
             Triggers transactionTriggers,
-            DatabaseMetadata databaseMetadata,
+            MetadataStrategy metadataStrategy,
             BinLog binLog,
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
@@ -153,13 +151,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         CachesImpl.of(triggers, entityManager, microServiceName, null);
         this.triggers = triggers;
         this.transactionTriggers = transactionTriggers;
+        this.metadataStrategy = metadataStrategy;
         this.binLog = binLog;
         this.filterManager = filterManager;
         this.transientResolverManager = transientResolverManager;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
-        this.databaseMetadata = databaseMetadata;
     }
 
     @Override
@@ -214,7 +212,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         if (userIdGenerator == null) {
             userIdGenerator = idGeneratorMap.get(null);
             if (userIdGenerator == null) {
-                userIdGenerator = databaseMetadata.getIdGenerator(ImmutableType.get(entityType));
+                userIdGenerator = ImmutableType.get(entityType).getIdGenerator(metadataStrategy);
             }
         }
         return userIdGenerator;
@@ -322,8 +320,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public DatabaseMetadata getDatabaseMetadata() {
-        return databaseMetadata;
+    public MetadataStrategy getMetadataStrategy() {
+        return metadataStrategy;
     }
 
     @Override
@@ -388,7 +386,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 new CachesImpl((CachesImpl) caches, cfg),
                 triggers,
                 transactionTriggers,
-                databaseMetadata,
+                metadataStrategy,
                 binLog,
                 filterManager,
                 transientResolverManager,
@@ -424,7 +422,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 caches,
                 triggers,
                 transactionTriggers,
-                databaseMetadata,
+                metadataStrategy,
                 binLog,
                 cfg.getFilterManager(),
                 transientResolverManager,
@@ -455,7 +453,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 caches,
                 triggers,
                 transactionTriggers,
-                databaseMetadata,
+                metadataStrategy,
                 binLog,
                 filterManager,
                 transientResolverManager,
@@ -990,24 +988,21 @@ class JSqlClientImpl implements JSqlClientImplementor {
             FilterManager filterManager = createFilterManager();
             validateAssociations(filterManager);
             createTriggersIfNecessary();
-            DatabaseMetadata.AutoForeignKeyPolicy autoForeignKeyPolicy;
+            ForeignKeyStrategy foreignKeyStrategy;
             if (!dialect.isForeignKeySupported()) {
-                autoForeignKeyPolicy = DatabaseMetadata.AutoForeignKeyPolicy.FORCED_FAKE;
+                foreignKeyStrategy = ForeignKeyStrategy.FORCED_FAKE;
             } else if (isForeignKeyEnabledByDefault) {
-                autoForeignKeyPolicy = DatabaseMetadata.AutoForeignKeyPolicy.REAL;
+                foreignKeyStrategy = ForeignKeyStrategy.REAL;
             } else {
-                autoForeignKeyPolicy = DatabaseMetadata.AutoForeignKeyPolicy.FAKE;
+                foreignKeyStrategy = ForeignKeyStrategy.FAKE;
             }
-            DatabaseMetadata databaseMetadata =
-                    new DatabaseMetadata(
-                            databaseNamingStrategy,
-                            entityManager(),
-                            microServiceName,
-                            autoForeignKeyPolicy
-                    );
+            MetadataStrategy metadataStrategy =
+                    new MetadataStrategy(databaseNamingStrategy, foreignKeyStrategy);
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
-                    databaseMetadata,
+                    entityManager(),
+                    microServiceName,
+                    metadataStrategy,
                     binLogParser,
                     triggers
             );
@@ -1033,7 +1028,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     caches,
                     triggers,
                     transactionTriggers,
-                    databaseMetadata,
+                    metadataStrategy,
                     binLog,
                     filterManager,
                     transientResolverManager,
@@ -1054,7 +1049,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     );
                 }
             }
-            validateDatabase(databaseMetadata);
+            validateDatabase(metadataStrategy);
             return sqlClient;
         }
 
@@ -1123,7 +1118,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
         }
 
-        private void validateDatabase(DatabaseMetadata databaseMetadata) {
+        private void validateDatabase(MetadataStrategy metadataStrategy) {
             if (databaseValidationMode != DatabaseValidationMode.NONE) {
                 ConnectionManager cm = connectionManager;
                 if (cm == null) {
@@ -1133,7 +1128,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 }
                 DatabaseValidationException validationException = cm.execute(con -> {
                     try {
-                        return DatabaseValidators.validate(databaseMetadata, databaseValidationCatalog, con);
+                        return DatabaseValidators.validate(
+                                entityManager(),
+                                microServiceName,
+                                metadataStrategy,
+                                databaseValidationCatalog,
+                                con
+                        );
                     } catch (SQLException ex) {
                         throw new ExecutionException(
                                 "Cannot validate the database because of SQL exception",

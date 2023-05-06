@@ -11,9 +11,8 @@ import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.meta.FormulaTemplate;
-import org.babyfish.jimmer.sql.meta.JoinTemplate;
-import org.babyfish.jimmer.sql.meta.SqlTemplate;
+import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.impl.Storages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,6 +93,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     private boolean manyToManyViewBasePropResolved;
 
     private Boolean isRemote;
+
+    private Map<MetadataStrategy, Storage> storageMap = new HashMap<>();
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
@@ -798,6 +799,15 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     @Override
     public boolean isMiddleTableDefinition() {
         return getStorageType() == 3;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <S extends Storage> S getStorage(MetadataStrategy strategy) {
+        if (getStorageType() <= 1) {
+            return null;
+        }
+        return (S)storageMap.computeIfAbsent(strategy, it -> Storages.of(this, it));
     }
 
     private int getStorageType() {

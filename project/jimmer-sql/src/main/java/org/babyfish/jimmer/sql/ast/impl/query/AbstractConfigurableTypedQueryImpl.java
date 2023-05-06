@@ -166,16 +166,13 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
     }
 
     private void renderIdOnlyQuery(PropExpressionImplementor<?> idPropExpr, SqlBuilder builder) {
+        MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         OffsetOptimizationWriter writer =
-                new OffsetOptimizationWriter(
-                        builder,
-                        builder.getAstContext().getSqlClient().getDatabaseMetadata()
-                );
+                new OffsetOptimizationWriter(builder, strategy);
         TableImplementor<?> tableImplementor = TableProxies.resolve(
                 idPropExpr.getTable(),
                 builder.getAstContext()
         );
-        DatabaseMetadata metadata = builder.getAstContext().getSqlClient().getDatabaseMetadata();
         builder.sql("select ");
         if (data.getSelections().get(0) instanceof FetcherSelection<?>) {
             for (Field field : ((FetcherSelection<?>)data.getSelections().get(0)).getFetcher().getFieldMap().values()) {
@@ -204,7 +201,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         builder.sql(") ")
                 .sql(OffsetOptimizationWriter.CORE_ALIAS)
                 .sql(" inner join ")
-                .sql(metadata.getTableName(tableImplementor.getImmutableType()))
+                .sql(tableImplementor.getImmutableType().getTableName(strategy))
                 .sql(" ")
                 .sql(OffsetOptimizationWriter.ALIAS)
                 .sql(" on ");
@@ -214,7 +211,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 true
         );
         builder.sql(" = ");
-        int size = metadata.<ColumnDefinition>getStorage(tableImplementor.getImmutableType().getIdProp()).size();
+        int size = tableImplementor.getImmutableType().getIdProp().<ColumnDefinition>getStorage(strategy).size();
         if (size == 1) {
             builder.sql(OffsetOptimizationWriter.CORE_ALIAS).sql(".");
             builder.sql(OffsetOptimizationWriter.idAlias(0));
@@ -249,13 +246,13 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
         private final SqlBuilder builder;
 
-        private final DatabaseMetadata metadata;
+        private final MetadataStrategy strategy;
 
         private boolean addComma;
 
-        OffsetOptimizationWriter(SqlBuilder builder, DatabaseMetadata metadata) {
+        OffsetOptimizationWriter(SqlBuilder builder, MetadataStrategy strategy) {
             this.builder = builder;
-            this.metadata = metadata;
+            this.strategy = strategy;
         }
 
         public void prop(ImmutableProp prop, String alias, boolean multiColumnsAsTuple) {
@@ -265,7 +262,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 builder.sql(((FormulaTemplate)template).toSql(alias));
                 return;
             }
-            Storage storage = metadata.getStorage(prop);
+            Storage storage = prop.getStorage(strategy);
             if (storage instanceof ColumnDefinition) {
                 ColumnDefinition definition = (ColumnDefinition) storage;
                 int size = definition.size();

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
             JsonParser jp,
             DeserializationContext ctx
     ) throws IOException {
-        DatabaseMetadata metadata = sqlClient.getDatabaseMetadata();
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         JsonNode node = jp.getCodec().readTree(jp);
         return Internal.produce(immutableType, null, draft -> {
             Iterator<Map.Entry<String, JsonNode>> itr = node.fields();
@@ -44,7 +45,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                 Map.Entry<String, JsonNode> fieldEntry = itr.next();
                 String columnName = fieldEntry.getKey();
                 JsonNode childNode = fieldEntry.getValue();
-                List<ImmutableProp> chain = metadata.getPropChainByColumnName(immutableType, columnName);
+                List<ImmutableProp> chain = immutableType.getPropChain(columnName, strategy);
                 ValueParser.addEntityProp((DraftSpi) draft, chain, childNode, sqlClient);
             }
             for (ImmutableProp prop : immutableType.getProps().values()) {

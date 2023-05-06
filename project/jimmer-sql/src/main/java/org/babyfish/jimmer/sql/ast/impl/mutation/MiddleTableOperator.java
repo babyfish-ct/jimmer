@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -54,14 +55,15 @@ class MiddleTableOperator {
         if (prop.isRemote() && mappedBy != null) {
             return null;
         }
-        Storage storage = sqlClient.getDatabaseMetadata().getStorage(prop);
+        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        Storage storage = prop.getStorage(strategy);
         if (storage instanceof MiddleTable) {
             return new MiddleTableOperator(
                     sqlClient, con, prop, (MiddleTable) storage, trigger
             );
         }
         if (mappedBy != null) {
-            storage = sqlClient.getDatabaseMetadata().getStorage(mappedBy);
+            storage = mappedBy.getStorage(strategy);
             if (storage instanceof MiddleTable) {
                 return new MiddleTableOperator(
                         sqlClient, con, prop, ((MiddleTable) storage).getInverse(), trigger

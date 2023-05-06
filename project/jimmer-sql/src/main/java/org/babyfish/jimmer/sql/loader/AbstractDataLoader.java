@@ -141,7 +141,7 @@ public abstract class AbstractDataLoader {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
-        this.storage = sqlClient.getDatabaseMetadata().getStorage(prop);
+        this.storage = prop.getStorage(sqlClient.getMetadataStrategy());
         this.remote = prop.isRemote();
         this.sourceIdProp = prop.getDeclaringType().getIdProp();
         this.targetIdProp = prop.getTargetType() != null ? prop.getTargetType().getIdProp() : null;
