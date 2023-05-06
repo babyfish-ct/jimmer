@@ -14,6 +14,21 @@ public interface DeleteCommand extends Executable<DeleteResult> {
     @NewChain
     DeleteCommand configure(Consumer<Cfg> block);
 
+    @NewChain
+    default DeleteCommand setMode(DeleteMode mode) {
+        return configure(it -> it.setMode(mode));
+    }
+
+    @NewChain
+    default DeleteCommand setDissociateAction(TypedProp.Reference<?, ?> prop, DissociateAction dissociateAction) {
+        return configure(it -> it.setDissociateAction(prop, dissociateAction));
+    }
+
+    @NewChain
+    default DeleteCommand setDissociateAction(ImmutableProp prop, DissociateAction dissociateAction) {
+        return configure(it -> it.setDissociateAction(prop, dissociateAction));
+    }
+
     interface Cfg {
 
         @OldChain

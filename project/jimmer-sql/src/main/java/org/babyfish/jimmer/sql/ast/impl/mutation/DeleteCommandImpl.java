@@ -68,7 +68,7 @@ public class DeleteCommandImpl implements DeleteCommand {
     public DeleteCommand configure(Consumer<Cfg> block) {
         Data newData = new Data(this.data);
         block.accept(newData);
-        if (newData.dissociateActionMap.isEmpty()) {
+        if (data.equals(newData)) {
             return this;
         }
         return new DeleteCommandImpl(this, newData);
@@ -190,6 +190,29 @@ public class DeleteCommandImpl implements DeleteCommand {
             }
             dissociateActionMap.put(prop, dissociateAction);
             return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Data)) return false;
+            Data data = (Data) o;
+            return frozen == data.frozen && sqlClient.equals(data.sqlClient) && mode == data.mode && dissociateActionMap.equals(data.dissociateActionMap);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(sqlClient, mode, dissociateActionMap, frozen);
+        }
+
+        @Override
+        public String toString() {
+            return "Data{" +
+                    "sqlClient=" + sqlClient +
+                    ", mode=" + mode +
+                    ", dissociateActionMap=" + dissociateActionMap +
+                    ", frozen=" + frozen +
+                    '}';
         }
     }
 }

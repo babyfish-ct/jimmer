@@ -2,10 +2,12 @@ package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
+import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
@@ -158,6 +160,32 @@ public class DeleteTest extends AbstractMutationTest {
                     ctx.rowCount(AffectedTable.of(Author.class), 1);
                     ctx.rowCount(AffectedTable.of(AuthorProps.COUNTRY), 1);
                     ctx.rowCount(AffectedTable.of(AuthorProps.BOOKS), 3);
+                }
+        );
+    }
+
+    @Test
+    public void testDeleteAdministrator() {
+        executeAndExpectResult(
+                getSqlClient().getEntities()
+                        .deleteCommand(Administrator.class, 1L)
+                        .setMode(DeleteMode.PHYSICAL),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("delete from ADMINISTRATOR_ROLE_MAPPING where ADMINISTRATOR_ID in (?)");
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select ID from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID in (?)");
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from ADMINISTRATOR_METADATA where ID in (?)");
+                        it.variables(10L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from ADMINISTRATOR where ID in (?)");
+                    });
                 }
         );
     }

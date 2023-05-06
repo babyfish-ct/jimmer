@@ -41,7 +41,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
     abstract AbstractEntitySaveCommand create(Data data);
 
-    static class Data implements Cfg {
+    static final class Data implements Cfg {
 
         private final JSqlClientImplementor sqlClient;
 
@@ -76,6 +76,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.triggers = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
                     null :
                     sqlClient.getTriggers(true);
+            this.frozen = false;
             this.mode = SaveMode.UPSERT;
             this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
@@ -100,6 +101,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
             this.pessimisticLock = base.pessimisticLock;
+            this.frozen = false;
         }
 
         public JSqlClientImplementor getSqlClient() {
@@ -269,6 +271,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
                 autoAttachingSet = Collections.unmodifiableSet(autoAttachingSet);
                 autoCheckingSet = Collections.unmodifiableSet(autoCheckingSet);
+                appendOnlySet = Collections.unmodifiableSet(appendOnlySet);
                 dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
                 frozen = true;
             }
@@ -276,16 +279,42 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(sqlClient, triggers, frozen, mode, deleteMode, keyPropMultiMap, autoAttachingAll, autoAttachingSet, autoCheckingAll, autoCheckingSet, dissociateActionMap, pessimisticLock);
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Data)) return false;
+            Data data = (Data) o;
+            return autoAttachingAll == data.autoAttachingAll &&
+                    autoCheckingAll == data.autoCheckingAll &&
+                    appendOnlyAll == data.appendOnlyAll &&
+                    pessimisticLock == data.pessimisticLock &&
+                    sqlClient.equals(data.sqlClient) &&
+                    triggers.equals(data.triggers) &&
+                    mode == data.mode &&
+                    deleteMode == data.deleteMode &&
+                    keyPropMultiMap.equals(data.keyPropMultiMap) &&
+                    autoAttachingSet.equals(data.autoAttachingSet) &&
+                    autoCheckingSet.equals(data.autoCheckingSet) &&
+                    appendOnlySet.equals(data.appendOnlySet) &&
+                    dissociateActionMap.equals(data.dissociateActionMap);
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Data data = (Data) o;
-            return frozen == data.frozen && autoAttachingAll == data.autoAttachingAll && autoCheckingAll == data.autoCheckingAll && pessimisticLock == data.pessimisticLock && sqlClient.equals(data.sqlClient) && Objects.equals(triggers, data.triggers) && mode == data.mode && deleteMode == data.deleteMode && keyPropMultiMap.equals(data.keyPropMultiMap) && autoAttachingSet.equals(data.autoAttachingSet) && autoCheckingSet.equals(data.autoCheckingSet) && dissociateActionMap.equals(data.dissociateActionMap);
+        public int hashCode() {
+            return Objects.hash(
+                    sqlClient,
+                    triggers,
+                    mode,
+                    deleteMode,
+                    keyPropMultiMap,
+                    autoAttachingAll,
+                    autoAttachingSet,
+                    autoCheckingAll,
+                    autoCheckingSet,
+                    appendOnlyAll,
+                    appendOnlySet,
+                    dissociateActionMap,
+                    pessimisticLock
+            );
         }
 
         @Override
@@ -293,7 +322,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return "Data{" +
                     "sqlClient=" + sqlClient +
                     ", triggers=" + triggers +
-                    ", frozen=" + frozen +
                     ", mode=" + mode +
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
