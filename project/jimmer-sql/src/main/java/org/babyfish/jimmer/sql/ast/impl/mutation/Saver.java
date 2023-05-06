@@ -23,6 +23,7 @@ import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.*;
@@ -406,7 +407,7 @@ class Saver {
                 guide = "call `setAutoAttaching(" +
                         path.getProp().getDeclaringType().getJavaClass().getSimpleName() +
                         "Props." +
-                        DatabaseMetadata.comparableIdentifier(path.getProp().getName()) +
+                        DatabaseIdentifiers.comparableIdentifier(path.getProp().getName()) +
                         ")` or `setAutoAttachingAll()` of the save command";
             }
             throw new SaveException(

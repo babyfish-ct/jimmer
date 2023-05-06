@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.util;
 
 import org.babyfish.jimmer.sql.common.AbstractTest;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.model.JimmerModule;

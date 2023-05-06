@@ -2,7 +2,8 @@ package org.babyfish.jimmer.sql.util;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata;
+import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
@@ -59,27 +60,25 @@ public class EntityManagerTest {
 
     @Test
     public void testTableName() {
-        DatabaseMetadata metadata = new DatabaseMetadata(
+        MetadataStrategy strategy = new MetadataStrategy(
                 DefaultDatabaseNamingStrategy.UPPER_CASE,
-                JimmerModule.ENTITY_MANAGER,
-                "",
-                DatabaseMetadata.AutoForeignKeyPolicy.REAL
+                ForeignKeyStrategy.REAL
         );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),
-                metadata.getTypeByTableName("`roLE`")
+                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "`roLE`", strategy)
         );
         Assertions.assertEquals(
                 ImmutableType.get(Permission.class),
-                metadata.getTypeByTableName("[PerMission]")
+                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "[PerMission]", strategy)
         );
         Assertions.assertEquals(
                 ImmutableType.get(Administrator.class),
-                metadata.getTypeByTableName("\"Administrator\"")
+                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "\"Administrator\"", strategy)
         );
         Assertions.assertEquals(
                 AssociationType.of(AdministratorProps.ROLES),
-                metadata.getTypeByTableName("`Administrator_Role_Mapping`")
+                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "`Administrator_Role_Mapping`", strategy)
         );
     }
 }

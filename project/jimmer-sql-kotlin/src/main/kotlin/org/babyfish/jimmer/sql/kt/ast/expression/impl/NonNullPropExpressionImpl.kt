@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.spi.KNonNullPropExpressionImplementor
-import org.babyfish.jimmer.sql.meta.DatabaseMetadata
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns
 import org.babyfish.jimmer.sql.meta.MetadataStrategy
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
