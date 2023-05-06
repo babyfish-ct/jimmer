@@ -288,7 +288,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     appendOnlyAll == data.appendOnlyAll &&
                     pessimisticLock == data.pessimisticLock &&
                     sqlClient.equals(data.sqlClient) &&
-                    triggers.equals(data.triggers) &&
+                    Objects.equals(triggers, data.triggers) &&
                     mode == data.mode &&
                     deleteMode == data.deleteMode &&
                     keyPropMultiMap.equals(data.keyPropMultiMap) &&
