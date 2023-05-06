@@ -84,7 +84,7 @@ class RecursiveTest : AbstractMutationTest() {
 
             // Query root
             ExecutedStatement(
-                "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id from TREE_NODE as tb_1_ " +
+                "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id is null",
                 "root"
             ),
@@ -98,7 +98,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-1`
             ExecutedStatement(
                 "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?",
                 "child-1", 1L
             ),
@@ -112,7 +112,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-1-1`
             ExecutedStatement(
                 ("select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?"),
                 "child-1-1", 2L
             ),
@@ -126,7 +126,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-1-2`
             ExecutedStatement(
                 ("select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?"),
                 "child-1-2", 2L
             ),
@@ -140,7 +140,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-2`
             ExecutedStatement(
                 ("select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?"),
                 "child-2", 1L
             ),
@@ -154,7 +154,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-2-1`
             ExecutedStatement(
                 ("select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?"),
                 "child-2-1", 5L
             ),
@@ -168,7 +168,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-2-2`
             ExecutedStatement(
                 ("select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?"),
                 "child-2-2", 5L
             ),
@@ -225,7 +225,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query aggregate by key
             ExecutedStatement(
                 "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id is null",
                 "root"
             ),
@@ -235,7 +235,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-1` by key
             ExecutedStatement(
                 "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?",
                 "child-1", 1L
             ),
@@ -245,7 +245,7 @@ class RecursiveTest : AbstractMutationTest() {
             // Query `child-1-1` by key
             ExecutedStatement(
                 "select tb_1_.node_id, tb_1_.NAME, tb_1_.parent_id " +
-                    "from TREE_NODE as tb_1_ " +
+                    "from TREE_NODE tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.parent_id = ?",
                 "child-1-1", 2L
             ),

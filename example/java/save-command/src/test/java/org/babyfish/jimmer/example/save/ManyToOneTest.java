@@ -55,7 +55,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // Select data by id
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -104,7 +104,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                      * However, this configuration can bring better error message.
                      *
                      * Sometimes it is not possible to add foreign key constraints,
-                     * such as table sharding. At this time, this configuration is
+                     * such table sharding. At this time, this configuration is
                      * very important.
                      */
                     .setAutoIdOnlyTargetChecking(BookProps.STORE)
@@ -120,7 +120,7 @@ public class ManyToOneTest extends AbstractMutationTest {
 
                 // Is target id valid?
                 new ExecutedStatement(
-                        "select tb_1_.ID from BOOK_STORE as tb_1_ where tb_1_.ID in (?)",
+                        "select tb_1_.ID from BOOK_STORE tb_1_ where tb_1_.ID in (?)",
                         99999L
                 )
         );
@@ -152,7 +152,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // Select parent object by key.
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE as tb_1_ " +
+                                "from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -160,7 +160,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // select aggregation-root object by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -200,7 +200,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // Select parent by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE as tb_1_ " +
+                                "from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -215,7 +215,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // Select aggregate-root object by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -270,7 +270,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // automatically create associated objects has not been turned on
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE as tb_1_ " +
+                                "from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "TURING"
                 )
@@ -311,7 +311,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // Select parent by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE as tb_1_ " +
+                                "from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "TURING"
                 ),
@@ -326,7 +326,7 @@ public class ManyToOneTest extends AbstractMutationTest {
                 // Select the aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),

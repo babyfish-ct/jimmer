@@ -106,7 +106,7 @@ public class SaveModeTest extends AbstractMutationTest {
                 //Although `UPDATE_ONLY` is specified, the id attribute of the object is missing
                 // so that it will still result in a key-based query.
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK as tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
 
@@ -140,7 +140,7 @@ public class SaveModeTest extends AbstractMutationTest {
                 //Although `UPDATE_ONLY` is specified, the id attribute of the object is missing
                 // so that it will still result in a key-based query.
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK as tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 )
 
@@ -174,7 +174,7 @@ public class SaveModeTest extends AbstractMutationTest {
                 // Query whether the data exists by id
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.ID = ?",
                         10L
                 ),
@@ -213,7 +213,7 @@ public class SaveModeTest extends AbstractMutationTest {
 
                 // Query whether the data exists by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK as tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
 
@@ -246,7 +246,7 @@ public class SaveModeTest extends AbstractMutationTest {
                 // Query whether the data exists by id
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.ID = ?",
                         10L
                 ),
@@ -279,7 +279,7 @@ public class SaveModeTest extends AbstractMutationTest {
 
                 // Query whether the data exists by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK as tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION from BOOK tb_1_ where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
 

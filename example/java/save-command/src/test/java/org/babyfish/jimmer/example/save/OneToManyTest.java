@@ -49,7 +49,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // Select aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE as tb_1_ " +
+                                "from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -95,7 +95,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // Select aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE as tb_1_ " +
+                                "from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -109,7 +109,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // Select child object by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -154,7 +154,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Select aggregate-root by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ " +
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -164,7 +164,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // Select child object by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -222,7 +222,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Query aggregate-root by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ " +
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -236,7 +236,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 new ExecutedStatement(
                         "select " +
                                 "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 )
@@ -273,7 +273,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Select aggregate-root by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ " +
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ " +
                                 "where tb_1_.NAME = ?",
                         "MANNING"
                 ),
@@ -284,7 +284,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 new ExecutedStatement(
                         "select " +
                                 "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -353,7 +353,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Query aggregate-root by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.NAME = ?",
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.NAME = ?",
                         "MANNING"
                 ),
 
@@ -415,7 +415,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Query aggregate-root by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.NAME = ?",
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.NAME = ?",
                         "MANNING"
                 ),
 
@@ -476,7 +476,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Query aggregate-root by key
                 new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_ where tb_1_.NAME = ?",
+                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.NAME = ?",
                         "MANNING"
                 ),
 

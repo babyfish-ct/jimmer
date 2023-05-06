@@ -52,7 +52,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // Select aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -120,7 +120,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                      * However, this configuration can bring better error message.
                      *
                      * Sometimes it is not possible to add foreign key constraints,
-                     * such as table sharding. At this time, this configuration is
+                     * such table sharding. At this time, this configuration is
                      * very important.
                      */
                     .setAutoIdOnlyTargetChecking(BookProps.AUTHORS)
@@ -137,7 +137,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // Select aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -150,7 +150,7 @@ public class ManyToManyTest extends AbstractMutationTest {
 
                 // Are target ids valid
                 new ExecutedStatement(
-                        "select tb_1_.ID from AUTHOR as tb_1_ where tb_1_.ID in (?, ?, ?)",
+                        "select tb_1_.ID from AUTHOR tb_1_ where tb_1_.ID in (?, ?, ?)",
                         100L, 88888L, 99999L
                 )
         );
@@ -187,7 +187,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // Query aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -254,7 +254,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // Query aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -271,7 +271,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // has not been turned on so that error will be raised
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR as tb_1_ " +
+                                "from AUTHOR tb_1_ " +
                                 "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?",
                         "Ben", "Brumm"
                 )
@@ -314,7 +314,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // Query aggregate-root by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK as tb_1_ " +
+                                "from BOOK tb_1_ " +
                                 "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                         "SQL in Action", 1
                 ),
@@ -328,7 +328,7 @@ public class ManyToManyTest extends AbstractMutationTest {
                 // Select associated object by key
                 new ExecutedStatement(
                         "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR as tb_1_ " +
+                                "from AUTHOR tb_1_ " +
                                 "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?",
                         "Ben", "Brumm"
                 ),

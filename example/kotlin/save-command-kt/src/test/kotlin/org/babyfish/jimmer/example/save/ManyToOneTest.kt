@@ -54,7 +54,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // Select data by key
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                    "from BOOK as tb_1_ " +
+                    "from BOOK tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
             ),
@@ -101,7 +101,7 @@ class ManyToOneTest : AbstractMutationTest() {
                      * However, this configuration can bring better error message.
                      *
                      * Sometimes it is not possible to add foreign key constraints,
-                     * such as table sharding. At this time, this configuration is
+                     * such table sharding. At this time, this configuration is
                      * very important.
                      */
                     setAutoIdOnlyTargetChecking(Book::store)
@@ -118,7 +118,7 @@ class ManyToOneTest : AbstractMutationTest() {
 
             // Is targetId valid?
             ExecutedStatement(
-                "select tb_1_.ID from BOOK_STORE as tb_1_ where tb_1_.ID in (?)",
+                "select tb_1_.ID from BOOK_STORE tb_1_ where tb_1_.ID in (?)",
                 99999L
             )
         )
@@ -151,7 +151,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // Select parent object by key.
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME " +
-                    "from BOOK_STORE as tb_1_ " +
+                    "from BOOK_STORE tb_1_ " +
                     "where tb_1_.NAME = ?",
                 "MANNING"
             ),
@@ -159,7 +159,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // select aggregation-root object by key
             ExecutedStatement(
                 ("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                    "from BOOK as tb_1_ " +
+                    "from BOOK tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.EDITION = ?"),
                 "SQL in Action", 1
             ),
@@ -200,7 +200,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // Select parent by key
             ExecutedStatement(
                 ("select tb_1_.ID, tb_1_.NAME " +
-                    "from BOOK_STORE as tb_1_ " +
+                    "from BOOK_STORE tb_1_ " +
                     "where tb_1_.NAME = ?"),
                 "MANNING"
             ),
@@ -215,7 +215,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // Select aggregate-root object by key
             ExecutedStatement(
                 ("select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                    "from BOOK as tb_1_ " +
+                    "from BOOK tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.EDITION = ?"),
                 "SQL in Action", 1
             ),
@@ -268,7 +268,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // automatically create associated objects has not been turned on
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME " +
-                    "from BOOK_STORE as tb_1_ " +
+                    "from BOOK_STORE tb_1_ " +
                     "where tb_1_.NAME = ?",
                 "TURING"
             )
@@ -310,7 +310,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // Select parent by key
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME " +
-                    "from BOOK_STORE as tb_1_ " +
+                    "from BOOK_STORE tb_1_ " +
                     "where tb_1_.NAME = ?",
                 "TURING"
             ),
@@ -325,7 +325,7 @@ class ManyToOneTest : AbstractMutationTest() {
             // Select the aggregate-root by key
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                    "from BOOK as tb_1_ " +
+                    "from BOOK tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
             ),
