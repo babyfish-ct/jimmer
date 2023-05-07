@@ -21,6 +21,8 @@ class MiddleTableOperator {
 
     private final ImmutableProp prop;
 
+    private final boolean isBackProp;
+
     private final MiddleTable middleTable;
 
     private final Expression<?> sourceIdExpression;
@@ -33,15 +35,22 @@ class MiddleTableOperator {
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp prop,
+            boolean isBackProp,
             MiddleTable middleTable,
             MutationTrigger trigger
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.prop = prop;
+        this.isBackProp = isBackProp;
         this.middleTable = middleTable;
-        this.sourceIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
-        this.targetIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
+        if (isBackProp) {
+            this.sourceIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
+            this.targetIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
+        } else {
+            this.sourceIdExpression = Expression.any().nullValue(prop.getDeclaringType().getIdProp().getElementClass());
+            this.targetIdExpression = Expression.any().nullValue(prop.getTargetType().getIdProp().getElementClass());
+        }
         this.trigger = trigger;
     }
 
@@ -51,22 +60,44 @@ class MiddleTableOperator {
             ImmutableProp prop,
             MutationTrigger trigger
     ) {
+        return tryGetImpl(sqlClient, con, prop, false, trigger);
+    }
+
+    public static MiddleTableOperator tryGetByBackProp(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableProp backProp,
+            MutationTrigger trigger
+    ) {
+        return tryGetImpl(sqlClient, con, backProp, true, trigger);
+    }
+
+    private static MiddleTableOperator tryGetImpl(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            ImmutableProp prop,
+            boolean isPropBack,
+            MutationTrigger trigger
+    ) {
         ImmutableProp mappedBy = prop.getMappedBy();
-        if (prop.isRemote() && mappedBy != null) {
+        if (mappedBy != null && prop.isRemote()) {
             return null;
         }
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
-        Storage storage = prop.getStorage(strategy);
-        if (storage instanceof MiddleTable) {
-            return new MiddleTableOperator(
-                    sqlClient, con, prop, (MiddleTable) storage, trigger
-            );
-        }
         if (mappedBy != null) {
-            storage = mappedBy.getStorage(strategy);
+            Storage storage = mappedBy.getStorage(strategy);
             if (storage instanceof MiddleTable) {
+                MiddleTable middleTable = isPropBack ? (MiddleTable) storage : ((MiddleTable) storage).getInverse();
                 return new MiddleTableOperator(
-                        sqlClient, con, prop, ((MiddleTable) storage).getInverse(), trigger
+                        sqlClient, con, prop, isPropBack, middleTable, trigger
+                );
+            }
+        } else {
+            Storage storage = prop.getStorage(strategy);
+            if (storage instanceof MiddleTable) {
+                MiddleTable middleTable = isPropBack ? ((MiddleTable) storage).getInverse() : (MiddleTable) storage;
+                return new MiddleTableOperator(
+                        sqlClient, con, prop, isPropBack, middleTable, trigger
                 );
             }
         }
@@ -247,7 +278,7 @@ class MiddleTableOperator {
         );
     }
 
-    int removeTargetIds(Object sourceId, Collection<Object> targetIds) {
+    int remove(Object sourceId, Collection<Object> targetIds) {
         if (targetIds.isEmpty()) {
             return 0;
         }
@@ -320,7 +351,7 @@ class MiddleTableOperator {
         Set<Object> removingTargetIds = new LinkedHashSet<>(oldTargetIds);
         removingTargetIds.removeAll(targetIds);
 
-        return removeTargetIds(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
+        return remove(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
     }
 
     public int removeBySourceIds(Collection<Object> sourceIds) {
@@ -365,10 +396,18 @@ class MiddleTableOperator {
         while (reader.read()) {
             Object sourceId = reader.sourceId();
             Object targetId = reader.targetId();
-            if (insert) {
-                trigger.insertMiddleTable(prop, sourceId, targetId);
+            if (isBackProp) {
+                if (insert) {
+                    trigger.insertMiddleTable(prop, targetId, sourceId);
+                } else {
+                    trigger.deleteMiddleTable(prop, targetId, sourceId);
+                }
             } else {
-                trigger.deleteMiddleTable(prop, sourceId, targetId);
+                if (insert) {
+                    trigger.insertMiddleTable(prop, sourceId, targetId);
+                } else {
+                    trigger.deleteMiddleTable(prop, sourceId, targetId);
+                }
             }
         }
 

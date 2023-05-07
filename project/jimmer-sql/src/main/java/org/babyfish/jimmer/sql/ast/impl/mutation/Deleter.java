@@ -132,36 +132,37 @@ public class Deleter {
             return;
         }
 
-        for (ImmutableProp prop : immutableType.getProps().values()) {
-            MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
+        for (ImmutableProp backProp : data.getSqlClient().getEntityManager().getAllBackProps(immutableType)) {
+            if (backProp.getMappedBy() != null && backProp.isRemote()) {
+                continue;
+            }
+            MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
                     data.getSqlClient(),
                     con,
-                    prop,
+                    backProp,
                     trigger
             );
             if (middleTableOperator != null) {
                 int affectedRowCount = middleTableOperator.removeBySourceIds(ids);
-                addOutput(AffectedTable.of(prop), affectedRowCount);
+                addOutput(AffectedTable.of(backProp), affectedRowCount);
             } else {
-                ImmutableProp mappedByProp = prop.getMappedBy();
-                if (mappedByProp != null &&
-                        mappedByProp.isReference(TargetLevel.PERSISTENT) &&
-                        mappedByProp.isColumnDefinition()
+                if (backProp.isReference(TargetLevel.PERSISTENT) &&
+                        backProp.isColumnDefinition()
                 ) {
-                    DissociateAction dissociateAction = data.getDissociateAction(mappedByProp);
+                    DissociateAction dissociateAction = data.getDissociateAction(backProp);
                     if (dissociateAction == DissociateAction.SET_NULL) {
                         ChildTableOperator childTableOperator = new ChildTableOperator(
                                 data.getSqlClient(),
                                 con,
-                                mappedByProp,
+                                backProp,
                                 false,
                                 cache,
                                 trigger
                         );
                         int affectedRowCount = childTableOperator.unsetParents(ids);
-                        addOutput(AffectedTable.of(prop.getTargetType()), affectedRowCount);
+                        addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
                     } else {
-                        tryDeleteFromChildTable(prop, ids);
+                        tryDeleteFromChildTable(backProp, ids);
                     }
                 }
             }
@@ -170,11 +171,10 @@ public class Deleter {
     }
 
     @SuppressWarnings("unchecked")
-    private void tryDeleteFromChildTable(ImmutableProp prop, Collection<?> ids) {
-        ImmutableProp manyToOneProp = prop.getMappedBy();
-        ImmutableType childType = manyToOneProp.getDeclaringType();
+    private void tryDeleteFromChildTable(ImmutableProp backProp, Collection<?> ids) {
+        ImmutableType childType = backProp.getDeclaringType();
         MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
-        ColumnDefinition definition = manyToOneProp.getStorage(strategy);
+        ColumnDefinition definition = backProp.getStorage(strategy);
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
         builder
@@ -214,19 +214,19 @@ public class Deleter {
                         }
                 );
         if (!childIds.isEmpty()) {
-            if (data.getDissociateAction(manyToOneProp) != DissociateAction.DELETE) {
+            if (data.getDissociateAction(backProp) != DissociateAction.DELETE) {
                 throw new ExecutionException(
                         "Cannot delete entities whose type are \"" +
-                                manyToOneProp.getTargetType().getJavaClass().getName() +
+                                backProp.getTargetType().getJavaClass().getName() +
                                 "\" because there are some child entities whose type are \"" +
-                                manyToOneProp.getDeclaringType().getJavaClass().getName() +
+                                backProp.getDeclaringType().getJavaClass().getName() +
                                 "\", these child entities use the association property \"" +
-                                manyToOneProp +
+                                backProp +
                                 "\" to reference current entities."
                 );
             }
             Deleter childDeleter = childDeleterMap.computeIfAbsent(
-                    prop.getName(),
+                    backProp.toString(),
                     it -> new Deleter(cascadeData, con, cache, trigger, affectedRowCountMap)
             );
             childDeleter.addPreHandleInput(childType, childIds);

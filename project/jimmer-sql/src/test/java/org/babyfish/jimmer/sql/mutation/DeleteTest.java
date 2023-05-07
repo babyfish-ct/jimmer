@@ -172,11 +172,11 @@ public class DeleteTest extends AbstractMutationTest {
                         .setMode(DeleteMode.PHYSICAL),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("delete from ADMINISTRATOR_ROLE_MAPPING where ADMINISTRATOR_ID in (?)");
+                        it.sql("select ID from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID in (?)");
                         it.variables(1L);
                     });
                     ctx.statement(it -> {
-                        it.sql("select ID from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID in (?)");
+                        it.sql("delete from ADMINISTRATOR_ROLE_MAPPING where ADMINISTRATOR_ID in (?)");
                         it.variables(1L);
                     });
                     ctx.statement(it -> {

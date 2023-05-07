@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class EntityManager {
 
@@ -90,7 +91,14 @@ public class EntityManager {
             info.implementationTypes = Collections.unmodifiableList(info.implementationTypes);
             info.directDerivedTypes = Collections.unmodifiableList(info.directDerivedTypes);
             info.allDerivedTypes = Collections.unmodifiableList(info.allDerivedTypes);
-            info.backProps = Collections.unmodifiableList(info.backProps);
+            info.backProps = Collections.unmodifiableList(
+                    info
+                            .backProps
+                            .stream()
+                            // sort is important, that means the order of cascade sql operations is fixed
+                            .sorted(Comparator.comparing(ImmutableProp::toString))
+                            .collect(Collectors.toList())
+            );
         }
         this.map = Collections.unmodifiableMap(map);
     }
