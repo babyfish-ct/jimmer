@@ -204,7 +204,7 @@ public class DraftImplGenerator {
                 .addStatement("$L = ($T)base", DRAFT_FIELD_BASE, type.getImplClassName())
                 .endControlFlow()
                 .beginControlFlow("else")
-                .addStatement("$L = new $T()", DRAFT_FIELD_BASE, type.getImplClassName())
+                .addStatement("$L = new $T()", DRAFT_FIELD_MODIFIED, type.getImplClassName())
                 .endControlFlow();
         typeBuilder.addMethod(builder.build());
     }
@@ -774,7 +774,9 @@ public class DraftImplGenerator {
 
         builder
                 .beginControlFlow(
-                        "if (__tmpModified == null || $T.equals(base, __tmpModified, true))",
+                        "if (" +
+                                DRAFT_FIELD_BASE +
+                                " != null && (__tmpModified == null || $T.equals(base, __tmpModified, true)))",
                         ImmutableSpi.class
                 )
                 .addStatement("return base")

@@ -167,7 +167,7 @@ internal val ENTITY_MANAGER_CLASS_NAME =
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"
 internal const val JIMMER_MODULE = "JimmerModule"
 
-internal const val UNMODIFIED = "(__modified ?: __base)"
-internal const val MODIFIED = "(__modified ?: __base.clone())\n.also { __modified = it }"
+internal const val UNMODIFIED = "(__modified ?: __base!!)"
+internal const val MODIFIED = "(__modified ?: __base!!.clone())\n.also { __modified = it }"
 
 internal const val EMAIL_PATTERN = "^[^@]+@[^@]+\$"

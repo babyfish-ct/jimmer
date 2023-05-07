@@ -64,11 +64,13 @@ class DraftImplGenerator(
         )
         addProperty(
             PropertySpec
-                .builder("__base", type.draftClassName(PRODUCER, IMPL))
+                .builder(
+                    "__base",
+                    type.draftClassName(PRODUCER, IMPL).copy(nullable = true)
+                )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
-                    "base as %T? ?: %T()",
-                    type.draftClassName(PRODUCER, IMPL),
+                    "base as %T?",
                     type.draftClassName(PRODUCER, IMPL)
                 )
                 .build()
@@ -81,7 +83,9 @@ class DraftImplGenerator(
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .mutable()
-                .initializer("null")
+                .initializer(
+                    "if (base === null) Impl() else null"
+                )
                 .build()
         )
         addProperty(
@@ -476,7 +480,7 @@ class DraftImplGenerator(
                                         (prop.isAssociation(false) || prop.isList)
                                     ) {
                                         beginControlFlow("if (__isLoaded(%L))", prop.id)
-                                        addStatement("val oldValue = base.%L", prop.name)
+                                        addStatement("val oldValue = base!!.%L", prop.name)
                                         addStatement(
                                             "val newValue = __ctx.%L(oldValue)",
                                             if (prop.isList || prop.isScalarList) {
@@ -522,7 +526,7 @@ class DraftImplGenerator(
                                 endControlFlow()
                             }
                             beginControlFlow(
-                                "if (__tmpModified === null || %T.equals(base, __tmpModified, true))",
+                                "if (base !== null && (__tmpModified === null || \n\t%T.equals(base, __tmpModified, true)))",
                                 IMMUTABLE_SPI_CLASS_NAME
                             )
                             addStatement("return base")
@@ -530,7 +534,7 @@ class DraftImplGenerator(
                             for ((className, _) in type.validationMessages) {
                                 addStatement("%L.validate(__tmpModified)", validatorFieldName(className))
                             }
-                            addStatement("return __tmpModified")
+                            addStatement("return __tmpModified!!")
                             nextControlFlow("finally")
                             addStatement("__resolving = false")
                             endControlFlow()
