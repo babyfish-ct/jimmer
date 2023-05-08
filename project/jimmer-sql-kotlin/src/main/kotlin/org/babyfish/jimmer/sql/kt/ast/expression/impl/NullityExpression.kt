@@ -23,13 +23,9 @@ internal abstract class NullityPredicate(
             if (partial != null) {
                 val table = expression.table as TableImplementor<*>
                 val prop = expression.prop
-                var addSeparator = false
+                builder.enter(SqlBuilder.ScopeType.AND)
                 for (column in partial) {
-                    if (addSeparator) {
-                        builder.sql(" and ")
-                    } else {
-                        addSeparator = true
-                    }
+                    builder.separator()
                     table.renderSelection(prop, builder,
                         SingleColumn(column, false)
                     )
@@ -39,6 +35,7 @@ internal abstract class NullityPredicate(
                         builder.sql(" is null")
                     }
                 }
+                builder.leave()
             }
         }
         (expression as Ast).renderTo(builder)

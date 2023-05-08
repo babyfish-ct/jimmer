@@ -16,25 +16,23 @@ internal abstract class CompositePredicate(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        var sp: String? = null
+        builder.enter(scopeType())
         for (predicate in predicates) {
-            if (sp !== null) {
-                builder.sql(sp)
-            } else {
-                sp = operator()
-            }
+            builder.separator()
             renderChild(predicate as Ast, builder)
         }
+        builder.leave()
     }
 
-    protected abstract fun operator(): String
+    protected abstract fun scopeType(): SqlBuilder.ScopeType
 }
 
 internal class AndPredicate(
     predicates: List<AbstractKPredicate>
 ): CompositePredicate(predicates) {
 
-    override fun operator(): String = " and "
+    override fun scopeType(): SqlBuilder.ScopeType =
+        SqlBuilder.ScopeType.AND
 
     override fun not(): AbstractKPredicate =
         OrPredicate(predicates.map { it.not() })
@@ -46,7 +44,8 @@ internal class OrPredicate(
     predicates: List<AbstractKPredicate>
 ): CompositePredicate(predicates) {
 
-    override fun operator(): String = " or "
+    override fun scopeType(): SqlBuilder.ScopeType =
+        SqlBuilder.ScopeType.OR
 
     override fun not(): AbstractKPredicate =
         AndPredicate(predicates.map { it.not() })

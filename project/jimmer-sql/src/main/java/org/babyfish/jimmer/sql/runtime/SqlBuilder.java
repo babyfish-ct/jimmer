@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
@@ -16,17 +17,23 @@ import java.util.function.Function;
 
 public class SqlBuilder {
 
+    private static final String COMMA = ",";
+
+    private static final String BRACKET = "(";
+
     private final AstContext ctx;
 
     private final SqlBuilder parent;
+
+    private final SqlFormatter formatter;
 
     private final StringBuilder builder = new StringBuilder();
 
     private final List<Object> variables = new ArrayList<>();
 
-    private int childBuilderCount;
+    private boolean indentRequired;
 
-    private int tupleDepth = 0;
+    private int childBuilderCount;
 
     private boolean terminated;
 
@@ -35,11 +42,13 @@ public class SqlBuilder {
     public SqlBuilder(AstContext ctx) {
         this.ctx = ctx;
         this.parent = null;
+        this.formatter = ctx.getSqlClient().getSqlFormatter();
     }
 
     private SqlBuilder(SqlBuilder parent) {
         this.ctx = parent.ctx;
         this.parent = parent;
+        this.formatter = ctx.getSqlClient().getSqlFormatter();
         parent.childBuilderCount++;
     }
 
@@ -47,14 +56,109 @@ public class SqlBuilder {
         return ctx;
     }
 
-    public SqlBuilder sql(String tableAlias, ColumnDefinition definition) {
-        return sql(tableAlias, definition, null);
+    private void preAppend() {
+        Scope scope = this.scope;
+        if (scope == null) {
+            SqlBuilder parent = this.parent;
+            if (parent != null) {
+                scope = parent.scope;
+            }
+        }
+        if (scope != null) {
+            scope.setDirty();
+        }
+        if (scope == null || !indentRequired) {
+            return;
+        }
+        indentRequired = false;
+        String indent = formatter.getIndent();
+        for (int i = scope.depth; i > 0; --i) {
+            builder.append(indent);
+        }
     }
 
-    public SqlBuilder sql(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
-        if (tableAlias == null || tableAlias.isEmpty()) {
-            return sql(definition);
+    public SqlBuilder enter(String separator) {
+        enterImpl(ScopeType.BLANK, separator);
+        return this;
+    }
+
+    public SqlBuilder enter(ScopeType type) {
+        enterImpl(type, null);
+        return this;
+    }
+
+    private void enterImpl(ScopeType type, String separator) {
+        Scope oldScope = this.scope;
+        boolean ignored =
+                type == ScopeType.TUPLE &&
+                oldScope != null &&
+                oldScope.type == ScopeType.TUPLE;
+        if (!ignored) {
+            String prefix = type.prefix;
+            if (prefix != null) {
+                if (type != ScopeType.SELECT && type != ScopeType.SELECT_DISTINCT && !BRACKET.equals(prefix)) {
+                    if (formatter.isMultipleLines()) {
+                        builder.append('\n');
+                        preAppend();
+                    } else {
+                        preAppend();
+                        builder.append(' ');
+                    }
+                }
+                builder.append(prefix);
+            }
         }
+        this.scope = new Scope(oldScope, type, ignored, separator);
+    }
+
+    public SqlBuilder separator() {
+        Scope scope = this.scope;
+        if (scope != null && scope.dirty) {
+            String separator = scope.separator;
+            if (separator != null) {
+                if (formatter.isMultipleLines() && scope.type != ScopeType.TUPLE) {
+                    if (!COMMA.equals(separator)) {
+                        builder.append('\n');
+                    }
+                    preAppend();
+                    builder.append(separator).append('\n');
+                    indentRequired = true;
+                } else {
+                    preAppend();
+                    if (!COMMA.equals(separator)) {
+                        builder.append(' ');
+                    }
+                    builder.append(separator).append(' ');
+                }
+                scope.dirty = false;
+            }
+        }
+        return this;
+    }
+
+    public SqlBuilder leave() {
+        Scope scope = this.scope;
+        Scope oldScope = scope.parent;
+        if (!scope.ignored) {
+            String suffix = scope.type.suffix;
+            if (suffix != null) {
+                preAppend();
+                builder.append(suffix);
+            }
+        }
+        this.scope = oldScope;
+        return this;
+    }
+
+    public SqlBuilder definition(String tableAlias, ColumnDefinition definition) {
+        return definition(tableAlias, definition, null);
+    }
+
+    public SqlBuilder definition(String tableAlias, ColumnDefinition definition, Function<Integer, String> asBlock) {
+        if (tableAlias == null || tableAlias.isEmpty()) {
+            return definition(definition);
+        }
+        preAppend();
         if (definition instanceof SingleColumn) {
             builder.append(tableAlias).append('.').append(((SingleColumn)definition).getName());
             if (asBlock != null) {
@@ -75,18 +179,19 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder sql(String tableAlias, ColumnDefinition definition, boolean applyEmbeddedScope) {
+    public SqlBuilder definition(String tableAlias, ColumnDefinition definition, boolean applyEmbeddedScope) {
         if (applyEmbeddedScope && definition.isEmbedded()) {
-            enterTuple();
-            sql(tableAlias, definition);
-            leaveTuple();
+            enter(ScopeType.TUPLE);
+            definition(tableAlias, definition);
+            leave();
         } else {
-            sql(tableAlias, definition);
+            definition(tableAlias, definition);
         }
         return this;
     }
 
-    public SqlBuilder sql(ColumnDefinition definition) {
+    public SqlBuilder definition(ColumnDefinition definition) {
+        preAppend();
         if (definition instanceof SingleColumn) {
             builder.append(((SingleColumn)definition).getName());
         } else {
@@ -105,6 +210,7 @@ public class SqlBuilder {
 
     public SqlBuilder assignment(ImmutableProp prop, Object value) {
         ColumnDefinition definition = prop.getStorage(getAstContext().getSqlClient().getMetadataStrategy());
+        preAppend();
         if (definition instanceof SingleColumn) {
             builder.append(((SingleColumn)definition).getName()).append(" = ");
             if (value != null) {
@@ -139,7 +245,46 @@ public class SqlBuilder {
     }
 
     public SqlBuilder sql(String sql) {
+        preAppend();
         builder.append(sql);
+        return this;
+    }
+
+    public SqlBuilder from() {
+        if (formatter.isMultipleLines()) {
+            builder.append('\n');
+            preAppend();
+        } else {
+            preAppend();
+            builder.append(' ');
+        }
+        builder.append("from ");
+        return this;
+    }
+
+    public SqlBuilder join(JoinType joinType) {
+        if (formatter.isMultipleLines()) {
+            builder.append('\n');
+            preAppend();
+        } else {
+            preAppend();
+            builder.append(' ');
+        }
+        builder.append(joinType.name().toLowerCase()).append(" join ");
+        return this;
+    }
+
+    public SqlBuilder on() {
+        SqlFormatter formatter = this.formatter;
+        if (formatter.isMultipleLines()) {
+            builder.append('\n');
+            preAppend();
+            builder.append(formatter.getIndent());
+        } else {
+            preAppend();
+            builder.append(' ');
+        }
+        builder.append("on ");
         return this;
     }
 
@@ -156,25 +301,25 @@ public class SqlBuilder {
             if (value instanceof Tuple2<?,?>) {
                 Tuple2<?,?> tuple = (Tuple2<?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple3<?,?,?>) {
                 Tuple3<?,?,?> tuple = (Tuple3<?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple4<?,?,?,?>) {
                 Tuple4<?,?,?,?> tuple = (Tuple4<?,?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
@@ -182,11 +327,11 @@ public class SqlBuilder {
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple5<?,?,?,?,?>) {
                 Tuple5<?,?,?,?,?> tuple = (Tuple5<?,?,?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
@@ -196,11 +341,11 @@ public class SqlBuilder {
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple6<?,?,?,?,?,?>) {
                 Tuple6<?,?,?,?,?,?> tuple = (Tuple6<?,?,?,?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
@@ -212,11 +357,11 @@ public class SqlBuilder {
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_6(), "tuple.get_6 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple7<?,?,?,?,?,?,?>) {
                 Tuple7<?,?,?,?,?,?,?> tuple = (Tuple7<?,?,?,?,?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
@@ -230,11 +375,11 @@ public class SqlBuilder {
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_6(), "tuple.get_6 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_7(), "tuple.get_7 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple8<?,?,?,?,?,?,?,?>) {
                 Tuple8<?,?,?,?,?,?,?,?> tuple = (Tuple8<?,?,?,?,?,?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
@@ -250,11 +395,11 @@ public class SqlBuilder {
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_7(), "tuple.get_7 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_8(), "tuple.get_8 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             } else if (value instanceof Tuple9<?,?,?,?,?,?,?,?,?>) {
                 Tuple9<?,?,?,?,?,?,?,?,?> tuple = (Tuple9<?,?,?,?,?,?,?,?,?>)value;
                 this
-                        .enterTuple()
+                        .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
@@ -272,7 +417,7 @@ public class SqlBuilder {
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_8(), "tuple.get_8 cannot be null"))
                         .sql(", ")
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_9(), "tuple.get_9 cannot be null"))
-                        .leaveTuple();
+                        .leave();
             }
         } else {
             nonTupleVariable(value);
@@ -293,6 +438,7 @@ public class SqlBuilder {
                 throw new IllegalArgumentException("Immutable variable must be entity or embeddable");
             }
         } else if (value instanceof DbNull) {
+            preAppend();
             builder.append('?');
             variables.add(value);
         } else {
@@ -315,6 +461,7 @@ public class SqlBuilder {
             } else {
                 finalValue = value;
             }
+            preAppend();
             builder.append('?');
             variables.add(finalValue);
         }
@@ -322,14 +469,9 @@ public class SqlBuilder {
     }
 
     private void embeddedVariable(ImmutableSpi spi, EmbeddedPath parentPath) {
-        enterTuple();
-        boolean addComma = false;
+        enter(ScopeType.TUPLE);
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            if (addComma) {
-                builder.append(", ");
-            } else {
-                addComma = true;
-            }
+            separator();
             EmbeddedPath path = new EmbeddedPath(parentPath, prop);
             if (!spi.__isLoaded(prop.getId())) {
                 throw new IllegalArgumentException(
@@ -347,11 +489,10 @@ public class SqlBuilder {
                 nonTupleVariable(value);
             }
         }
-        leaveTuple();
+        leave();
     }
 
     public SqlBuilder nullVariable(ImmutableProp prop) {
-        validate();
         ImmutableType targetType = prop.getTargetType();
         if (targetType == null) {
             return nullVariable(prop.getElementClass());
@@ -359,9 +500,7 @@ public class SqlBuilder {
         return nullVariable(targetType.getIdProp().getElementClass());
     }
 
-    @SuppressWarnings("unchecked")
     public SqlBuilder nullVariable(Class<?> type) {
-        validate();
         ImmutableType immutableType = ImmutableType.tryGet(type);
         if (immutableType != null) {
             nullImmutableVariable(immutableType);
@@ -387,7 +526,8 @@ public class SqlBuilder {
     }
 
     private void nullEmbeddedVariable(ImmutableType type) {
-        enterTuple();
+        validate();
+        enter(ScopeType.TUPLE);
         for (ImmutableProp prop : type.getProps().values()) {
             ImmutableType targetType = prop.getTargetType();
             if (targetType != null) {
@@ -396,11 +536,12 @@ public class SqlBuilder {
                 nullSingeVariable(prop.getElementClass());
             }
         }
-        leaveTuple();
+        leave();
     }
 
     @SuppressWarnings("unchecked")
     private void nullSingeVariable(Class<?> type) {
+        validate();
         ScalarProvider<Object, Object> scalarProvider =
                 ctx.getSqlClient().getScalarProvider((Class<Object>)type);
         Object finalValue;
@@ -409,22 +550,9 @@ public class SqlBuilder {
         } else {
             finalValue = new DbNull(type);
         }
+        preAppend();
         builder.append('?');
         variables.add(finalValue);
-    }
-
-    public SqlBuilder enterTuple() {
-        if (this.tupleDepth++ == 0) {
-            builder.append('(');
-        }
-        return this;
-    }
-
-    public SqlBuilder leaveTuple() {
-        if (--this.tupleDepth == 0) {
-            builder.append(')');
-        }
-        return this;
     }
 
     public SqlBuilder createChildBuilder() {
@@ -438,6 +566,9 @@ public class SqlBuilder {
     public Tuple2<String, List<Object>> build(
             Function<Tuple2<String, List<Object>>, Tuple2<String, List<Object>>> transformer
     ) {
+        if (scope != null) {
+            throw new IllegalStateException("Internal bug: Did not leave all scopes");
+        }
         validate();
         Tuple2<String, List<Object>> result = new Tuple2<>(builder.toString(), variables);
         if (transformer != null) {
@@ -445,6 +576,7 @@ public class SqlBuilder {
         }
         SqlBuilder p = this.parent;
         if (p != null) {
+            preAppend();
             p.builder.append(result.get_1());
             p.variables.addAll(result.get_2());
             while (p != null) {
@@ -490,10 +622,32 @@ public class SqlBuilder {
     }
 
     public enum ScopeType {
-        BLANK,
-        SUB_QUERY,
-        LIST,
-        TUPLE
+        BLANK(null, null, null),
+        SELECT("select ", ",", null),
+        SELECT_DISTINCT("select distinct ", ",", null),
+        SET("set ", ",", null),
+        WHERE("where ", "and", null),
+        ORDER_BY("order by ", ",", null),
+        GROUP_BY("group by ", ",", null),
+        HAVING("having ", ",", null),
+        SUB_QUERY("(", null, ")"),
+        LIST("(", ",", ")"),
+        TUPLE("(", ",", ")"),
+        AND(null, "and", null),
+        OR(null, "or", null),
+        VALUES("values ", ",", null);
+
+        public final String prefix;
+
+        public final String separator;
+
+        public final String suffix;
+
+        ScopeType(String prefix, String separator, String suffix) {
+            this.prefix = prefix;
+            this.separator = separator;
+            this.suffix = suffix;
+        }
     }
 
     private static class Scope {
@@ -502,19 +656,36 @@ public class SqlBuilder {
 
         final ScopeType type;
 
-        final boolean dirty;
+        final boolean ignored;
+
+        final String separator;
 
         final int depth;
 
-        private Scope(Scope parent, ScopeType type, boolean dirty) {
+        boolean dirty;
+
+        int separatorCountInLine;
+
+        private Scope(
+                Scope parent,
+                ScopeType type,
+                boolean ignored,
+                String separator
+        ) {
             this.parent = parent;
             this.type = type;
-            this.dirty = dirty;
-            this.depth = parent == null ?
-                    1 :
-                    parent.type == ScopeType.TUPLE && type == ScopeType.TUPLE ?
-                            parent.depth :
-                            parent.depth + 1;
+            this.ignored = ignored;
+            this.depth = ignored ? parent.depth : (parent != null ? parent.depth + 1: 1);
+            this.separator = separator != null ? separator : type.separator;
+        }
+
+        void setDirty() {
+            for (Scope scope = this; scope != null; scope = scope.parent) {
+                if (scope.dirty) {
+                    break;
+                }
+                scope.dirty = true;
+            }
         }
     }
 }

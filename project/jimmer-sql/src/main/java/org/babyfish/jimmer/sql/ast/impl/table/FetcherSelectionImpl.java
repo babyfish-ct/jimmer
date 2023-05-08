@@ -43,7 +43,6 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        String separator = "";
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
@@ -51,13 +50,9 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
             Storage storage = prop.getStorage(strategy);
             SqlTemplate template = prop.getSqlTemplate();
             if (storage instanceof ColumnDefinition) {
-                builder.sql(separator);
-                separator = ", ";
-                builder.sql(alias, (ColumnDefinition) storage);
+                builder.separator().definition(alias, (ColumnDefinition) storage);
             } else if (template instanceof FormulaTemplate) {
-                builder.sql(separator);
-                separator = ", ";
-                builder.sql(((FormulaTemplate)template).toSql(alias));
+                builder.separator().sql(((FormulaTemplate)template).toSql(alias));
             }
         }
     }

@@ -482,7 +482,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             renderJoin(sqlBuilder, mode);
         } else {
             sqlBuilder
-                    .sql(" from ")
+                    .from()
                     .sql(immutableType.getTableName(sqlBuilder.getAstContext().getSqlClient().getMetadataStrategy()))
                     .sql(" ")
                     .sql(alias);
@@ -498,13 +498,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (builder.getAstContext().getTableUsedState(this) != TableUsedState.NONE) {
                 Predicate predicate = weakJoinHandle.createPredicate(parent, this);
                 builder
-                        .sql(" ")
-                        .sql(joinType.name().toLowerCase())
-                        .sql(" join ")
+                        .join(joinType)
                         .sql(immutableType.getTableName(strategy))
                         .sql(" ")
                         .sql(alias)
-                        .sql(" on ");
+                        .on();
                 if (predicate == null) {
                     builder.sql("1 = 1");
                 } else {
@@ -648,13 +646,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             switch (mode) {
                 case NORMAL:
                     builder
-                            .sql(" ")
-                            .sql(joinType.name().toLowerCase())
-                            .sql(" join ")
+                            .join(joinType)
                             .sql(immutableType.getTableName(strategy))
                             .sql(" ")
                             .sql(alias)
-                            .sql(" on ");
+                            .on();
                     break;
                 case FROM_ONLY:
                     builder
@@ -674,7 +670,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     private void renderJoinImpl(
-            SqlBuilder sqlBuilder,
+            SqlBuilder builder,
             JoinType joinType,
             String previousAlias,
             ColumnDefinition previousDefinition,
@@ -688,17 +684,15 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         switch (mode) {
             case NORMAL:
-                sqlBuilder
-                        .sql(" ")
-                        .sql(joinType.name().toLowerCase())
-                        .sql(" join ")
+                builder
+                        .join(joinType)
                         .sql(newTableName)
                         .sql(" ")
                         .sql(newAlias)
-                        .sql(" on ");
+                        .on();
                 break;
             case FROM_ONLY:
-                sqlBuilder
+                builder
                         .sql(newTableName)
                         .sql(" ")
                         .sql(newAlias);
@@ -706,14 +700,10 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         if (mode == RenderMode.NORMAL || mode == RenderMode.WHERE_ONLY) {
             int size = previousDefinition.size();
-            boolean addSeparator = false;
+            builder.enter(SqlBuilder.ScopeType.AND);
             for (int i = 0; i < size; i++) {
-                if (addSeparator) {
-                    sqlBuilder.sql(" and ");
-                } else {
-                    addSeparator = true;
-                }
-                sqlBuilder
+                builder.separator();
+                builder
                         .sql(previousAlias)
                         .sql(".")
                         .sql(previousDefinition.name(i))
@@ -722,6 +712,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                         .sql(".")
                         .sql(newDefinition.name(i));
             }
+            builder.leave();
         }
     }
 
@@ -745,9 +736,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (middleTable != null) {
                 if (optionalDefinition == null) {
                     if (isInverse) {
-                        builder.sql(withPrefix ? middleTableAlias : null, middleTable.getColumnDefinition(), asBlock);
+                        builder.definition(withPrefix ? middleTableAlias : null, middleTable.getColumnDefinition(), asBlock);
                     } else {
-                        builder.sql(withPrefix ? middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
+                        builder.definition(withPrefix ? middleTableAlias : null, middleTable.getTargetColumnDefinition(), asBlock);
                     }
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
@@ -774,7 +765,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             }
             if (!isInverse) {
                 if (optionalDefinition == null) {
-                    builder.sql(withPrefix ? parent.alias : null, joinProp.getStorage(strategy), asBlock);
+                    builder.definition(withPrefix ? parent.alias : null, joinProp.getStorage(strategy), asBlock);
                 } else {
                     ColumnDefinition fullDefinition = prop.getStorage(strategy);
                     ColumnDefinition parentDefinition = joinProp.getStorage(strategy);
@@ -807,7 +798,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             ColumnDefinition definition = optionalDefinition != null ?
                     optionalDefinition :
                     prop.getStorage(strategy);
-            builder.sql(withPrefix ? alias : null, definition, asBlock);
+            builder.definition(withPrefix ? alias : null, definition, asBlock);
         }
     }
 

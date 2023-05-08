@@ -149,14 +149,12 @@ public class CoalesceBuilder<T> {
             if  (expressions.size() == 1) {
                 renderChild((Ast) expressions.get(0), builder);
             } else {
-                builder.sql("coalesce(");
-                String separator = "";
+                builder.sql("coalesce").enter(SqlBuilder.ScopeType.LIST);
                 for (Expression<?> expression : expressions) {
-                    builder.sql(separator);
+                    builder.separator();
                     renderChild((Ast) expression, builder);
-                    separator = ", ";
                 }
-                builder.sql(")");
+                builder.leave();
             }
         }
     }

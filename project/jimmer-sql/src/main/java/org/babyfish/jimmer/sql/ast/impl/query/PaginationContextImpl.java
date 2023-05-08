@@ -2,11 +2,14 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.PaginationContext;
+import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PaginationContextImpl implements PaginationContext {
+
+    private final SqlFormatter sqlFormatter;
     
     private final int limit;
     
@@ -25,11 +28,12 @@ public class PaginationContextImpl implements PaginationContext {
     private boolean originApplied = false;
 
     public PaginationContextImpl(
-            int limit,
+            SqlFormatter formatter, int limit,
             int offset,
             String originSql,
             List<Object> originVariables,
             boolean idOnly) {
+        sqlFormatter = formatter;
         this.limit = limit;
         this.offset = offset;
         this.originSql = originSql;
@@ -60,6 +64,24 @@ public class PaginationContextImpl implements PaginationContext {
         builder.append(originSql);
         variables.addAll(originVariables);
         originApplied = true;
+        return this;
+    }
+
+    @Override
+    public PaginationContext space() {
+        if (sqlFormatter.isMultipleLines()) {
+            builder.append('\n');
+        } else {
+            builder.append(' ');
+        }
+        return this;
+    }
+
+    @Override
+    public PaginationContext newLine() {
+        if (sqlFormatter.isMultipleLines()) {
+            builder.append('\n');
+        }
         return this;
     }
 

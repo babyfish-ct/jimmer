@@ -222,25 +222,27 @@ public abstract class AbstractMutableQueryImpl
         tableImplementor.renderTo(builder);
 
         if (predicate != null) {
-            builder.sql(" where ");
+            builder.enter(SqlBuilder.ScopeType.WHERE);
             ((Ast)predicate).renderTo(builder);
+            builder.leave();
         }
         if (!groupByExpressions.isEmpty()) {
-            String separator = " group by ";
+            builder.enter(SqlBuilder.ScopeType.GROUP_BY);
             for (Expression<?> expression : groupByExpressions) {
-                builder.sql(separator);
+                builder.separator();
                 ((Ast)expression).renderTo(builder);
-                separator = ", ";
             }
+            builder.leave();
         }
         if (havingPredicate != null) {
-            builder.sql(" having ");
+            builder.enter(SqlBuilder.ScopeType.HAVING);
             ((Ast)havingPredicate).renderTo(builder);
+            builder.leave();
         }
         if (!withoutSortingAndPaging && !orders.isEmpty()) {
-            String separator = " order by ";
+            builder.enter(SqlBuilder.ScopeType.ORDER_BY);
             for (Order order : orders) {
-                builder.sql(separator);
+                builder.separator();
                 ((Ast)order.getExpression()).renderTo(builder);
                 if (order.getOrderMode() == OrderMode.ASC) {
                     builder.sql(" asc");
@@ -255,8 +257,8 @@ public abstract class AbstractMutableQueryImpl
                         builder.sql(" nulls last");
                         break;
                 }
-                separator = ", ";
             }
+            builder.leave();
         }
     }
 

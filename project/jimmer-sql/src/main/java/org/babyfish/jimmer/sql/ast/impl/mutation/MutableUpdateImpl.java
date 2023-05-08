@@ -137,13 +137,12 @@ public class MutableUpdateImpl
                 .getExecutor()
                 .execute(
                         new Executor.Args<>(
+                                getSqlClient(),
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
                                 getPurpose(),
-                                ExecutorContext.create(getSqlClient()),
                                 null,
-                                getSqlClient().getDialect(),
                                 PreparedStatement::executeUpdate
                         )
                 );
@@ -179,13 +178,12 @@ public class MutableUpdateImpl
                 .getExecutor()
                 .execute(
                         new Executor.Args<>(
+                                getSqlClient(),
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
                                 getPurpose(),
-                                ExecutorContext.create(getSqlClient()),
                                 null,
-                                getSqlClient().getDialect(),
                                 PreparedStatement::executeUpdate
                         )
                 );
@@ -263,11 +261,15 @@ public class MutableUpdateImpl
                     child.renderTo(builder);
                 }
             }
-            builder.sql(" set ");
+
+            builder.enter(SqlBuilder.ScopeType.SET);
             renderAssignments(builder);
+            builder.leave();
+
             renderTables(builder);
             renderDeeperJoins(builder);
-            renderPredicates(builder, true, ids);
+
+            renderWhereClause(builder, true, ids);
         } finally {
             astContext.popStatement();
         }
@@ -280,38 +282,27 @@ public class MutableUpdateImpl
             accept(new VisitorImpl(builder.getAstContext(), null), false);
             TableImplementor<?> table = getTableImplementor();
             MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
-            builder.sql("select ");
-            boolean addComma = false;
+            builder.enter(SqlBuilder.ScopeType.SELECT);
             for (ImmutableProp prop : table.getImmutableType().getSelectableProps().values()) {
-                if (addComma) {
-                    builder.sql(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.sql(table.getAlias(), prop.getStorage(strategy));
+                builder.separator().definition(table.getAlias(), prop.getStorage(strategy));
             }
+            builder.leave();
             if (ids != null) {
                 builder
-                        .sql(" from ")
+                        .from()
                         .sql(table.getImmutableType().getTableName(strategy))
                         .sql(" ")
                         .sql(table.getAlias())
-                        .sql(" where ")
-                        .sql(table.getAlias(), table.getImmutableType().getIdProp().getStorage(strategy), true)
-                        .sql(" in (");
-                addComma = false;
+                        .enter(SqlBuilder.ScopeType.WHERE)
+                        .definition(table.getAlias(), table.getImmutableType().getIdProp().getStorage(strategy), true)
+                        .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
                 for (Object id : ids) {
-                    if (addComma) {
-                        builder.sql(", ");
-                    } else {
-                        addComma = true;
-                    }
-                    builder.variable(id);
+                    builder.separator().variable(id);
                 }
-                builder.sql(")");
+                builder.leave().leave();
             } else {
                 table.renderTo(builder);
-                renderPredicates(builder, false, null);
+                renderWhereClause(builder, false, null);
             }
         } finally {
             astContext.popStatement();
@@ -325,13 +316,11 @@ public class MutableUpdateImpl
                 updateJoin != null &&
                         updateJoin.isJoinedTableUpdatable() &&
                         hasUsedChild(table, builder.getAstContext());
-        String separator = "";
         for (Map.Entry<Target, Expression<?>> e : assignmentMap.entrySet()) {
-            builder.sql(separator);
+            builder.separator();
             renderTarget(builder, e.getKey(), withTargetPrefix);
             builder.sql(" = ");
             ((Ast) e.getValue()).renderTo(builder);
-            separator = ", ";
         }
     }
 
@@ -353,13 +342,12 @@ public class MutableUpdateImpl
                     table.renderTo(builder);
                     break;
                 case AS_JOIN:
-                    builder.sql(" from ");
-                    String separator = "";
+                    builder.from().enter(",");
                     for (TableImplementor<?> child : table) {
-                        builder.sql(separator);
+                        builder.separator();
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
-                        separator = ",";
                     }
+                    builder.leave();
             }
         }
     }
@@ -377,45 +365,52 @@ public class MutableUpdateImpl
         }
     }
 
-    private void renderPredicates(SqlBuilder builder, boolean forUpdate, Collection<Object> ids) {
+    private void renderWhereClause(SqlBuilder builder, boolean forUpdate, Collection<Object> ids) {
+
         TableImplementor<?> table = getTableImplementor();
         UpdateJoin updateJoin = getSqlClient().getDialect().getUpdateJoin();
-        String separator = " where ";
+
+        boolean hasTableCondition =
+                forUpdate &&
+                        updateJoin != null &&
+                        updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
+                        hasUsedChild(table, builder.getAstContext());
+
+        if (!hasTableCondition && ids == null && getPredicate() == null) {
+            return;
+        }
+
+        builder.enter(SqlBuilder.ScopeType.WHERE);
+
         if (ids != null) {
             ImmutableProp idProp = table.getImmutableType().getIdProp();
-            builder.sql(separator)
-                    .sql(table.getAlias(), idProp.getStorage(getSqlClient().getMetadataStrategy()), true)
-                    .sql(" in (");
-            boolean addComma = false;
+            builder
+                    .separator()
+                    .definition(table.getAlias(), idProp.getStorage(getSqlClient().getMetadataStrategy()), true)
+                    .sql(" in ")
+                    .enter(SqlBuilder.ScopeType.LIST);
             for (Object id : ids) {
-                if (addComma) {
-                    builder.sql(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.variable(id);
+                builder.separator().variable(id);
             }
-            builder.sql(")");
-            separator = " and ";
+            builder.leave();
         }
-        if (forUpdate &&
-                updateJoin != null &&
-                updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
-                hasUsedChild(table, builder.getAstContext())
-        ) {
+
+        if (hasTableCondition) {
             for (TableImplementor<?> child : table) {
-                builder.sql(separator);
-                separator = " and ";
+                builder.separator();
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }
+
         if (ids == null) {
             Predicate predicate = getPredicate();
             if (predicate != null) {
-                builder.sql(separator);
+                builder.separator();
                 ((Ast) predicate).renderTo(builder);
             }
         }
+
+        builder.leave();
     }
 
     private static class Target {

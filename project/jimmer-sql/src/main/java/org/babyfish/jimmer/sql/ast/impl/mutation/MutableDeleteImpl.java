@@ -120,13 +120,12 @@ public class MutableDeleteImpl
                 Tuple2<String, List<Object>> sqlResult = builder.build();
                 return sqlClient.getExecutor().execute(
                         new Executor.Args<>(
+                                getSqlClient(),
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
                                 getPurpose(),
-                                ExecutorContext.create(sqlClient),
                                 null,
-                                sqlClient.getDialect(),
                                 PreparedStatement::executeUpdate
                         )
                 );
@@ -172,13 +171,13 @@ public class MutableDeleteImpl
         TableImplementor<?> table = getTableImplementor();
         builder.sql("delete");
         if (getSqlClient().getDialect().isDeletedAliasRequired()) {
-            builder.sql(" ");
-            builder.sql(table.getAlias());
+            builder.sql(" ").sql(table.getAlias());
         }
-        builder.sql(" from ");
-        builder.sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()));
-        builder.sql(" ");
-        builder.sql(table.getAlias());
+        builder
+                .from()
+                .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
+                .sql(" ")
+                .sql(table.getAlias());
         Predicate predicate = deleteQuery.getPredicate();
         if (predicate != null) {
             builder.sql(" where ");

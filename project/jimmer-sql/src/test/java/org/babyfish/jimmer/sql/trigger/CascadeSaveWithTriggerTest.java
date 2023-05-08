@@ -1701,7 +1701,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
     public void testCascadeUpdateWithOneToOne() {
         executeAndExpectResult(
                 getSqlClient(it -> {
-                    UserIdGenerator idGenerator = this::autoId;
+                    UserIdGenerator<?> idGenerator = this::autoId;
                     it.setIdGenerator(idGenerator);
                     it.addDraftInterceptor(new Interceptor());
                 }).getEntities().saveCommand(

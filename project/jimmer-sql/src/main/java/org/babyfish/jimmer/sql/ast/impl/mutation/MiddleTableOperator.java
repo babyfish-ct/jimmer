@@ -107,14 +107,16 @@ class MiddleTableOperator {
     List<Object> getTargetIds(Object id) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
-                .sql("select ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .sql(" from ")
+                .enter(SqlBuilder.ScopeType.SELECT)
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .from()
                 .sql(middleTable.getTableName())
-                .sql(" where ")
-                .sql(null, middleTable.getColumnDefinition(), true)
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(null, middleTable.getColumnDefinition(), true)
                 .sql(" = ")
-                .variable(id);
+                .variable(id)
+                .leave();
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return Selectors.select(
                 sqlClient,
@@ -132,31 +134,31 @@ class MiddleTableOperator {
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
-                .sql("select ")
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .sql(" from ")
+                .enter(SqlBuilder.ScopeType.SELECT)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .from()
                 .sql(middleTable.getTableName())
-                .sql(" where ")
-                .enterTuple()
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .leaveTuple()
-                .sql(" in (");
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .enter(SqlBuilder.ScopeType.TUPLE)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
         while (reader.read()) {
+            builder.separator();
             builder
-                    .enterTuple()
+                    .enter(SqlBuilder.ScopeType.TUPLE)
                     .variable(reader.sourceId())
-                    .sql(", ")
+                    .separator()
                     .variable(reader.targetId())
-                    .leaveTuple();
-            if (reader.isReadable()) {
-                builder.sql(", ");
-            }
+                    .leave();
         }
-        builder.sql(")");
+        builder.leave().leave();
+
         reader.reset();
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
@@ -174,25 +176,22 @@ class MiddleTableOperator {
     IdPairReader getIdPairReader(Collection<Object> sourceIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
-                .sql("select ")
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .sql(" from ")
+                .enter(SqlBuilder.ScopeType.SELECT)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .from()
                 .sql(middleTable.getTableName())
-                .sql(" where ")
-                .sql(null, middleTable.getColumnDefinition(), true)
-                .sql(" in (");
-        boolean addComma = false;
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(null, middleTable.getColumnDefinition(), true)
+                .sql(" in ")
+                .enter(SqlBuilder.ScopeType.LIST);
         for (Object sourceId : sourceIds) {
-            if (addComma) {
-                builder.sql(", ");
-            } else {
-                addComma = true;
-            }
-            builder.variable(sourceId);
+            builder.separator().variable(sourceId);
         }
-        builder.sql(")");
+        builder.leave().leave();
+
         Tuple2<String, List<Object>> sqlResult = builder.build();
         List<Tuple2<Object, Object>> tuples = Selectors.select(
                 sqlClient,
@@ -229,53 +228,53 @@ class MiddleTableOperator {
         builder
                 .sql("insert into ")
                 .sql(middleTable.getTableName())
-                .sql("(")
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .sql(")");
+                .enter(SqlBuilder.ScopeType.TUPLE)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave();
         if (sqlClient.getDialect().isMultiInsertionSupported()) {
-            builder.sql(" values ");
-            String separator = "";
+            builder.enter(SqlBuilder.ScopeType.VALUES);
             while (reader.read()) {
-                builder.sql(separator);
-                separator = ", ";
                 builder
-                        .enterTuple()
+                        .separator()
+                        .enter(SqlBuilder.ScopeType.TUPLE)
                         .variable(reader.sourceId())
-                        .sql(", ")
+                        .separator()
                         .variable(reader.targetId())
-                        .leaveTuple();
+                        .leave();
             }
+            builder.leave();
         } else {
+            builder.sql(" ");
             String fromConstant = sqlClient.getDialect().getConstantTableName();
             if (fromConstant != null) {
                 fromConstant = " from " + fromConstant;
             }
-            String separator = " ";
+            builder.enter("union all");
             while (reader.read()) {
-                builder.sql(separator);
-                separator = " union all ";
                 builder
-                        .sql("select ")
+                        .separator()
+                        .enter(SqlBuilder.ScopeType.SELECT)
                         .variable(reader.sourceId())
-                        .sql(", ")
-                        .variable(reader.targetId());
+                        .separator()
+                        .variable(reader.targetId())
+                        .leave();
                 if (fromConstant != null) {
                     builder.sql(fromConstant);
                 }
             }
+            builder.leave();
         }
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         PreparedStatement::executeUpdate
                 )
         );
@@ -313,35 +312,34 @@ class MiddleTableOperator {
         builder
                 .sql("delete from ")
                 .sql(middleTable.getTableName())
-                .sql(" where ")
-                .enterTuple()
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .leaveTuple()
-                .sql(" in (");
-        String separator = "";
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .enter(SqlBuilder.ScopeType.TUPLE)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .sql(" in ")
+                .enter(SqlBuilder.ScopeType.LIST);
         while (reader.read()) {
-            builder.sql(separator);
-            separator = ", ";
             builder
-                    .enterTuple()
+                    .separator()
+                    .enter(SqlBuilder.ScopeType.TUPLE)
                     .variable(reader.sourceId())
-                    .sql(", ")
+                    .separator()
                     .variable(reader.targetId())
-                    .leaveTuple();
+                    .leave();
         }
-        builder.sql(")");
+        builder.leave().leave();
+
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         PreparedStatement::executeUpdate
                 )
         );
@@ -366,30 +364,29 @@ class MiddleTableOperator {
             return remove(reader);
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
-        builder.sql("delete from ");
-        builder.sql(middleTable.getTableName());
-        builder.sql(" where ");
-        builder.sql(null, middleTable.getColumnDefinition(), true);
-        builder.sql(" in (");
-        String separator = "";
+        builder
+                .sql("delete from ")
+                .sql(middleTable.getTableName())
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(null, middleTable.getColumnDefinition(), true)
+                .sql(" in ")
+                .enter(SqlBuilder.ScopeType.LIST);
         for (Object id : sourceIds) {
-            builder.sql(separator);
-            separator = ", ";
-            builder.variable(id);
+            builder.separator().variable(id);
         }
-        builder.sql(")");
+        builder.leave().leave();
+
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient
                 .getExecutor()
                 .execute(
                         new Executor.Args<>(
+                                sqlClient,
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
                                 ExecutionPurpose.DELETE,
-                                ExecutorContext.create(sqlClient),
                                 null,
-                                sqlClient.getDialect(),
                                 PreparedStatement::executeUpdate
                         )
                 );

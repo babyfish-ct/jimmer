@@ -32,7 +32,7 @@ public interface JSqlClientImplementor extends JSqlClient {
 
     List<String> getExecutorContextPrefixes();
 
-    boolean isPrettySql();
+    SqlFormatter getSqlFormatter();
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 

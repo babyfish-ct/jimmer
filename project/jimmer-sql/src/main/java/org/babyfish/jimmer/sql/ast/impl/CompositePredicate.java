@@ -48,17 +48,15 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        String sp = ' ' + operator() + ' ';
-        int size = predicates.length;
-        for (int i = 0; i < size; i++) {
-            if (i != 0) {
-                builder.sql(sp);
-            }
-            renderChild((Ast) predicates[i], builder);
+        builder.enter(scopeType());
+        for (Predicate predicate : predicates) {
+            builder.separator();
+            renderChild((Ast) predicate, builder);
         }
+        builder.leave();
     }
 
-    protected abstract String operator();
+    protected abstract SqlBuilder.ScopeType scopeType();
 
     static class And extends CompositePredicate {
 
@@ -67,8 +65,8 @@ public abstract class CompositePredicate extends AbstractPredicate {
         }
 
         @Override
-        protected String operator() {
-            return "and";
+        protected SqlBuilder.ScopeType scopeType() {
+            return SqlBuilder.ScopeType.AND;
         }
 
         @Override
@@ -84,8 +82,8 @@ public abstract class CompositePredicate extends AbstractPredicate {
         }
 
         @Override
-        protected String operator() {
-            return "or";
+        protected SqlBuilder.ScopeType scopeType() {
+            return SqlBuilder.ScopeType.OR;
         }
 
         @Override

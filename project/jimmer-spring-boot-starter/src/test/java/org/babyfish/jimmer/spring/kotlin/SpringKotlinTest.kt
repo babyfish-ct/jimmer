@@ -77,17 +77,9 @@ open class SpringKotlinTest : AbstractTest() {
         @Bean
         open fun executor(): Executor? {
             return object : Executor {
-                override fun <R> execute(
-                    con: Connection,
-                    sql: String,
-                    variables: List<Any>,
-                    purpose: ExecutionPurpose,
-                    ctx: ExecutorContext?,
-                    statementFactory: StatementFactory?,
-                    block: SqlFunction<PreparedStatement, R>
-                ): R {
-                    SQL_STATEMENTS.add(sql)
-                    return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, ctx, statementFactory, block)
+                override fun <R> execute(args: Executor.Args<R>): R {
+                    SQL_STATEMENTS.add(args.sql)
+                    return DefaultExecutor.INSTANCE.execute(args)
                 }
             }
         }

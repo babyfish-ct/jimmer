@@ -449,13 +449,12 @@ class Saver {
                 );
                 id = data.getSqlClient().getExecutor().execute(
                         new Executor.Args<>(
+                                data.getSqlClient(),
                                 con,
                                 sql,
                                 Collections.emptyList(),
                                 ExecutionPurpose.MUTATE,
-                                ExecutorContext.create(data.getSqlClient()),
                                 null,
-                                data.getSqlClient().getDialect(),
                                 stmt -> {
                                     try (ResultSet rs = stmt.executeQuery()) {
                                         rs.next();
@@ -534,26 +533,21 @@ class Saver {
         builder
                 .sql("insert into ")
                 .sql(type.getTableName(strategy))
-                .sql("(");
-        String separator = "";
+                .enter(SqlBuilder.ScopeType.TUPLE);
         for (ImmutableProp prop : props) {
-            builder.sql(separator);
-            separator = ", ";
-            builder.sql(prop.<ColumnDefinition>getStorage(strategy));
+            builder.separator().definition(prop.<ColumnDefinition>getStorage(strategy));
         }
-        builder.sql(")");
+        builder.leave();
         if (id != null && idGenerator instanceof IdentityIdGenerator) {
             String overrideIdentityIdSql = data.getSqlClient().getDialect().getOverrideIdentityIdSql();
             if (overrideIdentityIdSql != null) {
                 builder.sql(" ").sql(overrideIdentityIdSql);
             }
         }
-        builder.sql(" values").enterTuple();
-        separator = "";
+        builder.sql(" values").enter(SqlBuilder.ScopeType.TUPLE);
         int size = values.size();
         for (int i = 0; i < size; i++) {
-            builder.sql(separator);
-            separator = ", ";
+            builder.separator();
             Object value = values.get(i);
             if (value != null) {
                 builder.variable(value);
@@ -561,7 +555,7 @@ class Saver {
                 builder.nullVariable(props.get(i));
             }
         }
-        builder.leaveTuple();
+        builder.leave();
 
         boolean generateKeys = id == null;
         if (generateKeys) {
@@ -580,16 +574,15 @@ class Saver {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         Object insertedResult = data.getSqlClient().getExecutor().execute(
                 new Executor.Args<>(
+                        data.getSqlClient(),
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(data.getSqlClient()),
                         generateKeys ?
                                 (c, s) ->
                                         c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
                                 null,
-                        data.getSqlClient().getDialect(),
                         stmt -> {
                             if (generateKeys) {
                                 int updateCount = stmt.executeUpdate();
@@ -688,49 +681,46 @@ class Saver {
         builder
                 .sql("update ")
                 .sql(type.getTableName(strategy))
-                .sql(" set ");
+                .enter(SqlBuilder.ScopeType.SET);
 
-        String separator = "";
         int updatedCount = updatedProps.size();
         for (int i = 0; i < updatedCount; i++) {
-            builder.sql(separator);
-            separator = ", ";
-            builder.assignment(updatedProps.get(i), updatedValues.get(i));
+            builder.separator().assignment(updatedProps.get(i), updatedValues.get(i));
         }
         String versionColumName = null;
         if (version != null) {
             versionColumName = type.getVersionProp().<SingleColumn>getStorage(strategy).getName();
             builder
-                    .sql(separator)
+                    .separator()
                     .sql(versionColumName)
                     .sql(" = ")
                     .sql(versionColumName)
                     .sql(" + 1");
         }
-        builder.sql(" where ");
-
-        builder.
-                sql(null, type.getIdProp().getStorage(strategy), true)
+        builder
+                .leave()
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(null, type.getIdProp().getStorage(strategy), true)
                 .sql(" = ")
                 .variable(draftSpi.__get(type.getIdProp().getId()));
         if (versionColumName != null) {
             builder
-                    .sql(" and ")
+                    .separator()
                     .sql(versionColumName)
                     .sql(" = ")
                     .variable(version);
         }
+        builder.leave();
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         int rowCount = data.getSqlClient().getExecutor().execute(
                 new Executor.Args<>(
+                        data.getSqlClient(),
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(data.getSqlClient()),
                         null,
-                        data.getSqlClient().getDialect(),
                         PreparedStatement::executeUpdate
                 )
         );

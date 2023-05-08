@@ -74,25 +74,25 @@ class ChildTableOperator {
         subBuilder
                 .sql("select 1 from ")
                 .sql(parentProp.getDeclaringType().getTableName(strategy))
-                .sql(" where ")
-                .sql(parentProp.<ColumnDefinition>getStorage(strategy))
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(parentProp.<ColumnDefinition>getStorage(strategy))
                 .sql(" = ")
                 .variable(parentId);
         if (!retainedChildIds.isEmpty()) {
             subBuilder
-                    .sql(" and ")
-                    .sql(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage(strategy))
-                    .sql(" not in(");
-            String separator = "";
+                    .separator()
+                    .definition(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage(strategy))
+                    .sql(" not in").enter(SqlBuilder.ScopeType.LIST);
             for (Object retainedChildId : retainedChildIds) {
-                subBuilder.sql(separator);
-                subBuilder.variable(retainedChildId);
-                separator = ", ";
+                subBuilder.separator().variable(retainedChildId);
             }
-            subBuilder.sql(")");
+            subBuilder.leave();
         }
+        subBuilder.leave();
+
         Tuple2<String, List<Object>> sqlResult = subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
+                    sqlClient.getSqlFormatter(),
                     1,
                     0,
                     result.get_1(),
@@ -104,13 +104,12 @@ class ChildTableOperator {
         });
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         stmt -> stmt.executeQuery().next()
                 )
         );
@@ -163,7 +162,7 @@ class ChildTableOperator {
         builder
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName(strategy))
-                .sql(" set ");
+                .enter(SqlBuilder.ScopeType.SET);
         ColumnDefinition definition = parentProp.getStorage(strategy);
         if (definition instanceof SingleColumn) {
             builder.sql(((SingleColumn)definition).getName()).sql(" = ");
@@ -173,19 +172,13 @@ class ChildTableOperator {
                 builder.variable(parentId);
             }
         } else {
-            boolean addComma = false;
             Object[] values = EmbeddableObjects.expand(
                     parentProp.getTargetType().getIdProp().getTargetType(),
                     parentId
             );
             int size = definition.size();
             for (int i = 0; i < size; i++) {
-                if (addComma) {
-                    builder.sql(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.sql(definition.name(i)).sql(" = ");
+                builder.separator().sql(definition.name(i)).sql(" = ");
                 Object value = values[i];
                 if (value == null) {
                     builder.sql("null");
@@ -194,27 +187,26 @@ class ChildTableOperator {
                 }
             }
         }
-        builder.sql(" where ")
-                .sql(null, pkDefinition, true)
-                .sql(" in (");
-        String separator = "";
+        builder
+                .leave()
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(null, pkDefinition, true)
+                .sql(" in ")
+                .enter(SqlBuilder.ScopeType.LIST);
         for (Object childId : childIds) {
-            builder.sql(separator);
-            separator = ", ";
-            builder.variable(childId);
+            builder.separator().variable(childId);
         }
-        builder.sql(")");
+        builder.leave().leave();
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         PreparedStatement::executeUpdate
                 )
         );
@@ -281,33 +273,28 @@ class ChildTableOperator {
         builder
                 .sql("update ")
                 .sql(parentProp.getDeclaringType().getTableName(strategy))
-                .sql(" set ");
+                .enter(SqlBuilder.ScopeType.SET);
         ColumnDefinition definition = parentProp.getStorage(strategy);
         if (definition instanceof SingleColumn) {
             builder.sql(((SingleColumn)definition).getName()).sql(" = null");
         } else {
-            boolean addComma = false;
             for (String columName : definition) {
-                if (addComma) {
-                    builder.sql(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.sql(columName).sql(" = null");
+                builder.separator().sql(columName).sql(" = null");
             }
         }
+        builder.leave();
+
         addDetachConditions(builder, parentId, retainedChildIds);
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         PreparedStatement::executeUpdate
                 )
         );
@@ -318,9 +305,10 @@ class ChildTableOperator {
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         ImmutableProp idProp = parentProp.getDeclaringType().getIdProp();
         builder
-                .sql("select ")
-                .sql(idProp.<ColumnDefinition>getStorage(strategy))
-                .sql(" from ")
+                .enter(SqlBuilder.ScopeType.SELECT)
+                .definition(idProp.<ColumnDefinition>getStorage(strategy))
+                .leave()
+                .from()
                 .sql(parentProp.getDeclaringType().getTableName(strategy));
         addDetachConditions(builder, Collections.singleton(parentId), retainedChildIds);
         if (pessimisticLockRequired) {
@@ -330,13 +318,12 @@ class ChildTableOperator {
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
                         ExecutionPurpose.MUTATE,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         stmt -> {
                             List<Object> list = new ArrayList<>();
                             try (ResultSet rs = stmt.executeQuery()) {
@@ -362,39 +349,29 @@ class ChildTableOperator {
             Collection<Object> retainedChildIds
     ) {
         builder
-                .sql(" where ")
-                .sql(null, fkDefinition, true);
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .definition(null, fkDefinition, true);
         if (parentIds.size() == 1) {
             builder.sql(" = ").variable(parentIds.iterator().next());
         } else {
-            builder.sql(" in (");
-            boolean addComma = false;
+            builder.sql(" in ").enter(SqlBuilder.ScopeType.LIST);
             for (Object parentId : parentIds) {
-                if (addComma) {
-                    builder.sql(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.variable(parentId);
+                builder.separator().variable(parentId);
             }
-            builder.sql(")");
+            builder.leave();
         }
         if (!retainedChildIds.isEmpty()) {
             builder
-                    .sql(" and ")
-                    .sql(null, pkDefinition, true)
-                    .sql(" not in (");
-            boolean addComma = false;
+                    .separator()
+                    .definition(null, pkDefinition, true)
+                    .sql(" not in ")
+                    .enter(SqlBuilder.ScopeType.LIST);
             for (Object retainedChildId : retainedChildIds) {
-                if (addComma) {
-                    builder.sql(", ");
-                } else {
-                    addComma = true;
-                }
-                builder.variable(retainedChildId);
+                builder.separator().variable(retainedChildId);
             }
-            builder.sql(")");
+            builder.leave();
         }
+        builder.leave();
     }
 
     private static ImmutableSpi makeIdOnly(ImmutableType type, Object id) {

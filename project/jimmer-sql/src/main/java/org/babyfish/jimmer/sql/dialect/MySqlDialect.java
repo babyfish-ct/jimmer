@@ -9,7 +9,8 @@ public class MySqlDialect implements Dialect {
     public void paginate(PaginationContext ctx) {
         ctx
                 .origin()
-                .sql(" limit ")
+                .space()
+                .sql("limit ")
                 .variable(ctx.getOffset())
                 .sql(", ")
                 .variable(ctx.getLimit());

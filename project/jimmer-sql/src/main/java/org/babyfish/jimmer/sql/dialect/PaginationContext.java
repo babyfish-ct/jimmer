@@ -10,6 +10,10 @@ public interface PaginationContext {
 
     PaginationContext origin();
 
+    PaginationContext space();
+
+    PaginationContext newLine();
+
     PaginationContext sql(String sql);
 
     PaginationContext variable(Object value);

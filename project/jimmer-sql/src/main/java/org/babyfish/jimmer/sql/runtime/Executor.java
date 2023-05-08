@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +21,8 @@ public interface Executor {
 
     class Args<R> {
 
+        public final JSqlClientImplementor sqlClient;
+
         public final Connection con;
 
         public final String sql;
@@ -35,27 +36,24 @@ public interface Executor {
 
         public final StatementFactory statementFactory;
 
-        public final Dialect dialect;
-
         public final SqlFunction<PreparedStatement, R> block;
 
         public Args(
+                JSqlClientImplementor sqlClient,
                 Connection con,
                 String sql,
                 List<Object> variables,
                 ExecutionPurpose purpose,
-                @Nullable ExecutorContext ctx,
                 StatementFactory statementFactory,
-                Dialect dialect,
                 SqlFunction<PreparedStatement, R> block
         ) {
+            this.sqlClient = sqlClient;
             this.con = con;
             this.sql = sql;
             this.variables = variables;
             this.purpose = purpose;
-            this.ctx = ctx;
+            this.ctx = ExecutorContext.create(sqlClient);
             this.statementFactory = statementFactory;
-            this.dialect = dialect;
             this.block = block;
         }
     }

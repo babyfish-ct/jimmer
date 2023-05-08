@@ -40,13 +40,9 @@ class NullityPredicate extends AbstractPredicate {
                         builder.getAstContext()
                 );
                 ImmutableProp prop = propExpr.getProp();
-                boolean addSeparator = false;
+                builder.enter(SqlBuilder.ScopeType.AND);
                 for (String column : partial) {
-                    if (addSeparator) {
-                        builder.sql(" and ");
-                    } else {
-                        addSeparator = true;
-                    }
+                    builder.separator();
                     tableImplementor.renderSelection(prop, builder, new SingleColumn(column, false));
                     if (negative) {
                         builder.sql(" is not null");
@@ -54,6 +50,7 @@ class NullityPredicate extends AbstractPredicate {
                         builder.sql(" is null");
                     }
                 }
+                builder.leave();
                 return;
             }
         }

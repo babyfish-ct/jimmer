@@ -32,9 +32,9 @@ public class OracleDialect implements Dialect {
         int limit = ctx.getLimit();
         String rnProjection = offset > 0 ? ", rownum rn__" : "";
         ctx
-                .sql("select core__.*" + rnProjection + " from (")
+                .sql("select core__.*" + rnProjection + " from (").newLine()
                 .origin()
-                .sql(") core__ where rownum <= ")
+                .newLine().sql(") core__ where rownum <= ")
                 .variable(offset + limit);
     }
 

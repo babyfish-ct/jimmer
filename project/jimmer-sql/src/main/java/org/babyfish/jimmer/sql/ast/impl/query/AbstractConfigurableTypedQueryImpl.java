@@ -23,9 +23,9 @@ import java.util.Map;
 
 class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
-    private TypedQueryData data;
+    private final TypedQueryData data;
 
-    private AbstractMutableQueryImpl baseQuery;
+    private final AbstractMutableQueryImpl baseQuery;
 
     public AbstractConfigurableTypedQueryImpl(
             TypedQueryData data,
@@ -83,6 +83,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     renderWithoutPaging(subBuilder, null);
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
+                                getBaseQuery().getSqlClient().getSqlFormatter(),
                                 data.getLimit(),
                                 data.getOffset(),
                                 result.get_1(),
@@ -103,10 +104,11 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
     }
 
     private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {
-        builder.sql("select ");
-        if (data.isDistinct()) {
-            builder.sql("distinct ");
-        }
+        builder.enter(
+                data.isDistinct() ?
+                        SqlBuilder.ScopeType.SELECT_DISTINCT :
+                        SqlBuilder.ScopeType.SELECT
+        );
         if (idPropExpr != null) {
             TableImplementor<?> tableImplementor = TableProxies.resolve(
                     idPropExpr.getTable(),
@@ -120,9 +122,8 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     OffsetOptimizationWriter::idAlias
             );
         } else {
-            String separator = "";
             for (Selection<?> selection : data.getSelections()) {
-                builder.sql(separator);
+                builder.separator();
                 if (selection instanceof TableSelection) {
                     TableSelection tableSelection = (TableSelection) selection;
                     renderAllProps(tableSelection, builder);
@@ -140,9 +141,9 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                         ast.renderTo(builder);
                     }
                 }
-                separator = ", ";
             }
         }
+        builder.leave();
         baseQuery.renderTo(builder, data.isWithoutSortingAndPaging());
     }
 
@@ -154,14 +155,12 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
     }
 
     private static void renderAllProps(TableSelection table, SqlBuilder builder) {
-        String separator = "";
         Map<String, ImmutableProp> selectableProps = table
                 .getImmutableType()
                 .getSelectableProps();
         for (ImmutableProp prop : selectableProps.values()) {
-            builder.sql(separator);
+            builder.separator();
             table.renderSelection(prop, builder, null);
-            separator = ", ";
         }
     }
 
@@ -173,7 +172,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 idPropExpr.getTable(),
                 builder.getAstContext()
         );
-        builder.sql("select ");
+        builder.enter(SqlBuilder.ScopeType.SELECT);
         if (data.getSelections().get(0) instanceof FetcherSelection<?>) {
             for (Field field : ((FetcherSelection<?>)data.getSelections().get(0)).getFetcher().getFieldMap().values()) {
                 writer.prop(field.getProp(), OffsetOptimizationWriter.ALIAS, false);
@@ -183,11 +182,13 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 writer.prop(prop, OffsetOptimizationWriter.ALIAS, false);
             }
         }
-        builder.sql(" from (");
+        builder.leave();
+        builder.from().enter(SqlBuilder.ScopeType.SUB_QUERY);
         SqlBuilder subBuilder = builder.createChildBuilder();
         renderWithoutPaging(subBuilder, idPropExpr);
         subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
+                    getBaseQuery().getSqlClient().getSqlFormatter(),
                     data.getLimit(),
                     data.getOffset(),
                     result.get_1(),
@@ -197,14 +198,15 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             baseQuery.getSqlClient().getDialect().paginate(ctx);
             return ctx.build();
         });
-        writer.resetComma();
-        builder.sql(") ")
+        builder
+                .leave()
+                .sql(" ")
                 .sql(OffsetOptimizationWriter.CORE_ALIAS)
                 .sql(" inner join ")
                 .sql(tableImplementor.getImmutableType().getTableName(strategy))
                 .sql(" ")
                 .sql(OffsetOptimizationWriter.ALIAS)
-                .sql(" on ");
+                .on();
         writer.prop(
                 tableImplementor.getImmutableType().getIdProp(),
                 OffsetOptimizationWriter.ALIAS,
@@ -227,10 +229,12 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             builder.sql(")");
         }
         if (getBaseQuery().getSqlClient().getDialect().getOffsetOptimizationNumField() != null) {
-            builder.sql(" order by ")
+            builder
+                    .enter(SqlBuilder.ScopeType.ORDER_BY)
                     .sql(OffsetOptimizationWriter.CORE_ALIAS)
                     .sql(".")
-                    .sql(OffsetOptimizationWriter.ROW_NUMBER_ALIAS);
+                    .sql(OffsetOptimizationWriter.ROW_NUMBER_ALIAS)
+                    .leave();
         }
     }
 
@@ -248,8 +252,6 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
         private final MetadataStrategy strategy;
 
-        private boolean addComma;
-
         OffsetOptimizationWriter(SqlBuilder builder, MetadataStrategy strategy) {
             this.builder = builder;
             this.strategy = strategy;
@@ -258,8 +260,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         public void prop(ImmutableProp prop, String alias, boolean multiColumnsAsTuple) {
             SqlTemplate template = prop.getSqlTemplate();
             if (template instanceof FormulaTemplate) {
-                appendComma();
-                builder.sql(((FormulaTemplate)template).toSql(alias));
+                builder.separator().sql(((FormulaTemplate)template).toSql(alias));
                 return;
             }
             Storage storage = prop.getStorage(strategy);
@@ -267,38 +268,23 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 ColumnDefinition definition = (ColumnDefinition) storage;
                 int size = definition.size();
                 if (size == 1) {
-                    appendComma();
-                    builder.sql(alias).sql(".").sql(definition.name(0));
+                    builder.separator().sql(alias).sql(".").sql(definition.name(0));
                 } else if (multiColumnsAsTuple) {
-                    builder.enterTuple();
+                    builder.enter(SqlBuilder.ScopeType.TUPLE);
                     for (int i = 0; i < size; i++) {
-                        appendComma();
-                        builder.sql(alias).sql(".").sql(definition.name(i));
+                        builder.separator().sql(alias).sql(".").sql(definition.name(i));
                     }
-                    builder.leaveTuple();
+                    builder.leave();
                 } else {
                     for (int i = 0; i < size; i++) {
-                        appendComma();
-                        builder.sql(alias).sql(".").sql(definition.name(i));
+                        builder.separator().sql(alias).sql(".").sql(definition.name(i));
                     }
                 }
             }
         }
 
-        private void appendComma() {
-            if (addComma) {
-                builder.sql(", ");
-            } else {
-                addComma = true;
-            }
-        }
-
         public static String idAlias(int index) {
             return index == 0 ? CORE_ID_ALIAS : CORE_ID_ALIAS + index + '_';
-        }
-
-        public void resetComma() {
-            addComma = false;
         }
     }
 }

@@ -8,7 +8,7 @@ public class DefaultDialect implements Dialect {
 
     @Override
     public void paginate(PaginationContext ctx) {
-        ctx.origin().sql(" limit ").variable(ctx.getLimit());
+        ctx.origin().space().sql("limit ").variable(ctx.getLimit());
         if (ctx.getOffset() > 0) {
             ctx.sql(" offset ").variable(ctx.getOffset());
         }

@@ -8,7 +8,6 @@ public final class SqlFormatter {
             new SqlFormatter(
                     false,
                     "",
-                    Integer.MAX_VALUE,
                     Integer.MAX_VALUE
             );
 
@@ -16,7 +15,6 @@ public final class SqlFormatter {
             new SqlFormatter(
                     true,
                     "    ",
-                    3,
                     8
             );
 
@@ -24,15 +22,12 @@ public final class SqlFormatter {
 
     private final String indent;
 
-    private final int maxColumnCountInOneLine;
+    private final int maxValueCountInLine;
 
-    private final int maxParameterCountInOneLine;
-
-    public SqlFormatter(boolean multipleLines, String indent, int maxColumnCountInOneLine, int maxParameterCountInOneLine) {
+    public SqlFormatter(boolean multipleLines, String indent, int maxValueCountInLine) {
         this.multipleLines = multipleLines;
         this.indent = indent;
-        this.maxColumnCountInOneLine = maxColumnCountInOneLine;
-        this.maxParameterCountInOneLine = maxParameterCountInOneLine;
+        this.maxValueCountInLine = maxValueCountInLine;
     }
 
     public boolean isMultipleLines() {
@@ -43,12 +38,8 @@ public final class SqlFormatter {
         return indent;
     }
 
-    public int getMaxColumnCountInOneLine() {
-        return maxColumnCountInOneLine;
-    }
-
-    public int getMaxParameterCountInOneLine() {
-        return maxParameterCountInOneLine;
+    public int getMaxValueCountInLine() {
+        return maxValueCountInLine;
     }
 
     @Override
@@ -56,8 +47,7 @@ public final class SqlFormatter {
         return Objects.hash(
                 multipleLines,
                 indent,
-                maxColumnCountInOneLine,
-                maxParameterCountInOneLine
+                maxValueCountInLine
         );
     }
 
@@ -67,8 +57,7 @@ public final class SqlFormatter {
         if (!(o instanceof SqlFormatter)) return false;
         SqlFormatter that = (SqlFormatter) o;
         return multipleLines == that.multipleLines &&
-                maxColumnCountInOneLine == that.maxColumnCountInOneLine &&
-                maxParameterCountInOneLine == that.maxParameterCountInOneLine &&
+                maxValueCountInLine == that.maxValueCountInLine &&
                 indent.equals(that.indent);
     }
 
@@ -77,8 +66,7 @@ public final class SqlFormatter {
         return "SqlFormatter{" +
                 "multipleLines=" + multipleLines +
                 ", indent='" + indent + '\'' +
-                ", maxColumnCountInOneLine=" + maxColumnCountInOneLine +
-                ", maxParameterCountInOneLine=" + maxParameterCountInOneLine +
+                ", maxParameterCountInOneLine=" + maxValueCountInLine +
                 '}';
     }
 }

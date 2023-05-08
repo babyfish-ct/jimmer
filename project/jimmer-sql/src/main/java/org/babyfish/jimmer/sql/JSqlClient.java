@@ -202,7 +202,7 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setExecutorContextPrefixes(Collection<String> prefixes);
 
         @OldChain
-        Builder setPrettySql(boolean pretty);
+        Builder setSqlFormatter(SqlFormatter formatter);
 
         @OldChain
         Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);

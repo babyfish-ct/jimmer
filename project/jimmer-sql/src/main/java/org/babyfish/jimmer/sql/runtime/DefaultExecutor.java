@@ -21,7 +21,7 @@ public class DefaultExecutor implements Executor {
     public <R> R execute(@NotNull Args<R> args) {
         String sql = args.sql;
         List<Object> variables = args.variables;
-        Dialect dialect = args.dialect;
+        Dialect dialect = args.sqlClient.getDialect();
         try (PreparedStatement stmt = args.statementFactory != null ?
                 args.statementFactory.preparedStatement(args.con, sql) :
                 args.con.prepareStatement(sql)

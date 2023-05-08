@@ -153,9 +153,9 @@ public class PropExpressionImpl<T>
             if (ignoreEmbeddedTuple || partial.size() == 1) {
                 tableImplementor.renderSelection(prop, builder, path != null ? partial : null);
             } else {
-                builder.enterTuple();
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
                 tableImplementor.renderSelection(prop, builder, path != null ? partial : null);
-                builder.leaveTuple();
+                builder.leave();
             }
         } else {
             tableImplementor.renderSelection(prop, builder, null);

@@ -24,13 +24,12 @@ public class Selectors {
     ) {
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sql,
                         variables,
                         purpose,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         stmt -> {
                             Reader<?> reader = Readers.createReader(sqlClient, selections);
                             Reader.Col col = new Reader.Col();
@@ -61,13 +60,12 @@ public class Selectors {
     ) {
         sqlClient.getExecutor().execute(
                 new Executor.Args<>(
+                        sqlClient,
                         con,
                         sql,
                         variables,
                         purpose,
-                        ExecutorContext.create(sqlClient),
                         null,
-                        sqlClient.getDialect(),
                         stmt -> {
                             Reader<?> reader = Readers.createReader(sqlClient, selections);
                             Reader.Col col = new Reader.Col();

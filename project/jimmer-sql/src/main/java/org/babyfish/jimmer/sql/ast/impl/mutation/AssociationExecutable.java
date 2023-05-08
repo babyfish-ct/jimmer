@@ -141,31 +141,32 @@ class AssociationExecutable implements Executable<Integer> {
 
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
-                .sql("select ")
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .sql(" from ")
+                .enter(SqlBuilder.ScopeType.SELECT)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .from()
                 .sql(associationType.getTableName(strategy))
-                .sql(" where ")
-                .enterTuple()
-                .sql(middleTable.getColumnDefinition())
-                .sql(", ")
-                .sql(middleTable.getTargetColumnDefinition())
-                .leaveTuple()
-                .sql(" in (");
-        String separator = "";
+                .enter(SqlBuilder.ScopeType.WHERE)
+                .enter(SqlBuilder.ScopeType.TUPLE)
+                .definition(middleTable.getColumnDefinition())
+                .separator()
+                .definition(middleTable.getTargetColumnDefinition())
+                .leave()
+                .leave()
+                .sql(" in ");
+        builder.enter(SqlBuilder.ScopeType.LIST);
         for (Tuple2<Object, Object> idTuple : idTuples) {
             builder
-                    .sql(separator)
-                    .enterTuple()
+                    .separator()
+                    .enter(SqlBuilder.ScopeType.TUPLE)
                     .variable(idTuple.get_1())
-                    .sql(", ")
+                    .separator()
                     .variable(idTuple.get_2())
-                    .leaveTuple();
-            separator = ", ";
+                    .leave();
         }
-        builder.sql(")");
+        builder.leave();
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return Selectors.select(
