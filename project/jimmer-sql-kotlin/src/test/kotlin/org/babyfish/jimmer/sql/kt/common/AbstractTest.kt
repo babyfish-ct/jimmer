@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.DefaultExecutor
+import org.babyfish.jimmer.sql.runtime.Executor
 import org.junit.BeforeClass
 import java.io.IOException
 import java.io.InputStreamReader
@@ -29,10 +31,12 @@ abstract class AbstractTest {
     protected fun sqlClient(block: KSqlClientDsl.() -> Unit = {}): KSqlClient =
         newKSqlClient {
             setEntityManager(ENTITY_MANAGER)
-            setExecutor {
-                _executions.add(Execution(sql, variables))
-                proceed()
-            }
+            setExecutor(object : Executor {
+                override fun <R : Any?> execute(args: Executor.Args<R>): R {
+                    _executions.add(Execution(args.sql, args.variables))
+                    return DefaultExecutor.INSTANCE.execute(args)
+                }
+            })
             block()
         }
 

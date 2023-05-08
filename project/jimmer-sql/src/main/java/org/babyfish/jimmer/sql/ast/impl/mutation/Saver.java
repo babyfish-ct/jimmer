@@ -447,12 +447,23 @@ class Saver {
                 String sql = data.getSqlClient().getDialect().getSelectIdFromSequenceSql(
                         ((SequenceIdGenerator)idGenerator).getSequenceName()
                 );
-                id = data.getSqlClient().getExecutor().execute(con, sql, Collections.emptyList(), ExecutionPurpose.MUTATE, ExecutorContext.create(data.getSqlClient()), null, stmt -> {
-                    try (ResultSet rs = stmt.executeQuery()) {
-                        rs.next();
-                        return rs.getObject(1);
-                    }
-                });
+                id = data.getSqlClient().getExecutor().execute(
+                        new Executor.Args<>(
+                                con,
+                                sql,
+                                Collections.emptyList(),
+                                ExecutionPurpose.MUTATE,
+                                ExecutorContext.create(data.getSqlClient()),
+                                null,
+                                data.getSqlClient().getDialect(),
+                                stmt -> {
+                                    try (ResultSet rs = stmt.executeQuery()) {
+                                        rs.next();
+                                        return rs.getObject(1);
+                                    }
+                                }
+                        )
+                );
                 setDraftId(draftSpi, id);
             } else if (idGenerator instanceof UserIdGenerator) {
                 id = ((UserIdGenerator<?>)idGenerator).generate(type.getJavaClass());
@@ -484,26 +495,26 @@ class Saver {
                 props.add(prop);
                 Object value = draftSpi.__get(prop.getId());
                 ScalarProvider<Object, Object> scalarProvider;
-                if (value != null) {
-                    if (prop.isReference(TargetLevel.ENTITY)) {
+                if (prop.isReference(TargetLevel.ENTITY)) {
+                    scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
+                    if (value != null) {
                         value = ((ImmutableSpi) value).__get(prop.getTargetType().getIdProp().getId());
-                        scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
-                    } else {
-                        scalarProvider = data.getSqlClient().getScalarProvider(prop);
                     }
-                    if (scalarProvider != null) {
-                        try {
-                            value = scalarProvider.toSql(value);
-                        } catch (Exception ex) {
-                            throw new ExecutionException(
-                                    "Cannot convert the value of \"" +
-                                            prop +
-                                            "\" by the scalar provider \"" +
-                                            scalarProvider.getClass().getName() +
-                                            "\"",
-                                    ex
-                            );
-                        }
+                } else {
+                    scalarProvider = data.getSqlClient().getScalarProvider(prop);
+                }
+                if (scalarProvider != null) {
+                    try {
+                        value = value != null ? scalarProvider.toSql(value) : new DbNull(scalarProvider.getSqlType());
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Cannot convert the value of \"" +
+                                        prop +
+                                        "\" by the scalar provider \"" +
+                                        scalarProvider.getClass().getName() +
+                                        "\"",
+                                ex
+                        );
                     }
                 }
                 values.add(value);
@@ -568,27 +579,30 @@ class Saver {
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         Object insertedResult = data.getSqlClient().getExecutor().execute(
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                ExecutionPurpose.MUTATE,
-                ExecutorContext.create(data.getSqlClient()),
-                generateKeys ?
-                        (c, s) ->
-                                c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
-                        null,
-                stmt -> {
-                    if (generateKeys) {
-                        int updateCount = stmt.executeUpdate();
-                        Object generatedId;
-                        try (ResultSet rs = stmt.getGeneratedKeys()) {
-                            rs.next();
-                            generatedId = rs.getObject(1);
+                new Executor.Args<>(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.MUTATE,
+                        ExecutorContext.create(data.getSqlClient()),
+                        generateKeys ?
+                                (c, s) ->
+                                        c.prepareStatement(s, Statement.RETURN_GENERATED_KEYS) :
+                                null,
+                        data.getSqlClient().getDialect(),
+                        stmt -> {
+                            if (generateKeys) {
+                                int updateCount = stmt.executeUpdate();
+                                Object generatedId;
+                                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                                    rs.next();
+                                    generatedId = rs.getObject(1);
+                                }
+                                return new Tuple2<>(updateCount, generatedId);
+                            }
+                            return stmt.executeUpdate();
                         }
-                        return new Tuple2<>(updateCount, generatedId);
-                    }
-                    return stmt.executeUpdate();
-                }
+                )
         );
         int rowCount = insertedResult instanceof Tuple2<?, ?> ?
                 ((Tuple2<Integer, ?>)insertedResult).get_1() :
@@ -628,27 +642,27 @@ class Saver {
                 } else if (!prop.isId() && !excludeProps.contains(prop)) {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
-                    if (value != null && prop.isReference(TargetLevel.ENTITY)) {
-                        ScalarProvider<Object, Object> scalarProvider;
-                        if (prop.isReference(TargetLevel.ENTITY)) {
+                    ScalarProvider<Object, Object> scalarProvider;
+                    if (prop.isReference(TargetLevel.ENTITY)) {
+                        scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
+                        if (value != null) {
                             value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
-                            scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
-                        } else {
-                            scalarProvider = data.getSqlClient().getScalarProvider(prop);
                         }
-                        if (scalarProvider != null) {
-                            try {
-                                value = scalarProvider.toSql(value);
-                            } catch (Exception ex) {
-                                throw new ExecutionException(
-                                        "Cannot convert the value of \"" +
-                                                prop +
-                                                "\" by the scalar provider \"" +
-                                                scalarProvider.getClass().getName() +
-                                                "\"",
-                                        ex
-                                );
-                            }
+                    } else {
+                        scalarProvider = data.getSqlClient().getScalarProvider(prop);
+                    }
+                    if (scalarProvider != null) {
+                        try {
+                            value = value != null ? scalarProvider.toSql(value) : new DbNull(scalarProvider.getSqlType());
+                        } catch (Exception ex) {
+                            throw new ExecutionException(
+                                    "Cannot convert the value of \"" +
+                                            prop +
+                                            "\" by the scalar provider \"" +
+                                            scalarProvider.getClass().getName() +
+                                            "\"",
+                                    ex
+                            );
                         }
                     }
                     updatedValues.add(value);
@@ -709,13 +723,16 @@ class Saver {
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         int rowCount = data.getSqlClient().getExecutor().execute(
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                ExecutionPurpose.MUTATE,
-                ExecutorContext.create(data.getSqlClient()),
-                null,
-                PreparedStatement::executeUpdate
+                new Executor.Args<>(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.MUTATE,
+                        ExecutorContext.create(data.getSqlClient()),
+                        null,
+                        data.getSqlClient().getDialect(),
+                        PreparedStatement::executeUpdate
+                )
         );
         if (rowCount != 0) {
             addOutput(AffectedTable.of(type), rowCount);

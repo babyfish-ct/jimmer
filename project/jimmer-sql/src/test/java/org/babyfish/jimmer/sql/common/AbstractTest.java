@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -66,17 +67,9 @@ public class AbstractTest {
     private class ExecutorImpl implements Executor {
 
         @Override
-        public <R> R execute(
-                Connection con,
-                String sql,
-                List<Object> variables,
-                ExecutionPurpose purpose,
-                @Nullable ExecutorContext ctx,
-                StatementFactory statementFactory,
-                SqlFunction<PreparedStatement, R> block
-        ) {
-            executions.add(new Execution(sql, variables));
-            return DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, ExecutorContext.create(sqlClient), statementFactory, block);
+        public <R> R execute(@NotNull Args<R> args) {
+            executions.add(new Execution(args.sql, args.variables));
+            return DefaultExecutor.INSTANCE.execute(args);
         }
     }
 

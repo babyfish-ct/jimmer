@@ -3,6 +3,8 @@ package org.babyfish.jimmer.sql.dialect;
 import com.fasterxml.jackson.databind.JavaType;
 import org.postgresql.util.PGobject;
 
+import java.sql.Types;
+
 public class PostgresDialect extends DefaultDialect {
 
     @Override
@@ -37,5 +39,13 @@ public class PostgresDialect extends DefaultDialect {
     public Object baseValueToJson(Object baseValue, JavaType javaType) throws Exception {
         PGobject pgobject = (PGobject) baseValue;
         return JsonUtils.OBJECT_MAPPER.readValue(pgobject.getValue(), javaType);
+    }
+
+    @Override
+    public int resolveUnknownJdbcType(Class<?> sqlType) {
+        if (sqlType.getName().equals("org.postgresql.util.PGobject")) {
+            return Types.NULL;
+        }
+        return Types.OTHER;
     }
 }

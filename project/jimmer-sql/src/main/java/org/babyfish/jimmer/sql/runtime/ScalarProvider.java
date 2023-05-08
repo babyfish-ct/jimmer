@@ -41,7 +41,7 @@ public abstract class ScalarProvider<T, S> {
             );
         }
         TypeVariable<?>[] params = ScalarProvider.class.getTypeParameters();
-        this.scalarType = (Type)argMap.get(params[0]);
+        this.scalarType = argMap.get(params[0]);
         this.sqlType = (Class<S>) argMap.get(params[1]);
         validateScalarType(scalarType);
     }

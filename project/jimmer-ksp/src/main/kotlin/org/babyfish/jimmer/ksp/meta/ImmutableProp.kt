@@ -226,6 +226,8 @@ class ImmutableProp(
         }.let {
             if (overrideNullable != null) {
                 it.copy(nullable = overrideNullable)
+            } else if (isNullable) {
+                it.copy(nullable = true)
             } else {
                 it
             }

@@ -202,6 +202,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setExecutorContextPrefixes(Collection<String> prefixes);
 
         @OldChain
+        Builder setPrettySql(boolean pretty);
+
+        @OldChain
         Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);
 
         @OldChain

@@ -94,10 +94,6 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setExecutorContextPrefixes(prefixes)
     }
 
-    fun setExecutor(block: ExecutorDsl.() -> Unit) {
-        javaBuilder.setExecutor(ExecutorImpl(block))
-    }
-
     fun setTransientResolverProvider(provider: TransientResolverProvider) {
         javaBuilder.setTransientResolverProvider(provider)
     }
@@ -285,63 +281,6 @@ class KSqlClientDsl internal constructor(
 
         override fun <R> execute(block: Function<Connection, R>): R =
             ConnectionManagerDsl(block).let {
-                it.dslBlock()
-                it.get()
-            }
-    }
-
-    @DslScope
-    class ExecutorDsl internal constructor(
-        val con: Connection,
-        val sql: String,
-        val variables: List<Any>,
-        val purpose: ExecutionPurpose,
-        val ctx: ExecutorContext?,
-        private val statementFactory: StatementFactory?,
-        private val javaBlock: SqlFunction<PreparedStatement, *>
-    ) {
-        private var proceeded: Boolean = false
-
-        private var result: Any? = null
-
-        fun proceed() {
-            if (proceeded) {
-                throw IllegalStateException("ExecutorDsl cannot be proceeded twice")
-            }
-            result = DefaultExecutor.INSTANCE.execute(con, sql, variables, purpose, ctx, statementFactory, javaBlock)
-            proceeded = true
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        internal fun <R> get(): R {
-            if (!proceeded) {
-                throw IllegalStateException("ExecutorDsl has not be proceeded")
-            }
-            return result as R
-        }
-    }
-
-    private class ExecutorImpl(
-        private val dslBlock: ExecutorDsl.() -> Unit
-    ) : Executor {
-        override fun <R> execute(
-            con: Connection,
-            sql: String,
-            variables: List<Any>,
-            purpose: ExecutionPurpose,
-            ctx: ExecutorContext?,
-            statementFactory: StatementFactory?,
-            block: SqlFunction<PreparedStatement, R>
-        ): R =
-            ExecutorDsl(
-                con,
-                sql,
-                variables,
-                purpose,
-                ctx,
-                statementFactory,
-                block
-            ).let {
                 it.dslBlock()
                 it.get()
             }

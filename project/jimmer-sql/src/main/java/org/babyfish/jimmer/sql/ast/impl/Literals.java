@@ -67,7 +67,7 @@ public class Literals {
             List<Object> newLiterals = new ArrayList<>(literals.size());
             for (Object literal : literals) {
                 try {
-                    newLiterals.add(literal != null ? scalarProvider.toSql(literal) : literal);
+                    newLiterals.add(literal != null ? scalarProvider.toSql(literal) : null);
                 } catch (Exception ex) {
                     throw new ExecutionException(
                             "Cannot convert the value \"" +

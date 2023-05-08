@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +30,10 @@ class ExecutorForLog implements Executor {
     }
 
     @Override
-    public <R> R execute(
-            Connection con,
-            String sql,
-            List<Object> variables,
-            ExecutionPurpose purpose,
-            @Nullable ExecutorContext ctx,
-            StatementFactory statementFactory,
-            SqlFunction<PreparedStatement, R> block
-    ) {
+    public <R> R execute(@NotNull Args<R> args) {
+        ExecutorContext ctx = args.ctx;
+        String sql = args.sql;
+        List<Object> variables = args.variables;
         if (ctx == null) {
             LOGGER.info(
                     "jimmer> sql: " +
@@ -45,7 +41,7 @@ class ExecutorForLog implements Executor {
                             ", variables: " +
                             variables +
                             ", purpose: " +
-                            purpose
+                            args.purpose
             );
         } else {
             Logger logger = LoggerFactory.getLogger(ctx.getPrimaryElement().getClassName());
@@ -55,7 +51,7 @@ class ExecutorForLog implements Executor {
                             ", variables: " +
                             variables +
                             ", purpose: " +
-                            purpose
+                            args.purpose
             );
             for (StackTraceElement element : ctx.getMatchedElements()) {
                 logger.info(
@@ -64,6 +60,6 @@ class ExecutorForLog implements Executor {
                 );
             }
         }
-        return raw.execute(con, sql, variables, purpose, ctx, statementFactory, block);
+        return raw.execute(args);
     }
 }

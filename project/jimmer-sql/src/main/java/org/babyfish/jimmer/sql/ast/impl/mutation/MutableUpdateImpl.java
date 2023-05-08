@@ -136,13 +136,16 @@ public class MutableUpdateImpl
         return getSqlClient()
                 .getExecutor()
                 .execute(
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        getPurpose(),
-                        ExecutorContext.create(getSqlClient()),
-                        null,
-                        PreparedStatement::executeUpdate
+                        new Executor.Args<>(
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                getPurpose(),
+                                ExecutorContext.create(getSqlClient()),
+                                null,
+                                getSqlClient().getDialect(),
+                                PreparedStatement::executeUpdate
+                        )
                 );
     }
 
@@ -175,13 +178,16 @@ public class MutableUpdateImpl
         int affectRowCount = getSqlClient()
                 .getExecutor()
                 .execute(
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        getPurpose(),
-                        ExecutorContext.create(getSqlClient()),
-                        null,
-                        PreparedStatement::executeUpdate
+                        new Executor.Args<>(
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                getPurpose(),
+                                ExecutorContext.create(getSqlClient()),
+                                null,
+                                getSqlClient().getDialect(),
+                                PreparedStatement::executeUpdate
+                        )
                 );
         if (affectRowCount == 0) {
             return 0;

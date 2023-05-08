@@ -22,19 +22,30 @@ public class Selectors {
             List<Selection<?>> selections,
             ExecutionPurpose purpose
     ) {
-        return sqlClient.getExecutor().execute(con, sql, variables, purpose, ExecutorContext.create(sqlClient), null, stmt -> {
-            Reader<?> reader = Readers.createReader(sqlClient, selections);
-            Reader.Col col = new Reader.Col();
-            List<R> results = new ArrayList<>();
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                while (resultSet.next()) {
-                    results.add((R)reader.read(resultSet, col));
-                    col.reset();
-                }
-            }
-            Fetchers.fetch(sqlClient, con, selections, results);
-            return results;
-        });
+        return sqlClient.getExecutor().execute(
+                new Executor.Args<>(
+                        con,
+                        sql,
+                        variables,
+                        purpose,
+                        ExecutorContext.create(sqlClient),
+                        null,
+                        sqlClient.getDialect(),
+                        stmt -> {
+                            Reader<?> reader = Readers.createReader(sqlClient, selections);
+                            Reader.Col col = new Reader.Col();
+                            List<R> results = new ArrayList<>();
+                            try (ResultSet resultSet = stmt.executeQuery()) {
+                                while (resultSet.next()) {
+                                    results.add((R)reader.read(resultSet, col));
+                                    col.reset();
+                                }
+                            }
+                            Fetchers.fetch(sqlClient, con, selections, results);
+                            return results;
+                        }
+                )
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -48,28 +59,39 @@ public class Selectors {
             int batchSize,
             Consumer<R> consumer
     ) {
-        sqlClient.getExecutor().execute(con, sql, variables, purpose, ExecutorContext.create(sqlClient), null, stmt -> {
-            Reader<?> reader = Readers.createReader(sqlClient, selections);
-            Reader.Col col = new Reader.Col();
-            List<R> results = new ArrayList<>();
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                while (resultSet.next()) {
-                    results.add((R)reader.read(resultSet, col));
-                    col.reset();
-                    if (results.size() >= batchSize) {
-                        Fetchers.fetch(sqlClient, con, selections, results);
-                        for (R result : results) {
-                            consumer.accept(result);
+        sqlClient.getExecutor().execute(
+                new Executor.Args<>(
+                        con,
+                        sql,
+                        variables,
+                        purpose,
+                        ExecutorContext.create(sqlClient),
+                        null,
+                        sqlClient.getDialect(),
+                        stmt -> {
+                            Reader<?> reader = Readers.createReader(sqlClient, selections);
+                            Reader.Col col = new Reader.Col();
+                            List<R> results = new ArrayList<>();
+                            try (ResultSet resultSet = stmt.executeQuery()) {
+                                while (resultSet.next()) {
+                                    results.add((R)reader.read(resultSet, col));
+                                    col.reset();
+                                    if (results.size() >= batchSize) {
+                                        Fetchers.fetch(sqlClient, con, selections, results);
+                                        for (R result : results) {
+                                            consumer.accept(result);
+                                        }
+                                        results.clear();
+                                    }
+                                }
+                            }
+                            Fetchers.fetch(sqlClient, con, selections, results);
+                            for (R result : results) {
+                                consumer.accept(result);
+                            }
+                            return (Void) null;
                         }
-                        results.clear();
-                    }
-                }
-            }
-            Fetchers.fetch(sqlClient, con, selections, results);
-            for (R result : results) {
-                consumer.accept(result);
-            }
-            return (Void) null;
-        });
+                )
+        );
     }
 }

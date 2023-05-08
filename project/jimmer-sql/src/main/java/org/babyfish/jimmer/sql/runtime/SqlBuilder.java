@@ -30,6 +30,8 @@ public class SqlBuilder {
 
     private boolean terminated;
 
+    private Scope scope;
+
     public SqlBuilder(AstContext ctx) {
         this.ctx = ctx;
         this.parent = null;
@@ -106,24 +108,9 @@ public class SqlBuilder {
         if (definition instanceof SingleColumn) {
             builder.append(((SingleColumn)definition).getName()).append(" = ");
             if (value != null) {
-                ScalarProvider<Object, Object> scalarProvider = ctx.getSqlClient().getScalarProvider(prop);
-                if (scalarProvider != null) {
-                    try {
-                        value = scalarProvider.toSql(value);
-                    } catch (Exception ex) {
-                        throw new ExecutionException(
-                                "Cannot convert the value of \"" +
-                                        prop +
-                                        "\" by \"" +
-                                        scalarProvider.getClass().getName() +
-                                        "\"",
-                                ex
-                        );
-                    }
-                }
                 variable(value);
             } else {
-                nullVariable(prop.getElementClass());
+                nullVariable(prop.getReturnClass());
             }
         } else {
             ImmutableType type;
@@ -164,10 +151,6 @@ public class SqlBuilder {
     }
 
     public SqlBuilder variable(Object value) {
-        return variable(value, null);
-    }
-
-    public SqlBuilder variable(Object value, ScalarProvider<?, ?> scalarProvider) {
         validate();
         if (value instanceof TupleImplementor) {
             if (value instanceof Tuple2<?,?>) {
@@ -310,16 +293,15 @@ public class SqlBuilder {
                 throw new IllegalArgumentException("Immutable variable must be entity or embeddable");
             }
         } else if (value instanceof DbNull) {
-            throw new ExecutionException(
-                    "Cannot add variable whose type is " + DbNull.class.getName()
-            );
+            builder.append('?');
+            variables.add(value);
         } else {
             ScalarProvider<Object, Object> scalarProvider =
                     ctx.getSqlClient().getScalarProvider((Class<Object>) value.getClass());
             Object finalValue;
             if (scalarProvider != null) {
                 try {
-                    finalValue = ((ScalarProvider<Object, Object>)scalarProvider).toSql(value);
+                    finalValue = scalarProvider.toSql(value);
                 } catch (Exception ex) {
                     throw new ExecutionException(
                             "Cannot convert the jvm type \"" +
@@ -504,6 +486,35 @@ public class SqlBuilder {
                 return prop.getName();
             }
             return parent.toString() + '.' + prop.getName();
+        }
+    }
+
+    public enum ScopeType {
+        BLANK,
+        SUB_QUERY,
+        LIST,
+        TUPLE
+    }
+
+    private static class Scope {
+
+        final Scope parent;
+
+        final ScopeType type;
+
+        final boolean dirty;
+
+        final int depth;
+
+        private Scope(Scope parent, ScopeType type, boolean dirty) {
+            this.parent = parent;
+            this.type = type;
+            this.dirty = dirty;
+            this.depth = parent == null ?
+                    1 :
+                    parent.type == ScopeType.TUPLE && type == ScopeType.TUPLE ?
+                            parent.depth :
+                            parent.depth + 1;
         }
     }
 }

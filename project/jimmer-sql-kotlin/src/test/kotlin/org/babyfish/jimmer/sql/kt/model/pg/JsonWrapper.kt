@@ -10,19 +10,19 @@ interface JsonWrapper {
     val id: Long
 
     @Column(name = "json_1")
-    val point: Point
+    val point: Point?
 
     @Column(name = "json_2")
-    val tags: List<String>
+    val tags: List<String>?
 
     @Column(name = "json_3")
-    val scores: Map<Long, Int>
+    val scores: Map<Long, Int>?
 
     @Column(name = "json_4")
     @Serialized
-    val complexList: List<List<String>>
+    val complexList: List<List<String>>?
 
     @Column(name = "json_5")
     @Serialized
-    val complexMap: Map<String, Map<String, String>>
+    val complexMap: Map<String, Map<String, String>>?
 }

@@ -103,13 +103,16 @@ class ChildTableOperator {
             return ctx.build();
         });
         return sqlClient.getExecutor().execute(
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                ExecutionPurpose.MUTATE,
-                ExecutorContext.create(sqlClient),
-                null,
-                stmt -> stmt.executeQuery().next()
+                new Executor.Args<>(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.MUTATE,
+                        ExecutorContext.create(sqlClient),
+                        null,
+                        sqlClient.getDialect(),
+                        stmt -> stmt.executeQuery().next()
+                )
         );
     }
 
@@ -204,13 +207,16 @@ class ChildTableOperator {
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                ExecutionPurpose.MUTATE,
-                ExecutorContext.create(sqlClient),
-                null,
-                PreparedStatement::executeUpdate
+                new Executor.Args<>(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.MUTATE,
+                        ExecutorContext.create(sqlClient),
+                        null,
+                        sqlClient.getDialect(),
+                        PreparedStatement::executeUpdate
+                )
         );
     }
 
@@ -294,13 +300,16 @@ class ChildTableOperator {
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                ExecutionPurpose.MUTATE,
-                ExecutorContext.create(sqlClient),
-                null,
-                PreparedStatement::executeUpdate
+                new Executor.Args<>(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.MUTATE,
+                        ExecutorContext.create(sqlClient),
+                        null,
+                        sqlClient.getDialect(),
+                        PreparedStatement::executeUpdate
+                )
         );
     }
 
@@ -320,27 +329,30 @@ class ChildTableOperator {
 
         Tuple2<String, List<Object>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
-                con,
-                sqlResult.get_1(),
-                sqlResult.get_2(),
-                ExecutionPurpose.MUTATE,
-                ExecutorContext.create(sqlClient),
-                null,
-                stmt -> {
-                    List<Object> list = new ArrayList<>();
-                    try (ResultSet rs = stmt.executeQuery()) {
-                        while (rs.next()) {
-                            Object id = pkReader.read(rs, new Reader.Col());
-                            if (id == null) {
-                                throw new ExecutionException(
-                                        "Cannot convert " + id + " to the type of " + idProp
-                                );
+                new Executor.Args<>(
+                        con,
+                        sqlResult.get_1(),
+                        sqlResult.get_2(),
+                        ExecutionPurpose.MUTATE,
+                        ExecutorContext.create(sqlClient),
+                        null,
+                        sqlClient.getDialect(),
+                        stmt -> {
+                            List<Object> list = new ArrayList<>();
+                            try (ResultSet rs = stmt.executeQuery()) {
+                                while (rs.next()) {
+                                    Object id = pkReader.read(rs, new Reader.Col());
+                                    if (id == null) {
+                                        throw new ExecutionException(
+                                                "Cannot convert " + id + " to the type of " + idProp
+                                        );
+                                    }
+                                    list.add(id);
+                                }
                             }
-                            list.add(id);
+                            return list;
                         }
-                    }
-                    return list;
-                }
+                )
         );
     }
 

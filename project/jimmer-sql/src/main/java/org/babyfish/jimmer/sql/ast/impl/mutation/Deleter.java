@@ -197,21 +197,24 @@ public class Deleter {
                 .getSqlClient()
                 .getExecutor()
                 .execute(
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        ExecutionPurpose.DELETE,
-                        ExecutorContext.create(data.getSqlClient()),
-                        null,
-                        stmt -> {
-                            List<Object> values = new ArrayList<>();
-                            try (ResultSet rs = stmt.executeQuery()) {
-                                while (rs.next()) {
-                                    values.add(reader.read(rs, new Reader.Col()));
+                        new Executor.Args<>(
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                ExecutionPurpose.DELETE,
+                                ExecutorContext.create(data.getSqlClient()),
+                                null,
+                                data.getSqlClient().getDialect(),
+                                stmt -> {
+                                    List<Object> values = new ArrayList<>();
+                                    try (ResultSet rs = stmt.executeQuery()) {
+                                        while (rs.next()) {
+                                            values.add(reader.read(rs, new Reader.Col()));
+                                        }
+                                    }
+                                    return values;
                                 }
-                            }
-                            return values;
-                        }
+                        )
                 );
         if (!childIds.isEmpty()) {
             if (data.getDissociateAction(backProp) != DissociateAction.DELETE) {
@@ -290,13 +293,16 @@ public class Deleter {
                 .getSqlClient()
                 .getExecutor()
                 .execute(
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        ExecutionPurpose.DELETE,
-                        ExecutorContext.create(data.getSqlClient()),
-                        null,
-                        PreparedStatement::executeUpdate
+                        new Executor.Args<>(
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                ExecutionPurpose.DELETE,
+                                ExecutorContext.create(data.getSqlClient()),
+                                null,
+                                data.getSqlClient().getDialect(),
+                                PreparedStatement::executeUpdate
+                        )
                 );
         addOutput(AffectedTable.of(type), affectedRowCount);
     }
@@ -331,13 +337,16 @@ public class Deleter {
                 .getSqlClient()
                 .getExecutor()
                 .execute(
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        ExecutionPurpose.DELETE,
-                        ExecutorContext.create(data.getSqlClient()),
-                        null,
-                        PreparedStatement::executeUpdate
+                        new Executor.Args<>(
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                ExecutionPurpose.DELETE,
+                                ExecutorContext.create(data.getSqlClient()),
+                                null,
+                                data.getSqlClient().getDialect(),
+                                PreparedStatement::executeUpdate
+                        )
                 );
         addOutput(AffectedTable.of(type), affectedRowCount);
     }

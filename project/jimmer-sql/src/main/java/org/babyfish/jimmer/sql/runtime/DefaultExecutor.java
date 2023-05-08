@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.jetbrains.annotations.Nullable;
+import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -17,18 +18,13 @@ public class DefaultExecutor implements Executor {
     DefaultExecutor() {}
 
     @Override
-    public <R> R execute(
-            Connection con,
-            String sql,
-            List<Object> variables,
-            ExecutionPurpose purpose,
-            @Nullable ExecutorContext ctx,
-            StatementFactory statementFactory,
-            SqlFunction<PreparedStatement, R> block
-    ) {
-        try (PreparedStatement stmt = statementFactory != null ?
-                statementFactory.preparedStatement(con, sql) :
-                con.prepareStatement(sql)
+    public <R> R execute(@NotNull Args<R> args) {
+        String sql = args.sql;
+        List<Object> variables = args.variables;
+        Dialect dialect = args.dialect;
+        try (PreparedStatement stmt = args.statementFactory != null ?
+                args.statementFactory.preparedStatement(args.con, sql) :
+                args.con.prepareStatement(sql)
         ) {
             int size = variables.size();
             for (int index = 0; index < size; index++) {
@@ -36,13 +32,13 @@ public class DefaultExecutor implements Executor {
                 if (variable instanceof DbNull) {
                     stmt.setNull(
                             index + 1,
-                            toJdbcType(((DbNull) variable).getType())
+                            toJdbcType(((DbNull)variable).getType(), dialect)
                     );
                 } else {
                     stmt.setObject(index + 1, variable);
                 }
             }
-            return block.apply(stmt);
+            return args.block.apply(stmt);
         } catch (SQLException ex) {
             throw new ExecutionException(
                     "Cannot execute SQL statement: " +
@@ -54,7 +50,7 @@ public class DefaultExecutor implements Executor {
         }
     }
 
-    private int toJdbcType(Class<?> type) {
+    private int toJdbcType(Class<?> type, Dialect dialect) {
         if (type == String.class) {
             return Types.VARCHAR;
         }
@@ -106,10 +102,19 @@ public class DefaultExecutor implements Executor {
         if (type == LocalDateTime.class || type == ZonedDateTime.class) {
             return Types.TIMESTAMP;
         }
+        if (type == byte[].class) {
+            return Types.BINARY;
+        }
+        int jdbcType = dialect.resolveUnknownJdbcType(type);
+        if (jdbcType != Types.OTHER) {
+            return jdbcType;
+        }
         throw new IllegalArgumentException(
-                "Cannot convert '" +
+                "Cannot convert the sql type '" +
                         type +
-                        "' to java.sql.Types"
+                        "' to java.sql.Types by the current dialect \"" +
+                        dialect.getClass().getName() +
+                        "\""
         );
     }
 }

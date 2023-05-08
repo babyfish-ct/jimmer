@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JavaType;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Types;
+
 public interface Dialect {
 
     void paginate(PaginationContext ctx);
@@ -48,5 +50,9 @@ public interface Dialect {
 
     default boolean isForeignKeySupported() {
         return true;
+    }
+
+    default int resolveUnknownJdbcType(Class<?> sqlType) {
+        return Types.OTHER;
     }
 }

@@ -125,7 +125,7 @@ internal class LiteralExpression<T: Any>(
                     val newLiterals: MutableList<Any?> = ArrayList(literals.size)
                     for (literal in literals) {
                         try {
-                            newLiterals.add(literal?.let { scalarProvider.toSql(it) } ?: literal)
+                            newLiterals.add(literal?.let { scalarProvider.toSql(it) })
                         } catch (ex: Exception) {
                             throw ExecutionException(
                                 "Cannot convert the value \"" +

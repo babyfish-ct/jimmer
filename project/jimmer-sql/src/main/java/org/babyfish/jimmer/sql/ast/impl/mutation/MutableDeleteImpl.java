@@ -18,10 +18,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.sql.runtime.ExecutorContext;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -122,13 +119,16 @@ public class MutableDeleteImpl
                 renderDirectly(builder);
                 Tuple2<String, List<Object>> sqlResult = builder.build();
                 return sqlClient.getExecutor().execute(
-                        con,
-                        sqlResult.get_1(),
-                        sqlResult.get_2(),
-                        getPurpose(),
-                        ExecutorContext.create(sqlClient),
-                        null,
-                        PreparedStatement::executeUpdate
+                        new Executor.Args<>(
+                                con,
+                                sqlResult.get_1(),
+                                sqlResult.get_2(),
+                                getPurpose(),
+                                ExecutorContext.create(sqlClient),
+                                null,
+                                sqlClient.getDialect(),
+                                PreparedStatement::executeUpdate
+                        )
                 );
             } finally {
                 astContext.popStatement();

@@ -59,6 +59,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final List<String> executorContextPrefixes;
 
+    private final boolean isPrettySql;
+
     private final Map<Class<?>, IdGenerator> idGeneratorMap;
 
     private final ScalarProviderManager scalarProviderManager;
@@ -103,6 +105,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             Dialect dialect,
             Executor executor,
             List<String> executorContextPrefixes,
+            boolean isPrettySql,
             Map<Class<?>, IdGenerator> idGeneratorMap,
             ScalarProviderManager scalarProviderManager,
             int defaultBatchSize,
@@ -135,6 +138,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 executorContextPrefixes != null ?
                         Collections.unmodifiableList(executorContextPrefixes) :
                         null;
+        this.isPrettySql = isPrettySql;
         this.idGeneratorMap = idGeneratorMap;
         this.scalarProviderManager = scalarProviderManager;
         this.defaultBatchSize = defaultBatchSize;
@@ -187,6 +191,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public List<String> getExecutorContextPrefixes() {
         return executorContextPrefixes;
+    }
+
+    @Override
+    public boolean isPrettySql() {
+        return isPrettySql;
     }
 
     @SuppressWarnings("unchecked")
@@ -376,6 +385,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 dialect,
                 executor,
                 executorContextPrefixes,
+                isPrettySql,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -412,6 +422,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 dialect,
                 executor,
                 executorContextPrefixes,
+                isPrettySql,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -443,6 +454,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 dialect,
                 executor,
                 executorContextPrefixes,
+                isPrettySql,
                 idGeneratorMap,
                 scalarProviderManager,
                 defaultBatchSize,
@@ -521,6 +533,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private Executor executor;
 
         private List<String> executorContextPrefixes;
+
+        private boolean isPrettySql;
 
         private TransientResolverProvider transientResolverProvider;
 
@@ -624,6 +638,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     executorContextPrefixes = new ArrayList<>(set);
                 }
             }
+            return this;
+        }
+
+        @Override
+        public Builder setPrettySql(boolean pretty) {
+            this.isPrettySql = pretty;
             return this;
         }
 
@@ -1018,6 +1038,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     dialect,
                     executor,
                     executorContextPrefixes,
+                    isPrettySql,
                     idGeneratorMap,
                     new ScalarProviderManager(typeScalarProviderMap, propScalarProviderMap, defaultEnumStrategy, dialect),
                     defaultBatchSize,
