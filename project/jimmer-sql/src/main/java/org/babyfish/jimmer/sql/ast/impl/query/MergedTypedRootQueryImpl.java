@@ -116,11 +116,11 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
+        builder.enter('?' + operator + '?');
         left.renderTo(builder);
-        builder.sql(" ");
-        builder.sql(operator);
-        builder.sql(" ");
+        builder.separator();
         right.renderTo(builder);
+        builder.leave();
     }
 
     @Override

@@ -286,6 +286,7 @@ class QueryMethodParser {
         }
         String expectedTypeName = null;
         String actualTypeName = null;
+        boolean isCollection = false;
         if (predicate.getOp() == PropPredicate.Op.IN || predicate.getOp() == PropPredicate.Op.NOT_IN) {
             boolean valid = false;
             ParameterizedType parameterizedType =
@@ -294,11 +295,11 @@ class QueryMethodParser {
                             null;
             if (parameterizedType != null) {
                 if (parameterizedType.getRawType() == Collection.class || parameterizedType.getRawType() == List.class) {
-                    valid = predicate.getPath().getType() == parameterizedType.getActualTypeArguments()[0];
+                    valid = Classes.boxTypeOf(predicate.getPath().getType()) == parameterizedType.getActualTypeArguments()[0];
                 }
             }
             if (!valid) {
-                expectedTypeName = "Collection<" + predicate.getPath().getType().getName() + '>';
+                expectedTypeName = "Collection<" + Classes.boxTypeOf(predicate.getPath().getType()).getName() + '>';
                 actualTypeName = parameterizedType == null ?
                         parameterTypes[paramIndex].getName() :
                         parameterizedType.getRawType().getTypeName() +
@@ -307,6 +308,7 @@ class QueryMethodParser {
                                         .map(Type::getTypeName)
                                         .collect(Collectors.joining(", "))+
                                 '>';
+                isCollection = true;
             }
         } else {
             if (!Classes.matches(parameterTypes[paramIndex], predicate.getPath().getType())) {
@@ -316,7 +318,9 @@ class QueryMethodParser {
         }
         if (expectedTypeName != null) {
             throw new IllegalArgumentException(
-                    "This type of property \"" +
+                    "This type of " +
+                            (isCollection ? "the collection whose element is the " : "") +
+                            "property \"" +
                             predicate.getPath() +
                             "\" is \"" +
                             expectedTypeName +

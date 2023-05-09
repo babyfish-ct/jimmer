@@ -548,7 +548,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(newId, "Kotlin in Action", 1, new BigDecimal(30));
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), (?, ?)");
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
                         it.variables(newId, danId, newId, borisId);
                     });
                     ctx.entity(it -> {
@@ -607,7 +607,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(learningGraphQLId3, alexId, learningGraphQLId3, eveId);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?), (?, ?)");
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?), (?, ?)");
                         it.variables(learningGraphQLId3, danId, learningGraphQLId3, borisId);
                     });
                     ctx.entity(it -> {
@@ -666,7 +666,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(newId, "Jim", "Green", "M");
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values (?, ?), (?, ?)");
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
                         it.variables(newId, effectiveTypeScriptId3, newId, programmingTypeScriptId3);
                     });
                     ctx.entity(it -> {
@@ -728,7 +728,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.variables(eveId, learningGraphQLId1, eveId, learningGraphQLId2, eveId, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values (?, ?), (?, ?)");
+                        it.sql("insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) values(?, ?), (?, ?)");
                         it.variables(eveId, effectiveTypeScriptId3, eveId, programmingTypeScriptId3);
                     });
                     ctx.entity(it -> {

@@ -58,7 +58,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) " +
-                                        "values (?, ?), (?, ?)"
+                                        "values(?, ?), (?, ?)"
                         );
                         it.variables(learningGraphQLId2, borisId, learningGraphQLId3, borisId);
                     });
@@ -211,7 +211,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into BOOK_AUTHOR_MAPPING(AUTHOR_ID, BOOK_ID) " +
-                                        "values (?, ?), (?, ?)"
+                                        "values(?, ?), (?, ?)"
                         );
                         it.variables(borisId, learningGraphQLId2, borisId, learningGraphQLId3);
                     });

@@ -544,7 +544,7 @@ class Saver {
                 builder.sql(" ").sql(overrideIdentityIdSql);
             }
         }
-        builder.sql(" values").enter(SqlBuilder.ScopeType.TUPLE);
+        builder.enter(SqlBuilder.ScopeType.VALUES).enter(SqlBuilder.ScopeType.TUPLE);
         int size = values.size();
         for (int i = 0; i < size; i++) {
             builder.separator();
@@ -555,7 +555,7 @@ class Saver {
                 builder.nullVariable(props.get(i));
             }
         }
-        builder.leave();
+        builder.leave().leave();
 
         boolean generateKeys = id == null;
         if (generateKeys) {

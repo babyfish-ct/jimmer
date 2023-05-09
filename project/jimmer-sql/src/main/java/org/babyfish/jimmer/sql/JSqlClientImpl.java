@@ -534,7 +534,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private List<String> executorContextPrefixes;
 
-        private SqlFormatter sqlFormatter = SqlFormatter.SINGLE_LINE;
+        private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
 
         private TransientResolverProvider transientResolverProvider;
 
@@ -643,7 +643,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public Builder setSqlFormatter(SqlFormatter sqlFormatter) {
-            this.sqlFormatter = sqlFormatter != null ? sqlFormatter : SqlFormatter.SINGLE_LINE;
+            this.sqlFormatter = sqlFormatter != null ? sqlFormatter : SqlFormatter.SIMPLE;
             return this;
         }
 

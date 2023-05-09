@@ -619,7 +619,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                 "insert into ORDER_ITEM_PRODUCT_MAPPING(" +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C, " +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA" +
-                                        ") values " +
+                                        ") values" +
                                         "--->(?, ?, ?, ?, ?), " +
                                         "--->(?, ?, ?, ?, ?)"
                         );
@@ -770,7 +770,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                 "insert into ORDER_ITEM_PRODUCT_MAPPING(" +
                                         "--->FK_PRODUCT_ALPHA, FK_PRODUCT_BETA, " +
                                         "--->FK_ORDER_ITEM_A, FK_ORDER_ITEM_B, FK_ORDER_ITEM_C" +
-                                        ") values (?, ?, ?, ?, ?)"
+                                        ") values(?, ?, ?, ?, ?)"
                         );
                         it.variables("00A", "00A", 1, 2, 1);
                     });

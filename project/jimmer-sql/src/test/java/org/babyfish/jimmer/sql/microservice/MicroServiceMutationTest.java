@@ -162,7 +162,7 @@ public class MicroServiceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "insert into MS_ORDER_ITEM_PRODUCT_MAPPING(ORDER_ITEM_ID, PRODUCT_ID) " +
-                                        "values (?, ?), (?, ?)"
+                                        "values(?, ?), (?, ?)"
                         );
                     });
                     ctx.entity(it -> {

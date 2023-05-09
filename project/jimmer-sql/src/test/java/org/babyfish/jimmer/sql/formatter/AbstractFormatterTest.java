@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.formatter;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractTest;
-import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor;
 import org.babyfish.jimmer.sql.runtime.Executor;
@@ -51,7 +50,7 @@ public abstract class AbstractFormatterTest extends AbstractTest {
                             }
                         }
                 )
-                .setSqlFormatter(SqlFormatter.MULTIPLE_LINE)
+                .setSqlFormatter(SqlFormatter.PRETTY)
                 .build();
 
         sqlList.clear();

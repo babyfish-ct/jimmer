@@ -69,7 +69,7 @@ public class PaginationContextImpl implements PaginationContext {
 
     @Override
     public PaginationContext space() {
-        if (sqlFormatter.isMultipleLines()) {
+        if (sqlFormatter.isPretty()) {
             builder.append('\n');
         } else {
             builder.append(' ');
@@ -79,7 +79,7 @@ public class PaginationContextImpl implements PaginationContext {
 
     @Override
     public PaginationContext newLine() {
-        if (sqlFormatter.isMultipleLines()) {
+        if (sqlFormatter.isPretty()) {
             builder.append('\n');
         }
         return this;

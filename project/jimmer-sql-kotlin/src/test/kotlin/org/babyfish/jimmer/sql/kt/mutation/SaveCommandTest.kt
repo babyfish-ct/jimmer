@@ -110,7 +110,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values (?, ?), (?, ?)""".trimMargin()
+                        |values(?, ?), (?, ?)""".trimMargin()
                 )
                 variables(12L, 3L, 12L, 4L)
             }
@@ -260,7 +260,7 @@ class SaveCommandTest : AbstractMutationTest() {
                 sql(
                     """insert into 
                         |BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values (?, ?), (?, ?)""".trimMargin()
+                        |values(?, ?), (?, ?)""".trimMargin()
                 )
                 variables(12L, 100L, 12L, 101L)
             }

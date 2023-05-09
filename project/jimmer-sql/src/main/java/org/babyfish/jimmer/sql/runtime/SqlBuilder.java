@@ -112,7 +112,7 @@ public class SqlBuilder {
     public SqlBuilder space(char ch) {
         switch (ch) {
             case '?':
-                if (formatter.isMultipleLines()) {
+                if (formatter.isPretty()) {
                     newLine();
                 } else {
                     preAppend();
@@ -124,7 +124,7 @@ public class SqlBuilder {
                 builder.append(' ');
                 break;
             case '\n':
-                if (formatter.isMultipleLines()) {
+                if (formatter.isPretty()) {
                     newLine();
                 }
                 break;
@@ -278,7 +278,7 @@ public class SqlBuilder {
     public SqlBuilder on() {
         space('?');
         preAppend();
-        if (formatter.isMultipleLines()) {
+        if (formatter.isPretty()) {
             builder.append(formatter.getIndent());
         }
         builder.append("on ");
@@ -632,7 +632,7 @@ public class SqlBuilder {
         TUPLE("(", ", ", ")"),
         AND(null, "?and?", null, false),
         OR(null, "?or?", null, false),
-        VALUES("?values?", ",?", null);
+        VALUES("?values\n", ",?", null);
 
         final Part prefix;
 

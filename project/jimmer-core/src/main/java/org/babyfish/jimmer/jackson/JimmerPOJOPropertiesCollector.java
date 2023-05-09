@@ -9,13 +9,23 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import java.util.Map;
 
 public class JimmerPOJOPropertiesCollector extends POJOPropertiesCollector {
-    protected JimmerPOJOPropertiesCollector(MapperConfig<?> config, boolean forSerialization, JavaType type, AnnotatedClass classDef, AccessorNamingStrategy accessorNaming) {
+
+    public JimmerPOJOPropertiesCollector(
+            MapperConfig<?> config,
+            boolean forSerialization,
+            JavaType type,
+            AnnotatedClass classDef,
+            AccessorNamingStrategy accessorNaming
+    ) {
         super(config, forSerialization, type, classDef, accessorNaming);
     }
 
-
     @Override
-    protected void _addGetterMethod(Map<String, POJOPropertyBuilder> props, AnnotatedMethod m, AnnotationIntrospector ai) {
+    protected void _addGetterMethod(
+            Map<String, POJOPropertyBuilder> props,
+            AnnotatedMethod m,
+            AnnotationIntrospector ai
+    ) {
         super._addGetterMethod(props, m, ai);
         Class<?> clazz = m.getDeclaringClass();
         if (ImmutableType.tryGet(clazz) != null) {

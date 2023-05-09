@@ -251,7 +251,7 @@ class MiddleTableOperator {
             if (fromConstant != null) {
                 fromConstant = " from " + fromConstant;
             }
-            builder.enter("union all");
+            builder.enter("?union all?");
             while (reader.read()) {
                 builder
                         .separator()

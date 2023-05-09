@@ -4,23 +4,23 @@ import java.util.Objects;
 
 public final class SqlFormatter {
 
-    public static final SqlFormatter SINGLE_LINE =
+    public static final SqlFormatter SIMPLE =
             new SqlFormatter(false, "");
 
-    public static final SqlFormatter MULTIPLE_LINE =
+    public static final SqlFormatter PRETTY =
             new SqlFormatter(true, "    ");
 
-    private final boolean multipleLines;
+    private final boolean isPretty;
 
     private final String indent;
 
-    public SqlFormatter(boolean multipleLines, String indent) {
-        this.multipleLines = multipleLines;
+    public SqlFormatter(boolean isPretty, String indent) {
+        this.isPretty = isPretty;
         this.indent = indent;
     }
 
-    public boolean isMultipleLines() {
-        return multipleLines;
+    public boolean isPretty() {
+        return isPretty;
     }
 
     public String getIndent() {
@@ -29,7 +29,7 @@ public final class SqlFormatter {
 
     @Override
     public int hashCode() {
-        return Objects.hash(multipleLines, indent);
+        return Objects.hash(isPretty, indent);
     }
 
     @Override
@@ -37,14 +37,14 @@ public final class SqlFormatter {
         if (this == o) return true;
         if (!(o instanceof SqlFormatter)) return false;
         SqlFormatter that = (SqlFormatter) o;
-        return multipleLines == that.multipleLines &&
+        return isPretty == that.isPretty &&
                 indent.equals(that.indent);
     }
 
     @Override
     public String toString() {
         return "SqlFormatter{" +
-                "multipleLines=" + multipleLines +
+                "isPretty=" + isPretty +
                 ", indent='" + indent + '\'' +
                 '}';
     }

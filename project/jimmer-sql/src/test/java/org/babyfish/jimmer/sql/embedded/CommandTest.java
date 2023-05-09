@@ -358,7 +358,7 @@ public class CommandTest extends AbstractMutationTest {
                                         "--->FK_ORDER_ITEM_C, " +
                                         "--->FK_PRODUCT_ALPHA, " +
                                         "--->FK_PRODUCT_BETA" +
-                                        ") values " +
+                                        ") values" +
                                         "--->(?, ?, ?, ?, ?), " +
                                         "--->(?, ?, ?, ?, ?)"
                         );
@@ -439,7 +439,7 @@ public class CommandTest extends AbstractMutationTest {
                                         "--->FK_ORDER_ITEM_A, " +
                                         "--->FK_ORDER_ITEM_B, " +
                                         "--->FK_ORDER_ITEM_C" +
-                                        ") values (" +
+                                        ") values(" +
                                         "--->?, ?, ?, ?, ?" +
                                         ")"
                         );

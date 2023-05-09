@@ -17,7 +17,7 @@ class AssociationMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values (?, ?)""".trimMargin()
+                        |values(?, ?)""".trimMargin()
                 )
                 variables(3L, 5L)
             }
@@ -48,7 +48,7 @@ class AssociationMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
-                        |values (?, ?), (?, ?), (?, ?)""".trimMargin()
+                        |values(?, ?), (?, ?), (?, ?)""".trimMargin()
                 )
                 variables(4L, 5L, 5L, 5L, 6L, 5L)
             }
