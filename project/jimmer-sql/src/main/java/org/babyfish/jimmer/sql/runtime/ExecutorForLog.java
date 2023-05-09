@@ -32,7 +32,7 @@ class ExecutorForLog implements Executor {
             return raw.execute(args);
         }
         if (args.sqlClient.getSqlFormatter().isPretty()) {
-            return prettyLog(args, 100);
+            return prettyLog(args, args.sqlClient.getSqlFormatter().getMaxVariableContentLength());
         }
         return simpleLog(args);
     }
@@ -114,7 +114,7 @@ class ExecutorForLog implements Executor {
     ) {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("===>\nSQL: ");
+        builder.append("===>SQL: \n");
         int len = sql.length();
         int cloneFrom = 0;
         char expectedEndChar = '\0';
@@ -162,7 +162,7 @@ class ExecutorForLog implements Executor {
         builder.append("Time cost: ").append(millis).append("ms\n");
 
         if (ctx != null) {
-            builder.append("--- Business related stack trace information ---");
+            builder.append("--- Business related stack trace information ---\n");
             for (StackTraceElement element : ctx.getMatchedElements()) {
                 builder.append(element).append('\n');
             }

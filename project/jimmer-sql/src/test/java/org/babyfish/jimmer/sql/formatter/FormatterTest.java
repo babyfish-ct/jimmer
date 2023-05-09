@@ -176,7 +176,11 @@ public class FormatterTest extends AbstractFormatterTest {
                         ).in(
                                 Arrays.asList(
                                         new Tuple2<>("GraphQL in Action", 1),
-                                        new Tuple2<>("GraphQL in Action", 2)
+                                        new Tuple2<>("GraphQL in Action", 2),
+                                        new Tuple2<>("Learning GraphQL", 1),
+                                        new Tuple2<>("Learning GraphQL", 2),
+                                        new Tuple2<>("Effective TypeScript", 1),
+                                        new Tuple2<>("Effective TypeScript", 2)
                                 )
                         )
                 )
@@ -193,8 +197,8 @@ public class FormatterTest extends AbstractFormatterTest {
                         "from BOOK tb_1_\n" +
                         "where\n" +
                         "    (tb_1_.NAME, tb_1_.EDITION) in (\n" +
-                        "        (?, ?),\n" +
-                        "        (?, ?)\n" +
+                        "        (?, ?), (?, ?), (?, ?),\n" +
+                        "        (?, ?), (?, ?), (?, ?)\n" +
                         "    )"
         );
     }
@@ -271,8 +275,7 @@ public class FormatterTest extends AbstractFormatterTest {
                         "delete from BOOK_AUTHOR_MAPPING\n" +
                         "where\n" +
                         "    (BOOK_ID, AUTHOR_ID) in (\n" +
-                        "        (?, ?),\n" +
-                        "        (?, ?)\n" +
+                        "        (?, ?), (?, ?)\n" +
                         "    )",
 
                         "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)\n" +

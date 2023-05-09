@@ -77,11 +77,18 @@ public class SqlBuilder {
     public SqlBuilder separator() {
         Scope scope = this.scope;
         if (scope != null && scope.dirty) {
+            boolean forceInLine = false;
+            if (scope.type == ScopeType.LIST) {
+                forceInLine = ++scope.listSeparatorCount < formatter.getListParamCountInLine();
+                if (!forceInLine) {
+                    scope.listSeparatorCount = 0;
+                }
+            }
             if (scope.type.isSeparatorIndent) {
-                part(scope.separator);
+                part(scope.separator, forceInLine);
             } else {
                 scope.depth--;
-                part(scope.separator);
+                part(scope.separator, forceInLine);
                 scope.depth++;
             }
             scope.dirty = false;
@@ -91,8 +98,7 @@ public class SqlBuilder {
 
     public SqlBuilder leave() {
         Scope scope = this.scope;
-        Scope oldScope = scope.parent;
-        this.scope = oldScope;
+        this.scope = scope.parent;
         if (!scope.ignored) {
             part(scope.type.suffix);
         }
@@ -100,19 +106,27 @@ public class SqlBuilder {
     }
 
     private void part(ScopeType.Part part) {
+        part(part, false);
+    }
+
+    private void part(ScopeType.Part part, boolean forceInLine) {
         if (part == null) {
             return;
         }
-        space(part.before);
+        space(part.before, forceInLine);
         preAppend();
         builder.append(part.value);
-        space(part.after);
+        space(part.after, forceInLine);
     }
 
     public SqlBuilder space(char ch) {
+        return space(ch, false);
+    }
+
+    public SqlBuilder space(char ch, boolean forceInLine) {
         switch (ch) {
             case '?':
-                if (formatter.isPretty()) {
+                if (!forceInLine && formatter.isPretty()) {
                     newLine();
                 } else {
                     preAppend();
@@ -124,7 +138,7 @@ public class SqlBuilder {
                 builder.append(' ');
                 break;
             case '\n':
-                if (formatter.isPretty()) {
+                if (!forceInLine && formatter.isPretty()) {
                     newLine();
                 }
                 break;
@@ -698,7 +712,7 @@ public class SqlBuilder {
 
         boolean dirty;
 
-        int separatorCountInLine;
+        int listSeparatorCount;
 
         private Scope(
                 Scope parent,

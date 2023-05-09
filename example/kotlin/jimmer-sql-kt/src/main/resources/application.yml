@@ -28,6 +28,7 @@ jimmer:
   offset-optimizing-threshold: 10
   database-validation-mode: ERROR
   show-sql: true
+  pretty-sql: true
   executor-context-prefixes:
     - org.babyfish.jimmer.sql.example.business
   client:

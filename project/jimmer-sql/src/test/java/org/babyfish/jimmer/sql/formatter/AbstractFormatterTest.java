@@ -50,7 +50,7 @@ public abstract class AbstractFormatterTest extends AbstractTest {
                             }
                         }
                 )
-                .setSqlFormatter(SqlFormatter.PRETTY)
+                .setSqlFormatter(new SqlFormatter(true, "    ", 3, 100))
                 .build();
 
         sqlList.clear();
