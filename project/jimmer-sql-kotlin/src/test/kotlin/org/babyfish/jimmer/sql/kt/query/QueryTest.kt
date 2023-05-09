@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.kt.model.*
 import org.babyfish.jimmer.sql.kt.model.classic.author.fullName2
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.*
+import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -97,6 +98,40 @@ class QueryTest : AbstractQueryTest() {
                     |--->--->"store":{"id":2}
                     |--->}
                     |]""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testOr() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(
+                    or(
+                        table.price lt BigDecimal(40),
+                        table.price gt BigDecimal(60)
+                    )
+                )
+                orderBy(table.name)
+                orderBy(table.edition.desc())
+                select(table)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                    "from BOOK tb_1_ " +
+                    "where tb_1_.PRICE < ? or tb_1_.PRICE > ? " +
+                    "order by tb_1_.NAME asc, tb_1_.EDITION desc"
+            )
+            rows(
+                "[" +
+                    "{\"id\":6,\"name\":\"Effective TypeScript\",\"edition\":3,\"price\":88.00,\"store\":{\"id\":1}}," +
+                    "{\"id\":5,\"name\":\"Effective TypeScript\",\"edition\":2,\"price\":69.00,\"store\":{\"id\":1}}," +
+                    "{\"id\":4,\"name\":\"Effective TypeScript\",\"edition\":1,\"price\":73.00,\"store\":{\"id\":1}}," +
+                    "{\"id\":12,\"name\":\"GraphQL in Action\",\"edition\":3,\"price\":80.00,\"store\":{\"id\":2}}," +
+                    "{\"id\":11,\"name\":\"GraphQL in Action\",\"edition\":2,\"price\":81.00,\"store\":{\"id\":2}}," +
+                    "{\"id\":10,\"name\":\"GraphQL in Action\",\"edition\":1,\"price\":80.00,\"store\":{\"id\":2}}" +
+                    "]"
             )
         }
     }

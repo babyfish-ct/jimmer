@@ -9,20 +9,30 @@ import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class EntityManager {
 
-    private final Map<ImmutableType, ImmutableTypeInfo> map;
+    private static final Logger LOGGER = LoggerFactory.getLogger(EntityManager.class);
 
-    private final Map<MetadataStrategy, Map<Key, ImmutableType>> typesMap = new HashMap<>();
+    private final ReadWriteLock reloadingLock = new ReentrantReadWriteLock();
+
+    private volatile Data data;
 
     public EntityManager(Class<?> ... classes) {
         this(Arrays.asList(classes));
@@ -100,7 +110,12 @@ public class EntityManager {
                             .collect(Collectors.toList())
             );
         }
-        this.map = Collections.unmodifiableMap(map);
+        map = Collections.unmodifiableMap(map);
+        Map<String, ImmutableType> springDevToolMap = new HashMap<>((map.size() * 4 + 2) / 3);
+        for (ImmutableType type : map.keySet()) {
+            springDevToolMap.put(type.getJavaClass().getName(), type);
+        }
+        this.data = new Data(map, springDevToolMap);
     }
 
     public static EntityManager combine(EntityManager ... entityManagers) {
@@ -168,12 +183,12 @@ public class EntityManager {
 
     public Set<ImmutableType> getAllTypes(String microServiceName) {
         if (microServiceName == null) {
-            return map.keySet();
+            return data.map.keySet();
         }
         Set<ImmutableType> set = microServiceName.isEmpty() ?
-                new LinkedHashSet<>((map.size() * 4 + 2) / 3) :
+                new LinkedHashSet<>((data.map.size() * 4 + 2) / 3) :
                 new LinkedHashSet<>();
-        for (ImmutableType type : map.keySet()) {
+        for (ImmutableType type : data.map.keySet()) {
             if (type.getMicroServiceName().equals(microServiceName)) {
                 set.add(type);
             }
@@ -198,13 +213,62 @@ public class EntityManager {
     }
 
     private ImmutableTypeInfo info(ImmutableType type) {
-        ImmutableTypeInfo info = map.get(type);
+        ImmutableTypeInfo info = data.map.get(type);
         if (info == null) {
-            throw new IllegalArgumentException(
-                    "\"" + type + "\" is not managed by current EntityManager"
-            );
+            ImmutableType oldType = data.typeMapForSpringDevTools.get(type.getJavaClass().getName());
+            if (oldType != null) {
+                LOGGER.info(
+                        "You seem to be using spring-dev-tools (or other multi-ClassLoader technology), " +
+                                "so that some entity metadata changes but the ORM's entire metadata graph " +
+                                "is not updated, now try to reload the EntityManager."
+                );
+                try {
+                    reload(type);
+                } catch (RuntimeException | Error ex) {
+                    throw new IllegalStateException(
+                            "You seem to be using spring-dev-tools (or other multi-ClassLoader technology), " +
+                                    "so that some entity metadata changes but the ORM's entire metadata graph " +
+                                    "is not updated, jimmer try to reload the EntityManager but meet some problem.",
+                            ex
+                    );
+                }
+                info = data.map.get(type);
+            }
+            if (info == null) {
+                throw new IllegalArgumentException(
+                        "\"" + type + "\" is not managed by current EntityManager"
+                );
+            }
         }
         return info;
+    }
+
+    private void reload(ImmutableType immutableType) {
+
+        Lock lock;
+
+        (lock = reloadingLock.readLock()).lock();
+        try {
+            if (data.map.containsKey(immutableType)) {
+                return;
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        (lock = reloadingLock.writeLock()).lock();
+        try {
+            if (data.map.containsKey(immutableType)) {
+                return;
+            }
+            EntityManager newEntityManager = EntityManager.fromResources(
+                    immutableType.getJavaClass().getClassLoader(),
+                    null
+            );
+            data = newEntityManager.data;
+        } finally {
+            lock.unlock();
+        }
     }
 
     private boolean isImplementationType(ImmutableType mappedSuperClass, ImmutableType type) {
@@ -240,7 +304,7 @@ public class EntityManager {
             String tableName,
             MetadataStrategy strategy
     ) {
-        Map<Key, ImmutableType> typeMap = typesMap.computeIfAbsent(strategy, this::createTypeMap);
+        Map<Key, ImmutableType> typeMap = data.getTypeMap(strategy);
         return typeMap.get(
                 new Key(
                         Objects.requireNonNull(microServiceName, "`microServiceName` cannot be null"),
@@ -268,36 +332,6 @@ public class EntityManager {
             );
         }
         return type;
-    }
-
-    private Map<Key, ImmutableType> createTypeMap(MetadataStrategy strategy) {
-        Map<Key, ImmutableType> typeMap = new HashMap<>();
-        for (ImmutableType type : map.keySet()) {
-            if (!type.isEntity()) {
-                continue;
-            }
-            String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
-            String microServiceName = type.getMicroServiceName();
-            Key key = new Key(microServiceName, tableName);
-            ImmutableType conflictType = typeMap.put(key, type);
-            if (conflictType != null) {
-                tableSharedBy(key, conflictType, type);
-            }
-            for (ImmutableProp prop : type.getProps().values()) {
-                if (prop.isMiddleTableDefinition()) {
-                    AssociationType associationType = AssociationType.of(prop);
-                    String associationTableName = DatabaseIdentifiers.comparableIdentifier(
-                            associationType.getTableName(strategy)
-                    );
-                    key = new Key(microServiceName, associationTableName);
-                    conflictType = typeMap.put(key, associationType);
-                    if (conflictType != null) {
-                        tableSharedBy(key, conflictType, associationType);
-                    }
-                }
-            }
-        }
-        return typeMap;
     }
 
     private static void tableSharedBy(Key key, ImmutableType type1, ImmutableType type2) {
@@ -367,6 +401,55 @@ public class EntityManager {
                     "microServiceName='" + microServiceName + '\'' +
                     ", tableName='" + tableName + '\'' +
                     '}';
+        }
+    }
+
+    private static class Data {
+
+        final Map<ImmutableType, ImmutableTypeInfo> map;
+
+        final Map<String, ImmutableType> typeMapForSpringDevTools;
+
+        final ConcurrentMap<MetadataStrategy, Map<Key, ImmutableType>> typesMap =
+                new ConcurrentHashMap<>();
+
+        Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
+            this.map = map;
+            this.typeMapForSpringDevTools = typeMapForSpringDevTools;
+        }
+
+        public Map<Key, ImmutableType> getTypeMap(MetadataStrategy strategy) {
+            return typesMap.computeIfAbsent(strategy, this::createTypeMap);
+        }
+
+        private Map<Key, ImmutableType> createTypeMap(MetadataStrategy strategy) {
+            Map<Key, ImmutableType> typeMap = new HashMap<>();
+            for (ImmutableType type : map.keySet()) {
+                if (!type.isEntity()) {
+                    continue;
+                }
+                String tableName = DatabaseIdentifiers.comparableIdentifier(type.getTableName(strategy));
+                String microServiceName = type.getMicroServiceName();
+                Key key = new Key(microServiceName, tableName);
+                ImmutableType conflictType = typeMap.put(key, type);
+                if (conflictType != null) {
+                    tableSharedBy(key, conflictType, type);
+                }
+                for (ImmutableProp prop : type.getProps().values()) {
+                    if (prop.isMiddleTableDefinition()) {
+                        AssociationType associationType = AssociationType.of(prop);
+                        String associationTableName = DatabaseIdentifiers.comparableIdentifier(
+                                associationType.getTableName(strategy)
+                        );
+                        key = new Key(microServiceName, associationTableName);
+                        conflictType = typeMap.put(key, associationType);
+                        if (conflictType != null) {
+                            tableSharedBy(key, conflictType, associationType);
+                        }
+                    }
+                }
+            }
+            return typeMap;
         }
     }
 }
