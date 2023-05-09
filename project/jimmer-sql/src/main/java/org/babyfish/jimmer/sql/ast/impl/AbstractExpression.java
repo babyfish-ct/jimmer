@@ -12,9 +12,9 @@ abstract class AbstractExpression<T> implements ExpressionImplementor<T>, Ast {
                 ((ExpressionImplementor<?>)ast).precedence() <= precedence()) {
             ast.renderTo(builder);
         } else {
-            builder.sql("(");
+            builder.sql("(").space('\n');
             ast.renderTo(builder);
-            builder.sql(")");
+            builder.space('\n').sql(")");
         }
     }
 

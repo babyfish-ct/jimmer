@@ -57,6 +57,7 @@ public class SqlClientConfig {
             @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
+            @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
             @Autowired(required = false) MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
@@ -98,6 +99,7 @@ public class SqlClientConfig {
                 databaseNamingStrategy,
                 dialect,
                 executor,
+                sqlFormatter,
                 cacheFactory,
                 exchange,
                 providers,
@@ -125,6 +127,7 @@ public class SqlClientConfig {
             @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
             @Autowired(required = false) Executor executor,
+            @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
             @Autowired(required = false) MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
@@ -166,6 +169,7 @@ public class SqlClientConfig {
                     databaseNamingStrategy,
                     dialect,
                     executor,
+                    sqlFormatter,
                     cacheFactory,
                     exchange,
                     providers,
@@ -185,7 +189,7 @@ public class SqlClientConfig {
             );
             return Unit.INSTANCE;
         });
-        postCreateSqlClient((JSqlClientImplementor) sqlClient.getJavaClient(), publisher);
+        postCreateSqlClient(sqlClient.getJavaClient(), publisher);
         return sqlClient;
     }
 
@@ -200,6 +204,7 @@ public class SqlClientConfig {
             DatabaseNamingStrategy databaseNamingStrategy,
             Dialect dialect,
             Executor executor,
+            SqlFormatter sqlFormatter,
             CacheFactory cacheFactory,
             MicroServiceExchange exchange,
             List<ScalarProvider<?, ?>> providers,
@@ -238,6 +243,7 @@ public class SqlClientConfig {
         } else {
             builder.setExecutor(executor);
         }
+        builder.setSqlFormatter(sqlFormatter);
         builder.setDatabaseValidationMode(properties.getDatabaseValidation().getMode());
         builder.setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog());
         if (cacheFactory != null) {

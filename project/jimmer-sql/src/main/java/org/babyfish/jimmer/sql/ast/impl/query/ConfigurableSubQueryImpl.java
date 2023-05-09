@@ -140,9 +140,9 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        builder.sql("(");
+        builder.enter(SqlBuilder.ScopeType.SUB_QUERY);
         super.renderTo(builder);
-        builder.sql(")");
+        builder.leave();
     }
 
     @Override

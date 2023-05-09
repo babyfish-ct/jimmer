@@ -18,9 +18,9 @@ internal abstract class AbstractKExpression<T: Any>: ExpressionImplementor<T>, K
             ast.precedence() <= precedence()) {
             ast.renderTo(builder)
         } else {
-            builder.sql("(")
+            builder.sql("(").space('\n')
             ast.renderTo(builder)
-            builder.sql(")")
+            builder.space('\n').sql(")")
         }
     }
 

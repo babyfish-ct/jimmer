@@ -17,10 +17,6 @@ import java.util.function.Function;
 
 public class SqlBuilder {
 
-    private static final String COMMA = ",";
-
-    private static final String BRACKET = "(";
-
     private final AstContext ctx;
 
     private final SqlBuilder parent;
@@ -56,27 +52,6 @@ public class SqlBuilder {
         return ctx;
     }
 
-    private void preAppend() {
-        Scope scope = this.scope;
-        if (scope == null) {
-            SqlBuilder parent = this.parent;
-            if (parent != null) {
-                scope = parent.scope;
-            }
-        }
-        if (scope != null) {
-            scope.setDirty();
-        }
-        if (scope == null || !indentRequired) {
-            return;
-        }
-        indentRequired = false;
-        String indent = formatter.getIndent();
-        for (int i = scope.depth; i > 0; --i) {
-            builder.append(indent);
-        }
-    }
-
     public SqlBuilder enter(String separator) {
         enterImpl(ScopeType.BLANK, separator);
         return this;
@@ -94,19 +69,7 @@ public class SqlBuilder {
                 oldScope != null &&
                 oldScope.type == ScopeType.TUPLE;
         if (!ignored) {
-            String prefix = type.prefix;
-            if (prefix != null) {
-                if (type != ScopeType.SELECT && type != ScopeType.SELECT_DISTINCT && !BRACKET.equals(prefix)) {
-                    if (formatter.isMultipleLines()) {
-                        builder.append('\n');
-                        preAppend();
-                    } else {
-                        preAppend();
-                        builder.append(' ');
-                    }
-                }
-                builder.append(prefix);
-            }
+            part(type.prefix);
         }
         this.scope = new Scope(oldScope, type, ignored, separator);
     }
@@ -114,24 +77,14 @@ public class SqlBuilder {
     public SqlBuilder separator() {
         Scope scope = this.scope;
         if (scope != null && scope.dirty) {
-            String separator = scope.separator;
-            if (separator != null) {
-                if (formatter.isMultipleLines() && scope.type != ScopeType.TUPLE) {
-                    if (!COMMA.equals(separator)) {
-                        builder.append('\n');
-                    }
-                    preAppend();
-                    builder.append(separator).append('\n');
-                    indentRequired = true;
-                } else {
-                    preAppend();
-                    if (!COMMA.equals(separator)) {
-                        builder.append(' ');
-                    }
-                    builder.append(separator).append(' ');
-                }
-                scope.dirty = false;
+            if (scope.type.isSeparatorIndent) {
+                part(scope.separator);
+            } else {
+                scope.depth--;
+                part(scope.separator);
+                scope.depth++;
             }
+            scope.dirty = false;
         }
         return this;
     }
@@ -139,15 +92,71 @@ public class SqlBuilder {
     public SqlBuilder leave() {
         Scope scope = this.scope;
         Scope oldScope = scope.parent;
+        this.scope = oldScope;
         if (!scope.ignored) {
-            String suffix = scope.type.suffix;
-            if (suffix != null) {
+            part(scope.type.suffix);
+        }
+        return this;
+    }
+
+    private void part(ScopeType.Part part) {
+        if (part == null) {
+            return;
+        }
+        space(part.before);
+        preAppend();
+        builder.append(part.value);
+        space(part.after);
+    }
+
+    public SqlBuilder space(char ch) {
+        switch (ch) {
+            case '?':
+                if (formatter.isMultipleLines()) {
+                    newLine();
+                } else {
+                    preAppend();
+                    builder.append(' ');
+                }
+                break;
+            case ' ':
                 preAppend();
-                builder.append(suffix);
+                builder.append(' ');
+                break;
+            case '\n':
+                if (formatter.isMultipleLines()) {
+                    newLine();
+                }
+                break;
+        }
+        return this;
+    }
+
+    private void preAppend() {
+        Scope scope = this.scope;
+        if (scope == null) {
+            SqlBuilder parent = this.parent;
+            if (parent != null) {
+                scope = parent.scope;
             }
         }
-        this.scope = oldScope;
-        return this;
+        if (scope != null) {
+            scope.setDirty();
+        }
+        if (scope == null || !indentRequired) {
+            indentRequired = false;
+            return;
+        }
+        indentRequired = false;
+        String indent = formatter.getIndent();
+        for (int i = scope.depth; i > 0; --i) {
+            builder.append(indent);
+        }
+    }
+
+    private void newLine() {
+        builder.append('\n');
+        indentRequired = true;
     }
 
     public SqlBuilder definition(String tableAlias, ColumnDefinition definition) {
@@ -251,38 +260,26 @@ public class SqlBuilder {
     }
 
     public SqlBuilder from() {
-        if (formatter.isMultipleLines()) {
-            builder.append('\n');
-            preAppend();
-        } else {
-            preAppend();
-            builder.append(' ');
-        }
+        preAppend();
+        space('?');
+        preAppend();
         builder.append("from ");
         return this;
     }
 
     public SqlBuilder join(JoinType joinType) {
-        if (formatter.isMultipleLines()) {
-            builder.append('\n');
-            preAppend();
-        } else {
-            preAppend();
-            builder.append(' ');
-        }
+        preAppend();
+        space('?');
+        preAppend();
         builder.append(joinType.name().toLowerCase()).append(" join ");
         return this;
     }
 
     public SqlBuilder on() {
-        SqlFormatter formatter = this.formatter;
+        space('?');
+        preAppend();
         if (formatter.isMultipleLines()) {
-            builder.append('\n');
-            preAppend();
             builder.append(formatter.getIndent());
-        } else {
-            preAppend();
-            builder.append(' ');
         }
         builder.append("on ");
         return this;
@@ -303,7 +300,7 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple3<?,?,?>) {
@@ -311,9 +308,9 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple4<?,?,?,?>) {
@@ -321,11 +318,11 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple5<?,?,?,?,?>) {
@@ -333,13 +330,13 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple6<?,?,?,?,?,?>) {
@@ -347,15 +344,15 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_6(), "tuple.get_6 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple7<?,?,?,?,?,?,?>) {
@@ -363,17 +360,17 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_6(), "tuple.get_6 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_7(), "tuple.get_7 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple8<?,?,?,?,?,?,?,?>) {
@@ -381,19 +378,19 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_6(), "tuple.get_6 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_7(), "tuple.get_7 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_8(), "tuple.get_8 cannot be null"))
                         .leave();
             } else if (value instanceof Tuple9<?,?,?,?,?,?,?,?,?>) {
@@ -401,21 +398,21 @@ public class SqlBuilder {
                 this
                         .enter(ScopeType.TUPLE)
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_1(), "tuple.get_1 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_2(), "tuple.get_2 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_3(), "tuple.get_3 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_4(), "tuple.get_4 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_5(), "tuple.get_5 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_6(), "tuple.get_6 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_7(), "tuple.get_7 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_8(), "tuple.get_8 cannot be null"))
-                        .sql(", ")
+                        .separator()
                         .nonTupleVariable(Objects.requireNonNull(tuple.get_9(), "tuple.get_9 cannot be null"))
                         .leave();
             }
@@ -623,30 +620,67 @@ public class SqlBuilder {
 
     public enum ScopeType {
         BLANK(null, null, null),
-        SELECT("select ", ",", null),
-        SELECT_DISTINCT("select distinct ", ",", null),
-        SET("set ", ",", null),
-        WHERE("where ", "and", null),
-        ORDER_BY("order by ", ",", null),
-        GROUP_BY("group by ", ",", null),
-        HAVING("having ", ",", null),
-        SUB_QUERY("(", null, ")"),
-        LIST("(", ",", ")"),
-        TUPLE("(", ",", ")"),
-        AND(null, "and", null),
-        OR(null, "or", null),
-        VALUES("values ", ",", null);
+        SELECT("select?", ",?", null),
+        SELECT_DISTINCT("select distinct?", ",?", null),
+        SET("?set?", ",?", null),
+        WHERE("?where?", "?and?", null),
+        ORDER_BY("?order by?", ",?", null),
+        GROUP_BY("?group by?", ",?", null),
+        HAVING("?having?", ",?", null),
+        SUB_QUERY("(\n", null, "\n)"),
+        LIST("(\n", ",?", "\n)"),
+        TUPLE("(", ", ", ")"),
+        AND(null, "?and?", null, false),
+        OR(null, "?or?", null, false),
+        VALUES("?values?", ",?", null);
 
-        public final String prefix;
+        final Part prefix;
 
-        public final String separator;
+        final Part separator;
 
-        public final String suffix;
+        final Part suffix;
+
+        final boolean isSeparatorIndent;
 
         ScopeType(String prefix, String separator, String suffix) {
-            this.prefix = prefix;
-            this.separator = separator;
-            this.suffix = suffix;
+            this(prefix, separator, suffix, true);
+        }
+
+        ScopeType(String prefix, String separator, String suffix, boolean isSeparatorIndent) {
+            this.prefix = partOf(prefix);
+            this.separator = partOf(separator);
+            this.suffix = partOf(suffix);
+            this.isSeparatorIndent = isSeparatorIndent;
+        }
+
+        static class Part {
+
+            final char before;
+            final String value;
+            final char after;
+
+            Part(char before, String value, char after) {
+                this.before = before;
+                this.value = value;
+                this.after = after;
+            }
+        }
+
+        static Part partOf(String value) {
+            if (value == null) {
+                return null;
+            }
+            char before = spaceChar(value.charAt(0));
+            char after = value.length() > 1 ? spaceChar(value.charAt(value.length() - 1)) : 0;
+            return new Part(
+                    before,
+                    value.substring(before == '\0' ? 0 : 1, value.length() - (after == '\0' ? 0 : 1)),
+                    after
+            );
+        }
+
+        private static char spaceChar(char c) {
+            return c == ' ' || c == '\n' || c == '?' ? c : '\0';
         }
     }
 
@@ -658,9 +692,9 @@ public class SqlBuilder {
 
         final boolean ignored;
 
-        final String separator;
+        final ScopeType.Part separator;
 
-        final int depth;
+        int depth;
 
         boolean dirty;
 
@@ -676,7 +710,7 @@ public class SqlBuilder {
             this.type = type;
             this.ignored = ignored;
             this.depth = ignored ? parent.depth : (parent != null ? parent.depth + 1: 1);
-            this.separator = separator != null ? separator : type.separator;
+            this.separator = separator != null ? ScopeType.partOf(separator) : type.separator;
         }
 
         void setDirty() {

@@ -5,29 +5,18 @@ import java.util.Objects;
 public final class SqlFormatter {
 
     public static final SqlFormatter SINGLE_LINE =
-            new SqlFormatter(
-                    false,
-                    "",
-                    Integer.MAX_VALUE
-            );
+            new SqlFormatter(false, "");
 
     public static final SqlFormatter MULTIPLE_LINE =
-            new SqlFormatter(
-                    true,
-                    "    ",
-                    8
-            );
+            new SqlFormatter(true, "    ");
 
     private final boolean multipleLines;
 
     private final String indent;
 
-    private final int maxValueCountInLine;
-
-    public SqlFormatter(boolean multipleLines, String indent, int maxValueCountInLine) {
+    public SqlFormatter(boolean multipleLines, String indent) {
         this.multipleLines = multipleLines;
         this.indent = indent;
-        this.maxValueCountInLine = maxValueCountInLine;
     }
 
     public boolean isMultipleLines() {
@@ -38,17 +27,9 @@ public final class SqlFormatter {
         return indent;
     }
 
-    public int getMaxValueCountInLine() {
-        return maxValueCountInLine;
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hash(
-                multipleLines,
-                indent,
-                maxValueCountInLine
-        );
+        return Objects.hash(multipleLines, indent);
     }
 
     @Override
@@ -57,7 +38,6 @@ public final class SqlFormatter {
         if (!(o instanceof SqlFormatter)) return false;
         SqlFormatter that = (SqlFormatter) o;
         return multipleLines == that.multipleLines &&
-                maxValueCountInLine == that.maxValueCountInLine &&
                 indent.equals(that.indent);
     }
 
@@ -66,7 +46,6 @@ public final class SqlFormatter {
         return "SqlFormatter{" +
                 "multipleLines=" + multipleLines +
                 ", indent='" + indent + '\'' +
-                ", maxParameterCountInOneLine=" + maxValueCountInLine +
                 '}';
     }
 }

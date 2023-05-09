@@ -93,6 +93,11 @@ public class MutableDeleteImpl
                 .execute(this::executeImpl);
     }
 
+    @Override
+    protected void onFrozen() {
+        deleteQuery.freeze();
+    }
+
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
         freeze();
@@ -180,8 +185,9 @@ public class MutableDeleteImpl
                 .sql(table.getAlias());
         Predicate predicate = deleteQuery.getPredicate();
         if (predicate != null) {
-            builder.sql(" where ");
+            builder.enter(SqlBuilder.ScopeType.WHERE);
             ((Ast) predicate).renderTo(builder);
+            builder.leave();
         }
     }
 }

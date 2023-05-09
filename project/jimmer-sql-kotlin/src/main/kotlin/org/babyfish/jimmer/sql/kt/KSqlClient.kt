@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt
 
+import org.babyfish.jimmer.Input
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
@@ -124,6 +125,18 @@ interface KSqlClient {
 
     fun <E: Any> update(entity: E): KSimpleSaveResult<E> =
         save(entity, SaveMode.UPDATE_ONLY)
+
+    fun <E: Any> save(input: Input<E>, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
+        save(input.toEntity(), mode)
+
+    fun <E: Any> save(input: Input<E>, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =
+        entities.save(input.toEntity(), block = block)
+
+    fun <E: Any> insert(input: Input<E>): KSimpleSaveResult<E> =
+        save(input.toEntity(), SaveMode.INSERT_ONLY)
+
+    fun <E: Any> update(input: Input<E>): KSimpleSaveResult<E> =
+        save(input.toEntity(), SaveMode.UPDATE_ONLY)
 
     fun <E: Any> deleteById(entityType: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
         entities.delete(entityType, id) {

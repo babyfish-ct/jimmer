@@ -41,7 +41,7 @@ import java.util.function.Function;
 
 public class AbstractTest {
 
-    private static final String JDBC_URL = "jdbc:h2:~/jimmer_test_db;database_to_upper=true";
+    protected static final String JDBC_URL = "jdbc:h2:~/jimmer_test_db;database_to_upper=true";
 
     private Map<Class<?>, AutoIds> autoIdMap = new HashMap<>();
 
@@ -198,7 +198,7 @@ public class AbstractTest {
 
     private static class AutoIds {
 
-        private List<Object> ids;
+        private final List<Object> ids;
 
         private int index;
 
