@@ -29,6 +29,9 @@ public class JimmerProperties {
     private final boolean showSql;
 
     @NotNull
+    private final boolean prettySql;
+
+    @NotNull
     private final DatabaseValidation databaseValidation;
 
     @NotNull
@@ -59,6 +62,7 @@ public class JimmerProperties {
             @Nullable String language,
             @Nullable String dialect,
             boolean showSql,
+            boolean prettySql,
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
@@ -119,6 +123,7 @@ public class JimmerProperties {
             }
         }
         this.showSql = showSql;
+        this.prettySql = prettySql;
         if (databaseValidationMode != null && databaseValidation != null) {
             throw new IllegalArgumentException(
                     "Conflict configuration properties: \"jimmer.database-validation.mode\" and " +
@@ -182,6 +187,10 @@ public class JimmerProperties {
 
     public boolean isShowSql() {
         return showSql;
+    }
+
+    public boolean isPrettySql() {
+        return prettySql;
     }
 
     @NotNull

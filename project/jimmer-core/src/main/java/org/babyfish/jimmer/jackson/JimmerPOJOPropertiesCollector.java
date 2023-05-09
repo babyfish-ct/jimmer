@@ -28,15 +28,17 @@ public class JimmerPOJOPropertiesCollector extends POJOPropertiesCollector {
     ) {
         super._addGetterMethod(props, m, ai);
         Class<?> clazz = m.getDeclaringClass();
-        if (ImmutableType.tryGet(clazz) != null) {
-            String implName = _accessorNaming.findNameForRegularGetter(m, m.getName());
-            if(implName == null) {
-                implName = _accessorNaming.findNameForIsGetter(m, m.getName());
-            }
-            if (implName != null) {
+        ImmutableType immutableType = ImmutableType.tryGet(clazz);
+        if (immutableType != null) {
+            if (_accessorNaming.findNameForRegularGetter(m, m.getName()) != null) {
                 return;
             }
-            _property(props, m.getName()).addGetter(m, null, false, true, false);
+            if (_accessorNaming.findNameForIsGetter(m, m.getName()) != null) {
+                return;
+            }
+            if (immutableType.getProps().get(m.getName()) != null) {
+                _property(props, m.getName()).addGetter(m, null, false, true, false);
+            }
         }
     }
 }

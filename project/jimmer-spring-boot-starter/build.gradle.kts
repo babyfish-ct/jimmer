@@ -33,6 +33,7 @@ dependencies {
     compileOnly("io.swagger.core.v3:swagger-annotations:2.2.2")
     compileOnly("io.springfox:springfox-core:3.0.0")
     compileOnly("jakarta.platform:jakarta.jakartaee-api:9.0.0")
+    compileOnly("org.springdoc:springdoc-openapi-common:1.7.0")
 
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:2.7.0")
     testAnnotationProcessor(project(":jimmer-apt"))

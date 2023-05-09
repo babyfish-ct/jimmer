@@ -243,6 +243,9 @@ public class SqlClientConfig {
         } else {
             builder.setExecutor(executor);
         }
+        if (properties.isPrettySql()) {
+            builder.setSqlFormatter(SqlFormatter.PRETTY);
+        }
         builder.setSqlFormatter(sqlFormatter);
         builder.setDatabaseValidationMode(properties.getDatabaseValidation().getMode());
         builder.setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog());
