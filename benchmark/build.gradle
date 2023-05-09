@@ -6,8 +6,12 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
 
+ext {
+    jimmerVersion = "0.7.57"
+}
+
 group 'org.babyfish.jimmer'
-version '0.5.13'
+version "${jimmerVersion}"
 
 repositories {
     mavenCentral()
@@ -15,9 +19,9 @@ repositories {
 
 dependencies {
 
-    implementation 'org.babyfish.jimmer:jimmer-sql-kotlin:0.5.13'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.5.13'
-    ksp 'org.babyfish.jimmer:jimmer-ksp:0.5.13'
+    implementation "org.babyfish.jimmer:jimmer-sql-kotlin:$jimmerVersion"
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:$jimmerVersion"
+    ksp "org.babyfish.jimmer:jimmer-ksp:$jimmerVersion"
 
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
