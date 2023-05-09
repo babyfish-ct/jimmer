@@ -11,6 +11,7 @@ jimmer:
   dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
   database-validation-mode: ERROR
   show-sql: true
-
+  pretty-sql: true
+  
 demo:
   default-tenant: a

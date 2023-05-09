@@ -9,6 +9,7 @@ jimmer:
   language: kotlin
   micro-service-name: ${spring.application.name}
   show-sql: true
+  pretty-sql: true
   executor-context-prefixes:
     - org.babyfish.jimmer.example.cloud.kt.author.AuthorService
   database-validation-mode: ERROR

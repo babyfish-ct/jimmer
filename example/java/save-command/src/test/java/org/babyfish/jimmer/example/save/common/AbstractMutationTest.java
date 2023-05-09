@@ -127,30 +127,14 @@ public abstract class AbstractMutationTest {
     private class RecordSqlExecutor implements Executor {
 
         @Override
-        public <R> R execute(
-                Connection con,
-                String sql,
-                List<Object> variables,
-                ExecutionPurpose purpose,
-                ExecutorContext ctx,
-                StatementFactory statementFactory,
-                SqlFunction<PreparedStatement, R> block
-        ) {
+        public <R> R execute(Args<R> args) {
             executedStatements.add(
                     new ExecutedStatement(
-                            sql,
-                            variables.toArray(new Object[0])
+                            args.sql,
+                            args.variables.toArray(new Object[0])
                     )
             );
-            return DefaultExecutor.INSTANCE.execute(
-                    con,
-                    sql,
-                    variables,
-                    purpose,
-                    ctx,
-                    statementFactory,
-                    block
-            );
+            return DefaultExecutor.INSTANCE.execute(args);
         }
     }
 

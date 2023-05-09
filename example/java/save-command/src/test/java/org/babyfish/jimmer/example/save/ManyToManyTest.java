@@ -71,7 +71,7 @@ public class ManyToManyTest extends AbstractMutationTest {
 
                 // Mapping does not exist, insert it
                 new ExecutedStatement(
-                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?)",
+                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)",
                         10L, 100L
                 )
         );
@@ -347,7 +347,7 @@ public class ManyToManyTest extends AbstractMutationTest {
 
                 // Mapping does not exist, insert it
                 new ExecutedStatement(
-                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values (?, ?)",
+                        "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)",
                         10L, 100L
                 )
         );

@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.DefaultExecutor
+import org.babyfish.jimmer.sql.runtime.Executor
 import org.h2.Driver
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -36,10 +38,16 @@ abstract class AbstractMutationTest {
             setConnectionManager {
                 proceed(connection)
             }
-            setExecutor {
-                executedStatements += ExecutedStatement(sql, *variables.toTypedArray())
-                proceed()
-            }
+            setExecutor(
+                object : Executor {
+                    override fun <R : Any?> execute(args: Executor.Args<R>): R {
+                        executedStatements.add(
+                            ExecutedStatement(args.sql, *args.variables.toTypedArray())
+                        )
+                        return DefaultExecutor.INSTANCE.execute(args)
+                    }
+                }
+            )
             customize(this)
         }
     }

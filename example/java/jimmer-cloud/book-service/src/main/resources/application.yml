@@ -8,6 +8,7 @@ spring:
 jimmer:
   micro-service-name: ${spring.application.name}
   show-sql: true
+  pretty-sql: true
   executor-context-prefixes:
     - org.babyfish.jimmer.example.cloud.book.BookService
   database-validation-mode: ERROR

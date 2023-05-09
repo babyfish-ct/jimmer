@@ -10,6 +10,7 @@ jimmer:
   dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
   database-validation-mode: ERROR
   show-sql: true
+  pretty-sql: true
   executor-context-prefixes:
     - org.babyfish.jimmer.sql.example.graphql.business
 
