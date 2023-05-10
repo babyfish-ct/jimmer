@@ -19,6 +19,7 @@ public class Selectors {
             Connection con,
             String sql,
             List<Object> variables,
+            List<Integer> variableIndices,
             List<Selection<?>> selections,
             ExecutionPurpose purpose
     ) {
@@ -28,6 +29,7 @@ public class Selectors {
                         con,
                         sql,
                         variables,
+                        variableIndices,
                         purpose,
                         null,
                         stmt -> {
@@ -53,6 +55,7 @@ public class Selectors {
             Connection con,
             String sql,
             List<Object> variables,
+            List<Integer> variableIndices,
             List<Selection<?>> selections,
             ExecutionPurpose purpose,
             int batchSize,
@@ -64,6 +67,7 @@ public class Selectors {
                         con,
                         sql,
                         variables,
+                        variableIndices,
                         purpose,
                         null,
                         stmt -> {

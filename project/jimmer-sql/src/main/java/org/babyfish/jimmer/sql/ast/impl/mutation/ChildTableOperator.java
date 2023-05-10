@@ -10,10 +10,10 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.Connection;
@@ -90,13 +90,14 @@ class ChildTableOperator {
         }
         subBuilder.leave();
 
-        Tuple2<String, List<Object>> sqlResult = subBuilder.build(result -> {
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
                     sqlClient.getSqlFormatter(),
                     1,
                     0,
                     result.get_1(),
                     result.get_2(),
+                    result.get_3(),
                     false
             );
             sqlClient.getDialect().paginate(ctx);
@@ -108,6 +109,7 @@ class ChildTableOperator {
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         stmt -> stmt.executeQuery().next()
@@ -198,13 +200,14 @@ class ChildTableOperator {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         PreparedStatement::executeUpdate
@@ -286,13 +289,14 @@ class ChildTableOperator {
 
         addDetachConditions(builder, parentId, retainedChildIds);
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         PreparedStatement::executeUpdate
@@ -315,13 +319,14 @@ class ChildTableOperator {
             builder.sql(" for update");
         }
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         stmt -> {

@@ -3,11 +3,9 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.value
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
+import kotlin.reflect.KClass
 
 object CaseStarter {
     fun <R: Any> match(
@@ -58,6 +56,13 @@ class NonNullCase<R: Any> internal constructor(
 
     fun otherwise(value: KNullableExpression<R>): KNullableExpression<R> =
         NullableCaseExpression(match, value)
+
+    @Suppress("UNCHECKED_CAST")
+    fun otherwise(): KNullableExpression<R> =
+        NullableCaseExpression(
+            match,
+            nullValue((match.value as AbstractKExpression<*>).type.kotlin as KClass<R>)
+        )
 }
 
 class NullableCase<R: Any> internal constructor(
@@ -78,8 +83,16 @@ class NullableCase<R: Any> internal constructor(
     fun otherwise(value: KExpression<R>): KNullableExpression<R> =
         NullableCaseExpression(match, value)
 
-    fun otherwise(value: R): KNullableExpression<R> =
-        NullableCaseExpression(match, value(value))
+    @Suppress("UNCHECKED_CAST")
+    fun otherwise(value: R? = null): KNullableExpression<R> =
+        if (value !== null) {
+            NullableCaseExpression(match, value(value))
+        } else {
+            NullableCaseExpression(
+                match,
+                nullValue((match.value as AbstractKExpression<*>).type.kotlin as KClass<R>)
+            )
+        }
 }
 
 internal data class Match<R: Any>(
@@ -89,7 +102,7 @@ internal data class Match<R: Any>(
 ) {
     fun accept(visitor: AstVisitor) {
         prev?.accept(visitor)
-        (value as Ast).accept(visitor)
+        (cond as Ast).accept(visitor)
         (value as Ast).accept(visitor)
     }
 

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.query.TypedRootQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
@@ -69,8 +70,16 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     }
 
     private List<R> executeImpl(Connection con) {
-        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
-        return Selectors.select(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY);
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        return Selectors.select(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                ExecutionPurpose.QUERY
+        );
     }
 
     @Override
@@ -97,11 +106,21 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
     }
 
     private void forEachImpl(Connection con, int batchSize, Consumer<R> consumer) {
-        Tuple2<String, List<Object>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
-        Selectors.forEach(sqlClient, con, sqlResult.get_1(), sqlResult.get_2(), selections, ExecutionPurpose.QUERY, batchSize, consumer);
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = preExecute(new SqlBuilder(new AstContext(sqlClient)));
+        Selectors.forEach(
+                sqlClient,
+                con,
+                sqlResult.get_1(),
+                sqlResult.get_2(),
+                sqlResult.get_3(),
+                selections,
+                ExecutionPurpose.QUERY,
+                batchSize,
+                consumer
+        );
     }
 
-    private Tuple2<String, List<Object>> preExecute(SqlBuilder builder) {
+    private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
         AstVisitor visitor = new UseTableVisitor(builder.getAstContext());
         accept(visitor);
         renderTo(builder);

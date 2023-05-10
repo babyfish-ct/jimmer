@@ -60,12 +60,14 @@ public class ServiceWriter extends TsCodeWriter {
                     if (!operation.getParameters().isEmpty()) {
                         boolean optionsOptional = operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType);
                         code("options");
-                        codeIf(optionsOptional, '?');
                         code(": ");
                         if (getContext().isAnonymous()) {
                             optionsBody(operation);
                         } else {
                             optionsName(operation);
+                        }
+                        if (optionsOptional) {
+                            code(" | undefined");
                         }
                     }
                 })

@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
@@ -453,6 +454,7 @@ class Saver {
                                 con,
                                 sql,
                                 Collections.emptyList(),
+                                data.getSqlClient().getSqlFormatter().isPretty() ? Collections.emptyList() : null,
                                 ExecutionPurpose.MUTATE,
                                 null,
                                 stmt -> {
@@ -571,13 +573,14 @@ class Saver {
             }
         }
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         Object insertedResult = data.getSqlClient().getExecutor().execute(
                 new Executor.Args<>(
                         data.getSqlClient(),
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         generateKeys ?
                                 (c, s) ->
@@ -712,13 +715,14 @@ class Saver {
         }
         builder.leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         int rowCount = data.getSqlClient().getExecutor().execute(
                 new Executor.Args<>(
                         data.getSqlClient(),
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         PreparedStatement::executeUpdate

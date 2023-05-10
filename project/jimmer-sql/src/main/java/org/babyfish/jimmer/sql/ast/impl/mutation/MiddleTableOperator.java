@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -117,12 +118,13 @@ class MiddleTableOperator {
                 .sql(" = ")
                 .variable(id)
                 .leave();
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                sqlResult.get_3(),
                 Collections.singletonList(targetIdExpression),
                 ExecutionPurpose.MUTATE
         );
@@ -161,12 +163,13 @@ class MiddleTableOperator {
 
         reader.reset();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         List<Tuple2<Object, Object>> tuples = Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                sqlResult.get_3(),
                 Arrays.asList(sourceIdExpression, targetIdExpression),
                 ExecutionPurpose.MUTATE
         );
@@ -192,12 +195,13 @@ class MiddleTableOperator {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         List<Tuple2<Object, Object>> tuples = Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                sqlResult.get_3(),
                 Arrays.asList(sourceIdExpression, targetIdExpression),
                 ExecutionPurpose.MUTATE
         );
@@ -266,13 +270,14 @@ class MiddleTableOperator {
             }
             builder.leave();
         }
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         PreparedStatement::executeUpdate
@@ -331,13 +336,14 @@ class MiddleTableOperator {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
                 new Executor.Args<>(
                         sqlClient,
                         con,
                         sqlResult.get_1(),
                         sqlResult.get_2(),
+                        sqlResult.get_3(),
                         ExecutionPurpose.MUTATE,
                         null,
                         PreparedStatement::executeUpdate
@@ -376,7 +382,7 @@ class MiddleTableOperator {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient
                 .getExecutor()
                 .execute(
@@ -385,6 +391,7 @@ class MiddleTableOperator {
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 ExecutionPurpose.DELETE,
                                 null,
                                 PreparedStatement::executeUpdate

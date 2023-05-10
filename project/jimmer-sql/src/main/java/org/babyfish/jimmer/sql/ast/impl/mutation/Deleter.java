@@ -10,11 +10,11 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteResult;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -191,7 +191,7 @@ public class Deleter {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         List<Object> childIds = data
                 .getSqlClient()
                 .getExecutor()
@@ -201,6 +201,7 @@ public class Deleter {
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 ExecutionPurpose.DELETE,
                                 null,
                                 stmt -> {
@@ -286,7 +287,7 @@ public class Deleter {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         int affectedRowCount = data
                 .getSqlClient()
                 .getExecutor()
@@ -296,6 +297,7 @@ public class Deleter {
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 ExecutionPurpose.DELETE,
                                 null,
                                 PreparedStatement::executeUpdate
@@ -329,7 +331,7 @@ public class Deleter {
         }
         builder.leave().leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         int affectedRowCount = data
                 .getSqlClient()
                 .getExecutor()
@@ -339,6 +341,7 @@ public class Deleter {
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 ExecutionPurpose.DELETE,
                                 null,
                                 PreparedStatement::executeUpdate

@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -18,7 +19,6 @@ import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.dialect.UpdateJoin;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -132,7 +132,7 @@ public class MutableUpdateImpl
 
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
         renderTo(builder);
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return getSqlClient()
                 .getExecutor()
                 .execute(
@@ -141,6 +141,7 @@ public class MutableUpdateImpl
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 getPurpose(),
                                 null,
                                 PreparedStatement::executeUpdate
@@ -152,12 +153,13 @@ public class MutableUpdateImpl
 
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
         renderAsSelect(builder, null);
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         List<ImmutableSpi> rows = Selectors.select(
                 getSqlClient(),
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                sqlResult.get_3(),
                 Collections.singletonList(this.getTable()),
                 ExecutionPurpose.UPDATE
         );
@@ -182,6 +184,7 @@ public class MutableUpdateImpl
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 getPurpose(),
                                 null,
                                 PreparedStatement::executeUpdate
@@ -199,6 +202,7 @@ public class MutableUpdateImpl
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                sqlResult.get_3(),
                 Collections.singletonList(this.getTable()),
                 ExecutionPurpose.UPDATE
         );

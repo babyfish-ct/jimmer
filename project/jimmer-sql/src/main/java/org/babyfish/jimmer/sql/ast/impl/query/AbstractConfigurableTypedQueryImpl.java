@@ -88,6 +88,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                                 data.getOffset(),
                                 result.get_1(),
                                 result.get_2(),
+                                result.get_3(),
                                 false
                         );
                         baseQuery.getSqlClient().getDialect().paginate(ctx);
@@ -189,6 +190,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     data.getOffset(),
                     result.get_1(),
                     result.get_2(),
+                    result.get_3(),
                     true
             );
             baseQuery.getSqlClient().getDialect().paginate(ctx);

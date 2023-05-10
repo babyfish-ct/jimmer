@@ -27,6 +27,8 @@ public class SqlBuilder {
 
     private final List<Object> variables = new ArrayList<>();
 
+    private final List<Integer> variableIndices;
+
     private boolean indentRequired;
 
     private int childBuilderCount;
@@ -39,12 +41,22 @@ public class SqlBuilder {
         this.ctx = ctx;
         this.parent = null;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
+        if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
+            this.variableIndices = new ArrayList<>();
+        } else {
+            this.variableIndices = null;
+        }
     }
 
     private SqlBuilder(SqlBuilder parent) {
         this.ctx = parent.ctx;
         this.parent = parent;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
+        if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
+            this.variableIndices = new ArrayList<>();
+        } else {
+            this.variableIndices = null;
+        }
         parent.childBuilderCount++;
     }
 
@@ -452,6 +464,9 @@ public class SqlBuilder {
             preAppend();
             builder.append('?');
             variables.add(value);
+            if (variableIndices != null) {
+                variableIndices.add(builder.length());
+            }
         } else {
             ScalarProvider<Object, Object> scalarProvider =
                     ctx.getSqlClient().getScalarProvider((Class<Object>) value.getClass());
@@ -475,6 +490,9 @@ public class SqlBuilder {
             preAppend();
             builder.append('?');
             variables.add(finalValue);
+            if (variableIndices != null) {
+                variableIndices.add(builder.length());
+            }
         }
         return this;
     }
@@ -564,24 +582,34 @@ public class SqlBuilder {
         preAppend();
         builder.append('?');
         variables.add(finalValue);
+        if (variableIndices != null) {
+            variableIndices.add(builder.length());
+        }
     }
 
     public SqlBuilder createChildBuilder() {
         return new SqlBuilder(this);
     }
 
-    public Tuple2<String, List<Object>> build() {
+    public Tuple3<String, List<Object>, List<Integer>> build() {
         return build(null);
     }
 
-    public Tuple2<String, List<Object>> build(
-            Function<Tuple2<String, List<Object>>, Tuple2<String, List<Object>>> transformer
+    public Tuple3<String, List<Object>, List<Integer>> build(
+            Function<
+                    Tuple3<String, List<Object>, List<Integer>>,
+                    Tuple3<String, List<Object>, List<Integer>>
+            > transformer
     ) {
         if (scope != null) {
             throw new IllegalStateException("Internal bug: Did not leave all scopes");
         }
         validate();
-        Tuple2<String, List<Object>> result = new Tuple2<>(builder.toString(), variables);
+        Tuple3<String, List<Object>, List<Integer>> result = new Tuple3<>(
+                builder.toString(),
+                variables,
+                variableIndices
+        );
         if (transformer != null) {
             result = transformer.apply(result);
         }
@@ -590,6 +618,9 @@ public class SqlBuilder {
             preAppend();
             p.builder.append(result.get_1());
             p.variables.addAll(result.get_2());
+            if (p.variableIndices != null) {
+                p.variableIndices.addAll(result.get_3());
+            }
             while (p != null) {
                 --p.childBuilderCount;
                 p = p.parent;

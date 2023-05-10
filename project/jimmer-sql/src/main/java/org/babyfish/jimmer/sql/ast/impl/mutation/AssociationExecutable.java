@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -168,12 +169,13 @@ class AssociationExecutable implements Executable<Integer> {
         }
         builder.leave();
 
-        Tuple2<String, List<Object>> sqlResult = builder.build();
+        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
                 sqlResult.get_2(),
+                sqlResult.get_3(),
                 Arrays.asList(expressionPair.get_1(), expressionPair.get_2()),
                 ExecutionPurpose.QUERY
         );

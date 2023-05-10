@@ -29,6 +29,9 @@ public interface Executor {
 
         public final List<Object> variables;
 
+        @Nullable
+        public final List<Integer> variableIndices;
+
         public final ExecutionPurpose purpose;
 
         @Nullable
@@ -43,6 +46,7 @@ public interface Executor {
                 Connection con,
                 String sql,
                 List<Object> variables,
+                List<Integer> variableIndices,
                 ExecutionPurpose purpose,
                 StatementFactory statementFactory,
                 SqlFunction<PreparedStatement, R> block
@@ -51,6 +55,7 @@ public interface Executor {
             this.con = con;
             this.sql = sql;
             this.variables = variables;
+            this.variableIndices = variableIndices;
             this.purpose = purpose;
             this.ctx = ExecutorContext.create(sqlClient);
             this.statementFactory = statementFactory;

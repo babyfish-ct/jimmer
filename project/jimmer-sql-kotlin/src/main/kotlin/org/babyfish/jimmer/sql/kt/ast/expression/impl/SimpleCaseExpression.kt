@@ -3,11 +3,9 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.value
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
+import kotlin.reflect.KClass
 
 class SimpleCaseStarter<T: Any> internal constructor(
     private val start: KExpression<T>
@@ -97,6 +95,13 @@ class NonNullSimpleCase<T: Any, R: Any> internal constructor(
 
     fun otherwise(value: KNullableExpression<R>): KNullableExpression<R> =
         NullableSimpleCaseExpression(match, value)
+
+    @Suppress("UNCHECKED_CAST")
+    fun otherwise(): KNullableExpression<R> =
+        NullableSimpleCaseExpression(
+            match,
+            nullValue((match.value as AbstractKExpression<*>).type.kotlin as KClass<R>)
+        )
 }
 
 class NullableSimpleCase<T: Any, R: Any> internal constructor(
@@ -129,8 +134,16 @@ class NullableSimpleCase<T: Any, R: Any> internal constructor(
     fun otherwise(value: KExpression<R>): KNullableExpression<R> =
         NullableSimpleCaseExpression(match, value)
 
-    fun otherwise(value: R): KNullableExpression<R> =
-        NullableSimpleCaseExpression(match, value(value))
+    @Suppress("UNCHECKED_CAST")
+    fun otherwise(value: R? = null): KNullableExpression<R> =
+        if (value !== null) {
+            NullableSimpleCaseExpression(match, value(value))
+        } else {
+            NullableSimpleCaseExpression(
+                match,
+                nullValue((match.value as AbstractKExpression<*>).type.kotlin as KClass<R>)
+            )
+        }
 }
 
 internal data class SimpleMatch<T: Any, R: Any>(

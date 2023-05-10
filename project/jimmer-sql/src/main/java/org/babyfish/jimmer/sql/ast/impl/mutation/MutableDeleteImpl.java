@@ -16,7 +16,7 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableDelete;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.*;
 
@@ -122,13 +122,14 @@ public class MutableDeleteImpl
             astContext.pushStatement(this);
             try {
                 renderDirectly(builder);
-                Tuple2<String, List<Object>> sqlResult = builder.build();
+                Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
                 return sqlClient.getExecutor().execute(
                         new Executor.Args<>(
                                 getSqlClient(),
                                 con,
                                 sqlResult.get_1(),
                                 sqlResult.get_2(),
+                                sqlResult.get_3(),
                                 getPurpose(),
                                 null,
                                 PreparedStatement::executeUpdate

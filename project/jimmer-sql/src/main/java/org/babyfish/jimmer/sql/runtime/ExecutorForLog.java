@@ -88,6 +88,8 @@ class ExecutorForLog implements Executor {
         prettyPrint(
                 args.sql,
                 args.variables,
+                args.variableIndices,
+                args.purpose,
                 affectedRowCount,
                 throwable,
                 millis,
@@ -106,6 +108,8 @@ class ExecutorForLog implements Executor {
     private void prettyPrint(
             String sql,
             List<Object> variables,
+            List<Integer> variableIndices,
+            ExecutionPurpose purpose,
             int affectedRowCount,
             Throwable throwable,
             long millis,
@@ -115,41 +119,26 @@ class ExecutorForLog implements Executor {
         StringBuilder builder = new StringBuilder();
 
         builder.append("===>SQL: \n");
-        int len = sql.length();
-        int cloneFrom = 0;
-        char expectedEndChar = '\0';
-        int paramIndex = 0;
-        for (int i = 0; i < len; i++) {
-            char c = sql.charAt(i);
-            if (expectedEndChar != '\0') {
-                if (c == expectedEndChar) {
-                    expectedEndChar = '\0';
-                }
-                continue;
+        if (variableIndices == null) {
+            builder.append(sql);
+        } else {
+            int cloneFrom = 0;
+            int paramIndex = 0;
+            for (int index : variableIndices) {
+                builder.append(sql, cloneFrom, index);
+                cloneFrom = index;
+                builder.append(" /* ");
+                appendEmbeddedVariable(builder, variables.get(paramIndex++), maxVariableContentLength);
+                builder.append(" */");
             }
-            switch (c) {
-                case '`':
-                    expectedEndChar = '`';
-                    continue;
-                case '[':
-                    expectedEndChar = ']';
-                    continue;
-                case '\"':
-                    expectedEndChar = '\"';
-                    continue;
-                case '?':
-                    builder.append(sql, cloneFrom, i + 1);
-                    cloneFrom = i + 1;
-                    builder.append(" /* ");
-                    appendEmbeddedVariable(builder, variables.get(paramIndex++), maxVariableContentLength);
-                    builder.append(" */");
-                    break;
+            int len = sql.length();
+            if (cloneFrom < len) {
+                builder.append(sql, cloneFrom, len);
             }
-        }
-        if (cloneFrom < len) {
-            builder.append(sql, cloneFrom, len);
         }
         builder.append('\n');
+
+        builder.append("Purpose: ").append(purpose).append('\n');
 
         if (affectedRowCount != -1) {
             builder.append("Affected row count: ").append(affectedRowCount).append('\n');
@@ -205,22 +194,5 @@ class ExecutorForLog implements Executor {
         } else {
             builder.append(variable);
         }
-    }
-
-    public static void main(String[] args) {
-        ExecutorForLog executor = new ExecutorForLog(DefaultExecutor.INSTANCE);
-        executor.prettyPrint(
-                "select * from book where\n" +
-                        "id in(\n" +
-                        "    ?,\n" +
-                        "    ?\n" +
-                        ")",
-                Arrays.asList(1L, 2L),
-                12,
-                null,
-                10,
-                null,
-                100
-        );
     }
 }

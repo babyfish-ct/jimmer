@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.query;
 
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.PaginationContext;
 import org.babyfish.jimmer.sql.runtime.SqlFormatter;
 
@@ -19,26 +19,38 @@ public class PaginationContextImpl implements PaginationContext {
     
     private final List<Object> originVariables;
 
+    private final List<Integer> originVariableIndices;
+
     private final boolean idOnly;
 
     private final StringBuilder builder = new StringBuilder();
 
     private final List<Object> variables = new ArrayList<>();
 
+    private final List<Integer> variableIndices;
+
     private boolean originApplied = false;
 
     public PaginationContextImpl(
-            SqlFormatter formatter, int limit,
+            SqlFormatter formatter,
+            int limit,
             int offset,
             String originSql,
             List<Object> originVariables,
+            List<Integer> originVariableIndices,
             boolean idOnly) {
-        sqlFormatter = formatter;
+        this.sqlFormatter = formatter;
         this.limit = limit;
         this.offset = offset;
         this.originSql = originSql;
         this.originVariables = originVariables;
+        this.originVariableIndices = originVariableIndices;
         this.idOnly = idOnly;
+        if (originVariableIndices != null) {
+            variableIndices = new ArrayList<>();
+        } else {
+            variableIndices = null;
+        }
     }
 
     @Override
@@ -63,6 +75,9 @@ public class PaginationContextImpl implements PaginationContext {
         }
         builder.append(originSql);
         variables.addAll(originVariables);
+        if (variableIndices != null) {
+            variableIndices.addAll(originVariableIndices);
+        }
         originApplied = true;
         return this;
     }
@@ -96,15 +111,18 @@ public class PaginationContextImpl implements PaginationContext {
         if (!originApplied) {
             throw new IllegalStateException("Cannot add variables before the origin() is called");
         }
-        variables.add(value);
         builder.append("?");
+        variables.add(value);
+        if (variableIndices != null) {
+            variableIndices.add(builder.length());
+        }
         return this;
     }
 
-    public Tuple2<String, List<Object>> build() {
+    public Tuple3<String, List<Object>, List<Integer>> build() {
         if (!originApplied) {
             throw new IllegalStateException("origin() has not been called");
         }
-        return new Tuple2<>(builder.toString(), variables);
+        return new Tuple3<>(builder.toString(), variables, variableIndices);
     }
 }
