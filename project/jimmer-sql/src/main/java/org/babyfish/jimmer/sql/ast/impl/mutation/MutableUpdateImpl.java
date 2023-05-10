@@ -428,7 +428,7 @@ public class MutableUpdateImpl
         private Target(Table<?> table, ImmutableProp prop, PropExpression<?> expr) {
             this.table = table;
             this.prop = prop;
-            this.expr = (PropExpressionImplementor)expr;
+            this.expr = (PropExpressionImplementor<?>)expr;
         }
 
         static Target of(PropExpression<?> expr, MetadataStrategy strategy) {
@@ -463,12 +463,12 @@ public class MutableUpdateImpl
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Target target = (Target) o;
-            return table.equals(target.table) && prop.equals(target.prop);
+            return expr.equals(target.expr);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(table, prop);
+            return expr.hashCode();
         }
     }
 

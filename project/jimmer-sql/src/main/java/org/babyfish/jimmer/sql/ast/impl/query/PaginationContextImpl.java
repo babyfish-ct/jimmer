@@ -19,7 +19,7 @@ public class PaginationContextImpl implements PaginationContext {
     
     private final List<Object> originVariables;
 
-    private final List<Integer> originVariableIndices;
+    private final List<Integer> originVariablePositions;
 
     private final boolean idOnly;
 
@@ -27,7 +27,7 @@ public class PaginationContextImpl implements PaginationContext {
 
     private final List<Object> variables = new ArrayList<>();
 
-    private final List<Integer> variableIndices;
+    private final List<Integer> variablePositions;
 
     private boolean originApplied = false;
 
@@ -37,19 +37,19 @@ public class PaginationContextImpl implements PaginationContext {
             int offset,
             String originSql,
             List<Object> originVariables,
-            List<Integer> originVariableIndices,
+            List<Integer> originVariablePositions,
             boolean idOnly) {
         this.sqlFormatter = formatter;
         this.limit = limit;
         this.offset = offset;
         this.originSql = originSql;
         this.originVariables = originVariables;
-        this.originVariableIndices = originVariableIndices;
+        this.originVariablePositions = originVariablePositions;
         this.idOnly = idOnly;
-        if (originVariableIndices != null) {
-            variableIndices = new ArrayList<>();
+        if (originVariablePositions != null) {
+            variablePositions = new ArrayList<>();
         } else {
-            variableIndices = null;
+            variablePositions = null;
         }
     }
 
@@ -75,8 +75,8 @@ public class PaginationContextImpl implements PaginationContext {
         }
         builder.append(originSql);
         variables.addAll(originVariables);
-        if (variableIndices != null) {
-            variableIndices.addAll(originVariableIndices);
+        if (variablePositions != null) {
+            variablePositions.addAll(originVariablePositions);
         }
         originApplied = true;
         return this;
@@ -113,8 +113,8 @@ public class PaginationContextImpl implements PaginationContext {
         }
         builder.append("?");
         variables.add(value);
-        if (variableIndices != null) {
-            variableIndices.add(builder.length());
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
         }
         return this;
     }
@@ -123,6 +123,6 @@ public class PaginationContextImpl implements PaginationContext {
         if (!originApplied) {
             throw new IllegalStateException("origin() has not been called");
         }
-        return new Tuple3<>(builder.toString(), variables, variableIndices);
+        return new Tuple3<>(builder.toString(), variables, variablePositions);
     }
 }

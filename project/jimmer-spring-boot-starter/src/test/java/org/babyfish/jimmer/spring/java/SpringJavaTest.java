@@ -137,7 +137,7 @@ public class SpringJavaTest extends AbstractTest {
         public Executor executor() {
             return new Executor() {
                 @Override
-                public <R> R execute(Args<R> args) {
+                public <R> R execute(@NotNull Args<R> args) {
                     SQL_STATEMENTS.add(args.sql);
                     return DefaultExecutor.INSTANCE.execute(args);
                 }

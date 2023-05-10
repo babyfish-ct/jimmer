@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +10,10 @@ import java.util.*;
 class ExecutorForLog implements Executor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExecutorForLog.class);
+
+    private static final String REQUEST = "===>";
+
+    private static final String RESPONSE = "<===";
 
     private final Executor raw;
 
@@ -32,9 +37,36 @@ class ExecutorForLog implements Executor {
             return raw.execute(args);
         }
         if (args.sqlClient.getSqlFormatter().isPretty()) {
-            return prettyLog(args, args.sqlClient.getSqlFormatter().getMaxVariableContentLength());
+            return prettyLog(args);
         }
         return simpleLog(args);
+    }
+
+    @Override
+    public void openCursor(
+            long cursorId,
+            String sql,
+            List<Object> variables,
+            List<Integer> variablePositions,
+            ExecutionPurpose purpose,
+            @Nullable ExecutorContext ctx,
+            JSqlClientImplementor sqlClient
+    ) {
+        if (!LOGGER.isInfoEnabled()) {
+            return;
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("Open cursor(").append(cursorId).append(')').append(REQUEST).append('\n');
+        appendPrettyRequest(
+                builder,
+                sql,
+                variables,
+                variablePositions,
+                purpose,
+                ctx,
+                sqlClient
+        );
+        LOGGER.info(builder.toString());
     }
 
     private <R> R simpleLog(Args<R> args) {
@@ -70,7 +102,7 @@ class ExecutorForLog implements Executor {
         return raw.execute(args);
     }
 
-    private <R> R prettyLog(Args<R> args, int maxVariableContentLength) {
+    private <R> R prettyLog(Args<R> args) {
         R result = null;
         Throwable throwable = null;
         long millis = System.currentTimeMillis();
@@ -85,17 +117,38 @@ class ExecutorForLog implements Executor {
         if ((ch == 'i' || ch == 'u' || ch == 'd') && result instanceof Integer) {
             affectedRowCount = (Integer)result;
         }
-        prettyPrint(
-                args.sql,
-                args.variables,
-                args.variableIndices,
-                args.purpose,
+
+        StringBuilder builder = new StringBuilder();
+        if (args.closingCursorId == null) {
+            builder.append("Execute SQL").append(REQUEST).append('\n');
+            appendPrettyRequest(
+                    builder,
+                    args.sql,
+                    args.variables,
+                    args.variablePositions,
+                    args.purpose,
+                    args.ctx,
+                    args.sqlClient
+            );
+        }
+        appendPrettyResponse(
+                builder,
                 affectedRowCount,
                 throwable,
-                millis,
-                args.ctx,
-                maxVariableContentLength
+                millis
         );
+        if (args.closingCursorId != null) {
+            builder.append(RESPONSE).append("Close cursor(").append(args.closingCursorId).append(')');
+        } else {
+            Long currentCourseId = Cursors.currentCursorId();
+            if (currentCourseId != null) {
+                builder.append("CursorId: ").append(currentCourseId).append('\n');
+            }
+            builder.append(RESPONSE).append("Execute SQL");
+        }
+
+        LOGGER.info(builder.toString());
+
         if (throwable instanceof RuntimeException) {
             throw (RuntimeException)throwable;
         }
@@ -105,41 +158,45 @@ class ExecutorForLog implements Executor {
         return result;
     }
 
-    private void prettyPrint(
+    private void appendPrettyRequest(
+            StringBuilder builder,
             String sql,
             List<Object> variables,
-            List<Integer> variableIndices,
+            List<Integer> variablePositions,
             ExecutionPurpose purpose,
-            int affectedRowCount,
-            Throwable throwable,
-            long millis,
             ExecutorContext ctx,
-            int maxVariableContentLength
+            JSqlClientImplementor sqlClient
     ) {
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("===>SQL: \n");
-        if (variableIndices == null) {
-            builder.append(sql);
-        } else {
-            int cloneFrom = 0;
-            int paramIndex = 0;
-            for (int index : variableIndices) {
-                builder.append(sql, cloneFrom, index);
-                cloneFrom = index;
-                builder.append(" /* ");
-                appendEmbeddedVariable(builder, variables.get(paramIndex++), maxVariableContentLength);
-                builder.append(" */");
-            }
-            int len = sql.length();
-            if (cloneFrom < len) {
-                builder.append(sql, cloneFrom, len);
+        if (ctx != null) {
+            builder.append("--- Business related stack trace information ---\n");
+            for (StackTraceElement element : ctx.getMatchedElements()) {
+                builder.append(element).append('\n');
             }
         }
-        builder.append('\n');
 
         builder.append("Purpose: ").append(purpose).append('\n');
 
+        builder.append("SQL: ");
+        if (variablePositions == null) {
+            builder.append(sql);
+        } else {
+            appendSqlWithEmbeddedVariables(
+                    builder,
+                    sql,
+                    variables,
+                    variablePositions,
+                    sqlClient.getSqlFormatter().getMaxVariableContentLength()
+            );
+        }
+        builder.append('\n');
+    }
+
+    private void appendPrettyResponse(
+            StringBuilder builder,
+            int affectedRowCount,
+            Throwable throwable,
+            long millis
+    ) {
         if (affectedRowCount != -1) {
             builder.append("Affected row count: ").append(affectedRowCount).append('\n');
         }
@@ -149,18 +206,31 @@ class ExecutorForLog implements Executor {
             builder.append("JDBC response status: failed<").append(throwable.getClass().getName()).append(">\n");
         }
         builder.append("Time cost: ").append(millis).append("ms\n");
-
-        if (ctx != null) {
-            builder.append("--- Business related stack trace information ---\n");
-            for (StackTraceElement element : ctx.getMatchedElements()) {
-                builder.append(element).append('\n');
-            }
-        }
-        builder.append("<===");
-        LOGGER.info(builder.toString());
     }
 
-    private void appendEmbeddedVariable(
+    private static void appendSqlWithEmbeddedVariables(
+            StringBuilder builder,
+            String sql,
+            List<Object> variables,
+            List<Integer> variablePositions,
+            int maxVariableContentLength
+    ) {
+        int cloneFrom = 0;
+        int paramIndex = 0;
+        for (int index : variablePositions) {
+            builder.append(sql, cloneFrom, index);
+            cloneFrom = index;
+            builder.append(" /* ");
+            appendEmbeddedVariable(builder, variables.get(paramIndex++), maxVariableContentLength);
+            builder.append(" */");
+        }
+        int len = sql.length();
+        if (cloneFrom < len) {
+            builder.append(sql, cloneFrom, len);
+        }
+    }
+
+    private static void appendEmbeddedVariable(
             StringBuilder builder,
             Object variable,
             int maxVariableContentLength

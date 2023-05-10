@@ -29,16 +29,18 @@ public class StatementTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient()
                         .createUpdate(transform)
+                        .set(transform.target().rightBottom().x(), transform.target().rightBottom().x().plus(100L))
                         .set(transform.target().rightBottom().y(), transform.target().rightBottom().y().plus(100L))
                         .where(transform.id().eq(1L)),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "update TRANSFORM tb_1_ " +
-                                        "set TARGET_BOTTOM = tb_1_.TARGET_BOTTOM + ? " +
+                                "update TRANSFORM tb_1_ set " +
+                                        "TARGET_RIGHT = tb_1_.TARGET_RIGHT + ?, " +
+                                        "TARGET_BOTTOM = tb_1_.TARGET_BOTTOM + ? " +
                                         "where tb_1_.ID = ?"
                         );
-                        it.variables(100L, 1L);
+                        it.variables(100L, 100L, 1L);
                     });
                     ctx.rowCount(1);
                 }

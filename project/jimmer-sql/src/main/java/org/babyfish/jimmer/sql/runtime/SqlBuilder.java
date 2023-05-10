@@ -27,7 +27,7 @@ public class SqlBuilder {
 
     private final List<Object> variables = new ArrayList<>();
 
-    private final List<Integer> variableIndices;
+    private final List<Integer> variablePositions;
 
     private boolean indentRequired;
 
@@ -42,9 +42,9 @@ public class SqlBuilder {
         this.parent = null;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
         if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
-            this.variableIndices = new ArrayList<>();
+            this.variablePositions = new ArrayList<>();
         } else {
-            this.variableIndices = null;
+            this.variablePositions = null;
         }
     }
 
@@ -53,9 +53,9 @@ public class SqlBuilder {
         this.parent = parent;
         this.formatter = ctx.getSqlClient().getSqlFormatter();
         if (ctx.getSqlClient().getSqlFormatter().isPretty()) {
-            this.variableIndices = new ArrayList<>();
+            this.variablePositions = new ArrayList<>();
         } else {
-            this.variableIndices = null;
+            this.variablePositions = null;
         }
         parent.childBuilderCount++;
     }
@@ -464,8 +464,8 @@ public class SqlBuilder {
             preAppend();
             builder.append('?');
             variables.add(value);
-            if (variableIndices != null) {
-                variableIndices.add(builder.length());
+            if (variablePositions != null) {
+                variablePositions.add(builder.length());
             }
         } else {
             ScalarProvider<Object, Object> scalarProvider =
@@ -490,8 +490,8 @@ public class SqlBuilder {
             preAppend();
             builder.append('?');
             variables.add(finalValue);
-            if (variableIndices != null) {
-                variableIndices.add(builder.length());
+            if (variablePositions != null) {
+                variablePositions.add(builder.length());
             }
         }
         return this;
@@ -582,8 +582,8 @@ public class SqlBuilder {
         preAppend();
         builder.append('?');
         variables.add(finalValue);
-        if (variableIndices != null) {
-            variableIndices.add(builder.length());
+        if (variablePositions != null) {
+            variablePositions.add(builder.length());
         }
     }
 
@@ -608,7 +608,7 @@ public class SqlBuilder {
         Tuple3<String, List<Object>, List<Integer>> result = new Tuple3<>(
                 builder.toString(),
                 variables,
-                variableIndices
+                variablePositions
         );
         if (transformer != null) {
             result = transformer.apply(result);
@@ -618,8 +618,8 @@ public class SqlBuilder {
             preAppend();
             p.builder.append(result.get_1());
             p.variables.addAll(result.get_2());
-            if (p.variableIndices != null) {
-                p.variableIndices.addAll(result.get_3());
+            if (p.variablePositions != null) {
+                p.variablePositions.addAll(result.get_3());
             }
             while (p != null) {
                 --p.childBuilderCount;
