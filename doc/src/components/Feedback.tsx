@@ -98,5 +98,16 @@ const ITEMS: ReadonlyArray<{
                 <li>能显著减少业务系统代码量</li>
             </ul>
         )
+    },
+    {
+        author: "Leon",
+        company: "个人开发者",
+        content: (
+            <ul>
+                <li>强类型DSL + 比Exposed更丰富强大的功能 -&gt; 开发体验与效率最大化</li>
+                <li>依赖于jimmer任意数据结构查询与保存能力，消灭了Mybatis手写sql的烦恼，同时还解决DTO爆炸的问题</li>
+                <li>缓存一致与透明，减少大量繁杂工作</li>
+            </ul>
+        )
     }
 ];
