@@ -1,14 +1,17 @@
 package org.babyfish.jimmer.sql.json;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple5;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapper;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapperDraft;
 import org.babyfish.jimmer.sql.model.pg.JsonWrapperTable;
 import org.babyfish.jimmer.sql.model.pg.Point;
+import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.postgresql.util.PGobject;
 
 import java.util.*;
 
@@ -139,7 +142,7 @@ public class ScalarProviderTest extends AbstractJsonTest {
 
     @Test
     public void testNull() {
-        sqlClient().getEntities().save(
+        sqlClient().getEntities().saveCommand(
                 JsonWrapperDraft.$.produce(draft -> {
                     draft.setId(1L);
                     draft.setPoint(null);
@@ -148,6 +151,16 @@ public class ScalarProviderTest extends AbstractJsonTest {
                     draft.setComplexList(null);
                     draft.setComplexMap(null);
                 })
+        ).setMode(SaveMode.INSERT_ONLY).execute();
+        sql(
+                "insert into pg_json_wrapper(ID, json_1, json_2, json_3, json_4, json_5) " +
+                        "values(?, ?, ?, ?, ?, ?)",
+                1L,
+                new DbNull(PGobject.class),
+                new DbNull(PGobject.class),
+                new DbNull(PGobject.class),
+                new DbNull(PGobject.class),
+                new DbNull(PGobject.class)
         );
     }
 
