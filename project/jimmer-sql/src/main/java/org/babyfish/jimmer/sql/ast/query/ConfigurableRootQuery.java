@@ -37,6 +37,11 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
     ConfigurableRootQuery<T, R> distinct();
 
     @NewChain
+    default ConfigurableRootQuery<T, R> limit(int limit) {
+        return limit(limit, 0);
+    }
+
+    @NewChain
     ConfigurableRootQuery<T, R> limit(int limit, int offset);
 
     @NewChain

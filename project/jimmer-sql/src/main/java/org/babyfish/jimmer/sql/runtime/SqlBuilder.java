@@ -57,7 +57,9 @@ public class SqlBuilder {
         } else {
             this.variablePositions = null;
         }
-        parent.childBuilderCount++;
+        for (SqlBuilder p = parent; p != null; p = p.parent) {
+            p.childBuilderCount++;
+        }
     }
 
     public AstContext getAstContext() {

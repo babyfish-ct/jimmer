@@ -152,7 +152,7 @@ class QueryMethodParser {
             }
         } else if (query.getAction() == Query.Action.COUNT) {
             if (method.getReturnType() != int.class && method.getReturnType() != long.class) {
-                throw new IllegalArgumentException("The return type must be boolean");
+                throw new IllegalArgumentException("The return type must be int or long");
             }
         } else if (query.getAction() == Query.Action.DELETE) {
             if (method.getReturnType() != int.class && method.getReturnType() != void.class) {

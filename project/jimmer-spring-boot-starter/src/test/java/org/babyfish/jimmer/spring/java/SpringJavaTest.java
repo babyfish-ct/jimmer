@@ -404,6 +404,15 @@ public class SpringJavaTest extends AbstractTest {
     }
 
     @Test
+    public void testCountName() {
+        Assertions.assertEquals(
+                3,
+                bookRepository.countByName("GraphQL in Action")
+        );
+        assertSQLs("select count(tb_1_.ID) from BOOK tb_1_ where tb_1_.NAME = ?");
+    }
+
+    @Test
     public void testFindByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc() throws JsonProcessingException {
         Pageable pageable = PageRequest.of(0, 2);
         Page<Book> page = bookRepository.findByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc(

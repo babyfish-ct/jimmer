@@ -260,28 +260,6 @@ public class PagingTest extends AbstractQueryTest {
         );
     }
 
-//    @Test
-//    public void testSqlServerDialect() {
-//        executeAndExpect(
-//                getLambdaClient(
-//                        it -> it.setDialect(new SqlServerDialect())
-//                ).createQuery(BookTable.class, (q, book) -> {
-//                    q.orderBy(book.name());
-//                    return q.select(book.name());
-//                }).distinct().limit(2, 1),
-//                ctx -> {
-//                    ctx.sql(
-//                            "select distinct tb_1_.NAME " +
-//                                    "from BOOK tb_1_ " +
-//                                    "order by tb_1_.NAME asc " +
-//                                    "offset ? rows fetch next ? rows only"
-//                    );
-//                    ctx.variables(1, 2);
-//                    ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
-//                }
-//        );
-//    }
-
     @Test
     public void testOracleDialect() {
         executeAndExpect(
@@ -327,6 +305,44 @@ public class PagingTest extends AbstractQueryTest {
                     );
                     ctx.variables(2);
                     ctx.rows(Arrays.asList("Effective TypeScript", "GraphQL in Action"));
+                }
+        );
+    }
+
+    @Test
+    public void testDoubleLimit() {
+        AuthorTable author = AuthorTable.$;
+        BookTableEx book = BookTableEx.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(author)
+                        .where(
+                                author.id().in(
+                                        getSqlClient()
+                                                .createSubQuery(book)
+                                                .orderBy(book.price().desc())
+                                                .select(book.authors().id())
+                                                .limit(4)
+                                )
+                        )
+                        .orderBy(author.firstName(), author.lastName())
+                        .select(author)
+                        .limit(4),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                                    "from AUTHOR tb_1_ " +
+                                    "where tb_1_.ID in (" +
+                                    "--->select tb_3_.AUTHOR_ID " +
+                                    "--->from BOOK tb_2_ " +
+                                    "--->inner join BOOK_AUTHOR_MAPPING tb_3_ " +
+                                    "--->--->on tb_2_.ID = tb_3_.BOOK_ID " +
+                                    "--->order by tb_2_.PRICE desc " +
+                                    "--->limit ?" +
+                                    ") " +
+                                    "order by tb_1_.FIRST_NAME asc, tb_1_.LAST_NAME asc " +
+                                    "limit ?"
+                    );
                 }
         );
     }

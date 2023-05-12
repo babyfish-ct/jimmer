@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
-import kotlin.reflect.KClass;
 import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
 import org.babyfish.jimmer.impl.asm.Type;
@@ -162,10 +161,6 @@ public abstract class MethodCodeWriter implements Constants {
     }
 
     protected abstract void visitLoadJSqlClient();
-
-    public MethodVisitor getMethodVisitor() {
-        return mv;
-    }
 
     String queryMethodFieldName() {
         return "QUERY_METHOD_{" + id + '}';
