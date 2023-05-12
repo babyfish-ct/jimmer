@@ -76,6 +76,7 @@ public class BatchEntitySaveCommandImpl<E>
 
     @SuppressWarnings("unchecked")
     private BatchSaveResult<E> executeImpl(Connection con) {
+        data.freeze();
         if (entities.isEmpty()) {
             return new BatchSaveResult<>(Collections.emptyList());
         }

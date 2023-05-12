@@ -26,7 +26,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
     AbstractEntitySaveCommandImpl(JSqlClientImplementor sqlClient, Connection con, Data data) {
         this.sqlClient = sqlClient;
         this.con = con;
-        this.data = data != null ? data.freeze() : new Data(sqlClient).freeze();
+        this.data = data != null ? data : new Data(sqlClient);
     }
 
     @Override

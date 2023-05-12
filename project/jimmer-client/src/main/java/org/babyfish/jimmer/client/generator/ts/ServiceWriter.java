@@ -58,16 +58,12 @@ public class ServiceWriter extends TsCodeWriter {
         code("async ").code(getContext().getOperationName(operation))
                 .scope(ScopeType.ARGUMENTS, "", false, () -> {
                     if (!operation.getParameters().isEmpty()) {
-                        boolean optionsOptional = operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType);
                         code("options");
                         code(": ");
                         if (getContext().isAnonymous()) {
                             optionsBody(operation);
                         } else {
                             optionsName(operation);
-                        }
-                        if (optionsOptional) {
-                            code(" | undefined");
                         }
                     }
                 })
@@ -121,7 +117,6 @@ public class ServiceWriter extends TsCodeWriter {
     }
 
     private void impl(Operation operation) {
-        boolean optionsOptional = operation.getParameters().stream().allMatch(it -> it.getType() instanceof NullableType);
         List<UriPart> parts = UriPart.parts(operation.getUri());
         if (parts.get(0).variable) {
             Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
@@ -147,7 +142,7 @@ public class ServiceWriter extends TsCodeWriter {
         Map<String, PathBuilder> pathBuilderMap = new LinkedHashMap<>();
         for (Parameter parameter : operation.getParameters()) {
             if (parameter.getPathVariable() == null && parameter.getRequestParam() == null && !parameter.isRequestBody()) {
-                PathBuilder builder = new PathBuilder(optionsOptional);
+                PathBuilder builder = new PathBuilder();
                 builder.dot().append(parameter.getName());
                 Type type = parameter.getType();
                 if (type instanceof NullableType) {
@@ -180,7 +175,7 @@ public class ServiceWriter extends TsCodeWriter {
         }
         for (Parameter parameter : operation.getParameters()) {
             if (parameter.getRequestParam() != null) {
-                PathBuilder builder = new PathBuilder(optionsOptional);
+                PathBuilder builder = new PathBuilder();
                 builder.dot().append(parameter.getName());
                 Type type = parameter.getType();
                 if (type instanceof NullableType) {
@@ -283,9 +278,8 @@ public class ServiceWriter extends TsCodeWriter {
 
         private boolean nullable;
 
-        PathBuilder(boolean nullable) {
+        PathBuilder() {
             this.builder = new StringBuilder();
-            this.nullable = nullable;
         }
 
         PathBuilder(PathBuilder base) {
