@@ -5,14 +5,16 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.7.61"
+    jimmerVersion = "0.7.62"
 }
 
 group 'org.babyfish.jimmer.example.sql'
 version jimmerVersion
 
 repositories {
-    mavenCentral()
+    maven {
+        url("https://repo1.maven.org/maven2/")
+    }
 }
 
 dependencies {

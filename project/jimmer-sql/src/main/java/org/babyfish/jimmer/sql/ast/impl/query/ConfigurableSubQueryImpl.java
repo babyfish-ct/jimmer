@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.impl.SubQueryFunctionExpression;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -148,5 +149,25 @@ public class ConfigurableSubQueryImpl<R>
     @Override
     public int precedence() {
         return 0;
+    }
+
+    @Override
+    public TypedSubQuery<R> union(TypedSubQuery<R> other) {
+        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "union", this, other);
+    }
+
+    @Override
+    public TypedSubQuery<R> unionAll(TypedSubQuery<R> other) {
+        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "union all", this, other);
+    }
+
+    @Override
+    public TypedSubQuery<R> minus(TypedSubQuery<R> other) {
+        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "minus", this, other);
+    }
+
+    @Override
+    public TypedSubQuery<R> intersect(TypedSubQuery<R> other) {
+        return new MergedTypedSubQueryImpl<>(getBaseQuery().getSqlClient(), "intersect", this, other);
     }
 }

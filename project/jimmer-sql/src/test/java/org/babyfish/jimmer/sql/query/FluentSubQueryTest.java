@@ -93,7 +93,7 @@ public class FluentSubQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK tb_1_ where exists (" +
+                                    "from BOOK tb_1_ where exists(" +
                                         "select 1 " +
                                         "from AUTHOR tb_2_ " +
                                         "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
@@ -129,7 +129,7 @@ public class FluentSubQueryTest extends AbstractQueryTest {
                 ctx -> {
                     ctx.sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                    "from BOOK tb_1_ where exists (" +
+                                    "from BOOK tb_1_ where exists(" +
                                     "select 1 " +
                                     "from AUTHOR tb_2_ " +
                                     "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +

@@ -12,4 +12,12 @@ public interface TypedSubQuery<R> extends Expression<R> {
     Predicate exists();
 
     Predicate notExists();
+
+    TypedSubQuery<R> union(TypedSubQuery<R> other);
+
+    TypedSubQuery<R> unionAll(TypedSubQuery<R> other);
+
+    TypedSubQuery<R> minus(TypedSubQuery<R> other);
+
+    TypedSubQuery<R> intersect(TypedSubQuery<R> other);
 }

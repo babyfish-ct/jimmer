@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableSubQueryImpl;
+import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -9,9 +10,9 @@ import org.jetbrains.annotations.NotNull;
 
 public class ExistsPredicate extends AbstractPredicate {
 
-    private TypedSubQuery<Integer> subQuery;
+    private final TypedSubQuery<?> subQuery;
 
-    private boolean negative;
+    private final boolean negative;
 
     public static ExistsPredicate of(MutableSubQuery subQuery, boolean negative) {
         return new ExistsPredicate(
@@ -21,14 +22,17 @@ public class ExistsPredicate extends AbstractPredicate {
     }
 
     public static ExistsPredicate of(TypedSubQuery<?> subQuery, boolean negative) {
-        return new ExistsPredicate(
-                ((ConfigurableSubQueryImpl<?>)subQuery).getBaseQuery()
-                        .select(Constants.number(1)),
-                negative
-        );
+        if (subQuery instanceof ConfigurableSubQuery<?>) {
+            return new ExistsPredicate(
+                    ((ConfigurableSubQueryImpl<?>)subQuery).getBaseQuery()
+                            .select(Constants.number(1)),
+                    negative
+            );
+        }
+        return new ExistsPredicate(subQuery, negative);
     }
 
-    ExistsPredicate(TypedSubQuery<Integer> subQuery, boolean negative) {
+    ExistsPredicate(TypedSubQuery<?> subQuery, boolean negative) {
         this.subQuery = subQuery;
         this.negative = negative;
     }
@@ -50,7 +54,7 @@ public class ExistsPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        builder.sql(negative ? "not exists " : "exists ");
+        builder.sql(negative ? "not exists" : "exists");
         renderChild((Ast) subQuery, builder);
     }
 }

@@ -53,7 +53,7 @@ public class FormatterTest extends AbstractFormatterTest {
                         "    and\n" +
                         "        tb_2_.NAME = ?\n" +
                         "    and\n" +
-                        "        exists (\n" +
+                        "        exists(\n" +
                         "            select\n" +
                         "                1\n" +
                         "            from AUTHOR tb_3_\n" +
@@ -100,7 +100,7 @@ public class FormatterTest extends AbstractFormatterTest {
                         "where\n" +
                         "        tb_1_.NAME like ?\n" +
                         "    and\n" +
-                        "        exists (\n" +
+                        "        exists(\n" +
                         "            select\n" +
                         "                1\n" +
                         "            from AUTHOR tb_2_\n" +
@@ -145,7 +145,7 @@ public class FormatterTest extends AbstractFormatterTest {
                         "where\n" +
                         "        tb_1_.NAME like ?\n" +
                         "    and\n" +
-                        "        exists (\n" +
+                        "        exists(\n" +
                         "            select\n" +
                         "                1\n" +
                         "            from AUTHOR tb_2_\n" +
