@@ -1,7 +1,7 @@
 
 [![logo](logo.png)](https://babyfish-ct.github.io/jimmer/)
 
-# A revolutionary ORM framework for both java and kotlin.
+# An ORM based integrated solution for both java and kotlin
 
 > CRUD for single table is very simple, isn't it?
 > 
