@@ -1,4 +1,4 @@
 ---
 sidebar_position: 6
-title: Spring篇幅
+title: Spring篇
 ---

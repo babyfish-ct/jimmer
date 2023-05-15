@@ -1,4 +1,4 @@
 ---
 sidebar_position: 3
-title: Association
+title: 关联映射
 ---
