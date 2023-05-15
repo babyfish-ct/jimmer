@@ -764,7 +764,7 @@ public class ImmutableProp {
                         "it is decorated by \"@" +
                                 ManyToManyView.class.getName() +
                                 "\" whose `deeperProp` is not specified, " +
-                                "however, there is no many-property pointing to " +
+                                "however, there is no many-to-one property pointing to " +
                                 "target type in the middle entity type \"" +
                                 middleType +
                                 "\""
@@ -780,7 +780,7 @@ public class ImmutableProp {
                                 "\" whose `deeperProp` is `" +
                                 deeperPropName +
                                 "`, " +
-                                "however, there is no many-property \"" +
+                                "however, there is no many-to-one property \"" +
                                 deeperPropName +
                                 "\" in the middle entity type \"" +
                                 middleType +
@@ -795,7 +795,7 @@ public class ImmutableProp {
                                 "\" whose `deeperProp` is `" +
                                 deeperPropName +
                                 "`, " +
-                                "however, there is no many-property \"" +
+                                "however, there is no many-to-one property \"" +
                                 deeperPropName +
                                 "\" in the middle entity type \"" +
                                 middleType +
