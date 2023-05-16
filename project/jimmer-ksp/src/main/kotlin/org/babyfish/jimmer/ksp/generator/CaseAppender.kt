@@ -13,16 +13,7 @@ class CaseAppender(
 
     fun addCase(prop: ImmutableProp) {
         if (argType == Int::class) {
-            val declaringType = prop.declaringType
-            if (declaringType == type) {
-                builder.add("%L ->\n\t", prop.id)
-            } else {
-                builder.add(
-                    "%T.SLOT_%L ->\n\t",
-                    declaringType.draftClassName("$"),
-                    upper(prop.name)
-                )
-            }
+            builder.add("%L ->\n\t", prop.slotName)
         } else {
             builder.add("%S ->\n\t", prop.name)
         }

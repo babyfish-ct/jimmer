@@ -15,12 +15,20 @@ class ImplGenerator(
             TypeSpec
                 .classBuilder(IMPL)
                 .addModifiers(KModifier.PRIVATE)
-                .superclass(type.draftClassName(PRODUCER, IMPLEMENTOR))
+                .addSuperinterface(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .addSuperinterface(CLONEABLE_CLASS_NAME)
                 .apply {
+                    addProperty(
+                        PropertySpec
+                            .builder("__visibility", VISIBILITY_CLASS_NAME)
+                            .addModifiers(KModifier.INTERNAL)
+                            .initializer("%T.of(%L)", VISIBILITY_CLASS_NAME, type.properties.size)
+                            .build()
+                    )
                     for (prop in type.properties.values) {
                         addFields(prop)
                     }
+                    addInit()
                     for (prop in type.properties.values) {
                         addProp(prop)
                     }
@@ -35,6 +43,7 @@ class ImplGenerator(
                     addEqualsFun(true)
                     addEqualsFun(false)
                     addParameterizedEquals()
+                    addToStringFun()
                 }
                 .build()
         )
@@ -83,16 +92,26 @@ class ImplGenerator(
                     .build()
             )
         }
-        prop.visibleFieldName?.let {
-            addProperty(
-                PropertySpec
-                    .builder(it, BOOLEAN)
-                    .addModifiers(KModifier.INTERNAL)
-                    .initializer((!prop.isKotlinFormula && prop.idViewBaseProp == null).toString())
-                    .mutable()
-                    .build()
-            )
+    }
+
+    private fun TypeSpec.Builder.addInit() {
+
+        if (type.properties.values.all { it.valueFieldName !== null }) {
+            return
         }
+
+        addFunction(
+            FunSpec
+                .constructorBuilder()
+                .apply {
+                    for (prop in type.properties.values) {
+                        if (prop.valueFieldName === null) {
+                            addStatement("__visibility.show(%L, false)", prop.slotName)
+                        }
+                    }
+                }
+                .build()
+        )
     }
 
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
@@ -131,9 +150,10 @@ class ImplGenerator(
                                             }
                                         manyToManyViewBaseProp !== null ->
                                             addStatement(
-                                                "return %T(%L, %N)",
+                                                "return %T(%T.%L, %N)",
                                                 MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
-                                                prop.manyToManyViewBaseDeeperProp!!.id,
+                                                prop.manyToManyViewBaseDeeperProp!!.declaringType.draftClassName("$"),
+                                                prop.manyToManyViewBaseDeeperProp!!.slotName,
                                                 manyToManyViewBaseProp.name
                                             )
                                         else -> {
@@ -198,29 +218,32 @@ class ImplGenerator(
                                     idViewBaseProp !== null ->
                                         if (prop.isList) {
                                             addStatement(
-                                                "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
-                                                idViewBaseProp.id,
+                                                "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%T.%L) }",
+                                                idViewBaseProp.slotName,
                                                 idViewBaseProp.name,
                                                 IMMUTABLE_SPI_CLASS_NAME,
-                                                idViewBaseProp.targetType!!.idProp!!.id
+                                                idViewBaseProp.targetType!!.draftClassName("$"),
+                                                idViewBaseProp.targetType!!.idProp!!.slotName
                                             )
                                         } else {
                                             addStatement(
-                                                "__isLoaded(%L) && (%L as %T)%L__isLoaded(%L) ?: true",
-                                                idViewBaseProp.id,
+                                                "__isLoaded(%L) && (%L as %T)%L__isLoaded(%T.%L) ?: true",
+                                                idViewBaseProp.slotName,
                                                 idViewBaseProp.name,
                                                 IMMUTABLE_SPI_CLASS_NAME.copy(nullable = idViewBaseProp.isNullable),
                                                 if (idViewBaseProp.isNullable) "?." else ".",
-                                                idViewBaseProp.targetType!!.idProp!!.id
+                                                idViewBaseProp.targetType!!.draftClassName("$"),
+                                                idViewBaseProp.targetType!!.idProp!!.slotName
                                             )
                                         }
                                     manyToManyViewBaseProp !== null ->
                                         addStatement(
-                                            "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%L) }",
-                                            manyToManyViewBaseProp.id,
+                                            "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%T.%L) }",
+                                            manyToManyViewBaseProp.slotName,
                                             manyToManyViewBaseProp.name,
                                             IMMUTABLE_SPI_CLASS_NAME,
-                                            prop.manyToManyViewBaseDeeperProp!!.id
+                                            prop.manyToManyViewBaseDeeperProp!!.declaringType.draftClassName("$"),
+                                            prop.manyToManyViewBaseDeeperProp!!.slotName
                                         )
                                     prop.isKotlinFormula -> {
                                         indent()
@@ -231,7 +254,7 @@ class ImplGenerator(
                                             } else {
                                                 add(" && \n")
                                             }
-                                            add("__isLoaded(%L)", dependency.id)
+                                            add("__isLoaded(%L)", dependency.slotName)
                                         }
                                         add("\n")
                                         unindent()
@@ -262,24 +285,15 @@ class ImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
-                            if (type.properties.values.any { it.visibleFieldName !== null}) {
-                                add("return ")
-                                beginControlFlow("when (prop)")
-                                val appender = CaseAppender(this, type, argType)
-                                for (prop in type.propsOrderById) {
-                                    if (prop.visibleFieldName !== null) {
-                                        appender.addCase(prop)
-                                        addStatement(
-                                            "%L",
-                                            prop.visibleFieldName
-                                        )
-                                    }
-                                }
-                                addStatement("else -> true")
-                                endControlFlow()
-                            } else {
-                                addStatement("return true")
+                            add("return ")
+                            beginControlFlow("when (prop)")
+                            val appender = CaseAppender(this, type, argType)
+                            for (prop in type.propsOrderById) {
+                                appender.addCase(prop)
+                                addStatement("__visibility.visible(%L)", prop.slotName)
                             }
+                            addStatement("else -> true")
+                            endControlFlow()
                         }
                         .build()
                 )
@@ -301,13 +315,10 @@ class ImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
-                            addStatement("var hash = 1")
+                            addStatement("var hash = __visibility.hashCode()")
                             for (prop in type.properties.values) {
-                                if (prop.visibleFieldName !== null) {
-                                    addStatement("hash = 31 * hash + %L.hashCode()", prop.visibleFieldName)
-                                    if (prop.valueFieldName === null) {
-                                        continue
-                                    }
+                                if (prop.valueFieldName === null) {
+                                    continue
                                 }
                                 beginControlFlow(
                                     "if (%L)",
@@ -369,17 +380,15 @@ class ImplGenerator(
                             addStatement("return false")
                             endControlFlow()
                             for (prop in type.properties.values) {
-                                if (prop.visibleFieldName != null) {
-                                    beginControlFlow(
-                                        "if (%L != __other.__isVisible(%L))",
-                                        prop.visibleFieldName,
-                                        prop.id
-                                    )
-                                    addStatement("return false")
-                                    endControlFlow()
-                                    if (prop.valueFieldName == null) {
-                                        continue
-                                    }
+                                beginControlFlow(
+                                    "if (__visibility.visible(%L) != __other.__isVisible(%L))",
+                                    prop.slotName,
+                                    prop.slotName
+                                )
+                                addStatement("return false")
+                                endControlFlow()
+                                if (prop.valueFieldName == null) {
+                                    continue
                                 }
                                 val localLoadedName = "__${prop.name}Loaded"
                                 val objLoadedName = prop.loadedFieldName ?: "${prop.valueFieldName} !== null"
@@ -388,7 +397,7 @@ class ImplGenerator(
                                 beginControlFlow(
                                     "if (%L != (__other.__isLoaded(%L)))",
                                     localLoadedName,
-                                    prop.id
+                                    prop.slotName
                                 )
                                 addStatement("return false")
                                 endControlFlow()
@@ -429,6 +438,17 @@ class ImplGenerator(
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
                 .addStatement("return if (shallow) __shallowEquals(obj) else equals(obj)")
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addToStringFun() {
+        addFunction(
+            FunSpec
+                .builder("toString")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(STRING)
+                .addCode("return %T.toString(this)", IMMUTABLE_OBJECTS_CLASS_NAME)
                 .build()
         )
     }

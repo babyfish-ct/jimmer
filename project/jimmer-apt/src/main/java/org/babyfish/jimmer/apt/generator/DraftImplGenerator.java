@@ -628,12 +628,11 @@ public class DraftImplGenerator {
             );
         }
         builder.addStatement(
-                "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S + \n$S\n$<)",
+                "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S\n$<)",
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
                         " for \"" + type + "\": \"",
-                "\",it does not exists or the visibility of that property is not controllable",
-                "(Only non-abstract formula property can be used)"
+                "\",it does not exists"
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());

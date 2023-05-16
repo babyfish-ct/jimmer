@@ -18,7 +18,7 @@ class DraftImplGenerator(
         parent.addType(
             TypeSpec
                 .classBuilder(DRAFT_IMPL)
-                .superclass(type.draftClassName(PRODUCER, IMPLEMENTOR))
+                .addSuperinterface(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .addSuperinterface(type.draftClassName)
                 .addSuperinterface(DRAFT_SPI_CLASS_NAME)
                 .addModifiers(KModifier.PRIVATE)
@@ -37,6 +37,7 @@ class DraftImplGenerator(
                     addIsVisibleProp(String::class)
                     addHashCodeFuns()
                     addEqualsFuns()
+                    addToStringFun()
                     for (prop in type.properties.values) {
                         addProp(prop)
                         addPropFun(prop)
@@ -164,6 +165,17 @@ class DraftImplGenerator(
         )
     }
 
+    private fun TypeSpec.Builder.addToStringFun() {
+        addFunction(
+            FunSpec
+                .builder("toString")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(STRING)
+                .addCode("return %T.toString(%L)", IMMUTABLE_OBJECTS_CLASS_NAME, UNMODIFIED)
+                .build()
+        )
+    }
+
     private fun TypeSpec.Builder.addProp(prop: ImmutableProp) {
         val mutable = prop.manyToManyViewBaseProp === null && !prop.isKotlinFormula
         addProperty(
@@ -286,13 +298,13 @@ class DraftImplGenerator(
                                 if (prop.isNullable) {
                                     beginControlFlow(
                                         "if (!__isLoaded(%L) || %L === null)",
-                                        prop.id,
+                                        prop.slotName,
                                         prop.name
                                     )
                                 } else {
                                     beginControlFlow(
                                         "if (!__isLoaded(%L))",
-                                        prop.id
+                                        prop.slotName
                                     )
                                 }
                                 if (prop.isList) {
@@ -335,7 +347,7 @@ class DraftImplGenerator(
                                 indent()
                                 when {
                                     prop.baseProp !== null ->
-                                        addStatement("__unload(%L)", prop.baseProp!!.id)
+                                        addStatement("__unload(%L)", prop.baseProp!!.slotName)
                                     prop.isKotlinFormula ->
                                         addStatement("{}")
                                     prop.loadedFieldName !== null ->
@@ -406,36 +418,24 @@ class DraftImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
-                            if (type.properties.values.any { it.visibleFieldName !== null }) {
-                                beginControlFlow("when (prop)")
-                                val appender = CaseAppender(this, type, argType)
-                                for (prop in type.propsOrderById) {
-                                    if (prop.visibleFieldName != null) {
-                                        appender.addCase(prop)
-                                        add("%L\n.%L = visible\n", MODIFIED, prop.visibleFieldName)
-                                    }
-                                }
-                                add("else -> throw IllegalArgumentException(\n")
-                                indent()
-                                add(
-                                    "%S + \nprop + \n%S",
-                                    "Illegal property " +
-                                        (if (argType == String::class) "name" else "id") +
-                                        ": \"",
-                                    "\",it does not exists or is its visibility is not controllable)"
-                                )
-                                unindent()
-                                add("\n)")
-                                endControlFlow()
-                            } else {
-                                add(
-                                    "%S + \nprop + \n%S",
-                                    "Illegal property " +
-                                        (if (argType == String::class) "name" else "id") +
-                                        ": \"",
-                                    "\",it does not exists or is its visibility is not controllable)"
-                                )
+                            beginControlFlow("when (prop)")
+                            val appender = CaseAppender(this, type, argType)
+                            for (prop in type.propsOrderById) {
+                                appender.addCase(prop)
+                                addStatement("%L.__visibility.show(%L, visible)", MODIFIED, prop.slotName)
                             }
+                            add("else -> throw IllegalArgumentException(\n")
+                            indent()
+                            add(
+                                "%S + \nprop + \n%S",
+                                "Illegal property " +
+                                    (if (argType == String::class) "name" else "id") +
+                                    ": \"",
+                                "\",it does not exists"
+                            )
+                            unindent()
+                            add("\n)\n")
+                            endControlFlow()
                         }
                         .build()
                 )
@@ -479,7 +479,7 @@ class DraftImplGenerator(
                                     if (prop.valueFieldName !== null &&
                                         (prop.isAssociation(false) || prop.isList)
                                     ) {
-                                        beginControlFlow("if (__isLoaded(%L))", prop.id)
+                                        beginControlFlow("if (__isLoaded(%L))", prop.slotName)
                                         addStatement("val oldValue = base!!.%L", prop.name)
                                         addStatement(
                                             "val newValue = __ctx.%L(oldValue)",
@@ -621,7 +621,7 @@ class DraftImplGenerator(
                                             className,
                                             message,
                                             type.className,
-                                            prop.id.toString()
+                                            prop.slotName
                                         )
                                         .build()
                                 )

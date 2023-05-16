@@ -14,7 +14,7 @@ class ImplementorGenerator(
     fun generate() {
         parent.addType(
             TypeSpec
-                .classBuilder(IMPLEMENTOR)
+                .interfaceBuilder(IMPLEMENTOR)
                 .addModifiers(KModifier.PRIVATE, KModifier.ABSTRACT)
                 .addSuperinterface(type.className)
                 .addSuperinterface(IMMUTABLE_SPI_CLASS_NAME)
@@ -22,8 +22,6 @@ class ImplementorGenerator(
                     addGetFun(Int::class)
                     addGetFun(String::class)
                     addTypeFun()
-                    addToStringFun()
-                    addDummyPropForNoImmutableModuleError()
                 }
                 .build()
         )
@@ -64,31 +62,6 @@ class ImplementorGenerator(
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(IMMUTABLE_TYPE_CLASS_NAME)
                 .addCode("return %T.type", type.draftClassName(PRODUCER))
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addToStringFun() {
-        addFunction(
-            FunSpec
-                .builder("toString")
-                .addModifiers(KModifier.OVERRIDE)
-                .returns(STRING)
-                .addCode("return %T.toString(this)", IMMUTABLE_OBJECTS_CLASS_NAME)
-                .build()
-        )
-    }
-
-    private fun TypeSpec.Builder.addDummyPropForNoImmutableModuleError() {
-        addProperty(
-            PropertySpec
-                .builder("dummyPropForJacksonError__", INT)
-                .getter(
-                    FunSpec
-                        .getterBuilder()
-                        .addStatement("throw %T()", ImmutableModuleRequiredException::class)
-                        .build()
-                )
                 .build()
         )
     }

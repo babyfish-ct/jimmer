@@ -13,6 +13,7 @@ import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
+import org.babyfish.jimmer.ksp.generator.upper
 import org.babyfish.jimmer.meta.impl.ViewUtils
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
@@ -34,6 +35,8 @@ class ImmutableProp(
     }
 
     val name: String = propDeclaration.name
+
+    val slotName: String = "SLOT_${upper(name)}"
 
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
@@ -304,9 +307,6 @@ class ImmutableProp(
             null
         }
 
-    val visibleFieldName: String?
-        get() = if (_isVisibilityControllable) "__${name}Visible" else null
-
     fun annotation(annotationType: KClass<out Annotation>): KSAnnotation? =
         propDeclaration.annotation(annotationType)
 
@@ -329,8 +329,6 @@ class ImmutableProp(
     private var _manyToManyViewBaseDeeperProp: ImmutableProp? = null
 
     private lateinit var _dependencies: Set<ImmutableProp>
-
-    private var _isVisibilityControllable: Boolean = false
 
     val baseProp: ImmutableProp?
         get() = _idViewBaseProp ?: _manyToManyViewBaseProp
@@ -459,8 +457,6 @@ class ImmutableProp(
                     "\", but the current property does not return that type"
             )
         }
-        baseProp._isVisibilityControllable = true
-        _isVisibilityControllable = true
         _idViewBaseProp = baseProp
     }
 
@@ -553,11 +549,8 @@ class ImmutableProp(
                         "\""
                 )
         }
-        _manyToManyViewBaseProp = prop;
-        _manyToManyViewBaseDeeperProp = deeperProp;
-        _isVisibilityControllable = true;
-        prop._isVisibilityControllable = true;
-        deeperProp._isVisibilityControllable = true;
+        _manyToManyViewBaseProp = prop
+        _manyToManyViewBaseDeeperProp = deeperProp
     }
 
     private fun resolveFormulaDependencies() {
@@ -578,9 +571,7 @@ class ImmutableProp(
                             "\" does not eixst"
                     )
                 props.add(prop)
-                prop._isVisibilityControllable = true
             }
-            this._isVisibilityControllable = true
             this._dependencies = props
         }
     }

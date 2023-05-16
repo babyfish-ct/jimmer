@@ -117,14 +117,11 @@ public class ImmutableProcessor extends AbstractProcessor {
         while (true) {
             boolean hasNext = false;
             int ctxSize = context.getImmutableTypes().size();
-            while (true) {
+            do {
                 for (ImmutableType type : context.getImmutableTypes()) {
                     hasNext |= type.resolve(context, step);
                 }
-                if (ctxSize == context.getImmutableTypes().size()) {
-                    break;
-                }
-            }
+            } while (ctxSize < context.getImmutableTypes().size());
             if (!hasNext) {
                 break;
             }

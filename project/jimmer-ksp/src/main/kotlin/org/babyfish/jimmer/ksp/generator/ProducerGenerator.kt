@@ -16,9 +16,9 @@ class ProducerGenerator(
             TypeSpec
                 .objectBuilder(PRODUCER)
                 .apply {
+                    addSlots()
                     addTypeProp()
                     addProduceFun()
-                    addSlots()
                     ImplementorGenerator(type, this).generate()
                     ImplGenerator(type, this).generate()
                     DraftImplGenerator(type, this).generate()
@@ -78,20 +78,20 @@ class ProducerGenerator(
             prop.primaryAnnotationType == Id::class.java ->
                 add(
                     ".id(%L, %S, %T::class.java)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     prop.targetClassName
                 )
             prop.primaryAnnotationType == Version::class.java ->
                 add(
                     ".version(%L, %S)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name
                 )
             prop.primaryAnnotationType == LogicalDeleted::class.java ->
                 add(
                     ".logicalDeleted(%L, %S, %T::class.java, %L)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     prop.targetClassName,
                     prop.isNullable
@@ -99,7 +99,7 @@ class ProducerGenerator(
             prop.isKey && prop.isAssociation(false) ->
                 add(
                     ".keyReference(%L, %S, %T::class.java, %T::class.java, %L)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     if (prop.annotation(OneToOne::class) !== null) {
                         OneToOne::class
@@ -112,7 +112,7 @@ class ProducerGenerator(
             prop.isKey && !prop.isAssociation(false) ->
                 add(
                     ".key(%L, %S, %T::class.java, %L)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     prop.targetClassName,
                     prop.isNullable
@@ -120,7 +120,7 @@ class ProducerGenerator(
             prop.primaryAnnotationType == IdView::class.java ->
                 add(
                     ".add(%L, %S, %T.%L, %T::class.java, %L)",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
                     if (prop.isList) "SCALAR_LIST" else "SCALAR",
@@ -130,7 +130,7 @@ class ProducerGenerator(
             prop.primaryAnnotationType != null && prop.primaryAnnotationType != Formula::class.java && prop.primaryAnnotationType != Transient::class.java ->
                 add(
                     ".add(%L, %S, %T::class.java, %T::class.java, %L)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     when {
                         prop.primaryAnnotationType == OneToOne::class.java -> ONE_TO_ONE_CLASS_NAME
@@ -146,7 +146,7 @@ class ProducerGenerator(
             else ->
                 add(
                     ".add(%L, %S, %T.%L, %T::class.java, %L)\n",
-                    prop.id,
+                    prop.slotName,
                     prop.name,
                     IMMUTABLE_PROP_CATEGORY_CLASS_NAME,
                     when {
@@ -203,15 +203,21 @@ class ProducerGenerator(
     }
 
     private fun TypeSpec.Builder.addSlots() {
-        for (prop in type.declaredProperties.values) {
+        for (prop in type.properties.values) {
             addProperty(
                 PropertySpec
                     .builder(
-                        "SLOT_${upper(prop.name)}",
+                        prop.slotName,
                         INT,
                         KModifier.CONST
                     )
-                    .initializer(prop.id.toString())
+                    .apply {
+                        if (prop.declaringType == type) {
+                            initializer(prop.id.toString())
+                        } else {
+                            initializer("%T.%L", prop.declaringType.draftClassName("$"), prop.slotName)
+                        }
+                    }
                     .build()
             )
         }
