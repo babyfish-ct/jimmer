@@ -7,6 +7,8 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 ##  基本规则
 
+-   **所有文档编写相关PR提交到分支`doc`**
+
 -   为体现每位作者的贡献，请在每页文档右下角留下署名。愿留真实姓名者留真实行为，不愿者留网络昵称。大家可自由决定
 
     :::info
@@ -21,8 +23,6 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
     如果，多位作者共同参与同一篇文章撰写，署名之间请用多个逗号隔开。
     :::
-
--   所有文档编写相关PR提交到分支`doc`
 
 -   提PR前请使用`yarn build`验证文档可正确编译
 
@@ -281,3 +281,19 @@ System.out.println(c);
 你可以在这里让嵌入任意复杂的Markdown和React混合体哦
 
 </ViewMore>
+
+## 如果写出正确的代码
+
+文档需要编写正常的java/kotlin代码，一般情况下需要提供生成的SQL，如果保证java、kotlin、SQL代码的正确呢？
+
+本文的中的实体取自官方例子的BookStore、Book、Author、TreeNode四个类型。然而，除拦截器和过滤的外，大部分文档都不需要createdTime, modfiedTime和tenant属性。
+
+为此，克隆[https://github.com/babyfish-ct/for-doc](https://github.com/babyfish-ct/for-doc)并基于其修改代码即可。
+
+:::note
+[https://github.com/babyfish-ct/for-doc](https://github.com/babyfish-ct/for-doc)包含两个子项目
+-   for-doc-java，请修改JApp类
+-   for-doc-kotlin，请修改KApp类
+
+这是个两个简化到极致的Jimmer程序，无外部环境依赖且自建数据库。用来保证各文档中的Java、Kotlin、SQL代码一致很方便。
+:::
