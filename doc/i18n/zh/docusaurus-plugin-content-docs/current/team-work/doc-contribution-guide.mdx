@@ -1,0 +1,299 @@
+---
+sidebar_position: 11
+title: 文档贡献指南
+---
+
+import { ViewMore } from '@site/src/components/ViewMore';
+
+##  基本规则
+
+-   **所有文档编写相关PR提交到分支`doc`**
+
+-   为体现每位作者的贡献，请在每页文档右下角留下署名。愿留真实姓名者留真实行为，不愿者留网络昵称。大家可自由决定
+
+    :::info
+
+    可参见facebook relay的一文档页面[https://relay.dev/docs/tutorial/intro/](https://relay.dev/docs/tutorial/intro/)右下角的
+
+    Last updated on **May 12, 2023** by **Pieter Vanderwerff**
+
+    中文方式则可为
+
+    **张三**更新于**2023年5月16日**
+
+    如果，多位作者共同参与同一篇文章撰写，署名之间请用多个逗号隔开。
+    :::
+
+-   提PR前请使用`yarn build`验证文档可正确编译
+
+    :::caution
+    本机运行中文文档命令`yarn start --locale zh`不能发现所有问题，只有`yarn build`才能发现所有问题。
+    :::
+
+-   领取文档编辑前请告知我，我会做跟踪记录，防止不同的人撰写同一篇文章导致劳动浪费。
+
+##  如何在本机运行文档
+
+-   安装NodeJS的LST版本，下载地址：https://nodejs.org/en
+
+-   安装yarn
+    
+    ```
+    npm install --global yarn
+    ```
+
+-   安装VS Code
+
+    :::caution
+    注意，和Intellij不同，VSCode不会自动保存
+    :::
+
+-   首次Fork Jimmer代码，设本机目录为`<jimmer-home1>`，并*切换到doc分支*
+
+    :::note
+    文档协同统一在doc分支下进行，编写完成向Jimmer原仓库提PR也一样。
+    :::
+
+-   在另外一个目录下，再次Fork Jimmer代码，设本机目录为`<jimmer-home2>`（原因稍后解释）
+
+-   进入`<jimmer-home2>`, 切换到`orphan`分支，这是一个孤儿分支，切换到这个分支会导致之前clone到本地的所有代码被清空，替换为若干图片文件(PNG, JPEG, SVG)
+
+    :::note
+    为防止图片文件让git历史变大大致下载困难，`orphan`被设计为一个孤儿分支，专门保存图片文件，这就是为什么要两次For Jimmer代码的原因
+    :::
+
+-   将目录孤儿分支目录`<jimmer-home2>/doc/static/img`下所有图片文件复制到代码分支目录`<jimmer-home1>/doc/static/img`下，此时代码分支才具备完整的资源
+
+    >-  复制这些图片后，可放心提交PR，这些图片文件会被.gitignore
+    >-  如果后续步骤无误，`<jimmer-home2>`可以永久从本机删除
+
+-   打开命令行，进入`<jimmer-home1>/doc`。再次强调，`doc`分支。
+
+    -   运行英文文档
+        ```
+        yarn start
+        ```
+
+    -   运行中文文档
+        ```
+        yarn start --locale zh
+        ```
+
+    -   暴露所有编译错误：
+
+        ```
+        yarn build
+        ```
+
+        这很重要，yarn start命令无法暴露非法链接错误
+
+## 文档目录
+
+-   英文：`<jimmer-home1>`/doc/docs/，本次协作无关
+-   中文：`<jimmer-home1>`/doc/118n/zh/docusaurus-plugin-content-docs/current，本次协作目标目录
+
+##  MD文件规范
+
+### 严格的缩进
+
+无论`MD`文件还是`MDX`文件，除所有编号(1, -)后都加VSCode的Tab（四空格Tab，扣除编号本身，最多三个空格），如
+
+```
+##  二级标题
+
+1.  第一点
+    
+    -   注意事项1
+    -   注意事项2
+
+2.  第二点
+    
+    -   注意事项1
+    -   注意事项2
+
+        典故来源
+        >-  子曾经曰过，XXX
+        >-  泰戈尔曾说过，YYY
+```
+
+这个规则非常重要，任何文本开头偏移量一定是4的整数倍。因为，本文档常常混入代码，甚至，和MD文件不同，MDX文件常常混入React组件。这种混合编程模式下，如果没有如此严格的缩进，**巨坑！**
+
+### 文件头
+
+也许你发现了，所有文件（无论`MD`还是`MDX`），头部格式统一
+
+```
+---
+sidebar_position: <数字>
+title: <标题>
+---
+```
+
+虽然，这些文件都是我建好了的，但大家要明白头的作用。这文件头docaurus的约定。
+
+-   title：当前文档页面的一级标题，相当于markdown文件的“#”，它也是文档在左边目录结构中名称，所以尽量不要太长，不要导致左侧树换行。
+
+-   sidebar_position：当前文文档页面，在左侧树中同级节点中排序。同级页面的此值有大小关系即可，可跳跃。
+
+-   目录不是文件，不能写文件头，因此`index.md`表示目录头，也可附带简短的正文。
+
+    注意：`index.md`表示目录本身，其他文件表示目录的下级文件，两种文件的含义完全不同。
+
+### 只用二三级标题(##, ###)
+
+docusaurus中，文件最好只有二级标题和三级标题。
+
+-   文件头本身就是一级标题，所以，不能写一级标题
+
+-   从四级标题开始，都会被右侧导航忽略，所以四级或更细的的标题无用。
+
+##  MDX文件规范
+
+### 混入React代码
+
+MDX混入React代码的语法很特别
+
+-   导入语句必须紧跟文件头，之间不得出现任何非空行正文，否则编译报错
+    ```ts
+    文件头，略
+
+    import Tabs from '@theme/Tabs';
+    import TabItem from '@theme/TabItem';
+    ```
+
+-   插入React元素，根元必须遵循许markdown的缩进。另外，子元素无论有多深，都不得缩进，否则编译报错
+
+    比如
+    ```tsx
+    -   当这种情况出现时，你可以这么做
+
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+        略
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+        略
+        </TabItem>
+        </Tabs>
+    ```
+
+    虽然整体遵循了Markdown的缩进，但是React父子元素之间没有缩进，任何尝试使用类似HTML缩进来提高可读性的尝试都将获得编译报错。
+
+    诚然，react组件内部不得缩进很难受，但这就是MDX文件的约定。
+
+-   React内部再混入Markdown, 必须在Markdown上下留出空行，否则编译报错
+
+    ```tsx
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    `` `java
+    System.out.println("Hello world");
+    `` `
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    `` `kt
+    println("Hello world")
+    `` `
+
+    </TabItem>
+    </Tabs>
+    ```
+
+    :::note
+    上面代码中应该是&#96;&#96;&#96;，而非&#96;&#96; &#96; 这是因为代码套娃导致问题，不必在意
+    :::
+
+    请注意上面的空行，都发生在React嵌入Markdown的时，若非如此必然报错。如果读者无MDX的背景知识，必然评价为：“该空行的地方没空行，不该空行的地方空行了”
+
+### 区分语言的Tabs必须遵循的规则
+
+在上面的代码中
+-   Tabs的groupId被指定成了language
+-   TabItem的value被指定成了java或kotlin
+
+这非常重要，整个文档中所有j/k切换Tab都如此配置，才能100%联动
+
+### 语法着色和代码标题
+
+也许你发现了，上面代码中&#96;&#96;&#96;后面有java或kotlin，这表示请求docusaurus的语法着色。
+
+我已经配置的语法着色选项有：java、kotin、sql、ts、json、xml、gradle
+
+另外, docusaurus的还可以为代码块配置标题栏，比如: &#96;&#96;&#96;java title="Book.java"。
+
+### 代码高亮
+
+阅读过Jimmer的小伙伴，一定能发现Jimmer中存在代码高亮
+
+```java
+int a = 1;
+int b = 2;
+// highlight-next-line
+int c = a + b;
+System.out.println(c);
+```
+
+很简单，只需要在高亮代码前加`// highlight-next-line`即，如果draft对象的引用关联被设置过且被设置为非null，那么该方法一定返回draft对象。这样，用户就可以直接修改更深的关联对象。
+
+当然，因为语言不通。高亮语法有轻微变化，比如`/* highlight-next-line */`或`<!-- highlight-next-line -->`。
+
+### 代码标号
+
+当一个代码判断只有一个地方需要说明时，代码高亮是一个很好的选择。
+
+但是，如果代码有多处需要说明，比如前段时间编写的[新文档页面](http://localhost:3000/jimmer/zh/docs/tutorial/query/complex-query)，很多地方代码需要多处说明。很显然，到处高亮不是一个好的选择，加编号是一个很好的选择。
+
+为了照顾开发人员阅读spring文档形成的习惯，新文档阅读需要多处探讨的代码采用黑底unicode数字字符。为了方便大家拷贝，10个字符罗列如下
+
+&#9471;&#10102;&#10103;&#10104;&#10105;&#10106;&#10107;&#10108;&#10109;&#10110;
+
+### 对话框
+
+在目前首页中，采用对话框交互展示完全不说不行无条件说又碍眼的内容。调用Jimmer文档自定义对话框的方法如下
+
+-   导入
+    ```tsx
+    import { ViewMore } from '@site/src/components/ViewMore';
+    ```
+
+-   使用
+
+    ```tsx
+    <ViewMore buttonText="对话框效果预览" title="对话框效果预览" fullScreen={false}>
+
+    你可以在这里让嵌入任意复杂的Markdown和React混合体哦
+
+    </ViewMore>
+    ```
+
+    >   注意：之前讨论过，react嵌入markdown需要留空行
+
+    -   buttonText: 按钮文字
+    -   title: 对话框标题
+    -   fullScreen: 模式是否最大化
+        >   注意：此属性可以不给
+
+<ViewMore buttonText="对话框效果预览" title="对话框效果预览">
+
+你可以在这里让嵌入任意复杂的Markdown和React混合体哦
+
+</ViewMore>
+
+## 如果写出正确的代码
+
+文档需要编写正常的java/kotlin代码，一般情况下需要提供生成的SQL，如果保证java、kotlin、SQL代码的正确呢？
+
+本文的中的实体取自官方例子的BookStore、Book、Author、TreeNode四个类型。然而，除拦截器和过滤的外，大部分文档都不需要createdTime, modfiedTime和tenant属性。
+
+为此，克隆[https://github.com/babyfish-ct/for-doc](https://github.com/babyfish-ct/for-doc)并基于其修改代码即可。
+
+:::note
+[https://github.com/babyfish-ct/for-doc](https://github.com/babyfish-ct/for-doc)包含两个子项目
+-   for-doc-java，请修改JApp类
+-   for-doc-kotlin，请修改KApp类
+
+这是个两个简化到极致的Jimmer程序，无外部环境依赖且自建数据库。用来保证各文档中的Java、Kotlin、SQL代码一致很方便。
+:::
