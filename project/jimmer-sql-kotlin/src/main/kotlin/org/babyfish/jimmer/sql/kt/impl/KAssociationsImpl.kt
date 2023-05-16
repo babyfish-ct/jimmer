@@ -6,7 +6,8 @@ import org.babyfish.jimmer.sql.kt.KAssociations
 import java.sql.Connection
 
 internal class KAssociationsImpl(
-    private val javaAssociations: Associations
+    private val javaAssociations: Associations,
+    private val checkExistence: Boolean
 ): KAssociations {
 
     override fun forConnection(con: Connection): KAssociations =
@@ -14,61 +15,50 @@ internal class KAssociationsImpl(
             if (javaAssociations === it) {
                 this
             } else {
-                KAssociationsImpl(it)
+                KAssociationsImpl(it, checkExistence)
             }
         }
 
     override fun reverse(): KAssociations =
-        KAssociationsImpl(javaAssociations.reverse())
+        KAssociationsImpl(javaAssociations.reverse(), checkExistence)
+
+    override fun checkExistence(checkExistence: Boolean): KAssociations =
+        if (this.checkExistence == checkExistence) {
+            this
+        } else {
+            KAssociationsImpl(javaAssociations, checkExistence)
+        }
 
     override fun save(
         sourceId: Any,
         targetId: Any,
-        checkExistence: Boolean,
+        checkExistence: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .saveCommand(sourceId, targetId)
-            .let {
-                if (checkExistence) {
-                    it.checkExistence()
-                } else {
-                    it
-                }
-            }
+            .checkExistence(checkExistence ?: this.checkExistence)
             .execute(con)
 
     override fun batchSave(
         sourceIds: Collection<Any>,
         targetIds: Collection<Any>,
-        checkExistence: Boolean,
+        checkExistence: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .batchSaveCommand(sourceIds, targetIds)
-            .let {
-                if (checkExistence) {
-                    it.checkExistence()
-                } else {
-                    it
-                }
-            }
+            .checkExistence(checkExistence ?: this.checkExistence)
             .execute(con)
 
     override fun batchSave(
         idTuples: Collection<Tuple2<Any, Any>>,
-        checkExistence: Boolean,
+        checkExistence: Boolean?,
         con: Connection?
     ): Int =
         javaAssociations
             .batchSaveCommand(idTuples)
-            .let {
-                if (checkExistence) {
-                    it.checkExistence()
-                } else {
-                    it
-                }
-            }
+            .checkExistence(checkExistence ?: this.checkExistence)
             .execute(con)
 
     override fun delete(

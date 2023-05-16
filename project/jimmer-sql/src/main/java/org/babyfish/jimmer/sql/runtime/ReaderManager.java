@@ -6,6 +6,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
+import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
@@ -112,7 +113,7 @@ public class ReaderManager {
             Class<?> sqlType = scalarProvider.getSqlType();
             reader = BASE_READER_MAP.get(sqlType);
             if (reader == null) {
-                reader = new AnyReader();
+                reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
             }
             reader = new CustomizedScalarReader<>(
                     scalarProvider,
@@ -141,12 +142,35 @@ public class ReaderManager {
             Class<?> sqlType = scalarProvider.getSqlType();
             reader = BASE_READER_MAP.get(sqlType);
             if (reader == null) {
-                reader = new AnyReader();
+                reader = unknownSqlTypeReader(sqlType, scalarProvider, sqlClient.getDialect());
             }
             reader = new CustomizedScalarReader<>(
                     (ScalarProvider<Object, Object>) scalarProvider,
                     (Reader<Object>) reader
             );
+        }
+        return reader;
+    }
+
+    private static Reader<?> unknownSqlTypeReader(
+            Class<?> sqlType,
+            ScalarProvider<?, ?> provider,
+            Dialect dialect
+    ) {
+        Reader<?> reader = provider.reader();
+        if (reader == null) {
+            reader = dialect.unknownReader(sqlType);
+            if (reader == null) {
+                throw new IllegalStateException(
+                        "There is no reader for unknown type \"" +
+                                sqlType.getName() +
+                                "\" in both \"" +
+                                ScalarProvider.class.getName() +
+                                "\" and \"" +
+                                dialect.getClass().getName() +
+                                "\""
+                );
+            }
         }
         return reader;
     }
@@ -355,14 +379,6 @@ public class ReaderManager {
         @Override
         public ZonedDateTime read(ResultSet rs, Col col) throws SQLException {
             return rs.getObject(col.get(), ZonedDateTime.class);
-        }
-    }
-
-    private static class AnyReader implements Reader<Object> {
-
-        @Override
-        public Object read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get());
         }
     }
 

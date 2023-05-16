@@ -1,8 +1,11 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
+import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 
 public class PostgresDialect extends DefaultDialect {
@@ -47,5 +50,13 @@ public class PostgresDialect extends DefaultDialect {
             return Types.NULL;
         }
         return Types.OTHER;
+    }
+
+    @Override
+    public Reader<?> unknownReader(Class<?> sqlType) {
+        if (sqlType == PGobject.class) {
+            return (rs, col) -> rs.getObject(col.get(), PGobject.class);
+        }
+        return null;
     }
 }

@@ -51,7 +51,11 @@ class AssociationExecutable implements Executable<Integer> {
     }
 
     @NewChain
-    public AssociationExecutable setMode(Mode mode) {
+    public AssociationExecutable setCheckExistence(boolean checkExistence) {
+        if (mode == Mode.DELETE) {
+            throw new IllegalStateException("Cannot set check existence because the current operation is delete");
+        }
+        Mode mode = checkExistence ? Mode.CHECK_AND_INSERT : Mode.INSERT;
         if (this.mode == mode) {
             return this;
         }

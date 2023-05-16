@@ -36,9 +36,8 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
     }
 
     @Override
-    public AssociationSaveCommand checkExistence() {
-        AssociationExecutable newExecutable =
-                executable.setMode(AssociationExecutable.Mode.CHECK_AND_INSERT);
+    public AssociationSaveCommand checkExistence(boolean checkExistence) {
+        AssociationExecutable newExecutable = executable.setCheckExistence(checkExistence);
         if (newExecutable == executable) {
             return this;
         }

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Types;
@@ -54,5 +55,9 @@ public interface Dialect {
 
     default int resolveUnknownJdbcType(Class<?> sqlType) {
         return Types.OTHER;
+    }
+
+    default Reader<?> unknownReader(Class<?> sqlType) {
+        return null;
     }
 }

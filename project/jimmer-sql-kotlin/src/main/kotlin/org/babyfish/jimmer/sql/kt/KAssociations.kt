@@ -12,23 +12,26 @@ interface KAssociations {
     @NewChain
     fun reverse(): KAssociations
 
+    @NewChain
+    fun checkExistence(checkExistence: Boolean = true): KAssociations
+
     fun save(
         sourceId: Any,
         targetId: Any,
-        checkExistence: Boolean = false,
+        checkExistence: Boolean? = null,
         con: Connection? = null
     ): Int
 
     fun batchSave(
         sourceIds: Collection<Any>,
         targetIds: Collection<Any>,
-        checkExistence: Boolean = false,
+        checkExistence: Boolean? = null,
         con: Connection? = null
     ): Int
 
     fun batchSave(
         idTuples: Collection<Tuple2<Any, Any>>,
-        checkExistence: Boolean = false,
+        checkExistence: Boolean? = null,
         con: Connection? = null
     ): Int
 
