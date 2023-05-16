@@ -21,24 +21,28 @@ public class AssociationsImpl implements Associations {
 
     private final boolean reversed;
 
+    private final boolean checkExistence;
+
     public AssociationsImpl(
             JSqlClientImplementor sqlClient,
             Connection con, 
             AssociationType associationType
     ) {
-        this(sqlClient, con, associationType, false);
+        this(sqlClient, con, associationType, false, false);
     }
 
     private AssociationsImpl(
             JSqlClientImplementor sqlClient,
             Connection con,
             AssociationType associationType,
-            boolean reversed
+            boolean reversed,
+            boolean checkExistence
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
+        this.checkExistence = checkExistence;
     }
 
     @Override
@@ -46,12 +50,20 @@ public class AssociationsImpl implements Associations {
         if (this.con == con) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed);
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence);
     }
 
     @Override
     public Associations reverse() {
-        return new AssociationsImpl(sqlClient, con, associationType, !reversed);
+        return new AssociationsImpl(sqlClient, con, associationType, !reversed, checkExistence);
+    }
+
+    @Override
+    public Associations checkExistence(boolean checkExistence) {
+        if (this.checkExistence == checkExistence) {
+            return this;
+        }
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence);
     }
 
     @Override
@@ -107,7 +119,8 @@ public class AssociationsImpl implements Associations {
                 con,
                 associationType,
                 reversed,
-                AssociationExecutable.Mode.INSERT,
+                false,
+                checkExistence,
                 idTuples
         );
     }
@@ -119,7 +132,8 @@ public class AssociationsImpl implements Associations {
                 con,
                 associationType,
                 reversed,
-                AssociationExecutable.Mode.DELETE,
+                true,
+                checkExistence,
                 idTuples
         );
     }

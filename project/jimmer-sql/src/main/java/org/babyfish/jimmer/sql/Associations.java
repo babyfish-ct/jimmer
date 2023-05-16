@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql;
 
+import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -9,9 +10,19 @@ import java.util.Collection;
 
 public interface Associations {
 
+    @NewChain
     Associations forConnection(Connection con);
 
+    @NewChain
     Associations reverse();
+
+    @NewChain
+    default Associations checkExistence() {
+        return checkExistence(true);
+    }
+
+    @NewChain
+    Associations checkExistence(boolean checkExistence);
 
     default int save(Object sourceId, Object targetId) {
         return saveCommand(sourceId, targetId).execute();

@@ -28,7 +28,11 @@ class AssociationExecutable implements Executable<Integer> {
 
     private final boolean reversed;
 
-    private final Mode mode;
+    private final boolean forDelete;
+
+    private final boolean defaultCheckExistence;
+
+    private final Boolean nullOrCheckedExistence;
 
     private final Set<Tuple2<Object, Object>> idTuples;
 
@@ -37,26 +41,38 @@ class AssociationExecutable implements Executable<Integer> {
             Connection con,
             AssociationType associationType,
             boolean reversed,
-            Mode mode,
+            boolean forDelete,
+            boolean defaultCheckExistence,
+            Collection<Tuple2<Object, Object>> idTuples
+    ) {
+        this(sqlClient, con, associationType, reversed, forDelete, defaultCheckExistence, null, idTuples);
+    }
+
+    private AssociationExecutable(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            AssociationType associationType,
+            boolean reversed,
+            boolean forDelete,
+            boolean defaultCheckExistence,
+            Boolean nullOrCheckedExistence,
             Collection<Tuple2<Object, Object>> idTuples
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
-        this.mode = mode;
+        this.forDelete = forDelete;
+        this.defaultCheckExistence = defaultCheckExistence;
+        this.nullOrCheckedExistence = nullOrCheckedExistence;
         this.idTuples = idTuples instanceof Set<?> ?
                 (Set<Tuple2<Object, Object>>)idTuples :
                 new LinkedHashSet<>(idTuples);
     }
 
     @NewChain
-    public AssociationExecutable setCheckExistence(boolean checkExistence) {
-        if (mode == Mode.DELETE) {
-            throw new IllegalStateException("Cannot set check existence because the current operation is delete");
-        }
-        Mode mode = checkExistence ? Mode.CHECK_AND_INSERT : Mode.INSERT;
-        if (this.mode == mode) {
+    public AssociationExecutable setCheckExistence(Boolean checkExistence) {
+        if (this.defaultCheckExistence == checkExistence) {
             return this;
         }
         return new AssociationExecutable(
@@ -64,7 +80,9 @@ class AssociationExecutable implements Executable<Integer> {
                 con,
                 associationType,
                 reversed,
-                mode,
+                forDelete,
+                defaultCheckExistence,
+                checkExistence,
                 idTuples
         );
     }
@@ -100,7 +118,7 @@ class AssociationExecutable implements Executable<Integer> {
 
         MutationTrigger trigger = createTrigger();
         MiddleTableOperator operator = getMiddleTypeOperator(con, trigger);
-        if (mode == Mode.DELETE) {
+        if (forDelete) {
             int affectedRowCount = operator
                     .remove(
                             new MiddleTableOperator.TupleReader(idTuples),
@@ -113,7 +131,7 @@ class AssociationExecutable implements Executable<Integer> {
         }
 
         Set<Tuple2<Object, Object>> addingPairs = idTuples;
-        if (mode == Mode.CHECK_AND_INSERT) {
+        if (nullOrCheckedExistence != null ? nullOrCheckedExistence : defaultCheckExistence) {
             addingPairs = new LinkedHashSet<>(addingPairs);
             Set<Tuple2<Object, Object>> existingPairs = new HashSet<>(find(con));
             addingPairs.removeAll(existingPairs);
@@ -128,12 +146,6 @@ class AssociationExecutable implements Executable<Integer> {
             trigger.submit(sqlClient, con);
         }
         return affectedRowCount;
-    }
-
-    public enum Mode {
-        CHECK_AND_INSERT,
-        INSERT,
-        DELETE
     }
 
     private List<Tuple2<Object, Object>> find(Connection con) {

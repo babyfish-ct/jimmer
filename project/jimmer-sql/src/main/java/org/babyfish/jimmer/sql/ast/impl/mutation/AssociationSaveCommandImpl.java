@@ -31,16 +31,16 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
                 .execute(this::executeImpl);
     }
 
-    private Integer executeImpl(Connection con) {
-        return executable.execute(con);
-    }
-
     @Override
-    public AssociationSaveCommand checkExistence(boolean checkExistence) {
+    public AssociationSaveCommand checkExistence(Boolean checkExistence) {
         AssociationExecutable newExecutable = executable.setCheckExistence(checkExistence);
         if (newExecutable == executable) {
             return this;
         }
         return new AssociationSaveCommandImpl(newExecutable);
+    }
+
+    private Integer executeImpl(Connection con) {
+        return executable.execute(con);
     }
 }

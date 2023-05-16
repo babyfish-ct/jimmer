@@ -38,6 +38,7 @@ public class ImplementorGenerator {
             addGetterIfNecessary(prop);
         }
         addType();
+        addDummyProp();
         parentBuilder.addType(typeBuilder.build());
     }
 
@@ -120,5 +121,14 @@ public class ImplementorGenerator {
                             .build()
             );
         }
+    }
+
+    private void addDummyProp() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("getDummyPropForJacksonError__")
+                .returns(TypeName.INT)
+                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                .addStatement("throw new $T()", ImmutableModuleRequiredException.class);
+        typeBuilder.addMethod(builder.build());
     }
 }

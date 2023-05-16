@@ -2,6 +2,9 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 public interface CacheAbandonedCallback {
 
     void abandoned(ImmutableProp prop, Reason reason);
@@ -26,5 +29,17 @@ public interface CacheAbandonedCallback {
          * The field level filter of object fetcher or graphql is used
          */
         FIELD_FILTER_USED
+    }
+
+    static CacheAbandonedCallback log() {
+        return CacheAbandonedCallbackForLog.INSTANCE;
+    }
+
+    static CacheAbandonedCallback combine(CacheAbandonedCallback ... callbacks) {
+        return CompositeCacheAbandonedCallback.combine(Arrays.asList(callbacks));
+    }
+
+    static CacheAbandonedCallback combine(Collection<CacheAbandonedCallback> callbacks) {
+        return CompositeCacheAbandonedCallback.combine(callbacks);
     }
 }

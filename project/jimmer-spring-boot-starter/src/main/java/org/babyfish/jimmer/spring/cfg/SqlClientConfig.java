@@ -7,6 +7,7 @@ import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -60,6 +61,7 @@ public class SqlClientConfig {
             @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
             @Autowired(required = false) MicroServiceExchange exchange,
+            List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
@@ -102,6 +104,7 @@ public class SqlClientConfig {
                 sqlFormatter,
                 cacheFactory,
                 exchange,
+                callbacks,
                 providers,
                 interceptors,
                 javaFilters,
@@ -130,6 +133,7 @@ public class SqlClientConfig {
             @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
             @Autowired(required = false) MicroServiceExchange exchange,
+            List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
@@ -172,6 +176,7 @@ public class SqlClientConfig {
                     sqlFormatter,
                     cacheFactory,
                     exchange,
+                    callbacks,
                     providers,
                     interceptors,
                     kotlinFilters
@@ -207,6 +212,7 @@ public class SqlClientConfig {
             SqlFormatter sqlFormatter,
             CacheFactory cacheFactory,
             MicroServiceExchange exchange,
+            List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
@@ -253,6 +259,9 @@ public class SqlClientConfig {
         if (cacheFactory != null) {
             builder.setCaches(cfg -> {
                 cfg.setCacheFactory(cacheFactory);
+                cfg.setAbandonedCallback(
+                        CacheAbandonedCallback.combine(callbacks)
+                );
             });
         }
 
@@ -269,6 +278,12 @@ public class SqlClientConfig {
         if (!properties.getMicroServiceName().isEmpty()) {
             builder.setMicroServiceExchange(exchange);
         }
+    }
+
+    @ConditionalOnMissingBean(CacheAbandonedCallback.class)
+    @Bean
+    public CacheAbandonedCallback cacheAbandonedCallback() {
+        return CacheAbandonedCallback.log();
     }
 
     @Conditional(MicroServiceCondition.class)

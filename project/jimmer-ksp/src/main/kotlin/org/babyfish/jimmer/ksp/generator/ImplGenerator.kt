@@ -22,6 +22,12 @@ class ImplGenerator(
                         PropertySpec
                             .builder("__visibility", VISIBILITY_CLASS_NAME)
                             .addModifiers(KModifier.INTERNAL)
+                            .addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_IGNORE_CLASS_NAME)
+                                    .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
+                                    .build()
+                            )
                             .initializer("%T.of(%L)", VISIBILITY_CLASS_NAME, type.properties.size)
                             .build()
                     )

@@ -22,6 +22,7 @@ class ImplementorGenerator(
                     addGetFun(Int::class)
                     addGetFun(String::class)
                     addTypeFun()
+                    addDummyPropForNoImmutableModuleError()
                 }
                 .build()
         )
@@ -62,6 +63,20 @@ class ImplementorGenerator(
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(IMMUTABLE_TYPE_CLASS_NAME)
                 .addCode("return %T.type", type.draftClassName(PRODUCER))
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addDummyPropForNoImmutableModuleError() {
+        addProperty(
+            PropertySpec
+                .builder("dummyPropForJacksonError__", INT)
+                .getter(
+                    FunSpec
+                        .getterBuilder()
+                        .addStatement("throw %T()", ImmutableModuleRequiredException::class)
+                        .build()
+                )
                 .build()
         )
     }
