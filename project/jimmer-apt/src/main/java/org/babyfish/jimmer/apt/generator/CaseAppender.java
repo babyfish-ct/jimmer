@@ -20,12 +20,7 @@ public class CaseAppender {
 
     public void addCase(ImmutableProp prop) {
         if (argType == int.class) {
-            ImmutableType declaringType = prop.getDeclaringType();
-            if (declaringType == type) {
-                builder.addCode("case $L:\n\t\t", prop.getId());
-            } else {
-                builder.addCode("case $T.SLOT_$L:\n\t\t", declaringType.getProducerClassName(), Strings.upper(prop.getName()));
-            }
+            builder.addCode("case $L:\n\t\t", prop.getSlotName());
         } else {
             builder.addCode("case $S:\n\t\t", prop.getName());
         }

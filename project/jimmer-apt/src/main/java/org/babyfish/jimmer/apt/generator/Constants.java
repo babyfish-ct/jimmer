@@ -9,6 +9,7 @@ import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.Visibility;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
@@ -69,6 +70,9 @@ class Constants {
 
     public static final ClassName RUNTIME_TYPE_CLASS_NAME =
             ClassName.get(org.babyfish.jimmer.meta.ImmutableType.class);
+
+    public static final ClassName VISIBILITY_CLASS_NAME =
+            ClassName.get(Visibility.class);
 
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);

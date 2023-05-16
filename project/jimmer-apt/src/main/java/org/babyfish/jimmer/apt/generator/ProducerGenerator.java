@@ -29,8 +29,8 @@ public class ProducerGenerator {
         typeBuilder.modifiers.add(Modifier.PUBLIC);
         typeBuilder.modifiers.add(Modifier.STATIC);
         addInstance();
-        addType();
         addSlots();
+        addType();
         addConstructor();
         addProduce(false);
         addProduce(true);
@@ -79,6 +79,24 @@ public class ProducerGenerator {
         typeBuilder.addField(builder.build());
     }
 
+    private void addSlots() {
+        for (ImmutableProp prop : type.getProps().values()) {
+            FieldSpec.Builder builder = FieldSpec.builder(
+                    TypeName.INT,
+                    prop.getSlotName(),
+                    Modifier.PUBLIC,
+                    Modifier.STATIC,
+                    Modifier.FINAL
+            );
+            if (prop.getDeclaringType() == type) {
+                builder.initializer(Integer.toString(prop.getId()));
+            } else {
+                builder.initializer("$T.$L", prop.getDeclaringType().getProducerClassName(), prop.getSlotName());
+            }
+            typeBuilder.addField(builder.build());
+        }
+    }
+
     private void addType() {
         CodeBlock.Builder builder = CodeBlock
                 .builder()
@@ -118,20 +136,20 @@ public class ProducerGenerator {
             if (prop == type.getIdProp()) {
                 builder.add(
                         ".id($L, $S, $T.class)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName(),
                         prop.getRawElementTypeName()
                 );
             } else if (prop == type.getVersionProp()) {
                 builder.add(
                         ".version($L, $S)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName()
                 );
             } else if (prop == type.getLogicalDeletedProp()) {
                 builder.add(
                         ".logicalDeleted($L, $S, $T.class, $L)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName(),
                         prop.getRawElementTypeName(),
                         prop.isNullable()
@@ -139,7 +157,7 @@ public class ProducerGenerator {
             } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation(false)) {
                 builder.add(
                         ".key($L, $S, $T.class, $L)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName(),
                         prop.getRawElementTypeName(),
                         prop.isNullable()
@@ -147,7 +165,7 @@ public class ProducerGenerator {
             } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation(false)) {
                 builder.add(
                         ".keyReference($L, $S, $T.class, $T.class, $L)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName(),
                         prop.getAnnotation(OneToOne.class) != null ? OneToOne.class : ManyToOne.class,
                         prop.getRawElementTypeName(),
@@ -156,7 +174,7 @@ public class ProducerGenerator {
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(
                         ".add($L, $S, $T.class, $T.class, $L)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName(),
                         prop.getAssociationAnnotation().annotationType(),
                         prop.getRawElementTypeName(),
@@ -165,7 +183,7 @@ public class ProducerGenerator {
             } else {
                 builder.add(
                         ".add($L, $S, $T.$L, $T.class, $L)\n",
-                        prop.getId(),
+                        prop.getSlotName(),
                         prop.getName(),
                         ImmutablePropCategory.class,
                         category.name(),
@@ -188,23 +206,6 @@ public class ProducerGenerator {
                         .initializer(builder.build())
                         .build()
         );
-    }
-
-    private void addSlots() {
-        for (ImmutableProp prop : type.getDeclaredProps().values()) {
-            typeBuilder.addField(
-                    FieldSpec
-                            .builder(
-                                    TypeName.INT,
-                                    "SLOT_" + Strings.upper(prop.getName()),
-                                    Modifier.PUBLIC,
-                                    Modifier.STATIC,
-                                    Modifier.FINAL
-                            )
-                            .initializer(Integer.toString(prop.getId()))
-                            .build()
-            );
-        }
     }
 
     private void addConstructor() {

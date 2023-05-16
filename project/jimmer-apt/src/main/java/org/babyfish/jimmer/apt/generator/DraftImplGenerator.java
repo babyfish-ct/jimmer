@@ -36,7 +36,7 @@ public class DraftImplGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec.classBuilder("DraftImpl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                .superclass(type.getImplementorClassName())
+                .addSuperinterface(type.getImplementorClassName())
                 .addSuperinterface(draftSpiClassName)
                 .addSuperinterface(type.getDraftClassName());
         addFields();
@@ -187,7 +187,7 @@ public class DraftImplGenerator {
                                 e.getKey(),
                                 e.getValue(),
                                 type.getClassName(),
-                                prop.getId()
+                                prop.getSlotName()
                         );
                 typeBuilder.addField(builder.build());
             }
@@ -290,6 +290,15 @@ public class DraftImplGenerator {
                         .addStatement("return $L.__equals(obj, shallow)", UNMODIFIED)
                         .build()
         );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("toString")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .returns(String.class)
+                        .addStatement("return $T.toString($L)", ImmutableObjects.class, UNMODIFIED)
+                        .build()
+        );
     }
 
     private void addGetter(ImmutableProp prop) {
@@ -379,13 +388,13 @@ public class DraftImplGenerator {
         if (prop.isNullable()) {
             builder.beginControlFlow(
                     "if (autoCreate && (!__isLoaded($L) || $L() == null))",
-                    prop.getId(),
+                    prop.getSlotName(),
                     prop.getGetterName()
             );
         } else {
             builder.beginControlFlow(
                     "if (autoCreate && (!__isLoaded($L)))",
-                    prop.getId()
+                    prop.getSlotName()
             );
         }
         if (prop.isList()) {
@@ -611,14 +620,12 @@ public class DraftImplGenerator {
         builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
         for (ImmutableProp prop : type.getPropsOrderById()) {
-            if (prop.isVisibilityControllable()) {
-                appender.addCase(prop);
-                builder.addStatement(
-                        "$L().$L = visible;break",
-                        DRAFT_FIELD_MODIFIED,
-                        prop.getVisibleName()
-                );
-            }
+            appender.addCase(prop);
+            builder.addStatement(
+                    "$L().__visibility.show($L, visible);break",
+                    DRAFT_FIELD_MODIFIED,
+                    prop.getSlotName()
+            );
         }
         builder.addStatement(
                 "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S + \n$S\n$<)",
@@ -645,7 +652,7 @@ public class DraftImplGenerator {
             if (prop.getBaseProp() != null) {
                 builder.addStatement(
                         "__unload($L);break",
-                        prop.getBaseProp().getId()
+                        prop.getBaseProp().getSlotName()
                 );
             } else if (prop.isJavaFormula()) {
                 builder.addStatement("break");
@@ -717,7 +724,7 @@ public class DraftImplGenerator {
             builder.beginControlFlow("if (__tmpModified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isValueRequired() && (prop.isAssociation(false) || prop.isList())) {
-                    builder.beginControlFlow("if (base.__isLoaded($L))", prop.getId());
+                    builder.beginControlFlow("if (base.__isLoaded($L))", prop.getSlotName());
                     builder.addStatement(
                             "$T oldValue = base.$L()",
                             prop.getTypeName(),

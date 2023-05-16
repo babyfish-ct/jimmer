@@ -80,6 +80,8 @@ public class ImmutableType {
 
     private final String microServiceName;
 
+    private int resolvedStep;
+
     public ImmutableType(
             Context context,
             TypeElement typeElement
@@ -602,10 +604,14 @@ public class ImmutableType {
     }
 
     public boolean resolve(Context context, int step) {
+        if (resolvedStep > step) {
+            return false;
+        }
         boolean hasNext = false;
         for (ImmutableProp prop : declaredProps.values()) {
             hasNext |= prop.resolve(context, step);
         }
+        resolvedStep = step;
         return hasNext;
     }
 

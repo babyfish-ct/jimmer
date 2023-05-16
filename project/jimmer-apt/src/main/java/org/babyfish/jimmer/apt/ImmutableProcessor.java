@@ -4,17 +4,14 @@ import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.apt.meta.MetaException;
 import org.babyfish.jimmer.error.ErrorFamily;
-import org.babyfish.jimmer.sql.Entity;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes({
@@ -119,8 +116,14 @@ public class ImmutableProcessor extends AbstractProcessor {
         int step = 0;
         while (true) {
             boolean hasNext = false;
-            for (ImmutableType type : map.values()) {
-                hasNext |= type.resolve(context, step);
+            int ctxSize = context.getImmutableTypes().size();
+            while (true) {
+                for (ImmutableType type : context.getImmutableTypes()) {
+                    hasNext |= type.resolve(context, step);
+                }
+                if (ctxSize == context.getImmutableTypes().size()) {
+                    break;
+                }
             }
             if (!hasNext) {
                 break;

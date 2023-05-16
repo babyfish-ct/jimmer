@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.generator.Strings;
 import org.babyfish.jimmer.meta.impl.ViewUtils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
@@ -27,6 +28,8 @@ public class ImmutableProp {
 
     private final int id;
 
+    private final String slotName;
+
     private final String getterName;
 
     private final String setterName;
@@ -38,8 +41,6 @@ public class ImmutableProp {
     private final boolean beanStyle;
 
     private final String loadedStateName;
-
-    private final String visibleName;
 
     private final TypeMirror returnType;
 
@@ -82,8 +83,6 @@ public class ImmutableProp {
     private ImmutableProp manyToManyViewBaseProp;
 
     private ImmutableProp manyToManyViewBaseDeeperProp;
-
-    private boolean isVisibilityControllable;
 
     private Boolean remote;
 
@@ -138,8 +137,8 @@ public class ImmutableProp {
             beanStyle = false;
         }
 
+        slotName = "SLOT_" + Strings.upper(name);
         loadedStateName = "__" + name + "Loaded";
-        visibleName = "__" + name + "Visible";
 
         if (context.isCollection(returnType) && !isExplicitScalar()) {
             if (!context.isListStrictly(returnType)) {
@@ -325,6 +324,10 @@ public class ImmutableProp {
         return id;
     }
 
+    public String getSlotName() {
+        return slotName;
+    }
+
     public String getName() {
         return name;
     }
@@ -347,10 +350,6 @@ public class ImmutableProp {
 
     public String getLoadedStateName() {
         return getLoadedStateName(false);
-    }
-
-    public String getVisibleName() {
-        return visibleName;
     }
 
     public String getLoadedStateName(boolean force) {
@@ -495,10 +494,6 @@ public class ImmutableProp {
         return manyToManyViewBaseDeeperProp;
     }
 
-    public boolean isVisibilityControllable() {
-        return isVisibilityControllable;
-    }
-
     public boolean isRemote() {
         Boolean remote = this.remote;
         if (remote == null) {
@@ -555,7 +550,7 @@ public class ImmutableProp {
                 resolveIdViewBaseProp();
                 return true;
             case 3:
-                resolveManyToManyViewProp();
+                resolveManyToManyViewProp(context);
             default:
                 return false;
         }
@@ -607,9 +602,7 @@ public class ImmutableProp {
                     );
                 }
                 props.add(prop);
-                prop.isVisibilityControllable = true;
             }
-            this.isVisibilityControllable = true;
             this.dependencies = Collections.unmodifiableSet(props);
         }
     }
@@ -704,12 +697,10 @@ public class ImmutableProp {
                             "\", but the current property does not return that type"
             );
         }
-        baseProp.isVisibilityControllable = true;
-        isVisibilityControllable = true;
         idViewBaseProp = baseProp;
     }
 
-    private void resolveManyToManyViewProp() {
+    private void resolveManyToManyViewProp(Context ctx) {
         ManyToManyView manyToManyView = getAnnotation(ManyToManyView.class);
         if (manyToManyView == null) {
             return;
@@ -805,9 +796,6 @@ public class ImmutableProp {
         }
         manyToManyViewBaseProp = prop;
         manyToManyViewBaseDeeperProp = deeperProp;
-        isVisibilityControllable = true;
-        prop.isVisibilityControllable = true;
-        deeperProp.isVisibilityControllable = true;
     }
 
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {

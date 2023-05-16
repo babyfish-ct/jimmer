@@ -130,12 +130,13 @@ public class PropsGenerator {
                         Modifier.FINAL
                 )
                 .initializer(
-                        "\n    $T.$L($T.get($T.class).getProp($L))",
+                        "\n    $T.$L($T.get($T.class).getProp($T.$L))",
                         Constants.TYPED_PROP_CLASS_NAME,
                         action,
                         Constants.RUNTIME_TYPE_CLASS_NAME,
                         type.getClassName(),
-                        Integer.toString(prop.getId())
+                        prop.getDeclaringType().getProducerClassName(),
+                        prop.getSlotName()
                 );
         typeBuilder.addField(builder.build());
     }

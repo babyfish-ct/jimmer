@@ -15,9 +15,9 @@ import static org.babyfish.jimmer.apt.generator.Constants.MANY_TO_MANY_VIEW_LIST
 
 public class ImplementorGenerator {
 
-    private ImmutableType type;
+    private final ImmutableType type;
 
-    private ClassName spiClassName;
+    private final ClassName spiClassName;
 
     private TypeSpec.Builder typeBuilder;
 
@@ -27,27 +27,24 @@ public class ImplementorGenerator {
     }
 
     public void generate(TypeSpec.Builder parentBuilder) {
-        typeBuilder = TypeSpec.classBuilder("Implementor");
-        typeBuilder.modifiers.add(Modifier.PUBLIC);
-        typeBuilder.modifiers.add(Modifier.STATIC);
-        typeBuilder.modifiers.add(Modifier.ABSTRACT);
-        typeBuilder.addSuperinterface(type.getClassName());
-        typeBuilder.addSuperinterface(spiClassName);
+        typeBuilder = TypeSpec
+                .interfaceBuilder("Implementor")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addSuperinterface(type.getClassName())
+                .addSuperinterface(spiClassName);
         addGet(int.class);
         addGet(String.class);
         for (ImmutableProp prop : type.getProps().values()) {
             addGetterIfNecessary(prop);
         }
         addType();
-        addToString();
-        addDummyProp();
         parentBuilder.addType(typeBuilder.build());
     }
 
     private void addGet(Class<?> argType) {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__get")
-                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .returns(Object.class);
@@ -80,7 +77,7 @@ public class ImplementorGenerator {
     private void addType() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("__type")
-                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
                 .addAnnotation(Override.class)
                 .returns(Constants.RUNTIME_TYPE_CLASS_NAME)
                 .addStatement("return TYPE");
@@ -94,12 +91,13 @@ public class ImplementorGenerator {
                     MethodSpec
                             .methodBuilder(prop.getGetterName())
                             .addAnnotation(Override.class)
-                            .addModifiers(Modifier.PUBLIC)
+                            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
                             .returns(prop.getTypeName())
                             .addStatement(
-                                    "return new $T<>($L, $L())",
+                                    "return new $T<>($T.$L, $L())",
                                     MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
-                                    prop.getManyToManyViewBaseDeeperProp().getId(),
+                                    prop.getManyToManyViewBaseDeeperProp().getDeclaringType().getProducerClassName(),
+                                    prop.getManyToManyViewBaseDeeperProp().getSlotName(),
                                     manyToManyViewBaseProp.getGetterName()
                             )
                             .build()
@@ -116,30 +114,11 @@ public class ImplementorGenerator {
                                             name.substring(1)
                             )
                             .addAnnotation(JsonIgnore.class)
-                            .addModifiers(Modifier.PUBLIC)
+                            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
                             .returns(prop.getTypeName())
                             .addStatement("return $L()", name)
                             .build()
             );
         }
-    }
-
-    private void addToString() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("toString")
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
-                .returns(String.class)
-                .addStatement("return $T.toString(this)", ImmutableObjects.class);
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addDummyProp() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("getDummyPropForJacksonError__")
-                .returns(TypeName.INT)
-                .addModifiers(Modifier.PUBLIC)
-                .addStatement("throw new $T()", ImmutableModuleRequiredException.class);
-        typeBuilder.addMethod(builder.build());
     }
 }

@@ -14,6 +14,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +37,8 @@ public class Context {
     private final TypeMirror comparableType;
 
     private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
+
+    private final Map<TypeElement, ImmutableType> changedTypeMap = new HashMap<>();
 
     private final boolean keepIsPrefix;
 
@@ -128,6 +131,10 @@ public class Context {
 
     public boolean isSubType(TypeMirror type, TypeMirror superType) {
         return types.isSubtype(type, superType);
+    }
+
+    public Collection<ImmutableType> getImmutableTypes() {
+        return Collections.unmodifiableCollection(immutableTypeMap.values());
     }
 
     public ImmutableType getImmutableType(TypeElement typeElement) {
