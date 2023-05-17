@@ -13,20 +13,26 @@ import java.util.function.Consumer;
 public interface Predicate extends Expression<Boolean> {
 
     /**
-     * Please use {@link #not(Predicate)} when the current predicate may be null
+     * This function will be deleted in 1.0.0,
+     * please use the static method {@link #and(Predicate...)}
      */
+    @Deprecated
     @NewChain
     Predicate and(@Nullable Predicate other);
 
     /**
-     * Please use {@link #not(Predicate)} when the current predicate may be null
+     * This function will be deleted in 1.0.0,
+     * please use the static method {@link #or(Predicate...)}
      */
+    @Deprecated
     @NewChain
     Predicate or(@Nullable Predicate other);
 
     /**
-     * Please use {@link #not(Predicate)} when the current predicate may be null
+     * This function will be deleted in 1.0.0,
+     * please use the static method {@link #not(Predicate)}
      */
+    @Deprecated
     @NewChain
     Predicate not();
 
@@ -39,7 +45,7 @@ public interface Predicate extends Expression<Boolean> {
     static Predicate or(Predicate ... predicates) {
         return CompositePredicate.or(predicates);
     }
-
+    
     @Nullable
     static Predicate not(@Nullable Predicate predicate) {
         if (predicate == null) {

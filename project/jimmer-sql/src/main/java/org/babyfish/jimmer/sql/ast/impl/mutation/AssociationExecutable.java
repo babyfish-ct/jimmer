@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -71,8 +72,8 @@ class AssociationExecutable implements Executable<Integer> {
     }
 
     @NewChain
-    public AssociationExecutable setCheckExistence(Boolean checkExistence) {
-        if (this.defaultCheckExistence == checkExistence) {
+    public AssociationExecutable setCheckExistence(@Nullable Boolean checkExistence) {
+        if (nullOrCheckedExistence == checkExistence) {
             return this;
         }
         return new AssociationExecutable(

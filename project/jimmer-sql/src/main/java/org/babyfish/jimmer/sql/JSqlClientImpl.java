@@ -558,7 +558,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private EntityManager defaultEntityManager;
 
-        private Caches caches;
+        private Consumer<CacheConfig> cacheConfigLambda;
 
         private TriggerType triggerType = TriggerType.BINLOG_ONLY;
 
@@ -826,11 +826,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         "The EntityManager of SqlBuilder.Builder can only be set once"
                 );
             }
-            if (caches != null) {
-                throw new IllegalStateException(
-                        "The EntityManager cannot be changed after caches is set"
-                );
-            }
             this.userEntityManager = entityManager;
             return this;
         }
@@ -838,11 +833,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            if (caches != null) {
-                throw new IllegalStateException("caches cannot be set twice");
-            }
-            createTriggersIfNecessary();
-            caches = CachesImpl.of(triggers, entityManager(), microServiceName, block);
+            cacheConfigLambda = block;
             return this;
         }
 
@@ -1007,7 +998,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
             FilterManager filterManager = createFilterManager();
             validateAssociations(filterManager);
-            createTriggersIfNecessary();
+            createTriggers();
+            Caches caches = null;
+            if (cacheConfigLambda != null) {
+                caches = CachesImpl.of(triggers, entityManager(), microServiceName, cacheConfigLambda);
+            }
             ForeignKeyStrategy foreignKeyStrategy;
             if (!dialect.isForeignKeySupported()) {
                 foreignKeyStrategy = ForeignKeyStrategy.FORCED_FAKE;
@@ -1074,7 +1069,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return sqlClient;
         }
 
-        private void createTriggersIfNecessary() {
+        private void createTriggers() {
             if (triggers == null) {
                 switch (triggerType) {
                     case TRANSACTION_ONLY:

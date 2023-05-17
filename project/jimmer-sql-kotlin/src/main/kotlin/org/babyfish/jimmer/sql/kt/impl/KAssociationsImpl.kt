@@ -6,8 +6,7 @@ import org.babyfish.jimmer.sql.kt.KAssociations
 import java.sql.Connection
 
 internal class KAssociationsImpl(
-    private val javaAssociations: Associations,
-    private val checkExistence: Boolean
+    private val javaAssociations: Associations
 ): KAssociations {
 
     override fun forConnection(con: Connection): KAssociations =
@@ -15,18 +14,20 @@ internal class KAssociationsImpl(
             if (javaAssociations === it) {
                 this
             } else {
-                KAssociationsImpl(it, checkExistence)
+                KAssociationsImpl(it)
             }
         }
 
     override fun reverse(): KAssociations =
-        KAssociationsImpl(javaAssociations.reverse(), checkExistence)
+        KAssociationsImpl(javaAssociations.reverse())
 
     override fun checkExistence(checkExistence: Boolean): KAssociations =
-        if (this.checkExistence == checkExistence) {
-            this
-        } else {
-            KAssociationsImpl(javaAssociations, checkExistence)
+        javaAssociations.checkExistence(checkExistence).let {
+            if (javaAssociations === it) {
+                this
+            } else {
+                KAssociationsImpl(it)
+            }
         }
 
     override fun save(
@@ -37,7 +38,7 @@ internal class KAssociationsImpl(
     ): Int =
         javaAssociations
             .saveCommand(sourceId, targetId)
-            .checkExistence(checkExistence ?: this.checkExistence)
+            .checkExistence(checkExistence)
             .execute(con)
 
     override fun batchSave(
@@ -48,7 +49,7 @@ internal class KAssociationsImpl(
     ): Int =
         javaAssociations
             .batchSaveCommand(sourceIds, targetIds)
-            .checkExistence(checkExistence ?: this.checkExistence)
+            .checkExistence(checkExistence)
             .execute(con)
 
     override fun batchSave(
@@ -58,7 +59,7 @@ internal class KAssociationsImpl(
     ): Int =
         javaAssociations
             .batchSaveCommand(idTuples)
-            .checkExistence(checkExistence ?: this.checkExistence)
+            .checkExistence(checkExistence)
             .execute(con)
 
     override fun delete(

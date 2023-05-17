@@ -100,7 +100,9 @@ fun <T: Any> sqlNullable(type: KClass<T>, sql: String, block: (SqlDSL.() -> Unit
 }
 
 
-
+/**
+ * Shortcut for `this.id eq right `
+ */
 infix fun <E: Any> KTable<E>.eq(right: KTable<E>): KNonNullExpression<Boolean> {
     val immutableType = (this as TableSelection).immutableType
     if (immutableType !== (right as TableSelection).immutableType) {
@@ -112,12 +114,21 @@ infix fun <E: Any> KTable<E>.eq(right: KTable<E>): KNonNullExpression<Boolean> {
     return ComparisonPredicate.Eq(idExpr, rightIdExpr)
 }
 
+/**
+ * QBE
+ */
 infix fun <E: Any> KTable<E>.eq(right: E): KNonNullExpression<Boolean> =
     eq(example(right))
 
+/**
+ * QBE
+ */
 infix fun <E: Any> KTable<E>.eq(right: Input<E>): KNonNullExpression<Boolean> =
     eq(example(right))
 
+/**
+ * QBE
+ */
 infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean> =
     JavaPredicateWrapper(
         right.toPredicate((this as KTableImplementor<*>).javaTable) as PredicateImplementor

@@ -96,7 +96,7 @@ internal class KSqlClientImpl(
         javaClient.getAssociations(
             prop.toImmutableProp()
         ).let {
-            KAssociationsImpl(it, false)
+            KAssociationsImpl(it)
         }
 
     override fun caches(block: KCacheDisableDsl.() -> Unit): KSqlClient =

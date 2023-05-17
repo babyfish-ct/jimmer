@@ -93,7 +93,7 @@ public abstract class Visibility {
         }
     }
 
-    public static abstract class Composite extends Visibility {
+    private static abstract class Composite extends Visibility {
 
         abstract long hidden(int index);
 

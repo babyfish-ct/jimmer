@@ -142,7 +142,9 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
             }
         }
 
-        if (info != null && immutableType != fetcher.getImmutableType()) {
+        // For spring-dev-tools, compare class name here, not class or immutable type.
+        // Please see issue 109
+        if (info != null && !immutableType.getJavaClass().getName().equals(fetcher.getImmutableType().getJavaClass().getName())) {
             throw new IllegalDocMetaException(
                     "Illegal " +
                             ctx.getLocation() +

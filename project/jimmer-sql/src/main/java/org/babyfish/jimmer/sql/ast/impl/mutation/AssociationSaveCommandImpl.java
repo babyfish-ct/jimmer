@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.sql.ast.mutation.AssociationSaveCommand;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 
@@ -32,7 +33,7 @@ class AssociationSaveCommandImpl implements AssociationSaveCommand {
     }
 
     @Override
-    public AssociationSaveCommand checkExistence(Boolean checkExistence) {
+    public AssociationSaveCommand checkExistence(@Nullable Boolean checkExistence) {
         AssociationExecutable newExecutable = executable.setCheckExistence(checkExistence);
         if (newExecutable == executable) {
             return this;
