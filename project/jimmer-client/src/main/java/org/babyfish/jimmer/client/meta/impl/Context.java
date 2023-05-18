@@ -1,12 +1,15 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import kotlin.jvm.JvmClassMappingKt;
-import kotlin.reflect.*;
+import kotlin.reflect.KClass;
+import kotlin.reflect.KType;
+import kotlin.reflect.KTypeParameter;
+import kotlin.reflect.KTypeProjection;
 import kotlin.reflect.jvm.internal.KotlinReflectionInternalError;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
-import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.Type;
+import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.error.ErrorFamily;
 import org.babyfish.jimmer.error.ErrorField;
 import org.babyfish.jimmer.error.ErrorFields;
@@ -99,7 +102,7 @@ class Context {
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
-        TypeVariable<?>[] typeVariables = ((Class<?>)((ParameterizedType)parameterizedType.getType()).getRawType()).getTypeParameters();
+        TypeVariable<?>[] typeVariables = ((Class<?>) ((ParameterizedType) parameterizedType.getType()).getRawType()).getTypeParameters();
         AnnotatedType[] actualTypes = parameterizedType.getAnnotatedActualTypeArguments();
         Map<UnifiedTypeParameter, Object> map = new HashMap<>();
         for (int i = typeVariables.length - 1; i >= 0; --i) {
@@ -125,7 +128,7 @@ class Context {
         this.rawImmutableObjectTypeMap = base.rawImmutableObjectTypeMap;
         this.viewImmutableObjectTypeMap = base.viewImmutableObjectTypeMap;
         this.fetcherMap = base.fetcherMap;
-        List<KTypeParameter> typeParameters = ((KClass<?>)parameterizedType.getClassifier()).getTypeParameters();
+        List<KTypeParameter> typeParameters = ((KClass<?>) parameterizedType.getClassifier()).getTypeParameters();
         List<KTypeProjection> projections = parameterizedType.getArguments();
         Map<UnifiedTypeParameter, Object> map = new HashMap<>();
         for (int i = typeParameters.size() - 1; i >= 0; --i) {
@@ -211,7 +214,25 @@ class Context {
                 return enumType;
             }
             if (javaClass.isArray()) {
-                Type componentType = objectType(javaClass.getComponentType(), null);
+                final StaticObjectType componentType = objectType(javaClass.getComponentType(), null);
+                Class<?> componentClass = componentType.getJavaType();
+
+                if (componentClass.isArray()) {
+                    throw new IllegalDocMetaException(
+                            "Illegal type \"" +
+                                    annotatedType +
+                                    "\" declared in " +
+                                    location +
+                                    ", multi-dimensional array is not supported"
+                    );
+                }
+
+                final SimpleType simpleType = SimpleTypeImpl.get(componentClass);
+
+                if (simpleType != null) {
+                    return new ArrayTypeImpl(simpleType);
+                }
+
                 return new ArrayTypeImpl(componentType);
             }
             SimpleType simpleType = SimpleTypeImpl.get(javaClass);
@@ -240,14 +261,14 @@ class Context {
             return objectType(javaClass, null);
         }
         if (annotatedType instanceof AnnotatedWildcardType) {
-            return parseType(((AnnotatedWildcardType)annotatedType).getAnnotatedUpperBounds()[0]);
+            return parseType(((AnnotatedWildcardType) annotatedType).getAnnotatedUpperBounds()[0]);
         }
         if (annotatedType instanceof AnnotatedArrayType) {
             return new ArrayTypeImpl(parseType(((AnnotatedArrayType) annotatedType).getAnnotatedGenericComponentType()));
         }
         if (annotatedType instanceof AnnotatedTypeVariable) {
             if (ignoreTypeVariableResolving) {
-                return new UnresolvedTypeVariableImpl(((TypeVariable<?>)annotatedType.getType()).getName());
+                return new UnresolvedTypeVariableImpl(((TypeVariable<?>) annotatedType.getType()).getName());
             }
             TypeVariable<?> typeVariable = (TypeVariable<?>) annotatedType.getType();
             Object resolvedType = resolve(new UnifiedTypeParameter(typeVariable));
@@ -780,9 +801,10 @@ class Context {
 
         public static Object wrap(Object o) {
             if (o instanceof AnnotatedTypeVariable) {
-                TypeVariable<?> typeVariable = (TypeVariable<?>)((AnnotatedTypeVariable)o).getType();
+                TypeVariable<?> typeVariable = (TypeVariable<?>) ((AnnotatedTypeVariable) o).getType();
                 return new UnifiedTypeParameter(typeVariable);
-            } if (o instanceof TypeVariable<?>) {
+            }
+            if (o instanceof TypeVariable<?>) {
                 return new UnifiedTypeParameter((TypeVariable<?>) o);
             } else if (o instanceof KTypeParameter) {
                 return new UnifiedTypeParameter((KTypeParameter) o);
