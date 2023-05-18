@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.7.66"
+    jimmerVersion = "0.7.67"
 }
 
 group 'org.babyfish.jimmer.example.sql'
