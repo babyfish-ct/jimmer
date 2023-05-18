@@ -2,3 +2,105 @@
 sidebar_position: 1
 title: 项目动机
 ---
+
+import { ViewMore } from '@site/src/components/ViewMore';
+
+Jimmer是一个针对Java和Kotlin的革命性ORM，以及一套基于它的完整的集成方案。其目的在于
+
+-   目前Java/Kotlin领域内不同风格的访问关系数据库的痛点，。
+
+-   仅仅对关系型数据库进行ORM抽象是不够的，Jimmer以ORM为基础，提供完整的集成方案。
+
+## 当前技术方案的问题
+
+除了最底层的JDBC外，当前访问关系性数据库的方式有两种。
+
+### 以JPA为代表的传统的ORM框架
+
+传统ORM框架优点是非常便捷，但缺点是不够灵活。 以JPA为例
+
+-   查询：虽然EntityGraph赋予了JPA2.1一定的灵活性来控制被查询数据结构的形状，但这种关联级的控制能力和GraphQL那种针对任何属性的精确控制能力相比还是有所不足。 
+-   保存：对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。但无论如何开发人员如何配置，可保存的数据结构的形状是固定的。
+
+最终，人们为了追求灵活性放弃了使用ORM，转而使用抽象度较低的MyBatis方案。 这种现象在中国尤为明显。
+
+### 以MyBatis为代表的DTO映射框架
+
+这类框架并不针对数据库结构定义统一的实体模型，而是为每一个业务特例定义DTO类型，最后，对DTO而非同一实体进行SQL映射。
+
+诚然，这种做法可以获取足够的灵活性。DTO并非同一的实体模型，而是为每一个业务场景定制的数据类型，天生具备类型爆炸问题。
+
+<ViewMore buttonText="查看DTO爆炸问题" title="DTO爆炸">
+
+![jimmer-mind](@site/static/img/dto-explosion.png)
+
+</ViewMore>
+
+为大量的的DTO实施SQL Mapper必然导致大量重复工作。即，这类方案的灵活性是以重复劳动为代价的。
+
+### Jimmer的目标
+
+如上所说
+
+-   传统ORM开发便捷，但缺乏足够的灵活性
+-   MyBatis这类非ORM方案很灵活，但导致大量重复劳动。
+
+这些问题一直困扰着应用开人员。无论开发人员自己是否意识到这些问题，都因这些问题导致开发效率和开发体验遇到瓶颈难以突破。
+
+:::tip
+Jimmer提供了一条截然不同的新途径：
+
+传统ORM的便捷性 + MyBatis这类非ORM方案的灵活性
+:::
+
+## 完整的集成解决方案
+
+Jimmer不仅仅是一个ORM，还是以ORM为基础，形成了一整套完整的集成方案。
+
+仅仅对关系型数据库进行ORM抽象是不够的，实际项目中有很多其他工作需要做，比如：
+
+### 缓存及其一致性维护
+
+对于绝大部分查多写少的项目而言，采用kv缓存为数据库减压优化性能，是一种常用的方案。然而，引入缓存技术也会招来麻烦，其中最头疼的问题是保持缓存和数据库之间的一致性。
+
+Jimmer内置了缓存机制和一致性维护，具备如下特色
+
+-   Jimmer缓存对开发人员完全透明，是否启用缓存对业务代码没有任何影响，即，缓存技术的引入对项目复杂度没有任何影响。
+
+-   Jimmer的缓存并非仅有最常见的`id -> object`对象缓存，还包括
+    
+    -   关联缓存：ORM对象之间存在关系，关联缓存可以根据当前实体对象快速访问其关联对象，无需通过数据库访问。
+
+    -   计算缓存：除了ORM应该具备的属性外，Jimmer实体还可以允许开发人员根据业务规则用户定义计算属性，计算属性也可以被缓存。
+
+    -   多视角缓存：如果和权限系统相结合，在除了身份信息以外的其他所有参数都相同的情况下，不同的用户能看到不同的数据。为此Jimmer支持多视角缓存，让不同的用户看到不同的缓存数据。
+
+-   Jimmer内置良好的缓存一致性支持
+
+    -   对于对象缓存和关联缓存而言，Jimmer的缓存一致性是全自动的，无需任何开发工作。
+
+    -   对于计算缓存和多视角缓存而言，Jimmer只需开发人员的简单的帮助，即可快速实现一致性。
+
+### 前后端对接
+
+前后端分离的项目虽然让前后端代码相对独立，但总免不了前后端对接的工作。
+
+-   如果采用Jimmer构建REST服务端，客户端可以直接调用Jimmer自动生成的客户端代码，其中包含Web客户端常用的TypeScript代码。
+
+    >   注意：和其他自动生成REST客户端代码的所有技术体系都不同，Jimmer中客户端和服务端的API采用了不同的思维。
+    >
+    >   这样做的目的是为了让客户端团队和服务端团队都得到对自己最有利的开发体验最好的编程方式，具体细节将会在相关章节中详细介绍，这里仅指出客户端API并非是对服务端API的机械转译，这也是Jimmer REST客户端代码自动生成机制的核心价值
+
+-   如果采用Jimmer构建GraphQL服务端，可使用我的另外一个开源项目[graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client)获得极致的TypeScript开发体验（该客户端项目可用于任何GraphQL服务端，不限Jimmer实现的GraphQL服务）
+
+### 跨越微服务的数据整合
+
+微服务技术对业务系统进行了垂直切分，每一个的微服务都自己的数据库和缓存，即，单个微服务本质上是数据孤岛。
+
+这导致了一个问题，对于任何微服务而言，其查询返回的数据很可能只是所需数据的一部分，其他部分的数据分散在其他微服务中。
+因此，跨越服务边界远程查询数据是微服务技术体系下最基本最常见的操作。从不同的微服务查询数据的不同部分，最终拼接成一个整体，这种操作是繁琐且千篇一律的。
+
+为了解决状态问题，Jimmer支持远程关联。
+> Jimmer中实体不再局限于单个微服务，而是可以属于任何微服务，属于不同微服务的实体之间照样可以建立彼此关联
+
+如果开发人员查询的数据结构涵盖了远程，Jimmer将自动负责不同服务之间的远程数据查询和最终结果拼接。这种风格的查询隐藏了微服务的复杂性，业务代码和单体应用中查询一样简单。
