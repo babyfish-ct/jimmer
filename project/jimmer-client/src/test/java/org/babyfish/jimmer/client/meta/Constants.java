@@ -3,9 +3,11 @@ package org.babyfish.jimmer.client.meta;
 import kotlin.jvm.JvmClassMappingKt;
 import kotlin.reflect.KFunction;
 import kotlin.reflect.KType;
+import org.babyfish.jimmer.client.java.service.ArrayService;
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
 import org.babyfish.jimmer.client.java.service.FindBookArguments;
+import org.babyfish.jimmer.client.kotlin.service.KArrayService;
 import org.babyfish.jimmer.client.kotlin.service.KBookService;
 import org.babyfish.jimmer.client.kotlin.service.KBookStoreService;
 import org.babyfish.jimmer.client.meta.common.*;
@@ -96,6 +98,7 @@ public class Constants {
     public final static Metadata JAVA_METADATA = Metadata.newBuilder()
             .addServiceType(BookService.class)
             .addServiceType(AuthorService.class)
+            .addServiceType(ArrayService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )
@@ -107,6 +110,7 @@ public class Constants {
     public final static Metadata KOTLIN_METADATA = Metadata.newBuilder()
             .addServiceType(KBookService.class)
             .addServiceType(KBookStoreService.class)
+            .addServiceType(KArrayService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )
