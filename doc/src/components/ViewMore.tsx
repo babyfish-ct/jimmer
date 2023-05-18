@@ -41,7 +41,9 @@ export const ViewMore: FC<
                         </Button>
                     </Toolbar>
                 </AppBar>  
-                <DialogContent>{children}</DialogContent>
+                <DialogContent>
+                    {children}
+                </DialogContent>
             </Dialog>
         </>
     );

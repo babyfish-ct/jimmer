@@ -2,3 +2,2009 @@
 sidebar_position: 2
 title: Jimmer的优势
 ---
+
+import { Collapse } from '@site/src/components/Collapse';
+import { ViewMore } from '@site/src/components/ViewMore';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
+
+import JavaFetcherMp4 from '@site/static/img/java-fetcher.mp4';
+import KotlinFetcherMp4 from '@site/static/img/kotlin-fetcher.mp4';
+import { Benchmark } from '@site/src/components/Benchmark';
+
+## 基础能力变革
+
+[前文](./reason)提到，jimmer的目的之一是把以JPA为代表的传统ORM方案的便捷性和以MyBatis为代表的非ORM方案的灵活性相结合。
+
+为了实现这个能力，Jimmer首先改变了实体对象，在Jimmer中，实体并非简单的Java Bean对象，而是具备动态性和不可变性的对象。
+
+### 动态性
+
+所谓动态性，就是指对象的任何属性都可以缺失。
+
+把动态对象的某个属性设置为null（如果属性允许为null），和不设置对象的某个属性，是完全不同的两个概念。
+
+-   如果在代码中直接访问缺失的属性，会导致异常
+
+-   如果利用Jackson序列化动态对象，所有的缺失属性会被忽略，不会导致异常
+
+由于对象具备动态性，因此我们很容易表达任意形状的数据结构。
+
+<ViewMore title="动态对象导致数据结构的形状千变万化" buttonText="查看例子">
+
+<Divider>
+<Chip label="不完整对象"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{"name": "Learning GraphQL"}
+```
+
+<Divider>
+<Chip label="完整的对象"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99
+}
+```
+
+<Divider>
+<Chip label="附带关联的对象"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+    book.applyStore(store -> {
+        store.setName("O'REILLY");
+        store.setWebsite("https://www.oreilly.com/");
+    });
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+    store().apply {
+        name = "O'REILLY"
+        website = "https://www.oreilly.com/"
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99,
+    "store": {
+        "name": "O'REILLY",
+        "website": "https://www.oreilly.com/"
+    }
+}
+```
+
+<Divider>
+<Chip label="附带更多的关联"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+    book.applyStore(store -> {
+        store.setName("O'REILLY");
+        store.setWebsite("https://www.oreilly.com/");
+    });
+    book.addIntoAutors(author -> { 
+        author.setFirstName("Eve");
+        author.setLastName("Procello");
+        author.setGender(Gender.FEMALE);
+    });
+    book.addIntoAutors(author -> { 
+        author.setFirstName("Alex");
+        author.setLastName("Banks");
+        author.setGender(Gender.MALE);
+    });
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+    store().apply {
+        name = "O'REILLY"
+        website = "https://www.oreilly.com/"
+    }
+    authors().addBy {
+        firstName = "Eve"
+        setLastName = "Procello"
+        gender = Gender.FEMALE
+    }
+    authors().addBy {
+        firstName = "Alex"
+        lastName = "Banks"
+        gender = Gender.MALE
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99,
+    "store": {
+        "name": "O'REILLY",
+        "website": "https://www.oreilly.com/"
+    },
+    "authors": [
+        {
+            "firstName": "Eve",
+            "lastName": "Procello",
+            "gender:" "FEMALE"
+        },
+        {
+            "firstName": "Alex",
+            "lastName": "Banks",
+            "gender:" "MALE"
+        }
+    ]
+}
+```
+
+<Divider>
+<Chip label="附带更深的关联"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+    book.applyStore(store -> {
+        store.setName("O'REILLY");
+        store.setWebsite("https://www.oreilly.com/");
+        store.applyAddress(address -> {
+            address.setCity("Sevastopol");
+            address.setState("California");
+        });
+    });
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+    store().apply {
+        name = "O'REILLY"
+        website = "https://www.oreilly.com/"
+        address().apply {
+            city = "Sevastopol"
+            state = "California"
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99,
+    "store": {
+        "name": "O'REILLY",
+        "website": "https://www.oreilly.com/",
+        "address": {
+            "city": "Sevastopol",
+            "state": "California"
+        }
+    }
+}
+```
+
+</ViewMore>
+
+:::note
+这里的动态对象，并非指动态语言中那种没有拼写检查和类型检查的弱类型的对象。在Jimmer中，实体对象是100%强类型的。
+
+Jimmer对象的动态性，其实是把传统ORM中延迟属性的性质推广到了对象的任何属性。既然直接访问缺失属性会导致异常这个代价早已经被ORM领域接受，那么就充分发挥它的价值。
+:::
+
+:::info
+动态性是Jimmer对象的内禀特征，具有普适性，框架本身和开发人员都可以轻松构建动态对象给对方使用。
+
+-   Jimmer创建动态对象返回给开发人员，即，查询任意形状的数据结构
+
+-   开发人员创建动态对象传递给Jimmer，即，保存任意形状的数据结构
+
+所以，无论输入还是输出，Jimemer的基本操作单元都是形状的数据结构，而非简单的实体对象。
+
+动态性是Jimmer和最重要底层特性，是其所有上层方案的基础。
+:::
+
+### 不可变性
+
+只有动态性是不够的，ORM领域还存在一个头疼的问题：循环引用。
+
+循环引用会导致很多问题，尤其是JSON序列化的问题最为头疼。因此，Jimmer阻止用户创建具备循环引用的数据结构，并通过不可变性让它永远保持此品质。
+
+作为一个ORM，Jimmer当然允许用户在实体类型之间定双向关联，这是ORM一个强大的能力。
+
+然而，在实例化对象时，一旦开发人员决定了聚合根的类型，那么被创建的数据结构就只能是以聚合根对象作为起点的单向树。
+
+即，实体类型之间可以定义双向关联，保留两个方向的可能性。待实例化对象时，再按照业务特性选择使用其中一个关联方向。
+
+:::info
+Jimmer中任何实体相关数据结构绝不包含循环引用，因此，无需做任何转化，就可以直接参与JSON序列化和HTTP远程交互。这为应用开发带来了极大的简化。
+:::
+
+Java从14开始支持不可变record类型，kotlin的data class可轻松实现不可变类，甚至支持copy函数。然而，它们都是为简单的不可变对象而设计，处理复杂的的深层次不可变对象会面临问题。
+
+深层次的复杂不可变对象难以处理的原因，不是如何从头创建一个全新的数据结构，这对任何编程语言而言都很简单。真正的难点在于，期望对已有的数据结构做一些局部调整，构建新的数据结构。这对当前的Java和Kotlin而言很难处理，请参见
+
+<ViewMore title="Java/Kotlin面对复杂不可变对象的问题" buttonText="Java/Kotlin面对复杂不可变对象的问题">
+
+首先定义一个不可变的树节点
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="TreeNode.java"
+record TreeNode(
+    String name, 
+    List<TreeNode> childNodes
+) {}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="TreeNode.java"
+data class TreeNode(
+    val name: String, 
+    val childNodes: List<TreeNode>
+)
+```
+
+</TabItem>
+</Tabs>
+
+准备一个旧对象
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+var oldTreeNode = ...blabla...
+```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val oldTreeNode = ...blabla...
+```
+
+</TabItem>
+</Tabs>
+
+让我们从简单到复杂依次实现三种数据变更操作，创建全新的对象
+
+1.  变更根节点的name属性
+    
+    <Tabs groupId="language">
+    <TabItem value="java" lable="Java">
+    
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        // highlight-next-line
+        "Hello", // 设置根节点的名称
+        oldTreeNode.childNodes()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" lable="Kotlin">
+    
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        // highlight-next-line
+        name = "Hello" // 设置根节点的名称
+    );
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这种案例非常简单，没看出Java/Kotlin的问题。别急，轻往后看。
+
+2.  变更第一级子节点的name属性
+    
+    面包屑条件如下：
+    - 第一级子节点的位置: pos1
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        oldTreeNode.name(),
+        IntStream
+            .range(0, oldTreeNode.childNodes().size())
+            .mapToObj(index1 -> {
+                TreeNode oldChild1 = oldTreeNode.childNodes().get(index1);
+                if (index1 != pos1) {
+                    return oldChild1;
+                }
+                return new TreeNode(
+                    // highlight-next-line
+                    "Hello", // 设置第一级子节点的名称
+                    oldChild1.childNodes()
+                );
+            })
+            .toList()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        childNodes = oldTreeNode
+            .childNodes
+            .mapIndexed { index1, child1 ->
+                if (index1 == pos1) {
+                    child1.copy(
+                        // highlight-next-line
+                        name = "Hello" // 设置第一级子节点的名称
+                    )
+                } else {
+                    child1
+                }
+            }
+    )
+    ```
+    </TabItem>
+    </Tabs>
+
+2.  变更第二级子节点的name属性
+    
+    面包屑条件如下：
+    - 第一级子节点的位置: pos1
+    - 第二级子节点的位置: pos2
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        oldTreeNode.name(),
+        IntStream
+            .range(0, oldTreeNode.childNodes().size())
+            .mapToObj(index1 -> {
+                TreeNode oldChild1 = oldTreeNode.childNodes().get(index1);
+                if (index1 != pos1) {
+                    return oldChild1;
+                }
+                return new TreeNode(
+                    oldChild1.name(),
+                    IntStream
+                        .range(0, oldChild1.childNodes().size())
+                        .mapToObj(index2 -> {
+                            TreeNode oldChild2 = oldChild1.childNodes().get(index2);
+                            if (index2 != pos2) {
+                                return oldChild2;
+                            } else {
+                                return new TreeNode(
+                                    // highlight-next-line
+                                    "Hello", // 设置第二级子节点的名称
+                                    oldChild2.childNodes()
+                                );
+                            }
+                        })
+                        .toList()
+                );
+            })
+            .toList()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        childNodes = oldTreeNode
+            .childNodes
+            .mapIndexed { index1, child1 ->
+                if (index1 == pos1) {
+                    child1.copy(
+                        childNodes = child1
+                            .childNodes
+                            .mapIndexed { index2, child2 -> 
+                                if (index2 == pos2) {
+                                    child2.copy(
+                                        // highlight-next-line
+                                        name = "Hello" // 设置第二级子节点的名称
+                                    )
+                                } else {
+                                    child2
+                                }
+                            }
+                    )
+                } else {
+                    child1
+                }
+            }
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::info
+可见，只要对象树有一点深度，基于另一个不可变对象创建新的不可变对象将是一场噩梦。
+:::
+
+</ViewMore>
+
+为了JVM生态目前复杂不可变对象不便的问题，诞生了一些不可变对象框架
+-   [Immutables](https://immutables.github.io/immutable.html)
+-   [FreeBuilder](https://github.com/inferred/FreeBuilder)
+-   [Arrow-Kt(Kotlin)](https://arrow-kt.io/learn/immutable-data/intro/)
+-   [Kopyk(Kotlin)](https://kopyk.at/)
+-   [MuteKt(Kotlin)](https://github.com/PatilShreyas/mutekt)
+
+Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题。为了同时为Java和Kotlin良好的支持，Jimmer并未使用它们中的任何一个，而是选择移植JavaScript/TypeScript领域的[https://github.com/immerjs/immer](https://github.com/immerjs/immer)。
+
+移植[immer](https://github.com/immerjs/immer)后，Java/Kotlin处理复杂不可变数据结构的能力会变得非常强大和简单。
+
+<ViewMore buttonText="移植immer后的效果" title="移植immer后的效果">
+
+<Divider>
+<Chip label="前提假设"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+package yourpackage;
+
+import java.util.List;
+
+import org.babyfish.jimmer.Immutable;
+import org.jetbrains.annotations.Nullable;
+
+// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
+@Immutable 
+public interface TreeNode {
+    
+    String name();
+
+    @Nullable
+    TreeNode parent();
+
+    List<TreeNode> childNodes();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+package yourpackage
+
+import org.babyfish.jimmer.Immutable
+
+// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
+@Immutable
+interface TreeNode {
+
+    val name: String
+
+    val parent: TreeNode?
+
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Divider>
+<Chip label="使用方法"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+// 第一步，从头构建全新的数据
+TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
+    root.setName("Root").addIntoChildNodes(food -> {
+        food
+            .setName("Food")
+            .addIntoChildNodes(drink -> {
+                drink
+                    .setName("Drink")
+                    .addIntoChildNodes(cococola -> {
+                        cococola.setName("Cococola");
+                    })
+                    .addIntoChildNodes(fanta -> {
+                        fanta.setName("Fanta");
+                    });
+                ;
+            });
+        ;
+    });
+});
+
+// 第二步，关键步骤！
+// 基于现有数据对象，做某些“变更”，创建新的数据对象。
+TreeNode newTreeNode = TreeNodeDraft.$.produce(
+        // highlight-next-line
+        treeNode, // existing data
+        root -> {
+            root
+                .childNodes(false).get(0) // Food
+                .childNodes(false).get(0) // Drink
+                .childNodes(false).get(0) // Cococola
+                .setName("Cococola plus");
+        }
+);
+
+System.out.println("treeNode:" + treeNode);
+System.out.println("newTreeNode:" + newTreeNode);
+```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// 第一步，从头构建全新的数据
+val treeNode = new(TreeNode::class).by {
+    name = "Root"
+    childNodes().addBy {
+        name = "Food"
+        childNodes().addBy {
+            name = "Drinks"
+            childNodes().addBy {
+                name = "Cococola"
+            }
+            childNodes().addBy {
+                name = "Fanta"
+            }
+        }
+    }
+}
+
+// 第二步，关键步骤！
+// 基于现有数据对象，做某些“变更”，创建新的数据对象。
+val newTreeNode = new(TreeNode::class).by(
+    // highlight-next-line
+    treeNode // existing data
+) {
+    childNodes()[0] // Food
+        .childNodes()[0] // Drinks
+        .childNodes()[0] // Cococola
+        .name += " plus"
+}
+
+println("treeNode: $treeNode")
+println("newTreeNode: $newTreeNode")
+```
+
+</TabItem>
+</Tabs>
+
+
+<Divider>
+<Chip label="执行结果"/>
+</Divider>
+
+输出结果（实际打印结果是紧凑的，但为了方便阅读，这里进行了格式化）
+
+```javascript
+treeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Coco Cola"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+newTreeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Coco Cola plus"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+</ViewMore>
+
+这个移植是对JVM生态的有力补充。
+
+:::info
+本框架命名为Jimmer，即为致敬[Immer](https://github.com/immerjs/immer)
+:::
+
+前文提到，Jimmer实体被设计不可变对象的目的是为了杜绝循环引用。其实，不可变对象的还有很多其他好处，这里稍加讨论，请点击按钮。
+
+<ViewMore title="其他好处" buttonText="其他好处">
+
+-   多线程安全性，这点很好理解，不用解释。
+
+-   对于Set、Map这里以来hashCode的集合容器而言，迫切需要对象的不可变性。
+
+    一旦集合容器保存了可变对象，开发人员就必须小心翼翼地确保不去修改被这些容器共享的数据。如果不慎犯了错误，通常需要debug跟踪来发现问题，这往往会浪费时间影响效率。
+
+-   其实，除了集合容器外，实际开发中还有其他需长期持有某些对象的场合场合，比如：
+
+    -   利用Web Session中长期持有某些数据
+
+    -   利用一级缓存，即，使用JVM内存的进程内缓存，长期持有某些数据
+
+    和集合容器能作为某个模块的私有数据不同，WebSession和Cache这类结构是对外暴露的，具有很强的`public`特性，会更麻烦。
+
+    细心的开发人员肯定不希望Web Session或Cache中被长期持有数据的引用和泄漏到用户代码中的引用共享数据结构，进而导致不可控的彼此干扰。
+    
+    因此，对WebSession或Cache这类长期持有数据的结构进行读写操作时，细心的开发人员会将可变数据结构复制一次再进行保存或返回。其中，写入时复制尚可接受，但每次读取都复制一次显得昂贵。
+
+    可见
+    
+    -   使用可变对象，是否需要复制对象以保证必要安全性，依赖于开发人员的风险预知能力。然而，即便预知了风险，解决之道也没有客观标准，过于严格会导致浪费，过于宽松会导致BUG *(团队人数越多，越容易出错)*。而且，对于有一定体量的数据而言，团队内部对这种保护机制的严格程度也常有争论，具备很强的主观性。
+
+    -   使用可不变对象，只有需要数据变化时才复制数据结构 *(Jimmer/Immer内部对此有优化，变化的部分才复制，未变的部分仍然共享重用)*，其余情况一律简单共享引用即可。具备非常严格的客观性。
+
+    很明显，基于客观规律开发，必然由于基于主观感觉开发。
+
+</ViewMore>
+
+总之，以不可变数据结构驱动整个应用的开发，一定能获益颇丰。
+
+## 上层能力图示
+
+<ViewMore buttonText="更大图片" title="思维导图" fullScreen={true}>
+
+![jimmer-mind](@site/static/img/jimmer-mind-zh.svg)
+
+</ViewMore>
+
+![jimmer-mind](@site/static/img/jimmer-mind-zh.svg)
+
+## 功能点介绍
+
+### 1. 动态对象的灵活性 + 静态语言的安全性
+
+<Collapse title="动态实体的灵活性">
+
+在Jimmer中，实体对象并非简单的Java Bean，而是动态对象。
+
+即，实体对象的任何属性都可以缺失。不指定对象的属性，和把对象的属性设置为null，是完全不同的概念，故数据结构的形状千变万化。
+
+<ViewMore title="动态对象导致数据结构的形状千变万化" buttonText="查看例子">
+
+-   残缺对象
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = BookDraft.$.product(book -> {
+        book.setName("Learning GraphQL");
+    });
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = new(Book::class).by {
+        name = "Learning GraphQL"
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+-   完整对象
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = BookDraft.$.product(book -> {
+        book.setName("Learning GraphQL");
+        book.setEdition(1);
+        book.setPrice(new BigDecimal("49.99"));
+    });
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = new(Book::class).by {
+        name = "Learning GraphQL"
+        edition = 1
+        price = BigDecimal("49.99")
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+-   附带关联
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = BookDraft.$.product(book -> {
+        book.setName("Learning GraphQL");
+        book.setEdition(1);
+        book.setPrice(new BigDecimal("49.99"));
+        book.applyStore(store -> {
+            store.setName("O'REILLY");
+            store.setWebsite("https://www.oreilly.com/");
+        });
+    });
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = new(Book::class).by {
+        name = "Learning GraphQL"
+        edition = 1
+        price = BigDecimal("49.99")
+        store().apply {
+            name = "O'REILLY"
+            website = "https://www.oreilly.com/"
+        }
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+-   更多关联
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = BookDraft.$.product(book -> {
+        book.setName("Learning GraphQL");
+        book.setEdition(1);
+        book.setPrice(new BigDecimal("49.99"));
+        book.applyStore(store -> {
+            store.setName("O'REILLY");
+            store.setWebsite("https://www.oreilly.com/");
+        });
+        book.addIntoAutors(author -> { 
+            author.setFirstName("Eve");
+            author.setLastName("Procello");
+            author.setGender(Gender.FEMALE);
+        });
+        book.addIntoAutors(author -> { 
+            author.setFirstName("Alex");
+            author.setLastName("Banks");
+            author.setGender(Gender.MALE);
+        });
+    });
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = new(Book::class).by {
+        name = "Learning GraphQL"
+        edition = 1
+        price = BigDecimal("49.99")
+        store().apply {
+            name = "O'REILLY"
+            website = "https://www.oreilly.com/"
+        }
+        authors().addBy {
+            firstName = "Eve"
+            setLastName = "Procello"
+            gender = Gender.FEMALE
+        }
+        authors().addBy {
+            firstName = "Alex"
+            lastName = "Banks"
+            gender = Gender.MALE
+        }
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+-   更深关联
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = BookDraft.$.product(book -> {
+        book.setName("Learning GraphQL");
+        book.setEdition(1);
+        book.setPrice(new BigDecimal("49.99"));
+        book.applyStore(store -> {
+            store.setName("O'REILLY");
+            store.setWebsite("https://www.oreilly.com/");
+            store.applyAddress(address -> {
+                address.setCity("Sevastopol");
+                address.setState("California");
+            });
+        });
+    });
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = new(Book::class).by {
+        name = "Learning GraphQL"
+        edition = 1
+        price = BigDecimal("49.99")
+        store().apply {
+            name = "O'REILLY"
+            website = "https://www.oreilly.com/"
+            address().apply {
+                city = "Sevastopol"
+                state = "California"
+            }
+        }
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+</ViewMore>
+
+数据结构的千变万化，可以带来静态语言ORM难以企及的灵活性。
+
+-   对查询而言，用户可以灵活控制被查询数据结构的格式，精确到每个属性。
+
+    这种能力类似于[GraphQL](https://graphql.org/)。如果说GraphQL在最终HTTP API层面实现了灵活性，那么Jimmer就是把这种能力拓展到代码中任何需要查询数据的地方。
+
+    <ViewMore buttonText="查看视频">
+        <Tabs groupId="language">
+            <TabItem value="java" label="Java">
+                <video width="100%" controls>
+                    <source src={JavaFetcherMp4} type="video/mp4"/>
+                    <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+                </video>
+            </TabItem>
+            <TabItem value="kotlin" label="Kotlin">
+                <video width="100%" controls>
+                    <source src={KotlinFetcherMp4} type="video/mp4"/>
+                    <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+                </video>
+            </TabItem>
+        </Tabs>
+    </ViewMore>
+
+-   对于保存而言，也和传统的ORM有巨大的区别。
+
+    以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。但无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+
+    Jimmer采用完全不同方法，直接保存动态实体。被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+
+    这样做的目的是：
+	-   快速开发任意复杂的表单保存业务
+	-   对同一个聚合根类型而言，多种不同表单格式的保存业务可并存
+
+:::note
+无论查询输出还是保存输入，Jimmer的基本操作单元都是任意形状的数据结构，而非简单的实体对象
+:::
+
+让我们来对比3种传统的做法
+
+-   数据层使用非常简单的技术完成单表CRUD，在上层业务中自己想办法处理不同数据之间的关联。这种做法工作量大、容易出bug、难以通用、难以优化，是最不推荐的方式。
+
+-   使用传统的JVM ORM来处理，虽然这些ORM框架多少会提供一些控制被读写的数据结构的形状的能力，但受缚于静态java对象的束缚终归有限，面对灵活的业务需求经常会显得力不从心。
+
+-   使用MyBatis来应对灵活的业务需求。但是，MyBatis的灵活性是以工作量为为代价的。即，对每一种业务场景需要的数据结构，都要定义DTO类型并为之实现CURD Mapper。
+
+Jimmer的这种绝对灵活性，可以让你可以上述任何一种做法的烦劳中解脱出来。
+
+</Collapse>
+
+<Collapse title="静态语言的安全性">
+
+前面，我们谈到动态对象，也许读者你第一时间想到了动态语言，想到了编译时没有拼写检查没有类型检查，想到了没有良好的IDE智能提示，想到动态语言脆弱的可维护性。
+
+恰恰相反，Jimmer是一个尽最大努力发挥静态语言的优势的框架，拥有良好的安全性，具备极致的高性能。
+
+虽然Jimmer实体是动态的，但是它仍然是强类型Java/Kotlin实体对象，而非弱类型的map或任何和map同质的东西。
+
+<ViewMore title="定义强类型实体例子"  buttonText="查看例子">
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+package com.example.demo;
+
+import org.babyfish.jimmer.sql.*;
+
+@Entity
+public interface Book {
+
+    @Id
+    long id();
+
+    String name();
+
+    int edition();
+
+    BigDecimal price();
+
+    @ManyToOne
+    BookStore store();
+
+    @ManyToMany
+    List<Author> authors();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+package com.example.demo
+
+import org.babyfish.jimmer.sql.*
+
+@Entity
+interface Book {
+
+    @Id
+    val id: Long
+
+    val name: String
+
+    val edition: Int
+
+    val price: BigDecimal
+
+    @ManyToOne
+    val store: BookStore
+
+    @ManyToMany
+    val authors: List<Author>
+}
+```
+
+</TabItem>
+</Tabs>
+</ViewMore>
+
+除了直接访问对象的未设置属性会导致一个异常外，Jimmer实体和普通的Java对象再无区别。此异常等价于传统ORM中的延迟加载异常 *（以Hibernate为例，指[org.hibernate.LazyInitializationException](https://docs.jboss.org/hibernate/orm/6.0/javadocs/org/hibernate/LazyInitializationException.html)）*
+
+:::note
+事实上，Jimmer实体对象的动态性就是把传统ORM领域的`LazyInitializationException`异常推广到对象的任何属性的结果。既然这类异常的代价早已为ORM领域所普遍接受，那么就把动态性发挥到极致，把这个代价能换取的好处全部拿走。
+:::
+
+不仅由用户定义的实体对象是强类型的，Jimmer本身的API也在充分发挥静态语言的优势。比如，其数据操作API采用[DSL](https://en.wikipedia.org/wiki/Domain-specific_language)设计，而非接受直接接受字符串的`(x)ql`风格API。力求在编译时发现问题，而非运行时。
+
+甚至，Jimmer针对Java和Kotlin两种语言提供了两套相似但不同API，而非共享同一套API。因为kotlin能比java更便捷更优雅地实现更丰富的编译时安全能力和更好的IDE提示。
+
+:::note
+一方面充分发挥动态实体带来的绝对灵活性和控制力，一方面又在竭尽所能发挥静态语言的优势，这是Jimmer最明显的特性。无论动态语言生态的ORM框架，还是静态语言生态的ORM框架，都无法找到对应物。
+:::
+</Collapse>
+
+### 2. 不局限于ORM: 计算属性和远程关联
+
+<Collapse title="计算属性">
+
+如果某业务计算指标和实体强相关，开发人员可以选择为实体定义计算字段。
+
+-   由于Jimmer可以精细地控制被查询数据结构的形状，只有明确需要查询计算属性是才会被计算。
+
+-   和其他ORM的技术属性不同，Jimmer的计算规则和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）做计算
+
+-   Jimmer内置了一套和[graphql/datloader框架](https://github.com/graphql/dataloader)类似的机制，和普通的ORM属性一样，计算属性没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
+
+-   计算过程可以使用任何技术完成计算，可以使用SQL之外的技术，比如OLAP相关技术，来完成计算
+
+-   计算属性既可以为简单类型，也可以为关联类型
+
+由于上述最后两点，你甚至可以要求Jimmer查询这样的数据结构
+
+```
++------------------+
+|    Entity A      |
+| (Aggregate-root) |
++--------+---------+
+         |
+    (ORM association)
+         |
+         ↓
++------------------+
+|    Entity B      |
++--------+---------+
+         |
+(Calculated association)
+         |
+         ↓
++------------------+
+|    Entity C      |
++--------+---------+
+         |
+    (ORM association)
+         |
+         ↓
++------------------+
+|    Entity D      |
++--------+---------+
+         |
+(Calculated association)
+         |
+         ↓
++------------------+
+|    Entity E      |
++--------+---------+
+```
+其中
+
+-   `ORM assocition`表示传统的ORM的关联，比如@OneToOne, @ManyToOne, @OneToMany和@ManyToMany，由数据库数据决定的关联，这是被Jimmer自动执行的SQL操作
+
+-   `Calculated association`表示用户实现的计算关联，其行为由用户决定，有可能使用非SQL的技术实现计算逻辑
+
+在不考虑缓存的情况下，Jimmer将把ORM自动负责的SQL操作和用户实现的计算（可能是SQL以外的技术实现）结合起来，交替执行，直到查出整个数据结构。
+
+</Collapse>
+
+<Collapse title="远程关联属性">
+
+Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM，还是可以处理跨越微服务（数据库）边界的远程关联。
+
+你可以要求Jimmer查询这样的数据结构
+
+```
++------------------------+
+|     Micro   service: α |
+|                        |
+|  +------------------+  |
+|  |    Entity A      |  |
+|  | (Aggregate-root) |  |
+|  +--------+---------+  |
+|           |            | 
+|   (Local association)  |
+|           |            |
+|           ↓            |
+|  +------------------+  |
+|  |    Entity B      |  |
+|  +--------+---------+  |
+|           |            |
++-----------+------------+
+            |
+    (Remote association)
+            |
++-----------+------------+
+|     Micro | service: β |
+|           ↓            |
+|  +------------------+  |
+|  |    Entity C      |  |
+|  +--------+---------+  |
+|           |            | 
+|   (Local association)  |
+|           |            |
+|           ↓            |
+|  +------------------+  |
+|  |    Entity D      |  |
+|  +--------+---------+  |
+|           |            |
++-----------+------------+
+            |
+    (Remote association)
+            |
++-----------+------------+
+|     Micro | service: γ |
+|           ↓            |
+|  +------------------+  |
+|  |    Entity E      |  |
+|  +--------+---------+  |
+|           |            | 
+|   (Local association)  |
+|           |            |
+|           ↓            |
+|  +------------------+  |
+|  |    Entity F      |  |
+|  +--------+---------+  |
+|           |            |
++-----------+------------+
+```
+
+其中
+
+-   `Local assocaition`表示微服务(数据库)内部的ORM关联，这类关联的查询会被翻译为SQL或缓存操作
+
+-   `Remote association`表示不同微服务（数据库）之间的远程关联，这类关联的查询会被翻译为远程数据获取。
+
+然而，这一切，对用户透明。
+
+</Collapse>
+
+### 3. 缓存、缓存一致性、触发器
+
+<Collapse title="完全透明的缓存">
+
+如果业务系统系统仅需操作数据库，绝大部分开发团队都能让代码保持相对良好的可维护性。  
+
+然而，一旦为了提高抗压能力引入缓存技术后，业务代码就需要大量调整，可维护性变差，缓存一致性更是一个头疼的问题。
+
+为了解决这个痛点，Jimmer本身内置了强大的缓存机制，保证缓存对业务代码完全透明，并解决一致性问题。
+
+-   从底层实现看，Jimmer支持如下3种缓存
+    -   对象缓存：将id映射为孤单（没有关联）对象
+        <ViewMore buttonText="查看图片" title="对象缓存">
+        
+        ![object-cache](@site/static/img/object-cache.jpeg)
+        
+        </ViewMore>
+    -   关联缓存：将当前对象id映射为关联对象的id或其集合，对one-to-one，one-to-many，many-to-one和many-to-many都有效。
+        <ViewMore buttonText="查看图片" title="关联缓存">
+        
+        ![association-cache](@site/static/img/association-cache.png)
+        
+        </ViewMore>
+    -   计算缓存：将当前对象id映射为计算属性的结果
+        <ViewMore buttonText="查看图片" title="计算缓存">
+        
+        ![association-cache](@site/static/img/calculated-cache.png)
+        
+        </ViewMore>
+    
+-   从上层开发人员视角看，得到的是针对任意形状的数据结构的缓存。
+
+Jimmer缓存有如下特色
+
+-   Jimmer缓存是多层缓存，层次数量由用户定，每一层的缓存实现由用户决定 *（如果以缓存模式运行官方例子，使用两级缓存，第一级为jvm内存缓存caffeine，第二级为远程内存缓存redis）*
+
+-   缓存对Jimmer而言是可选的，你可以选择启用，不启用或部分启用。开发人员可以精细地控制每个实体类甚至每个实体属性是否启用缓存
+    :::note
+    无论如何更改缓存的部分启用模式，都无需对业务代码做出任何修改，Jimmer缓存对业务代码完全透明。
+    :::
+
+</Collapse>
+
+<Collapse title="触发器和缓存一致性">
+
+为了更好地实现缓存一致性，Jimmer实现了触发器，感知数据库的任何变动（注意：触发器的应用不限于缓存一致性）
+
+Jimmer提供了两种触发器
+
+-   binlog触发器：
+    -   让数据库支持binlog，使用任何技术手段接收binlog变更并调用Jimmer的API完成通知，即意味启用，无需调用任何Jimmer API来启用。
+    -   Jimmer会进行`binlog->实体和关系`映射，不仅会根据普通数据变化触发对象变更事件，还会根据外建或中间表的变化触发关联变更事件。
+    -   binlog可以捕获因系统外导致的的数据库变更，触发时机为事务提交后。实时程度依赖于用户接受binlog变更的技术选择和网络健康程度，正常情况下应该接近实时。
+
+-   事务内触发器
+    -   无需任何外部环境配置，调用jimmer API启用。
+    -   Jimmer所有修改数据库的API会受到影响，自动植入一些额外的SQL查询，模拟出出发起的效果（这种做法和[阿里seata的AT模式](https://seata.io/en-us/docs/dev/mode/at-mode.html)极其类似，但不需要代理JDBC连接池）
+    -   事务内触发器只能捕获当前应用对数据库的修改，触发时机为事务提交前。注意，事务内触发器不能挂接耗时任务，此举会导致事务被拉长。
+
+两种触发器虽然机制迥异，但事件通知的数据格式完全兼容。
+
+一旦开启了触发器，就可以使用Jimmer的缓存一致性了。
+
+-   对象缓存：全自动一致性，保证启用触发器即可，无需额外任何工作
+-   关联缓存：全自动一致性，保证启用触发器即可，无需额外任何工作
+-   计算缓存：开发人员辅助一致性，响应触发器事件，判断是否会影响计算结果，如果是，清理计算缓存。
+
+</Collapse>
+
+### 4. SQL DSL，隐式表连接
+
+<Collapse title="SQL DSL">
+
+用于操作数据库的框架通常有两种风格
+
+-   字符串`(x)ql`风格的设计
+    -   代表：[Hiberante](https://hibernate.org/)的[HQL](https://docs.jboss.org/hibernate/core/3.3/reference/en/html/queryhql.html)，[JPA](https://www.oracle.com/java/technologies/persistence-jsp.html)的[JPQL](https://docs.oracle.com/html/E13946_04/ejb3_langref.html)，[MyBatis](https://mybatis.org/mybatis-3)的[mapper](https://mybatis.org/mybatis-3/sqlmap-xml.html)。
+    -   优点：简单易懂
+    -   缺点：
+        -   弱类型，不能编译时提前发现问题（IDE特殊支持可以缓解）可维护性差。
+        -   动态查询需要引入一套特定的sql拼接模板语法，且控制力一般。
+
+-   [DSL](https://en.wikipedia.org/wiki/Domain-specific_language)风格设计
+    -   代表: [JOOQ](https://www.jooq.org/)，[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html)，[QueryDSL](http://querydsl.com/)，[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex)，[Fluent-MyBatis](https://github.com/atool/fluent-mybatis)，[Exposed(Kotlin)](https://github.com/JetBrains/Exposed)，[Squeryl(Scala)](http://max-l.github.io/Squeryl/introduction.html)。
+    -   优点：
+        -   强类型，编译时发现问题，可维护性好，重构项目时尤其有用。
+        -   有IDE智能提示支持，代码书写流畅。
+        -   良好的动态查询控制力可以非常强 *(和具体DSL设计相关)*。
+    -   缺点：
+        -   有轻微的学习成本 *(和具体DSL设计相关)*。
+        -   尚未熟练掌握SQL的新手会面临困难。
+
+DSL风格更符合Java/Kotlin这类静态语言的设计理念，因此Jimmer选择以DSL作为数据库操作API。同时，对于特定数据库产品相关的非通用性SQL表达式，允许在强类型DSL中插入Native SQL片段。
+
+:::note
+受限于Java语言本身的表达力，Jimmer下`Java DSL`的开发体验略逊于`Kotlin DSL`的开发体验。这应该作为你决定自己究竟以java还是kotlin使用Jimmer的考量点之一。
+:::
+
+</Collapse>
+
+<Collapse title="隐式表连接">
+
+上面所讨论的依赖于静态语言安全性的高可维护性，是Jimmer选择成为DSL风格框架的原因，但非唯一的原因。
+
+Jimmer DSL引入了一个非常强大能力，隐式表连接。
+:::note
+隐式表连接的思想萌芽于`JPA/Hibernate`，Jimmer将其拓展到了极致。
+:::
+
+在jimmer中没有显式的`join`操作，所有表连接都是隐式的。
+
+几乎所有数据库操作框架都会支持动态`where`表达式实现动态查询。即，子条件有很多个，但未必都会生效，根据UI的输入情况任意组合使用，适用于查询条件多样化的场合。
+
+假如其中某些子条件过滤的的并非当前表，而是通过`join`操作关联到其他表再施加过滤条件。
+
+-   如果预先把所有可能被`join`的表全部`join`了，那么当需要这些`join`的子条件未全部生效时，产生性能浪费。
+-   如果当每个子条件生效的判断成立是才`join`，那么当对同一张表`join`的多个子条件同时生效时，会导致同一张表被`join`多次，这同样是一种性能浪费。
+
+其中，某些子条件还可能需要`join`多张表，即`join`链路可能比较长，这类问题会更加繁琐。
+
+无论动态查询有多繁琐，业务代码都应该极简的。所以
+
+:::note
+仅仅有`动态where`和`动态 order by`是不够的，还需要`动态join`。
+:::
+
+Jimmer隐式表连接就是为`动态join`而设计，完美解决了上述问题，即便面对这种非常繁琐的动态查询也能优雅快捷地实现。这是其他所有方案 *(无论是`(x)ql`还是DSL风格)* 都没有的功能，也是Jimmer项目被创建的最初动机。
+
+</Collapse>
+
+### 5. 解决DTO爆炸 + TypeScript代码生成
+
+<Collapse title="服务端解决DTO爆炸问题">
+
+所谓DTO爆炸，指由于不同的业务查询的数据格式的不同，即使聚合根对象类型相同，也要为不同的数据结构定义不同的类型。
+<ViewMore title="传统方案下的DTO类型定义爆炸示范" buttonText="查看例子">
+
+![dto-explosion](@site/static/img/dto-explosion.png)
+
+</ViewMore>
+
+对于有一定业务复杂度的项目而言，查询业务的种类繁多，上述这些雷同却不同的类型将会逐渐变多。这就叫DTO爆炸问题。
+
+DTO爆炸存在两个问题
+
+-   对于MyBatis为代表的`DTO映射派`（相对的概念就是ORM框架这类`统一实体映射派`)框架而言，DTO爆炸意味CRUD Mapper编写工作量的增加，即前文曾提到过的“灵活性是以工作量激增为代价的”。
+
+-   任何团队，其成员总不可避免新陈代谢，甚至项目本身也有可能跨团队移交。新来的开发人员对项目中数量庞大的DTO类型和受影响的功能未必能做到全然了解，不改贸然修改老代码，当面临新需求时，往往优先选择弃老代码不顾直接定义全新的DTO。此举会让`DTO爆炸问题`更严重，形成恶性循环。
+
+我们在第一章，谈到了3点
+
+-   定义统一的实体类型
+    <ViewMore title="定义强类型实体例子"  buttonText="回顾">
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    package com.example.demo;
+
+    import org.babyfish.jimmer.sql.*;
+
+    @Entity
+    public interface Book {
+
+        @Id
+        long id();
+
+        String name();
+
+        int edition();
+
+        BigDecimal price();
+
+        @ManyToOne
+        BookStore store();
+
+        @ManyToMany
+        List<Author> authors();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    package com.example.demo
+
+    import org.babyfish.jimmer.sql.*
+
+    @Entity
+    interface Book {
+
+        @Id
+        val id: Long
+
+        val name: String
+
+        val edition: Int
+
+        val price: BigDecimal
+
+        @ManyToOne
+        val store: BookStore
+
+        @ManyToMany
+        val authors: List<Author>
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+    </ViewMore>
+-   实体是动态的，可以表达任意形状的数据结构
+    <ViewMore title="动态对象导致数据结构的形状千变万化" buttonText="回顾">
+
+    -   残缺对象
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        Book book = BookDraft.$.product(book -> {
+            book.setName("Learning GraphQL");
+        });
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val book = new(Book::class).by {
+            name = "Learning GraphQL"
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+    -   完整对象
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        Book book = BookDraft.$.product(book -> {
+            book.setName("Learning GraphQL");
+            book.setEdition(1);
+            book.setPrice(new BigDecimal("49.99"));
+        });
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val book = new(Book::class).by {
+            name = "Learning GraphQL"
+            edition = 1
+            price = BigDecimal("49.99")
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+    -   附带关联
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        Book book = BookDraft.$.product(book -> {
+            book.setName("Learning GraphQL");
+            book.setEdition(1);
+            book.setPrice(new BigDecimal("49.99"));
+            book.applyStore(store -> {
+                store.setName("O'REILLY");
+                store.setWebsite("https://www.oreilly.com/");
+            });
+        });
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val book = new(Book::class).by {
+            name = "Learning GraphQL"
+            edition = 1
+            price = BigDecimal("49.99")
+            store().apply {
+                name = "O'REILLY"
+                website = "https://www.oreilly.com/"
+            }
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+    -   更多关联
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        Book book = BookDraft.$.product(book -> {
+            book.setName("Learning GraphQL");
+            book.setEdition(1);
+            book.setPrice(new BigDecimal("49.99"));
+            book.applyStore(store -> {
+                store.setName("O'REILLY");
+                store.setWebsite("https://www.oreilly.com/");
+            });
+            book.addIntoAutors(author -> { 
+                author.setFirstName("Eve");
+                author.setLastName("Procello");
+                author.setGender(Gender.FEMALE);
+            });
+            book.addIntoAutors(author -> { 
+                author.setFirstName("Alex");
+                author.setLastName("Banks");
+                author.setGender(Gender.MALE);
+            });
+        });
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val book = new(Book::class).by {
+            name = "Learning GraphQL"
+            edition = 1
+            price = BigDecimal("49.99")
+            store().apply {
+                name = "O'REILLY"
+                website = "https://www.oreilly.com/"
+            }
+            authors().addBy {
+                firstName = "Eve"
+                setLastName = "Procello"
+                gender = Gender.FEMALE
+            }
+            authors().addBy {
+                firstName = "Alex"
+                lastName = "Banks"
+                gender = Gender.MALE
+            }
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+    -   更深关联
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        Book book = BookDraft.$.product(book -> {
+            book.setName("Learning GraphQL");
+            book.setEdition(1);
+            book.setPrice(new BigDecimal("49.99"));
+            book.applyStore(store -> {
+                store.setName("O'REILLY");
+                store.setWebsite("https://www.oreilly.com/");
+                store.applyAddress(address -> {
+                    address.setCity("Sevastopol");
+                    address.setState("California");
+                });
+            });
+        });
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val book = new(Book::class).by {
+            name = "Learning GraphQL"
+            edition = 1
+            price = BigDecimal("49.99")
+            store().apply {
+                name = "O'REILLY"
+                website = "https://www.oreilly.com/"
+                address().apply {
+                    city = "Sevastopol"
+                    state = "California"
+                }
+            }
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+
+    </ViewMore>
+-   可以轻松控制被查询数据结构的形状
+    <ViewMore buttonText="回顾">
+        <Tabs groupId="language">
+            <TabItem value="java" label="Java">
+                <video width="100%" controls>
+                    <source src={JavaFetcherMp4} type="video/mp4"/>
+                    <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+                </video>
+            </TabItem>
+            <TabItem value="kotlin" label="Kotlin">
+                <video width="100%" controls>
+                    <source src={KotlinFetcherMp4} type="video/mp4"/>
+                    <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+                </video>
+            </TabItem>
+        </Tabs>
+    </ViewMore>
+
+所以，Jimmer天生避免了DTO爆炸问题。
+
+Jimmer的动态实体还有如下两个特性
+
+-   未指定属性在Jackson序列化时会被自动忽略
+
+-   虽然作为一个ORM，Jimmer鼓励开发人员在实体**类型**之间声明双向关联，但是，实体**对象**之间只存在单向关联，绝不会有循环引用，开发人员没有任何手段可以用于构建带有循环引用Jimmer实体数据结构。
+
+所以，Jimmer动态实体可以直接作为web返回类型。若无特殊需求，无需任何转化，直接返回即可。*（注意：需要为Jackson注册一个`ImmutableModule`模块，但这已经被jimmer的spring-starter自动完成了）*
+
+</Collapse>
+
+<Collapse title="为客户端生成TypeScrpt，恢复DTO爆炸">
+
+Jimmer选择在服务端解决了DTO爆炸问题，因为DTO爆炸问题对服务端有害。不拔除这个问题，很难用极少的代码快速实现服务，服务端难以获得极致的开发体验。
+
+然而，对客户端而言，恰恰相反，DTO爆炸问题是有益的。丰富的DTO类型为调用者明确定定义了精确的数据类型。不恢复DTO爆炸，客户端难以获得极致的开发体验。
+
+:::note
+传统的技术方案中，如果期望由框架将前后端对接工作自动化，那么通常会为服务的和客户端的API的理解形式应该一样。
+
+Jimmer不这样认为，双方开发的工作职责相差太大，它们的思维应该不一样。服务端应该简单地返回动态对象，这样很容易实现；客户端应该使用大量定义好的静态对象，这样消费体验好。
+:::
+
+Jimmer提供一种简便的方法，可以为客户端自定生成TypeScrpit代码完成前后端对接，并在其中恢复DTO爆炸
+
+<ViewMore title="被恢复的三种BookDTO" buttonText="查看生成的TypeScript">
+
+```ts
+import type { Gender } from '../enums';
+
+export type BookDto = {
+    // highlight-next-line
+    'BookService/SIMPLE_FETCHER': {
+        readonly id: number, 
+        readonly name: string, 
+        readonly edition: number
+    }, 
+    // highlight-next-line
+    'BookService/COMPLEX_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly name: string, 
+        readonly edition: number, 
+        readonly price: number, 
+        readonly store?: {
+            readonly id: number, 
+            readonly createdTime: string, 
+            readonly modifiedTime: string, 
+            readonly name: string, 
+            readonly website?: string, 
+            readonly avgPrice: number
+        }, 
+        readonly authors: ReadonlyArray<{
+            readonly id: number, 
+            readonly createdTime: string, 
+            readonly modifiedTime: string, 
+            readonly firstName: string, 
+            readonly lastName: string, 
+            readonly gender: Gender
+        }>
+    }, 
+    // highlight-next-line
+    'BookService/DEFAULT_FETCHER': {
+        readonly id: number, 
+        readonly createdTime: string, 
+        readonly modifiedTime: string, 
+        readonly name: string, 
+        readonly edition: number, 
+        readonly price: number, 
+        readonly store?: {
+            readonly id: number, 
+            readonly name: string
+        }, 
+        readonly authors: ReadonlyArray<{
+            readonly id: number, 
+            readonly firstName: string, 
+            readonly lastName: string
+        }>
+    }
+}
+```
+
+</ViewMore>
+
+</Collapse>
+
+### 6. 拦截器
+
+<Collapse title="输入拦截">
+
+输入拦截器可以拦截Jimmer插入或更新实体的行为，在数据被保存之前给予用户一次调整被保存数据的机会。
+
+输入拦截器和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）来调整即将被保存的数据对象。
+
+</Collapse>
+
+<Collapse title="输出拦截：全局过滤器">
+
+输出拦截器也称全局过滤器，在绝大部分查询中自动为某些实体类型添加而外的过滤条件，其功能和Hibernate的[@Where](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/annotations/Where.html)类似。
+
+全局过滤器和ORM解耦，可以使用只有业务层才能拿到的信息（比如权限系统的信息）来添加额外的过滤条件。
+
+:::note
+这类需求中有一个非常常见：软删除；Jimmer对其进行了特别支持，其全局过滤器被Jimmer内置，无需开发人员提供。
+:::
+
+</Collapse>
+
+<Collapse title="多视角缓存">
+
+全局过滤器可以使用业务层权限系统的信息来为查询添加额外的过滤条件，这会导致一个现象：即便透过完全相同的查询功能，不同身份的用户也会看到不同的数据。
+
+为此，Jimmer引入了多视角缓存，让不同身份的用户也会看到不同的缓存。
+
+<ViewMore buttonText="查看示意图" title="多视角缓存图示">
+
+![multi-view-cache](@site/static/img/multi-view-cache.png)
+
+</ViewMore>
+
+</Collapse>
+
+### 7. 极致性能
+
+<Collapse title="解决传统ORM会被新手诱发低性能SQL的问题">
+
+传统ORM容易被新手诱发地性能SQL，这类问题是有两个方面的原因导致的，Jimmer都给予了解决。
+
+-   绝不会导致内存分页
+
+    以Hibernate为例，当开发人员同事使用`collection-join-fetch`和分页查询时，会诱发内存分页，请参见[这里](https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/)
+
+    Jimmer中没有`join-fetch`的概念，所以，不会有这个问题
+
+-   不会因lazy-loading导致[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
+
+    Jimmer不支持lazy-loading，被查询的数据结构的形状都是事先指定的。因为
+    
+    -   B/S或微服务架构不允许实体对象持有数据库连接，lazy-loading方案无用
+
+    -   一旦支持lazy-loading，新手就可能不做任何深入配置，放任lazy-loading机制频繁制造[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
+    
+    Jimmer灵活控制被查询数据结构的形状，其内部机制对用户透明。底层查询可能涉及数据库访问，缓存访问，用户自定义计算甚至跨越微服务边界的远程调用。但无论是何种底层行为，都没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题，因为被查询的数据结构的形状总是事先指定的，而非查询后的lazy-loading。
+
+    :::note
+    事实上，Jimmer生成SQL并执行，一定是因为开发人员**显式**调用了其具有明确CRUD性质的API，绝不会如传统ORM一样在其他操作，比如对数据对象的处理过程中，因lazy-loading这类行为导致SQL被**隐式**地执行。
+
+    因此，在Spring项目中设置[Transactinal.readOnly()](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html#readOnly())对Jimmer而言没有意义。
+
+    所以，在Jimmer的Spring项目中，直接用[@Transactional](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)修饰业务类即可；没有必要用[@Transactional](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)修饰每个业务方法，并将所有查询方法的[@Transactional](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Transactional.html)指定`readOnly = true`。
+    :::
+
+
+</Collapse>
+
+<Collapse title="高性能的对象映射">
+
+除了保证不会被新手诱导出低性能SQL外，Jimmer本身对结果集的映射性能也非常高。
+
+-   以前，数据库项目的大部分时间都是在等待JDBC阻塞，ORM本身的映射性能无关痛痒。
+
+-   现在，JVM力推虚拟线程。在这个模式下，ORM本身的映射性能高，可以让其carrier线程尽快完成任务后去扛起更多的虚拟线程，具备很重要的意义。
+
+<ViewMore buttonText="查看性能报告" title="Benchmark">
+
+基准测试的源代码[在此](https://github.com/babyfish-ct/jimmer/tree/main/benchmark)，使用H2的内存数据库，无需任何环境准备即可直接运行。
+
+# 实现原则
+
+1.  所有框架禁用缓存
+
+2.  所有框架关闭日志
+
+3.  所有框架每次都打开和关闭连接/会话，不做共享；靠连接池保证性能。
+
+4.  接入Spring的连接管理机制。因不同框架API不同，实现方法略有不同。
+    
+    - 有的使用[DataSourceUtils](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/DataSourceUtils.html)的getConnection和releaseConnection
+    - 有的使用[TransactionAwareDataSourceProxy](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/TransactionAwareDataSourceProxy.html)
+    
+    但最终效果都一样
+
+5.  不使用事务
+    
+    `Exposed`比较特殊，其API强制要求事务，给予假的实现。
+
+6.  使用嵌入的H2内数据库，尽可能压缩数据库的消耗，凸显ORM本身的性能，即映射的性能。
+
+:::note
+由于Spring移除了对OpenJPA的支持，本基准测试不包含`JPA(OpenJPA)`
+:::
+
+# 结果数据
+
+-   每秒重复查询次数
+
+    <Benchmark type="OPS" locale="zh"/>
+
+    - 横坐标：每次从数据库中查询到的数据对象的数量
+    - 纵坐标：每秒操作次数
+
+-   每次操作耗时
+
+    <Benchmark type="TIME" locale="zh"/>
+
+    - 横坐标：每次从数据库中查询到的数据对象的数量
+    - 纵坐标：每次操作耗时(微秒)
+
+</ViewMore>
+
+</Collapse>
+
+### 8. 不可变对象 + 极简设计
+
+<Collapse title="不可变实体">
+
+前面谈到，Jimmer实体是动态对象。不仅如此，Jimmer实体还是不可变对象。
+
+不可变对象优点很多，比如
+
+-   可以所以随意共享，比如，进程内缓存。多人开发模式下不用担心被其他同事无意修改，更无需为为此做防御性复制。
+-   没有线程安全问题。
+-   具备稳定的hashCode，对集合框架友好
+
+现代语言逐渐重视不可变对象，比如，Java14和C#9引入了不可变的record类型，kotlin data class对不可变对象支持也非常好。这些编程语言的发展方向显示了这是未来的必然趋势。
+
+对ORM而言，情况略有不同。不但对象字段多，对象的关联也可能很深，即使ORM中对象非常复杂，往往代表一个庞大的数据结构，而非一个简单的孤单对象。
+
+这种复杂对象暴露了不可变对象的最大缺点，基于现有对象对某些属性做出调整后创建新对象，即`复制构造`，将会变成非常复杂的事情。
+
+到目前为止，语言本身支持的不可变对象，为简单不可变对象设计，而非为复杂的不可变对象而设计。对复杂不可变对象的`复制构造`难题无能为力。
+
+Jimmer也解决这个问题，期望让复杂不可变对象的`复制构造`变得如同修改可变对象一样简单，并同时适用于java和kotlin的方案。
+
+幸运的是，js/ts领域已经存在一个足够强大和优雅的方案：[immmer](https://github.com/immerjs/immer)
+
+Jimmer将它移植到了java/kotlin下，复杂不可变对象的`复制构造`变得如同直接修改可变对象一样简单，非常简单自然 *（尤其是kotlin版本）*
+
+<ViewMore title="复杂不可变对象的复制构造" buttonText="查看例子">
+
+# 定义不可变类型
+
+</ViewMore>
+
+:::note
+本框架叫Jimmer，是为了致敬[immmer](https://github.com/immerjs/immer)
+:::
+
+</Collapse>
+
+<Collapse title="极简设计">
+
+很多数数据操作框架的API入口，都用一个无状态的全局对象构建生命周期有限的临时有状态对象。
+比如JPA的[EntityManagerFactory](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManagerFactory.html)和[EntityManager](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html)，Hibernate的[SessionFactory](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/SessionFactory.html)和[Session](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/Session.html)，MyBatis的[SqlSessionFactory](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSessionFactory.html)和[SqlSession](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSession.html)。其中有状态对象还对JDBC事务进行了封装，比如JPA的[EntityManager.getTransaction](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html#getTransaction--)，Hibernate的[Session.getTransaction](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/SharedSessionContract.html#getTransaction())，MyBatis的[SqlSession.commit](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSession.html#commit())。
+
+Jimmer没有类似的抽象，一个无状态的全局SqlClient对象就是所有API的入口，也没有封装JDBC事务。
+
+ORM本身应该保持高度的体系中立，其底层API不应该和spring、quarkus等胶水框架耦合。Jimmer这样的极简设计带来了一个明显的好处，就是和胶水框架的耦合非常简单。
+
+**假如**jimmer本身没有提供spring整合的能力，需要用户自己把jimmer整合到spring *(注意，不是spring-data)* 中，也非常容易，整合难度远低于同类框架。
+
+</Collapse>
+
+## 方案类比
+
+Jimmer是一个全面的解决方案，有很多强大的功能。其中有一部分功能是Jimmer独创的，还有一部分和某些其他技术体系有相似性，可以通过类比来帮助用相关经验的用户理解。
+
+可和其他相似技术体系类比的功能点有：
+
+<table>
+<thead>
+<tr>
+<th>Jimmer功能点</th>
+<th>类似方案</th>
+<th>必要说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查询任意数据结构</td>
+<td><a href="https://graphql.org/)">GraphQL</a></td>
+<td>
+
+-   和GraphQL作为协议仅用于HTTP接口暴露不同，Jimmer将此能力拓展成了ORM的API，即无处不在的本地代码调用。*(当然，你也可以选择利用Jimmer的能力快速暴露GraphQL)*
+
+-   Jimmer可以对自关联属性进行递归查询
+
+</td>
+</tr>
+<tr>
+<td>实体对象计算属性</td>
+<td><a href="https://github.com/graphql/dataloader">DataLoader</a></td>
+<td>
+
+-   计算属性没有没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
+
+-   计算规则和ORM解耦，可以使用任何信息（比如身份权限信息）用做计算，也可以使用关系型库以外的技术进行计算
+
+</td>
+</tr>
+<tr>
+<td>实体对象远程关联属性</td>
+<td><a href="https://www.apollographql.com/docs/federation/">Apollo Federation</a></td>
+<td>
+
+-   跨越微服务的实体关系，关联双方实体隶属于不同的微服务（也表示，隶属于不同数据库）
+
+-   如果被查询的数据结构的形状包含远程关联，将会自动使用远程数据访问完成跨服务数据访问，对开发人员透明
+
+-   将不同微服务的关系型数据库模型，合并成一个全局的关系模型
+
+</td>
+</tr>
+<tr>
+<td>事务内触发器</td>
+<td><a href="https://seata.io/zh-cn/docs/dev/mode/at-mode.html">Seata的AT模式</a></td>
+<td>
+
+-   相似点：在修改数据库时植入额外的查询SQL，以捕获数据库的变更
+
+-   不同点：和seata会进行更多操作不同，Jimmer事务内触发器仅仅发送事件通知用户；另外不需要如同[Seata的AT模式](https://seata.io/zh-cn/docs/dev/mode/at-mode.html)一样代理JDBC连接池。
+
+:::note
+若条件允许，应优先使用binlog触发器，而非事务内触发器
+:::
+
+</td>
+</tr>
+<tr>
+<td>不可变对象</td>
+<td><a href="https://github.com/immerjs/immer">immer</a></td>
+<td>
+
+和传统ORM不同，Jimmer中所有实体对象都是不可变对象。
+
+:::note
+这非常重要，如果用可变对象作为实体对象，其实就是纵容开发人员随意构建`循环引用`，这会是一个后患无穷的问题。
+:::
+
+不幸的是，java record和kotilin data class的copy函数为简单不可变对象而设计，难以简洁地处理复杂的深层次不可变对象的复制构造问题，而深层次复杂数据结构恰恰是ORM框架要面对的。
+
+所以，Jimmer为java/kotlin移植了[immer](https://github.com/immerjs/immer)，这是一个足够强大的不可变对象方案。本框架命名为Jimmer，即致敬[immer](https://github.com/immerjs/immer)
+
+</td>
+</tr>
+</tbody>
+</table>
