@@ -214,7 +214,8 @@ class Context {
                 return enumType;
             }
             if (javaClass.isArray()) {
-                Class<?> componentClass = objectType(javaClass.getComponentType(), null).getJavaType();
+                final StaticObjectType componentType = objectType(javaClass.getComponentType(), null);
+                Class<?> componentClass = componentType.getJavaType();
 
                 if (componentClass.isArray()) {
                     throw new IllegalDocMetaException(
@@ -226,7 +227,13 @@ class Context {
                     );
                 }
 
-                return new ArrayTypeImpl(SimpleTypeImpl.get(componentClass));
+                final SimpleType simpleType = SimpleTypeImpl.get(componentClass);
+
+                if (simpleType != null) {
+                    return new ArrayTypeImpl(simpleType);
+                }
+
+                return new ArrayTypeImpl(componentType);
             }
             SimpleType simpleType = SimpleTypeImpl.get(javaClass);
             if (simpleType != null) {
