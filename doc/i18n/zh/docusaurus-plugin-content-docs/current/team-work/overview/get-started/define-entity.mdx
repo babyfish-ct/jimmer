@@ -2,3 +2,765 @@
 sidebar_position: 3
 title: 定义实体
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+和以`JPA/Hibenrate`为代表的ORM不同，Jimmer中的实体定义采用interface，而非class。原因在[下一节](#为什么实体是interface)讨论。
+
+在定义实体之前，需要声明两个概念：
+
+- Jimmer中实体对象并非简单的Java Bean，而是动态对象。
+
+    **即，某个属性未被设置和某个属性被设置为null，是完全不同的。**
+
+- Jimmer实体是不可变对象，因此，接口中指存在getter，不存在setter。
+
+## 定义非关联字段
+
+假设实体所在的包为"com.example.model"，**先忽略关联属性**，各实体定义如下。
+
+-   BookStore
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookStore.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.*;
+    import org.jetbrains.annotations.Nullable;
+
+    @Entity
+    public interface BookStore {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        long id();
+
+        String name();
+
+        @Nullable
+        String website();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="BookStore.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.*
+
+    @Entity
+    interface BookStore {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long
+
+        val name: String
+
+        val website: String?
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   Book
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.*;
+    import java.math.BigDecimal;
+
+    @Entity
+    public interface Book {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        long id();
+
+        String name();
+
+        int edition();
+
+        BigDecimal price();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.*
+    import java.math.BigDecimal
+
+    @Entity
+    interface Book {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long
+
+        val name: String
+
+        val edition: Int
+
+        val price: BigDecimal
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   Author
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Author.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.*;
+
+    @Entity
+    public interface Author {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        long id();
+
+        String firstName();
+
+        String lastName();
+
+        /*
+         * 这里，Gender是一个枚举，代码稍后给出
+         */
+        Gender gender();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.*
+
+    @Entity
+    interface Author {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long
+
+        val firstName: String
+
+        val lastName: String
+
+        /*
+         * 这里，Gender是一个枚举，，代码稍后给出
+         */
+        val gender: Gender
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    其中`Gender`是一个枚举，只有两个选项：`MALE`和`FEMALE`。
+
+    ORM处理枚举有两种方式：
+    -   按Java枚举的名称映射为字符串：可观察性优先的选择，也是默认的选项。
+    -   安Java美剧的orinal映射为数字：性能优先的选择。
+
+    虽然本教程示例按照默认方式把枚举映射成字符串，但数据库中check约束限定的取值是`M`和`F`，并非`MALE`和`FEMALE`，所以，这个没有需要简单配置一下。
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Author.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.EnumItem;
+
+    public enum Gender {
+
+        @EnumItem(name = "M")
+        MALE,
+
+        @EnumItem(name = "F")
+        FEMALE
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.EnumItem
+
+    enum class Gender {
+
+        @EnumItem(name = "M")
+        MALE,
+
+        @EnumItem(name = "F")
+        FEMALE
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::info
+    完整的自定义标量类型的映射，请参见**TODO**
+    :::
+
+-   TreeNode
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="TreeNode.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.*;
+
+    @Entity
+    public interface TreeNode {
+
+        @Id
+        @Column(name = "NODE_ID")
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        long id();
+
+        String name();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.*
+
+    @Entity
+    interface TreeNode {
+
+        @Id
+        @Column(name = "NODE_ID")
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long
+
+        val name: String
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   对于Java而言，每一个getter，既可以采用传统Java Bean那种`get/is`开头的方方式，比如`getName()`，也可以采用当前例子中不用`get/is`开头的方式，比如`name()`。
+
+    :::note
+    打破传统Java Bean中getter方法必须以`get/is`开头的规则的并非Jimmer，而是Java14引入的record类型。这种新的风格可以让不可变对象的书写变得更简单。
+    :::
+
+-   Jimmer实体对每个属性是否为null非常敏感。
+    - 对于kotlin而言，采用语言本身的nullity描述。
+    - 对于Java而言：
+        - boolean, char, byte, short, int, long, float, double表示不能为null
+        - Boolean, Character, Byte, Short, Integer, Long, Float, Double表示允许为null
+        - 其他类型默认不能为null，如果期望允许为null，请加注解`@org.jetbrains.annotations.Nullable`、`@javax.validation.constraints.Null`或`@org.springframework.lang.Nullable`
+
+-   例子使用的注解:
+    - `@org.babyfish.jimmer.sql.Entity`: 指定实体类型。
+    - `@org.babyfish.jimmer.sql.Id`: 指定id属性。
+    - `@org.babyfish.jimmer.sql.GeneratedValue`: 指定id自动分配策略，这里使用数据库的自动编号。
+
+-   代码中Java/Kotlin接口的短名，按照`word1Word2...WordN -> WORD1_WORD2_..._WORDN`的规则转换后，和数据库中对应的表名完全匹配。
+
+    如果Java/Kotlin接口的短名和数据库表名无法自动匹配，请用`@org.babyfish.jimmer.sql.Table`修饰接口。
+
+-   同理，代码中Java/Kotlin属性，按照上述规则转换后，和数据库中对应的列名完全匹配。
+
+    如果Java/Kotlin属性名和数据库列名无法自动匹配，请用`@org.babyfish.jimmer.sql.Column`修饰属性。
+
+    :::note
+    注意：改注解即可用于修饰非关联字段，而非下文要讨论的外建字段
+    :::
+
+-   Jimmer实体是动态对象，没有id的对象，就是id未被设置的对象，而非id被设置为null的对象。Jimmer不需要让id可以为null。
+
+    所以，代码中id属性的类型为不能为null的`long`，而非可以为null的`Long`，否则框架会报错提示。
+    
+    :::note
+    有JPA/Hibenrate背景知识的读者需注意这个细节。
+    :::
+
+## 多对一关联`Book.store`
+
+修改`Book.java`/`Book.kt`，添加一个关联属性`store`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+package com.example.model;
+
+...省略导入语句...
+
+@Entity
+public interface Book {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToOne
+    @Nullable
+    BookStore store();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+package com.example.model
+
+...省略导入语句...
+
+@Entity
+interface Book {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToOne
+    val store: BookStore?
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   `@org.babyfish.jimmer.sql.ManyToOne`声明多对一关联属性，将数据库的外键字段映射为关联对象。
+
+-   代码中Java/Kotlin属性，按照`word1Word2...WordN -> WORD1_WORD2_..._WORDN_ID`的规则转换，即`store -> STORE_ID`，结果和数据库中外键的列名完全匹配。
+
+    如果Java/Kotlin属性名和数据库列名无法自动匹配，请用`@org.babyfish.jimmer.sql.JoinColumn`修饰属性。
+
+## 一对多关联`BookStore.books`
+
+修改`BookStore.java`/`BookStore.kt`，添加一个关联属性`books`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+package com.example.model;
+
+...省略导入语句...
+
+@Entity
+public interface BookStore {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "store")
+    List<Book> books();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+package com.example.model
+
+...省略导入语句...
+
+@Entity
+interface BookStore {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "store")
+    val books: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   `@org.babyfish.jimmer.sql.OneToMany`声明对一对多关联。
+
+    一对多关联并不映射数据库中的任何字段，它仅用于对另一个多对一关联做镜像映射，将实体之间单向关联变成双向关联。
+
+    这里，`@ManyToOne(mappedBy = "store")`，指当前属性`BookStore.books`是`Book.store`的镜像。
+
+    <div style={{display: 'flex', alignItems: 'start'}}>
+    <div>
+    
+    ```java
+    @Entity
+    public interface BookStore {
+
+        @OneToMany(
+            // highlight-next-line
+            mappedBy = "store"
+        )
+        List<Book> books();
+
+        ...
+    }
+    ```
+    
+    </div>
+    <div>
+
+    ![mirror](@site/static/img/mirror.svg)
+    
+    </div>
+    <div>
+    
+    ```java
+    @Entity
+    public interface Book {
+
+        @ManyToOne
+        @Nullable
+        // highlight-next-line
+        BookStore store();
+
+        ...
+    }
+    ```
+    
+    </div>
+    </div>
+
+    关联注解具备`mappedBy`的属性（这里的`BookStore.books`），叫做镜像属性。
+
+-   镜像属性是可选的，因此，双向关联不是必须的。
+
+-   和`JPA/Hibernate`不同，Jimmer中的一对多关联只能作为多对一关联的镜像。即，一对多关联一定意味着双向关联。
+    
+## 多对多关联`Book.authors`
+
+修改`Book.java`/`Book.kt`，添加一个关联属性`authors`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+package com.example.model;
+
+...省略导入语句...
+
+@Entity
+public interface Book {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_id"
+    )
+    List<Author> authors();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+package com.example.model
+
+...省略导入语句...
+
+@Entity
+interface Book {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_id"
+    )
+    val authors: List<Author>
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   `@org.babyfish.jimmer.sql.ManyToMany`声明对多对多关联。
+
+-   多对多关联分为两种，主动端和镜像端，这里的`@ManyToMany`是主动端。镜像端在后文介绍。
+
+-   对于主动端的多对多关联，可以使用`@org.babyfish.jimmer.sql.JoinTable`设置中间表
+
+    -   name: 中间表的表名
+
+        如果不指定，默认为：`{当前实体短名驼峰转下划线}_{目标实体短名驼峰转下划线}_MAPPING`
+
+    - joinColumnName: 中间表引用当前实体类型（这里是`Book`）的外键
+
+        如果不指定，默认为：`{当前实体短名驼峰转下划线}_ID`
+
+    - inverseJoinColumnName: 中间表引用目标实体类型（这里是`Author`）的外键
+
+        如果不指定，默认为：`{目标实体短名驼峰转下划线}_ID`
+
+    :::note
+    不难看出，这个例子中，`@JoinTable`的name，joinColumnName和inverseJoinColumnName的值都被设置成了默认值。
+    这种情况下，其实可以省略这个`@JoinTable`的。
+
+    但是，为了保持必要的代码可读性，还是写了这个`@JoinTable`
+    :::
+
+## 多对多关联`Author.books`
+
+修改`Auhtor.java`/`Author.kt`，添加一个关联属性`books`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+package com.example.model;
+
+...省略导入语句...
+
+@Entity
+public interface Author {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToMany(mappedBy = "authors")
+    List<Book> books();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+package com.example.model
+
+...省略导入语句...
+
+@Entity
+interface Book {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToMany(mappedBy = "authors")
+    val books: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`@org.babyfish.jimmer.sql.ManyToMany`注解的`mappedBy`被设置了，这表示是一个镜像端的多对多映射。
+
+`@ManyToMany(mappedBy = "authors")`，指当前属性`Author.books`是`Book.authors`的镜像。
+
+<div style={{display: 'flex', alignItems: 'start'}}>
+<div>
+
+```java
+@Entity
+public interface Author {
+
+    @ManyToMany(
+        // highlight-next-line
+        mappedBy = "authors"
+    )
+    List<Book> books();
+
+    ...
+}
+```
+
+</div>
+<div>
+
+![mirror](@site/static/img/mirror.svg)
+
+</div>
+<div>
+
+```java
+@Entity
+public interface Book {
+
+    @ManyToMany
+    @JoinTable(...略...)
+    // highlight-next-line
+    List<Author> authors();
+
+    ...
+}
+```
+
+</div>
+</div>
+
+镜像端的多对多关联是可选的，即，双向多对多关联是可选的。但是，一旦声明双向多对多关联，必须一端为主动端，一端是镜像端。
+
+:::tip
+和JPA/Hibernate不同，在JPA/Hibernate中，主动端和镜像端的抉择非常重要，这会对数据保存行为的编程方式造成影响。
+
+Jimmer没有这个问题，你可以随意决定，没有任何影响。
+:::
+
+## 完善TreeNode的定义
+
+现在，读者应该理解了关联属性。让我们快速完善TreeNode的定义：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="TreeNode.java"
+package com.example.model;
+
+...省略导入语句...
+
+@Entity
+public interface TreeNode {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToOne
+    @Nullable
+    TreeNode parent();
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "parent")
+    List<TreeNode> childNodes();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+package com.example.model
+
+...省略导入语句...
+
+@Entity
+interface TreeNode {
+
+    ...省略其他属性...
+
+    // highlight-next-line
+    @ManyToOne
+    val parent: TreeNode?
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "parent")
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 为什么实体是interface
+
+在前面的例子中，我们看到Jimmer中实体类型声明采用interface而非class，这是为什么呢？
+
+1.  动态性
+
+    Jimmer实体并非简单的Java Bean，而是动态对象。
+
+    - 某个属性未被设置和某个属性被设置为null，是完全不同的。
+
+    - 直接访问某个不存在的属性，异常。
+    
+    - 使用Jackson序列化动态对象，不会异常，而是自动忽略未设置属性。
+
+    完整的动态性论述，请参见**TODO**
+
+    -   动态性的好处
+    
+        -   轻松表达任意复杂的数据结构。任何一个实体对象，都有无限的表达力，可能是一个残缺的对象，也可能是一个完整的对象，还可能是一个复杂树的聚合根。
+
+        -   既然可以轻松表达任意复杂的数据结构，那么，ORM就可以以整个数据结构为基本操作单位，而非以单个实体对象为操作单位，对整个数据结构实现一句话查询、一句话保存。
+
+        -   对于查询业务而言，描述任意复杂的数据结构可以直接作为HTTP服务的返回，无需为实现每一种特定形状的返回数据结构不厌其烦地定义DTO类型并逐一映射。
+
+            :::tip
+            服务端利用了这种动态性，极大地简化开发。
+            
+            然而，对于客户端而言，Jimmer可以恢复查询结果的静态性，可以自动生成TypeScript对接代码，定义所有业务场景的DTO类型，保证客户端的极致开发体验。
+
+            可以参考**TODO**了解更多。
+            :::
+
+    -   Jimmer和动态语言方案的对比
+
+        如上所述，Jimmer利用实体对象的动态性，提供静态语言ORM难以想象的灵活性。
+
+        然而，Jimmer拒绝动态语言高度的不安全性和不可维护性。Jimmer实体仍然是普通的Java/Kotlin对象，保住了静态语言的拼写安全、类型安全、甚至空安全(限kotlin)。
+
+        :::note
+        Jimmer的动态实体唯一的不安全问题是，直接访问不存在的属性会导致异常：`org.babyfish.jimmer.UnloadedException`。
+        
+        这个问题并非Jimmer独有的问题，Jimmer对象的动态性其实是把`JPA/Hibernate`中的延迟属性推广到了任何属性，这个异常本质上和`org.hibernate.LazyIntializationException`相似。
+
+        即，这是ORM领域早已普遍接受的必要成本。
+        :::
+
+    :::tip
+    Jimmer的本质，是在动态语言ORM的灵活性和静态语言的安全性之间，寻找最佳折中和完美平衡点。
+    :::
+
+2.  不可变性
+
+    从前文的代码中，我们看到实体接口中只有getter没有setter，这表示实体对象是不可变的。
+
+    可变数据对象，被多处代码逻辑共享时，任何一方不小心修改了数据，都会导致其他方逻辑被影响，会面临代码维护性的风险。被多线程共享时，还会容易因忘记同步而导致不一致问题。
+
+    对于绝大部分系统而言，只有数据库和缓存才值得开发人员认真思考数据共享问题（可能是防御，也可能是利用，是好是坏需要开发人员自己评估），并谨慎应对并发问题。其他和数据库或缓存无关的细节，如果能保证不可变，会利于复杂系统的开发和多人协作。
+
+    然而，享受并利用不可变对象的优势，压制其的劣势，并不是一件容易的事情。尤其是对ORM这类对象层次结构很深的场景。
+
+    幸运的是，在JavaScript/TypeScript领域，有一个叫做[immer](https://github.com/immerjs/immer)的框架，给出一套完美的深层次不可变对象的处理方法。
+
+    Jimmer为Java/Kotlin移植了[immer](https://github.com/immerjs/immer)，让其成为整个ORM的基础编程模型，项目取名"Jimmer"也为致敬[immer](https://github.com/immerjs/immer)。
+
+    如何创建和“修改”不可变对象的细节，请参考**TODO**
+
+综上，由于Jimmer对象本身具备动态性且不可变，所以它并非简单的Java对像，其类型有着复杂的内部实现。
+
+因此，Jimmer选择让开发人员书写interface，并由AnnotationProcessor(java)或KSP(kotlin)在编译时生成它们的实现。

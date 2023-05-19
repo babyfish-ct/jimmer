@@ -2,3 +2,218 @@
 sidebar_position: 1
 title: 创建项目
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 创建SpringBoot项目
+
+使用[https://start.spring.io/](https://start.spring.io/)创建一个SpringBoot项目，你需要选择你喜欢的语言：Java或Kotlin。
+
+项目的语言的选择很重要，Jimmer支持两套不同的API。
+
+- Java API: 保证尽可能多的开发人员可以使用
+
+- Kotlin API: 专为kotlin语言设计的API，尽可能利用kotlin的语言特性优化开发体验
+
+## 加入依赖
+
+Jimmer本身是高度中立的，可以脱离spring-boot使用；但同时也提供了良好的spring-boot集成
+
+用户既可以选择和spring-boot结合使用，也可以单独使用。不同的选择需要添加的依赖不同。
+
+-   groupId: 
+    org.babyfish.jimmer
+
+-   artifaceId:
+
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                <th>和SpringBoot结合使用</th>
+                <th>单独使用</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Java</td>
+                <td rowspan="2">jimmer-spring-boot-starter</td>
+                <td>jimmer-sql</td>
+            </tr>
+            <tr>
+                <td>Kotlin</td>
+                <td>jimmer-sql-kotlin</td>
+            </tr>
+        </tbody>
+    </table>    
+
+相比于独立使用而言，和Spring-Boot结合使用更简单，因此本教程一律使用后者进行演示。
+
+修改gradle或maven文件，加入依赖
+
+<Tabs groupId="buildTool">
+<TabItem value="maven" label="Maven">
+
+```xml title="pom.xml"
+<properties>
+    <jimmer.version>0.7.35</jimmer.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.babyfish.jimmer</groupId>
+        <artifactId>jimmer-spring-boot-starter</artifactId>
+        <version>${jimmer.version}</version>
+    </dependency>
+    ...省略其他依赖...
+</dependencies>
+```
+
+</TabItem>
+<TabItem value="gradle" label="Gradle">
+
+```groovy title="build.gradle"
+ext {
+    jimmerVersion = "0.7.35"
+}
+
+depdencies {
+    
+    implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
+
+    ...省略其他依赖...
+}
+```
+
+</TabItem>
+<TabItem value="gradlekts" label="Gradle(kts)">
+
+```kotlin title="build.gradle.kts"
+val jimmerVersion = "0.7.35"
+
+depdencies {
+    
+    implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
+
+    ...省略其他依赖...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## kotlin需要的额外配置
+
+如果开发人员选择了kotlin，需要修改spring-boot的配置文件，这点非常重要。
+
+<Tabs groupId="springBoot">
+<TabItem value="properties" label="application.properties">
+
+```
+jimmer.language = kotlin
+```
+
+</TabItem>
+<TabItem value="maven" label="application.yml">
+
+```
+jimmer:
+    language: kotlin
+```
+
+</TabItem>
+</Tabs>
+
+## 其他有用的配置
+
+除了kotlin项目必需的`jimmer.language`外，还有其他配置。
+
+这里再介绍几个很用的基本配置，对Java和Kotlin都有效
+
+|属性名|类型|默认值|描述|
+|---|---|---|---|
+|jimmer.dialect|string|org.babyfish.jimmer.sql.dialect.DefaultDialect|数据库方言类名|
+|jimmer.show-sql|boolean|false|如果为true，自动打印被执行的SQL|
+|jimmer.database-validation-mode|NONE&#124;WARNING&#124;ERROR|NONE|如果非NONE，验证数据库结构和代码实体类型结构的一致性，如果不一致，WARNING导致日志告警，ERROR导致报错|
+
+完整的配置，请参考**TODO**
+
+<Tabs groupId="springBoot">
+<TabItem value="properties" label="application.properties">
+
+```
+jimmer.dialect = org.babyfish.jimmer.sql.dialect.MySqlDialect
+jimmer.show-sql = true
+jimmer.database-validation-mode = ERROR
+...省略其他配置...
+```
+
+</TabItem>
+<TabItem value="maven" label="application.yml">
+
+```
+jimmer:
+    dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect
+    show-sql: true
+    database-validation-mode: ERROR
+    ...省略其他配置...
+```
+
+</TabItem>
+</Tabs>
+
+## 添加除Jimmer外的其他必要依赖
+
+除了Jimmer外，还需要一些其他必要的依赖，比如spring-web，JDBC驱动。
+
+修改gradle或maven文件，加入依赖
+
+<Tabs groupId="buildTool">
+<TabItem value="maven" label="Maven">
+
+```xml title="pom.xml"
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>8.0.30</version>
+        <scope>runtime</scope>
+    </dependency>
+    ...省略其他依赖...
+</dependencies>
+```
+
+</TabItem>
+<TabItem value="gradle" label="Gradle">
+
+```groovy title="build.gradle"
+depdencies {
+    
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.30'
+
+    ...省略其他依赖...
+}
+```
+
+</TabItem>
+<TabItem value="gradlekts" label="Gradle(kts)">
+
+```kotlin title="build.gradle.kts"
+depdencies {
+    
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    runtimeOnly("mysql:mysql-connector-java:8.0.30")
+
+    ...省略其他依赖...
+}
+```
+
+</TabItem>
+</Tabs>
