@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.UnloadedException;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
@@ -188,7 +189,19 @@ class Saver {
                         idOnlyTargetIds = new ArrayList<>();
                         for (DraftSpi associatedObject : associatedObjects) {
                             if (!isNonIdPropLoaded(associatedObject, false)) {
-                                idOnlyTargetIds.add(associatedObject.__get(targetIdPropId));
+                                Object targetId;
+                                try {
+                                    targetId = associatedObject.__get(targetIdPropId);
+                                } catch (UnloadedException ex) {
+                                    throw new SaveException(
+                                            SaveErrorCode.EMPTY_OBJECT,
+                                            path,
+                                            "An associated object of the property \"" +
+                                                    prop +
+                                                    "\" does not have any properties"
+                                    );
+                                }
+                                idOnlyTargetIds.add(targetId);
                             } else if (prop.isRemote()) {
                                 throw new SaveException(
                                         SaveErrorCode.LONG_REMOTE_ASSOCIATION,
