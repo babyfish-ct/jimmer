@@ -27,7 +27,12 @@ export const ViewMore: FC<
     return (
         <>
             <Button onClick={onButtonClick} variant="contained">{buttonText}</Button>
-            <Dialog open={open} onClose={onClose} fullScreen={maximize} TransitionComponent={Transition}>
+            <Dialog 
+            open={open} 
+            onClose={onClose} 
+            fullScreen={maximize} 
+            TransitionComponent={Transition}
+            maxWidth="md">
                 <AppBar sx={{ position: 'relative' }}>
                     <Toolbar>
                         <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
@@ -40,7 +45,7 @@ export const ViewMore: FC<
                             Close
                         </Button>
                     </Toolbar>
-                </AppBar>  
+                </AppBar>
                 <DialogContent>
                     {children}
                 </DialogContent>

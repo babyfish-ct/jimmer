@@ -1,0 +1,188 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
+
+<Divider>
+<Chip label="前提假设"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+package yourpackage;
+
+import java.util.List;
+
+import org.babyfish.jimmer.Immutable;
+import org.jetbrains.annotations.Nullable;
+
+// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
+@Immutable 
+public interface TreeNode {
+    
+    String name();
+
+    @Nullable
+    TreeNode parent();
+
+    List<TreeNode> childNodes();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+package yourpackage
+
+import org.babyfish.jimmer.Immutable
+
+// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
+@Immutable
+interface TreeNode {
+
+    val name: String
+
+    val parent: TreeNode?
+
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Divider>
+<Chip label="使用方法"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+// 第一步，从头构建全新的数据
+TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
+    root.setName("Root").addIntoChildNodes(food -> {
+        food
+            .setName("Food")
+            .addIntoChildNodes(drink -> {
+                drink
+                    .setName("Drink")
+                    .addIntoChildNodes(cococola -> {
+                        cococola.setName("Cococola");
+                    })
+                    .addIntoChildNodes(fanta -> {
+                        fanta.setName("Fanta");
+                    });
+                ;
+            });
+        ;
+    });
+});
+
+// 第二步，关键步骤！
+// 基于现有数据对象，做某些“变更”，创建新的数据对象。
+TreeNode newTreeNode = TreeNodeDraft.$.produce(
+        // highlight-next-line
+        treeNode, // existing data
+        root -> {
+            root
+                .childNodes(false).get(0) // Food
+                .childNodes(false).get(0) // Drink
+                .childNodes(false).get(0) // Cococola
+                .setName("Cococola plus");
+        }
+);
+
+System.out.println("treeNode:" + treeNode);
+System.out.println("newTreeNode:" + newTreeNode);
+```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// 第一步，从头构建全新的数据
+val treeNode = new(TreeNode::class).by {
+    name = "Root"
+    childNodes().addBy {
+        name = "Food"
+        childNodes().addBy {
+            name = "Drinks"
+            childNodes().addBy {
+                name = "Cococola"
+            }
+            childNodes().addBy {
+                name = "Fanta"
+            }
+        }
+    }
+}
+
+// 第二步，关键步骤！
+// 基于现有数据对象，做某些“变更”，创建新的数据对象。
+val newTreeNode = new(TreeNode::class).by(
+    // highlight-next-line
+    treeNode // existing data
+) {
+    childNodes()[0] // Food
+        .childNodes()[0] // Drinks
+        .childNodes()[0] // Cococola
+        .name += " plus"
+}
+
+println("treeNode: $treeNode")
+println("newTreeNode: $newTreeNode")
+```
+
+</TabItem>
+</Tabs>
+
+
+<Divider>
+<Chip label="执行结果"/>
+</Divider>
+
+输出结果（实际打印结果是紧凑的，但为了方便阅读，这里进行了格式化）
+
+```javascript
+treeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Coco Cola"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+newTreeNode: {
+    "name":"Root",
+    "childNodes":[
+        {
+            "name":"Food",
+            "childNodes":[
+                {
+                    "name":"Drink",
+                    "childNodes":[
+                        // highlight-next-line
+                        {"name":"Coco Cola plus"},
+                        {"name":"Fanta"}
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```

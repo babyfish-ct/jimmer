@@ -1,0 +1,32 @@
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
+
+![jimmer-mind](@site/static/img/save.png)
+
+<Divider>
+<Chip label="功能简介"/>
+</Divider>
+
+-   左上角为数据库现有的数据结构
+
+-   左上角为用户期望保存的数据结构
+
+-   下方为Jimmer执行的操作。
+
+    Jimmer会对比新旧数据结构，对其中有变化部分执行<span style={{color: 'green'}}>插入</span>、<span style={{color: 'orange'}}>修改</span>甚至<span style={{color: 'red'}}>删除</span>。
+
+    >   如果你理解[react](https://react.dev/)或[vue](https://vuejs.org/)，不难看出这个功能很像`Virtual DOM dIff`。
+
+<Divider>
+<Chip label="和JPA的差异"/>
+</Divider>
+
+-   在JPA中，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和
+    [Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
+    关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、
+    [ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、
+    [OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或
+    [ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。
+    但无论如何开发人员如何配置，可保存的数据结构的形状是固定的；而在Jimmer中，无需类似的配置，其行为取决于用户想保存的动态对象的形状，存在无数种肯能。
+
+-   在JPA中，如果一个关联是双向的，那么只有主动方才可用于保存数据，从动方 *(带`mappedBy`)* 不能用于修改数据；在Jimmer中，双向关联的双方平等，任何一方都可用于修改数据。

@@ -1,0 +1,28 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
+
+import JavaFetcherMp4 from '@site/static/img/java-fetcher.mp4';
+import KotlinFetcherMp4 from '@site/static/img/kotlin-fetcher.mp4';
+
+<Tabs groupId="language">
+    <TabItem value="java" label="Java">
+        <video width="100%" controls>
+            <source src={JavaFetcherMp4} type="video/mp4"/>
+            <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+        </video>
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+        <video width="100%" controls>
+            <source src={KotlinFetcherMp4} type="video/mp4"/>
+            <div style={{padding: '1rem', fontSize: '2rem', color: 'red'}}>Your browser does not support the video tag.</div>
+        </video>
+    </TabItem>
+</Tabs>
+
+<Divider><Chip label="和GraphQL的差异"/></Divider>
+
+-   GraphQL基于HTTP服务，该功能只有在跨越HTTP服务的边界才能呈现；而在Jimmer中，这是ORM的基础API，你可以在任何代码逻辑中使用此能力。
+
+-   截止到目前为止，GraphQL协议不支持对深度无限的自关联属性的递归查询；而Jimer支持。

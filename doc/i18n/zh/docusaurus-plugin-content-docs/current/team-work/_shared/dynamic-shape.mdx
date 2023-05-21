@@ -1,0 +1,271 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Divider from '@mui/material/Divider';
+import Chip from '@mui/material/Chip';
+
+<Divider>
+<Chip label="不完整对象"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{"name": "Learning GraphQL"}
+```
+
+<Divider>
+<Chip label="完整的对象"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99
+}
+```
+
+<Divider>
+<Chip label="附带关联的对象"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+    book.applyStore(store -> {
+        store.setName("O'REILLY");
+        store.setWebsite("https://www.oreilly.com/");
+    });
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+    store().apply {
+        name = "O'REILLY"
+        website = "https://www.oreilly.com/"
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99,
+    "store": {
+        "name": "O'REILLY",
+        "website": "https://www.oreilly.com/"
+    }
+}
+```
+
+<Divider>
+<Chip label="附带更多的关联"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+    book.applyStore(store -> {
+        store.setName("O'REILLY");
+        store.setWebsite("https://www.oreilly.com/");
+    });
+    book.addIntoAutors(author -> { 
+        author.setFirstName("Eve");
+        author.setLastName("Procello");
+        author.setGender(Gender.FEMALE);
+    });
+    book.addIntoAutors(author -> { 
+        author.setFirstName("Alex");
+        author.setLastName("Banks");
+        author.setGender(Gender.MALE);
+    });
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+    store().apply {
+        name = "O'REILLY"
+        website = "https://www.oreilly.com/"
+    }
+    authors().addBy {
+        firstName = "Eve"
+        setLastName = "Procello"
+        gender = Gender.FEMALE
+    }
+    authors().addBy {
+        firstName = "Alex"
+        lastName = "Banks"
+        gender = Gender.MALE
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99,
+    "store": {
+        "name": "O'REILLY",
+        "website": "https://www.oreilly.com/"
+    },
+    "authors": [
+        {
+            "firstName": "Eve",
+            "lastName": "Procello",
+            "gender:" "FEMALE"
+        },
+        {
+            "firstName": "Alex",
+            "lastName": "Banks",
+            "gender:" "MALE"
+        }
+    ]
+}
+```
+
+<Divider>
+<Chip label="附带更深的关联"/>
+</Divider>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.product(book -> {
+    book.setName("Learning GraphQL");
+    book.setEdition(1);
+    book.setPrice(new BigDecimal("49.99"));
+    book.applyStore(store -> {
+        store.setName("O'REILLY");
+        store.setWebsite("https://www.oreilly.com/");
+        store.applyAddress(address -> {
+            address.setCity("Sevastopol");
+            address.setState("California");
+        });
+    });
+});
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "Learning GraphQL"
+    edition = 1
+    price = BigDecimal("49.99")
+    store().apply {
+        name = "O'REILLY"
+        website = "https://www.oreilly.com/"
+        address().apply {
+            city = "Sevastopol"
+            state = "California"
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这时，`book`对象对应的JSON如下
+
+```json
+{
+    "name": "Learning GraphQL",
+    "edition": 1,
+    "price": 49.99,
+    "store": {
+        "name": "O'REILLY",
+        "website": "https://www.oreilly.com/",
+        "address": {
+            "city": "Sevastopol",
+            "state": "California"
+        }
+    }
+}
+```

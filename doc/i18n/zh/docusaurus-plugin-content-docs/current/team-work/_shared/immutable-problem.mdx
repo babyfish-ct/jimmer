@@ -1,0 +1,206 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+首先定义一个不可变的树节点
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="TreeNode.java"
+record TreeNode(
+    String name, 
+    List<TreeNode> childNodes
+) {}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="TreeNode.java"
+data class TreeNode(
+    val name: String, 
+    val childNodes: List<TreeNode>
+)
+```
+
+</TabItem>
+</Tabs>
+
+准备一个旧对象
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+var oldTreeNode = ...blabla...
+```
+
+</TabItem>
+
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val oldTreeNode = ...blabla...
+```
+
+</TabItem>
+</Tabs>
+
+让我们从简单到复杂依次实现三种数据变更操作，创建全新的对象
+
+1.  变更根节点的name属性
+    
+    <Tabs groupId="language">
+    <TabItem value="java" lable="Java">
+    
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        // highlight-next-line
+        "Hello", // 设置根节点的名称
+        oldTreeNode.childNodes()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" lable="Kotlin">
+    
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        // highlight-next-line
+        name = "Hello" // 设置根节点的名称
+    );
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这种案例非常简单，没看出Java/Kotlin的问题。别急，轻往后看。
+
+2.  变更第一级子节点的name属性
+    
+    面包屑条件如下：
+    - 第一级子节点的位置: pos1
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        oldTreeNode.name(),
+        IntStream
+            .range(0, oldTreeNode.childNodes().size())
+            .mapToObj(index1 -> {
+                TreeNode oldChild1 = oldTreeNode.childNodes().get(index1);
+                if (index1 != pos1) {
+                    return oldChild1;
+                }
+                return new TreeNode(
+                    // highlight-next-line
+                    "Hello", // 设置第一级子节点的名称
+                    oldChild1.childNodes()
+                );
+            })
+            .toList()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        childNodes = oldTreeNode
+            .childNodes
+            .mapIndexed { index1, child1 ->
+                if (index1 == pos1) {
+                    child1.copy(
+                        // highlight-next-line
+                        name = "Hello" // 设置第一级子节点的名称
+                    )
+                } else {
+                    child1
+                }
+            }
+    )
+    ```
+    </TabItem>
+    </Tabs>
+
+2.  变更第二级子节点的name属性
+    
+    面包屑条件如下：
+    - 第一级子节点的位置: pos1
+    - 第二级子节点的位置: pos2
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    TreeNode newTreeNode = new TreeNode(
+        oldTreeNode.name(),
+        IntStream
+            .range(0, oldTreeNode.childNodes().size())
+            .mapToObj(index1 -> {
+                TreeNode oldChild1 = oldTreeNode.childNodes().get(index1);
+                if (index1 != pos1) {
+                    return oldChild1;
+                }
+                return new TreeNode(
+                    oldChild1.name(),
+                    IntStream
+                        .range(0, oldChild1.childNodes().size())
+                        .mapToObj(index2 -> {
+                            TreeNode oldChild2 = oldChild1.childNodes().get(index2);
+                            if (index2 != pos2) {
+                                return oldChild2;
+                            } else {
+                                return new TreeNode(
+                                    // highlight-next-line
+                                    "Hello", // 设置第二级子节点的名称
+                                    oldChild2.childNodes()
+                                );
+                            }
+                        })
+                        .toList()
+                );
+            })
+            .toList()
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy(
+        childNodes = oldTreeNode
+            .childNodes
+            .mapIndexed { index1, child1 ->
+                if (index1 == pos1) {
+                    child1.copy(
+                        childNodes = child1
+                            .childNodes
+                            .mapIndexed { index2, child2 -> 
+                                if (index2 == pos2) {
+                                    child2.copy(
+                                        // highlight-next-line
+                                        name = "Hello" // 设置第二级子节点的名称
+                                    )
+                                } else {
+                                    child2
+                                }
+                            }
+                    )
+                } else {
+                    child1
+                }
+            }
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::info
+可见，只要对象树有一点深度，基于另一个不可变对象创建新的不可变对象将是一场噩梦。
+:::
