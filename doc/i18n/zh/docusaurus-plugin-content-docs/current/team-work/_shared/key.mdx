@@ -1,0 +1,190 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+最初，人们直接用业务字段作为表的主键。这是最直接最容易立即的方式，但存在以下问题。
+
+-   主键不稳定
+
+    由于主键本身是业务字段，所以会被修改，这就导致主键不稳定。
+
+    虽然数据库中引用它的外建可以使用`on update cascade`来保持一致，
+    但是对于数据库外的系统，比如缓存，主键不稳定会导致很多问题。
+
+    即使从技术层面能抽象出主键不稳定问题的统一解决办法，也不推荐，因为这样系统难以理解。
+
+-   多表连接成本高
+
+    由于主键本身是业务字段，主键的类型很可能不是数字类型，而是相对较长的字符串类型，
+    而且还可能是多个列组合而成的联合主键，这会导致多表链接成本高。
+
+为了解决以上问题，人们学会使用使用没有业务意义的数据作为主键，比如
+
+-   数据库自动编号
+-   数据库序列值
+-   UUID
+-   雪花ID
+
+为了让保存指令支持幂等性保存，Jimmer引入了两个概念：Id和Key
+
+-   @Id: 主键
+
+-   @Key: 业务性主键
+
+    -   如果Id本身就是业务属性（不推荐），无需指定Key，因为Id本身已经表示了业务层面的唯一约束。
+
+    -   如果Id没有业务意义（推荐），那么Key表示业务层面的唯一约束是什么。
+
+        :::note
+        注意：`@Key`唯一的作用是和保存指令配合使用。
+        :::
+
+请看下的例子
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Entity
+public interface TreeNode {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+
+    // highlight-next-line
+    @Key
+    String name();
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    @Nullable
+    TreeNode parent();
+
+    @OneToMany(mappedBy = "parent")
+    List<TreeNode> childNodes();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Entity
+interface TreeNode {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    // highlight-next-line
+    @Key
+    val name: String
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    val parent: TreeNode?
+
+    @OneToMany(mappedBy = "parent")
+    val childNodes: List<TreeNode>
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`TreeNode`实体的Id采用自动编号，并没有义务意义。所以，为了更好地配合保存指令，
+这里指定了`key`，由两个属性构成：`name`和`parent`。
+
+对应的DDL是
+
+```sql
+create table TREE_NODE(
+    ID bigint not null,
+    NAME varchar(20) not null,
+    PARENT_ID bigint
+);
+
+alter table TREE_NODE
+    add constraint PK_TREE_NODE
+        primary key(ID);
+
+alter table TREE_NODE
+    add constraint UQ_TREE_NODE
+        /* highlight-next-line */
+        unique(NAME, PARENT_ID);
+```
+
+实体类型的属性`name`和`parent`被@Key修饰，对应于数据库中`NAME`和`PARENT_ID`列组成的UNIQUE约束 *（或UNIQUE INDEX）*。
+
+这个唯一性约束可以用计算机文件系统做为类比。文件系统允许同名目录或文件，但如果限定父目录，则不允许同名。
+
+:::info
+通过这个例子，我们看到
+
+-   Key可以由多个属性组成
+
+-   外建业可以作为Key的一部分
+:::
+
+让我们再来看另外一个例子，在这个例子中，组成Key的属性全部是基于外建的属性
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Entity
+public interface OrderItem {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    Customer owner();
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    Product product();
+
+    int quantity();
+
+    // Snapshot of `product.price`
+    BigDecimal unitPrice();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Entity
+interface OrderItem {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    val owner: Customer
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    val product: Product
+
+    val quantity: Int
+
+    // Snapshot of `product.price`
+    val unitPrice: BigDecimal
+}
+```
+
+</TabItem>
+</Tabs>

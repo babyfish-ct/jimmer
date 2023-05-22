@@ -2,3 +2,262 @@
 sidebar_position: 1
 title: 简单映射
 ---
+
+## @Entity
+
+`Entity`注解用于修饰不可变接口，表示一个ORM实体。
+
+## @Table
+
+默认情况下，可以不使用`@Table`注解，由接口名推导表名。
+
+默认表名全部使用大写字母，原名称每处从小写字母切换为大写字母的地方，都会自动添加下划线。比如，接口名`BookStore`会自动推导出表名`BOOK_STORE`。
+
+如果默认表名无满足你的要求，请使用`@Tabale`指定你的表名。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+@Table("MY_BOOK_STORE")
+public interface BookStore {
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+@Table("MY_BOOK_STORE")
+interface BookStore {
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## @Id
+
+声明某个属性是id属性，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @Id
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @Id
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+Id字段必须非空
+
+- 对Java而言，不能是8种基本类型的装箱类型
+- 对kotlin而言，不能使用可空类型
+:::
+
+默认情况下，id列的列名就是由Java属性名推导。默认列名全部使用大写字母，原名称每处从小写字母切换为大写字母的地方，都会自动添加下划线。这里对应的数据库列名就是ID。
+
+## @GeneratedValue
+
+在上面的例子中，被`@Id`修饰的主键属性本身是业务字段，插入数据时必须指定。
+
+然而，更多时候，我们期望主键属性本身没有业务意义，这样插入数据时就可以不指定，而是自动生成。自动生成id的策略有
+
+-   数据库自动编号
+-   数据库序列
+-   UUID
+-   雪花ID
+
+`@GeneratedValue`和`@Id`配合使用，为Id指定自动增长策略。
+
+### 数据库自动编号
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 数据库序列
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        sequenceName = "BOOK_ID_SEQ" // sequenceName is optional
+    )
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        sequenceName = "BOOK_ID_SEQ" // sequenceName is optional
+    )
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+如果`sequenceName`没有被指定, 默认值为`表名 + "_ID_SEQ"`
+
+### UUID
+
+将`@GeneratedValue`的generatorType属性指定为`org.babyfish.jimmer.sql.meta.UUIDIdGenerator`，即可用于随机生成UUID
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(generateType = UUIDIdGenerator.class)
+    UUID id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(generateType = UUIDIdGenerator::class)
+    val id: UUID
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 用户自定义IdGenerator
+
+当以上Id增长策略都无法满足要求时，可以自定义Id生成策略。
+
+Jimmer提供了一个`UserIdGenerator<T>`接口
+
+```java title="UserIdGenerator.java"
+package org.babyfish.jimmer.sql.meta;
+
+public interface UserIdGenerator<T> extends IdGenerator {
+
+    T generate(Class<?> entityType);
+}
+```
+
+用户可以通过实现此接口，实现任何Id生成算法，包括雪花ID。
+
+```java title="MyGenerator.java"
+package com.mycompany.myproject.common;
+
+public interface MyIdGenerator implements UserIdGenerator<Long> {
+
+    @Override
+    public Long generate(Class<?> entityType) {
+        return ...省略自定义id生成逻辑...
+    }
+}
+```
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(generateType = MyIdGenerator.class)
+    Long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(generateType = MyIdGenerator::class)
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+用户实现的Id生成类`MyIdGenerator`本身是没有范型参数的，但需要为超接口`UserIdGenerator`指定范型参数。
+
+被修饰的Id属性的类型必须和该范型参数一致，否则会导致异常。
+:::

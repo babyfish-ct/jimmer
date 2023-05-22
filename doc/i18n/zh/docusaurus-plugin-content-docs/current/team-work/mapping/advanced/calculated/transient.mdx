@@ -1,4 +1,1092 @@
 ---
 sidebar_position: 1
-title: Transient
+title: 复杂计算
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## @Transient注解
+
+Jimmer实体可以用`@org.babyfish.jimmer.sql.Transient`定义一种和数据库表结构无关的属性。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+package com.example.model;
+
+import org.babyfish.jimmer.sql.*;
+
+public interface BookStore {
+    
+    ...省略其他属性...
+
+    @Transient
+    Object customData();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+package com.example.model
+
+import org.babyfish.jimmer.sql.*
+
+interface BookStore {
+
+    ...省略其他属性...
+
+    @Transient
+    val customData: Any?
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`@Tranisent`注解本身没有任何参数被指定，则当前数据只是一个用户自定义数据，和ORM的任何行为都没关系。
+
+:::caution
+只有当`@Transient`注解的参数被指定时，当前属性才是复杂计算属性。
+:::
+
+那么，`@Transient`注解的参数是什么？
+
+Jimmer为复杂计算属性提供了接口:
+
+-   Java: `org.babyfish.jimmer.sql.TransientResolver<ID, V>`
+-   Kotlin: `org.babyfish.jimmer.sql.kt.KTransientResolver<ID, V>`
+
+该接口让用户自定义数据计算过程。
+
+用户开发一个类实现此接口，并让让此类收到Spring托管。
+
+该类如何实现会在后文详细讲解，但这里为了便于表达，先假设用户实现此接口的类的是`CustomerDataResolver`，`@Transient`注解的参数应该如此书写
+
+-   如果项目是单工程的，实体类能引用到这个类，那么`@Transient(CustomerDataResolver.class)`或`@Transient(CustomerDataResolver::class)`
+
+-   如果项目是多工程的，实体类不能引用到这个类，那么`@Transient(ref = "customerDataResolver")`。
+
+    其中，字符串"customerDataResolver"表示Spring上下文中该类对象的名称。
+
+## 标量计算：`BookStore.avgPrice`
+
+本小节中，我们会为`BookStore`添加一个计算属性`BookStore.avgPrice`，其类型为`java.math.BigDecimal`。
+
+### 定义`avgPrice`的Resolver
+
+每一个复杂计算属性，都对应一个`TransientResolver`实现类。
+
+在定义计算属性`BookStore.avgPrice`之前，我们先定义`BookStoreAvgPriceResolver`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+package com.example.business.resolver;
+
+import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.TransientResolver;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
+    
+    @Override
+    public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
+        稍后实现
+    }
+
+    @Override
+    public BigDecimal getDefaultValue() {
+        return BigDecimal.ZERO;
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+package com.example.business.resolver
+
+import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.springframework.stereotype.Component
+
+@Component
+class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
+
+    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> {
+        稍后实现
+    }
+
+    override fun getDefaultValue(): BigDecimal =
+        BigDecimal.ZERO
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   基接口`TransientResolver/KTransientResolver`有两个范型参数
+
+    -   第1个范型参数：计算属性所属实体的id属性的类型
+
+        本例中，即将被定义的`BookStore.avgPrice`所属于实体为`BookStore`，其id类型为`long`，所以这里范型参数为`Long`
+
+    -   第2个范型参数：计算属性所属返回数据的类型
+
+        本例中，即将被定义的`BookStore.avgPrice`的类型为`BigDecmial`，所以这里范型参数为`BigDecimal`
+
+-   `resolve`是基接口的一个必须实现的方法，用户考此方法完成计算。
+
+    :::info
+    `resolve`方法的参数类型为`Collection<Long>`，而非`Long`；其返回类型为`Map<Long, BigDecimal>`。
+
+    这非常重要，这表示`BookStore.avgPrice`并非针对`BookStore.id`一个一个计算，而是针对多个`BookStore.id`做一次性批量化计算。
+    
+    这样设计的目的是为了防止因计算属性导致[`N + 1`](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)查询问题。
+
+    这个设计和GraphQL领域的[MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html)几乎一样，这是所有类似领域标准的编程模型。
+    :::
+
+-   `getDefaultValue`是基接口的一个可选实现的方法。
+
+    对于`resolve`方法而言，如果返回的Map的长度小于`ids`参数传入的集合长度，表示部分数据没有计算结果，其中每一个数据对应的计算值将会被视为null。
+
+    但是，如果计算属性（本例子中的`BookStore.avgPrice`）非null，就会导致问题，用户可以通过覆盖`getDefaultValue()`返回非null的默认值解决此问题。
+
+    :::caution
+    如果计算属性不允许为空，对其`TransientResolver`实现类而言
+    
+    - 要么保证`resolve`方法返回的Map的keySet包含所有参数
+    - 要么覆盖`getDefaultValue`并返回非null的默认值
+    :::
+
+### 实现`avgPrice`的计算逻辑
+
+上文中，我们定义了`BookStoreAvgPriceResolver`类，但其`resolve`方法未被实现。
+
+:::tip
+Jimmer对计算属性的计算方法不加任何限制，你甚至可以使用SQL以外的任何技术，比如OLAP领域的技术，来实现计算过程。
+:::
+
+本文档聚焦于Jimmer本身，所以例子中计算过程也用Jimmer来实现。
+
+定义为一批书店计算平均书籍价的Repository。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreRepository.java"
+package com.example.repository;
+
+import com.example.model.BookStoreTable;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+
+public interface BookStoreRepository implements JRepository<BookStore, Long> {
+    
+    BookStoreTable table = BookStoreTable.$;
+    
+    default List<Tuple2<Long, BigDecimal>> findTuplesWithIdAndAvgBookPrice(
+        Collection<Long> ids
+    ) {
+        return sql().createQuery(table)
+                .where(table.id().in(ids)) ❶
+                .groupBy(table.id()) ❷
+                .select(
+                        table.id(),
+                        table.asTableEx().books().price().avg() ❸
+                )
+                .execute();
+    }
+
+    ... 省略其他查询 ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreRepository.kt"
+package com.example.bll
+
+import com.example.model.BookStore
+
+import org.babyfish.jimmer.spring.repository.KRepository
+import org.babyfish.jimmer.sql.kt.ast.expression.*
+
+interface BookStoreRepository : KRepository<BookStore, Long> {
+
+    fun findTuplesWithIdAndAvgBookPrice(
+        ids: Collection<Long>
+    ): List<Tuple2<Long, BigDecimal>> =
+        sql.createQuery(BookStore::class) {
+            where(table.id valueIn ids) ❶
+            groupBy(table.id) ❷
+            select(
+                table.id,
+                avg(table.asTableEx().books.price).asNonNull() ❸
+            )
+        }.execute()
+
+    ... 省略其他查询 ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  限定查询范围，仅对为当前需要计算的书店计算平均书籍的计算价格，而非为数据库中所有书店计算
+
+2.  按照`BookStore.id`分组
+
+3.  把每组内部的书籍的价格求平均
+
+    -   `.asTableEx()`: 
+        
+        默认情况下，顶级查询不允许通过集合关联（一对多或多对多）进行JOIN；
+    
+        这个`asTableEx()`是开发人员在表明明白自己在干什么，需要这种JOIN。
+
+    -   `.books()`: 
+    
+        当前对象`BookStore`为起点，通过一对多关联属性`BookStore.books`，关联到`Book`对象
+
+    -   `avg`: 
+    
+        对分组内的`Book.price`求平均
+
+        :::note
+        kotlin代码中，有一个`asNonNull()`。
+
+        按照SQL标准，如果聚合函数`avg`不和分组配套使用，在没有原始数据的前提下，其返回值允许为null。所以，kotlin中`avg`被定义成了返回可空类型。
+
+        然而，当聚合函数`avg`和分组集合使用时，聚合函数不可能返回null，所以调用`asNonNull`得到非null的表达式。ß
+        :::
+
+### 实现`avgPrice`的Resolver
+
+现在，我们已经用Jimmer查询实现了计算逻辑，让们回到`BookStoreAvgPriceResolver`，实现其所有代码。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+package com.example.business.resolver;
+
+import com.example.repository.BookStoreRepository;
+
+import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.TransientResolver;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
+
+    private final BookStoreRepository bookStoreRepository;
+
+    // 构造注入
+    public BookStoreAvgPriceResolver(BookStoreRepository bookStoreRepository) {
+        this.bookStoreRepository = bookStoreRepository;
+    }
+    
+    @Override
+    public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
+        // Tuple -> Map 
+        return bookStoreRepository
+            .findIdAndAvgBookPriceTuples(ids)
+            .stream()
+            .collect(
+                    Collectors.toMap(
+                            Tuple2::get_1,
+                            Tuple2::get_2
+                    )
+            );
+    }
+
+    ...省略其他方法...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+package com.example.business.resolver
+
+import com.example.repository.BookStoreRepository
+
+import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.springframework.stereotype.Component
+
+@Component
+class BookStoreAvgPriceResolver(
+    // 构造注入
+    private val bookStoreRepository: BookStoreRepository
+) : KTransientResolver<Long, BigDecimal> {
+
+    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
+        // Tuple -> Map
+        bookStoreRepository
+            .findIdAndAvgBookPrice(ids)
+            .associateBy({it._1}) {
+                it._2
+            }
+
+    ...省略其他函数...
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 定义`avgPrice`
+
+现在，`BookStoreAvgPriceResolver`类已经完善，我们可以为`BookStore`实体添加计算属性`avgPrice`了。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+package com.example.model;
+
+import com.example.business.resolver.BookStoreAvgPriceResolver; ❶
+
+import org.babyfish.jimmer.sql.*;
+
+public interface BookStore {
+    
+    ...省略其他属性...
+
+    @Transient(BookStoreAvgPriceResolver.class) ❷
+    BigDecimal avgPrice();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+package com.example.model
+
+import com.example.business.resolver.BookStoreAvgPriceResolver ❶
+
+import org.babyfish.jimmer.sql.*
+
+interface BookStore {
+
+    ...省略其他属性...
+
+    @Transient(BookStoreAvgPriceResolver::class) ❷
+    val avgPrice: BigDecimal
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  如果项目是单工程，这里可以引用`BookStoreAvgPriceResolver`类。
+
+2.  定义计算属性`BookStore.avgPrice`，并为其注解`@Transient`指定❶处引入的类，告诉Jimmer计算属性的计算规则。
+
+    :::caution
+    如果项目是多工程，代码结构进行了分割，❶处的import语句无效，这时❷处必须写`@Transient(ref = "bookStoreAvgPriceResolver")`。
+    
+    即，使用spring上下文中该对象的名称。
+    :::
+
+### 抓取`avgPrice`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<BookStore> stores = bookStoreRepository.findAll(
+    BookStoreFetcher.$
+        .name()
+        // highlight-next-line
+        .avgPrice()
+);
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = bookStoreRepository.findAll(
+    newFetcher(BookStore::class).by {
+        name()
+        // highlight-next-line
+        avgPrice()
+    }
+)
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+打印结果:
+
+```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        // highlight-next-line
+        "avgPrice":80.333333333333
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        // highlight-next-line
+        "avgPrice":57.944444444444
+    }
+]
+```
+
+执行的SQL
+
+```sql
+/* 第一步：查询聚合根对象：即BookStore */
+select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_
+
+/* 第二步：为id为1和2的BookStore对象计算`avgPrice`属性 */
+select 
+    tb_1_.ID, 
+    /* highlight-next-line */
+    avg(tb_2_.PRICE) 
+from BOOK_STORE as tb_1_ 
+inner join BOOK as tb_2_ 
+    on tb_1_.ID = tb_2_.STORE_ID 
+where 
+    /* highlight-next-line */
+    tb_1_.ID in (
+        ?, ? /* 实际参数列表：2, 1 */
+    ) 
+group by 
+    /* highlight-next-line */
+    tb_1_.ID
+```
+
+## 关联计算：`BookStore.newestBooks`
+
+### 明确需求
+
+上小节中我们展示了计算属性`BookStore.avgPrice`，很明显，该计算属性是非关联属性。
+
+本小节中，我们会为`BookStore`添加一个计算属性`BookStore.newestBooks`，其类型为`java.uitl.List<Book>`，很明显这是一个关联属性。
+
+为了说明这个例子为什么要添加一个计算属性`BookStore.newestBooks`，先看一下原始的关联属性`BookStore.books`的特点。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book store = bookStoreRepository.findNullable(
+    1L,
+    BookStoreFetcher.$
+        .name()
+        .books(
+            BookFetcher.$
+                .name()
+                .edition()
+        )
+);
+System.out.println(store);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val store = bookStoreRepository.findNullable(
+    1L,
+    newFetcher(BookStore::class).by {
+        name()
+        books {
+            name()
+            edition()
+        }
+    }
+)
+println(store)
+```
+
+</TabItem>
+</Tabs>
+
+查询结果如下
+
+```json
+{
+    "id":1,
+    "name":"O'REILLY",
+    "books":[
+        {
+            "id":6,
+            "name":"Effective TypeScript",
+            "edition":3
+        },
+        {
+            "id":5,
+            "name":"Effective TypeScript",
+            "edition":2
+        },
+        {
+            "id":4,
+            "name":"Effective TypeScript",
+            "edition":1
+        },
+        {
+            "id":3,
+            "name":"Learning GraphQL",
+            "edition":3
+        },
+        {
+            "id":2,
+            "name":"Learning GraphQL",
+            "edition":2
+        },
+        {
+            "id":1,
+            "name":"Learning GraphQL",
+            "edition":1
+        },
+        {
+            "id":9,
+            "name":"Programming TypeScript",
+            "edition":3
+        },
+        {
+            "id":8,
+            "name":"Programming TypeScript",
+            "edition":2
+        },
+        {
+            "id":7,
+            "name":"Programming TypeScript",
+            "edition":1
+        }
+    ]
+}
+```
+
+我们看到，在原始的`BookStore.books`关联中，书店的书籍中有很多同名的。
+
+例如，一共有三本书籍名称为"Effective TypeScript"，只是发行版本`edition`不同而已：3、2、1。
+
+现在我们期望新建一个靠计算而得的`BookStore.newestBooks`关联属性，它保证返回的书籍集合没有同名问题，每个名称对一的书籍中，只取最高的发行版的，即`edition`最大的。
+
+由于之前我们已经讲解了`BookStore.avgPrice`，对计算属性、Resolver和Repository之间的联系有了了解。所以，这个例子不再采用一变开发一边讲解的顺序，而是直接采用实际开发的顺序：
+
+-   为`BookStoreRepository`添加查询逻辑，实现计算逻辑
+-   实现`BookStoreNewestBooksResolver`类
+-   定义计算属性`BookStore.newestBooks`
+-   抓取计算属性`BookStore.newestBooks`
+
+### 实现`newestBooks`的计算逻辑
+
+:::tip
+Jimmer对计算属性的计算方法不加任何限制，你甚至可以使用SQL以外的任何技术，比如OLAP领域的技术，来实现计算过程。
+:::
+
+本文档聚焦于Jimmer本身，所以例子中计算过程也用Jimmer来实现。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreRepository.java"
+package com.example.repository;
+
+import com.example.model.BookStoreTable;
+
+import org.babyfish.jimmer.spring.repository.JRepository;
+
+public interface BookStoreRepository implements JRepository<BookStore, Long> {
+    
+    BookStoreTable table = BookStoreTable.$;
+    
+    default List<Tuple2<Long, Long>> findTuplesWithIdAndNewestBookId(
+        Collection<Long> ids
+    ) {
+        BookTableEx book = BookTableEx.$;
+
+        return sql()
+            .createQuery(table)
+            .where(
+                    Expression.tuple( ❶
+                            table.asTableEx().books().name(),
+                            table.asTableEx().books().edition()
+                    ).in( ❷
+                            sql().createSubQuery(book)
+                                    .where(book.store().id().in(ids)) ❸
+                                    .groupBy(book.name()) ❹
+                                    .select(
+                                            book.name(),
+                                            book.edition().max() ❺
+                                    )
+                    )
+            )
+            .select(
+                    table.id(),
+                    table.asTableEx().books().id()
+            )
+            .execute();
+    }
+
+    @Override
+    public BigDecimal getDefaultValue() {
+        return BigDecimal.ZERO;
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreRepository.kt"
+package com.example.bll
+
+import com.example.model.BookStore
+
+import org.babyfish.jimmer.spring.repository.KRepository
+import org.babyfish.jimmer.sql.kt.ast.expression.*
+
+interface BookStoreRepository : KRepository<BookStore, Long> {
+
+    fun findTuplesWithIdAndNewestBookId(
+        ids: Collection<Long>
+    ): List<Tuple2<Long, Long>> =
+        sql.createQuery(BookStore::class) {
+            where(
+                tuple( ❶
+                    table.asTableEx().books.name,
+                    table.asTableEx().books.edition
+                ) valueIn subQuery(Book::class) { ❷
+                    where(table.store.id valueIn ids) ❸
+                    groupBy(table.name) ❹
+                    select(
+                        table.name,
+                        max(table.edition).asNonNull() ❺
+                    )
+                }
+            )
+            select(
+                table.id,
+                table.asTableEx().books.id
+            )
+        }.execute()
+
+    ... 省略其他查询 ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  以当前对象`BookStore`为起点，通过一对多关联`BookStore.books`连接到`Book`对象。然后将`Book.name`和`Book.edition`两列组成一个元组。
+
+2.  元组有两列，类型为String和int；子查询也有两列，类型也是String和int。二者完全匹配，可以使用in操作符。
+
+3.  限定查询范围，仅对为当前需要计算的书店计算平均书籍的计算价格，而非为数据库中所有书店计算。
+
+    在子查询上施加计算范围限定条件，性能优于在父查询上施加。
+
+4.  按照书籍名称分组，同名书籍必然属于同一组。
+
+5.  对每一组内部的同名书籍，查找`edition`的最大值。
+
+### 实现`newestBooks`的Resolver
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+package com.example.business.resolver;
+
+import java.util.Collections;
+
+import com.example.repository.BookStoreRepository;
+
+import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.TransientResolver;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookStoreAvgPriceResolver 
+implements TransientResolver<Long, List<Long>> { ❶
+
+    private final BookStoreRepository bookStoreRepository;
+
+    // 构造注入
+    public BookStoreAvgPriceResolver(BookStoreRepository bookStoreRepository) {
+        this.bookStoreRepository = bookStoreRepository;
+    }
+    
+    @Override
+    public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
+        // Tuple -> MultiMap 
+        return bookStoreRepository
+                .findTuplesWithIdAndNewestBookId(ids)
+                .stream()
+                .collect(
+                        Collectors.groupingBy( ❷
+                                Tuple2::get_1,
+                                Collectors.mapping(
+                                        Tuple2::get_2,
+                                        Collectors.toList()
+                                )
+                        )
+                );
+    }
+
+    @Override
+    public BigDecimal getDefaultValue() {
+        return Collections.emptyList(); ❸
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+package com.example.business.resolver
+
+import com.example.repository.BookStoreRepository
+
+import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.springframework.stereotype.Component
+
+@Component
+class BookStoreAvgPriceResolver(
+    // 构造注入
+    private val bookStoreRepository: BookStoreRepository
+) : KTransientResolver<Long, List<Long>> { ❶
+
+    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
+        // Tuple -> MultiMap
+        bookStoreRepository
+            .findTuplesWithIdAndNewestBookId(ids)
+            .groupBy({it._1}) { ❷
+                it._2
+            }
+
+    override fun getDefaultValue(): List<Long> =
+        emptyList() ❸
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  基接口`TransientResolver/KTransientResolver`有两个范型参数
+
+    -   第1个范型参数：计算属性所属实体的id属性的类型
+
+        本例中，即将被定义的`BookStore.newestBooks`所属于实体为`BookStore`，其id类型为`long`，所以这里范型参数为`Long`
+
+    -   第2个范型参数：计算属性所属返回数据的类型
+
+        本例中，即将被定义的`BookStore.newestBooks`的类型为`List<Book>`
+
+        -   由于`List<Book>`是集合类型，所以这里范型参数包含`List`
+
+        -   `Book`是实体类型，Jimmer约定这里需要将实体类型替换为其id的类型，而`Book.id`是`long`类型
+
+        综上，第2个范型参数为`List<Long>`
+
+2.  调用底层的计算逻辑，并转换数据
+
+    底层计算逻辑返回元组集合，元组有两列，第一列为书店的id，第二列为书籍id，按照第一列进行分组，把元组转化为MultiMap
+
+    :::info
+    如果认为上面的Java stream API过于繁琐，可以用jimmer提供的快捷方式`org.babyfish.jimmer.sql.ast.tuple.Tuple2.toMultiMap()`替换。比如
+    ```java
+     @Override
+    public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
+        // Tuple -> MultiMap 
+        return Tuple2.toMultiMap(
+            bookStoreRepository.findTuplesWithIdAndNewestBookId(ids)
+        );
+    }
+    ```
+    :::
+
+3.  `getDefaultValue`是基接口的一个可选实现的方法。
+
+    此方法的目的在[上一节](#标量计算bookstoreavgprice)中解释过，这里对关键点重申一次。
+
+    :::caution
+    如果计算属性不允许为空，对其`TransientResolver`实现类而言
+    
+    - 要么保证`resolve`方法返回的Map的keySet包含所有参数
+    - 要么覆盖`getDefaultValue`并返回非null的默认值
+    :::
+
+### 定义`newestBooks`
+
+现在，`BookStoreNewestBooksResolver`类已经完善，我们可以为`BookStore`实体添加计算属性`newestBooks`了。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+package com.example.model;
+
+import com.example.business.resolver.BookStoreNewestBooksResolver; ❶
+
+import org.babyfish.jimmer.sql.*;
+
+public interface BookStore {
+    
+    ...省略其他属性...
+
+    @Transient(BookStoreNewestBooksResolver.class) ❷
+    List<Book> newestBooks();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+package com.example.model
+
+import com.example.business.resolver.BookStoreNewestBooksResolver ❶
+
+import org.babyfish.jimmer.sql.*
+
+interface BookStore {
+
+    ...省略其他属性...
+
+    @Transient(BookStoreNewestBooksResolver::class) ❷
+    val newestBooks: List<Book>
+}
+```
+
+</TabItem>
+</Tabs>
+
+1.  如果项目是单工程，这里可以引用`BookStoreNewestBooksResolver`类。
+
+2.  定义计算属性`BookStore.newestBooks`，并为其注解`@Transient`指定❶处引入的类，告诉Jimmer计算属性的计算规则。
+
+    :::caution
+    如果项目是多工程，代码结构进行了分割，❶处的import语句无效，这时❷处必须写`@Transient(ref = "bookStoreNewestBooksResolver")`。
+    
+    即，使用spring上下文中该对象的名称。
+    :::
+
+### 抓取`newestBooks`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+List<BookStore> stores = bookStoreRepository.findAll(
+    BookStoreFetcher.$
+        .name()
+        .newestBooks( ❶
+
+            ❷
+            BookFetcher.$
+                allScalarFields() 
+                .authors(
+                    AuthorFetcher.$
+                        .allScalarFields()
+                )
+        )
+);
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = bookStoreRepository.findAll(
+    newFetcher(BookStore::class).by {
+        name()
+        newestBooks { ❶
+
+            ❷
+            allScalarFields() 
+            authors {
+                allScalarFields()
+            }
+        }
+    }
+)
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+1.  抓取计算属性`BookStore.newestBooks`
+
+2.  计算属性本身也是关联属性，所以，其关联对象的形状可以被更深的子抓取器控制
+
+打印结果如下
+
+```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        /* highlight-next-line */
+        "newestBooks":[
+            {
+                "id":12,
+                "name":"GraphQL in Action",
+                /* highlight-next-line */
+                "edition":3, // 此edition最大，没有同名书籍
+                "price":80,
+                "authors":[
+                    {
+                        "id":5,
+                        "firstName":"Samer",
+                        "lastName":"Buna",
+                        "gender":"MALE"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        /* highlight-next-line */
+        "newestBooks":[
+            {
+                "id":3,
+                "name":"Learning GraphQL",
+                /* highlight-next-line */
+                "edition":3, // 此edition最大，没有同名书籍
+                "price":51,
+                "authors":[
+                    {
+                        "id":2,
+                        "firstName":"Alex",
+                        "lastName":"Banks",
+                        "gender":"MALE"
+                    },
+                    {
+                        "id":1,
+                        "firstName":"Eve",
+                        "lastName":"Procello",
+                        "gender":"FEMALE"
+                    }
+                ]
+            },
+            {
+                "id":6,
+                "name":"Effective TypeScript",
+                /* highlight-next-line */
+                "edition":3, // 此edition最大，没有同名书籍
+                "price":88,
+                "authors":[
+                    {
+                        "id":3,
+                        "firstName":"Dan",
+                        "lastName":"Vanderkam",
+                        "gender":"MALE"
+                    }
+                ]
+            },
+            {
+                "id":9,
+                "name":"Programming TypeScript",
+                /* highlight-next-line */
+                "edition":3, // 此edition最大，没有同名书籍
+                "price":48,
+                "authors":[
+                    {
+                        "id":4,
+                        "firstName":"Boris",
+                        "lastName":"Cherny",
+                        "gender":"MALE"
+                    }
+                ]
+            }
+        ]
+    }
+]
+```
+
+生成的SQL如下
+
+```sql
+/* 第一步：查询聚合根对象：即BookStore */
+select tb_1_.ID, tb_1_.NAME 
+from BOOK_STORE as tb_1_
+
+/* 第二步：为id为1和2的BookStore计算`newestBooks`能够关联到的所有Book的id集合 */
+/* highlight-start */
+select 
+    tb_1_.ID, 
+    tb_2_.ID 
+from BOOK_STORE as tb_1_ 
+inner join BOOK as tb_2_ 
+    on tb_1_.ID = tb_2_.STORE_ID 
+where 
+    (tb_2_.NAME, tb_2_.EDITION) in (
+        select 
+            tb_3_.NAME, max(tb_3_.EDITION) 
+        from BOOK as tb_3_ 
+        where 
+            tb_3_.STORE_ID in (
+                ?, ? /* 实际参数列表：2，1 */
+            ) 
+        group by 
+            tb_3_.NAME
+    )
+/* highlight-end */
+
+/* 第三步：对关联到的所有Book的id，进一步查询非关联字段 */
+select 
+    tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
+from BOOK as tb_1_ 
+where tb_1_.ID in (?, ?, ?, ?)
+
+/* 第四步：对关联到的所有Book，进一步查询能关联到的作者 */
+select 
+    tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
+from AUTHOR as tb_1_ 
+inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+    on tb_1_.ID = tb_2_.AUTHOR_ID 
+where 
+    tb_2_.BOOK_ID in (?, ?, ?, ?)
+```
+
+:::tip
+这个例子展示了，当计算属性本身也是关联属性时，其关联对象的形状可以被更深的子抓取器控制。
+
+既然存在更深的子抓取器，当然既可以包含ORM原生关联属性，也可以包含其他计算关联属性。
+
+即，在对象抓取器查询复杂数据结构的过程中，ORM原生关联属性的抓取任务，和计算关联属性的抓取任务，可以随意混合。
+
+-   ORM原生属性抓取任务，其实是SQL操作
+
+    （至少在我们介绍缓存之前，可以如此认为）
+
+-   前文提到，Jimmer对计算属性的计算方法不加任何限制，你甚至可以使用SQL以外的任何技术，比如OLAP领域的技术，来实现计算过程（本文档聚焦于Jimmer本身，所以例子中计算过程也用Jimmer来实现）。
+
+    即，计算属性抓取任务，不一定是SQL操作。
+
+所以，对象抓取器提供的功能，其实是SQL操作和非SQL操作的任意混合。
+:::
