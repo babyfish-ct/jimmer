@@ -492,9 +492,12 @@ public class PropDescriptor {
                 case ID_VIEW:
                     if (isList) {
                         if (specifiedNullable) {
-                            throw new IllegalArgumentException("Fuck " + explicitNullable + ", " + annotationNullity);
+                            throw exceptionCreator.apply(
+                                    "the list property must be nullable"
+                            );
                         }
                     }
+                    break;
             }
             return specifiedNullable;
         }
@@ -576,7 +579,7 @@ public class PropDescriptor {
 
         final boolean isNullable;
 
-        private AnnotationNullity(String annotationTypeName, boolean isNullable) {
+        AnnotationNullity(String annotationTypeName, boolean isNullable) {
             this.annotationTypeName = annotationTypeName;
             this.isNullable = isNullable;
         }
