@@ -15,6 +15,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class PropExpressionImpl<T>
         extends AbstractExpression<T>
         implements PropExpressionImplementor<T> {
@@ -171,6 +173,19 @@ public class PropExpressionImpl<T>
     @Override
     public Class<T> getType() {
         return (Class<T>) deepestProp.getElementClass();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PropExpressionImpl<?> that = (PropExpressionImpl<?>) o;
+        return table.equals(that.table) && prop.equals(that.prop) && path.equals(that.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(table, prop, path);
     }
 
     @Override

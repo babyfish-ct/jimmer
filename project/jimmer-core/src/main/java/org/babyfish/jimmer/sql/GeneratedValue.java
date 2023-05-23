@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import kotlin.annotation.AnnotationTarget;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 
 import java.lang.annotation.*;
 
@@ -12,7 +12,7 @@ public @interface GeneratedValue {
 
     GenerationType strategy() default GenerationType.AUTO;
 
-    Class<? extends IdGenerator> generatorType() default IdGenerator.None.class;
+    Class<? extends UserIdGenerator<?>> generatorType() default UserIdGenerator.None.class;
 
     String sequenceName() default "";
 }

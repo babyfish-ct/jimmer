@@ -26,6 +26,8 @@ import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.*;
@@ -479,7 +481,7 @@ class Saver {
                         )
                 );
                 setDraftId(draftSpi, id);
-            } else if (idGenerator instanceof UserIdGenerator) {
+            } else if (idGenerator instanceof UserIdGenerator<?>) {
                 id = ((UserIdGenerator<?>)idGenerator).generate(type.getJavaClass());
                 setDraftId(draftSpi, id);
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {

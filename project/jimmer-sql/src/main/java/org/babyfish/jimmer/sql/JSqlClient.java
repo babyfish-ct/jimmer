@@ -23,9 +23,9 @@ import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 

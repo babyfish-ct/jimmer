@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class SqlExpressions {
@@ -67,9 +68,9 @@ public class SqlExpressions {
 
     private static class Any<T> extends AbstractExpression<T> {
 
-        private Class<T> type;
+        private final Class<T> type;
 
-        private List<Object> parts;
+        private final List<Object> parts;
 
         Any(Class<T> type, String sql, List<Expression<?>> expressions, List<Object> values) {
             List<Expression> literals;
@@ -85,7 +86,6 @@ public class SqlExpressions {
                 }
             }
             this.type = type;
-
             this.parts = parts(sql, expressions, literals);
         }
 
@@ -117,6 +117,19 @@ public class SqlExpressions {
                     builder.sql((String)part);
                 }
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Any<?> any = (Any<?>) o;
+            return type.equals(any.type) && parts.equals(any.parts);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, parts);
         }
     }
 

@@ -9,9 +9,7 @@ import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class Literals {
 
@@ -152,7 +150,7 @@ public class Literals {
 
     private static class Any<T> extends AbstractExpression<T> {
 
-        private T value;
+        private final T value;
 
         // Single
         private ImmutableProp matchedProp;
@@ -188,7 +186,7 @@ public class Literals {
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
             Object finalValue;
-            if (value != null && matchedProp != null) {
+            if (matchedProp != null) {
                 ScalarProvider<Object, Object> scalarProvider = builder.getAstContext().getSqlClient().getScalarProvider(matchedProp);
                 if (scalarProvider != null) {
                     try {
@@ -208,7 +206,7 @@ public class Literals {
                 } else {
                     finalValue = value;
                 }
-            } else if (value != null && matchedProps != null) {
+            } else if (matchedProps != null) {
                 finalValue = ((TupleImplementor)value).convert((it, index) -> {
                     ImmutableProp prop = matchedProps[index];
                     ScalarProvider<Object, Object> scalarProvider =
@@ -260,6 +258,21 @@ public class Literals {
                 );
             }
             this.matchedProps = matchedProps;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Any<?> any = (Any<?>) o;
+            return value.equals(any.value) && Objects.equals(matchedProp, any.matchedProp) && Arrays.equals(matchedProps, any.matchedProps);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(value, matchedProp);
+            result = 31 * result + Arrays.hashCode(matchedProps);
+            return result;
         }
     }
 

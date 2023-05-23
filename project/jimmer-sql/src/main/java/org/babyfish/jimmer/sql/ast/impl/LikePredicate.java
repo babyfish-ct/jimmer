@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 class LikePredicate extends AbstractPredicate {
 
     private final StringExpression expression;
@@ -84,5 +86,18 @@ class LikePredicate extends AbstractPredicate {
             builder.sql(negative ? " not like " : " like ");
             builder.variable(pattern);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LikePredicate)) return false;
+        LikePredicate that = (LikePredicate) o;
+        return insensitive == that.insensitive && negative == that.negative && expression.equals(that.expression) && pattern.equals(that.pattern);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression, pattern, insensitive, negative);
     }
 }

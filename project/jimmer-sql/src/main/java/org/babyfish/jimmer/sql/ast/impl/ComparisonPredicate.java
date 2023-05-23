@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 abstract class ComparisonPredicate extends AbstractPredicate {
 
     protected Expression<?> left;
@@ -41,6 +43,19 @@ abstract class ComparisonPredicate extends AbstractPredicate {
     @Override
     public int precedence() {
         return ExpressionPrecedences.COMPARISON;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(left, right);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+        ComparisonPredicate that = (ComparisonPredicate) o;
+        return left.equals(that.left) && right.equals(that.right);
     }
 
     static class Eq extends ComparisonPredicate {

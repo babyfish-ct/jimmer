@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -69,6 +68,19 @@ public class Tuples {
                 );
             }
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr2<?, ?> expr21 = (Expr2<?, ?>) o;
+            return expr1.equals(expr21.expr1) && expr2.equals(expr21.expr2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2);
+        }
     }
 
     public static class Expr3<T1, T2, T3>
@@ -135,6 +147,21 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr3<?, ?, ?> expr31 = (Expr3<?, ?, ?>) o;
+            return expr1.equals(expr31.expr1) &&
+                    expr2.equals(expr31.expr2) &&
+                    expr3.equals(expr31.expr3);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3);
         }
     }
 
@@ -210,6 +237,22 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr4<?, ?, ?, ?> expr41 = (Expr4<?, ?, ?, ?>) o;
+            return expr1.equals(expr41.expr1) &&
+                    expr2.equals(expr41.expr2) &&
+                    expr3.equals(expr41.expr3) &&
+                    expr4.equals(expr41.expr4);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3, expr4);
         }
     }
 
@@ -293,6 +336,23 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr5<?, ?, ?, ?, ?> expr51 = (Expr5<?, ?, ?, ?, ?>) o;
+            return expr1.equals(expr51.expr1) &&
+                    expr2.equals(expr51.expr2) &&
+                    expr3.equals(expr51.expr3) &&
+                    expr4.equals(expr51.expr4) &&
+                    expr5.equals(expr51.expr5);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3, expr4, expr5);
         }
     }
 
@@ -384,6 +444,24 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr6<?, ?, ?, ?, ?, ?> expr61 = (Expr6<?, ?, ?, ?, ?, ?>) o;
+            return expr1.equals(expr61.expr1) &&
+                    expr2.equals(expr61.expr2) &&
+                    expr3.equals(expr61.expr3) &&
+                    expr4.equals(expr61.expr4) &&
+                    expr5.equals(expr61.expr5) &&
+                    expr6.equals(expr61.expr6);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3, expr4, expr5, expr6);
         }
     }
 
@@ -483,6 +561,25 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr7<?, ?, ?, ?, ?, ?, ?> expr71 = (Expr7<?, ?, ?, ?, ?, ?, ?>) o;
+            return expr1.equals(expr71.expr1) &&
+                    expr2.equals(expr71.expr2) &&
+                    expr3.equals(expr71.expr3) &&
+                    expr4.equals(expr71.expr4) &&
+                    expr5.equals(expr71.expr5) &&
+                    expr6.equals(expr71.expr6) &&
+                    expr7.equals(expr71.expr7);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3, expr4, expr5, expr6, expr7);
         }
     }
 
@@ -590,6 +687,26 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr8<?, ?, ?, ?, ?, ?, ?, ?> expr81 = (Expr8<?, ?, ?, ?, ?, ?, ?, ?>) o;
+            return expr1.equals(expr81.expr1) &&
+                    expr2.equals(expr81.expr2) &&
+                    expr3.equals(expr81.expr3) &&
+                    expr4.equals(expr81.expr4) &&
+                    expr5.equals(expr81.expr5) &&
+                    expr6.equals(expr81.expr6) &&
+                    expr7.equals(expr81.expr7) &&
+                    expr8.equals(expr81.expr8);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3, expr4, expr5, expr6, expr7, expr8);
         }
     }
 
@@ -705,6 +822,27 @@ public class Tuples {
                         "Index must between 0 and " + (size() - 1)
                 );
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr9<?, ?, ?, ?, ?, ?, ?, ?, ?> expr91 = (Expr9<?, ?, ?, ?, ?, ?, ?, ?, ?>) o;
+            return expr1.equals(expr91.expr1) &&
+                    expr2.equals(expr91.expr2) &&
+                    expr3.equals(expr91.expr3) &&
+                    expr4.equals(expr91.expr4) &&
+                    expr5.equals(expr91.expr5) &&
+                    expr6.equals(expr91.expr6) &&
+                    expr7.equals(expr91.expr7) &&
+                    expr8.equals(expr91.expr8) &&
+                    expr9.equals(expr91.expr9);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expr1, expr2, expr3, expr4, expr5, expr6, expr7, expr8, expr9);
         }
     }
 }

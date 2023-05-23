@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
-import org.babyfish.jimmer.sql.meta.IdentityIdGenerator;
+import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
 import org.junit.jupiter.api.Test;

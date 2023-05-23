@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 class InCollectionPredicate extends AbstractPredicate {
 
@@ -64,5 +65,18 @@ class InCollectionPredicate extends AbstractPredicate {
     @Override
     public Predicate not() {
         return new InCollectionPredicate(expression, values, !negative);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof InCollectionPredicate)) return false;
+        InCollectionPredicate that = (InCollectionPredicate) o;
+        return negative == that.negative && expression.equals(that.expression) && values.equals(that.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression, values, negative);
     }
 }

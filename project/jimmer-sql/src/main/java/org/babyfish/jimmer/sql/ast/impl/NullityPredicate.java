@@ -11,6 +11,8 @@ import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 class NullityPredicate extends AbstractPredicate {
 
     private final Expression<?> expression;
@@ -70,5 +72,18 @@ class NullityPredicate extends AbstractPredicate {
     @Override
     public Predicate not() {
         return new NullityPredicate(expression, !negative);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof NullityPredicate)) return false;
+        NullityPredicate that = (NullityPredicate) o;
+        return negative == that.negative && expression.equals(that.expression);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression, negative);
     }
 }

@@ -9,9 +9,7 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
-import org.babyfish.jimmer.sql.meta.impl.PropChains;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
