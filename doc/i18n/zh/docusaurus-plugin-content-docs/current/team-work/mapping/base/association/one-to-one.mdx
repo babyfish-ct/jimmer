@@ -59,7 +59,9 @@ interface Customer {
 </TabItem>
 </Tabs>
 
-这里并没有配合使用`@JoinColumn`明确指定外键列名，就采用默认列名，从一对一属性`address`自动推导出外键列名为`ADDRESS_ID`。
+这里并没有配合使用`@JoinColumn`明确指定外键列名，Jimmer会根据[命名策略](../naming-strategy)推导`address`属性对应的列名。
+
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`address`的外建列名为`ADDRESS_ID`。所以，之前的代码和这里的代码等价。
 
 因此，上面的代码和下面的代码等价
 
@@ -120,6 +122,7 @@ public interface Customer {
 
     @Nullable
     @OneToOne
+    // highlight-next-line
     @JoinTable
     Address address();
 
@@ -135,6 +138,7 @@ public interface Customer {
 interface Customer {
 
     @OneToOne
+    // highlight-next-line
     @JoinTable
     val address: Address?
 
@@ -145,12 +149,15 @@ interface Customer {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，默认属性如下
-- `name`: CUSTOMER_ADDRESS_MAPPING"。
-- `joinColumnName`: CUSTOMER_ID。
-- `inverseJoinColumnName`: ADDRESS_ID。
+这里，并没有为`@JoinTable`指定任何属性，Jimmer会根据[命名策略](../naming-strategy)推导`address`属性对应的列名。
 
-因此，上面的代码和下面的代码等价
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+
+-   中间表表名: CUSTOMER_ADDRESS_MAPPING
+-   中间表指向当前实体的外键的列名: CUSTOMER_ID
+-   中间表指向关联实体的外键的列名: ADDRESS_ID
+
+所以，之前的代码和这里的代码等价：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -162,9 +169,11 @@ public interface Customer {
     @Nullable
     @OneToOne
     @JoinTable(
+        /* highlight-start */
         name = "CUSTOMER_ADDRESS_MAPPING",
         joinColumnName = "CUSTOMER_ID",
         inverseJoinColumnName = "ADDRESS_ID"
+        /* highlith-end */
     )
     Address address();
 
@@ -181,9 +190,11 @@ interface Customer {
 
     @OneToOne
     @JoinTable(
+        /* highlight-start */
         name = "CUSTOMER_ADDRESS_MAPPING",
         joinColumnName = "CUSTOMER_ID",
         inverseJoinColumnName = "ADDRESS_ID"
+        /* highlight-end */
     )
     val address: Address?
 
@@ -342,7 +353,7 @@ interface Address {
 :::caution
 注意
 
--   一旦指定`@OneToOne`的`mappedBy`属性，就不得使用任何和数据库关联映射相关的其他注解，比如`@JoinColumn`、`@JoinTable`
+-   一旦指定`@OneToOne`的`mappedBy`属性，就不得使用比如`@JoinColumn`和`@JoinTable`
 
 -   作为从动方的一对一关联属性必须可null
 :::

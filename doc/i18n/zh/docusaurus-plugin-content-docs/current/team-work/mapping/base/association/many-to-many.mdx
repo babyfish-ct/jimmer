@@ -55,12 +55,15 @@ interface Book {
 
 多对多关联必须基于中间表实现，即便上述代码中并未使用`@JoinTable`注解，其实也等同于使用了该注解。
 
-如果并没有为`@JoinTable`指定任何属性，甚至连`@JoinTable`本身也被忽略（就像前面的代码一样），默认属性如下
-- `name`: BOOK_AUTHOR_MAPPING"。
-- `joinColumnName`: BOOK_ID。
-- `inverseJoinColumnName`: AUTHOR_ID。
+如果并没有为`@JoinTable`指定任何属性，甚至连`@JoinTable`本身也被忽略（就像前面的代码一样），Jimmer会根据[命名策略](../naming-strategy)推导`authors`属性对应的列名。
 
-因此，上面的代码和下面的代码等价
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+
+-   中间表表名: BOOK_AUTHOR_MAPPING
+-   中间表指向当前实体的外键的列名: BOOK_ID
+-   中间表指向关联实体的外键的列名: AUTHOR_ID
+
+所以，之前的代码和这里的代码等价：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

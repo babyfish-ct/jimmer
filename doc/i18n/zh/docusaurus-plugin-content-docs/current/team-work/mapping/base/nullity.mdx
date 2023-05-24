@@ -38,8 +38,10 @@ Java下属性是否为null，靠以下规则制定
 
 ## 注意事项
 
-:::caution
-这里会出现一系列现在没讲解的概念，它们都会在后续文档中讲解。这里先做罗列，请读者先忽略这些名词，等了解了所有概念后再回来查看。
+:::info
+这里会出现一系列现在没讲解的概念，它们都会在后续文档中讲解。
+
+这里仅仅做一个注意事项的简单罗列，请读者先忽略这些名词，本文也不提供相关例子，读者了解所有后续概念后再回来查看。
 :::
 
 -   `@Id`属性必须非null
@@ -50,9 +52,9 @@ Java下属性是否为null，靠以下规则制定
 
     -   Jimmer必须将id属性声明为非空了类型，比如，对Java而言，就是`long`而非`Long`。Jimmer靠实体对象本身的动态性来表达id属性的缺失。
 
--   `@org.babyfish.jimmer.sql.OneToMany`和`org.babyfish.jimmer.sql.@ManyToMany`属性必须非null
+-   一对多和多对多属性必须非null
 
--   `@org.babyfish.jimmer.sql.OneToOne`和`org.babyfish.jimmer.sql.@ManyToOne`属性在某些场合下必须可null
+-   一对一和多对一属性在以下情况下必须可null
 
     -   基于中间表映射，而非外键
 

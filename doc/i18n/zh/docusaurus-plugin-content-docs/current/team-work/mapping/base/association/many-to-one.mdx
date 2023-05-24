@@ -45,9 +45,9 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这里并没有配合使用`@JoinColumn`明确指定外键列名，就采用默认列名，从多对一属性`store`自动推导出外键列名为`STORE_ID`。
+这里并没有配合使用`@JoinColumn`明确指定外键列名，Jimmer会根据[命名策略](../naming-strategy)推导`store`属性对应的列名。
 
-因此，上面的代码和下面的代码等价
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`store`的外建列名为`STORE_ID`。所以，之前的代码和这里的代码等价。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -132,12 +132,15 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，默认属性如下
-- `name`: BOOK_BOOK_STORE_MAPPING"。
-- `joinColumnName`: BOOK_ID。
-- `inverseJoinColumnName`: STORE_ID。
+这里，并没有为`@JoinTable`指定任何属性，Jimmer会根据[命名策略](../naming-strategy)推导`store`属性对应的列名。
 
-因此，上面的代码和下面的代码等价
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+
+-   中间表表名: BOOK_BOOK_STORE_MAPPING
+-   中间表指向当前实体的外键的列名: BOOK_ID
+-   中间表指向关联实体的外键的列名: STORE_ID
+
+所以，之前的代码和这里的代码等价：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

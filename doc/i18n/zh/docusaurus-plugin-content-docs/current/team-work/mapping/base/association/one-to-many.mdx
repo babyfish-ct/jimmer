@@ -99,7 +99,7 @@ interface BookStore {
 :::caution
 注意
 
--   `@OneToMany`关联仅仅是`@ManyToOne`关联的镜像，不得使用任何和数据库关联映射相关的其他注解，比如`@JoinColumn`、`@JoinTable`
+-   `@OneToMany`关联仅仅是`@ManyToOne`关联的镜像，不得使用`@JoinColumn`和`@JoinTable`
 
 -   `@OneToMany`关联属性必须非null，如果查询父对象并要求抓取其一对多关联属性，那么对于没有对应子对象的父对象而言，该属性的值是一个长度为0的集合，而非null
 
