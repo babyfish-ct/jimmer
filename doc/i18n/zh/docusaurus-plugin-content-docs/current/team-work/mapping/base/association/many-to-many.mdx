@@ -2,3 +2,245 @@
 sidebar_position: 4
 title: 多对多
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+本通过介绍如何使用`@org.babyfish.jimmer.sql.ManyToMany`注解可以声明多对多关联属性
+
+多对多可支持双向关联，对于双向关联而言，其中一方必须主动方，另外一方为从动方。
+
+-   主动方(必须)：真正的数据库和关联属性之间映射，实现单向多对多关联。
+
+-   从动方(可选)：如果已经存在一个单向关联，可以为此配置从动方，作为主动方的镜像，形成双向关联。
+
+本文中，我们假设存在书籍Book和作者Author两种实体类型，并在它们之间建立双向多对多关联。
+
+-   主动方(必须)：`Book.authors`
+
+-   从动方(可选)：`Author.books`
+
+## 主动方
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @ManyToMany
+    Author authors();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToMany
+    val authors: Author?
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+多对多关联必须基于中间表实现，即便上述代码中并未使用`@JoinTable`注解，其实也等同于使用了该注解。
+
+如果并没有为`@JoinTable`指定任何属性，甚至连`@JoinTable`本身也被忽略（就像前面的代码一样），Jimmer会根据[命名策略](../naming-strategy)推导`authors`属性对应的列名。
+
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+
+-   中间表表名: BOOK_AUTHOR_MAPPING
+-   中间表指向当前实体的外键的列名: BOOK_ID
+-   中间表指向关联实体的外键的列名: AUTHOR_ID
+
+所以，之前的代码和这里的代码等价：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
+    Author authors();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
+    val authors: Author?
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+中间表`BOOK_AUTHOR_MAPPING`定义如下
+
+```sql
+create table BOOK_AUTHOR_MAPPING(
+    BOOK_ID bigint not null,
+    AUTHOR_ID bigint not null
+);
+
+alter table AUTHOR_MAPPING
+    add constraint PK_AUTHOR_MAPPING
+        primary(BOOK_ID, AUTHOR_ID);
+
+// 如果指向当前对象的外建是真的，建立外键约束
+alter table BOOK_AUTHOR_MAPPING
+    add constraint FK_BOOK_AUTHOR_MAPPING__BOOK
+        foreign key(BOOK_ID)
+            references BOOK(ID);
+
+// 如果指向关联对象的外建是真的，建立外键约束
+alter table BOOK_AUTHOR_MAPPING
+    add constraint FK_BOOK_AUTHOR_MAPPING__AUTHOR
+        foreign key(AUTHOR_ID)
+            references AUTHOR(ID);
+```
+
+-   中间表的只有两个外建，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+
+-   中间表没有对应的ORM实体，无需独立主键，两个外建联合作为主键即可
+
+:::caution
+注意
+
+`@ManyToMany`关联属性必须非null，如果某种对象并要求抓取其多对多关联属性，那么对于没有对应关联对象的当前对象而言，该属性的值是一个长度为0的集合，而非null
+:::
+
+## 从动方
+
+从动方的配置非常简单，指定`Author.books`属性是`Book.authors`属性的镜像即可。
+
+在下面的代码中
+
+-   左侧：上一节中讨论过的主动方
+
+-   右侧：本节要介绍从动方关联`Author.books`，它是`Book.authors`的镜像
+
+这里，`@ManyToMany(mappedBy = "store")`，指当前属性`BookStore.books`是`Book.store`的镜像。
+
+<div style={{display: 'flex', alignItems: 'start'}}>
+<div>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @ManyToMany
+    @JoinColumn(name = "AUTHOR_ID")
+    Author authors();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToMany
+    @JoinColumn(name = "AUTHOR_ID")
+    val authors: Author
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+</div>
+<div>
+
+![mirror](@site/static/img/mirror.svg)
+
+</div>
+<div>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+@Entity
+public interface Author {
+
+    // `mappedBy`表示`Author.books`
+    // 是`Book.authors`的镜像
+    // highlight-next-line
+    @ManyToMany(mappedBy = "authors")
+    Book books();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+@Entity
+interface Author {
+
+    // `mappedBy`表示`Author.books`
+    // 是`Book.authors`的镜像
+    // highlight-next-line
+    @ManyToMany(mappedBy = "authors")
+    val books: Book?
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+</div>
+</div>
+
+:::caution
+注意
+
+-   一旦指定`@ManyToMany`的`mappedBy`属性，就不得使用`@JoinTable`
+
+-   和主动方的`@ManyToMany`关联属性一样，从动方的`@ManyToMany`关联必须非null。原因相同
+:::

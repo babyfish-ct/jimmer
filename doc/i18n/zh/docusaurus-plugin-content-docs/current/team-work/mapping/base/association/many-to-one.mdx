@@ -2,3 +2,229 @@
 sidebar_position: 2
 title: 多对一
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+本通过介绍如何使用`@org.babyfish.jimmer.sql.ManyToOne`注解可以声明多对一关联属性
+
+有两种方法可以实现多对一关联，基于外键和基于中间表。
+
+## 1. 基于外键
+    
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @ManyToOne
+    BookStore store();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @ManyToOne
+    val store: BookStore
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里并没有配合使用`@JoinColumn`明确指定外键列名，Jimmer会根据[命名策略](../naming-strategy)推导`store`属性对应的列名。
+
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`store`的外建列名为`STORE_ID`。所以，之前的代码和这里的代码等价。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @ManyToOne
+    // highlight-next-line
+    @JoinColumn(name = "STORE_ID")
+    BookStore store();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToOne
+    // highlight-next-line
+    @JoinColumn(name = "STORE_ID")
+    val store: BookStore
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+外建可真可假。伪外建在后续文档中讨论，这里假设外建是真实的，则数据库中对应的约束为
+
+```sql
+// 如果指向关联对象的外建是真的，建立外建约束
+alter table BOOK
+    add constraint FK_BOOK__BOOK_STORE
+        /* highlight-next-line */
+        foreign key(STORE_ID)
+            references BOOK_STORE(ID);
+```
+
+## 2. 基于中间表
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Nullable
+    @ManyToOne
+    @JoinTable
+    BookStore store();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Book.kt"
+@Entity
+interface Book {
+
+    @Nullable
+    @ManyToOne
+    @JoinTable
+    val store: BookStore?
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，并没有为`@JoinTable`指定任何属性，Jimmer会根据[命名策略](../naming-strategy)推导`store`属性对应的列名。
+
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+
+-   中间表表名: BOOK_BOOK_STORE_MAPPING
+-   中间表指向当前实体的外键的列名: BOOK_ID
+-   中间表指向关联实体的外键的列名: STORE_ID
+
+所以，之前的代码和这里的代码等价：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Null
+    @ManyToOne
+    @JoinTable(
+        name = "BOOK_BOOK_STORE_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "STORE_ID"
+    )
+    BookStore store();
+
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToOne
+    @JoinTable(
+        name = "BOOK_BOOK_STORE_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "STORE_ID"
+    )
+    val store: BookStore?
+
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+中间表`BOOK_BOOK_STORE_MAPPING`定义如下
+
+```sql
+create table BOOK_BOOK_STORE_MAPPING(
+    BOOK_ID bigint not null,
+    STORE_ID bigint not null
+);
+
+alter table BOOK_STORE_MAPPING
+    add constraint PK_BOOK_STORE_MAPPING
+        primary(BOOK_ID, STORE_ID);
+
+// 如果指向当前对象的外建是真的，建立外键约束
+alter table BOOK_BOOK_STORE_MAPPING
+    add constraint FK_BOOK_BOOK_STORE_MAPPING__BOOK
+        foreign key(BOOK_ID)
+            references BOOK(ID);
+
+// 如果指向关联对象的外建是真的，建立外键约束
+alter table BOOK_BOOK_STORE_MAPPING
+    add constraint FK_BOOK_BOOK_STORE_MAPPING__STORE
+        foreign key(STORE_ID)
+            references BOOK_STORE(ID);
+
+// 这个约束非常重要。
+// 否则这张中间表表达的是多对多关联，而非多对一关联
+alter table BOOK_BOOK_STORE_MAPPING
+    add constraint UQ_BOOK_BOOK_STORE_MAPPING__BOOK_ID
+        unique(BOOK_ID);
+```
+
+-   中间表的只有两个外建，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+
+-   中间表没有对应的ORM实体，无需独立主键，两个外建联合作为主键即可
+
+-   默认情况下，中间表表示多对多关联。要让其退化为多对一关联，必须为指向当前对象的外建`BOOK_ID`指定唯一约束
+
+:::caution
+注意
+
+-   除非为了兼容已有数据库设计，多对一关联都建议直接使用外建，而非中间表
+
+-   一旦使用中间表映射多对一关联，Jimmer关联属性必须可null，因为数据库无法保证任何实体在中间表中一定有对应数据
+:::

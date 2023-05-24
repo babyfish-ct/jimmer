@@ -1,0 +1,258 @@
+---
+sidebar_position: 4
+title: 命名策略
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 命名策略接口
+
+前面的章节，我们已经介绍了简单实体映射和关联映射 *（一对一、多对一、一对多、多对多）*。从这些内容中，我们了解到
+
+-   可以使用`@Table(name = "...")`明确地为实体指定表名
+
+-   可以使用`@GeneratedValue(..., sequenceName = "...")`明确地指定生成id所需的序列名称 *（前提是使用序列增长策略）*
+
+-   可以使用`@Column(name = "...")`明确地为普通列指定列名
+
+-   可以使用`@JoinColumn(name = "...")`明确地为外键列指定列名
+
+-   可以使用`@JoinTable(name = "...")`明确地为基于中间表的关联属性指定中间表表名以及其所有列名。
+
+然而，为了提高开发效率，我们不可能到过多地使用这些注解。大部分情况下，默认的名字推导行为应该可以工作，少数情况下，才在代码中使用这些注解。
+
+对于某个类或属性，如果用户**不**用这类注解，如何自动决定数据库中的标识名，被称为命名策略，是一个可定制的Java接口
+
+```java
+package org.babyfish.jimmer.sql.meta;
+
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+
+public interface DatabaseNamingStrategy {
+
+    String tableName(ImmutableType type);
+
+    String sequenceName(ImmutableType type);
+
+    String columnName(ImmutableProp prop);
+
+    String foreignKeyColumnName(ImmutableProp prop);
+
+    String middleTableName(ImmutableProp prop);
+
+    String middleTableBackRefColumnName(ImmutableProp prop);
+
+    String middleTableTargetRefColumnName(ImmutableProp prop);
+}
+```
+
+其中，`ImmutableType`和`ImmutableProp`是Jimmer元数据所用类型，可以很直观地用JVM反射API的`Class`和`Field`来做类比理解。
+
+各方法的作用如下
+
+-   tableName: 已知一个实体类型，其表名是什么？
+
+-   sequenceName: 已知一个id增长策略为序列的实体类型，其序列名是什么？
+
+-   columName: 已知一个非关联属性，其列名是什么？
+
+-   foreignKeyColumnName: 已知一个基于外建的关联属性，其列名是什么？
+
+-   middleTableName: 已知一个基于中间表的关联属性，其中间表表名是什么？
+
+-   middleTableBackRefColumnName: 已知一个基于中间表的关联属性，中间表中指向当前实体的外建的列名是什么？
+
+-   middleTableTargetRefColumnName: 已知一个基于中间表的关联属性，中间表中指向关联实体的外建的列名是什么？
+
+## 默认命名策略
+
+大部分情况下，开发人员都无需直接实现此接口，Jimmer内置的`org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy`类已经实现了此接口。
+
+DefaultDatabaseNamingStrategy类有两个静态字字段
+
+-   UPPER_CASE: 
+    
+    生成的数据库标识名全部大写
+    
+    :::info
+    如果用户不做任何配置，这就是Jimmer默认的命名策略。
+    :::
+
+-   LOWER_CASE: 
+
+    生成的数据库标识名全部小写。
+
+    一些数据库，比如MySQL，可以配置是否大小写敏感。所以，你很有可能接手一个MySQL数据库，被设置为大小敏感模式且大部分表名和列名都是小写的，这是，你需要用此策略覆盖默认策略。
+
+:::tip
+即使`UPPER_CASE`和`LOWER_CASE`都无法满足你的要求，你需要实现自己的策略，也可以考虑继承这个默认策略，而非从头实现。
+:::
+
+在介绍默认策略的行为之前，我们先引入一个字符变换规则：snake。
+
+所谓snake，即使把大小写交替的文本转化为下划线拼接的文本，比如类名`BookStore`的snake变形为`BOOK_STORE`，属性名`firstName`的snake变形为`FIRST_NAME`。
+
+考虑到大小写问题，我们定义两个函数, `u_snake`和`l_snake`，其行为如下
+
+-   `u_snake("BookStore")` -> "BOOK_STORE"
+-   `l_snake("BookStore")` -> "book_store"
+-   `u_snake("firstName")` -> "FIRST_NAME"
+-   `l_snake("firstName")` -> "first_name"
+
+有了`u_snake`和`l_snake`的规定后，我们很容易阐述`DefaultDatabaseNamingStrategy`的行为
+
+:::note
+下文中的ClassName，指Java类的SimpleName，并非QualifiedName。
+:::
+
+### UPPER_CASE
+
+-   tableName
+
+    规则：`u_snake(ClassName)`
+
+    例子：BookStore -> BOOK_STORE
+
+-   sequenceName
+
+    规则：`u_snake(ClassName)`_ID_SEQ
+
+    例子：BookStore -> BOOK_STORE_ID_SEQ
+
+-   columName
+
+    规则：`u_snake(ClassName)`
+
+    例子：firstName -> FIRST_NAME
+
+-   foreignKeyColumnName
+
+    规则：`u_snake(ClassName)`_ID
+
+    例子：parentNode -> PARENT_NODE_ID
+
+-   middleTableName
+
+    规则：`u_snake(SourceClassName)`_`u_snake(TargetClassName)`_MAPPING
+
+    例子：Book::authors -> BOOK_AUTHOR_MAPPING
+
+-   middleTableBackRefColumnName
+
+    规则：`u_snake(SourceClassName)`_ID
+
+    例子：Book::authors -> BOOK_ID
+
+-   middleTableTargetRefColumnName
+
+    规则：`u_snake(TargetClassName)`_ID
+
+    例子：Book::authors -> AUTHOR_ID
+
+### LOWER_CASE
+
+-   tableName
+
+    规则：`l_snake(ClassName)`
+
+    例子：BookStore -> book_store
+
+-   sequenceName
+
+    规则：`l_snake(ClassName)`_id_seq
+
+    例子：BookStore -> book_store_id_seq
+
+-   columName
+
+    规则：`l_snake(ClassName)`
+
+    例子：firstName -> first_name
+
+-   foreignKeyColumnName
+
+    规则：`l_snake(ClassName)`_id
+
+    例子：parentNode -> parent_node_id
+
+-   middleTableName
+
+    规则：`l_snake(SourceClassName)`_`l_snake(TargetClassName)`_mapping
+
+    例子：Book::authors -> book_author_mapping
+
+-   middleTableBackRefColumnName
+
+    规则：`l_snake(SourceClassName)`_id
+
+    例子：Book::authors -> book_id
+
+-   middleTableTargetRefColumnName
+
+    规则：`l_snake(TargetClassName)`_id
+    
+    例子：Book::authors -> author_id
+
+## 覆盖策略
+
+现在，我们来掩饰如何用`DefaultDatabaseNamingStrategy.LOWER_CASE`覆盖默认的`DefaultDatabaseNamingStrategy.UPPER_CASE`。
+
+### 使用SpringBoot时
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public DatabaseNamingStrategy databaseNamingStrategy() {
+    // highlight-next-line
+    return DefaultDatabaseNamingStrategy.LOWER_CASE;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun databaseNamingStrategy(): DatabaseNamingStrategy =
+    // highlight-next-line
+    DefaultDatabaseNamingStrategy.LOWER_CASE
+```
+
+</TabItem>
+</Tabs>
+
+### 不使用SprinBoot时
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+JSqlClient sqlClient = JSqlClient
+    .newBuilder()
+    .setDatabaseNamingStrategy(
+        // highlight-next-line
+        DefaultDatabaseNamingStrategy.LOWER_CASE
+    )
+    ...省略其他配置...
+    .build();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val sqlClient = newKSqlClient {
+    setDatabaseNamingStrategy(
+        // highlight-next-line
+        DefaultDatabaseNamingStrategy.LOWER_CASE
+    )
+    ...省略其他配置...
+}
+```
+
+</TabItem>
+</Tabs>

@@ -1,4 +1,67 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 title: 可空性
 ---
+
+实体对象属性是否许为null这个问题，Jimmer用非常严格的方式处理。即便对Java开发者而言，也要求如同kotlin开发者一样认知考虑思考每个属性是否允许为null。
+
+:::caution
+明确说明实体对象的每个属性是否允许为null，对Jimmer而言非常重要，很多功能都会其影响。
+:::
+
+## 定义属性的可空性
+
+### Kotlin
+Kotlin支持空安全，`T` 表示非空，`T?` 表示可为空，按照kotlin的本身的方式声明实体属性即可。
+
+### Java
+
+Java下属性是否为null，靠以下规则制定
+
+-   如果属性类型为boolean、char、byte、short、int、long、float或double，则非null
+
+-   如果属性类型为Boolean、Character、Byte、Short、Integer、Long、Float或Double，则可null
+
+-   否则
+    
+    -   如果属性被任何简名为`Nullable`或`Null`的annotation修饰，则可null
+
+    -   否则，默认非null
+
+    :::note
+    推荐使用`org.jetbrains.annotations.Nullable`，因为
+
+    -   虽然可识别的annotation不受限制，但是如果使用了未被Jimmer annotation processor默认包含的annotation，需要将其依赖添加到annotation processor中，这终归是麻烦。
+    
+    -   `org.jetbrains.annotations.Nullable`受Intellij支持
+    :::
+
+## 注意事项
+
+:::info
+这里会出现一系列现在没讲解的概念，它们都会在后续文档中讲解。
+
+这里仅仅做一个注意事项的简单罗列，请读者先忽略这些名词，本文也不提供相关例子，读者了解所有后续概念后再回来查看。
+:::
+
+-   `@Id`属性必须非null
+
+    和JPA/Hibernate有很大不同
+
+    -   JPA/Hibernate推荐将id属性声明为可空类型，比如，对Java而言，就是`Long`而非`long`，这样，保存数据时可表达没有id而需要自动分配的情况。
+
+    -   Jimmer必须将id属性声明为非空了类型，比如，对Java而言，就是`long`而非`Long`。Jimmer靠实体对象本身的动态性来表达id属性的缺失。
+
+-   一对多和多对多属性必须非null
+
+-   一对一和多对一属性在以下情况下必须可null
+
+    -   基于中间表映射，而非外键
+
+    -   基于伪外建，而非真实外建
+
+    -   远程关联
+
+    -   作为镜像端的@OneToOne关联
+
+    -   目标对象被施加了全局过滤器

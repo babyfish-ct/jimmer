@@ -60,7 +60,7 @@ public class DefaultDatabaseNamingStrategy implements DatabaseNamingStrategy {
                 (lowercase ? "_id" : "_ID");
     }
 
-    private String snake(String text) {
+    protected String snake(String text) {
         StringBuilder builder = new StringBuilder();
         int size = text.length();
         boolean isPrevLowerCase = false;

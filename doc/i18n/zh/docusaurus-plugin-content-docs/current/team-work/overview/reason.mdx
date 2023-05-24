@@ -4,6 +4,7 @@ title: 项目动机
 ---
 
 import { ViewMore } from '@site/src/components/ViewMore';
+import DynamicJoinProblem from '../_shared/dynamic-join-problem.mdx';
 
 Jimmer是一个针对Java和Kotlin的革命性ORM，以及一套基于它的完整的集成方案。其目的在于
 
@@ -15,16 +16,16 @@ Jimmer是一个针对Java和Kotlin的革命性ORM，以及一套基于它的完�
 
 除了最底层的JDBC外，当前访问关系性数据库的方式有两种。
 
-### 以JPA为代表的传统的ORM框架
+### 1. 以JPA为代表的传统的ORM框架
 
 传统ORM框架优点是非常便捷，但缺点是不够灵活。 以JPA为例
 
 -   查询：虽然EntityGraph赋予了JPA2.1一定的灵活性来控制被查询数据结构的形状，但这种关联级的控制能力和GraphQL那种针对任何属性的精确控制能力相比还是有所不足。 
 -   保存：对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。但无论如何开发人员如何配置，可保存的数据结构的形状是固定的。
 
-最终，人们为了追求灵活性放弃了使用ORM，转而使用抽象度较低的MyBatis方案。 这种现象在中国尤为明显。
+最终，人们为了追求灵活性放弃了使用ORM，甚至认为ORM没有达到它应该达到的效果，转而使用抽象度较低的MyBatis方案。这种现象在中国尤为普遍。
 
-### 以MyBatis为代表的DTO映射框架
+### 2. 以MyBatis为代表的DTO映射框架
 
 这类框架并不针对数据库结构定义统一的实体模型，而是为每一个业务特例定义DTO类型，最后，对DTO而非同一实体进行SQL映射。
 
@@ -38,7 +39,21 @@ Jimmer是一个针对Java和Kotlin的革命性ORM，以及一套基于它的完�
 
 为大量的的DTO实施SQL Mapper必然导致大量重复工作。即，这类方案的灵活性是以重复劳动为代价的。
 
-### Jimmer的目标
+### 3. 动态表连接问题方面存在空白
+
+动态查询在实际项目中是一个很常见的需求。
+
+然而，有一种相对复杂的动态查询，到目前为止，所有方案，无论ORM方案还是非ORM方案，无论SQL字符串模板方案还是DSL方案，处理起来都很棘手。
+
+<ViewMore buttonText="动态表连接的问题">
+<DynamicJoinProblem/>
+</ViewMore>
+
+本质原因是因为其他所有方案都只关注于动态where条件，没有考虑动态table join的问题，最终导致这种有一定复杂度的动态查询实施起来很麻烦。
+
+## Jimmer的目标
+
+### 1. ORM便捷性 + MyBatis灵活性
 
 如上所说
 
@@ -53,13 +68,17 @@ Jimmer提供了一条截然不同的新途径：
 传统ORM的便捷性 + MyBatis这类非ORM方案的灵活性
 :::
 
+### 2. 完美解决动态表连接问题
+
+虽然Jimmer最终生成的还是SQL，但是Jimmer赋予了开发人员一种和SQL略有差异但更加智能的处理方式，完美解决多个查询条件都依赖table join的动态查询实现起来很麻烦的问题。
+
 ## 完整的集成解决方案
 
 Jimmer不仅仅是一个ORM，还是以ORM为基础，形成了一整套完整的集成方案。
 
 仅仅对关系型数据库进行ORM抽象是不够的，实际项目中有很多其他工作需要做，比如：
 
-### 缓存及其一致性维护
+### 1. 缓存及其一致性维护
 
 对于绝大部分查多写少的项目而言，采用kv缓存为数据库减压优化性能，是一种常用的方案。然而，引入缓存技术也会招来麻烦，其中最头疼的问题是保持缓存和数据库之间的一致性。
 
@@ -81,7 +100,7 @@ Jimmer内置了缓存机制和一致性维护，具备如下特色
 
     -   对于计算缓存和多视角缓存而言，Jimmer只需开发人员的简单的帮助，即可快速实现一致性。
 
-### 前后端对接
+### 2. 前后端免对接
 
 前后端分离的项目虽然让前后端代码相对独立，但总免不了前后端对接的工作。
 
@@ -93,7 +112,7 @@ Jimmer内置了缓存机制和一致性维护，具备如下特色
 
 -   如果采用Jimmer构建GraphQL服务端，可使用我的另外一个开源项目[graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client)获得极致的TypeScript开发体验（该客户端项目可用于任何GraphQL服务端，不限Jimmer实现的GraphQL服务）
 
-### 跨越微服务的数据整合
+### 3. 跨越微服务的数据整合
 
 微服务技术对业务系统进行了垂直切分，每一个的微服务都自己的数据库和缓存，即，单个微服务本质上是数据孤岛。
 
