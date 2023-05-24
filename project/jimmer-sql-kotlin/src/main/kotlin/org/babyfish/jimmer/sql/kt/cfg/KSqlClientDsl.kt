@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
+import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
 import java.util.function.Function

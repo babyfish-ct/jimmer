@@ -81,6 +81,11 @@ public class JTypeScriptTest {
                 "    } | \n" +
                 "    {\n" +
                 "        readonly family: \"SaveErrorCode\",\n" +
+                "        readonly code: \"EMPTY_OBJECT\",\n" +
+                "        readonly \"exportedPath\": ExportedSavePath\n" +
+                "    } | \n" +
+                "    {\n" +
+                "        readonly family: \"SaveErrorCode\",\n" +
                 "        readonly code: \"FAILED_REMOTE_VALIDATION\",\n" +
                 "        readonly \"exportedPath\": ExportedSavePath\n" +
                 "    } | \n" +
@@ -220,6 +225,11 @@ public class JTypeScriptTest {
                 "            {\n" +
                 "                readonly family: 'SaveErrorCode',\n" +
                 "                readonly code: 'ILLEGAL_GENERATED_ID',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SaveErrorCode',\n" +
+                "                readonly code: 'EMPTY_OBJECT',\n" +
                 "                readonly [key:string]: any\n" +
                 "            } | \n" +
                 "            {\n" +

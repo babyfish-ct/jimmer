@@ -811,8 +811,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public Builder setOffsetOptimizingThreshold(int threshold) {
-            if (threshold <= 0) {
-                throw new IllegalArgumentException("`threshold` must be greater than 0");
+            if (threshold < 0) {
+                throw new IllegalArgumentException("`threshold` cannot be negative number");
             }
             offsetOptimizingThreshold = threshold;
             return this;
