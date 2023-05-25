@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
+import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,9 +68,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private final String microServiceName;
 
-    private final Map<MetadataStrategy, String> tableNameMap = new HashMap<>();
+    private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
 
-    private final Map<MetadataStrategy, IdGenerator> idGeneratorMap = new HashMap<>();
+    private final MetaCache<IdGenerator> idGeneratorCache = new MetaCache<>(it -> {
+        IdGenerator g = IdGenerators.of(this, it.getNamingStrategy());
+        return g != null ? g : NIL_ID_GENERATOR;
+    });
 
     ImmutableTypeImpl(
             Class<?> javaClass,
@@ -391,7 +395,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @Override
     public String getTableName(MetadataStrategy strategy) {
-        return tableNameMap.computeIfAbsent(strategy, this::getTableName0);
+        return tableNameCache.get(strategy);
     }
 
     private String getTableName0(MetadataStrategy strategy) {
@@ -405,13 +409,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @Override
     public IdGenerator getIdGenerator(MetadataStrategy strategy) {
-        IdGenerator generator = idGeneratorMap.computeIfAbsent(
-                strategy,
-                it -> {
-                    IdGenerator g = IdGenerators.of(this, it.getNamingStrategy());
-                    return g != null ? g : NIL_ID_GENERATOR;
-                }
-        );
+        IdGenerator generator = idGeneratorCache.get(strategy);
         return generator == NIL_ID_GENERATOR ? null : generator;
     }
 

@@ -12,6 +12,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
+import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.babyfish.jimmer.sql.meta.impl.Storages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -94,7 +95,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private Boolean isRemote;
 
-    private Map<MetadataStrategy, Storage> storageMap = new HashMap<>();
+    private final MetaCache<Storage> storageCache = new MetaCache<>(it -> Storages.of(this, it));
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
@@ -807,7 +808,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         if (getStorageType() <= 1) {
             return null;
         }
-        return (S)storageMap.computeIfAbsent(strategy, it -> Storages.of(this, it));
+        return (S)storageCache.get(strategy);
     }
 
     private int getStorageType() {

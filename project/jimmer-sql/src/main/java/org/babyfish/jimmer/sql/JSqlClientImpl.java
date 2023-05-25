@@ -1013,6 +1013,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
             MetadataStrategy metadataStrategy =
                     new MetadataStrategy(databaseNamingStrategy, foreignKeyStrategy);
+            entityManager().validate(metadataStrategy);
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
                     entityManager(),

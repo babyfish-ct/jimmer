@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -335,6 +336,10 @@ public class EntityManager {
         return type;
     }
 
+    public void validate(MetadataStrategy strategy) {
+        data.getTypeMap(strategy);
+    }
+
     private static void tableSharedBy(Key key, ImmutableType type1, ImmutableType type2) {
         if (type1 instanceof AssociationType && type2 instanceof AssociationType) {
             AssociationType associationType1 = (AssociationType) type1;
@@ -411,8 +416,8 @@ public class EntityManager {
 
         final Map<String, ImmutableType> typeMapForSpringDevTools;
 
-        final ConcurrentMap<MetadataStrategy, Map<Key, ImmutableType>> typesMap =
-                new ConcurrentHashMap<>();
+        final MetaCache<Map<Key, ImmutableType>> typeMapCache =
+                new MetaCache<>(this::createTypeMap);
 
         Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
             this.map = map;
@@ -420,7 +425,7 @@ public class EntityManager {
         }
 
         public Map<Key, ImmutableType> getTypeMap(MetadataStrategy strategy) {
-            return typesMap.computeIfAbsent(strategy, this::createTypeMap);
+            return typeMapCache.get(strategy);
         }
 
         private Map<Key, ImmutableType> createTypeMap(MetadataStrategy strategy) {
