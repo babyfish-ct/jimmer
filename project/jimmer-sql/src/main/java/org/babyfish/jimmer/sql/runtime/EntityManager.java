@@ -2,11 +2,16 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.jetbrains.annotations.NotNull;
@@ -19,11 +24,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -457,7 +459,38 @@ public class EntityManager {
             }
             for (ImmutableType type : map.keySet()) {
                 if (type.isEntity()) {
-                    ((AbstractImmutableTypeImpl)type).validateColumns(strategy);
+                    ((AbstractImmutableTypeImpl)type).validateColumnUniqueness(strategy);
+                }
+                for (ImmutableProp prop : type.getProps().values()) {
+                    if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
+                        Storage storage = prop.getStorage(strategy);
+                        if (prop.isRemote()) {
+                            throw new ModelException(
+                                    "Illegal reference association property \"" +
+                                            prop +
+                                            "\", it must be nullable because it is remote association"
+                            );
+                        } else if (storage instanceof ColumnDefinition) {
+                            boolean isForeignKey = ((ColumnDefinition) storage).isForeignKey();
+                            if (!isForeignKey) {
+                                throw new ModelException(
+                                        "Illegal reference association property \"" +
+                                                prop +
+                                                "\", it must be nullable because it is based on FAKE foreign key"
+                                );
+                            }
+                        } else if (storage instanceof MiddleTable) {
+                            boolean isForeignKey = ((MiddleTable) storage).getTargetColumnDefinition().isForeignKey();
+                            if (!isForeignKey) {
+                                throw new ModelException(
+                                        "Illegal reference association property \"" +
+                                                prop +
+                                                "\", it must be nullable because it is based on middle table " +
+                                                "whose target column is FAKE foreign key"
+                                );
+                            }
+                        }
+                    }
                 }
             }
             return typeMap;

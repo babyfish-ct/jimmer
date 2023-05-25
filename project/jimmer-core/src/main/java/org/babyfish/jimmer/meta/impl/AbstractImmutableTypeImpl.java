@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.babyfish.jimmer.sql.meta.impl.PropChains;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +31,7 @@ public abstract class AbstractImmutableTypeImpl implements ImmutableType {
         return chain;
     }
 
-    public void validateColumns(MetadataStrategy strategy) {
+    public void validateColumnUniqueness(MetadataStrategy strategy) {
         chainMapCache.get(strategy);
     }
 }

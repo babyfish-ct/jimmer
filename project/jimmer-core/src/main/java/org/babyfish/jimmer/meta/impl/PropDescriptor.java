@@ -493,7 +493,7 @@ public class PropDescriptor {
                     if (isList) {
                         if (specifiedNullable) {
                             throw exceptionCreator.apply(
-                                    "the list property must be nullable"
+                                    "the list property cannot be nullable"
                             );
                         }
                     }

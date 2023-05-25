@@ -996,13 +996,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         "The `microServiceExchange` must be configured when `microServiceName` is configured"
                 );
             }
-            FilterManager filterManager = createFilterManager();
-            validateAssociations(filterManager);
-            createTriggers();
-            Caches caches = null;
-            if (cacheConfigLambda != null) {
-                caches = CachesImpl.of(triggers, entityManager(), microServiceName, cacheConfigLambda);
-            }
             ForeignKeyStrategy foreignKeyStrategy;
             if (!dialect.isForeignKeySupported()) {
                 foreignKeyStrategy = ForeignKeyStrategy.FORCED_FAKE;
@@ -1013,7 +1006,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
             MetadataStrategy metadataStrategy =
                     new MetadataStrategy(databaseNamingStrategy, foreignKeyStrategy);
+
             entityManager().validate(metadataStrategy);
+
+            FilterManager filterManager = createFilterManager();
+            validateAssociations(filterManager);
+
+            createTriggers();
+            Caches caches = null;
+            if (cacheConfigLambda != null) {
+                caches = CachesImpl.of(triggers, entityManager(), microServiceName, cacheConfigLambda);
+            }
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
                     entityManager(),
@@ -1112,23 +1115,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
             for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
                 if (type.isEntity()) {
                     for (ImmutableProp prop : type.getProps().values()) {
-                        if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
-                            if (prop.isRemote()) {
-                                throw new ModelException(
-                                        "Illegal reference association property \"" +
-                                                prop +
-                                                "\", it must be nullable because it is remote association"
-                                );
-                            }
-                            if (filterManager.contains(prop.getTargetType())) {
-                                throw new ModelException(
-                                        "Illegal reference association property \"" +
-                                                prop +
-                                                "\", it must be nullable because the target type \"" +
-                                                prop.getTargetType() +
-                                                "\" may be handled by some global filters"
-                                );
-                            }
+                        if (!prop.isNullable() &&
+                                prop.isReference(TargetLevel.ENTITY) &&
+                                filterManager.contains(prop.getTargetType())
+                        ) {
+                            throw new ModelException(
+                                    "Illegal reference association property \"" +
+                                            prop +
+                                            "\", it must be nullable because the target type \"" +
+                                            prop.getTargetType() +
+                                            "\" may be handled by some global filters"
+                            );
                         }
                     }
                 }
