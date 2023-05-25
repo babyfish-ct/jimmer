@@ -144,7 +144,7 @@ public interface OrderItem {
     // highlight-next-line
     @Key
     @ManyToOne
-    Customer owner();
+    Order order();
 
     // highlight-next-line
     @Key
@@ -172,7 +172,7 @@ interface OrderItem {
     // highlight-next-line
     @Key
     @ManyToOne
-    val owner: Customer
+    val order: Order
 
     // highlight-next-line
     @Key

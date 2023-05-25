@@ -14,11 +14,17 @@ import TabItem from '@theme/TabItem';
 
 -   从动方(可选)：如果已经存在一个单向关联，可以为此配置从动方，作为主动方的镜像，形成双向关联。
 
-本文中，我们假设存在用户Customer和地址Address两种实体类型，并在它们之间建立双向一对一关联。
+我们假设存在用户Customer和地址Address两种实体类型，并在它们之间建立双向一对一关联。
+
+:::info
+和JPA/Hibernate不同，主动方和从动方可以随意抉择，二者都可以用于保存关联。
+
+本文例子抉择如下：
 
 -   主动方(必须)：`Customer.address`
 
 -   从动方(可选)：`Address.customer`
+:::
 
 ## 主动方
 

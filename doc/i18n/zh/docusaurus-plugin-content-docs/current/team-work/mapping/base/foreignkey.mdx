@@ -3,3 +3,270 @@ sidebar_position: 5
 title: 真假外键
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+通过[关联映射](./association)的论述中，我们知道关联映射需要大量的外键。
+
+Jimmer中外建有两种
+
+-   真外键：
+
+    数据库中存在对应的外建约束
+
+-   伪外键：
+
+    在开发人员意识中是外键，但是数据库中并没有对应的外建约束
+
+:::info
+在保存数据时
+
+-   真外键靠关系性数据库本身的能力保证引用完整性
+
+-   伪外键靠ORM在上层代码中植入额外检查来保证引用完整性
+
+这种差异对用户透明，用户只需要配置外键的真伪即可，无需修改业务代码。
+:::
+
+## 明确指定真外键
+
+-   基于外建的关联属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        @ManyToOne
+        // highlight-next-line
+        @JoinColumn(foreignKeyType = ForeignKeyType.REAL)
+        BookStore store();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+        
+        @ManyToOne
+        // highlight-next-line
+        @JoinColumn(foreignKeyType = ForeignKeyType.REAL)
+        val store: BookStore
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   基于中间表的关联属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        @ManyToMany
+        @JoinTable(
+            // highlight-next-line
+            joinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.REAL),
+            // highlight-next-line
+            inverseJoinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.REAL)
+        )
+        List<Author> authors();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+        
+        @ManyToMany
+        // highlight-next-line
+        @JoinTable(
+            // highlight-next-line
+            joinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.REAL),
+            // highlight-next-line
+            inverseJoinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.REAL)
+        )
+        val authors: List<Author>
+        
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::info
+    和之前的例子不同，这里
+    
+    -   配置`JoinTable.joinColumns`而非`JoinTable.joinColumnName`
+
+        如果外建只有一列且不想明确指定外键的真伪，`joinColumnName`是一种简化配置；否则，应使用`joinColumns`
+
+    -   配置`JoinTable.inverseJoinColumns`而非`JoinTable.inverseColumnName`
+
+        如果外建只有一列且不想明确指定外键的真伪，`inverseColumnName`是一种简化配置；否则，应使用`inverseJoinColumns`
+
+    :::
+
+:::caution
+如果数据方言不支持外建， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则不能明确指定真外建。
+
+因为，作为一个分布式关系型数据库，TiDB不支持外建约束。
+:::
+
+## 明确指定伪外键
+
+-   基于外建的关联属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        @ManyToOne
+        @Nullable
+        // highlight-next-line
+        @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
+        BookStore store();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+        
+        @ManyToOne
+        // highlight-next-line
+        @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
+        val store: BookStore?
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   基于中间表的关联属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        @ManyToMany
+        @JoinTable(
+            // highlight-next-line
+            joinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.FAKE),
+            // highlight-next-line
+            inverseJoinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
+        )
+        List<Author> authors();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+        
+        @ManyToMany
+        // highlight-next-line
+        @JoinTable(
+            // highlight-next-line
+            joinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.FAKE),
+            // highlight-next-line
+            inverseJoinColumns = @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
+        )
+        val authors: List<Author>
+        
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 不明确指定外建的真伪
+
+如果不想明确指定外建的真伪，可使用`@JoinColumn(foreignKeyType = ForeignKeyType.AUTO)`。
+
+由于`ForeignKeyType.AUTO`是`@JoinColumn`注解的默认配置，所以，更好的选择是对此不做任何配置。
+
+因此，代码和[关联映射](./association)中的示范的代码无差异，这里无需再做示范代码。
+
+如果没有明确指定外建的真伪，则通过以下两个步骤自动决定外键的真伪
+
+1.  如果数据库方言不支持外建， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则判定为伪外键。
+
+    此时，已经有了判定结果，提前返回，不会执行步骤2
+
+2.  如果第一步无法完成判定，则参见Jimmer的全局配置`foreign-key-enabled-by-default`。
+
+    如果此配置为true，则判定为真外键；否则，判定为伪外键。
+
+    该配置默认为true，用户可以将其覆盖为false
+
+    -   如果使用SpringBoot
+
+        修改`application.yml`或`application.properties`，将`jimmer.foreign-key-enabled-by-default`设置为false
+
+    -   如果不使用SpringBoot
+
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        JSqlClient sqlClient = JSqlClient
+            .newBuilder()
+            // highlight-next-line
+            .setForeignKeyEnabledByDefault(false)
+            ...省略其他配置...
+            .build();
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val sqlClient = newKSqlClient {
+            // highlight-next-line
+            setForeignKeyEnabledByDefault(false)
+            ...省略其他配置...
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+
