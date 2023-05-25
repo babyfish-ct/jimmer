@@ -607,13 +607,13 @@ alter table learning_link
 
 ## @ManyToManyView的本质
 
--   `@ManyToManyView`声明的属性并没有维护自己的数据，它只是把原始属性的视图，将原始属性返回的集合进行一层代理包装而已。
+-   `@ManyToManyView`声明的属性并没有维护自己的数据，它只是原始属性的视图，将原始属性返回的集合进行一层代理包装而已。
 
     以本文Java例子中`Student`端为例 *（Course端一样）*。
 
     -   原始关联属性：List&lt;LearningLink&gt; learningLinks();
 
-    -   视图关联属性：List&lt;Course;&gt; courses();
+    -   视图关联属性：List&lt;Course&gt; courses();
 
     你可以这段伪码来理解ManyToManyView视图属性
 
@@ -635,4 +635,4 @@ alter table learning_link
 
     这和[@IdView](./id-view)不同，对于[@IdView](./id-view)而言，原始属性和试图属性都可以设置
 
--   无论原始属性，还是试图属性，预编译器都会生成与之配套的代码，所以二者都可以在强类型SQL DSL中使用
+-   无论原始属性，还是试图属性，预编译器都会生成与之配套的代码，所以二者都可以在[对象抓取器](../../../query/object-fetcher)和强类型SQL DSL中使用
