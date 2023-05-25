@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -447,6 +448,11 @@ public class EntityManager {
                             tableSharedBy(key, conflictType, associationType);
                         }
                     }
+                }
+            }
+            for (ImmutableType type : map.keySet()) {
+                if (type.isEntity()) {
+                    ((AbstractImmutableTypeImpl)type).validateColumns(strategy);
                 }
             }
             return typeMap;

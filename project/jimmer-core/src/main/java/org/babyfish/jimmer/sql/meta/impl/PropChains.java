@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.util.*;
@@ -16,6 +13,13 @@ public class PropChains {
     private PropChains() {}
 
     public static Map<String, List<ImmutableProp>> of(ImmutableType type, MetadataStrategy strategy) {
+        if (!type.isEntity()) {
+            throw new IllegalArgumentException(
+                    "Cannot parse properties by column name because the declaring type \"" +
+                            type +
+                            "\" is not entity"
+            );
+        }
         Map<String, List<ImmutableProp>> map = new HashMap<>();
         for (ImmutableProp prop : type.getProps().values()) {
             addInto(prop, strategy, map);
@@ -23,7 +27,11 @@ public class PropChains {
         return map;
     }
 
-    private static void addInto(ImmutableProp prop, MetadataStrategy strategy, Map<String, List<ImmutableProp>> outputMap) {
+    private static void addInto(
+            ImmutableProp prop,
+            MetadataStrategy strategy,
+            Map<String, List<ImmutableProp>> outputMap
+    ) {
         Storage storage = prop.getStorage(strategy);
         if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
             MultipleJoinColumns multipleJoinColumns = null;
@@ -59,7 +67,12 @@ public class PropChains {
                         while (index >= 0) {
                             String referencedName = multipleJoinColumns.referencedName(index);
                             if (DatabaseIdentifiers.comparableIdentifier(referencedName).equals(cmpName)) {
-                                outputMap.put(multipleJoinColumns.name(index), Collections.unmodifiableList(chain));
+                                addInto(
+                                        prop.getDeclaringType(),
+                                        multipleJoinColumns.name(index),
+                                        Collections.unmodifiableList(chain),
+                                        outputMap
+                                );
                                 break;
                             }
                             --index;
@@ -70,13 +83,59 @@ public class PropChains {
                             );
                         }
                     } else {
-                        outputMap.put(cmpName, Collections.unmodifiableList(chain));
+                        addInto(
+                                prop.getDeclaringType(),
+                                cmpName,
+                                Collections.unmodifiableList(chain),
+                                outputMap
+                        );
                     }
                 }
             }
         } else if (storage instanceof SingleColumn) {
             String cmpName = DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName());
-            outputMap.put(cmpName, Collections.singletonList(prop));
+            addInto(
+                    prop.getDeclaringType(),
+                    cmpName,
+                    Collections.singletonList(prop),
+                    outputMap
+            );
         }
+    }
+
+    private static void addInto(
+            ImmutableType type,
+            String columnName,
+            List<ImmutableProp> chain,
+            Map<String, List<ImmutableProp>> outputMap
+    ) {
+        List<ImmutableProp> conflictChain = outputMap.put(columnName, chain);
+        if (conflictChain == null) {
+            return;
+        }
+        throw new ModelException(
+                "Illegal type \"" +
+                        type +
+                        "\", the column \"" +
+                        columnName +
+                        "\" is mapped by both \"" +
+                        chainPath(conflictChain) +
+                        "\" and \"" +
+                        chainPath(chain) +
+                        "\""
+        );
+    }
+
+    private static String chainPath(List<ImmutableProp> chain) {
+        if (chain.size() == 1) {
+            return chain.get(0).toString();
+        }
+        StringBuilder builder = new StringBuilder();
+        Iterator<ImmutableProp> itr = chain.iterator();
+        builder.append(itr.next().getName());
+        while (itr.hasNext()) {
+            builder.append('.').append(itr.next().getName());
+        }
+        return builder.toString();
     }
 }
