@@ -11,3 +11,13 @@ title: 关联映射
 -   org.babyfish.jimmer.sql.ManyToMany
 -   org.babyfish.jimmer.sql.JoinColumn
 -   org.babyfish.jimmer.sql.JoinTable
+
+:::caution
+对于关联而言，实体类型中的基础属性的类型应该是关联对象，而非关联Id。
+
+如果想定义关联Id属性，请
+
+-   先按本目录的文档完成关联映射
+
+-   再按照[IdView](../../advanced/view/id-view)文档添加关联Id属性
+:::

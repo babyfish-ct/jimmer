@@ -250,3 +250,9 @@ interface Author {
 
 -   和主动方的`@ManyToMany`关联属性一样，从动方的`@ManyToMany`关联必须非null。原因相同
 :::
+
+## 如果想为中间表加入业务字段
+
+对于本文所讨论的多对多关联而言，除了两个外建外，中间表不得定义其他业务字段。
+
+如果想在多对多关联中间表中定义更多的其他业务字段，请参见[ManyToManyView](../../advanced/view/many-to-many-view)
