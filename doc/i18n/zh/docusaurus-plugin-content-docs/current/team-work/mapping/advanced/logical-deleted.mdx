@@ -2,3 +2,375 @@
 sidebar_position: 4
 title: 逻辑删除
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+逻辑删除也称软删除，表示并不真正从数据库中删除数据，而是通过隐藏数据来达到数据被删除的假象。这可以为误操作留下一次恢复的机会。
+
+想让实体支持逻辑删除，需要添加一个被`org.babyfish.jimmer.sql.LogicalDeleted`的标志属性，以表示该数据是正常的还是已经被删除。
+
+一旦为实体配置了逻辑删除属性
+
+-   默认情况下，开发人员调用API删除某个实体对象时，Jimmer并不会用SQL的`delete`语句真正删除数据，而是使用`update`语句把该实体的逻辑删除属性设置为“已经被删除“
+
+    其他情况：即便实体具备逻辑删除属性，Jimmer也提供API让开发人员通过额外的参数强行真正删除对象。
+
+-   默认情况下，所有针对实体的SQL查询都会被自动加上`where 软删除标志 <> 已经被删除`的条件，从而营造出某些数据已经被删除的假象。
+
+    其他情况：
+
+    -   Jimmer提供了一些便捷性API，无需用户创建查询，提供根据id *(或id集合)* 查询实体*(或id集合)* 的能力。这一簇API较为特殊，无视软删除规则。
+
+    -   Jimmer可以忽略逻辑删除过滤规则 *(不添加过滤条件)*；甚至反转逻辑删除过滤规则 *(添加相反的过滤条件，专查已经被删除的数据)*
+
+:::info
+逻辑删除是一个相对固定的功能，在自动加入查询过滤条件这方面，更通用的的功能是[全局过滤器](../../query/global-filter)。
+
+事实上，逻辑删除本身也是[全局过滤器](../../query/global-filter)，是Jimmer内置提供的，无需开发人员实现。
+:::
+
+## 用法
+
+逻辑删除标志属性可以是如下类型之一
+
+-   boolean：必须非null
+-   int：必须非null
+-   枚举：必须非null
+-   日期：必须可null
+
+### boolean类型
+
+-   用true表示被删除
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted("true")
+        boolean isDeleted();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted("true")
+        val isDeleted: Boolean
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   用false表示被删除
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted("false")
+        boolean isEnabled();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted("false")
+        val isEnabled: Boolean
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+这里，我们配置`@LogicalDeleted`的`value`参数，其实，该注解还有另外一个参数`restoredValue`
+
+-   `value`: 对象处于被删除状态时，该字段的取值
+
+-   `restoredValue`: 对象处于未被删除状态时，该字段的取值
+
+很明显，`value`和`restoredValue`不能相等。
+
+:::tip
+当此属性只有两种取值可能时 *(boolean或只有两个选项的枚举类型)*，`restoredValue`可以省略
+:::
+
+因此，上面代码中示范的注解，其实是省略了`restoredValue`参数的写法
+
+-   `@LogicalDeleted("true")`其实是`@LogicalDeleted(value = "true", restoredValue = "false")`的简写
+
+-   `@LogicalDeleted("false")`其实是`@LogicalDeleted(value = "false", restoredValue = "true")`的简写
+
+:::info
+无论被省略，还是被开发人员明确指定，`restoredValue`参数有两个作用
+
+-   对象首次被保存时，该属性的默认值
+
+-   处于已删除状态的的数据被再次保存时，其状态需要恢复成正常状态，此时，该属性被自动复位的值
+:::
+
+### int类型
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted(value = "1", restoredValue = "0")
+    int state();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted(value = "1", restoredValue = "0")
+    val state: Int
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 枚举类型
+
+首先，定义枚举类型，表示数据的状态
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookState.java"
+public enum BookState {
+    INTIALIZED,
+    FROZEN,
+    PUBLISHED,
+    DELETED
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookState.kt"
+enum class BookState {
+    INTIALIZED,
+    FROZEN,
+    PUBLISHED,
+    DELETED
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted(
+        value = "DELETED", 
+        restoredValue = "INTIALIZED"
+    )
+    BookState state();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted(
+        value = "DELETED", 
+        restoredValue = "INTIALIZED"
+    )
+    val state: BookState
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::tip
+如果枚举只有两个选项，可以省略`restoredValue`
+:::
+
+:::info
+至于Jimmer保存枚举属性的相关配置，请参见[Enum映射](./enum)
+:::
+
+### 日期
+
+-   用非null表示已删除，null表示未删除
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted(value = "now", restoredValue = "null")
+        @Nullable
+        LocalDateTime deletedTime();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted(value = "now", restoredValue = "null")
+        val deletedTime: LocalDateTime?
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   用null表示已删除，非null表示未删除
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted(value = "null", restoredValue = "now")
+        @Nullable
+        LocalDateTime createdTime();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        // highlight-next-line
+        @LogicalDeleted(value = "null", restoredValue = "now")
+        val createdTime: LocalDateTime?
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+其中，`now`是`@LogicalDeleted`规定的特殊取值，表示当前时间。
+
+## 多视角缓存支持
+
+:::caution
+逻辑删除本身是一个很简单的功能，如果仅仅在SQL操作的层面使用它，它就仅仅是一个简单的查询条件添加功能。
+
+然而，如果和Jimmer的缓存能力一起使用，由于逻辑删除本身是一种内置的[全局过滤器](../../query/global-filter)，这会涉及到[多视角缓存](../../cache/multiview-cache)问题，这点需要开发人员知悉。
+:::
+
+本文不会讨论[多视角缓存](../../cache/multiview-cache)企图解决什么问题以及如何解决问题，这部分内容请参考[多视角缓存](../../cache/multiview-cache)相关文档。本文简单介绍如何为逻辑删除属性开启多视角缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @LogicalDeleted(
+        value = "true",
+        // highlight-next-line
+        useMultiViewCache = true
+    )
+    boolean isDeleted();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @LogicalDeleted(
+        value = "true",
+        // highlight-next-line
+        useMultiViewCache = true
+    )
+    val isDeleted: Boolean
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>

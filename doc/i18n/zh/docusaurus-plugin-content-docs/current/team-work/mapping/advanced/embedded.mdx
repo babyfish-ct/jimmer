@@ -2,3 +2,513 @@
 sidebar_position: 1
 title: 复合字段
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+复合字段将来数据库的多个列合并为一个整体，将其映射为一个非实体的自定义类型，然后利用此自定义属性为实体声明一个属性。
+
+## 作为普通字段
+
+### 简单使用
+
+首先，定义一个复合类型
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="FullName.java"
+// highlight-next-line
+@Embeddable
+public interface FullName {
+
+    String firstName();
+
+    String lastName();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="FullName.kt"
+// highlight-next-line
+@Embeddable
+interface FullName {
+
+    val firstName: String
+    
+    val lastName: String
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+@Embeddable所定义的类型不是实体类型，其中不得声明id属性和关联属性。否则，会导致编译错误。
+:::
+
+接下来我们就可以在另外一个实体中使用它
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+@Entity
+public interface Author {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+
+    // highlight-next-line
+    FullName name();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+@Entity
+interface Author {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    // highlight-next-line
+    val name: FullName
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+和JPA/Hibernate不同，在实体中使用复合类型时无需使用`@Embedded`。事实上，Jimmer也不提供`@Embedded`注解。
+:::
+
+`Author`对应的表结构如下
+
+```sql
+create table author(
+    id bigint unsigned not null auto_increment primary key,
+    /* highlight-next-line */
+    first_name varchar(20) not null,
+    /* highlight-next-line */
+    last_name varchar(20) not null
+) engine=innodb;
+```
+
+### 覆盖列名
+
+可以使用`org.babyfish.jimmer.sql.PropOverride`覆盖复合类型字段的列名
+
+-   定义复合类型`Point`
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Point.java"
+    @Embeddable
+    public interface Point {
+
+        int x();
+
+        int y();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Point.kt"
+    @Embeddable
+    interface Point {
+
+        val x: Int
+        
+        val y: Int
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   定义复合类型`Rect`，覆盖`Point`类型的列名
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Rect.java"
+    @Embeddable
+    public interface Rect {
+
+        // highlight-next-line
+        @PropOverride(prop = "x", columnName = "`LEFT`")
+        // highlight-next-line
+        @PropOverride(prop = "y", columnName = "`TOP`")
+        Point leftTop();
+
+        // highlight-next-line
+        @PropOverride(prop = "x", columnName = "`RIGHT`")
+        // highlight-next-line
+        @PropOverride(prop = "y", columnName = "BOTTOM")
+        Point rightBottom();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Rect.kt"
+    @Embeddable
+    interface Rect {
+
+        // highlight-next-line
+        @PropOverride(prop = "x", columnName = "`LEFT`")
+        // highlight-next-line
+        @PropOverride(prop = "y", columnName = "`TOP`")
+        val leftTop: Point
+
+        // highlight-next-line
+        @PropOverride(prop = "x", columnName = "`RIGHT`")
+        // highlight-next-line
+        @PropOverride(prop = "y", columnName = "BOTTOM")
+        val rightBottom: Point
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   定义实体类型`Transition`，覆盖`Rect`类型的列名
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Transition.java"
+    @Entity
+    public interface Transition {
+
+        @Id
+        long id();
+
+        int millis();
+
+        Rect source();
+
+        // highlight-start
+        @PropOverride(prop = "leftTop.x", columnName = "TARGET_LEFT")
+        @PropOverride(prop = "leftTop.y", columnName = "TARGET_TOP")
+        @PropOverride(prop = "rightBottom.x", columnName = "TARGET_RIGHT")
+        @PropOverride(prop = "rightBottom.y", columnName = "TARGET_BOTTOM")
+        // highlight-end
+        Rect target();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Transition.kt"
+    @Entity
+    interface Transition {
+
+        @Id
+        val id: Long
+
+        val millis: Int
+
+        val source: Rect
+
+        // highlight-start
+        @PropOverride(prop = "leftTop.x", columnName = "TARGET_LEFT")
+        @PropOverride(prop = "leftTop.y", columnName = "TARGET_TOP")
+        @PropOverride(prop = "rightBottom.x", columnName = "TARGET_RIGHT")
+        @PropOverride(prop = "rightBottom.y", columnName = "TARGET_BOTTOM")
+        // highlight-end
+        val target: Rect
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+`Transition`对应的表结构如下
+
+```sql
+create table transition(
+    id bigint unsigned not null auto_increment primary key,
+    millis int not null,
+    `LEFT` int not null,
+    `TOP` int not null,
+    `RIGHT` int not null,
+    bottom int not null,
+    target_left int not null,
+    target_top int not null,
+    target_right int not null,
+    target_bottom int not null
+) engine=innodb;
+```
+
+## 作为主外键
+
+:::warning
+用复合类型作为主外键，即，主键和外键都由多个列组合而成，除了让系统变得复杂外，没有什么好处。
+
+因此，除非必须兼容遗留系统中已有的数据库设计，系统应该避免如此使用，保证主外键的简单性。
+:::
+
+让我们先定义一个复合类型
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="UniqueId.java"
+// highlight-next-line
+@Embeddable
+public interface UniqueId {
+
+    @columnName("UNIQUE_ID_DAY_NO")
+    int dayNo();
+
+    @columnName("UNIQUE_ID_SEQ_NO")
+    int sequenceNo();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="UniqueId.kt"
+// highlight-next-line
+@Embeddable
+interface UniqueId {
+
+    @columnName("UNIQUE_ID_DAY_NO")
+    val dayNo: Int
+    
+    @columnName("UNIQUE_ID_SEQ_NO")
+    val sequenceNo: Int
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 作为主键
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    UniqueId id();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    val id: UniqueId
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+由于`Book.id`未使用`@PropOverride`对`UniqueId`类型中列名配置进行覆盖，所以采用`UniqueId`中配置的列名，对应的DDL为
+
+```sql
+create table book(
+    unique_id_day_no int not null,
+    unique_id_seq_no int not null,
+    ...省略其他字段...
+) engine=innodb;
+
+alter table book
+    add constraint pk_book
+        primary key(unique_id_day_no, unique_id_seq_no);
+```
+
+### 被@JoinColumn引用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Chapter.java"
+@Entity
+public interface Chapter {
+
+    @ManyToOne
+    @JoinColumn(
+        name = "BOOK_ID_DAY_NO", 
+        referencedColumnName = "UNIQUE_ID_DAY_NO"
+    )
+    @JoinColumn(
+        name = "BOOK_ID_SEQ_NO", 
+        referencedColumnName = "UNIQUE_ID_SEQ_NO"
+    )
+    Book book();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Chapter.kt"
+@Entity
+interface Chapter {
+
+    @ManyToOne
+    @JoinColumn(
+        name = "BOOK_ID_DAY_NO", 
+        referencedColumnName = "UNIQUE_ID_DAY_NO"
+    )
+    @JoinColumn(
+        name = "BOOK_ID_SEQ_NO", 
+        referencedColumnName = "UNIQUE_ID_SEQ_NO"
+    )
+    val book: Book
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+和我们之前讲解过的所有例子不同，这里@JoinColumn注解的`referencedColumnName`被指定了。
+
+当外建由多列构成时，就需要使用多个`@JoinColumn`注解，其中，每个`@JoinColumn`必须指定`referencedColumnName`。
+:::
+
+如果外键是真的，对应的约束为
+
+```sql
+alter table chapter
+    add constraint fk_chapter__book
+        foreign key(
+            book_id_day_no,
+            book_id_seq_id
+        ) references book(
+            unique_id_day_no,
+            unique_id_seq_no
+        );
+```
+
+### 被@JoinTable引用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    UniqueId id();
+
+    @ManyToMany
+    @JoinTable(
+        joinColumns = {
+            @JoinColumn(
+                name = "BOOK_ID_DAY_NO", 
+                referencedColumnName = "UNIQUE_ID_DAY_NO"
+            )
+            @JoinColumn(
+                name = "BOOK_ID_SEQ_NO", 
+                referencedColumnName = "UNIQUE_ID_SEQ_NO"
+            )
+        }
+    )
+    // highlight-next-line
+    List<Author> authors();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    val id: UniqueId
+
+    @ManyToMany
+    @JoinTable(
+        joinColumns = {
+            @JoinColumn(
+                name = "BOOK_ID_DAY_NO", 
+                referencedColumnName = "UNIQUE_ID_DAY_NO"
+            )
+            @JoinColumn(
+                name = "BOOK_ID_SEQ_NO", 
+                referencedColumnName = "UNIQUE_ID_SEQ_NO"
+            )
+        }
+    )
+    // highlight-next-line
+    val authors: List<Author>
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+如果外建是真的，中间表的DDL如下
+
+```sql
+create table book_author_mapping(
+    book_id_day_no int not null,
+    book_id_seq_id int not null,
+    author_id bigint not null
+) engine=innodb;
+
+alter table book_author_mapping
+    add constraint pk_book_author_mapping
+        primary key(
+            book_id_day_no, 
+            book_id_seq_id, 
+            author_id
+        );
+
+alter table book_author_mapping
+    add constraint fk_book_author_mapping__book
+        foreign key(
+            book_id_day_no,
+            book_id_seq_id
+        ) references book(
+            unique_id_day_no,
+            unique_id_seq_no
+        );
+
+alter table book_author_mapping
+    add constraint fk_book_author_mapping__author
+        foreign key(author_id)
+            references author(id);
+```

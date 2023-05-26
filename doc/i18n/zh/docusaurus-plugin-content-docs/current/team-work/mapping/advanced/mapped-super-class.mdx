@@ -2,3 +2,150 @@
 sidebar_position: 3
 title: MappedSuperclass
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+`org.babyfish.jimmer.sql.MappedSuperclass`用于提供可供实体继承的抽象超类型。
+
+该超类型不并是实体，但可以被多个实体类型继承，从而避免多个实体重复声明相同的属性。
+
+让我们来看一个例子，先定义超类型
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="CommonEntity.java"
+// highlight-next-line
+@MappedSuperclass
+public interface CommonEntity {
+
+    LocalDateTime createdTime();
+
+    @ManyToOne
+    User createdBy();
+
+    LocalDateTime modifiedTime();
+
+    @ManyToOne
+    User modifiedBy();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="CommonEntity.kt"
+// highlight-next-line
+interface CommonEntity {
+
+    val createdTime: LocalDateTime
+
+    @ManyToOne
+    val createdBy: User
+
+    val modifiedTime: LocalDateTime
+
+    @ManyToOne
+    val modifiedBy: User
+}
+```
+
+</TabItem>
+</Tabs>
+
+其他实体就可以继承它
+
+-   `BookStore`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookStore.java"
+    @Entity
+    // highlight-next-line
+    public interface BookStore extends CommonEntity {
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="BookStore.kt"
+    @Entity
+    // highlight-next-line
+    interface BookStore : CommonEntity {
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   `Book`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    // highlight-next-line
+    public interface Book extends CommonEntity {
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    // highlight-next-line
+    interface Book : CommonEntity {
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   `Author`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Author.java"
+    @Entity
+    // highlight-next-line
+    public interface Author extends CommonEntity {
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Author.kt"
+    @Entity
+    // highlight-next-line
+    interface Author : CommonEntity {
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::info
+`@MapperSuperclass`的作用不仅仅是减少溶于代码，它和其他两个功能点有密切联系
+
+-   [全局过滤器](../../query/global-filter)
+-   [拦截器](../../mutation/draft-interceptor)
+:::
