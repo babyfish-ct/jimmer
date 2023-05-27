@@ -5,6 +5,7 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.UnloadedException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
 import org.babyfish.jimmer.sql.Id;
@@ -41,9 +42,9 @@ public class ImplGenerator {
             addGetter(prop);
         }
         addClone();
-        addIsLoaded(int.class);
+        addIsLoaded(PropId.class);
         addIsLoaded(String.class);
-        addIsVisible(int.class);
+        addIsVisible(PropId.class);
         addIsVisible(String.class);
         addHashCode(false);
         addHashCode(true);
@@ -186,8 +187,15 @@ public class ImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .returns(boolean.class);
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("return __isLoaded(prop.asName())");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
@@ -195,30 +203,40 @@ public class ImplGenerator {
             if (idViewBaseProp != null) {
                 if (idViewBaseProp.isList()) {
                     builder.addStatement(
-                            "return __isLoaded($L) && $L().stream().allMatch(__each -> (($T)__each).__isLoaded($T.$L))",
+                            "return __isLoaded($T.byIndex($L)) && $L().stream().allMatch(__each -> \n$>" +
+                                    "(($T)__each).__isLoaded($T.byIndex($T.$L))" +
+                                    "\n$<)",
+                            PROP_ID_CLASS_NAME,
                             idViewBaseProp.getSlotName(),
                             idViewBaseProp.getGetterName(),
                             ImmutableSpi.class,
+                            PROP_ID_CLASS_NAME,
                             idViewBaseProp.getTargetType().getProducerClassName(),
                             idViewBaseProp.getTargetType().getIdProp().getSlotName()
                     );
                 } else {
                     builder.addStatement(
-                            "return __isLoaded($L) && ($L() == null || (($T)$L()).__isLoaded($T.$L))",
+                            "return __isLoaded($T.byIndex($L)) && ($L() == null || \n\t(($T)$L()).__isLoaded($T.byIndex($T.$L)))",
+                            PROP_ID_CLASS_NAME,
                             idViewBaseProp.getSlotName(),
                             idViewBaseProp.getGetterName(),
                             ImmutableSpi.class,
                             idViewBaseProp.getGetterName(),
+                            PROP_ID_CLASS_NAME,
                             idViewBaseProp.getTargetType().getProducerClassName(),
                             idViewBaseProp.getTargetType().getIdProp().getSlotName()
                     );
                 }
             } else if (manyToManyViewBaseProp != null) {
                 builder.addStatement(
-                        "return __isLoaded($L) && $L().stream().allMatch(__each -> (($T)__each).__isLoaded($T.$L))",
+                        "return __isLoaded($T.byIndex($L)) && $L().stream().allMatch(__each -> \n$>" +
+                                "(($T)__each).__isLoaded($T.byIndex($T.$L))" +
+                                "$<\n)",
+                        PROP_ID_CLASS_NAME,
                         manyToManyViewBaseProp.getSlotName(),
                         manyToManyViewBaseProp.getGetterName(),
                         ImmutableSpi.class,
+                        PROP_ID_CLASS_NAME,
                         prop.getManyToManyViewBaseDeeperProp().getDeclaringType().getProducerClassName(),
                         prop.getManyToManyViewBaseDeeperProp().getSlotName()
                 );
@@ -231,7 +249,7 @@ public class ImplGenerator {
                     } else {
                         builder.addCode(" && \n");
                     }
-                    builder.addCode("__isLoaded($L)", dependency.getSlotName());
+                    builder.addCode("__isLoaded($T.byIndex($L))", PROP_ID_CLASS_NAME, dependency.getSlotName());
                 }
                 builder.addStatement("$<");
             } else if (prop.isLoadedStateRequired()) {
@@ -258,8 +276,15 @@ public class ImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .returns(boolean.class);
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("return __isVisible(prop.asName())");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             builder.addStatement("return __visibility.visible($L)", prop.getSlotName());
@@ -343,8 +368,9 @@ public class ImplGenerator {
         for (ImmutableProp prop : type.getProps().values()) {
             builder
                     .beginControlFlow(
-                            "if (__visibility.visible($L) != __other.__isVisible($L))",
+                            "if (__visibility.visible($L) != __other.__isVisible($T.byIndex($L)))",
                             prop.getSlotName(),
+                            PROP_ID_CLASS_NAME,
                             prop.getSlotName()
                     )
                     .addStatement("return false")
@@ -359,8 +385,9 @@ public class ImplGenerator {
             }
             builder
                     .beginControlFlow(
-                            "if (__$L != __other.__isLoaded($L))",
+                            "if (__$L != __other.__isLoaded($T.byIndex($L)))",
                             prop.getLoadedStateName(true),
+                            PROP_ID_CLASS_NAME,
                             prop.getSlotName()
                     )
                     .addStatement("return false")

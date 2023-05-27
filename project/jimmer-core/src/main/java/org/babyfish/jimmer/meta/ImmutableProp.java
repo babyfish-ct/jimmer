@@ -17,7 +17,7 @@ public interface ImmutableProp {
     @NotNull
     ImmutableType getDeclaringType();
 
-    int getId();
+    PropId getId();
 
     @NotNull
     String getName();

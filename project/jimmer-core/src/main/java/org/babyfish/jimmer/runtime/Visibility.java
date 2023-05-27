@@ -65,13 +65,13 @@ public abstract class Visibility {
 
         @Override
         public final boolean visible(int propId) {
-            long mask = 1L << (propId - 1);
+            long mask = 1L << propId;
             return (hidden & mask) == 0;
         }
 
         @Override
         public final void show(int propId, boolean visible) {
-            long mask = 1L << (propId - 1);
+            long mask = 1L << propId;
             if (visible) {
                 hidden &= ~mask;
             } else {
@@ -104,17 +104,15 @@ public abstract class Visibility {
 
         @Override
         public final boolean visible(int propId) {
-            int index = propId - 1;
-            int arrIndex = index / 64;
-            long mask = 1L << (index - arrIndex * 64);
+            int arrIndex = propId / 64;
+            long mask = 1L << (propId - arrIndex * 64);
             return (hidden(arrIndex) & mask) == 0;
         }
 
         @Override
         public final void show(int propId, boolean visible) {
-            int index = propId - 1;
-            int arrIndex = index / 64;
-            long mask = 1L << (index - arrIndex * 64);
+            int arrIndex = propId / 64;
+            long mask = 1L << (propId - arrIndex * 64);
             if (visible) {
                 hidden(arrIndex, hidden(arrIndex) & ~mask);
             } else {

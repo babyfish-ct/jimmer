@@ -1,18 +1,19 @@
 package org.babyfish.jimmer.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 
 public interface ImmutableSpi {
 
-    boolean __isLoaded(int prop);
+    boolean __isLoaded(PropId prop);
 
     boolean __isLoaded(String prop);
 
-    boolean __isVisible(int prop);
+    boolean __isVisible(PropId prop);
 
     boolean __isVisible(String prop);
 
-    Object __get(int prop);
+    Object __get(PropId prop);
 
     Object __get(String prop);
 

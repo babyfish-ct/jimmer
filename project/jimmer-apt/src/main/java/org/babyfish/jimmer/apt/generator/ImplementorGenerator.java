@@ -7,11 +7,13 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import javax.lang.model.element.Modifier;
 
 import static org.babyfish.jimmer.apt.generator.Constants.MANY_TO_MANY_VIEW_LIST_CLASS_NAME;
+import static org.babyfish.jimmer.apt.generator.Constants.PROP_ID_CLASS_NAME;
 
 public class ImplementorGenerator {
 
@@ -32,7 +34,7 @@ public class ImplementorGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addSuperinterface(type.getClassName())
                 .addSuperinterface(spiClassName);
-        addGet(int.class);
+        addGet(PropId.class);
         addGet(String.class);
         for (ImmutableProp prop : type.getProps().values()) {
             addGetterIfNecessary(prop);
@@ -49,8 +51,15 @@ public class ImplementorGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .returns(Object.class);
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("return __get(prop.asName())");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             if (prop.getBoxType() != null) {
@@ -95,8 +104,9 @@ public class ImplementorGenerator {
                             .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
                             .returns(prop.getTypeName())
                             .addStatement(
-                                    "return new $T<>($T.$L, $L())",
+                                    "return new $T<>(\n$>$T.byIndex($T.$L), $L()$<\n)",
                                     MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
+                                    PROP_ID_CLASS_NAME,
                                     prop.getManyToManyViewBaseDeeperProp().getDeclaringType().getProducerClassName(),
                                     prop.getManyToManyViewBaseDeeperProp().getSlotName(),
                                     manyToManyViewBaseProp.getGetterName()

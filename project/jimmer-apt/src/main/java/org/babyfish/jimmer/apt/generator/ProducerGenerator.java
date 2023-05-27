@@ -11,8 +11,9 @@ import org.babyfish.jimmer.sql.OneToOne;
 
 import javax.lang.model.element.Modifier;
 
-import static org.babyfish.jimmer.apt.generator.Constants.DRAFT_CONSUMER_CLASS_NAME;
-import static org.babyfish.jimmer.apt.generator.Constants.RUNTIME_TYPE_CLASS_NAME;
+import java.util.Arrays;
+
+import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class ProducerGenerator {
 
@@ -29,14 +30,18 @@ public class ProducerGenerator {
         typeBuilder.modifiers.add(Modifier.PUBLIC);
         typeBuilder.modifiers.add(Modifier.STATIC);
         addInstance();
-        addSlots();
+        if (!type.isMappedSuperClass()) {
+            addSlots();
+        }
         addType();
         addConstructor();
-        addProduce(false);
-        addProduce(true);
-        new ImplementorGenerator(type).generate(typeBuilder);
-        new ImplGenerator(type).generate(typeBuilder);
-        new DraftImplGenerator(type).generate(typeBuilder);
+        if (!type.isMappedSuperClass()) {
+            addProduce(false);
+            addProduce(true);
+            new ImplementorGenerator(type).generate(typeBuilder);
+            new ImplGenerator(type).generate(typeBuilder);
+            new DraftImplGenerator(type).generate(typeBuilder);
+        }
         parentBuilder.addType(typeBuilder.build());
     }
 
@@ -88,7 +93,7 @@ public class ProducerGenerator {
                     Modifier.STATIC,
                     Modifier.FINAL
             );
-            if (prop.getDeclaringType() == type) {
+            if (prop.getDeclaringType() == type || prop.getDeclaringType().isMappedSuperClass()) {
                 builder.initializer(Integer.toString(prop.getId()));
             } else {
                 builder.initializer("$T.$L", prop.getDeclaringType().getProducerClassName(), prop.getSlotName());
@@ -105,23 +110,42 @@ public class ProducerGenerator {
                 .add(".newBuilder(\n")
                 .indent()
                 .add("$T.class,\n", type.getClassName());
-        if (type.getSuperType() != null) {
-            builder.add(
-                    "$T.Producer.TYPE,\n",
-                    type.getSuperType().getDraftClassName()
-            );
-        } else {
-            builder.add("null,\n");
+        switch (type.getSuperTypes().size()) {
+            case 0:
+                builder.add("$T.emptyList(),\n", COLLECTIONS_CLASS_NAME);
+                break;
+            case 1:
+                builder.add(
+                        "$T.singleton($T.Producer.TYPE),\n",
+                        COLLECTIONS_CLASS_NAME,
+                        type.getSuperTypes().iterator().next().getDraftClassName()
+                );
+                break;
+            default:
+                builder.add("$T.asList(\n$>", Arrays.class);
+                boolean addComma = false;
+                for (ImmutableType superType : type.getSuperTypes()) {
+                    if (addComma) {
+                        builder.add(",\n");
+                    } else {
+                        addComma = true;
+                    }
+                    builder.add("$T.Producer.TYPE", superType.getDraftClassName());
+                }
+                builder.add("\n$<)\n,");
+                break;
         }
 
-        builder
-                .add(
-                        "(ctx, base) -> new $T(ctx, ($T)base)\n",
-                        type.getDraftImplClassName(),
-                        type.getClassName()
-                )
-                .unindent()
-                .add(")\n");
+        if (type.isMappedSuperClass()) {
+            builder.add("null\n");
+        } else {
+            builder.add(
+                    "(ctx, base) -> new $T(ctx, ($T)base)\n",
+                    type.getDraftImplClassName(),
+                    type.getClassName()
+            );
+        }
+        builder.unindent().add(")\n");
         for (ImmutableProp prop : type.getDeclaredProps().values()) {
             ImmutablePropCategory category;
             if (prop.isList()) {
@@ -133,23 +157,24 @@ public class ProducerGenerator {
             } else {
                 category = ImmutablePropCategory.SCALAR;
             }
+            String slotName = type.isMappedSuperClass() ? "-1" : prop.getSlotName();
             if (prop == type.getIdProp()) {
                 builder.add(
                         ".id($L, $S, $T.class)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName(),
                         prop.getRawElementTypeName()
                 );
             } else if (prop == type.getVersionProp()) {
                 builder.add(
                         ".version($L, $S)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName()
                 );
             } else if (prop == type.getLogicalDeletedProp()) {
                 builder.add(
                         ".logicalDeleted($L, $S, $T.class, $L)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName(),
                         prop.getRawElementTypeName(),
                         prop.isNullable()
@@ -157,7 +182,7 @@ public class ProducerGenerator {
             } else if (prop.getAnnotation(Key.class) != null && !prop.isAssociation(false)) {
                 builder.add(
                         ".key($L, $S, $T.class, $L)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName(),
                         prop.getRawElementTypeName(),
                         prop.isNullable()
@@ -165,7 +190,7 @@ public class ProducerGenerator {
             } else if (prop.getAnnotation(Key.class) != null && prop.isAssociation(false)) {
                 builder.add(
                         ".keyReference($L, $S, $T.class, $T.class, $L)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName(),
                         prop.getAnnotation(OneToOne.class) != null ? OneToOne.class : ManyToOne.class,
                         prop.getRawElementTypeName(),
@@ -174,7 +199,7 @@ public class ProducerGenerator {
             } else if (prop.getAssociationAnnotation() != null) {
                 builder.add(
                         ".add($L, $S, $T.class, $T.class, $L)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName(),
                         prop.getAssociationAnnotation().annotationType(),
                         prop.getRawElementTypeName(),
@@ -183,7 +208,7 @@ public class ProducerGenerator {
             } else {
                 builder.add(
                         ".add($L, $S, $T.$L, $T.class, $L)\n",
-                        prop.getSlotName(),
+                        slotName,
                         prop.getName(),
                         ImmutablePropCategory.class,
                         category.name(),

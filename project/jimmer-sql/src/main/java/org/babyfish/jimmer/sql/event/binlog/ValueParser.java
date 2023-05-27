@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -51,7 +52,7 @@ class ValueParser {
         ImmutableProp entityProp = chain.get(0);
         if (entityProp.isEmbedded(EmbeddedLevel.BOTH)) {
             for (ImmutableProp prop : chain) {
-                int propId = prop.getId();
+                PropId propId = prop.getId();
                 if (prop.getTargetType() != null) {
                     if (!spi.__isLoaded(propId)) {
                         spi.__set(propId, Internal.produce(prop.getTargetType(), null, null));

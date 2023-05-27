@@ -57,11 +57,8 @@ public class EntityManager {
                                     "\" is not entity"
                     );
                 }
-                map.put(immutableType, new ImmutableTypeInfo());
-                immutableType = immutableType.getSuperType();
-                while (immutableType != null && (immutableType.isEntity() || immutableType.isMappedSuperclass())) {
-                    map.put(immutableType, new ImmutableTypeInfo());
-                    immutableType = immutableType.getSuperType();
+                for (ImmutableType type : immutableType.getAllTypes()) {
+                    map.put(type, new ImmutableTypeInfo());
                 }
             }
         }
@@ -78,7 +75,7 @@ public class EntityManager {
                 for (ImmutableType otherType : map.keySet()) {
                     if (type != otherType && type.isAssignableFrom(otherType)) {
                         info.allDerivedTypes.add(otherType);
-                        if (type == otherType.getSuperType()) {
+                        if (otherType.getSuperTypes().contains(type)) {
                             info.directDerivedTypes.add(otherType);
                         }
                     }
@@ -285,7 +282,12 @@ public class EntityManager {
         if (!mappedSuperClass.isAssignableFrom(type)) {
             return false;
         }
-        return type.getSuperType().isMappedSuperclass();
+        for (ImmutableType superType : type.getSuperTypes()) {
+            if (superType.isMappedSuperclass()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class ImmutableTypeInfo {

@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.jackson.ImmutableModule;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -32,7 +29,7 @@ public class ImmutableObjects {
      * @return Whether the property of the object is specified.
      * @exception IllegalArgumentException The first argument is immutable object created by jimmer
      */
-    public static boolean isLoaded(Object immutable, int prop) {
+    public static boolean isLoaded(Object immutable, PropId prop) {
         if (immutable instanceof ImmutableSpi) {
             return ((ImmutableSpi) immutable).__isLoaded(prop);
         }
@@ -98,7 +95,7 @@ public class ImmutableObjects {
      *      </ul>
      * @exception UnloadedException The property is not loaded
      */
-    public static Object get(Object immutable, int prop) {
+    public static Object get(Object immutable, PropId prop) {
         if (immutable instanceof ImmutableSpi) {
             return ((ImmutableSpi) immutable).__get(prop);
         }
@@ -241,13 +238,13 @@ public class ImmutableObjects {
         ImmutableType type = spi.__type();
         return (T)Internal.produce(type, immutable, draft -> {
             for (ImmutableProp prop : type.getProps().values()) {
-                int propId = prop.getId();
+                PropId propId = prop.getId();
                 if (prop.isAssociation(TargetLevel.ENTITY) && spi.__isLoaded(propId)) {
                     if (prop.isColumnDefinition()) {
                         ImmutableSpi target = (ImmutableSpi) spi.__get(propId);
                         if (target != null) {
                             ImmutableType targetType = prop.getTargetType();
-                            int targetIdPropId = targetType.getIdProp().getId();
+                            PropId targetIdPropId = targetType.getIdProp().getId();
                             if (!target.__isLoaded(targetIdPropId)) {
                                 ((DraftSpi) draft).__unload(propId);
                             } else if (!isIdOnly(target)) {

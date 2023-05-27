@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -35,7 +36,7 @@ class MutationCache {
     public ImmutableSpi find(ImmutableSpi example, boolean requiresKey) {
         ImmutableType type = example.__type();
         ImmutableProp idProp = type.getIdProp();
-        int idPropId = idProp.getId();
+        PropId idPropId = idProp.getId();
         if (example.__isLoaded(idPropId)) {
             Object id = example.__get(idPropId);
             if (id != null) {
@@ -105,7 +106,7 @@ class MutationCache {
             spi = (ImmutableSpi) Internal.produce(spi.__type(), oldSpi, draft -> {
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (prop.isMutable()) {
-                        int propId = prop.getId();
+                        PropId propId = prop.getId();
                         if (newSpi.__isLoaded(propId)) {
                             ((DraftSpi) draft).__set(propId, newSpi.__get(prop.getId()));
                         }

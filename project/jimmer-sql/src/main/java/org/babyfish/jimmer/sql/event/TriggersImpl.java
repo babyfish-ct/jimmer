@@ -344,12 +344,11 @@ public class TriggersImpl implements Triggers {
         List<EntityListener<ImmutableSpi>> listeners = new ArrayList<>(globalEntityListeners);
         Map<ImmutableType, CopyOnWriteArrayList<EntityListener<ImmutableSpi>>> map =
                 entityTableListenerMultiMap;
-        while (type != null) {
-            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(type);
+        for (ImmutableType t : type.getAllTypes()) {
+            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(t);
             if (list != null) {
                 listeners.addAll(list);
             }
-            type = type.getSuperType();
         }
         return listeners;
     }

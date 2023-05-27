@@ -57,7 +57,7 @@ class DraftInterceptorManager {
     @SuppressWarnings("unchecked")
     private DraftInterceptor<?> create(ImmutableType type) {
         List<DraftInterceptor<?>> interceptors = new ArrayList<>();
-        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
+        for (ImmutableType t : type.getAllTypes()) {
             List<DraftInterceptor<?>> list = interceptorMap.get(t);
             if (list != null) {
                 interceptors.addAll(list);

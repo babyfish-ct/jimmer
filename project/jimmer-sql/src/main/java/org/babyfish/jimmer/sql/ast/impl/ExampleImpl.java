@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -176,7 +173,7 @@ public class ExampleImpl<E> implements Example<E> {
             if (spi.__isLoaded(prop.getId()) && prop.isColumnDefinition()) {
                 Object value = spi.__get(prop.getId());
                 if (value != null && prop.isReference(TargetLevel.PERSISTENT)) {
-                    int targetIdPropId = prop.getTargetType().getIdProp().getId();
+                    PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
                     if (!((ImmutableSpi)value).__isLoaded(targetIdPropId)) {
                         continue;
                     }

@@ -29,7 +29,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     private final ImmutableTypeImpl declaringType;
 
-    private final int id;
+    private final PropId id;
 
     private final String name;
 
@@ -99,7 +99,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
-            int id,
+            PropId id,
             String name,
             ImmutablePropCategory category,
             Class<?> elementClass,
@@ -270,7 +270,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     }
 
     @Override
-    public int getId() {
+    public PropId getId() {
         return id;
     }
 

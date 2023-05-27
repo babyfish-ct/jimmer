@@ -13,6 +13,8 @@ import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.*;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.BiFunction;
 
 public class Metadata {
@@ -129,18 +131,18 @@ public class Metadata {
 
     public static ImmutableType.Builder newTypeBuilder(
             Class<?> javaClass,
-            ImmutableType superType,
+            Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return new ImmutableTypeImpl.BuilderImpl(javaClass, superType, draftFactory);
+        return new ImmutableTypeImpl.BuilderImpl(javaClass, superTypes, draftFactory);
     }
 
     public static ImmutableType.Builder newTypeBuilder(
             KClass<?> kotlinClass,
-            ImmutableType superType,
+            Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return new ImmutableTypeImpl.BuilderImpl(kotlinClass, superType, draftFactory);
+        return new ImmutableTypeImpl.BuilderImpl(kotlinClass, superTypes, draftFactory);
     }
 
     private static Class<?> getImmutableJavaClass(Class<?> javaClass) {

@@ -222,8 +222,8 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
-        public int getId() {
-            return 1;
+        public PropId getId() {
+            return PropId.byIndex(0);
         }
 
         @Override
@@ -280,8 +280,8 @@ public abstract class AssociationProp implements ImmutableProp {
         }
 
         @Override
-        public int getId() {
-            return 2;
+        public PropId getId() {
+            return PropId.byIndex(1);
         }
 
         @Override

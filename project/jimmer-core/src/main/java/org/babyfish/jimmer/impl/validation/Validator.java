@@ -2,6 +2,7 @@ package org.babyfish.jimmer.impl.validation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,7 @@ public class Validator<T> {
             @NotNull Class<? extends Annotation> annotationType,
             @NotNull String message,
             @NotNull Class<?> type,
-            @Nullable Integer propId
+            @Nullable PropId propId
     ) {
         ImmutableProp prop = propId != null ? ImmutableType.get(type).getProp(propId) : null;
 

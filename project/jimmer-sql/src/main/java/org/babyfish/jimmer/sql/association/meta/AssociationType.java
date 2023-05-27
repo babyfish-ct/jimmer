@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.association.meta;
 
 import org.babyfish.jimmer.Draft;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
@@ -163,11 +160,15 @@ public class AssociationType extends AbstractImmutableTypeImpl {
 
     @NotNull
     @Override
-    public ImmutableProp getProp(int id) {
-        switch (id) {
-            case 1:
+    public ImmutableProp getProp(PropId id) {
+        int index = id.asIndex();
+        if (index == -1) {
+            return getProp(id.asName());
+        }
+        switch (index) {
+            case 0:
                 return sourceProp;
-            case 2:
+            case 1:
                 return targetProp;
             default:
                 throw new IllegalArgumentException(
@@ -187,10 +188,14 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         return false;
     }
 
-    @Nullable
     @Override
-    public ImmutableType getSuperType() {
-        return null;
+    public Set<ImmutableType> getSuperTypes() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<ImmutableType> getAllTypes() {
+        return Collections.emptySet();
     }
 
     @Override
