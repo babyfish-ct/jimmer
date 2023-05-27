@@ -2,3 +2,206 @@
 sidebar_position: 7
 title: Enum映射
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Jimmer处理枚举有两种方式：
+
+-   映射为字符串：可观察性优先的选择，也是默认的选项。
+
+-   映射为整数：性能优先的选择。
+
+Jimmer提供了两个用于枚举的注解
+
+-   `org.babyfish.jimmer.sql.EnumType`: 修饰枚举类型，可选
+
+    指定映射方式，映射为字符串，还是按位置映射为整数
+
+-   `org.babyfish.jimmer.sql.EnumItem`: 修饰枚举项，可选
+
+    覆盖某个枚举项被映射后的字符串值或整数值
+
+## 映射为字符串
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Gender.java"
+// highlight-next-line
+@EnumType(EnumType.Strategy.NAME)
+public enum Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Gender.kt"
+// highlight-next-line
+@EnumType(EnumType.Strategy.NAME)
+enum class Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`@EnumType`的参数被指定为"NAME", 表示映射为字符串。默认情况下，两个枚举项映射后的字符串和它们的名字相同，即"MALE"和"FEMALE"。
+
+如果你期望后的字符串和枚举项名称不同，你可以使用`@EnumItem`修饰枚举项。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Gender.java"
+@EnumType(EnumType.Strategy.NAME)
+public enum Gender {
+
+    // highlight-next-line
+    @EnumItem(name = "M")
+    MALE,
+
+    // highlight-next-line
+    @EnumItem(name = "F")
+    FEMALE
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Gender.kt"
+@EnumType(EnumType.Strategy.NAME)
+enum class Gender {
+
+    // highlight-next-line
+    @EnumItem(name = "M")
+    MALE,
+
+    // highlight-next-line
+    @EnumItem(name = "F")
+    FEMALE
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 映射为整数
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Gender.java"
+// highlight-next-line
+@EnumType(EnumType.Strategy.ORDINAL)
+public enum Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Gender.kt"
+// highlight-next-line
+@EnumType(EnumType.Strategy.ORDINAL)
+enum class Gender {
+    MALE,
+    FEMALE
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`@EnumType`的参数被指定为"ORDINAL", 表示映射为整数。默认情况下，两个枚举项映射后的字符串和它们的`ordinal`相同，即0和1。
+
+如果你期望后的字符串和枚举项的`ordinal`不同，你可以使用`@EnumItem`修饰枚举项。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Gender.java"
+@EnumType(EnumType.Strategy.ORDINAL)
+public enum Gender {
+
+    // highlight-next-line
+    @EnumItem(ordinal = 100)
+    MALE,
+
+    // highlight-next-line
+    @EnumItem(ordinal = 200)
+    FEMALE
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Gender.kt"
+@EnumType(EnumType.Strategy.ORDINAL)
+enum class Gender {
+
+    // highlight-next-line
+    @EnumItem(ordinal = 100)
+    MALE,
+
+    // highlight-next-line
+    @EnumItem(ordinal = 200)
+    FEMALE
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 不明确使用@EnumType
+
+你也可以不为枚举类型指定@EnumType注解，即，不明确说明某个枚举类型应该映射成字符串还是整数。
+
+此时，Jimmer会参考默认的全部配置。
+
+:::info
+此全局配置默认为"NAME"，如果你需要"ORDINAL"，请覆盖全部配置。
+:::
+
+接下来，我们展示如何覆盖全部配置。
+
+-   使用SpringBoot时
+
+    在`application.yml`或`application.properties`种添加配置项`jimmer.default-enum-strategy`，将其指定为"ORIDNAL"
+
+-   不使用SpringBoot时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        // highlight-next-line
+        .setDefaultEnumStrategy(EnumType.Strategy.ORDINAL)
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        // highlight-next-line
+        setDefaultEnumStrategy(EnumType.Strategy.ORDINAL)
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>

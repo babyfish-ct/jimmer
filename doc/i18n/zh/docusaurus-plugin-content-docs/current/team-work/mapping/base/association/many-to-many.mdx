@@ -170,7 +170,11 @@ alter table BOOK_AUTHOR_MAPPING
 public interface Book {
 
     @ManyToMany
-    @JoinColumn(name = "AUTHOR_ID")
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
     List<Author> authors();
 
     ...省略其他代码...
@@ -185,7 +189,11 @@ public interface Book {
 interface Book {
 
     @ManyToMany
-    @JoinColumn(name = "AUTHOR_ID")
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
     val authors: List<Author>
 
     ...省略其他代码...
