@@ -385,7 +385,7 @@ sqlClient
 ```kotlin
 sqlClient.createQuery(Book::class) {
     // 你可以再次访问隐含的变量`table`.
-    // 其累心为`Table<Book>`, 而非`TableEx<Book>`
+    // 其类型为`Table<Book>`, 而非`TableEx<Book>`
     ...
 }
 ```
