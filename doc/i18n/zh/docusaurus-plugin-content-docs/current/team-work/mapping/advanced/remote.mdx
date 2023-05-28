@@ -2,3 +2,182 @@
 sidebar_position: 10
 title: 远程关联
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::caution
+远程关联是Jimmer和微服务技术体系结合后的产物，会在[Spring Cloud和远程关联](../../spring/spring-cloud)中详细介绍。
+
+本文的目的并非系统性讲解远程关联，仅仅介绍远程关联所需映射配置。
+:::
+
+## @Entity
+
+`@Entity`注解具备可选参数`microServiceName`，默认为""。
+
+关联属性设计两个实体类型，因为关联必然从源头方指向目标方 *(自关联属性比较特殊，源头方和目标方重合)*
+
+-   如果关联属性的源实体和目标实体的`microServiceName`相等，则该关联为本地关联 *（本文之前所有例子中的实体都采用默认的`microServiceName`，因此都是本地关联）*
+
+-   如果关联属性的源实体和目标实体的`microServiceName`不相等，则该关联为远程关联。
+
+例如
+
+-   主动方 *(必需)*: `Book.authors`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    // highlight-next-line
+    @Entity(microServiceName = "book-service")
+    public interface Book {
+
+        @ManyToMany
+        List<Author> authors();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```java title="Book.kt"
+    // highlight-next-line
+    @Entity(microServiceName = "book-service")
+    interface Book {
+
+        @ManyToMany
+        val authors: List<Author>
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   主动方 *(可选)*: `Author.authors`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Author.java"
+    // highlight-next-line
+    @Entity(microServiceName = "author-service")
+    public interface Author {
+
+        @ManyToMany(mappedBy = "authors")
+        List<Book> books();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Author.kt"
+    // highlight-next-line
+    @Entity(microServiceName = "author-service")
+    interface Author {
+
+        @ManyToMany(mappedBy = "authors")
+        val books: List<Book>
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+这里，`Book`的微服务名为`book-service`，`Author`的微服务名为`author-service`。二者不相等，因此`Book.authors`和`Author.books`都是远程关联
+
+## @MappedSuperclass
+
+作为超类型的`MappedSuperclass`有两种用法
+
+-   可以包含关联属性，但必需隶属于一个微服务
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookServiceCommonEnity.java"
+    // highlight-next-line
+    @MappedSuperclass(microServiceName = "book-service")
+    public interface BookServiceCommonEnity {
+
+        LocalDateTime createdTime();
+
+        @ManyToOne
+        User createdBy();
+
+        LocalDateTime modifiedTime();
+
+        @ManyToOne
+        User modifiedBy();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```java title="BookServiceCommonEnity.kt"
+    // highlight-next-line
+    @MappedSuperclass(microServiceName = "book-service")
+    interface BookServiceCommonEnity {
+
+        val createdTime: LocalDateTime
+
+        @ManyToOne
+        val createdBy: User
+
+        val modifiedTime: LocalDateTime
+
+        @ManyToOne
+        val modifiedBy: User
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这里`BookServiceCommonEnity`具备关联属性`createdBy`和`modifiedBy`，但是只有同属于微服务"book-service"的`Entity`或其他`MappedSuperclass`才可以继承它。
+
+-   跨越任何微服务，但不得包含关联属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="CommonEnity.java"
+    // highlight-next-line
+    @MappedSuperclass(acrossMicroServices = true)
+    public interface CommonEnity {
+
+        LocalDateTime createdTime();
+
+        LocalDateTime modifiedTime();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```java title="CommonEnity.kt"
+    // highlight-next-line
+    @MappedSuperclass(acrossMicroServices = true)
+    interface CommonEnity {
+
+        val createdTime: LocalDateTime
+
+        val modifiedTime: LocalDateTime
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这里`CommonEnity`可以跨越任何微服务，任何微服务下的`Entity`或其他`MappedSuperclass`都可以继承它，但其本身不的包含任何关联属性。

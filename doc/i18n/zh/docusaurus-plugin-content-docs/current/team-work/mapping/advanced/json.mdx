@@ -2,3 +2,137 @@
 sidebar_position: 8
 title: JSON映射
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Jimmer支持JSON属性。在Java/Kotin实体类型中，这种属性可以被声明为任何非Object的JVM类型，在数据库中，对应列的存储的信息是JSON。
+
+:::info
+-   JSON属性是简单属性，而非关联属性。
+
+-   按目前实现，Postgres中对应列的类型应为`jsonb`，其他数据库中对应列的类型应为字符串。
+:::
+
+Jimmer提供`org.babyfish.jimmer.sql.Serialized`，有两种使用JSON映射的方式
+
+-   全局JSON映射
+
+    如果属性的类型是自定义类，而非数组、集合或Map。可以用`@Serialized`修饰这个类。这样，不仅仅是当前属性，任何实体中相同类型的属性都会成为JSON属性。
+
+-   属性级JSON映射
+
+    无论属性是什么类型，都可以使用`@Serialized`修饰当前属性。
+    
+    一般而言，应该修饰类型为数组、集合或Map类型的属性，因为类型为自定义类的属性采用全局JSON映射更好。
+
+## 全局JSON映射
+
+首先，定义自定义类，并用`@Serialized`修饰
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="UserType.java"
+// highlight-next-line
+@Serialized
+public class UserType {
+
+    ...省略成员，可包含任意信息...
+    ...只要支持Json序列化/反序列化即可...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="UserType.kt"
+// highlight-next-line
+@Serialized
+data class UserType(
+
+    ...省略参数，可包含任何信息...
+    ...只要支持Json序列化/反序列化即可...
+)
+```
+
+</TabItem>
+</Tabs>
+
+然后，就可以使用`UserType`类型定义任何实体属性了
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    UserType userData();
+
+    ...省略其他类型...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    val userData: UserType
+    
+    ...省略其他类型...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 属性级JSON映射
+
+直接用`@Serialized`修饰属性即可
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @Serialized
+    List<Map<String, SomeType1>> userData1();
+
+    // highlight-next-line
+    @Serialized
+    Map<String, List<SomeType2>> userData2();
+
+    ...省略其他类型...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @Serialized
+    val userData1: List<Map<String, SomeType1>>
+    
+    // highlight-next-line
+    @Serialized
+    val userData2: Map<String, List<SomeType2>>
+    
+    ...省略其他类型...
+}
+```
+
+</TabItem>
+</Tabs>
