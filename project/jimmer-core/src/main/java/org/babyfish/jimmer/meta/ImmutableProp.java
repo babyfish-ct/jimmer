@@ -60,6 +60,8 @@ public interface ImmutableProp {
 
     Annotation getAssociationAnnotation();
 
+    Class<? extends Annotation> getPrimaryAnnotationType();
+
     boolean isTransient();
 
     boolean hasTransientResolver();

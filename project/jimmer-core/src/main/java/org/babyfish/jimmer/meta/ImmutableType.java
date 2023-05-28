@@ -128,8 +128,6 @@ public interface ImmutableType {
 
     interface Builder {
 
-        Builder superInterface(ImmutableType type);
-
         Builder id(int id, String name, Class<?> elementType);
 
         Builder key(int id, String name, Class<?> elementType, boolean nullable);

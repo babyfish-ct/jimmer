@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.meta;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 public class MultipleJoinColumns extends MultipleColumns {
 
@@ -23,5 +25,31 @@ public class MultipleJoinColumns extends MultipleColumns {
     @Override
     public boolean isForeignKey() {
         return isForeignKey;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        MultipleJoinColumns that = (MultipleJoinColumns) o;
+        return isForeignKey == that.isForeignKey && Arrays.equals(referencedColumnNames, that.referencedColumnNames);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(super.hashCode(), isForeignKey);
+        result = 31 * result + Arrays.hashCode(referencedColumnNames);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "MultipleJoinColumns{" +
+                "arr=" + Arrays.toString(arr) +
+                ", embedded=" + embedded +
+                ", referencedColumnNames=" + Arrays.toString(referencedColumnNames) +
+                ", isForeignKey=" + isForeignKey +
+                '}';
     }
 }

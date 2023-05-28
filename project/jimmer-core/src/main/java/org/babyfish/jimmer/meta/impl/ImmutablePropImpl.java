@@ -5,11 +5,12 @@ import kotlin.reflect.KProperty1;
 import kotlin.reflect.full.KClasses;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Formula;
+import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.*;
-import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
+import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
@@ -23,7 +24,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
 
-class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
+class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 
@@ -46,6 +47,8 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     private final Method javaGetter;
 
     private final Annotation associationAnnotation;
+
+    private final Class<? extends Annotation> primaryAnnotationType;
 
     private final boolean isTransient;
 
@@ -157,11 +160,6 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         hasTransientResolver = trans != null && (
                 trans.value() != void.class || !trans.ref().isEmpty()
         );
-        if (associationType != null) {
-            associationAnnotation = getAnnotation(associationType);
-        } else {
-            associationAnnotation = null;
-        }
 
         Formula formula = getAnnotation(Formula.class);
         isFormula = formula != null;
@@ -226,6 +224,30 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             dissociateAction = DissociateAction.NONE;
         }
 
+        if (associationType != null) {
+            associationAnnotation = getAnnotation(associationType);
+            primaryAnnotationType = associationType;
+        } else {
+            associationAnnotation = null;
+            if (isId()) {
+                primaryAnnotationType = Id.class;
+            } else if (isVersion()) {
+                primaryAnnotationType = Version.class;
+            } else if (isLogicalDeleted()) {
+                primaryAnnotationType = LogicalDeleted.class;
+            } else if (isFormula) {
+                primaryAnnotationType = Formula.class;
+            } else if (isTransient) {
+                primaryAnnotationType = Transient.class;
+            } else if (getAnnotation(IdView.class) != null) {
+                primaryAnnotationType = IdView.class;
+            } else if (getAnnotation(ManyToManyView.class) != null) {
+                primaryAnnotationType = ManyToManyView.class;
+            } else {
+                primaryAnnotationType = Scalar.class;
+            }
+        }
+
         this.original = null;
     }
 
@@ -255,6 +277,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         this.kotlinProp = original.kotlinProp;
         this.javaGetter = original.javaGetter;
         this.associationAnnotation = original.associationAnnotation;
+        this.primaryAnnotationType = original.primaryAnnotationType;
         this.isTransient = original.isTransient;
         this.isFormula = original.isFormula;
         this.sqlTemplate = original.sqlTemplate;
@@ -432,6 +455,11 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
     @Override
     public Annotation getAssociationAnnotation() {
         return associationAnnotation;
+    }
+
+    @Override
+    public Class<? extends Annotation> getPrimaryAnnotationType() {
+        return primaryAnnotationType;
     }
 
     @Override
@@ -936,23 +964,7 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
         }
         if (isAssociation(TargetLevel.ENTITY)) {
             validateDeclaringEntity("mappedBy");
-            String mappedBy = "";
-            OneToOne oneToOne = getAnnotation(OneToOne.class);
-            if (oneToOne != null) {
-                mappedBy = oneToOne.mappedBy();
-            }
-            if (mappedBy.isEmpty()) {
-                OneToMany oneToMany = getAnnotation(OneToMany.class);
-                if (oneToMany != null) {
-                    mappedBy = oneToMany.mappedBy();
-                }
-                if (mappedBy.isEmpty()) {
-                    ManyToMany manyToMany = getAnnotation(ManyToMany.class);
-                    if (manyToMany != null) {
-                        mappedBy = manyToMany.mappedBy();
-                    }
-                }
-            }
+            String mappedBy = getMappedByValue();
             if (!mappedBy.isEmpty()) {
                 ImmutableProp resolved = getTargetType().getProps().get(mappedBy);
                 if (resolved == null) {
@@ -1015,6 +1027,27 @@ class ImmutablePropImpl implements ImmutableProp, EntityPropImplementor {
             }
         }
         mappedByResolved = true;
+        return mappedBy;
+    }
+
+    String getMappedByValue() {
+        String mappedBy = "";
+        OneToOne oneToOne = getAnnotation(OneToOne.class);
+        if (oneToOne != null) {
+            mappedBy = oneToOne.mappedBy();
+        }
+        if (mappedBy.isEmpty()) {
+            OneToMany oneToMany = getAnnotation(OneToMany.class);
+            if (oneToMany != null) {
+                mappedBy = oneToMany.mappedBy();
+            }
+            if (mappedBy.isEmpty()) {
+                ManyToMany manyToMany = getAnnotation(ManyToMany.class);
+                if (manyToMany != null) {
+                    mappedBy = manyToMany.mappedBy();
+                }
+            }
+        }
         return mappedBy;
     }
 

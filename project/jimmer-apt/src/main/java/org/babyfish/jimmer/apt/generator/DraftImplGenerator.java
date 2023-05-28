@@ -183,11 +183,12 @@ public class DraftImplGenerator {
                                 Modifier.FINAL
                         )
                         .initializer(
-                                "\n    new $T<>($T.class, $S, $T.class, $L)",
+                                "\n    new $T<>($T.class, $S, $T.class, $T.byIndex($L))",
                                 VALIDATOR_CLASS_NAME,
                                 e.getKey(),
                                 e.getValue(),
                                 type.getClassName(),
+                                PROP_ID_CLASS_NAME,
                                 prop.getSlotName()
                         );
                 typeBuilder.addField(builder.build());

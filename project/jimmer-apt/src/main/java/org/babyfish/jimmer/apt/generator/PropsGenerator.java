@@ -79,17 +79,8 @@ public class PropsGenerator {
             }
         }
         try {
-            for (ImmutableProp prop : type.getDeclaredProps().values()) {
+            for (ImmutableProp prop : type.getProps().values()) {
                 addStaticProp(prop);
-            }
-            if (type.isEntity() && !type.getSuperTypes().isEmpty()) {
-                for (ImmutableType superType : type.getSuperTypes()) {
-                    if (superType.isMappedSuperClass()) {
-                        for (ImmutableProp prop : superType.getProps().values()) {
-                            addStaticProp(prop);
-                        }
-                    }
-                }
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
                 for (ImmutableProp prop : type.getDeclaredProps().values()) {

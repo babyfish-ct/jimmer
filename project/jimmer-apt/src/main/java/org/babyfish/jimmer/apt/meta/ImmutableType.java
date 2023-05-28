@@ -207,14 +207,26 @@ public class ImmutableType {
             for (ImmutableProp prop : superType.getProps().values()) {
                 ImmutableProp conflictProp = superPropMap.put(prop.getName(), prop);
                 if (conflictProp != null) {
-                    throw new MetaException(
-                            typeElement,
-                            "Conflict super properties: \"" +
-                                    conflictProp +
-                                    "\" and \"" +
-                                    prop +
-                                    "\""
-                    );
+                    if (conflictProp.getGetterName().equals(prop.getGetterName())) {
+                        throw new MetaException(
+                                typeElement,
+                                "There are two super properties with the same name: \"" +
+                                        conflictProp +
+                                        "\" and \"" +
+                                        prop +
+                                        "\", but their java getter name are different"
+                        );
+                    }
+                    if (!conflictProp.getReturnType().equals(prop.getReturnType())) {
+                        throw new MetaException(
+                                typeElement,
+                                "There are two super properties with the same name: \"" +
+                                        conflictProp +
+                                        "\" and \"" +
+                                        prop +
+                                        "\", but their return type are different"
+                        );
+                    }
                 }
             }
         }

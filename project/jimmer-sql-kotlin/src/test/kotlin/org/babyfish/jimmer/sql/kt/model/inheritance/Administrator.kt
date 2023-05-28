@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.GenerationType
 import org.babyfish.jimmer.sql.Id
 
 @Entity
-interface Administrator : AdministratorBase {
+interface Administrator : AdministratorBase, UserInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

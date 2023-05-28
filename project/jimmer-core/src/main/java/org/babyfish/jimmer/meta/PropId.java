@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.meta;
 
-import org.jetbrains.annotations.Nullable;
-
 public abstract class PropId {
 
     PropId() {}
@@ -19,7 +17,6 @@ public abstract class PropId {
 
     public abstract int asIndex();
 
-    @Nullable
     public abstract String asName();
 
     public static final class Index extends PropId {
@@ -30,7 +27,7 @@ public abstract class PropId {
 
         Index(int value) {
             if (value < 0) {
-                throw new IllegalArgumentException("value can not be less than 1");
+                throw new IllegalArgumentException("value can not be less than 0");
             }
             this.value = value;
         }
@@ -40,7 +37,6 @@ public abstract class PropId {
             return value;
         }
 
-        @Nullable
         @Override
         public String asName() {
             return null;

@@ -6,6 +6,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.meta.PropId
 import javax.validation.constraints.Email
 import javax.validation.constraints.Pattern
 import kotlin.reflect.KClass
@@ -31,9 +32,9 @@ class DraftImplGenerator(
                 )
                 .apply {
                     addFields()
-                    addIsLoadedProp(Int::class)
+                    addIsLoadedProp(PropId::class)
                     addIsLoadedProp(String::class)
-                    addIsVisibleProp(Int::class)
+                    addIsVisibleProp(PropId::class)
                     addIsVisibleProp(String::class)
                     addHashCodeFuns()
                     addEqualsFuns()
@@ -42,11 +43,11 @@ class DraftImplGenerator(
                         addProp(prop)
                         addPropFun(prop)
                     }
-                    addUnloadFun(Int::class)
+                    addUnloadFun(PropId::class)
                     addUnloadFun(String::class)
-                    addSetFun(Int::class)
+                    addSetFun(PropId::class)
                     addSetFun(String::class)
-                    addShowFun(Int::class)
+                    addShowFun(PropId::class)
                     addShowFun(String::class)
                     addDraftContextFun()
                     addResolveFun()
@@ -103,7 +104,7 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder("__isLoaded")
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode("return %L.__isLoaded(prop)", UNMODIFIED)
@@ -115,7 +116,7 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder("__isVisible")
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .returns(BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode("return %L.__isVisible(prop)", UNMODIFIED)
@@ -297,13 +298,15 @@ class DraftImplGenerator(
                             .apply {
                                 if (prop.isNullable) {
                                     beginControlFlow(
-                                        "if (!__isLoaded(%L) || %L === null)",
+                                        "if (!__isLoaded(%T.byIndex(%L)) || %L === null)",
+                                        PROP_ID_CLASS_NAME,
                                         prop.slotName,
                                         prop.name
                                     )
                                 } else {
                                     beginControlFlow(
-                                        "if (!__isLoaded(%L))",
+                                        "if (!__isLoaded(%T.byIndex(%L)))",
+                                        PROP_ID_CLASS_NAME,
                                         prop.slotName
                                     )
                                 }
@@ -334,28 +337,38 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder("__unload")
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode(
                     CodeBlock
                         .builder()
                         .apply {
-                            beginControlFlow("when (prop)")
                             val appender = CaseAppender(this, type, argType)
+                            if (argType == PropId::class) {
+                                beginControlFlow("when (prop.asIndex())")
+                                appender.addIllegalCase()
+                                addStatement("__unload(prop.asName())")
+                            } else {
+                                beginControlFlow("when (prop)")
+                            }
                             for (prop in type.propsOrderById) {
                                 appender.addCase(prop)
                                 indent()
                                 when {
                                     prop.baseProp !== null ->
-                                        addStatement("__unload(%L)", prop.baseProp!!.slotName)
+                                        addStatement(
+                                            "__unload(%T.byIndex(%L))",
+                                            PROP_ID_CLASS_NAME,
+                                            prop.baseProp!!.slotName
+                                        )
                                     prop.isKotlinFormula ->
                                         addStatement("{}")
                                     prop.loadedFieldName !== null ->
-                                        add("%L\n.%L = false", MODIFIED, prop.loadedFieldName)
-                                    else -> add("%L\n.%L = null", MODIFIED, prop.valueFieldName)
+                                        addStatement("%L\n.%L = false", MODIFIED, prop.loadedFieldName)
+                                    else ->
+                                        addStatement("%L\n.%L = null", MODIFIED, prop.valueFieldName)
                                 }
                                 unindent()
-                                add("\n")
                             }
                             addElseForNonExistingProp(type, argType)
                             endControlFlow()
@@ -370,15 +383,21 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder("__set")
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .addParameter("value", ANY.copy(nullable = true))
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode(
                     CodeBlock
                         .builder()
                         .apply {
-                            beginControlFlow("when (prop)")
                             val appender = CaseAppender(this, type, argType)
+                            if (argType == PropId::class) {
+                                beginControlFlow("when (prop.asIndex())")
+                                appender.addIllegalCase()
+                                addStatement("__set(prop.asName(), value)")
+                            } else {
+                                beginControlFlow("when (prop)")
+                            }
                             for (prop in type.propsOrderById) {
                                 appender.addCase(prop)
                                 if (prop.isKotlinFormula || prop.manyToManyViewBaseProp != null) {
@@ -411,15 +430,21 @@ class DraftImplGenerator(
         addFunction(
             FunSpec
                 .builder("__show")
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .addParameter("visible", BOOLEAN)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode(
                     CodeBlock
                         .builder()
                         .apply {
-                            beginControlFlow("when (prop)")
                             val appender = CaseAppender(this, type, argType)
+                            if (argType == PropId::class) {
+                                beginControlFlow("when (prop.asIndex())")
+                                appender.addIllegalCase()
+                                addStatement("__show(prop.asName(), visible)")
+                            } else {
+                                beginControlFlow("when (prop)")
+                            }
                             for (prop in type.propsOrderById) {
                                 appender.addCase(prop)
                                 addStatement("%L.__visibility.show(%L, visible)", MODIFIED, prop.slotName)
@@ -479,7 +504,11 @@ class DraftImplGenerator(
                                     if (prop.valueFieldName !== null &&
                                         (prop.isAssociation(false) || prop.isList)
                                     ) {
-                                        beginControlFlow("if (__isLoaded(%L))", prop.slotName)
+                                        beginControlFlow(
+                                            "if (__isLoaded(%T.byIndex(%L)))",
+                                            PROP_ID_CLASS_NAME,
+                                            prop.slotName
+                                        )
                                         addStatement("val oldValue = base!!.%L", prop.name)
                                         addStatement(
                                             "val newValue = __ctx.%L(oldValue)",
@@ -616,11 +645,12 @@ class DraftImplGenerator(
                                             KModifier.PRIVATE
                                         )
                                         .initializer(
-                                            "%T(%T::class.java, %S, %T::class.java, %L)",
+                                            "%T(%T::class.java, %S, %T::class.java, %T.byIndex(%L))",
                                             VALIDATOR_CLASS_NAME,
                                             className,
                                             message,
                                             type.className,
+                                            PROP_ID_CLASS_NAME,
                                             prop.slotName
                                         )
                                         .build()

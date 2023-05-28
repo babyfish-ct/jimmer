@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.association.meta;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
@@ -96,6 +97,11 @@ public abstract class AssociationProp implements ImmutableProp {
     @Override
     public Annotation getAssociationAnnotation() {
         return null;
+    }
+
+    @Override
+    public Class<? extends Annotation> getPrimaryAnnotationType() {
+        return ManyToOne.class;
     }
 
     @Override

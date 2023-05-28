@@ -190,7 +190,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             collectAllSuperTypes(all);
             allTypes = all = Collections.unmodifiableSet(all);
         }
-        return allTypes;
+        return all;
     }
 
     private void collectAllSuperTypes(Set<ImmutableType> allSuperTypes) {
@@ -574,10 +574,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 }
             }
             if (set.size() > 1) {
-                Map<String, ImmutableProp> propMap = new HashMap<>();
+                Map<String, ImmutableProp> superPropMap = new HashMap<>();
                 for (ImmutableType superType : superTypes) {
                     for (ImmutableProp prop : superType.getProps().values()) {
-                        ImmutableProp oldProp = propMap.put(prop.getName(), prop);
+                        ImmutableProp oldProp = superPropMap.put(prop.getName(), prop);
                         if (oldProp != null) {
                             if (oldProp.getCategory() != prop.getCategory()) {
                                 throw new ModelException(
@@ -604,26 +604,59 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                                 "\", their types are different"
                                 );
                             }
+                            if (oldProp.isNullable() != prop.isNullable()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their nullity are different"
+                                );
+                            }
+                            if (oldProp.isInputNotNull() != prop.isInputNotNull()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their input nullity are different"
+                                );
+                            }
+                            if (!((ImmutablePropImpl)oldProp).getMappedByValue().equals(((ImmutablePropImpl)prop).getMappedByValue())) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their configuration `mappedBy` are different"
+                                );
+                            }
+                            if (oldProp.getPrimaryAnnotationType() != prop.getPrimaryAnnotationType()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", the first one is decorated by \"@" +
+                                                oldProp.getPrimaryAnnotationType().getName() +
+                                                "\" but the second one is decorated by \"@" +
+                                                prop.getPrimaryAnnotationType().getName() +
+                                                "\""
+                                );
+                            }
                         }
                     }
                 }
             }
             return Collections.unmodifiableSet(set);
-        }
-
-        @Override
-        public Builder superInterface(ImmutableType superInterface) {
-            if (!superInterface.isMappedSuperclass()) {
-                throw new IllegalArgumentException(
-                        "The super interface type \"" +
-                                superInterface +
-                                "\" is not decorated by \"@" +
-                                MappedSuperclass.class +
-                                "\""
-                );
-            }
-            superTypes.add(superInterface);
-            return this;
         }
 
         @Override
@@ -846,7 +879,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 propId = PropId.byName(name);
             } else {
                 if (javaClass.isAnnotationPresent(MappedSuperclass.class)) {
-                    throw new IllegalArgumentException("The id of property in mapped super class must be -1");
+                    throw new IllegalArgumentException("The prop-id of properties in mapped super class must be -1");
                 }
                 propId = PropId.byIndex(id);
                 if (!propIndices.add((PropId.Index)propId)) {
@@ -875,7 +908,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                     javaClass.getName() +
                                     "." +
                                     name +
-                                    "\" is already exists in super type"
+                                    "\" is already exists in super type \"" +
+                                    superType +
+                                    "\""
                     );
                 }
             }
@@ -937,14 +972,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 type.setDeclaredLogicalDeletedInfo(null);
             }
 
-            Set<ImmutableProp> keyProps = new LinkedHashSet<>();
+            Map<String, ImmutableProp> keyPropMap = new LinkedHashMap<>();
             for (ImmutableType superType : superTypes) {
-                keyProps.addAll(superType.getKeyProps());
+                for (ImmutableProp keyProp : superType.getKeyProps()) {
+                    keyPropMap.putIfAbsent(keyProp.getName(), keyProp);
+                }
             }
             for (String keyPropName : keyPropNames) {
-                keyProps.add(type.declaredProps.get(keyPropName));
+                keyPropMap.put(keyPropName, type.declaredProps.get(keyPropName));
             }
-            type.setKeyProps(keyProps);
+            type.setKeyProps(new LinkedHashSet<>(keyPropMap.values()));
 
             return type;
         }

@@ -141,6 +141,19 @@ public abstract class SqlTemplate {
         return builder.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SqlTemplate that = (SqlTemplate) o;
+        return charCount == that.charCount && parts.equals(that.parts) && placeholderCountMap.equals(that.placeholderCountMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(parts, charCount, placeholderCountMap);
+    }
+
     protected static class Placeholder {
 
         final String name;

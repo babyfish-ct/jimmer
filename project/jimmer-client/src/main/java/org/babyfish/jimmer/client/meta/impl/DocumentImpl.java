@@ -4,7 +4,7 @@ import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.client.Docs;
 import org.babyfish.jimmer.client.meta.Document;
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
+import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.AnnotatedElement;
@@ -21,7 +21,7 @@ class DocumentImpl implements Document {
 
     @Nullable
     static Document of(ImmutableProp prop) {
-        return of(((EntityPropImplementor)prop).getJavaGetter());
+        return of(((ImmutablePropImplementor)prop).getJavaGetter());
     }
 
     @Nullable

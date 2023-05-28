@@ -6,7 +6,7 @@ import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.spi.EntityPropImplementor;
+import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -246,7 +246,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     static ObjectType idOnly(Context ctx, ImmutableType immutableType) {
         Map<String, Property> props = new LinkedHashMap<>();
         ImmutableProp idProp = immutableType.getIdProp();
-        Type type = ctx.parseType(((EntityPropImplementor)idProp).getJavaGetter().getAnnotatedReturnType());
+        Type type = ctx.parseType(((ImmutablePropImplementor)idProp).getJavaGetter().getAnnotatedReturnType());
         props.put(idProp.getName(), new PropertyImpl(idProp.getName(), type, DocumentImpl.of(idProp)));
         return new ImmutableObjectTypeImpl(
                 immutableType,
@@ -257,7 +257,7 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     }
 
     private static Property property(Context ctx, ImmutableProp prop) {
-        Type type = ctx.parseType(((EntityPropImplementor)prop).getJavaGetter().getAnnotatedReturnType());
+        Type type = ctx.parseType(((ImmutablePropImplementor)prop).getJavaGetter().getAnnotatedReturnType());
         if (prop.isNullable()) {
             type = NullableTypeImpl.of(type);
         }

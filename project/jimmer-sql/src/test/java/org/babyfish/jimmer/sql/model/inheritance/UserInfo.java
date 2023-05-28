@@ -4,4 +4,6 @@ import org.babyfish.jimmer.sql.MappedSuperclass;
 
 @MappedSuperclass
 public interface UserInfo {
+
+    String name();
 }

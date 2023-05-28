@@ -2,7 +2,7 @@ package org.babyfish.jimmer.meta.spi;
 
 import java.lang.reflect.Method;
 
-public interface EntityPropImplementor {
+public interface ImmutablePropImplementor {
 
     Method getJavaGetter();
 }

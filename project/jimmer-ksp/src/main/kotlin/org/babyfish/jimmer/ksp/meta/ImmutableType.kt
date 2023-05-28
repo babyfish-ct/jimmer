@@ -5,9 +5,9 @@ import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.Formula
+import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
@@ -22,6 +22,31 @@ class ImmutableType(
     ctx: Context,
     val classDeclaration: KSClassDeclaration
 ) {
+    private val immutableAnnoTypeName: String =
+        listOf(
+            classDeclaration.annotation(Entity::class),
+            classDeclaration.annotation(MappedSuperclass::class),
+            classDeclaration.annotation(Embeddable::class),
+            classDeclaration.annotation(Immutable::class)
+        ).filterNotNull().map {
+            it.annotationType.resolve().declaration.fullName
+        }.also {
+            if (it.size > 1) {
+                throw MetaException(
+                    classDeclaration,
+                    "Conflict annotations: $it"
+                )
+            }
+        }.first()
+
+    val isEntity: Boolean = immutableAnnoTypeName == Entity::class.qualifiedName
+
+    val isMappedSuperclass: Boolean = immutableAnnoTypeName == MappedSuperclass::class.qualifiedName
+
+    val isEmbeddable: Boolean = immutableAnnoTypeName == Embeddable::class.qualifiedName
+
+    val isImmutable: Boolean = immutableAnnoTypeName == Immutable::class.qualifiedName
+
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
@@ -63,8 +88,6 @@ class ImmutableType(
     val qualifiedName: String
         get() = classDeclaration.qualifiedName!!.asString()
 
-    val isEntity: Boolean = classDeclaration.annotation(Entity::class) !== null
-
     val isAcrossMicroServices: Boolean =
         classDeclaration.annotation(MappedSuperclass::class)?.get(MappedSuperclass::acrossMicroServices) ?: false
 
@@ -84,7 +107,7 @@ class ImmutableType(
             }
         }
 
-    val superType: ImmutableType? =
+    val superTypes: List<ImmutableType> =
         classDeclaration
             .superTypes
             .map { it.resolve().declaration }
@@ -94,37 +117,165 @@ class ImmutableType(
                     ctx.typeAnnotationOf(it) !== null
             }
             .toList()
-            .also { 
+            .map {
+                ctx.typeOf(it)
+            }.also {
+                if (it.isEmpty()) {
+                    return@also
+                }
+                when {
+                    isImmutable -> if (it.size > 1) {
+                        throw MetaException(
+                            classDeclaration,
+                            "simple immutable type does not support multiple inheritance"
+                        )
+                    }
+                    isEmbeddable -> throw MetaException(
+                        classDeclaration,
+                        "embeddable type does not support inheritance"
+                    )
+                    isEntity -> for (superType in it) {
+                        if (!superType.isEntity && !superType.isMappedSuperclass) {
+                            throw MetaException(
+                                classDeclaration,
+                                "the super type \"$superType\" is neither entity nor mapped super class"
+                            )
+                        }
+                    }
+                    isMappedSuperclass -> for (superType in it) {
+                        if (!superType.isMappedSuperclass) {
+                            throw MetaException(
+                                classDeclaration,
+                                "the super type \"$superType\" is not mapped super class"
+                            )
+                        }
+                    }
+                }
+                for (superType in it) {
+                    if (!superType.isAcrossMicroServices && superType.microServiceName != microServiceName) {
+                        throw MetaException(
+                            classDeclaration,
+                            "its micro service name is \"" +
+                                microServiceName +
+                                "\" but the micro service name of its super type \"" +
+                                superType.qualifiedName +
+                                "\" is \"" +
+                                superType.microServiceName +
+                                "\""
+                        )
+                    }
+                }
+            }
+
+    val primarySuperType: ImmutableType? =
+        superTypes
+            .filter { !it.isMappedSuperclass }
+            .also {
                 if (it.size > 1) {
                     throw MetaException(
                         classDeclaration,
-                        "it extends several super immutable types: ${it.map { sp -> sp.fullName }}"
+                        "two many primary(not mapped super class) super types: $it"
                     )
                 }
             }
             .firstOrNull()
-            ?.let {
-                ctx.typeOf(it)
-            }?.also {
-                if (!it.isAcrossMicroServices && it.microServiceName != microServiceName) {
-                    throw MetaException(
-                        classDeclaration,
-                        "its micro service name is \"" +
-                            microServiceName +
-                            "\" but the micro service name of its super type \"" +
-                            it.qualifiedName +
-                            "\" is \"" +
-                            it.microServiceName +
-                            "\""
-                    )
-                }
-            }
 
     val declaredProperties: Map<String, ImmutableProp>
 
+    private val redefinedProps: Map<String, ImmutableProp>
+
     init {
-        val superProps = superType?.properties
-        val reorderedPropDeclarations = mutableListOf<KSPropertyDeclaration>()
+        val superPropMap = superTypes
+            .flatMap { it.properties.values }
+            .groupBy { it.name }
+            .toList()
+            .associateBy({it.first}) {
+                if (it.second.size > 1) {
+                    val prop1 = it.second[0]
+                    val prop2 = it.second[1]
+                    if (prop1.propDeclaration.type.resolve() != prop2.propDeclaration.type.resolve()) {
+                        throw MetaException(
+                            classDeclaration,
+                            "There are two super properties with the same name: \"" +
+                                prop1 +
+                                "\" and \"" +
+                                prop2 +
+                                "\", but their return type are different"
+                        )
+                    }
+                }
+                it.second.first()
+            }
+
+        for (propDeclaration in classDeclaration.getDeclaredProperties()) {
+            val superProp = superPropMap[propDeclaration.name]
+            if (superProp != null) {
+                throw MetaException(
+                    propDeclaration,
+                    "it overrides '$superProp', this is not allowed"
+                )
+            }
+            if (propDeclaration.isAbstract()) {
+                val formula = propDeclaration.annotation(Formula::class)
+                if (formula !== null) {
+                    val sql = formula[Formula::sql] ?: ""
+                    if (sql.isEmpty()) {
+                        throw MetaException(
+                            propDeclaration,
+                            "it is abstract and decorated by @" +
+                                Formula::class.java.name +
+                                ", abstract modifier means simple calculation property based on " +
+                                "SQL expression so that the `sql` of that annotation must be specified"
+                        )
+                    }
+                    val dependencies = formula.getListArgument(Formula::dependencies) ?: emptyList()
+                    if (dependencies.isNotEmpty()) {
+                        throw MetaException(
+                            propDeclaration,
+                            "it is abstract and decorated by @" +
+                                Formula::class.java.name +
+                                ", abstract modifier means simple calculation property based on " +
+                                "SQL expression so that the `dependencies` of that annotation cannot be specified"
+                        )
+                    }
+                }
+            } else {
+                for (anno in propDeclaration.annotations) {
+                    if (anno.fullName.startsWith("org.babyfish.jimmer.") && anno.fullName != FORMULA_CLASS_NAME) {
+                        throw MetaException(
+                            propDeclaration,
+                            "it is not abstract so that " +
+                                "it cannot be decorated by " +
+                                "any jimmer annotations except @" +
+                                FORMULA_CLASS_NAME
+                        )
+                    }
+                    val formula = propDeclaration.annotation(Formula::class)
+                    if (formula !== null) {
+                        formula[Formula::sql]?.takeIf { it.isNotEmpty() } ?.let {
+                            throw MetaException(
+                                propDeclaration,
+                                "it is non-abstract and decorated by @" +
+                                    Formula::class.java.name +
+                                    ", non-abstract modifier means simple calculation property based on " +
+                                    "kotlin expression so that the `sql` of that annotation cannot be specified"
+                            )
+                        }
+                        val dependencies = formula.getListArgument(Formula::dependencies) ?: emptyList()
+                        if (dependencies.isEmpty()) {
+                            throw MetaException(
+                                propDeclaration,
+                                "it is non-abstract and decorated by @" +
+                                    Formula::class.java.name +
+                                    ", non-abstract modifier means simple calculation property based on " +
+                                    "kotlin expression so that the `dependencies` of that annotation must be specified"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         for (function in classDeclaration.getDeclaredFunctions()) {
             if (function.isAbstract) {
                 throw MetaException(function, "only non-abstract function is acceptable")
@@ -138,96 +289,42 @@ class ImmutableType(
                 }
             }
         }
-        for (i in 0..1) {
+
+        var propIdSequence = primarySuperType?.properties?.size ?: 0
+        redefinedProps = superPropMap.filterKeys {
+            primarySuperType == null || !primarySuperType.properties.containsKey(it)
+        }.mapValues {
+            ImmutableProp(ctx, this, propIdSequence++, it.value.propDeclaration)
+        }
+
+        declaredProperties =
             classDeclaration
                 .getDeclaredProperties()
-                .forEach { propDeclaration ->
-                    if (propDeclaration.isAbstract()) {
-                        val isId = propDeclaration.annotations(Id::class).isNotEmpty()
-                        superProps?.get(propDeclaration.name)?.let {
-                            throw MetaException(
-                                propDeclaration,
-                                "it overrides '$it', this is not allowed"
-                            )
-                        }
-                        if (isId == (i == 0)) {
-                            reorderedPropDeclarations += propDeclaration
-                        }
-                        val formula = propDeclaration.annotation(Formula::class)
-                        if (formula !== null) {
-                            val sql = formula[Formula::sql] ?: ""
-                            if (sql.isEmpty()) {
-                                throw MetaException(
-                                    propDeclaration,
-                                    "it is abstract and decorated by @" +
-                                        Formula::class.java.name +
-                                        ", abstract modifier means simple calculation property based on " +
-                                        "SQL expression so that the `sql` of that annotation must be specified"
-                                )
-                            }
-                            val dependencies = formula.getListArgument(Formula::dependencies) ?: emptyList()
-                            if (dependencies.isNotEmpty()) {
-                                throw MetaException(
-                                    propDeclaration,
-                                    "it is abstract and decorated by @" +
-                                        Formula::class.java.name +
-                                        ", abstract modifier means simple calculation property based on " +
-                                        "SQL expression so that the `dependencies` of that annotation cannot be specified"
-                                )
-                            }
-                        }
-                    } else {
-                        for (anno in propDeclaration.annotations) {
-                            if (anno.fullName.startsWith("org.babyfish.jimmer.") && anno.fullName != FORMULA_CLASS_NAME) {
-                                throw MetaException(
-                                    propDeclaration,
-                                    "it is not abstract so that " +
-                                        "it cannot be decorated by " +
-                                        "any jimmer annotations except @" +
-                                        FORMULA_CLASS_NAME
-                                )
-                            }
-                            val formula = propDeclaration.annotation(Formula::class)
-                            if (formula !== null) {
-                                formula[Formula::sql]?.takeIf { it.isNotEmpty() } ?.let {
-                                    throw MetaException(
-                                        propDeclaration,
-                                        "it is non-abstract and decorated by @" +
-                                            Formula::class.java.name +
-                                            ", non-abstract modifier means simple calculation property based on " +
-                                            "kotlin expression so that the `sql` of that annotation cannot be specified"
-                                    )
-                                }
-                                val dependencies = formula.getListArgument(Formula::dependencies) ?: emptyList()
-                                if (dependencies.isEmpty()) {
-                                    throw MetaException(
-                                        propDeclaration,
-                                        "it is non-abstract and decorated by @" +
-                                            Formula::class.java.name +
-                                            ", non-abstract modifier means simple calculation property based on " +
-                                            "kotlin expression so that the `dependencies` of that annotation must be specified"
-                                    )
-                                }
-                                reorderedPropDeclarations += propDeclaration
-                            }
-                        }
+                .filter { it.annotation(Id::class) != null }
+                .associateBy({it.name}) {
+                    ImmutableProp(ctx, this, propIdSequence++, it)
+                } +
+                classDeclaration
+                    .getDeclaredProperties()
+                    .filter { it.annotation(Id::class) == null }
+                    .associateBy({it.name}) {
+                        ImmutableProp(ctx, this, propIdSequence++, it)
                     }
-                }
-        }
-        val basePropId = (superProps?.size ?: 0) + 1
-        declaredProperties = reorderedPropDeclarations
-            .mapIndexed { index, propDeclaration ->
-                ImmutableProp(ctx, this, basePropId + index, propDeclaration)
-            }
-            .associateBy { it.name }
     }
 
     val properties: Map<String, ImmutableProp> =
-        if (superType == null) {
+        if (superTypes.isEmpty()) {
             declaredProperties
         } else {
             val map = mutableMapOf<String, ImmutableProp>()
-            for ((name, prop) in superType.properties) {
+            for (superType in superTypes) {
+                for ((name, prop) in superType.properties) {
+                    if (prop.isId) {
+                        map[name] = prop
+                    }
+                }
+            }
+            for ((name, prop) in redefinedProps) {
                 if (prop.isId) {
                     map[name] = prop
                 }
@@ -237,7 +334,14 @@ class ImmutableType(
                     map[name] = prop
                 }
             }
-            for ((name, prop) in superType.properties) {
+            for (superType in superTypes) {
+                for ((name, prop) in superType.properties) {
+                    if (!prop.isId) {
+                        map[name] = prop
+                    }
+                }
+            }
+            for ((name, prop) in redefinedProps) {
                 if (!prop.isId) {
                     map[name] = prop
                 }
@@ -263,7 +367,7 @@ class ImmutableType(
                     idProps
             )
         }
-        val superIdProp = superType?.idProp
+        val superIdProp = superTypes.firstOrNull { it.idProp !== null }?.idProp
         if (superIdProp != null && idProps.isNotEmpty()) {
             throw MetaException(
                 classDeclaration,
@@ -291,6 +395,9 @@ class ImmutableType(
     internal fun resolve(ctx: Context, step: Int): Boolean {
         var hasNext = false
         for (prop in declaredProperties.values) {
+            hasNext = hasNext or prop.resolve(ctx, step)
+        }
+        for (prop in redefinedProps.values) {
             hasNext = hasNext or prop.resolve(ctx, step)
         }
         return hasNext

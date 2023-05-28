@@ -41,6 +41,29 @@ public class EmbeddedColumns extends MultipleColumns {
         return false;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        EmbeddedColumns that = (EmbeddedColumns) o;
+        return partialMap.equals(that.partialMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), partialMap);
+    }
+
+    @Override
+    public String toString() {
+        return "EmbeddedColumns{" +
+                "partialMap=" + partialMap +
+                ", arr=" + Arrays.toString(arr) +
+                ", embedded=" + embedded +
+                '}';
+    }
+
     public static class Partial extends MultipleColumns {
 
         private final String path;
@@ -57,6 +80,29 @@ public class EmbeddedColumns extends MultipleColumns {
         @Override
         public boolean isForeignKey() {
             return false;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            Partial partial = (Partial) o;
+            return path.equals(partial.path);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), path);
+        }
+
+        @Override
+        public String toString() {
+            return "Partial{" +
+                    "path='" + path + '\'' +
+                    ", arr=" + Arrays.toString(arr) +
+                    ", embedded=" + embedded +
+                    '}';
         }
     }
 
