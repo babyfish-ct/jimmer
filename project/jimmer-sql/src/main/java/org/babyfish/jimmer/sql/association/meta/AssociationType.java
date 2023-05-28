@@ -188,6 +188,12 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         return false;
     }
 
+    @Nullable
+    @Override
+    public ImmutableType getPrimarySuperType() {
+        return null;
+    }
+
     @Override
     public Set<ImmutableType> getSuperTypes() {
         return Collections.emptySet();

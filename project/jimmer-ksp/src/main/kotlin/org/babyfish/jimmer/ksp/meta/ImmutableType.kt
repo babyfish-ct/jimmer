@@ -182,7 +182,7 @@ class ImmutableType(
 
     val declaredProperties: Map<String, ImmutableProp>
 
-    private val redefinedProps: Map<String, ImmutableProp>
+    val redefinedProps: Map<String, ImmutableProp>
 
     init {
         val superPropMap = superTypes

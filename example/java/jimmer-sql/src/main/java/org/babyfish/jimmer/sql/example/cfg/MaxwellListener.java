@@ -37,17 +37,21 @@ public class MaxwellListener {
         String tableName = node.get("table").asText();
         String type = node.get("type").asText();
         JsonNode data = node.get("data");
-        switch (type) {
-            case "insert":
-                binLog.accept(tableName, null, data);
-                break;
-            case "update":
-                binLog.accept(tableName, node.get("old"), data);
-                break;
-            case "delete":
-                binLog.accept(tableName, data, null);
-                break;
+        try {
+            switch (type) {
+                case "insert":
+                    binLog.accept(tableName, null, data);
+                    break;
+                case "update":
+                    binLog.accept(tableName, node.get("old"), data);
+                    break;
+                case "delete":
+                    binLog.accept(tableName, data, null);
+                    break;
+            }
+            acknowledgment.acknowledge();
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
         }
-        acknowledgment.acknowledge();
     }
 }

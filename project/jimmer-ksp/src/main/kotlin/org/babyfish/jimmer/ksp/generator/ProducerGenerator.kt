@@ -69,6 +69,11 @@ class ProducerGenerator(
             add("}")
         }
         add("\n")
+        if (!type.isMappedSuperclass) {
+            for (prop in type.redefinedProps.values) {
+                add(".redefine(%S, %L)\n", prop.name, prop.slotName)
+            }
+        }
         for (prop in type.declaredProperties.values) {
             addProp(prop)
         }

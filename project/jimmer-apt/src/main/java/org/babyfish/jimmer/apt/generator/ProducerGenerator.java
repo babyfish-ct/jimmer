@@ -146,7 +146,15 @@ public class ProducerGenerator {
             );
         }
         builder.unindent().add(")\n");
+        if (!type.isMappedSuperClass()) {
+            for (ImmutableProp prop : type.getRedefinedProps().values()) {
+                builder.add(".redefine($S, $L)\n", prop.getName(), prop.getSlotName());
+            }
+        }
         for (ImmutableProp prop : type.getDeclaredProps().values()) {
+            if (type.getPrimarySuperType() != null && type.getPrimarySuperType().getProps().containsKey(prop.getName())) {
+                continue;
+            }
             ImmutablePropCategory category;
             if (prop.isList()) {
                 category = prop.isAssociation(false) ?

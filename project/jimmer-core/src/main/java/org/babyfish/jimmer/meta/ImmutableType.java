@@ -55,6 +55,9 @@ public interface ImmutableType {
 
     boolean isAssignableFrom(ImmutableType type);
 
+    @Nullable
+    ImmutableType getPrimarySuperType();
+
     Set<ImmutableType> getSuperTypes();
 
     Set<ImmutableType> getAllTypes();
@@ -127,6 +130,8 @@ public interface ImmutableType {
     List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy);
 
     interface Builder {
+
+        Builder redefine(String name, int id);
 
         Builder id(int id, String name, Class<?> elementType);
 

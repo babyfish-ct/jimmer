@@ -34,6 +34,8 @@ public class ImmutableType {
 
     private final Set<Modifier> modifiers;
 
+    private final ImmutableType primarySuperType;
+
     private final Set<ImmutableType> superTypes;
 
     private final Map<String, ImmutableProp> declaredProps;
@@ -114,15 +116,26 @@ public class ImmutableType {
         qualifiedName = typeElement.getQualifiedName().toString();
         modifiers = typeElement.getModifiers();
 
+        ImmutableType primarySuperType = null;
         Set<ImmutableType> superTypes = new LinkedHashSet<>();
         for (TypeMirror itf : typeElement.getInterfaces()) {
             if (context.isImmutable(itf)) {
-                superTypes.add(context.getImmutableType(itf));
+                ImmutableType superType = context.getImmutableType(itf);
+                superTypes.add(superType);
+                if (!superType.isMappedSuperClass) {
+                    if (primarySuperType == null) {
+                        primarySuperType = superType;
+                    } else {
+                        throw new MetaException(
+                                typeElement,
+                                "there can be at most one primary superclass not decorated by @MappedSuperclass"
+                        );
+                    }
+                }
             }
         }
         if (!superTypes.isEmpty()) {
             if (isEntity || isMappedSuperClass) {
-                ImmutableType superEntityType = null;
                 for (ImmutableType superType : superTypes) {
                     if (superType.isEntity) {
                         if (isMappedSuperClass) {
@@ -130,17 +143,6 @@ public class ImmutableType {
                                     typeElement,
                                     "mapped super class cannot inherit entity type"
                             );
-                        } else if (superEntityType != null) {
-                            throw new MetaException(
-                                    typeElement,
-                                    "it cannot inherit two entity types: \"" +
-                                            superEntityType +
-                                            "\" and \"" +
-                                            superType +
-                                            "\""
-                            );
-                        } else {
-                            superEntityType = superType;
                         }
                     } else if (!superType.isMappedSuperClass) {
                         throw new MetaException(
@@ -192,9 +194,8 @@ public class ImmutableType {
                 );
             }
         }
+        this.primarySuperType = primarySuperType;
         this.superTypes = superTypes;
-
-        ImmutableType primarySuperType = null;
         for (ImmutableType superType : superTypes) {
             if (!superType.isMappedSuperClass) {
                 primarySuperType = superType;
@@ -344,7 +345,7 @@ public class ImmutableType {
         }
 
         this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
-        this.redefinedProps = redefinedPropMap;
+        this.redefinedProps = Collections.unmodifiableMap(redefinedPropMap);
 
         List<ImmutableProp> idProps = declaredProps
                 .values()
@@ -563,8 +564,16 @@ public class ImmutableType {
         return superTypes;
     }
 
+    public ImmutableType getPrimarySuperType() {
+        return primarySuperType;
+    }
+
     public Map<String, ImmutableProp> getDeclaredProps() {
         return declaredProps;
+    }
+
+    public Map<String, ImmutableProp> getRedefinedProps() {
+        return redefinedProps;
     }
 
     public Map<String, ImmutableProp> getProps() {
@@ -609,7 +618,7 @@ public class ImmutableType {
                     }
                 }
             }
-            this.props = props;
+            this.props = Collections.unmodifiableMap(props);
         }
         return props;
     }

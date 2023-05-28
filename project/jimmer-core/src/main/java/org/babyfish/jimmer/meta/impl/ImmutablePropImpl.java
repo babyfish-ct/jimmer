@@ -252,8 +252,9 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     }
 
     ImmutablePropImpl(
+            ImmutablePropImpl original,
             ImmutableTypeImpl declaringType,
-            ImmutablePropImpl original
+            PropId id
     ) {
         if (!original.getDeclaringType().isAssignableFrom(declaringType)) {
             throw new IllegalArgumentException(
@@ -268,7 +269,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             original = original.original;
         }
         this.declaringType = declaringType;
-        this.id = original.id;
+        this.id = id != null ? id: original.id;
         this.name = original.name;
         this.category = original.category;
         this.elementClass = original.elementClass;

@@ -19,7 +19,7 @@ public abstract class PropId {
 
     public abstract String asName();
 
-    public static final class Index extends PropId {
+    private static final class Index extends PropId {
 
         final static Index[] CACHED_INDICES;
 
@@ -69,7 +69,7 @@ public abstract class PropId {
         }
     }
 
-    public static final class Name extends PropId {
+    private static final class Name extends PropId {
 
         final String value;
 
