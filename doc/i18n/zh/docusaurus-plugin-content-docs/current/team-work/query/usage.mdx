@@ -19,7 +19,7 @@ BookTable table = BookTable.$;
 List<Book> books = sqlClient
     .createQuery(table) ❶
     .where(table.name().eq("SQL in Action"))
-    .orderBy(table.name().asc(), table.editon().desc())
+    .orderBy(table.name().asc(), table.edition().desc())
     // highlight-next-line
     .select(table) ❷
     .limit(10, 100)
