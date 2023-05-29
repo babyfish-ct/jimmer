@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -151,7 +152,7 @@ public class MutableDeleteImpl
             List<ImmutableSpi> rows = (List<ImmutableSpi>) deleteQuery
                     .select(table)
                     .execute(con);
-            int idPropId = table.getImmutableType().getIdProp().getId();
+            PropId idPropId = table.getImmutableType().getIdProp().getId();
             ids = new ArrayList<>(rows.size());
             cache = new MutationCache(sqlClient, false);
             for (ImmutableSpi row : rows) {

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.graphql.entities;
 
 import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.example.graphql.entities.common.BaseEntity;
 import org.babyfish.jimmer.sql.example.graphql.entities.common.TenantAware;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-public interface Book extends TenantAware {
+public interface Book extends BaseEntity, TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +22,6 @@ public interface Book extends TenantAware {
     String name();
 
     @Key
-    @Positive
     int edition();
 
     BigDecimal price();

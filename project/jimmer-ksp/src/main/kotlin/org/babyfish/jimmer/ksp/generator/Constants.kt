@@ -9,6 +9,7 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
+import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -40,6 +41,7 @@ internal val DRAFT_SPI_CLASS_NAME = DraftSpi::class.asClassName()
 internal val DRAFT_CONTEXT_CLASS_NAME = DraftContext::class.asClassName()
 internal val NON_SHARED_LIST_CLASS_NAME = NonSharedList::class.asClassName()
 internal val VISIBILITY_CLASS_NAME = Visibility::class.asClassName()
+internal val PROP_ID_CLASS_NAME = PropId::class.asClassName()
 internal val CIRCULAR_REFERENCE_EXCEPTION_CLASS_NAME = CircularReferenceException::class.asClassName()
 internal val IMMUTABLE_CREATOR_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "ImmutableCreator")
 internal val DSL_SCOPE_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "DslScope")

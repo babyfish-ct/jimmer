@@ -2,10 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.UnloadedException;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -149,7 +146,7 @@ class Saver {
                                     "cannot be supported by save command"
                     );
                 }
-                int currentIdPropId = currentType.getIdProp().getId();
+                PropId currentIdPropId = currentType.getIdProp().getId();
                 Object currentId = currentDraftSpi.__isLoaded(currentIdPropId) ?
                         currentDraftSpi.__get(currentIdPropId) :
                         null;
@@ -187,7 +184,7 @@ class Saver {
                                     Collections.singletonList((DraftSpi) associatedValue);
                     List<Object> idOnlyTargetIds = Collections.emptyList();
                     if (data.isAutoCheckingProp(prop) || childTableOperator != null) {
-                        int targetIdPropId = prop.getTargetType().getIdProp().getId();
+                        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
                         idOnlyTargetIds = new ArrayList<>();
                         for (DraftSpi associatedObject : associatedObjects) {
                             if (!isNonIdPropLoaded(associatedObject, false)) {
@@ -309,7 +306,7 @@ class Saver {
         }
         Set<Object> illegalTargetIds = new LinkedHashSet<>(targetIds);
         if (prop.isRemote()) {
-            int targetIdPropId = prop.getTargetType().getIdProp().getId();
+            PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
             List<ImmutableSpi> targets;
             try {
                 targets = data
@@ -395,7 +392,7 @@ class Saver {
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
             boolean updated;
-            int idPropId = draftSpi.__type().getIdProp().getId();
+            PropId idPropId = draftSpi.__type().getIdProp().getId();
             if (draftSpi.__isLoaded(idPropId)) {
                 updated = update(draftSpi, false);
             } else {
@@ -774,7 +771,7 @@ class Saver {
         }
         DraftInterceptor<?> interceptor = data.getSqlClient().getDraftInterceptor(type);
         if (interceptor != null) {
-            int idPropId = type.getIdProp().getId();
+            PropId idPropId = type.getIdProp().getId();
             Object id = draftSpi.__isLoaded(idPropId) ?
                     draftSpi.__get(type.getIdProp().getId()) :
                     null;

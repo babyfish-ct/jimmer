@@ -67,22 +67,20 @@ public class PropsGenerator {
                             .build()
             );
         }
-        if (type.getSuperType() != null) {
-            typeBuilder.addSuperinterface(
-                    type.getSuperType().getPropsClassName()
-            );
-        } else if (type.isEntity() || type.isMappedSuperClass()) {
-            typeBuilder.addSuperinterface(Constants.PROPS_CLASS_NAME);
+        if (type.getSuperTypes().isEmpty()) {
+            if (type.isEntity() || type.isMappedSuperClass()) {
+                typeBuilder.addSuperinterface(Constants.PROPS_CLASS_NAME);
+            }
+        } else {
+            for (ImmutableType superType : type.getSuperTypes()) {
+                typeBuilder.addSuperinterface(
+                        superType.getPropsClassName()
+                );
+            }
         }
         try {
-            for (ImmutableProp prop : type.getDeclaredProps().values()) {
+            for (ImmutableProp prop : type.getProps().values()) {
                 addStaticProp(prop);
-            }
-            ImmutableType superType = type.getSuperType();
-            if (type.isEntity() && superType != null && superType.isMappedSuperClass()) {
-                for (ImmutableProp prop : superType.getProps().values()) {
-                    addStaticProp(prop);
-                }
             }
             if (type.isEntity() || type.isMappedSuperClass()) {
                 for (ImmutableProp prop : type.getDeclaredProps().values()) {
@@ -130,13 +128,12 @@ public class PropsGenerator {
                         Modifier.FINAL
                 )
                 .initializer(
-                        "\n    $T.$L($T.get($T.class).getProp($T.$L))",
+                        "\n    $T.$L($T.get($T.class).getProp($S))",
                         Constants.TYPED_PROP_CLASS_NAME,
                         action,
                         Constants.RUNTIME_TYPE_CLASS_NAME,
                         type.getClassName(),
-                        prop.getDeclaringType().getProducerClassName(),
-                        prop.getSlotName()
+                        prop.getName()
                 );
         typeBuilder.addField(builder.build());
     }

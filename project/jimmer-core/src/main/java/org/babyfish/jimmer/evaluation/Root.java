@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.evaluation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
@@ -23,7 +24,7 @@ class Root<T> {
 
     private void evaluate(Path ctx, ImmutableSpi spi) {
         for (ImmutableProp prop : spi.__type().getProps().values()) {
-            int propId = prop.getId();
+            PropId propId = prop.getId();
             boolean isLoaded = spi.__isLoaded(propId);
             Object value = spi.__isLoaded(propId) ? spi.__get(propId) : null;
             Path propCtx = new PathImpl(

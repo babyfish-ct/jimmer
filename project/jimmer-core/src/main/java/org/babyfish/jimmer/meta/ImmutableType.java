@@ -25,18 +25,18 @@ public interface ImmutableType {
 
     static Builder newBuilder(
             Class<?> javaClass,
-            ImmutableType superType,
+            Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return Metadata.newTypeBuilder(javaClass, superType, draftFactory);
+        return Metadata.newTypeBuilder(javaClass, superTypes, draftFactory);
     }
 
     static Builder newBuilder(
             KClass<?> kotlinClass,
-            ImmutableType superType,
+            Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return Metadata.newTypeBuilder(kotlinClass, superType, draftFactory);
+        return Metadata.newTypeBuilder(kotlinClass, superTypes, draftFactory);
     }
 
     @NotNull
@@ -56,7 +56,11 @@ public interface ImmutableType {
     boolean isAssignableFrom(ImmutableType type);
 
     @Nullable
-    ImmutableType getSuperType();
+    ImmutableType getPrimarySuperType();
+
+    Set<ImmutableType> getSuperTypes();
+
+    Set<ImmutableType> getAllTypes();
 
     @NotNull
     BiFunction<DraftContext, Object, Draft> getDraftFactory();
@@ -111,7 +115,7 @@ public interface ImmutableType {
     ImmutableProp getProp(String name);
 
     @NotNull
-    ImmutableProp getProp(int id);
+    ImmutableProp getProp(PropId id);
 
     Map<String, ImmutableProp> getSelectableProps();
 
@@ -126,6 +130,8 @@ public interface ImmutableType {
     List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy);
 
     interface Builder {
+
+        Builder redefine(String name, int id);
 
         Builder id(int id, String name, Class<?> elementType);
 

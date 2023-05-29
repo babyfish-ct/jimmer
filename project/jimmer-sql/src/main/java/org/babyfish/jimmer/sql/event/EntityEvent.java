@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +38,7 @@ public class EntityEvent<E> {
                 throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
             }
         }
-        int idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
+        PropId idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
         Object oldId = null;
         if (oe != null && oe.__isLoaded(idPropId)) {
             oldId = oe.__get(idPropId);
@@ -140,7 +137,7 @@ public class EntityEvent<E> {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(int propId) {
+    public <T> Ref<T> getUnchangedFieldRef(PropId propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
         if (!prop.isColumnDefinition()) {
             throw new IllegalArgumentException(
@@ -188,7 +185,7 @@ public class EntityEvent<E> {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(int propId) {
+    public <T> ChangedRef<T> getChangedFieldRef(PropId propId) {
         ImmutableProp prop = getImmutableType().getProp(propId);
         if (!prop.isColumnDefinition()) {
             throw new IllegalArgumentException(
@@ -266,7 +263,7 @@ public class EntityEvent<E> {
         if (a == null || b == null) {
             return false;
         }
-        int targetIdPropId = prop.getTargetType().getIdProp().getId();
+        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
         Object targetId1 = ((ImmutableSpi) a).__get(targetIdPropId);
         Object targetId2 = ((ImmutableSpi) b).__get(targetIdPropId);
         return targetId1.equals(targetId2);

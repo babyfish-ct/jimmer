@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.entities
 
+import org.babyfish.jimmer.example.kt.graphql.entities.common.BaseEntity
 import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
 import org.babyfish.jimmer.sql.*
 import java.math.BigDecimal
@@ -7,7 +8,7 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Positive
 
 @Entity
-interface Book : TenantAware {
+interface Book : BaseEntity, TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +18,7 @@ interface Book : TenantAware {
     val name: @NotBlank String
 
     @Key
-    val edition: @Positive Int
+    val edition: Int
 
     val price: BigDecimal
 

@@ -259,7 +259,7 @@ public class FilterManager implements Filters {
     }
 
     public boolean contains(ImmutableType type) {
-        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
+        for (ImmutableType t : type.getAllTypes()) {
             if (filterMap.containsKey(t)) {
                 // No matter enabled or disabled
                 return true;
@@ -279,13 +279,15 @@ public class FilterManager implements Filters {
     @SuppressWarnings("unchecked")
     private Filter<Props> create(ImmutableType type, boolean shardingOnly) {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
-        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
-            List<Filter<Props>> list = filterMap.get(t);
-            if (list != null) {
-                for (Filter<Props> filter : list) {
-                    if ((!shardingOnly || filter instanceof ShardingFilter<?>) &&
-                            !disabledFilters.contains(filter)) {
-                        filters.add(filter);
+        if (type != null) {
+            for (ImmutableType t : type.getAllTypes()) {
+                List<Filter<Props>> list = filterMap.get(t);
+                if (list != null) {
+                    for (Filter<Props> filter : list) {
+                        if ((!shardingOnly || filter instanceof ShardingFilter<?>) &&
+                                !disabledFilters.contains(filter)) {
+                            filters.add(filter);
+                        }
                     }
                 }
             }
@@ -304,8 +306,8 @@ public class FilterManager implements Filters {
     @SuppressWarnings("unchecked")
     private List<Filter<Props>> createAllCacheable(ImmutableType type) {
         List<Filter<Props>> filters = new ArrayList<>();
-        while (type != null) {
-            List<Filter<Props>> list = allCacheableFilterMap.get(type);
+        for (ImmutableType t : type.getAllTypes()) {
+            List<Filter<Props>> list = allCacheableFilterMap.get(t);
             if (list != null) {
                 for (Filter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
@@ -313,7 +315,6 @@ public class FilterManager implements Filters {
                     }
                 }
             }
-            type = type.getSuperType();
         }
         return filters;
     }

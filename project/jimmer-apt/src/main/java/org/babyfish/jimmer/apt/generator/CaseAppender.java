@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt.generator;
 import com.squareup.javapoet.MethodSpec;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 
 public class CaseAppender {
 
@@ -19,10 +20,16 @@ public class CaseAppender {
     }
 
     public void addCase(ImmutableProp prop) {
-        if (argType == int.class) {
+        if (argType == PropId.class) {
             builder.addCode("case $L:\n\t\t", prop.getSlotName());
         } else {
             builder.addCode("case $S:\n\t\t", prop.getName());
+        }
+    }
+
+    public void addIllegalCase() {
+        if (argType == PropId.class) {
+            builder.addCode("case -1:\n\t\t");
         }
     }
 }

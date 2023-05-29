@@ -5,6 +5,7 @@ import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -50,11 +51,11 @@ public class DraftImplGenerator {
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
-        addSet(int.class);
+        addSet(PropId.class);
         addSet(String.class);
-        addShow(int.class);
+        addShow(PropId.class);
         addShow(String.class);
-        addUnload(int.class);
+        addUnload(PropId.class);
         addUnload(String.class);
         addDraftContext();
         addResolve();
@@ -182,11 +183,12 @@ public class DraftImplGenerator {
                                 Modifier.FINAL
                         )
                         .initializer(
-                                "\n    new $T<>($T.class, $S, $T.class, $L)",
+                                "\n    new $T<>($T.class, $S, $T.class, $T.byIndex($L))",
                                 VALIDATOR_CLASS_NAME,
                                 e.getKey(),
                                 e.getValue(),
                                 type.getClassName(),
+                                PROP_ID_CLASS_NAME,
                                 prop.getSlotName()
                         );
                 typeBuilder.addField(builder.build());
@@ -215,7 +217,7 @@ public class DraftImplGenerator {
                         .methodBuilder("__isLoaded")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addParameter(int.class, "prop")
+                        .addParameter(PropId.class, "prop")
                         .returns(boolean.class)
                         .addStatement("return $L.__isLoaded(prop)", UNMODIFIED)
                         .build()
@@ -235,7 +237,7 @@ public class DraftImplGenerator {
                         .methodBuilder("__isVisible")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addParameter(int.class, "prop")
+                        .addParameter(PropId.class, "prop")
                         .returns(boolean.class)
                         .addStatement("return $L.__isVisible(prop)", UNMODIFIED)
                         .build()
@@ -387,13 +389,15 @@ public class DraftImplGenerator {
                 .returns(prop.getDraftTypeName(true));
         if (prop.isNullable()) {
             builder.beginControlFlow(
-                    "if (autoCreate && (!__isLoaded($L) || $L() == null))",
+                    "if (autoCreate && (!__isLoaded($T.byIndex($L)) || $L() == null))",
+                    PROP_ID_CLASS_NAME,
                     prop.getSlotName(),
                     prop.getGetterName()
             );
         } else {
             builder.beginControlFlow(
-                    "if (autoCreate && (!__isLoaded($L)))",
+                    "if (autoCreate && (!__isLoaded($T.byIndex($L))))",
+                    PROP_ID_CLASS_NAME,
                     prop.getSlotName()
             );
         }
@@ -571,8 +575,16 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(Object.class, "value");
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("__set(prop.asName(), value)");
+            builder.addStatement("return");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             Object castTo = prop.getBoxType();
             if (castTo == null) {
@@ -617,8 +629,16 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(TypeName.BOOLEAN, "visible");
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("__show(prop.asName(), visible)");
+            builder.addStatement("return");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             builder.addStatement(
@@ -644,13 +664,22 @@ public class DraftImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop");
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("__unload(prop.asName())");
+            builder.addStatement("return");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             if (prop.getBaseProp() != null) {
                 builder.addStatement(
-                        "__unload($L);break",
+                        "__unload($T.byIndex($L));break",
+                        PROP_ID_CLASS_NAME,
                         prop.getBaseProp().getSlotName()
                 );
             } else if (prop.isJavaFormula()) {
@@ -723,7 +752,11 @@ public class DraftImplGenerator {
             builder.beginControlFlow("if (__tmpModified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isValueRequired() && (prop.isAssociation(false) || prop.isList())) {
-                    builder.beginControlFlow("if (base.__isLoaded($L))", prop.getSlotName());
+                    builder.beginControlFlow(
+                            "if (base.__isLoaded($T.byIndex($L)))",
+                            PROP_ID_CLASS_NAME,
+                            prop.getSlotName()
+                    );
                     builder.addStatement(
                             "$T oldValue = base.$L()",
                             prop.getTypeName(),

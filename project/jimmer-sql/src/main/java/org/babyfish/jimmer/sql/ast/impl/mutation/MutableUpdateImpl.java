@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -167,7 +168,7 @@ public class MutableUpdateImpl
             return 0;
         }
 
-        int idPropId = getTable().getImmutableType().getIdProp().getId();
+        PropId idPropId = getTable().getImmutableType().getIdProp().getId();
         Map<Object, ImmutableSpi> rowMap = new HashMap<>((rows.size() * 4 + 2) / 3);
         for (ImmutableSpi row : rows) {
             rowMap.put(row.__get(idPropId), row);

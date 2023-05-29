@@ -57,11 +57,8 @@ public class EntityManager {
                                     "\" is not entity"
                     );
                 }
-                map.put(immutableType, new ImmutableTypeInfo());
-                immutableType = immutableType.getSuperType();
-                while (immutableType != null && (immutableType.isEntity() || immutableType.isMappedSuperclass())) {
-                    map.put(immutableType, new ImmutableTypeInfo());
-                    immutableType = immutableType.getSuperType();
+                for (ImmutableType type : immutableType.getAllTypes()) {
+                    map.put(type, new ImmutableTypeInfo());
                 }
             }
         }
@@ -78,7 +75,7 @@ public class EntityManager {
                 for (ImmutableType otherType : map.keySet()) {
                     if (type != otherType && type.isAssignableFrom(otherType)) {
                         info.allDerivedTypes.add(otherType);
-                        if (type == otherType.getSuperType()) {
+                        if (otherType.getSuperTypes().contains(type)) {
                             info.directDerivedTypes.add(otherType);
                         }
                     }
@@ -285,7 +282,12 @@ public class EntityManager {
         if (!mappedSuperClass.isAssignableFrom(type)) {
             return false;
         }
-        return type.getSuperType().isMappedSuperclass();
+        for (ImmutableType superType : type.getSuperTypes()) {
+            if (superType.isMappedSuperclass()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class ImmutableTypeInfo {
@@ -488,6 +490,34 @@ public class EntityManager {
                                                 "\", it must be nullable because it is based on middle table " +
                                                 "whose target column is FAKE foreign key"
                                 );
+                            }
+                        }
+                    }
+                }
+            }
+            for (ImmutableType type : map.keySet()) {
+                if (type.isEntity() && !type.getSuperTypes().isEmpty()) {
+                    Map<String, ImmutableProp> superPropMap = new HashMap<>();
+                    for (ImmutableType superType : type.getSuperTypes()) {
+                        for (ImmutableProp superProp : superType.getProps().values()) {
+                            ImmutableProp conflictProp = superPropMap.put(superProp.getName(), superProp);
+                            if (conflictProp != null) {
+                                Storage storage1 = conflictProp.getStorage(strategy);
+                                Storage storage2 = superProp.getStorage(strategy);
+                                if (!Objects.equals(storage1, storage2)) {
+                                    throw new ModelException(
+                                            "Illegal entity type \"" +
+                                                    type +
+                                                    "\", conflict super properties \"" +
+                                                    conflictProp +
+                                                    "\" and \"" +
+                                                    superProp +
+                                                    "\", the storage of the first one is " +
+                                                    storage1 +
+                                                    " but the storage of the second one is " +
+                                                    storage2
+                                    );
+                                }
                             }
                         }
                     }

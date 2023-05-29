@@ -4,6 +4,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 
 class ImplGenerator(
@@ -39,9 +40,9 @@ class ImplGenerator(
                         addProp(prop)
                     }
                     addCloneFun()
-                    addIsLoadedFun(Int::class)
+                    addIsLoadedFun(PropId::class)
                     addIsLoadedFun(String::class)
-                    addIsVisibleFun(Int::class)
+                    addIsVisibleFun(PropId::class)
                     addIsVisibleFun(String::class)
                     addHashCodeFun(true)
                     addHashCodeFun(false)
@@ -156,8 +157,9 @@ class ImplGenerator(
                                             }
                                         manyToManyViewBaseProp !== null ->
                                             addStatement(
-                                                "return %T(%T.%L, %N)",
+                                                "return %T(%T.byIndex(%T.%L), %N)",
                                                 MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
+                                                PROP_ID_CLASS_NAME,
                                                 prop.manyToManyViewBaseDeeperProp!!.declaringType.draftClassName("$"),
                                                 prop.manyToManyViewBaseDeeperProp!!.slotName,
                                                 manyToManyViewBaseProp.name
@@ -207,15 +209,21 @@ class ImplGenerator(
             FunSpec
                 .builder("__isLoaded")
                 .addModifiers(KModifier.OVERRIDE)
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .returns(BOOLEAN)
                 .addCode(
                     CodeBlock
                         .builder()
                         .apply {
-                            add("return ")
-                            beginControlFlow("when (prop)")
                             val appender = CaseAppender(this, type, argType)
+                            add("return ")
+                            if (argType == PropId::class) {
+                                beginControlFlow("when (prop.asIndex())")
+                                appender.addIllegalCase()
+                                addStatement("__isLoaded(prop.asName())")
+                            } else {
+                                beginControlFlow("when (prop)")
+                            }
                             for (prop in type.propsOrderById) {
                                 val idViewBaseProp = prop.idViewBaseProp
                                 val manyToManyViewBaseProp = prop.manyToManyViewBaseProp
@@ -224,30 +232,36 @@ class ImplGenerator(
                                     idViewBaseProp !== null ->
                                         if (prop.isList) {
                                             addStatement(
-                                                "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%T.%L) }",
+                                                "__isLoaded(%T.byIndex(%L)) && \n%L.all { (it as %T).__isLoaded(%T.byIndex(%T.%L)) }",
+                                                PROP_ID_CLASS_NAME,
                                                 idViewBaseProp.slotName,
                                                 idViewBaseProp.name,
                                                 IMMUTABLE_SPI_CLASS_NAME,
+                                                PROP_ID_CLASS_NAME,
                                                 idViewBaseProp.targetType!!.draftClassName("$"),
                                                 idViewBaseProp.targetType!!.idProp!!.slotName
                                             )
                                         } else {
                                             addStatement(
-                                                "__isLoaded(%L) && (%L as %T)%L__isLoaded(%T.%L) ?: true",
+                                                "__isLoaded(%T.byIndex(%L)) && \n(%L as %T)%L__isLoaded(%T.byIndex(%T.%L)) ?: true",
+                                                PROP_ID_CLASS_NAME,
                                                 idViewBaseProp.slotName,
                                                 idViewBaseProp.name,
                                                 IMMUTABLE_SPI_CLASS_NAME.copy(nullable = idViewBaseProp.isNullable),
                                                 if (idViewBaseProp.isNullable) "?." else ".",
+                                                PROP_ID_CLASS_NAME,
                                                 idViewBaseProp.targetType!!.draftClassName("$"),
                                                 idViewBaseProp.targetType!!.idProp!!.slotName
                                             )
                                         }
                                     manyToManyViewBaseProp !== null ->
                                         addStatement(
-                                            "__isLoaded(%L) && %L.all { (it as %T).__isLoaded(%T.%L) }",
+                                            "__isLoaded(%T.byIndex(%L)) && \n%L.all { (it as %T).__isLoaded(%T.byIndex(%T.%L)) }",
+                                            PROP_ID_CLASS_NAME,
                                             manyToManyViewBaseProp.slotName,
                                             manyToManyViewBaseProp.name,
                                             IMMUTABLE_SPI_CLASS_NAME,
+                                            PROP_ID_CLASS_NAME,
                                             prop.manyToManyViewBaseDeeperProp!!.declaringType.draftClassName("$"),
                                             prop.manyToManyViewBaseDeeperProp!!.slotName
                                         )
@@ -260,7 +274,7 @@ class ImplGenerator(
                                             } else {
                                                 add(" && \n")
                                             }
-                                            add("__isLoaded(%L)", dependency.slotName)
+                                            add("__isLoaded(%T.byIndex(%L))", PROP_ID_CLASS_NAME, dependency.slotName)
                                         }
                                         add("\n")
                                         unindent()
@@ -285,15 +299,21 @@ class ImplGenerator(
             FunSpec
                 .builder("__isVisible")
                 .addModifiers(KModifier.OVERRIDE)
-                .addParameter("prop", if (argType == Int::class) INT else STRING)
+                .addParameter("prop", argType)
                 .returns(BOOLEAN)
                 .addCode(
                     CodeBlock
                         .builder()
                         .apply {
-                            add("return ")
-                            beginControlFlow("when (prop)")
                             val appender = CaseAppender(this, type, argType)
+                            add("return ")
+                            if (argType == PropId::class) {
+                                beginControlFlow("when (prop.asIndex())")
+                                appender.addIllegalCase()
+                                addStatement("__isVisible(prop.asName())")
+                            } else {
+                                beginControlFlow("when (prop)")
+                            }
                             for (prop in type.propsOrderById) {
                                 appender.addCase(prop)
                                 addStatement("__visibility.visible(%L)", prop.slotName)
@@ -387,8 +407,9 @@ class ImplGenerator(
                             endControlFlow()
                             for (prop in type.properties.values) {
                                 beginControlFlow(
-                                    "if (__visibility.visible(%L) != __other.__isVisible(%L))",
+                                    "if (__visibility.visible(%L) != __other.__isVisible(%T.byIndex(%L)))",
                                     prop.slotName,
+                                    PROP_ID_CLASS_NAME,
                                     prop.slotName
                                 )
                                 addStatement("return false")
@@ -401,8 +422,9 @@ class ImplGenerator(
                                 add("val %L = \n", localLoadedName)
                                 addStatement("    this.%L", objLoadedName)
                                 beginControlFlow(
-                                    "if (%L != (__other.__isLoaded(%L)))",
+                                    "if (%L != (__other.__isLoaded(%T.byIndex(%L))))",
                                     localLoadedName,
+                                    PROP_ID_CLASS_NAME,
                                     prop.slotName
                                 )
                                 addStatement("return false")

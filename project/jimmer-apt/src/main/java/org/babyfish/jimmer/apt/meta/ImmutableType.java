@@ -34,9 +34,13 @@ public class ImmutableType {
 
     private final Set<Modifier> modifiers;
 
-    private final ImmutableType superType;
+    private final ImmutableType primarySuperType;
+
+    private final Set<ImmutableType> superTypes;
 
     private final Map<String, ImmutableProp> declaredProps;
+
+    private final Map<String, ImmutableProp> redefinedProps;
 
     private Map<String, ImmutableProp> props;
 
@@ -112,53 +116,71 @@ public class ImmutableType {
         qualifiedName = typeElement.getQualifiedName().toString();
         modifiers = typeElement.getModifiers();
 
-        TypeMirror superTypeMirror = null;
+        ImmutableType primarySuperType = null;
+        Set<ImmutableType> superTypes = new LinkedHashSet<>();
         for (TypeMirror itf : typeElement.getInterfaces()) {
             if (context.isImmutable(itf)) {
-                if (superTypeMirror != null) {
-                    throw new MetaException(
-                            typeElement,
-                            "it inherits multiple Immutable interfaces"
-                    );
+                ImmutableType superType = context.getImmutableType(itf);
+                superTypes.add(superType);
+                if (!superType.isMappedSuperClass) {
+                    if (primarySuperType == null) {
+                        primarySuperType = superType;
+                    } else {
+                        throw new MetaException(
+                                typeElement,
+                                "there can be at most one primary superclass not decorated by @MappedSuperclass"
+                        );
+                    }
                 }
-                superTypeMirror = itf;
             }
         }
-
-        if (superTypeMirror != null) {
-            superType = context.getImmutableType(superTypeMirror);
-        } else {
-            superType = null;
-        }
-
-        if (superType != null) {
-            if (this.isEntity || this.isMappedSuperClass) {
-                if (superType.isEntity()) {
-                    throw new MetaException(
-                            typeElement,
-                            "it super type \"" +
-                                    superType.qualifiedName +
-                                    "\" is entity. " +
-                                    "Super entity is not supported temporarily, " +
-                                    "please use an interface decorated by @MappedSuperClass to be the super type"
-                    );
+        if (!superTypes.isEmpty()) {
+            if (isEntity || isMappedSuperClass) {
+                for (ImmutableType superType : superTypes) {
+                    if (superType.isEntity) {
+                        if (isMappedSuperClass) {
+                            throw new MetaException(
+                                    typeElement,
+                                    "mapped super class cannot inherit entity type"
+                            );
+                        }
+                    } else if (!superType.isMappedSuperClass) {
+                        throw new MetaException(
+                                typeElement,
+                                "its super type \"" +
+                                        superType +
+                                        "\"" +
+                                        (isEntity ?
+                                                "is neither entity nor mapped super class" :
+                                                "is not mapped super class"
+                                        )
+                        );
+                    }
                 }
-                if (!superType.isMappedSuperClass) {
-                    throw new MetaException(
-                            typeElement,
-                            "it super type \"" +
-                                    superType.qualifiedName +
-                                    "\" is entity is not decorated by @MappedSuperClass"
-                    );
-                }
-            } else if (superType.isEntity || superType.isMappedSuperClass) {
+            } else if (isEmbeddable) {
                 throw new MetaException(
                         typeElement,
-                        "it super type \"" +
-                                superType.qualifiedName +
-                                "\" cannot be decorated by @Entity or @MappedSuperClass"
+                        "embedded type does not support inheritance"
                 );
+            } else {
+                if (superTypes.size() > 1) {
+                    throw new MetaException(
+                            typeElement,
+                            "simple immutable type does not support multiple inheritance"
+                    );
+                }
+                for (ImmutableType superType : superTypes) {
+                    if (superType.isEntity || superType.isMappedSuperClass || superType.isEmbeddable) {
+                        throw new MetaException(
+                                typeElement,
+                                "simple immutable type can only inherit simple immutable type"
+                        );
+                    }
+                }
             }
+        }
+
+        for (ImmutableType superType : superTypes) {
             if (!superType.isAcrossMicroServices() && !superType.microServiceName.equals(microServiceName)) {
                 throw new MetaException(
                         typeElement,
@@ -172,10 +194,92 @@ public class ImmutableType {
                 );
             }
         }
+        this.primarySuperType = primarySuperType;
+        this.superTypes = superTypes;
+        for (ImmutableType superType : superTypes) {
+            if (!superType.isMappedSuperClass) {
+                primarySuperType = superType;
+                break;
+            }
+        }
 
-        int propIdSequence = superType != null ? superType.getProps().size() : 0;
-        Map<String, ImmutableProp> map = new LinkedHashMap<>();
-        List<ExecutableElement> executableElements = ElementFilter.methodsIn(typeElement.getEnclosedElements());
+        Map<String, ImmutableProp> superPropMap = new LinkedHashMap<>();
+        for (ImmutableType superType : superTypes) {
+            for (ImmutableProp prop : superType.getProps().values()) {
+                ImmutableProp conflictProp = superPropMap.put(prop.getName(), prop);
+                if (conflictProp != null) {
+                    if (conflictProp.getGetterName().equals(prop.getGetterName())) {
+                        throw new MetaException(
+                                typeElement,
+                                "There are two super properties with the same name: \"" +
+                                        conflictProp +
+                                        "\" and \"" +
+                                        prop +
+                                        "\", but their java getter name are different"
+                        );
+                    }
+                    if (!conflictProp.getReturnType().equals(prop.getReturnType())) {
+                        throw new MetaException(
+                                typeElement,
+                                "There are two super properties with the same name: \"" +
+                                        conflictProp +
+                                        "\" and \"" +
+                                        prop +
+                                        "\", but their return type are different"
+                        );
+                    }
+                }
+            }
+        }
+
+        Map<String, ImmutableProp> redefiningSuperProps;
+        if (primarySuperType == null) {
+            redefiningSuperProps = superPropMap;
+        } else {
+            redefiningSuperProps = new LinkedHashMap<>(superPropMap);
+            redefiningSuperProps.keySet().removeAll(primarySuperType.getProps().keySet());
+        }
+        int propIdSequence = primarySuperType != null ? primarySuperType.getProps().size() : 0;
+        Map<String, ImmutableProp> redefinedPropMap = new LinkedHashMap<>(
+                (redefiningSuperProps.size() * 4 + 2) / 3
+        );
+        Map<String, ImmutableProp> declaredPropMap =
+                primarySuperType != null ?
+                        new LinkedHashMap<>(primarySuperType.getProps()) :
+                        new LinkedHashMap<>();
+
+        List<ExecutableElement> executableElements = new ArrayList<>();
+        for (ImmutableProp redefiningSuperProp : redefiningSuperProps.values()) {
+            executableElements.add(redefiningSuperProp.toElement());
+            ImmutableProp prop = new ImmutableProp(
+                    context,
+                    this,
+                    redefiningSuperProp.toElement(),
+                    propIdSequence++
+            );
+            redefinedPropMap.put(prop.getName(), prop);
+        }
+        for (int i = 0; i < 2; i++) {
+            for (ExecutableElement executableElement : ElementFilter.methodsIn(typeElement.getEnclosedElements())) {
+                if (((executableElement.getAnnotation(Id.class)) != null) == (i == 0)) {
+                    if (superPropMap.containsKey(executableElement.getSimpleName().toString())) {
+                        throw new MetaException(
+                                executableElement,
+                                "it overrides property of super type, this is not allowed"
+                        );
+                    }
+                    executableElements.add(executableElement);
+                    ImmutableProp prop = new ImmutableProp(
+                            context,
+                            this,
+                            executableElement,
+                            propIdSequence++
+                    );
+                    declaredPropMap.put(prop.getName(), prop);
+                }
+            }
+        }
+
         for (ExecutableElement executableElement : executableElements) {
             if (executableElement.isDefault()) {
                 for (AnnotationMirror am : executableElement.getAnnotationMirrors()) {
@@ -190,12 +294,6 @@ public class ImmutableType {
                         );
                     }
                 }
-            }
-        }
-        for (ExecutableElement executableElement : executableElements) {
-            if (!executableElement.isDefault() && executableElement.getAnnotation(Id.class) != null) {
-                ImmutableProp prop = new ImmutableProp(context, this, executableElement, ++propIdSequence);
-                map.put(prop.getName(), prop);
             }
         }
         for (ExecutableElement executableElement : executableElements) {
@@ -220,8 +318,6 @@ public class ImmutableType {
                                         "java expression so that the `dependencies` of that annotation must be specified"
                         );
                     }
-                    ImmutableProp prop = new ImmutableProp(context, this, executableElement, ++propIdSequence);
-                    map.put(prop.getName(), prop);
                 }
             } else if (executableElement.getAnnotation(Id.class) == null) {
                 Formula formula = executableElement.getAnnotation(Formula.class);
@@ -245,21 +341,12 @@ public class ImmutableType {
                         );
                     }
                 }
-                ImmutableProp prop = new ImmutableProp(context, this, executableElement, ++propIdSequence);
-                map.put(prop.getName(), prop);
             }
         }
-        if (superType != null) {
-            for (Map.Entry<String, ImmutableProp> e : map.entrySet()) {
-                if (superType.getProps().containsKey(e.getKey())) {
-                    throw new MetaException(
-                            e.getValue().toElement(),
-                            "it overrides property of super type, this is not allowed"
-                    );
-                }
-            }
-        }
-        declaredProps = Collections.unmodifiableMap(map);
+
+        this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
+        this.redefinedProps = Collections.unmodifiableMap(redefinedPropMap);
+
         List<ImmutableProp> idProps = declaredProps
                 .values()
                 .stream()
@@ -275,7 +362,7 @@ public class ImmutableType {
                 .stream()
                 .filter(it -> it.getAnnotation(LogicalDeleted.class) != null)
                 .collect(Collectors.toList());
-        if (superType != null) {
+        for (ImmutableType superType : superTypes) {
             if (superType.getIdProp() != null && !idProps.isEmpty()) {
                 throw new MetaException(
                         typeElement,
@@ -303,9 +390,15 @@ public class ImmutableType {
                                 "` because version has been declared in super type"
                 );
             }
-            idProp = superType.idProp;
-            versionProp = superType.versionProp;
-            logicalDeletedProp = superType.logicalDeletedProp;
+            if (idProp == null) {
+                idProp = superType.idProp;
+            }
+            if (versionProp == null) {
+                versionProp = superType.versionProp;
+            }
+            if (logicalDeletedProp == null) {
+                logicalDeletedProp = superType.logicalDeletedProp;
+            }
         }
         if (!isEntity && !isMappedSuperClass) {
             if (!idProps.isEmpty()) {
@@ -467,22 +560,37 @@ public class ImmutableType {
         return modifiers;
     }
 
-    public ImmutableType getSuperType() {
-        return superType;
+    public Set<ImmutableType> getSuperTypes() {
+        return superTypes;
+    }
+
+    public ImmutableType getPrimarySuperType() {
+        return primarySuperType;
     }
 
     public Map<String, ImmutableProp> getDeclaredProps() {
         return declaredProps;
     }
 
+    public Map<String, ImmutableProp> getRedefinedProps() {
+        return redefinedProps;
+    }
+
     public Map<String, ImmutableProp> getProps() {
         Map<String, ImmutableProp> props = this.props;
         if (props == null) {
-            if (superType == null) {
+            if (superTypes.isEmpty()) {
                 props = declaredProps;
             } else {
                 props = new LinkedHashMap<>();
-                for (ImmutableProp prop : superType.getProps().values()) {
+                for (ImmutableType superType : superTypes) {
+                    for (ImmutableProp prop : superType.getProps().values()) {
+                        if (prop.getAnnotation(Id.class) != null) {
+                            props.put(prop.getName(), prop);
+                        }
+                    }
+                }
+                for (ImmutableProp prop : redefinedProps.values()) {
                     if (prop.getAnnotation(Id.class) != null) {
                         props.put(prop.getName(), prop);
                     }
@@ -492,7 +600,14 @@ public class ImmutableType {
                         props.put(prop.getName(), prop);
                     }
                 }
-                for (ImmutableProp prop : superType.getProps().values()) {
+                for (ImmutableType superType : superTypes) {
+                    for (ImmutableProp prop : superType.getProps().values()) {
+                        if (prop.getAnnotation(Id.class) == null) {
+                            props.put(prop.getName(), prop);
+                        }
+                    }
+                }
+                for (ImmutableProp prop : redefinedProps.values()) {
                     if (prop.getAnnotation(Id.class) == null) {
                         props.put(prop.getName(), prop);
                     }
@@ -503,7 +618,7 @@ public class ImmutableType {
                     }
                 }
             }
-            this.props = props;
+            this.props = Collections.unmodifiableMap(props);
         }
         return props;
     }
@@ -609,6 +724,9 @@ public class ImmutableType {
         }
         boolean hasNext = false;
         for (ImmutableProp prop : declaredProps.values()) {
+            hasNext |= prop.resolve(context, step);
+        }
+        for (ImmutableProp prop : redefinedProps.values()) {
             hasNext |= prop.resolve(context, step);
         }
         resolvedStep = step;

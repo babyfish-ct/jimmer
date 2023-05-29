@@ -7,6 +7,7 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.TypeRuntimeWiring;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.impl.TypedPropImpl;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -122,9 +123,9 @@ public class JimmerSpringGraphQLAutoConfiguration {
 
     private static class JimmerSimpleFetcher implements DataFetcher<Object> {
 
-        private final int propId;
+        private final PropId propId;
 
-        JimmerSimpleFetcher(int propId) {
+        JimmerSimpleFetcher(PropId propId) {
             this.propId = propId;
         }
 

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,7 +38,7 @@ public class ChangedRef<T> {
         } else {
             throw new IllegalStateException("The current `ChangedRef` is not object pair");
         }
-        int idPropId = type.getIdProp().getId();
+        PropId idPropId = type.getIdProp().getId();
         return new ChangedRef<>(
                 oldValue != null ? (X)((ImmutableSpi) oldValue).__get(idPropId) : null,
                 newValue != null ? (X)((ImmutableSpi) newValue).__get(idPropId) : null

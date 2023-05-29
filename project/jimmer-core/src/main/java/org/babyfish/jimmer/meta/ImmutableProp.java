@@ -17,7 +17,7 @@ public interface ImmutableProp {
     @NotNull
     ImmutableType getDeclaringType();
 
-    int getId();
+    PropId getId();
 
     @NotNull
     String getName();
@@ -59,6 +59,8 @@ public interface ImmutableProp {
     <A extends Annotation> A[] getAnnotations(Class<A> annotationType);
 
     Annotation getAssociationAnnotation();
+
+    Class<? extends Annotation> getPrimaryAnnotationType();
 
     boolean isTransient();
 

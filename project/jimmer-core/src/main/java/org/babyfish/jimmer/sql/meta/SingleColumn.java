@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.meta;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 public class SingleColumn implements ColumnDefinition {
 
@@ -60,6 +57,19 @@ public class SingleColumn implements ColumnDefinition {
     @Override
     public Iterator<String> iterator() {
         return new Itr(name);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SingleColumn column = (SingleColumn) o;
+        return isForeignKey == column.isForeignKey && name.equals(column.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, isForeignKey);
     }
 
     @Override

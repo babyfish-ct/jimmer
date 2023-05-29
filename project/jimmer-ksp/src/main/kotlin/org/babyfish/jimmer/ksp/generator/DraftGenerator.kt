@@ -51,8 +51,10 @@ class DraftGenerator(
                     for (classDeclaration in modelClassDeclarations) {
                         val type = ctx.typeOf(classDeclaration)
                         addType(type)
-                        addNewByFun(type)
-                        addAddFun(type)
+                        if (!type.isMappedSuperclass) {
+                            addNewByFun(type)
+                            addAddFun(type)
+                        }
                     }
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
@@ -68,9 +70,13 @@ class DraftGenerator(
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
                 .addSuperinterface(type.className)
                 .apply {
-                    type.superType?.let {
-                        addSuperinterface(it.draftClassName)
-                    } ?: addSuperinterface(DRAFT_CLASS_NAME)
+                    if (type.superTypes.isEmpty()) {
+                        addSuperinterface(DRAFT_CLASS_NAME)
+                    } else {
+                        for (superType in type.superTypes) {
+                            addSuperinterface(superType.draftClassName)
+                        }
+                    }
                 }
                 .apply {
                     for (prop in type.declaredProperties.values) {
@@ -80,7 +86,9 @@ class DraftGenerator(
                         }
                     }
                     ProducerGenerator(type, this).generate()
-                    MapStructGenerator(type, this).generate()
+                    if (!type.isMappedSuperclass) {
+                        MapStructGenerator(type, this).generate()
+                    }
                 }
                 .build()
         )
