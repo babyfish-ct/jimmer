@@ -1,6 +1,19 @@
-目前其他操作SQL的技术方案，无论ORM还是非ORM，都有存在一个问题，只考虑到了动态`where`，没有考虑`动态join`。
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
 
-这里的`动态JOIN`是什么? 让我们先来看一个例子，这里用面向原生SQL的MyBatis为例
+目前其他操作SQL的技术方案，无论ORM还是非ORM，都有存在一个空白领域：只考虑到了动态`where`，没有考虑`动态join`。
+
+`动态JOIN`定义：如果某些动态查询条件针对其他表而非当前表。这意味着
+
+-   条件满足时：先通过关联属性join到其他表，再对join得到的表添加动态where条件
+
+-   条件不满足时：不能通过关联属性join其他表
+
+<Divider>
+<Chip label="场景-1"/>
+</Divider>
+
+让我们先来看第一个场景，这里用面向原生SQL的MyBatis为例
 
 -   定义MyBatis Mapper接口
 
@@ -57,56 +70,54 @@
     
     **然而，这仅仅是最简单的两表之间动态连接，对于更深的多表连接操作而言，动态连接的复杂度会急剧上升！**
 
-    让我们再来看一个例子，有了前面的例子作为基础，这个例子就不同任何业务耦合了。
+<Divider>
+<Chip label="场景-2"/>
+</Divider>
 
-    ```xml
-    <?xml version="1.0" encoding="UTF-8" ?>
-    <!DOCTYPE mapper
-            PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-            "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-    <mapper namespace="somepackage.AMapper">
-        <select id="findAObjects" resultType="somepackage.A">
-            select distinct A.id
-            from A
-            <!-- highlight-start -->
-            <if test="bId != null or cId != null or dId != null or eId != null">
-                inner join B on A.ID = B.A_ID
+让我们再来看第二个场景，有了前面的例子作为基础，这个例子就不同任何业务耦合了。
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="somepackage.AMapper">
+    <select id="findAObjects" resultType="somepackage.A">
+        select distinct A.id
+        from A
+        <!-- highlight-start -->
+        <if test="bId != null or cId != null or dId != null or eId != null">
+            inner join B on A.ID = B.A_ID
+        </if>
+        <if test="cId != null or dId != null or eId != null">
+            inner join C on B.ID = C.B_ID
+        </if>
+        <if test="dId != null or eId != null">
+            inner join D on C.ID = D.C_ID
+        </if>
+        <if test="eId != null">
+            inner join E on D.ID = E.D_ID
+        </if>
+        <!-- highlight-end -->
+        <where>
+            <if test="aId != null">
+                and A.ID = #{aId}
             </if>
-            <if test="cId != null or dId != null or eId != null">
-                inner join C on B.ID = C.B_ID
+            <if test="bId != null">
+                and B.ID = #{bId}
             </if>
-            <if test="dId != null or eId != null">
-                inner join D on C.ID = D.C_ID
+            <if test="cId != null">
+                and C.ID = #{cId}
+            </if>
+            <if test="dId != null">
+                and D.ID = #{dId}
             </if>
             <if test="eId != null">
-                inner join E on D.ID = E.D_ID
+                and E.ID = #{eId}
             </if>
-            <!-- highlight-end -->
-            <where>
-                <if test="aId != null">
-                    and A.ID = #{aId}
-                </if>
-                <if test="bId != null">
-                    and B.ID = #{bId}
-                </if>
-                <if test="cId != null">
-                    and C.ID = #{cId}
-                </if>
-                <if test="dId != null">
-                    and D.ID = #{dId}
-                </if>
-                <if test="eId != null">
-                    and E.ID = #{eId}
-                </if>
-            </where>
-        </select>
-    </mapper>
-    ```
+        </where>
+    </select>
+</mapper>
+```
 
-    这个例子逻辑很简单，A、B、C、D和E这五张表形成了一个JOIN链，每张表都一个动态查询条件。然而，正如你所见，动态JOIN的复杂度已经变得不可接受了。
-
-:::info
-动态JOIN很难处理，是当前所有其他SQL技术方案的功能缺失，无论是ORM方案还是非ORM方案，SQL字符串模板方案还是DSL方案。
-
-支持动态JOIN，是我创建Jimmer的最初动机。
-:::
+这个例子逻辑很简单，A、B、C、D和E这五张表形成了一个JOIN链，每张表都一个动态查询条件。然而，正如你所见，动态JOIN的复杂度已经变得不可接受了。

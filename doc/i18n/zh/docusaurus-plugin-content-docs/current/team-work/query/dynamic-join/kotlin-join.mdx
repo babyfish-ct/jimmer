@@ -1,0 +1,178 @@
+---
+sidebar_position: 7
+title: Kotlin表连接特有功能
+---
+
+## 抉择
+
+为了充分利用kotlin的语言优势充分优化其开发体验，Jimmer对Java和Kotlin提供不同的API，但二者本质相同。
+
+然而，外连接却是唯一的例外，对于这个细节，Java API和Kotlin API的行为并不一样
+
+-   Java DSL
+    采用JoinType表示连接类型，可以是`INNER` *(默认)*, `LEFT`, `RIGHT`或`FULL`
+
+-   Kotlin DSL
+
+    -   和实体属性同名的DSL属性表示内连接
+
+    -   相比于实体属性名后面多了一个`?`的DSL属性表示左连接
+
+    即，Kotlin DSL不支持`RIGHT`和`FULL`，这种牺牲是仔细权衡后的结果，目的为了换取在对Kotlin而言更重要的功能：把kotlin的null safety和SQL DSL完美结合。
+
+## 初识DSL的null safety
+
+实体`BookStore`的定义如下
+
+```kotlin
+@Entity
+interface BookStore {
+
+    val name: String
+
+    val website: String?
+
+    ...省略其他代码...
+}
+```
+
+预编译器生成的代码如下
+
+```kotlin
+public val KNonNullProps<BookStore>.name: KNonNullPropExpression<String>
+    get() = get("name")
+
+public val KNullableProps<BookStore>.name: KNullablePropExpression<String>
+    get() = get("name")
+
+public val KProps<BookStore>.website: KNullablePropExpression<String>
+    get() = get("website")
+```
+
+请先忽略忽略这里生成的代码中各细节的具体作用，我们可以看到大量名称包含`NoNull`或`Nullable`的类型。
+
+:::tip
+在Jimmer的Kotlin SQL DSL中，几乎所有AST类型都具备`NoNull`或`Nullable`两种实现。
+
+这意味着，Kotlin SQL DSL具备和kotlin语言对等的的null safety特性，SQL风格的查询的代码具备完整的null saftey自检能力。
+:::
+
+让我们先看一个简单的例子
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.name,
+            table.website ❶
+        )
+    }
+    .execute()
+for ((name, website) in books) { ❷
+    println("Length of name: ${name.length}")
+    // 编译报错
+    // highlight-next-line
+    println("Length of website: ${website.length}") ❸
+}
+```
+
+1.  由于`BookStore.webiste`是可空的，❶处select的第二列的类型为`String?`而非`String`，
+    最终，查询返回的数据的类型为`List<Tuple2<String, String?>>`
+
+2.  ❷处通过循环遍历查询查询到的每一个元祖，将其解构成变量`name`和`website`。
+    由于`tuples`的类型为`List<Tuple2<String, String?>>`，这里`website`的类型是`String?`
+
+3.  ❸处对可能为null的`website`进行`.length`运算，导致编译错误。
+
+要修复这个编译错误，可以修改❸处的代码，将其中的`.`修改为`?.`
+
+```kotlin
+println("Length of website: ${website?.length}")
+```
+
+## 表连接的null safety
+
+上文中，我们通过一个非常简单的例子了解了SQL DSL中最简单的null safety。
+
+现在，让我们把null safety和表连接操作结合起来看看
+
+### 内连接
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.name,
+            table.store.name ❶
+        )
+    }
+    .execute()
+for ((name, storeName) in books) { ❷
+    println("Length of name: ${name.length}")
+    println("Length of storeName: ${storeName.length}") ❸
+}
+```
+
+-   ❶处使用内连接得到父对象的name，最终查询返回的数据类型为`List<Tuple2<String, String>>`。
+
+-   ❷处解构得到的变量`storeName`的类型为`String`，不为null。所以，❸处的代码可编译通过
+
+### 左连接
+
+让我们修改一下代码，把内连接改为外连接
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.name,
+            table.`store?`.name ❶
+        )
+    }
+    .execute()
+for ((name, storeName) in books) { ❷
+    println("Length of name: ${name.length}")
+    // 编译报错
+    // highlight-next-line
+    println("Length of storeName: ${storeName.length}") ❸
+}
+```
+
+-   ❶处使用左连接得到父对象
+
+    预编译生成的代码为文件`BookProps.kt`中包括
+
+    ```kotlin
+    public val KProps<Book>.store: KNonNullTable<BookStore>
+        get() = join("store")
+
+    public val KProps<Book>.`store?`: KNullableTable<BookStore>
+        get() = outerJoin("store")
+    ```
+
+    和内连接`store`不同，外连接`store?`得到的表的类型是`KNullableTable`，即可以为null的表。这就是SQL中左连接的作用。
+
+    预编译生成的代码为文件`BookStoreProps.kt`中包括
+
+    ```kotlin
+    public val KNonNullProps<BookStore>.name: KNonNullPropExpression<String>
+        get() = get("name") ❹
+
+    public val KNullableProps<BookStore>.name: KNullablePropExpression<String>
+        get() = get("name") ❺
+    ```
+
+    左连接返回的`KNullableTable`继承自`KNullableProps`，而非`KNonNullProps`。
+    所以，最终DSL中对`name`属性的访问匹配了❺，而非❹。
+    
+    即，仅仅靠`BookStore.name`属性本身非null是不够的，还要参考属性访问所基于的表是否非null。
+
+    最终，Jimmer认为❶处查询的第二列是`String?`，查询返回的数据类型为`List<Tuple2<String, String?>>`。
+
+-   ❷处解构得到的变量`storeName`的类型为`String?`，可为null。这必然导致❸处的编译错误。
+
+要修复这个编译错误，可以修改❸处的代码，将其中的`.`修改为`?.`
+
+```kotlin
+println("Length of storeName: ${storeName?.length}") ❸
+```

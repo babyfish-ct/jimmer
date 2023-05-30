@@ -1,61 +1,57 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 title: 合并冲突连接
 ---
 
 import DynamicJoinProblem from '../../_shared/dynamic-join-problem.mdx';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
 
-## 目前技术方案的问题
+## 使用方法
 
-<DynamicJoinProblem/>
+在[动态连接介绍](./)中，我们论述了目前技术方案存在问题，并简要介绍了Jimmer中动态JOIN的编程风格。
 
-## Jimmer的解决方法
-
-前文中我们通过来两个例子暴露了目前技术方案的问题，这里我们用两个例子介绍介绍办法
+在<ViewMore buttonText="目前技术方案存在问题"><DynamicJoinProblem/></ViewMore>中，我们列举了两个场景，本文讨论是否如何解决这两个场景的问题。
 
 :::note
 这个问题有两种解决方啊，本文演示第一种解决办法
 :::
 
--   第一个例子
+-   解决场景1的问题
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    public interface BookRepository extends JRepository<Book, Long> {
-
-        BookTable table = BookTable.$;
-
-        default List<Book> findBooks(
+    List<Book> findBooks(
             @Nullable String name,
             @Nullable String storeName,
             @Nullable String storeWebsite
-        ) {
-            return sql()
-                .createQuery(table)
-                .whereIf(
-                    name != null,
-                    () -> book.name().like(name)
-                )
-                .whereIf(
-                    storeName != null,
-                    () -> book
-                        .store() ❶
-                        .name()
-                        .like(storeName)
-                )
-                .whereIf(
-                    storeWebsite != null,
-                    () -> book
-                        .store() ❷
-                        .website()
-                        .like(storeWebsite)
-                )
-                .select(book)
-                .execute();
-        }
+    ) {
+        BookTable table = BookTable.$;
+
+        return sqlClient
+            .createQuery(table)
+            .whereIf(
+                name != null,
+                () -> book.name().like(name)
+            )
+            .whereIf(
+                storeName != null,
+                () -> table
+                    .store() ❶
+                    .name()
+                    .like(storeName)
+            )
+            .whereIf(
+                storeWebsite != null,
+                () -> table
+                    .store() ❷
+                    .website()
+                    .like(storeWebsite)
+            )
+            .select(book)
+            .execute();
     }
     ```
 
@@ -63,35 +59,33 @@ import TabItem from '@theme/TabItem';
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    interface BookRepository : KRepository<Book, Long> {
-        fun findBooks(
-            name: String? = null,
-            storeName: String? = null,
-            storeWebsite: String? = null
-        ): List<Book> =
-            sql
-                .createQuery(Book::class) {
-                    name?.let {
-                        where(table.name like it)
-                    }
-                    storeName?.let {
-                        where(
-                            table
-                                .store ❶
-                                .name like it
-                        )
-                    }
-                    storeName?.let {
-                        where(
-                            table
-                                .store ❷
-                                .website like it
-                        )
-                    }
-                    select(table)
+    fun findBooks(
+        name: String? = null,
+        storeName: String? = null,
+        storeWebsite: String? = null
+    ): List<Book> =
+        sqlClient
+            .createQuery(Book::class) {
+                name?.let {
+                    where(table.name like it)
                 }
-                .execute()
-    }
+                storeName?.let {
+                    where(
+                        table
+                            .store ❶
+                            .name like it
+                    )
+                }
+                storeName?.let {
+                    where(
+                        table
+                            .store ❷
+                            .website like it
+                    )
+                }
+                select(table)
+            }
+            .execute()
     ```
 
     </TabItem>
@@ -99,7 +93,7 @@ import TabItem from '@theme/TabItem';
 
     这是一个典型的动态查询，三个查询参数都允许为null。
 
-    - 指定`name`，但`storeName`和`storeWebsite`仍然为null。
+    -   指定`name`，但`storeName`和`storeWebsite`仍然为null。
 
         这时，❶和❷两处的代码都不会执行，最终生成的SQL不会包含任何join。
 
@@ -113,7 +107,8 @@ import TabItem from '@theme/TabItem';
         from BOOK as tb_1_ 
             where tb_1_.NAME = ?
         ```
-    - 指定`name`和`storeName`, 但`storeWebsite`仍然为null。
+
+    -   指定`name`和`storeName`, 但`storeWebsite`仍然为null。
 
         这时，❶处的连接生效但❷处的代码不会被执行，最终生成的SQL如下。
 
@@ -134,35 +129,15 @@ import TabItem from '@theme/TabItem';
         and 
             tb_2_.NAME = ?
         ```
-    - 指定`name`和`storeWebsite`, 但`storeName`仍然为null。
 
-        这时，❷处的连接生效但❶处的代码不会被执行，最终生成的SQL如下。
-
-        ```sql
-        select 
-            tb_1_.ID, 
-            tb_1_.NAME, 
-            tb_1_.EDITION, 
-            tb_1_.PRICE, 
-            tb_1_.STORE_ID 
-        from BOOK as tb_1_ 
-        /* highlight-start */
-        inner join BOOK_STORE as tb_2_ 
-            on tb_1_.STORE_ID = tb_2_.ID 
-        /* highlight-end */
-        where 
-            tb_1_.NAME = ? 
-        and 
-            tb_2_.WEBSITE = ?
-        ```
-
-    - 指定所有参数，`name`, `storeName`和`storeWebsite`都非null。
+    -   指定所有参数，`name`, `storeName`和`storeWebsite`都非null。
         
         这时，❶、❷两处的连接都生效，这种情况叫连接冲突。
         
-        这种冲突并不会导致任何问题，因为
-        :::info
-        **冲突的table join会被合并成了一个，而非join多次。
+        :::tip
+        这种冲突并不会导致任何问题，冲突的join对象会被合并成一个join对象。
+
+        因此，在最终生成的SQL，不会导致重复的join操作。
         :::
 
         ```sql
@@ -185,61 +160,46 @@ import TabItem from '@theme/TabItem';
             tb_2_.WEBSITE = ?
         ```
 
-    :::info
-    小结
-
-    1. 无需像其它ORM一样使用局部变量来记住join对象，可以在SQL的任何位置创建并使用临时join对象。
-
-    2. 更重要的是，不必考虑这些join对象之间是否存在冲突，冲突的join对象会被自动合并。
-
-    这样特性使得jimmer-sql极其适合实现复杂的动态查询。也是jimmer-sql项目被创建的动机之一。
-    :::
-
--   第二个例子
-
-    有了前面的基础，这个例子我们给出代码即可，各种情况下的调用不用讨论
+-   解决场景2的问题
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    public interface ARepository extends JRepository<A, Long> {
+    List<Long> findDistinctIds(
+        @Nullable Long aId,
+        @Nullable Long bId,
+        @Nullable Long cId,
+        @Nullable Long dId,
+        @Nullable Long eId
+    ) {
+        ATable table = ATable.$;
 
-        BookTable table = BookTable.$;
-
-        default List<Long> findDistinctIds(
-            @Nullable Long aId,
-            @Nullable Long bId,
-            @Nullable Long cId,
-            @Nullable Long dId,
-            @Nullable Long eId
-        ) {
-            return sql()
-                .createQuery(table)
-                .whereIf(
-                    aId != null,
-                    () -> table.asTableEx().id().like(aId)
-                )
-                .whereIf(
-                    bId != null,
-                    () -> table.asTableEx().bs().id().like(bId)
-                )
-                .whereIf(
-                    cId != null,
-                    () -> table.asTableEx().bs().cs().id().like(cId)
-                )
-                .whereIf(
-                    dId != null,
-                    () -> table.asTableEx().bs().cs().ds().id().like(dId)
-                )
-                .whereIf(
-                    eId != null,
-                    () -> table.asTableEx().bs().cs().ds().es().id().like(eId)
-                )
-                .select(book.id())
-                .distinct()
-                .execute();
-        }
+        return sqlClient
+            .createQuery(table)
+            .whereIf(
+                aId != null,
+                () -> table.id().like(aId)
+            )
+            .whereIf(
+                bId != null,
+                () -> table.asTableEx().bs().id().like(bId)
+            )
+            .whereIf(
+                cId != null,
+                () -> table.asTableEx().bs().cs().id().like(cId)
+            )
+            .whereIf(
+                dId != null,
+                () -> table.asTableEx().bs().cs().ds().id().like(dId)
+            )
+            .whereIf(
+                eId != null,
+                () -> table.asTableEx().bs().cs().ds().es().id().like(eId)
+            )
+            .select(book.id())
+            .distinct()
+            .execute();
     }
     ```
 
@@ -247,42 +207,46 @@ import TabItem from '@theme/TabItem';
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    interface ARepository : KRepository<A, Long> {
-        fun findDistinctIds(
-            aId: Long? = null,
-            bId: Long? = null,
-            cId: Long? = null,
-            dId: Long? = null,
-            eId: Long? = null
-        ): List<Long> =
-            sql
-                .createQuery(Book::class) {
-                    aId?.let {
-                        where(table.asTableEx().id eq it)
-                    }
-                    bId?.let {
-                        where(table.asTableEx().bs.id eq it)
-                    }
-                    cId?.let {
-                        where(table.asTableEx().bs.cs.id eq it)
-                    }
-                    dId?.let {
-                        where(table.asTableEx().bs.cs.ds.id eq it)
-                    }
-                    eId?.let {
-                        where(table.asTableEx().bs.cs.ds.es.id eq it)
-                    }
-                    select(table.id)
+    fun findDistinctIds(
+        aId: Long? = null,
+        bId: Long? = null,
+        cId: Long? = null,
+        dId: Long? = null,
+        eId: Long? = null
+    ): List<Long> =
+        sqlClient
+            .createQuery(A::class) {
+                aId?.let {
+                    where(table.id eq it)
                 }
-                .distinct()
-                .execute()
-    }
+                bId?.let {
+                    where(table.asTableEx().bs.id eq it)
+                }
+                cId?.let {
+                    where(table.asTableEx().bs.cs.id eq it)
+                }
+                dId?.let {
+                    where(table.asTableEx().bs.cs.ds.id eq it)
+                }
+                eId?.let {
+                    where(table.asTableEx().bs.cs.ds.es.id eq it)
+                }
+                select(table.id)
+            }
+            .distinct()
+            .execute()
     ```
 
     </TabItem>
     </Tabs>
 
-## 冲突连接合并规则
+    :::info
+    -   有了前面的基础，这里不再需要罗列不同的参数组合下会生成和何种SQL。明白无论如何最终SQL都不会包含重复的连接操作即可。
+
+    -   这里的`asTableEx`是后续文档[分页安全性](./table-ex)要介绍的概念。这里，请读者先忽略它。
+    :::
+
+## 合并规则
 
 假设有三个表连接路径，分别是
 

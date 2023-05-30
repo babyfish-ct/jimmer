@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 5
 title: 分页安全性
 ---
 
@@ -175,7 +175,7 @@ interface Book {
 
     [firstResult/maxResults specified with collection fetch; applying in memory](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html)
 
-    :::note
+    :::tip
     注意，Jimmer的另外一个功能[对象抓取器](../object-fetcher)，并不是基于table join来实现对集合关联属性进行fetch的，故而无此问题，请放心使用。
     :::
 
@@ -208,7 +208,9 @@ interface Book {
 
     Kotlin类型：org.babyfish.jimmer.sql.kt.ast.table.KTableEx&lt;E&gt;
 
-味了实现强类型的SQL DSL，Jimmer使用Annotation processor(Java)或KSP(kotlin)，根据用户定义的实体接口生成SQL DSL相关的源代码。
+### 生成的代码
+
+为了实现强类型的SQL DSL，Jimmer使用Annotation processor(Java)或KSP(kotlin)，根据用户定义的实体接口生成SQL DSL相关的源代码。
 
 还是以文章开头的Book实体接口为例，如下两个类型会被自动生成
 
@@ -366,63 +368,36 @@ public val KTableEx<Book>.`authors?`: KNullableTableEx<Author>
 
 ### 只能基于Table创建的顶层查询
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-BookTable book = BookTable.$;
-
-sqlClient
-    // `query`只接受`BookTable`类型的实例,
-    // 如果参数的类型是`BookTableEx`，会导致异常
-    .createQuery(book)
-    ...略...
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-sqlClient.createQuery(Book::class) {
-    // 你可以再次访问隐含的变量`table`.
-    // 其类型为`Table<Book>`, 而非`TableEx<Book>`
-    ...
-}
-```
-
-</TabItem>
-</Tabs>
-
 所以，你的代码看起来如此
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-BookTable book = BookTable.$;
+BookTable table = BookTable.$;
 
 List<Book> books = sqlClient
-    .createQuery(book)
+    .createQuery(table)
     .where(
-        book
+        table
             // highlight-next-line
             .name() // 可以访问普通字段name
             .eq("Book Name")
     )
     .where(
-        book
+        table
             // highlight-next-line
             .store() // 也可以对引用关联store进行join
             .name()
             .eq("Store Name")
     )
     /* 
-     * 然而，无法使用"book.authors()"，因为authors()
+     * 然而，无法使用"table.authors()"，因为authors()
      * 方法被定义在了BookTableEx中，而非BookTable中。
      * 
      * 即，编译时禁止了用户在顶级查询中对集合关联进行join
      */
-    .select(book)
+    .select(table)
     .execute();
 ```
 
@@ -459,6 +434,12 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
+:::info
+-   Java: `createQuery`的参数由用户指定，只能指定为`Table`类型，如果指定为`TableEx`类型，报错
+
+-   Kotlin: `createQuery`自动创建表对象，lamba中的自动变量`table`的类型被自动识别为`Table`而非`TableEx`
+:::
+
 最终生成的SQL如下
 
 ```sql
@@ -485,27 +466,29 @@ and
 <TabItem value="java" label="Java">
 
 ```java
-BookTable book = BookTable.$;
+BookTable table = BookTable.$;
 
 // `author`为子查询所用，采用TableEx
 AuthorTableEx author = AuthorTableEx.$;
 
 List<Book> books = sqlClient
-    .createQuery(book)
+    .createQuery(table)
     .where(sqlClient
+        // highlight-next-line
         .createSubQuery(author)
         .where(
             author
                 // `author`是TableEx，
                 // 所以集合关联`books`是允许的
+                // highlight-next-line
                 .books()
-                .eq(book),
+                .eq(table),
 
             author.firstName().eq("Alex")
         )
         .exists()
     )
-    .select(book)
+    .select(table)
     .execute();
 ```
 
@@ -520,6 +503,7 @@ val books = sqlClient
         
         where(
             exists(
+                // highlight-next-line
                 wildSubQuery(Author::class) {
 
                     // 在子查询中，`table`表示TableEx<Author>
@@ -528,8 +512,8 @@ val books = sqlClient
                         table
                             // 子查询的`table`是TableEx，
                             // 所以集合关联`books`是允许的
-                            .books
-                            eq
+                            // highlight-next-line
+                            .books eq
                             parentTable,
 
                         table.firstName.eq("Alex")
@@ -544,6 +528,12 @@ val books = sqlClient
 
 </TabItem>
 </Tabs>
+
+:::info
+-   Java: `createSubQuery`的参数由用户指定，不强制但建议指定为`TableEx`类型
+
+-   Kotlin: `wildSubQuery` *(或`subQuery`)* 自动创建表对象，lamba中的自动变量`table`的类型被自动识别为`TableEx`而非`Table`
+:::
 
 最终生成的SQL如下
 
@@ -569,7 +559,7 @@ where exists(
 )
 ```
 
-## 突破软性限制
+## asTableEx
 
 禁止在顶级查询中使用集合关联，绝大部分情况下都是合理的，但并非所有情况都合理。
 
@@ -587,14 +577,13 @@ List<Long> bookIds = sqlClient
     .createQuery(book)
     .where(
         book
-            // highlight-next-line
-            .asTableEx()
+            .asTableEx() ❶
             .authors()
             .firstName()
             .ilike("A%")
     )
     .select(book.id())
-    .distinct()
+    .distinct() ❷
     .execute();
 ```
 
@@ -606,21 +595,26 @@ val bookIds = sqlClient
     .createQuery(Book::class) {
         where(
             table
-                // highlight-next-line
-                .asTableEx()
+                .asTableEx() ❶
                 .authors
                 .firstName ilike "A%"
         )
         select(table.id)
     }
-    .distinct()
+    .distinct() ❷
     .execute()
 ```
 
 </TabItem>
 </Tabs>
 
-`asTableEx()`方法把`Table`转化为`TableEx`，你可以在顶级查询中使用集合关联。最终生成的SQL如下
+:::info
+1.  开发人员向Jimmer表示TA清楚自己在干什么，请求Jimmer允许TA基于集合关联进行表连接
+
+2.  开发人员对自己的行为负责，如果此处有额外的操作，则应该是distinct而不应该是分页相关的操作
+:::
+
+最终生成的SQL如下
 
 ```sql
 select 
@@ -634,9 +628,3 @@ inner join AUTHOR as tb_3_
 /* highlight-end */
 where lower(tb_3_.FIRST_NAME) like ?
 ```
-
-:::tip
-加上这个限制，又让这个限制可以轻松突破。如此看似矛盾的做法目的何在？
-
-当开发人员真要这么做时，确保他明白自己在干什么。
-:::

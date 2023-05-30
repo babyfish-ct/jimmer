@@ -1,4 +1,527 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 title: 优化不必要连接
 ---
+
+import DynamicJoinProblem from '../../_shared/dynamic-join-problem.mdx';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
+
+## 使用方法
+
+### 基本概念
+
+在Jimmer SQL DSL 中，被创建的join对象，如果不被使用将会被忽略。例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+// highlight-next-line
+System.out.println("Unsed join: " + table.store());
+
+List<Book> books = sqlClient
+    .createQuery(table)
+    .orderBy(table.name().asc(), table.edition().desc())
+    .select(table)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        
+        // highlight-next-line
+        println("Unsed join: ${table.store}");
+
+        orderBy(table.name.asc(), table.edition.desc())
+        select(table)
+    }
+    .execute()    
+```
+
+</TabItem>
+</Tabs>
+
+虽然通过`table.store`创建了一个JOIN对象，但是，该对象并没有被当前查询的SQL DSL使用，这种情绪下，该JOIN对象会被忽略。
+
+因此，最终生成的SQL不会包含任何JOIN操作
+
+```sql
+select 
+    tb_1_.ID, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+    where tb_1_.NAME = ?
+```
+
+### 另外一种解决方案
+
+在<ViewMore buttonText="目前技术方案存在问题"><DynamicJoinProblem/></ViewMore>中，我们列举了两个场景。
+
+在[上一篇文档](./merge)中，我们讨论了利用Jimmer SQL DSL自动合并冲突连接的特性解决这两个场景的问题。
+
+这里，我们换用另外一种方式来解决相同的问题。
+
+-   解决场景1的问题
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Book> findBooks(
+            @Nullable String name,
+            @Nullable String storeName,
+            @Nullable String storeWebsite
+    ) {
+        BookTable table = BookTable.$;
+
+        // 先无条件建立JOIN对象，若未被后续代码使用，
+        // 则被自动忽略。因此，此举不会导致无用JOIN
+        // highlight-next-line
+        BookStoreTable store = table.store();
+
+        return sql()
+            .createQuery(table)
+            .whereIf(
+                name != null,
+                () -> book.name().like(name)
+            )
+            .whereIf(
+                storeName != null,
+                () -> store .name().like(storeName)
+            )
+            .whereIf(
+                storeWebsite != null,
+                () -> store.website().like(storeWebsite)
+            )
+            .select(book)
+            .execute();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    fun findBooks(
+        name: String? = null,
+        storeName: String? = null,
+        storeWebsite: String? = null
+    ): List<Book> {
+        return sqlClient
+            .createQuery(Book::class) {
+
+                // 先无条件建立JOIN对象，若未被后续代码使用，
+                // 则被自动忽略。因此，此举不会导致无用JOIN
+                // highlight-next-line
+                val store = table.store;
+
+                name?.let {
+                    where(table.name like it)
+                }
+                storeName?.let {
+                    where(store .name like it)
+                }
+                storeName?.let {
+                    where(store.website like it)
+                }
+                select(table)
+            }
+            .execute()
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    -   如果仅指定`name`，不指定`storeName`和`storeWebsite`，那么`store`就是一个创建后却不被使用的join对象，因此被忽略。最终生成的SQL不包含任何join操作。
+
+        ```sql
+        select 
+            tb_1_.ID, 
+            tb_1_.NAME, 
+            tb_1_.EDITION, 
+            tb_1_.PRICE, 
+            tb_1_.STORE_ID 
+        from BOOK as tb_1_ 
+            where tb_1_.NAME = ?
+        ```
+
+    -   如果指定`storeName`和`storeWebsite`，`store`就会被使用，从而导致最终生成SQL包含join操作。这很明显，此处不用示范。
+
+-   解决场景2的问题
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    List<Long> findDistinctIds(
+        @Nullable Long aId,
+        @Nullable Long bId,
+        @Nullable Long cId,
+        @Nullable Long dId,
+        @Nullable Long eId
+    ) {
+        ATable table = ATable.$;
+
+        // 先无条件建立JOIN对象，若未被后续代码使用，
+        // 则被自动忽略。因此，此举不会导致无用JOIN
+        // highlight-start
+        BTableEx b = table.asTableEx().bs();
+        CTableEx c = b.cs();
+        DTableEx d = c.ds();
+        DTableEx e = d.es();
+        // highlight-end
+
+        return sqlClient
+            .createQuery(table)
+            .whereIf(
+                aId != null,
+                () -> table.id().like(aId)
+            )
+            .whereIf(
+                bId != null,
+                () -> b.id().like(bId)
+            )
+            .whereIf(
+                cId != null,
+                () -> c.id().like(cId)
+            )
+            .whereIf(
+                dId != null,
+                () -> d.id().like(dId)
+            )
+            .whereIf(
+                eId != null,
+                () -> e.id().like(eId)
+            )
+            .select(book.id())
+            .distinct()
+            .execute();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    fun findDistinctIds(
+        aId: Long? = null,
+        bId: Long? = null,
+        cId: Long? = null,
+        dId: Long? = null,
+        eId: Long? = null
+    ): List<Long> {
+        
+        // 先无条件建立JOIN对象，若未被后续代码使用，
+        // 则被自动忽略。因此，此举不会导致无用JOIN
+        // highlight-start
+        val b = table.asTableEx().bs
+        val c = b.cs
+        val d = c.ds
+        val e = d.es
+        // highlight-end
+
+        return sqlClient
+            .createQuery(A::class) {
+                aId?.let {
+                    where(table.id eq it)
+                }
+                bId?.let {
+                    where(b.id eq it)
+                }
+                cId?.let {
+                    where(c.id eq it)
+                }
+                dId?.let {
+                    where(d.id eq it)
+                }
+                eId?.let {
+                    where(e.id eq it)
+                }
+                select(table.id)
+            }
+            .distinct()
+            .execute()
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::info
+    -   有了前面的基础，这里不再需要罗列不同的参数组合下会生成和何种SQL。明白无论如何最终SQL都不会包含无用连接操作即可。
+
+    -   某个JOIN对象被SQL DSL使用时，会将它标记成“被使用”以防止它被忽略。这种标记具备传递性。
+
+        例如：将`d`标记成“被使用”，自然也会标记`c`、`b`和`table`
+
+    -   这里的`asTableEx` *(以及Java下的各种TableEx类型)* 是后续文档[分页安全性](./table-ex)要介绍的概念。这里，请读者先忽略它。
+    :::
+
+## 幻连接
+
+幻连接是一个很简单的优化概念，和普通的连接对比一下就明白了。
+
+我们先来看一个普通表连接的例子。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<Book> books = sqlClient
+    .createQuery(book)
+    .where(book.store().name().eq("MANNING"))
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.store.name eq "MANNING")
+        select(table)    
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下：
+
+```sql
+select 
+    tb_1_.ID, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+    /* highlight-start */
+    inner join BOOK_STORE as tb_2_ 
+        on tb_1_.STORE_ID = tb_2_.ID
+    /* highlight-end */     
+where 
+    tb_2_.NAME = ?
+```
+
+现在，再来看一个幻连接的例子
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<Book> books = sqlClient
+    .createQuery(book)
+    .where(
+        book
+        .store()
+        // highlight-next-line
+        .id() // 只访问id
+        .eq(2L)
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+            .store
+            // highlight-next-line
+            .id // 只访问id
+            eq 2L
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+这次，生成的SQL如下：
+
+```sql
+select 
+    tb_1_.ID, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+    where tb_1_.STORE_ID = ?
+```
+
+我们没有在SQL中看到任何表连接，我们只看到条件一个基于外键的判断条件`tb_1_.STORE_ID = ?`。
+
+原因：对于基于外键映射的多对一关联而言，父表的id其实就是子表自己的外键。
+
+:::info
+1. 对于基于外键映射的多对一关联，在Java查询代码中通过连接操作获取了关联对象，如果此关联对象除了id字段以外没有任何的其它字段被访问，那么该连接将被视为幻连接。
+
+2. 幻连接将会被忽略，不会在最终SQL中生成相关的JOIN语句。
+:::
+
+## 半连接
+
+半连接是一个和幻象连接类似的概念，但用于基于中间表的关联。
+
+我们先来看一个基于中间表的普通连接。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<Long> bookIds = sqlClient
+    .createQuery(book)
+    .where(
+        book
+            .asTableEx()
+            .authors()
+            .firstName()
+            .eq("Alex")
+    )
+    .select(book.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+                .asTableEx()
+                .authors
+                .firstName eq "Alex"
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+这里的`asTableEx` *(以及Java下的各种TableEx类型)* 是后续文档[分页安全性](./table-ex)要介绍的概念。这里，请读者先忽略它。
+:::
+
+生成的SQL如下：
+```sql
+select 
+    distinct tb_1_.ID 
+from BOOK as tb_1_ 
+/* highlight-start */
+inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+    on tb_1_.ID = tb_2_.BOOK_ID 
+inner join AUTHOR as tb_3_ on 
+    tb_2_.AUTHOR_ID = tb_3_.ID
+/* highlight-end */ 
+where tb_3_.FIRST_NAME = ?
+```
+
+我们看到基于中间表的连接会产生两个SQL JOIN子句
+
+- 第一步：连接到中间表
+    `inner join BOOK_AUTHOR_MAPPING as tb_2_ on tb_1_.ID = tb_2_.BOOK_ID `
+
+- 第二步：连接到目标表
+    `inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID`
+
+接下来，让我们看看半连接的例子
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<Long> bookIds = sqlClient
+    .createQuery(book)
+    .where(
+        book
+            .asTableEx()
+            .authors()
+            // highlight-next-line
+            .id() // 只访问id
+            .eq(2L)
+    )
+    .select(book.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            (table as KNullableTableEx<Book>)
+                .authors
+                // highlight-next-line
+                .id // 只访问id 
+                eq 2L
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+这次，生成的SQL如下：
+```sql
+select 
+    distinct tb_1_.ID 
+from BOOK as tb_1_ 
+/* highlight-start */
+inner join BOOK_AUTHOR_MAPPING as tb_2_ 
+    on tb_1_.ID = tb_2_.BOOK_ID 
+/* highlight-end */
+where tb_2_.AUTHOR_ID = ?
+```
+
+这一次，我们只看到一个SQL JOIN子句，而不是两个。
+
+原因：目标表的主键，其实就是中间表到目标表的外键。
+
+:::info
+1. 对于基于中间表映射的关联，在Java查询代码中通过连接操作获取了关联对象，如果此关联对象除了id字段以外没有任何的其它字段被访问，那么该连接将被视为半连接。
+
+2. 在最终生成的SQL中，半连接仅使用一条JOIN语句连接到中间表，不会进一步使用第二条JOIN语句连接到目标表。
+:::

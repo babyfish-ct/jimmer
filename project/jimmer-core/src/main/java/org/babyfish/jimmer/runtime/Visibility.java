@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.runtime;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Cheaper than `java.util.BitSet`
  */
-public abstract class Visibility {
+public abstract class Visibility implements Serializable {
 
     public abstract boolean visible(int propId);
 
@@ -54,9 +56,13 @@ public abstract class Visibility {
         return builder.toString();
     }
 
+    Object writeReplace() throws ObjectStreamException {
+        return new SerializerReplacement(this);
+    }
+
     private static class Simple extends Visibility {
 
-        private long hidden;
+        long hidden;
 
         @Override
         int longCount() {
@@ -334,6 +340,41 @@ public abstract class Visibility {
             if (!(o instanceof CompositeAny)) return false;
             CompositeAny composite = (CompositeAny) o;
             return Arrays.equals(hiddenArr, composite.hiddenArr);
+        }
+    }
+
+    private static class SerializerReplacement implements Serializable {
+
+        private int longCount;
+
+        private long[] longArr;
+
+        public SerializerReplacement() {}
+
+        public SerializerReplacement(Visibility visibility) {
+            longCount = visibility.longCount();
+            if (longCount == 1) {
+                longArr = new long[] { ((Simple)visibility).hidden };
+            } else {
+                Composite composite = (Composite)visibility;
+                longArr = new long[composite.longCount()];
+                for (int i = longArr.length - 1; i >= 0; --i) {
+                    longArr[i] = composite.hidden(i);
+                }
+            }
+        }
+
+        Object readResolve() throws ObjectStreamException {
+            Visibility visibility = Visibility.of(longCount * 64);
+            if (visibility instanceof Simple) {
+                ((Simple)visibility).hidden = longArr[0];
+            } else {
+                Composite composite = (Composite) visibility;
+                for (int i = longCount - 1; i >= 0; --i) {
+                    composite.hidden(i, longArr[i]);
+                }
+            }
+            return visibility;
         }
     }
 }
