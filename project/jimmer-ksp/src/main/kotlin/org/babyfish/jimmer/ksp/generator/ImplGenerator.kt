@@ -145,9 +145,10 @@ class ImplGenerator(
                                         idViewBaseProp !== null ->
                                             if (prop.isList) {
                                                 addStatement(
-                                                    "return %N.map {it.%N}",
-                                                    idViewBaseProp.name,
-                                                    idViewBaseProp.targetType!!.idProp!!.name
+                                                    "return %T(%T.type, %L)",
+                                                    ID_VIEW_CLASS_NAME,
+                                                    idViewBaseProp.targetType!!.draftClassName("$"),
+                                                    idViewBaseProp.name
                                                 )
                                             } else {
                                                 addStatement(

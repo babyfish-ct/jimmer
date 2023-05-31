@@ -190,8 +190,13 @@ class DraftImplGenerator(
                         .apply {
                             val idViewBaseProp = prop.idViewBaseProp
                             when {
-                                idViewBaseProp !== null ->
-                                    addCode("return %L.%L", MODIFIED, prop.name)
+                                idViewBaseProp !== null && prop.isList ->
+                                    addCode(
+                                        "return %T(%T.type, %L)",
+                                        MUTABLE_ID_VIEW_CLASS_NAME,
+                                        idViewBaseProp.targetType!!.draftClassName("$"),
+                                        idViewBaseProp.name
+                                    )
                                 prop.isList || prop.isScalarList ->
                                     addCode(
                                         "return __ctx.toDraftList(%L.%L, %T::class.java, %L)",
