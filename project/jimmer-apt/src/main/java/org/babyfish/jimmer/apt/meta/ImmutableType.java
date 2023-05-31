@@ -83,7 +83,7 @@ public class ImmutableType {
     private final boolean acrossMicroServices;
 
     private final String microServiceName;
-
+    
     public ImmutableType(
             Context context,
             TypeElement typeElement

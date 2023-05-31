@@ -544,6 +544,7 @@ public class ImmutableProp {
         if (resolvedStep >= step) {
             return;
         }
+        resolvedStep = step;
         switch (step) {
             case 0:
                 resolveTargetType(context);
@@ -555,12 +556,11 @@ public class ImmutableProp {
                 resolveIdViewBaseProp();
                 break;
             case 3:
-                resolveManyToManyViewProp(context);
+                resolveManyToManyViewProp();
                 break;
             default:
                 break;
         }
-        resolvedStep = step;
     }
 
     private void resolveTargetType(Context context) {
@@ -605,7 +605,7 @@ public class ImmutableProp {
                                     Formula.class.getName() +
                                     "\" but the dependency property \"" +
                                     dependency +
-                                    "\" does not eixst"
+                                    "\" does not exists"
                     );
                 }
                 props.add(prop);
@@ -707,7 +707,7 @@ public class ImmutableProp {
         idViewBaseProp = baseProp;
     }
 
-    private void resolveManyToManyViewProp(Context ctx) {
+    private void resolveManyToManyViewProp() {
         ManyToManyView manyToManyView = getAnnotation(ManyToManyView.class);
         if (manyToManyView == null) {
             return;
