@@ -1,0 +1,242 @@
+---
+sidebar_position: 6
+title: 弱连接
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 要解决的问题
+
+之前我们所讨论的所有连接，都依赖于实体对象的关联属性，这意味着表连接总是和主外键相关。
+
+然而，有时我们需要基于和主外键无关的其他业务属性连接两张表。这种相对自由的表连接虽然用得不多，但一旦需要就很有用。
+
+这种场景下，你有两种选择。
+
+-   利用[@JoinSql](../../mapping/advanced/join-sql)声明和主外键无关的ManyToMany关联属性，然后利用关联属性进行join
+
+    :::info
+    第种方法适合于高重用性的场合。即，对应的连接操作多个业务场景都需要。
+    :::
+
+-   无需声明实体之间的关联属性，直接用本文讲解的弱连接
+
+    :::info
+    这种方法适合于低重用性的场合。即，对应的连接操作只有个别业务场景需要，不愿为此在实体中定义基于[@JoinSql](../../mapping/advanced/join-sql)的关联属性。
+    :::
+
+## 使用方法
+
+### 定义连接条件
+
+要使用弱连接
+
+-   Java用户需先实现`WeakJoin`接口
+
+-   Kotlin用户需要实现`KWeakJoin`抽象类
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="WeakJoin.java"
+package org.babyfish.jimmer.sql.ast.table;
+
+import org.babyfish.jimmer.sql.ast.Predicate;
+
+public interface WeakJoin<ST extends Table<?>, TT extends Table<?>> {
+
+    Predicate on(ST source, TT target);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="KWeakJoin.kt"
+package org.babyfish.jimmer.sql.kt.ast.table
+
+abstract class KWeakJoin<S: Any, T: Any> /* 省略超类型 */ {
+
+    abstract fun on(
+        source: KNonNullTable<S>,
+        target: KNonNullTable<T>
+    ): KNonNullExpression<Boolean>
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   对于Java而言，`WeakJoin`接口的范型参数应为是预编译器为当前表实体和目标实体生成的`Table`类，例如
+
+    `WeakJoin<BookTable, AuthorTable>`
+
+-   对于Kotlin而言，`KWeakJoin`抽象类的范型参数应为当前实体和目标实体，例如
+
+    `KWeakJoin<Book, Author>`
+
+开发人员需要自定义一个类，实现自定义表连接条件
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> {
+
+    @Override
+    public Predicate on(ST source, TT target) {
+        return Prdicate.and(
+            source.businessProp1().eq(target.businessPropA()),
+            source.businessProp2().eq(target.businessPropB())
+        );
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+private class BookAuthorJoin : KWeakJoin<Book, Author> {
+
+    override fun on(
+        source: KNonNullTable<S>,
+        target: KNonNullTable<T>
+    ): KNonNullExpression<Boolean> =
+        and(
+            source.businessProp1 eq target.businessPropA,
+            source.businessProp2 eq target.businessPropB
+        )
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+-   对Java而言，由于`WeakJoin`是一个接口，所以需要注意，实现类型必需是一个类，不能是lambda
+
+-   不要用匿名类实现。匿名类虽然可以运行，但是违背这里的设计初衷
+
+    如果该类没有任何复用价值，建议定义为私有的静态内部类
+
+-   该类本身不的带范型参数，但是，必需明确指定超接口/超类的范型参数
+
+后续论述中，会解释为什么有前两点限制
+:::
+
+开发人员甚至还可以使用[NativeSQL表达式](../native-sql)构建更随意的连接条件，例如 *(这里假设使用MySQL，可以调用SQL函数`substr`)*
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> {
+
+    @Override
+    public Predicate on(ST source, TT target) {
+        return Prdicate.sql(
+            "substr(%e, 1, 5) = substr(%e, 1, 5)",
+            new Expression[] {
+                source.code(),
+                target.code()
+            }
+        );
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+private class BookAuthorJoin : KWeakJoin<Book, Author> {
+
+    override fun on(
+        source: KNonNullTable<S>,
+        target: KNonNullTable<T>
+    ): KNonNullExpression<Boolean> =
+        sql(Boolean::class, "substr(%e, 1, 5) = substr(%e, 1, 5)") {
+            expression(source.code)
+            expression(target.code)
+        }
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+这里，Java代码中的`Predicate.sql`和Kotlin代码中的`sql`，是在Jimmer强类型SQL DSL中混入原生SQL片段的方法。
+
+这种方法我们从未介绍过，请参考[NativeSQL表达式](../native-sql)
+:::
+
+### 使用连接条件
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+List<Long> bookIds = sqlClient
+    .createQuery(table)
+    .where(
+        table
+            .asTableEx() ❶
+            .weakJoin(BookAutorJoin.class) ❷
+            .firstName().eq("Alex")
+    )
+    .select(table.id())
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookIds = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table
+                .asTableEx() ❶
+                .weakJoin(BookAutorJoin::class) ❷
+                .firstName eq "Alex"
+        )
+        select(table.id)
+    }
+    .distinct()
+    .execute();
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶处使用`asTableEx`把`Table`转化为`TableEx`
+
+    :::caution
+    后续的`weakJoin`只被`TableEx`支持，`Table`不支持此行为。
+    :::
+
+-   ❷处代码调用`weakJoin`，以前文定义的`BookAuthorJoin`类作为连接条件，连接到author表
+
+    -   此处，weakJoin的返回类型是`AuthorTable`/`KNonNullTable<Athor>`
+
+    -   这里的`weakJoin`表示内连接，可以通过如下方法支持外连接
+    
+        -   Java: `weakJoin(BookAuthorJoin.class, JoinType.LEFT)`
+
+        -   Kotlin: `weakOuterJoin(BookAuthorJoin::class)`
+
+:::info
+之前我们介绍过一个功能点，[合并冲突连接](./merge)。`weakJoin`兼容它，这非常重要。
+
+对同一个join起点而言，如果多次调用`weakJoin`，只要参数中WeakJoin类 *(这里的BookAuthorJoin类)* 是相同的，它们就能合并成一次连接操作，从而保证最终SQL中没有重复连接。
+
+这就是前面所说的`BookAuthorJoin`这种类型不能用lambda或匿名类实现的原因。
+:::

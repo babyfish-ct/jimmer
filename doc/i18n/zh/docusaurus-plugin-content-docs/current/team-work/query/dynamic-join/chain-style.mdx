@@ -58,7 +58,9 @@ fun findBooksByStoreCityName(name: storeCityName?): List<Book> =
 </Tabs>
 
 :::info
-上面得代码中，Java的`table.store().city()`或Kotlin的`table.store.city`就是关联路径，代表SQL中的表连接操作
+上面得代码中，Java的`table.store().city()`或Kotlin的`table.store.city`就是关联路径。
+
+关联路径长度不受限制，其中的每个关联属性引用都对应一个SQL表连接操作。
 
 ```sql
 from BOOK tb_1_
