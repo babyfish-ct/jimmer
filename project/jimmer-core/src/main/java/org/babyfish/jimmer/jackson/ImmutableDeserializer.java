@@ -34,6 +34,11 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
 
         return Internal.produce(immutableType, null, draft -> {
             for (ImmutableProp prop : immutableType.getProps().values()) {
+                if (!prop.getPropsDependOnSelf().isEmpty()) {
+                    ((DraftSpi) draft).__show(prop.getId(), false);
+                }
+            }
+            for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (prop.isMutable()) {
                     String fieldName = propNameConverter.fieldName(prop);
                     String nodeName = null;
@@ -57,6 +62,7 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
                             value = ((Converter<Object>) prop.getConverter()).input(value);
                         }
                         ((DraftSpi) draft).__set(prop.getId(), value);
+                        ((DraftSpi) draft).__show(prop.getId(), true);
                     }
                 }
             }

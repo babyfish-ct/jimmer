@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.model.inheritance;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.LogicalDeleted;
+import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import java.time.LocalDateTime;

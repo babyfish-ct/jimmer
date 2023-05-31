@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.PrimitiveType;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -35,7 +36,8 @@ public class ImplGenerator {
         typeBuilder = TypeSpec.classBuilder("Impl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .addSuperinterface(type.getImplementorClassName())
-                .addSuperinterface(CLONEABLE_CLASS_NAME);
+                .addSuperinterface(CLONEABLE_CLASS_NAME)
+                .addSuperinterface(Serializable.class);
         addFields();
         addConstructor();
         for (ImmutableProp prop : type.getProps().values()) {
@@ -121,23 +123,11 @@ public class ImplGenerator {
         if (idViewBaseProp != null) {
             if (idViewBaseProp.isList()) {
                 builder.addStatement(
-                        "$T<$T> __ids = new $T($L().size())",
-                        LIST_CLASS_NAME,
-                        idViewBaseProp.getTargetType().getIdProp().getTypeName().box(),
-                        ArrayList.class,
+                        "return new $T<>($T.TYPE, $L())",
+                        ID_VIEW_LIST_CLASS_NAME,
+                        idViewBaseProp.getTargetType().getProducerClassName(),
                         idViewBaseProp.getGetterName()
                 );
-                builder.beginControlFlow(
-                        "for ($T __target : $L())",
-                        idViewBaseProp.getElementTypeName(),
-                        idViewBaseProp.getGetterName()
-                );
-                builder.addStatement(
-                        "__ids.add(__target.$L())",
-                        idViewBaseProp.getTargetType().getIdProp().getGetterName()
-                );
-                builder.endControlFlow();
-                builder.addStatement("return __ids");
             } else {
                 builder.addStatement("$T __target = $L()", idViewBaseProp.getElementTypeName(), idViewBaseProp.getGetterName());
                 builder.addStatement(

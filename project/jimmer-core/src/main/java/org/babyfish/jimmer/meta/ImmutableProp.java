@@ -113,6 +113,8 @@ public interface ImmutableProp {
 
     List<Dependency> getDependencies();
 
+    List<ImmutableProp> getPropsDependOnSelf();
+
     boolean isRemote();
 
     ImmutableProp toOriginal();

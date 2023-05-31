@@ -185,6 +185,11 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public List<ImmutableProp> getPropsDependOnSelf() {
+        return Collections.emptyList();
+    }
+
+    @Override
     public List<OrderedItem> getOrderedItems() {
         return Collections.emptyList();
     }

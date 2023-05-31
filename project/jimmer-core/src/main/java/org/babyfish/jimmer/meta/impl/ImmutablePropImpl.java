@@ -86,6 +86,8 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private List<Dependency> dependencies;
 
+    private List<ImmutableProp> propsDependOnSelf;
+
     private ImmutableProp idViewBaseProp;
 
     private boolean idViewBasePropResolved;
@@ -510,7 +512,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             }
             String basePropName;
             if (idView.value().isEmpty()) {
-                basePropName = ViewUtils.defaultBasePropName(isReferenceList(TargetLevel.OBJECT) || isScalarList(), name);
+                basePropName = Utils.defaultViewBasePropName(isReferenceList(TargetLevel.OBJECT) || isScalarList(), name);
                 if (basePropName == null) {
                     throw new ModelException(
                             "Illegal property \"" +
@@ -928,7 +930,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                         "\""
                         );
                     }
-                    ImmutableProp prop = targetType.getProp(orderedProp.value());
+                    ImmutableProp prop = targetType.getProps().get(orderedProp.value());
                     if (prop == null) {
                         throw new ModelException(
                                 "Illegal property \"" +
@@ -964,7 +966,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             return mappedBy;
         }
         if (isAssociation(TargetLevel.ENTITY)) {
-            validateDeclaringEntity("mappedBy");
             String mappedBy = getMappedByValue();
             if (!mappedBy.isEmpty()) {
                 ImmutableProp resolved = getTargetType().getProps().get(mappedBy);
@@ -1073,7 +1074,13 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             return opposite;
         }
         if (isAssociation(TargetLevel.PERSISTENT)) {
-            validateDeclaringEntity("opposite");
+            if (!declaringType.isEntity()) {
+                throw new UnsupportedOperationException(
+                        "Cannot access the `opposite` of \"" +
+                                this +
+                                "\" because it is not declared in entity"
+                );
+            }
             opposite = getMappedBy();
             if (opposite == null) {
                 for (ImmutableProp backProp : getTargetType().getProps().values()) {
@@ -1098,7 +1105,22 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     public List<Dependency> getDependencies() {
         List<Dependency> list = dependencies;
         if (list == null) {
-            return getDependenciesImpl(new LinkedList<>());
+            dependencies = list = Collections.unmodifiableList(getDependenciesImpl(new LinkedList<>()))              ;
+        }
+        return list;
+    }
+
+    @Override
+    public List<ImmutableProp> getPropsDependOnSelf() {
+        List<ImmutableProp> list = propsDependOnSelf;
+        if (list == null) {
+            list = new ArrayList<>();
+            for (ImmutableProp prop : getDeclaringType().getProps().values()) {
+                if (prop != this && prop.getDependencies().stream().anyMatch(it -> it.getProp() == this)) {
+                    list.add(prop);
+                }
+            }
+            propsDependOnSelf = Collections.unmodifiableList(list);
         }
         return list;
     }
@@ -1137,8 +1159,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (list == null) {
             list = new ArrayList<>();
             Formula formula = getAnnotation(Formula.class);
-            ImmutableProp idViewBaseProp = getIdViewBaseProp();
-            ImmutableProp manyToManyToBaseProp = getManyToManyViewBaseProp();
             if (formula != null) {
                 String[] arr = formula.dependencies();
                 if (arr.length != 0) {
@@ -1205,7 +1225,6 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             } else if (getManyToManyViewBaseProp() != null) {
                 list.add(new Dependency(getManyToManyViewBaseProp(), getManyToManyViewBaseDeeperProp()));
             }
-            dependencies = Collections.unmodifiableList(list);
         }
         return list;
     }
@@ -1232,13 +1251,5 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
     @Override
     public String toString() {
         return declaringType.toString() + '.' + name;
-    }
-
-    private void validateDeclaringEntity(String value) {
-        if (!this.declaringType.isEntity()) {
-            throw new UnsupportedOperationException(
-                    "Cannot get the `" + value + "` of \"" + this + "\" because it is not declared in entity"
-            );
-        }
     }
 }

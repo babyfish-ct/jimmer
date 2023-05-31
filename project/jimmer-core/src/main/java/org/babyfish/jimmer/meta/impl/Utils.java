@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.meta.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.jetbrains.annotations.Nullable;
 
-public class ViewUtils {
+public class Utils {
 
-    private ViewUtils() {}
+    private Utils() {}
 
     @Nullable
-    public static String defaultBasePropName(boolean isList, String name) {
+    public static String defaultViewBasePropName(boolean isList, String name) {
         if (!isList && name.length() > 2 && !Character.isUpperCase(name.charAt(name.length() - 3)) && name.endsWith("Id")) {
             return name.substring(0, name.length() - 2);
         }

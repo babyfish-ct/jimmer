@@ -460,9 +460,10 @@ public class EntityManager {
                 }
             }
             for (ImmutableType type : map.keySet()) {
-                if (type.isEntity()) {
-                    ((AbstractImmutableTypeImpl)type).validateColumnUniqueness(strategy);
+                if (!type.isEntity()) {
+                    continue;
                 }
+                ((AbstractImmutableTypeImpl)type).validateColumnUniqueness(strategy);
                 for (ImmutableProp prop : type.getProps().values()) {
                     if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
                         Storage storage = prop.getStorage(strategy);

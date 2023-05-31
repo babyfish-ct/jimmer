@@ -12,7 +12,9 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.Visibility;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
+import org.babyfish.jimmer.sql.collection.IdViewList;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
+import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 
 import java.beans.ConstructorProperties;
 import java.util.*;
@@ -70,6 +72,12 @@ class Constants {
 
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
+
+    public static final ClassName ID_VIEW_LIST_CLASS_NAME =
+            ClassName.get(IdViewList.class);
+
+    public static final ClassName MUTABLE_ID_VIEW_LIST_CLASS_NAME =
+            ClassName.get(MutableIdViewList.class);
 
     public static final ClassName MANY_TO_MANY_VIEW_LIST_CLASS_NAME =
             ClassName.get(ManyToManyViewList.class);

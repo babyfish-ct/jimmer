@@ -381,6 +381,10 @@ public class DraftImplGenerator {
         if (!prop.isAssociation(false) && !prop.isList()) {
             return;
         }
+        ImmutableProp realProp = prop.getIdViewBaseProp();
+        if (realProp == null) {
+            realProp = prop;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getGetterName())
                 .addModifiers(Modifier.PUBLIC)
@@ -391,41 +395,50 @@ public class DraftImplGenerator {
             builder.beginControlFlow(
                     "if (autoCreate && (!__isLoaded($T.byIndex($L)) || $L() == null))",
                     PROP_ID_CLASS_NAME,
-                    prop.getSlotName(),
-                    prop.getGetterName()
+                    realProp.getSlotName(),
+                    realProp.getGetterName()
             );
         } else {
             builder.beginControlFlow(
                     "if (autoCreate && (!__isLoaded($T.byIndex($L))))",
                     PROP_ID_CLASS_NAME,
-                    prop.getSlotName()
+                    realProp.getSlotName()
             );
         }
         if (prop.isList()) {
             builder.addStatement(
                     "$L(new $T<>())",
-                    prop.getSetterName(),
+                    realProp.getSetterName(),
                     ArrayList.class
             );
         } else {
             builder.addStatement(
                     "$L($T.$L.produce(null, null))",
-                    prop.getSetterName(),
-                    prop.getDraftElementTypeName(),
+                    realProp.getSetterName(),
+                    realProp.getDraftElementTypeName(),
                     "$"
             );
         }
         builder.endControlFlow();
         if (prop.isList()) {
-            builder.addCode(
-                    "return $L.$L($L.$L(), $T.class, $L);",
-                    DRAFT_FIELD_CTX,
-                    "toDraftList",
-                    UNMODIFIED,
-                    prop.getGetterName(),
-                    prop.getElementType(),
-                    prop.isAssociation(false)
-            );
+            if (realProp != prop) {
+                builder.addStatement(
+                        "return new $T<>($T.TYPE, $L())",
+                        MUTABLE_ID_VIEW_LIST_CLASS_NAME,
+                        realProp.getTargetType().getProducerClassName(),
+                        realProp.getGetterName()
+                );
+            } else {
+                builder.addCode(
+                        "return $L.$L($L.$L(), $T.class, $L);",
+                        DRAFT_FIELD_CTX,
+                        "toDraftList",
+                        UNMODIFIED,
+                        prop.getGetterName(),
+                        prop.getElementType(),
+                        prop.isAssociation(false)
+                );
+            }
         } else {
             builder.addCode(
                     "return $L.$L($L.$L());",

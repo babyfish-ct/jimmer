@@ -40,4 +40,36 @@ public class DraftObjects {
     public static void unload(Object draft, TypedProp<?, ?> prop) {
         ((DraftSpi)draft).__unload(prop.unwrap().getId());
     }
+
+    public static void show(Object draft, PropId prop) {
+        ((DraftSpi)draft).__show(prop, true);
+    }
+
+    public static void show(Object draft, String prop) {
+        ((DraftSpi)draft).__show(prop, true);
+    }
+
+    public static void show(Object draft, ImmutableProp prop) {
+        ((DraftSpi)draft).__show(prop.getId(), true);
+    }
+
+    public static void show(Object draft, TypedProp<?, ?> prop) {
+        ((DraftSpi)draft).__show(prop.unwrap().getId(), true);
+    }
+
+    public static void hide(Object draft, PropId prop) {
+        ((DraftSpi)draft).__show(prop, false);
+    }
+
+    public static void hide(Object draft, String prop) {
+        ((DraftSpi)draft).__show(prop, false);
+    }
+
+    public static void hide(Object draft, ImmutableProp prop) {
+        ((DraftSpi)draft).__show(prop.getId(), false);
+    }
+
+    public static void hide(Object draft, TypedProp<?, ?> prop) {
+        ((DraftSpi)draft).__show(prop.unwrap().getId(), false);
+    }
 }

@@ -7,7 +7,7 @@ import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.generator.Strings;
-import org.babyfish.jimmer.meta.impl.ViewUtils;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -614,7 +614,7 @@ public class ImmutableProp {
         }
         String base = idView.value();
         if (base.isEmpty()) {
-            base = ViewUtils.defaultBasePropName(isList, name);
+            base = Utils.defaultViewBasePropName(isList, name);
             if (base == null) {
                 throw new MetaException(
                         executableElement,
