@@ -93,6 +93,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setExecutorContextPrefixes(prefixes)
     }
 
+    fun setSqlFormatter(fFormatter: SqlFormatter) {
+        javaBuilder.setSqlFormatter(fFormatter)
+    }
+
     fun setTransientResolverProvider(provider: TransientResolverProvider) {
         javaBuilder.setTransientResolverProvider(provider)
     }
