@@ -108,7 +108,7 @@ val tuples: List<Tuple2<Long, BigDecimal>> = sqlClient
 
 -   ❸ 非分组列不能直接查询，只能查询以它们作为参数的聚合函数表达式
 
-    :::cuation
+    :::caution
     Kotlin代码多调用了个函数：`asNonNull()`
 
     在Jimmer的Kotlin DSL中，聚合函数`avg` *(以及`sum`、`min`、`max`)* 返回类型都是Nullable的。在不使用分组的前提下，对没有数据的表的任何列进行聚合运算都会得到null。
