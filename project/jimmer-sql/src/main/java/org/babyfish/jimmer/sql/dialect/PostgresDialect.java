@@ -42,8 +42,7 @@ public class PostgresDialect extends DefaultDialect {
     public Object baseValueToJson(Object baseValue, JavaType javaType) throws Exception {
         PGobject pgobject = (PGobject) baseValue;
         String json = pgobject.getValue();
-        assert json != null;
-        if (json.equals("null")) {
+        if (json == null || json.isEmpty()) {
             return null;
         }
         return JsonUtils.OBJECT_MAPPER.readValue(json, javaType);

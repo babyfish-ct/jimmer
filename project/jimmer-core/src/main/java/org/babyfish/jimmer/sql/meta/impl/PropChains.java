@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
+import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.sql.IdView;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.util.*;
@@ -113,17 +115,43 @@ public class PropChains {
         if (conflictChain == null) {
             return;
         }
-        throw new ModelException(
-                "Illegal type \"" +
-                        type +
-                        "\", the column \"" +
-                        columnName +
-                        "\" is mapped by both \"" +
-                        chainPath(conflictChain) +
-                        "\" and \"" +
-                        chainPath(chain) +
-                        "\""
-        );
+        ImmutableProp targetIdProp = null;
+        if (chain.size() == 1 && conflictChain.size() == 1) {
+            ImmutableProp prop = chain.get(0);
+            ImmutableProp conflictProp = conflictChain.get(0);
+            if (prop.isReference(TargetLevel.PERSISTENT) &&
+                    Classes.matches(
+                            prop.getTargetType().getIdProp().getElementClass(),
+                            conflictProp.getElementClass()
+                    )
+            ) {
+                targetIdProp = conflictProp;
+            } else if (conflictProp.isReference(TargetLevel.PERSISTENT) &&
+                    Classes.matches(
+                            conflictProp.getTargetType().getIdProp().getElementClass(),
+                            prop.getElementClass()
+                    )
+            ) {
+                targetIdProp = prop;
+            }
+        }
+        String message = "Illegal type \"" +
+                type +
+                "\", the column \"" +
+                columnName +
+                "\" is mapped by both \"" +
+                chainPath(conflictChain) +
+                "\" and \"" +
+                chainPath(chain) +
+                "\"";
+        if (targetIdProp != null) {
+            message += ", it looks like \"" +
+                    targetIdProp +
+                    "\" should be a property decorated by \"@" +
+                    IdView.class.getName() +
+                    "\"";
+        }
+        throw new ModelException(message);
     }
 
     private static String chainPath(List<ImmutableProp> chain) {

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.table.spi;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
@@ -149,6 +150,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             return raw.get(prop);
         }
         ImmutableProp immutableProp = immutableType.getProp(prop);
+        ImmutableProp idViewBaseProp = immutableProp.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
+            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+        }
         return (XE)PropExpressionImpl.of(this, immutableProp);
     }
 

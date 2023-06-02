@@ -65,14 +65,14 @@ public class PropExpressionImpl<T>
         }
         if (!prop.getDependencies().isEmpty()) {
             throw new IllegalArgumentException(
-                    "Cannot create prop expression for java/kt based calculated property \"" +
+                    "Cannot create prop expression for java/kotlin based calculated property \"" +
                             prop +
                             "\""
             );
         }
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException(
-                    "Cannot create prop expression for java/kt based association property \"" +
+                    "Cannot create prop expression for java/kotlin based association property \"" +
                             prop +
                             "\""
             );

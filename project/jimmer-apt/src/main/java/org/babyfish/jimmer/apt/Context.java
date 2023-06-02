@@ -36,9 +36,7 @@ public class Context {
 
     private final TypeMirror comparableType;
 
-    private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
-
-    private final Map<TypeElement, ImmutableType> changedTypeMap = new HashMap<>();
+    private final Map<String, ImmutableType> immutableTypeMap = new HashMap<>();
 
     private final boolean keepIsPrefix;
 
@@ -139,10 +137,18 @@ public class Context {
 
     public ImmutableType getImmutableType(TypeElement typeElement) {
         if (getImmutableAnnotationType(typeElement) != null) {
-            ImmutableType type = immutableTypeMap.get(typeElement);
+            String qualifiedName = typeElement.getQualifiedName().toString();
+            ImmutableType type = immutableTypeMap.get(qualifiedName);
             if (type == null) {
                 type = new ImmutableType(this, typeElement);
-                immutableTypeMap.put(typeElement, type);
+                if (immutableTypeMap.put(qualifiedName, type) != null) {
+                    throw new MetaException(
+                            typeElement,
+                            "Conflict qualified immutable type name \"" +
+                                    qualifiedName +
+                                    "\""
+                    );
+                }
             }
             return type;
         }

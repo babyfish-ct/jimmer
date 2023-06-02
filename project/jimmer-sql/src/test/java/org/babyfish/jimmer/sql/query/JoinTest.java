@@ -159,6 +159,24 @@ public class JoinTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testUnnecessaryJoinByIdView() {
+        executeAndExpect(
+                getLambdaClient().createQuery(BookTable.class, (q, book) -> {
+                    q.where(
+                            book.storeId().in(Arrays.asList(oreillyId, manningId))
+                    );
+                    return q.select(Expression.constant(1));
+                }),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 from BOOK tb_1_ where tb_1_.STORE_ID in (?, ?)"
+                    );
+                    ctx.variables(oreillyId, manningId);
+                }
+        );
+    }
+
+    @Test
     public void testHalfJoin() {
         executeAndExpect(
                 getLambdaClient().createQuery(BookTable.class, (q, book) -> {

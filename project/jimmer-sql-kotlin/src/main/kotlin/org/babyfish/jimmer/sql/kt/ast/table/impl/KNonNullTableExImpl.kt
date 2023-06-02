@@ -23,7 +23,13 @@ internal class KNonNullTableExImpl<E: Any>(
     @Suppress("UNCHECKED_CAST")
     override fun <X : Any, EXP : KPropExpression<X>> get(prop: String): EXP =
         javaTable.get<PropExpressionImpl<X>>(prop).let {
-            if (it.prop.isNullable) {
+            val isNullable = if (it.table !== javaTable) {
+                // IdView
+                (it.table as TableImplementor).joinProp.isNullable
+            } else {
+                it.prop.isNullable
+            }
+            if (isNullable) {
                 NullablePropExpressionImpl(it)
             } else {
                 NonNullPropExpressionImpl(it)

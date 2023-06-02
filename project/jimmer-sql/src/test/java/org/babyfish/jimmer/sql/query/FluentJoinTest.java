@@ -170,6 +170,25 @@ public class FluentJoinTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testUnnecessaryJoinByIdView() {
+        BookTable book = BookTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(book)
+                        .where(
+                                book.storeId().in(Arrays.asList(oreillyId, manningId))
+                        )
+                        .select(Expression.constant(1)),
+                ctx -> {
+                    ctx.sql(
+                            "select 1 from BOOK tb_1_ where tb_1_.STORE_ID in (?, ?)"
+                    );
+                    ctx.variables(oreillyId, manningId);
+                }
+        );
+    }
+
+    @Test
     public void testHalfJoin() {
         BookTable book = BookTable.$;
         executeAndExpect(

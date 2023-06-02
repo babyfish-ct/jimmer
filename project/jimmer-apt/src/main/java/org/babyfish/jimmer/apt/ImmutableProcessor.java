@@ -115,11 +115,19 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
         for (int step = 0; step < 4; step++) {
             int ctxSize = context.getImmutableTypes().size();
+            int repeatCount = 128;
             do {
                 for (ImmutableType type : context.getImmutableTypes()) {
                     type.resolve(context, step);
                 }
-            } while (ctxSize < context.getImmutableTypes().size());
+            } while (--repeatCount >= 0 && ctxSize < context.getImmutableTypes().size());
+            if (repeatCount < 0) {
+                // Special problem of `Intellij + Maven`
+                throw new IllegalArgumentException(
+                        "Jimmer-apt still unable to converge after multiple iterations, " +
+                                "please execute `mvn clean install`"
+                );
+            }
         }
         return map;
     }

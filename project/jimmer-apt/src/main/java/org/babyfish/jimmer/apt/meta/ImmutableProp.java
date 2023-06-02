@@ -431,7 +431,7 @@ public class ImmutableProp {
     }
 
     public boolean isDsl(boolean isTableEx) {
-        if (idViewBaseProp != null || isJavaFormula || isTransient) {
+        if (isJavaFormula || isTransient || (idViewBaseProp != null && isList)) {
             return false;
         }
         if (isRemote() && isReverse) {
