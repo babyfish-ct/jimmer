@@ -188,3 +188,105 @@ SpringData中`Pageabe`的页码从0开始，而非从1开始，所以，这里�
 这个例子可以让我们明白Jimmer分页功能，但是，Jimmer的Spring API隐藏了一些细节。因此，接下来，我们绕开Spring Boot，从更底层的角度更清晰地阐述。
 
 ## 不配合SpringBoot使用时
+
+### 实现通用代码
+
+既然不使用SpringBoot，那么自然无法使用`org.springframework.data.domain.Page`。
+
+因此，根据项目要求，定义自己的可重用类`Page`，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Page.java"
+@lombok.Data
+public class Page<E> {
+    private final int totalRowCount;
+    private final int totalPageCount;
+    private final List<E> entities;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Page.kt"
+data class Page<E>(
+    val totalRowCount: Int,
+    val totalPageCount: Int
+    val entities: List<E>
+)
+```
+
+</TabItem>
+</Tabs>
+
+定义通用类`Pages`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Page.java"
+import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
+
+public class Pages {
+
+    private Pages() {}
+
+    public static <E> Page<E> execute(
+        int pageIndex,
+        int pageSize,
+        ConfigurableRootQuery<?, E> query
+    ) {
+        if (pageIndex < 0 || pageSize < 1) {
+            throw new IllegalArgumentException("Illegal page arguments");
+        }
+        int rowCount = query.count();
+        int pageCount = (rowCount + pageSize - 1) / pageSize;
+        if (pageIndex >= pageCount) {
+            return new Page<>(rowCount, pageCount, Collections.emptyList());
+        }
+        List<E> entities = query
+            .limit(pageSize, pageIndex * pageSize)
+            .execute();
+        return new Page<>(rowCount, pageCount, entities);
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Page.kt"
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+
+fun <E> KConfigurableRootQuery<*, E>.fetchPage(
+    pageIndex: Int = 0,
+    pageSize: Int = 10
+): Page<E> {
+    if (pageIndex < 0 || pageSize < 1) {
+        throw IllegalArgumentException("Illegal page arguments")
+    }
+    val rowCount = count()
+    val pageCount = (rowCount + pageSize - 1) / pageSize
+    return Page(
+        rowCount,
+        pageCount,
+        if (pageIndex >= pageCount) {
+            emptyList()
+        } else {
+            limit(pageSize, pageIndex * pageSize)
+                .execute()
+        }
+    )
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 实现业务代码
+
+### 方言
+
+### 和对象抓取器配合
