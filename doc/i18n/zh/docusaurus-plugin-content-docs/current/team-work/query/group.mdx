@@ -2,3 +2,120 @@
 sidebar_position: 6
 title: 聚合和分组
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 聚合
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+long count = sqlClient
+    .createQuery(table)
+    .where(table.name().ilike("graphql"))
+    .select(
+        table
+            .asTableEx().authors().id()
+            // highlight-next-line
+            .count(true) // distinct: true
+    )
+    .fetchOne();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val count = sqlClient
+    .createQuery(Book::class) {
+        where(table.name.ilike("graphq"))
+        select(
+            // highlight-next-line
+            count(
+                table.asTableEx().authors.id,
+                distinct = true
+            )
+        )
+    }
+    .fetchOne()
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL为
+
+```sql
+select
+    // highlight-next-line
+    count(distinct tb_2_.AUTHOR_ID)
+from BOOK tb_1_
+inner join BOOK_AUTHOR_MAPPING tb_2_
+    on tb_1_.ID = tb_2_.BOOK_ID
+where
+    lower(tb_1_.NAME) like ? /* %graphq% */
+```
+
+## 分组
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+List<Tuple2<Long, BigDecimal>> tuples = sqlClient
+    .createQuery(table)
+    .groupBy(table.store().id()) ❶
+    .select(
+            table.store().id(), ❷
+            table.price().avg() ❸
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples: List<Tuple2<Long, BigDecimal>> = sqlClient
+    .createQuery(Book::class) {
+        groupBy(table.store.id) ❶
+        select(
+            table.store.id, ❷
+            avg(table.price).asNonNull() ❸
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ 按照`BOOK`表的外建`STORE_ID`分组
+
+    :::info
+    这里，Jimmer不会把`table.store`并不会被视为表连接操作，而是把`table.store.id`整体视为外建字段
+
+    请参见[幻连接](./dynamic-join/optimization#幻连接)
+    :::
+
+-   ❷ 分组列可以被直接查询
+
+-   ❸ 非分组列不能直接查询，只能查询以它们作为参数的聚合函数表达式
+
+    :::caution
+    Kotlin代码多调用了个函数：`asNonNull()`
+
+    在Jimmer的Kotlin DSL中，聚合函数`avg` *(以及`sum`、`min`、`max`)* 返回类型都是Nullable的。在不使用分组的前提下，对没有数据的表的任何列进行聚合运算都会得到null。
+
+    然而，和分组配合使用后不再如此。分组后，每一组内部至少有一条数据，如果被聚合的原始字段本身非null，则聚合结构比为null。
+
+    所以，这里通过`asNonNull()`将Nullable表达式转换为NonNull表达式，最终`execute()`函数查询到的数据类型是`List<Tuple2<Long, BigDecimal>>`，和第一行明确指定变量`tuples`的类型相同。
+        
+    如果去掉这里的`asNonNull()`，`execute()`函数查询到的数据类型是`List<Tuple2<Long, BigDecimal?>>`，从而导致编译错误。
+    :::

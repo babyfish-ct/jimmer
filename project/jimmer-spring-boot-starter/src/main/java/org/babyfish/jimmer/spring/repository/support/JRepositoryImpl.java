@@ -368,14 +368,14 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
             if (pageSize == 0) {
                 return new PageImpl<>(query.execute());
             }
-            int offset = pageIndex * pageSize;
+            long offset = (long)pageIndex * pageSize;
             if (offset > Integer.MAX_VALUE - pageSize) {
                 throw new IllegalArgumentException("offset is too big");
             }
             int total = query.count();
             List<T> content =
                     query
-                            .limit(pageSize, offset)
+                            .limit(pageSize, (int)offset)
                             .execute();
             ConfigurableRootQueryImplementor<?, ?> queryImplementor = (ConfigurableRootQueryImplementor<?, ?>) query;
             return new PageImpl<>(

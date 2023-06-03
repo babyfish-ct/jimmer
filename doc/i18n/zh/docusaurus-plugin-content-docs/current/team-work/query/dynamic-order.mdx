@@ -6,5 +6,325 @@ title: 动态排序
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 排序的基本用法
+## 静态排序
 
+首先，让我们来看看静态排序的用法，认识Jimmer的排序的概念
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public List<Book> findBooks() {
+
+    BookTable table = BookTable.$;
+
+    return sqlClient
+        .createQuery(table)
+        // highlight-next-line
+        .orderBy(table.name())
+        // highlight-next-line
+        .orderBy(table.edition().desc())
+        // highlight-next-line
+        .orderBy(table.score().desc().nullsLast())
+        .select(table)
+        .execute();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(): List<Book> =
+    sqlClient
+        .createQuery(Book::class) {
+            // highlight-next-line
+            orderBy(table.name)
+            // highlight-next-line
+            orderBy(table.edition.desc())
+            // highlight-next-line
+            .orderBy(table.score.desc().nullsLast())
+            select(table)
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+`nullsFirst/nullsLast`需要数据库支持，比如，Oracle。
+
+对于更多不支持此功能的数据库，请使用[常见表达式](./expression)中的`case`表达式。
+:::
+
+## 动态排序
+
+动态排序有两种用法
+
+-   orderByIf
+-   客户端指定的排序
+
+### orderByIf
+
+`orderByIf`的用法和`whereIf`的用法类似。
+
+:::info
+-   和where不同，多个orderBy对先后顺序非常敏感，因此`orderByIf`并不如`whereIf`那样实用。
+
+    尽管如此，Jimmer仍然支持`orderByIf`，毕竟这是一种最简单最基础的用法。
+
+-   `orderByIf`其实是动态排序的Java DSL的API，Java DSL使用链式编程风格，为了不打断链式代码的书写，提供`orderByIf`。
+
+    Kotlin DSL使用lambda书写查询，本身就可以混入任意复杂的逻辑，所以，kotlin无需提供`orderByIf`。
+:::
+
+假设`OrderMode`是一个枚举，具有取值`NAME`、`PRICE`，则可以按照下面的例子使用`orderByIf`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public List<Book> findBooks(OrderMode orderMode) {
+
+    BookTable table = BookTable.$;
+
+    return sqlClient
+        .createQuery(table)
+        // highlight-next-line
+        .orderByIf(mode == OrderMode.NAME, table.name())
+        // highlight-next-line
+        .orderByIf(mode == OrderMode.PRICE, table.price())
+        .select(table)
+        .execute();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(orderMode: OrderMode): List<Book> =
+    sqlClient
+        .createQuery(Book::class) {
+            // highlight-next-line
+            when (orderMode) {
+                OrderMode.NAME -> orderBy(table.name)
+                OrderMode.PRICE -> orderBy(table.price)
+            }
+            select(table)
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
+
+### 客户端指定排序
+
+很多时候，前端UI允许用户通过操作表格组件来实现动态排序。即，排序的决定权在于客户端，服务端被动地接受参数，按客户端的排序要求执行查询。
+
+客户端通过传递字符串参数可以指定动态排序，可以通过`Order`类的静态函数`makeOrders`把字符串转化为Jimmer排序需要的`List<Order>`。
+
+`Order.makeOrders`定义如下
+
+```java title="Order.java"
+package org.babyfish.jimmer.sql.ast.query;
+
+public class Order {
+
+    public static List<Order> makeOrders(Props table, String ... codes) {
+        ...省略实现...
+    }
+
+    ...省略其他代码...
+}
+```
+
+其中，第一个参数`table`为SQL DSL中的主表。
+
+`Order.makeOrders`的使用方式非常灵活，例如
+
+-   用多个参数实现多列排序
+
+    ```java
+    Order.makeOrders(table, "name", "edition desc")
+    ```
+
+-   可以把多个参数合并成一个，并在字符串内部用`,`或`;`做分割
+
+    ```java
+    Order.makeOrders(table, "name, edition desc")
+    ```
+    :::info
+    实际项目中，大部分情况下都属于这种单参用法，因为只提供一个HTTP参数是最简单的。
+    :::
+
+-   甚至支持按照引用关联 *(一对一、多对一)* 进行连接
+
+    ```java
+    Order.makeOrders(table, "store.city.name; store.name; name")
+    ```
+
+    :::info
+    [动态连接](./dynamic-join)中所有特性对这种隐含连接有效
+    :::
+
+`Order.makeOrders`的使用方式如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public List<Book> findBooks(String sort) {
+
+    BookTable table = BookTable.$;
+
+    return sqlClient
+        .createQuery(table)
+        // highlight-next-line
+        .orderBy(Order.makeOrders(table, sort))
+        .select(table)
+        .execute();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(sort: String): List<Book> =
+    sqlClient
+        .createQuery(Book::class) {
+            // highlight-next-line
+            .orderBy(Order.makeOrders(table, sort))
+            select(table)
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
+
+如果调用`findBooks("store.name asc, name asc")`，则生成如下SQL
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+/* highlight-next-line */
+inner join BOOK_STORE tb_2_
+    on tb_1_.STORE_ID = tb_2_.ID
+order by
+    tb_2_.NAME asc,
+    tb_1_.NAME desc
+```
+
+由此可见，如果排序中包含隐含连接，Jimmer一样会构建动态连接。
+
+### 处理SpringData的Sort
+
+在上面的例子中，我们直接把客户端传递的排序字符串转化为Jimmer SQL AST的排序。
+
+然而，和SpingData协作时，可能需要处理[org.springframework.data.domain.Sort](https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/domain/Sort.html)类型。
+
+我们可以如此编写查询。这次，参数不再是字符串，而是Spring Data的Sort类。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public List<Book> findBooks(Sort sort) {
+
+    BookTable table = BookTable.$;
+
+    return sqlClient
+        .createQuery(table)
+        // highlight-next-line
+        .orderBy(table, SpingOrders.toOrders(sort))
+        .select(table)
+        .execute();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(sort: Sort): List<Book> =
+    sqlClient
+        .createQuery(Book::class) {
+            // highlight-next-line
+            .orderBy(sort)
+            select(table)
+        }
+        .execute()
+```
+
+</TabItem>
+</Tabs>
+
+这段代码解释如下：
+
+-   Java:
+
+    Jimmer的Java API提供了一个工具类，`org.babyfish.jimmer.spring.repository.SpringOrders`，其静态方法`toOrders`把spring-data的`Sort`对象装化成成Jimmer SQL DSL中的`Oder`对象数组。
+
+    `SpingOrders.toOrders`具备两个参数
+
+    -   `table`: SQL DSL中的主表
+
+    -   `sort`：外部传递的spring-data之`Sort`对象
+
+    `SpingOrders.toOrders`把spring dataa的`Sort`对象转化为Jimmer SQL DSL的`Order`对象数组后，就可以用Jimmer查询对象的`orderBy`实现排序。
+
+-   Kotlin
+
+    Jimmer的Kotlin API扩展了Jimmer查询对象，可以直接按照spring data的`Sort`对象排序。
+
+至此，我们已经示范了如何把spring data的`Sort`对象转化为Jimmer中的排序操作。
+
+为了进一步简化用户代码，Jimmer还提供了工具类`org.babyfish.jimmer.spring.model.SortUtils`, 其静态方法`toSort`可以把客户端传递的排序字符串转化为spring-data的`Sort`对象。比如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Sort sort = SortUtils.toSort("name asc, edition desc");
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var sort = SortUtils.toSort("name asc, edition desc")
+```
+
+</TabItem>
+</Tabs>
+
+即
+```
++------------------------+
+| 客户端构建的动态排序字符串 |
++-----------+------------+
+            |
+    SortUtils.toSort
+            |
+           \|/
++------------------------+
+|  Spring-Data的Sort对象  |
++-----------+------------+
+            |
+Java: 先调SpringOrders.toOrders，再orderBy
+Ktlin: 直接用sort对象进行orderBy操作
+            |
+           \|/
++------------------------+
+|  Jimmer查询AST中的排序   |
++-----------+------------+ 
+```

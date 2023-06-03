@@ -3,3 +3,1281 @@ sidebar_position: 8
 title: 常见表达式
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 字面量表达式
+
+先来看个例子 *（这个查询没有实际业务意义，仅为演示）*
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<
+    Tuple5<
+        String,
+        Long,
+        OffsetDateTime,
+        String,
+        Boolean
+    >
+> tuples = sqlClient
+    .createQuery(book)
+    .select(
+        Expression.string().value("String"),
+        Expression.numeric().value(3L),
+        Expression.comparable().value(OffsetDateTime.now()),
+        Expression.any().value("String"),
+        Expression.nullValue(Boolean.class)
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(Book::class) {
+        select(
+            value("String"),
+            value(3L),
+            value(OffsetDateTime.now()),
+            value("String"),
+            nullValue(Boolean::class)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+```sql
+select ?, ?, ?, ?, null from BOOK as tb_1_
+```
+
+除了null以外，其余各种类型的字面量都变成了JDBC参数。
+
+:::caution
+这段示范中，可以看出，`value()`方法接受了很多种类型的参数。
+
+需要注意的是，无论`value()`方法参数类型是什么，都不能为null，否则将导致异常。
+
+要为null创建字面量表达式，必须使用`nullValue()`方法，该方法需要指定表达式类型。
+:::
+
+:::info
+对于Java代码，我们使用了类型引导方法：
+1. Expression.string()，针对字符串类型。
+2. Expression.numeric()，针对数字类型。
+3. Expression.comparable()，针对可比较类型，即继承自java.lang.Comparable的类型。
+4. Expression.any()，其它类型。
+
+kotlin没有这个问题，其API是统一的。
+:::
+
+:::tip
+大部分情况下，开发人员无需手动创建字面量表达式。
+
+以下文即将讨论的相等判断为例，下面这种相对繁琐的写法
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    book.name().eq(
+        Expression.string().value("Java in Action")
+    )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table.name eq value("Java in Action")
+)
+```
+
+</TabItem>
+</Tabs>
+
+可以用更便捷的写法代替
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(book.name().eq("Java in Action"));
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java
+where(table.name eq "Java in Action")
+```
+
+</TabItem>
+</Tabs>
+
+不难发现，其它API会提供重载版本，以避免让开发人员亲自构建字面量表达式。
+
+但是，这无法100%做到。极少数情况下，仍然需要开发人员亲自构建字面量表达式。
+:::
+
+## 常量表达式
+
+常量表达式和字面量表达式高度类似，先看例子 *（这个查询没有实际业务意义，仅为演示）*
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<Integer> constants = sqlClient
+    .createQuery(book)
+    .select(
+        // highlight-next-line
+        Expression.constant(1)
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val constants = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            constant(1)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+select 
+    /* highlight-next-line */
+    1 
+from BOOK as tb_1_
+```
+
+不难看出，和字面量表达式总是使用JDBC参数不同，常量表达式直接把值硬编码进SQL语句。
+
+为了杜绝注入方式攻击的问题，常量表达式只支持数字类型，这是一个硬性限制。
+
+:::info
+虽然有常量表达式只支持数字类型这个硬性限制，不用担心注入方式攻击问题，但实际项目仍需要严格限制其使用。
+
+常量表达式之所以存在的唯一理由：某些数据库支持函数索引，如果定义函数索引的SQL表达式内部存在数字常量，这时，为了匹配这样的函数索引，常量表达式会非常有用。
+
+如果你的项目没有这种场景，请永远不要使用常量表达式，而应该全部使用字面量表达式。
+
+错误地使用常量表达式会带来严重的后果。错误地把善变的数字类型参数作为常量表达式植入SQL，将会破坏SQL字符串的稳定性，最终导致数据库内部执行计划缓存命中率极低，影响性能。
+:::
+
+## 比较
+
+1.  等于
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().eq("SQL in Action"));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name eq "SQL in Action")
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2. 不等
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().ne("SQL in Action"));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name ne "SQL in Action")
+    ```
+
+    </TabItem>
+    </Tabs>
+
+3. 大于
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.price().gt(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price gt BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+4. 大于或等于
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.price().ge(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price ge BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+5. 小于
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.price().lt(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price lt BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+6. 小于或等于
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.price().le(new BigDecimal(50)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.price le BigDecimal(50))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+7.  Between
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    where(
+        book.price().between(
+            new BigDecimal(40), 
+            new BigDecimal(50)
+        )
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```java
+    where(
+        table.price.between(
+            BigDecimal(40), 
+            BigDecimal(50)
+        )
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+8.  Not Between
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    where(
+        book.price().notBetween(
+            new BigDecimal(40), 
+            new BigDecimal(50)
+        )
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```java
+    where(
+        table.price.notBetween(
+            BigDecimal(40), 
+            BigDecimal(50)
+        )
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 模糊匹配
+
+### 大小写
+
+1.  like: 大小写敏感
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    where(book.name().like("Ab"));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name like "Ab")
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    最终生成的SQL条件
+    ```sql
+    where tb_1_.NAME like ?
+    ```
+    相应的JDBC参数: `%Ab%`
+
+2.  ilike: 大小写不敏感
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().ilike("Ab"));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name ilike "Ab")
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    最终生成的SQL条件
+    ```sql
+    where lower(tb_1_.NAME) like ?
+    ```
+    相应的JDBC参数: `%ab%`
+
+### 匹配模式
+
+1.  `LikeMode.ANYWHERE`（不指定时的默认行为）：出现在任何位置
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().like("Ab", LikeMode.ANYWHERE));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.ANYWHERE))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    相应的JDBC参数: `'%Ab%'`
+
+2.  `LikeMode.START`：作为开头
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().like("Ab", LikeMode.START));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.START))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    相应的JDBC参数: `'Ab%'`
+
+3.  `LikeMode.END`：作为结尾
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().like("Ab", LikeMode.END));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.END))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    相应的JDBC参数: `'%Ab'`
+
+4. `LikeMode.EXACT`：精确匹配
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    where(book.name().like("Ab", LikeMode.EXACT));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    where(table.name.like("Ab", LikeMode.EXACT))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    相应的JDBC参数: `'Ab'`
+
+## 空判断
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(book.store().isNull());
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(table.store.isNull())
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(book.store().isNotNull());
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(table.store.isNotNull())
+```
+
+</TabItem>
+</Tabs>
+
+## IN LIST
+
+### 单列
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    book.name().in(
+        Arrays.asList(
+            "SQL in Action",
+            "Java in Action"
+        )
+    )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    table.name valueIn listOf(
+        "SQL in Action",
+        "Java in Action"
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL条件
+```sql
+where tb_1_.NAME in (?, ?)
+```
+
+### 多列
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    Expression.tuple(
+        book.name(),
+        book.edition()
+    ).in(
+        Arrays.asList(
+            new Tuple2<>("SQL in Action", 1),
+            new Tuple2<>("SQL in Action", 2),
+            new Tuple2<>("Java in Action", 1),
+            new Tuple2<>("Java in Action", 2)
+        )
+    )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    tuple(
+        table.name, 
+        table.edition
+    ) valueIn listOf(
+        Tuple2("SQL in Action", 1),
+        Tuple2("SQL in Action", 2),
+        Tuple2("Java in Action", 1),
+        Tuple2("Java in Action", 2)
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL条件
+```sql
+where (tb_1_.NAME, tb_1_.EDITION) in (
+    (?, ?), (?, ?), (?, ?), (?, ?)
+)
+```
+
+:::note
+除了和数据集合配合使用外，in还可以可以子查询配合使用。
+
+这部分内容会在[子查询](../query/sub-query)相关文档中详细介绍，本文不做重复介绍。
+:::
+
+## 与、或、非
+
+### 与
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    Predicate.and(
+        book.name().like("Ab"),
+        book.price().ge(new BigDecimal(40)),
+        book.price().lt(new BigDecimal(60))
+    )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    and(
+        table.name like "Ab",
+        table.price ge BigDecimal(40),
+        table.price lt BigDecimal(60)
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+注意，如果逻辑与表达式直接作为where方法的参数，以下两种等价写法更值得推荐.
+:::
+
+1.  使用where方法的变参版本
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    where(
+        book.name().like("Ab"),
+        book.price().ge(new BigDecimal(40)),
+        book.price().lt(new BigDecimal(60))
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(
+        table.name like "Ab",
+        table.price ge BigDecimal(40),
+        table.price lt BigDecimal(60)
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  多次调用where方法
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    q.where(book.name().like("Ab"));
+    q.where(book.price().ge(new BigDecimal(40)));
+    q.where(book.price().lt(new BigDecimal(60)));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    where(table.name like "Ab")
+    where(table.price ge BigDecimal(40))
+    where(table.price lt BigDecimal(60))
+    ```
+
+    </TabItem>
+    </Tabs>
+
+所以，直接使用`and`的写法在实际项目中应该不常见。
+
+### 或
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    // highlight-next-line
+    Predicate.or(
+        book.name().like("Ab"),
+        book.price().ge(new BigDecimal(40)),
+        book.price().le(new BigDecimal(60))
+    )
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    // highlight-next-line
+    or(
+        table.name like "Ab",
+        table.price ge BigDecimal(40),
+        table.price le BigDecimal(60)
+    )
+)
+```
+
+</TabItem>
+</Tabs>
+
+### 非
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    book.name().like("Ab").not()
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+where(
+    not(table.name like "Ab")
+);
+```
+
+</TabItem>
+</Tabs>
+
+并不总是需要调用`not()`函数。很多时候有快捷方式可用，比如
+1. `.eq(value).not()`可以简写成`.ne(value)`
+2. `.isNull().not()`可以简写成`.isNotNull(value)`
+3. `.exists().not()`可以简写成`.notExists()` *(exists会在[子查询](../query/sub-query)中介绍，本文不会介绍)*
+
+甚至，即便开发人员明确使用了not()，最终SQL也不一定会出现not，比如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+where(
+    book.price().ge(new BigDecimal(40)).not()
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java
+where(
+    not(book.price ge BigDecimal(40))
+)
+```
+
+</TabItem>
+</Tabs>
+
+实际生成的SQL却是
+```sql
+where tb_1_1.PRICE < ?
+```
+jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻辑和你想要的逻辑等价。
+
+## 数学运算
+
+1.  &#43;
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().plus(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price + BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+2.  &#45;
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().minus(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price - BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+3.  &#42;
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().times(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price * BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+4.  /
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().div(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price / BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+5.  %
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    select(book.price().rem(BigDecimal.TWO));
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    select(table.price % BigDecimal.TWO)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 聚合函数
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<
+    Tuple6<
+        Long,
+        Long,
+        BigDecimal,
+        BigDecimal,
+        BigDecimal,
+        BigDecimal
+    >
+> tuples = sqlClient
+    .createQuery(book)
+    .select(
+        book.count(),
+        book.id().count(/* disintct */ true),
+        book.price().sum(),
+        book.price().min(),
+        book.price().max(),
+        book.price().avg()
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val tuples = sqlClient
+    .createQuery(Book::class) {
+        select(
+            count(table),
+            count(table.id, distinct = true),
+            sum(table.price),
+            min(table.price),
+            max(table.price),
+            avg(table.price)
+        );
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+最终生成的SQL如下
+
+```sql
+select 
+    count(tb_1_.ID), 
+    count(distinct tb_1_.ID), 
+    sum(tb_1_.PRICE), 
+    min(tb_1_.PRICE), 
+    max(tb_1_.PRICE), 
+    avg(tb_1_.PRICE) 
+from BOOK as tb_1_
+```
+
+## Coalesce
+
+Coalesce语句指定一系列表达式，返回第一个非null值。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookStoreTable store = BookStoreTable.$;
+
+List<String> results = sqlClient
+    .createQuery(store)
+    .select(
+        store.website() // 1
+            // highlight-next-line
+            .coalesceBuilder()
+            .or(store.name()) // 2
+            .or("Default Value") // 3
+            .build()
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var results = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.website
+                // highlight-next-line
+                .coalesce() // 1
+                .or(table.name) // 2
+                .end()
+        )
+    }
+```
+
+</TabItem>
+</Tabs>
+
+:::tip
+
+在这个例子中，kotlin 代码和 java 代码是不同的。 kotlin 代码中没有表达式“3”。
+
+Kotlin-API 引入了 kotlin 对 SQL 的 null-safety，`table.name` 是一个非 null 字段，所以 kotlin 强制我们编写 `end()` 来完成这个表达式。
+
+这意味着java代码中的表达式 `3`不会被使用。
+:::
+
+最终生成的SQL如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="SQL for java">
+
+```sql
+select 
+    /* highlight-next-line */
+    coalesce(
+        tb_1_.WEBSITE, 
+        tb_1_.NAME, 
+        ?
+    ) 
+from BOOK_STORE as tb_1_
+```
+
+</TabItem>
+<TabItem value="kotlin" label="SQL for kotlin">
+
+```sql
+select 
+    /* highlight-next-line */
+    coalesce(
+        tb_1_.WEBSITE, 
+        tb_1_.NAME
+    ) 
+from BOOK_STORE as tb_1_
+```
+
+</TabItem>
+</Tabs>
+
+特别地，如果SQL的coalesce函数只有两个参数，即上述Java代码中`or()`方法只会被调用一次时，有一个快捷写法：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookStoreTable store = BookStoreTable.$;
+
+List<String> results = sqlClient
+    .createQuery(store)
+    .select(
+        // highlight-next-line
+        store.website().coalesce(store.name())
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var results = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            // highlight-next-line
+            table.website.coalesce(table.name)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+最终生成的SQL如下
+
+```sql
+select 
+    /* highlight-next-line */
+    coalesce(tb_1_.WEBSITE, tb_1_.NAME) 
+from BOOK_STORE as tb_1_
+```
+
+其实，这种写法才是最常见的。
+
+## Concat
+
+Contact表达式用于字符串拼接。
+
+这个例子以空格作为连接符，把作者的firstName和lastName拼起来
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+AuthorTable author = AuthorTable.$;
+
+List<String> results = sqlClient
+    .createQuery(author)
+    .select(
+        author
+            .firstName()
+            // highlight-next-line
+            .concat(
+                Expression.string().value(" "),
+                author.lastName()
+            )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+var fullNames = sqlClient
+    .createQuery(Author::class) {
+        select(
+            // highlight-next-line
+            concat(
+                table.firstName,
+                value(" "),
+                table.lastName
+            )
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+最终生成的SQL
+
+```sql
+select 
+    /* highlight-next-line */
+    concat(
+        tb_1_.FIRST_NAME, 
+        ?, 
+        tb_1_.LAST_NAME
+    ) 
+from AUTHOR as tb_1_
+```
+
+## Case
+
+case表达式分为两种，简单的case和普通的case
+
+### 简单的case
+
+简单的case语句，需要在语句开头处指定一个表达式，后续每一个判断分支指定一个期望值，检查指定的表达式是否和某个期望值匹配。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<String> results = sqlClient
+    .createQuery(book)
+    .select(
+        Expression.string()
+            // highlight-next-line
+            .caseBuilder(book.name())
+            .when("Java in Action", "Matched")
+            .when("SQL in Action", "Matched")
+            .otherwise("Not matched")
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val results = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            case(table.name)
+                .match("Kotlin in Action", "Matched")
+                .match("SQL in Action", "Matched")
+                .otherwise("Not matched")
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+最终生成的SQL如下
+
+```sql
+select 
+    /* highlight-next-line */
+    case tb_1_.NAME 
+        when ? then ? 
+        when ? then ? 
+        else ? 
+    end 
+from BOOK as tb_1_
+```
+
+### 普通的case
+
+普通的case语句，语句开头处不需要指定任何参数，但后续每一个判断分支都可以指定一个任意复杂度的逻辑判断表达式，检查是否有分支的逻辑判断成立。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+
+List<String> results = sqlClient
+    .createQuery(book)
+    .select(
+        Expression.string()
+            // highlight-next-line
+            .caseBuilder()
+            .when(
+                book.price().lt(new BigDecimal(30)),
+                "Cheap"
+            )
+            .when(
+                book.price().gt(new BigDecimal(70)),
+                "Expensive"
+            )
+            .otherwise("Appropriate")
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val results = sqlClient
+    .createQuery(Book::class) {
+        select(
+            // highlight-next-line
+            case()
+                .match(table.price lt BigDecimal(30), "Cheap")
+                .match(table.price gt BigDecimal(70), "Expensive")
+                .otherwise("Appropriate")
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+最终生成的SQL如下
+```sql
+select 
+    /* highlight-next-line */
+    case 
+        when tb_1_.PRICE < ? then ? 
+        when tb_1_.PRICE > ? then ? 
+        else ? 
+    end 
+from BOOK as tb_1_
+```
