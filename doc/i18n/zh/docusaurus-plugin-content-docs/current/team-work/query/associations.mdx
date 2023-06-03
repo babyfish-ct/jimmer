@@ -2,3 +2,528 @@
 sidebar_position: 12
 title: 直接查询中间表
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 被对象模型隐藏的中间表
+
+让我们回顾一下这段实体接口定义代码
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Entity
+public interface Book {
+
+    @ManyToMany
+    @JoinTable(
+        // highlight-next-line
+        name = "BOOK_AUTHOR_MAPPING", 
+        joinColumnName = "BOOK_ID", 
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
+    List<Author> authors();
+
+    ...omit other code...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Entity
+interface Book {
+
+    @ManyToMany
+    @JoinTable(
+        // highlight-next-line
+        name = "BOOK_AUTHOR_MAPPING", 
+        joinColumnName = "BOOK_ID", 
+        inverseJoinColumnName = "AUTHOR_ID"
+    )
+    val authors: List<Author>
+
+    ...omit other code...
+}
+```
+
+</TabItem>
+</Tabs>
+
+上述代码中，`BOOK_AUTHOR_MAPPING`表作为中间表被使用。
+
+-   数据库的BOOK表，Java代码有与之对应的实体接口Book。
+
+-   数据库的AUTHOR表，Java代码有与之对应的实体接口Author。
+
+-   但是，数据库中的BOOK_AUTHOR_MAPPING表，在Java代码中没有对应的实体接口。
+
+即，中间表被对象模型隐藏了。
+
+## 直接查询中间表
+
+Jimmer提供了一个有趣的功能，即便中间表被隐藏没有对应实体，也可以对其直接查询。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
+    AssociationTable.of(BookTableEx.class, BookTableEx::authors);
+    
+List<Association<Book, Author>> associations =
+    sqlClient
+        // highlight-next-line
+        .createAssociationQuery(association)
+        .where(association.source().id().eq(3L))
+        .select(association)
+        .execute();
+associations.forEach(System.out::println);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val associations = sqlClient
+    .queries
+    .forList(Book::authors) {
+        where(table.source.id eq 3L)
+        select(table)
+    }
+    .execute()
+associations.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
+这里，Java的`createAssociationQuery`或Kotlin的`queries.forList`表示基于中间表创建查询，而非基于实体表。
+
+:::tip
+这里的Java代码示范为了兼容Java8，第一行的变量`association`的类型比较复杂。建议提高Java的版本，采用`var`关键字。
+:::
+
+生成的SQL如下
+```sql
+select 
+    tb_1_.BOOK_ID, 
+    tb_1_.AUTHOR_ID 
+/* highlight-next-line */
+from BOOK_AUTHOR_MAPPING as tb_1_
+where tb_1_.BOOK_ID = ? /* 3 */
+```
+
+果然，这是一个基于中间表的查询。
+
+最终打印结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+
+```
+Association{
+    source={
+        "id":3
+    }, target={
+        "id":1
+    }
+}
+Association{
+    source={
+        "id":3
+    }, 
+    target={
+        "id":2
+    }
+}
+```
+
+返回数据是一系列Association对象
+
+```java
+package org.babyfish.jimmer.sql.association;
+
+public class Association<S, T> {
+
+    public Association(S source, T target) {
+        this.source = source;
+        this.target = target;
+    }
+
+    public S source() {
+        return source;
+    }
+
+    public T target() {
+        return target;
+    }
+}
+```
+
+`Association<S, T>`表示从`S`类型指向`T`类型关联的中间表实体。中间表实体是伪实体，没有id。它只有两个属性:
+
+- `source`: 中间表指向己方的外键所对应的对象(在这个例子中，就是`Book`对象)。
+- `target`: 中间表指向对方的外键所对应的对象(在这个例子中，就是`Author`对象)。
+
+:::note
+
+1.  在这个例子中，并未使用对象抓取器定义Association的对象格式（事实上Association也不支持对象抓取器），因此对象的`source`和`targate`关联属性仅包含对象id。
+
+2.  `Author`也有一个从动的多对多关联`Author.books`, 它是`Book.authors`的镜像。
+    
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    @Entity
+    public interface Author {
+
+        // highlight-next-line
+        @ManyToMany(mappedBy = "authors")
+        List<Book> books();
+
+        ...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```java
+    @Entity
+    interface Author {
+
+        // highlight-next-line
+        @ManyToMany(mappedBy = "authors")
+        val books: List<Book>
+
+        ...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    基于`Author.books`也可以创建中间表查询，但是`source`代表Author，而`target`代表Book。和当前例子相反。
+:::
+
+这个例子中，我们只查询了中间表本身。所以，`source`和`target`对象中只有id。
+
+要获获取完整的`source`和`target`对象，可以表连接，然后利用元组进行返回。
+
+代码如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
+    AssociationTable.of(BookTableEx.class, BookTableEx::authors);
+
+List<Tuple2<Book, Author>> tuples =
+    sqlClient
+        .createAssociationQuery(association)
+        .where(association.source().id().eq(3L))
+        // highlight-next-line
+        .select(
+            association.source(),
+            association.target()
+        )
+        .execute();
+tuples.forEach(System.out::println);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val associations = sqlClient
+    .queries
+    .forList(Book::authors) {
+        where(table.source.id eq 3L)
+        // highlight-next-line
+        select(
+            table.source,
+            table.target
+        )
+    }
+    .execute()
+associations.forEach(::println)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下:
+```sql
+select 
+
+    /* source() */
+    tb_1_.BOOK_ID, 
+    tb_2_.NAME, 
+    tb_2_.EDITION, 
+    tb_2_.PRICE, 
+    tb_2_.STORE_ID, 
+
+    /* target() */
+    tb_1_.AUTHOR_ID, 
+    tb_3_.FIRST_NAME, 
+    tb_3_.LAST_NAME, 
+    tb_3_.GENDER
+
+from BOOK_AUTHOR_MAPPING as tb_1_ 
+inner join BOOK as tb_2_ 
+    on tb_1_.BOOK_ID = tb_2_.ID 
+inner join AUTHOR as tb_3_ 
+    on tb_1_.AUTHOR_ID = tb_3_.ID 
+where tb_1_.BOOK_ID = ? /* 3 */
+```
+
+最终打印结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+```
+Tuple2{
+    _1={
+        "id":3,
+        "name":"Learning GraphQL",
+        "edition":3,
+        "price":51.00,
+        "store":{
+            "id":1
+        }
+    }, 
+    _2={
+        "id":1,
+        "firstName":"Alex",
+        "lastName":"Banks",
+        "gender":"MALE"
+    }
+}
+Tuple2{
+    _1={
+        "id":3,
+        "name":"Learning GraphQL",
+        "edition":3,
+        "price":51.00,
+        "store":{
+            "id":1
+        }
+    }, 
+    _2={
+        "id":2,
+        "firstName":"Eve",
+        "lastName":"Procello",
+        "gender":"MALE"
+    }
+}
+```
+
+:::cuation
+关联对象`Association<S, T>`很简单也很特殊，不支持也不需要[对象抓取器](./object-fetcher)。
+
+注意，这里仅指`Association<S, T>`对象<b>本身</b>不支持，其关联属性`source`和`target`仍然支持[对象抓取器](./object-fetcher)，如：
+
+<Tabs groupId="language">
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+select(
+    table
+        .source
+        // highlight-next-line
+        .fetchBy {
+            allScalarFields()
+            store { 
+                allScalarFields()
+            }
+        },
+    table.target
+)
+```
+
+</TabItem>
+</Tabs>
+
+:::
+
+## 和非中间表查询的对比
+
+读者可能会认为，基于中间表查询的查询存在的价值，是为了让开发人员写出性能更高的查询。
+
+但其实不是这样的。由于[幻连接](./dynamic-join/optimization#幻连接)和[半连接](./dynamic-join/optimization#半连接)这两个优化手段的存在，无论是否使用基于中间表的查询，都能达到很好的性能。是否选择使用基于中间表的查询，完全看用户自己喜好。
+
+### 1. 基于中间表子查询实现一个功能
+
+之前的代码，我们演示基于中间表的顶级查询；而这个例子演示基于中间表的子查询。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+AssociationTable<Book, BookTableEx, Author, AuthorTableEx> association =
+    AssociationTable.of(BookTableEx.class, BookTableEx::authors);
+
+List<Book> books = sqlClient
+    .createQuery(table)
+    .where(
+        table.id().in(
+            // highlight-next-line
+            sqlClient
+                .createAssociationSubQuery(association)
+                .where(
+                    association
+                        .target() ❶
+                        .firstName().eq("Alex")
+                )
+                .select(
+                    association
+                        .source() ❷
+                        .id()
+                )
+        )
+    )
+    .select(table)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table.id valueIn
+                // highlight-next-line
+                subQueries.forList(Book::authors) {
+                    where(
+                        table
+                        .target ❶
+                        .firstName eq "Alex"
+                    )
+                    select(
+                        table
+                        .source ❷
+                        .id
+                    )
+                }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+其中
+
+-   Java的`createAssociationSubQuery`和Kotlin的`subQueries.forList`用于创建一个基于中间表的子查询。该查询用户寻找所有包含`firstName`为"Alex"的作者的书籍。
+
+-   ❶处`association.target`是真正的表连接，会生成SQL JOIN连接`AUTHOR`表进行条件判断。
+
+-   ❷处`association.source`是由于[幻连接](./dynamic-join/optimization#幻连接)，并不会生成SQL join。
+
+最终生成的SQL如下: 
+
+```sql
+select 
+    tb_1_.ID, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+from BOOK as tb_1_ 
+where 
+    tb_1_.ID in (
+        /* highlight-next-line */
+        select 
+            tb_2_.BOOK_ID 
+        from BOOK_AUTHOR_MAPPING as tb_2_ 
+        inner join AUTHOR as tb_3_ 
+            on tb_2_.AUTHOR_ID = tb_3_.ID 
+        where tb_3_.FIRST_NAME = ?
+    )
+```
+
+### 2. 不基于中间表子查询实现同样的功能
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+AuthorTableEx author = AuthorTableEx.$;
+
+List<Book> books = sqlClient
+    .createQuery(book)
+    .where(
+        book.id().in(sqlClient
+            // highlight-next-line
+            .createSubQuery(author)
+            .where(author.firstName().eq("Alex"))
+            .select(
+                author.books().id() ❶
+            )
+        )
+    )
+    .select(book)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(
+            table.id valueIn
+                // highlight-next-line
+                subQuery(Author::class) {
+                    where(table.firstName eq "Alex")
+                    select(
+                        table.books.id ❶
+                    )
+                }
+        )
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+❶处`author.books`是[半连接](./dynamic-join/optimization#半连接)，所以仅仅生成从表`AUTHOR`到中间表`BOOK_AUTHOR_MAPPING`的SQL JOIN，而不会进一步SQL JOIN到`BOOK表`。
+
+最终生成的SQL如下: 
+
+```sql
+select 
+
+    tb_1_.ID, 
+    tb_1_.NAME, 
+    tb_1_.EDITION, 
+    tb_1_.PRICE, 
+    tb_1_.STORE_ID 
+
+from BOOK as tb_1_ 
+where 
+    tb_1_.ID in (
+        /* highlight-next-line */
+        select 
+            tb_3_.BOOK_ID 
+        from AUTHOR as tb_2_ 
+        inner join BOOK_AUTHOR_MAPPING as tb_3_ 
+            on tb_2_.ID = tb_3_.AUTHOR_ID 
+        where tb_2_.FIRST_NAME = ?
+    )
+```
+
+对比这两个SQL，不难发现，它们功能一样，性能一样。
+
+:::info
+基于中间表的查询，只是为开发人员多提供一种代码书写风格，并不具备不可取代性，用其他手段也可以实现功能和性能形同的查询。
+:::

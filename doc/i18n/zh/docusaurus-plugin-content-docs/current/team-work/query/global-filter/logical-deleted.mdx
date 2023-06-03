@@ -1,0 +1,321 @@
+---
+sidebar_position: 1
+title: 逻辑删除
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 映射
+
+逻辑删除也称软删除，表示并不真正从数据库中删除数据，而是通过隐藏数据来达到数据被删除的假象。这可以为误操作留下一次恢复的机会。
+
+逻辑删除相关的实体映射，在[映射篇/进阶映射/逻辑删除](../../mapping/advanced/logical-deleted)有非常详细的介绍，这里不再重复所有细节，仅做一个简要回顾
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted(value = "true", useMultiViewCache = true)
+    boolean isDeleted();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted(value = "true", useMultiViewCache = true)
+    val isDeleted: Boolean
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+这里的`useMultiViewCache`将会在[多视角缓存](./multiview-cache)中介绍，这里请读者先先忽略之。
+:::
+
+## 使用
+
+### 过滤聚合根
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+List<Book> books = sqlClient
+    .createQuery(table)
+    .select(table)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        select(table)
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL为
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.DELETED,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+where
+    /* highlight-next-line */
+    tb_1_.DELETED = ? /* false */
+```
+
+### 过滤关联对象
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+AuthorTable author = AuthorTable.$;
+
+List<Author> authors = sqlClient
+    .createQuery(author)
+    .select(
+        author.fetch(
+            AuthorFetcher.$
+                .allScalarFields()
+                .books(
+                    BookFetcher.$
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val authors = sqlClient
+    .createQuery(Author::class) {
+        select(
+            table.fetchBy {
+                allScalarFields()
+                books {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+在未启用缓存的情况下，这会生成两条SQL
+
+-   查询聚合根
+
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    ```
+
+-   查询关联对象，应用逻辑删除过滤器
+
+    ```sql
+    select
+        tb_2_.AUTHOR_ID,
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
+    from BOOK tb_1_
+    inner join BOOK_AUTHOR_MAPPING tb_2_
+        on tb_1_.ID = tb_2_.BOOK_ID
+    where
+            tb_2_.AUTHOR_ID in (
+                ? /* 1 */, ? /* 2 */, ? /* 3 */, ? /* 4 */, ? /* 5 */
+            )
+        and
+            /* highlight-next-line */
+            tb_1_.DELETED = ? /* false */
+    ```
+
+## 忽略逻辑删除过滤器
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+List<Book> books = sqlClient
+    .filters(cfg -> { ❶
+        cfg.disable( ❷
+            cfg
+                .getFilterManager() ❸
+                .builtIns() ❹
+                .getDeclaredNotDeletedFilter(Book.class) ❺
+        );
+    })
+    .createQuery(table)
+    .select(table)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .filters { ❶
+        disable( ❷
+            filterManager ❸
+                .builtIns ❹
+                .getDeclaredNotDeletedFilter(Book::class) ❺
+        )
+    }
+    .createQuery(table)
+    .select(table)
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ 在不影响当前`sqlClien`的前提下，调整过滤器配置，创建新的临时`sqlClient`
+
+-   ❷ 禁用参数所代表的全局过滤器
+
+-   当前过滤管理器为❸，其中，Jimmer内置过滤管理器为❹
+
+-   ❺ 处获取针对`Book`实体的过滤器，该过滤器查询未被删除的过滤器。
+
+这次，生成的SQL不再包含
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.DELETED,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+```
+
+## 反转逻辑删除过滤器
+
+事实上，Jimmer为逻辑删除提供了两个过滤器
+
+-   NotDeleteFilter: 查询未被删除的数据，默认启用
+    
+    这也是上一个例子我们手动禁用的过滤器
+
+-   AlreadDeletedFilter: 查询已经被删除的数据，默认禁用
+
+接下来，我们继续禁用`NotDeleteFilter`，同时启用`AlreadyDeletedFilter`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+List<Book> books = sqlClient
+    .filters(cfg -> {
+        cfg.disable(
+            cfg
+                .getFilterManager()
+                .builtIns()
+                .getDeclaredNotDeletedFilter(Book.class)
+        );
+        cfg.enable(
+            cfg
+                .getFilterManager()
+                .builtIns()
+                .getDeclaredAlreadyDeletedFilter(Book.class)
+        );
+    })
+    .createQuery(table)
+    .select(table)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .filters {
+        disable(
+            filterManager
+                .builtIns
+                .getDeclaredNotDeletedFilter(Book::class)
+        )
+        enable(
+            cfg
+                .getFilterManager()
+                .builtIns()
+                .getDeclaredAlreadyDeletedFilter(Book.class)
+        )
+    }
+    .createQuery(table)
+    .select(table)
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+再次执行，生成的SQL为
+
+生成的SQL为
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.DELETED,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+where
+    /* highlight-next-line */
+    tb_1_.DELETED = ? /* true */
+```
+
+这次过滤条件为`tb_1_.DELETED = true`，即查询已经被删除数据，和默认的过滤规则刚好相反。
