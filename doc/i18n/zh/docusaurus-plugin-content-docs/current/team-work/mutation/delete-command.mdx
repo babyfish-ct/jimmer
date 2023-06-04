@@ -2,3 +2,347 @@
 sidebar_position: 4
 title: 删除指令
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 本文讨论前提
+
+Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
+
+如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+
+本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+
+## 基本概念
+
+删除指令，即按id或id集合删除对象。
+
+<table>
+    <thead>
+        <tr>
+            <th>API类别</th>
+            <th>语言</th>
+            <th>按id删除</th>
+            <th>按id集合删除</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="2">底层API</td>
+            <td>Java</td>
+            <td>
+                完整API
+                <ul>
+                    <li>JSqlClient.getEntities().delete</li>
+                    <li>JSqlClient.getEntities().deleteCommand</li>
+                </ul>
+                快捷API
+                <ul>
+                    <li>JSqlClient.deleteById</li>
+                </ul>
+            </td>
+            <td>
+                完整API
+                <ul>
+                    <li>JSqlClient.getEntities().batchDelete</li>
+                    <li>JSqlClient.getEntities().batchDeleteCommand</li>
+                </ul>
+                快捷API
+                <ul>
+                    <li>JSqlClient.deleteByIds</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Kotlin</td>
+            <td>
+                完整API
+                <ul>
+                    <li>KSqlClient.entities.delete</li>
+                </ul>
+                快捷API
+                <ul>
+                    <li>KSqlClient.deleteById</li>
+                </ul>
+            </td>
+            <td>
+                完整API
+                <ul>
+                    <li>KSqlClient.entities.batchDelete</li>
+                </ul>
+                快捷API
+                <ul>
+                    <li>KSqlClient.deleteByIds</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td rowspan="2">Spring Data API</td>
+            <td>Java</td>
+            <td>
+                <ul>
+                    <li>JRepository.deleteById</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>JRepository.deleteByIds</li>
+                    <li>JRepository.deleteAllById</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Kotlin</td>
+            <td>
+                <ul>
+                    <li>KRepository.deleteById</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>KRepository.deleteByIds</li>
+                    <li>KRepository.deleteAllById</li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+必要说明
+
+-   在Java底层API中，具备两个方法以Command结尾的方法: `deleteCommand`和`batchDeleteCommand`。
+
+    -   这两个方法创建指令但不立即执行，用户对指令做出更多配置后，在调用`execute`执行。
+
+        以`deleteCommand`为例
+    
+        ```java
+        DeleteResult result = sqlClient
+            .getEntities()
+            .deleteCommand(BookStore.class, 1L) ❶
+            .setDissociateAction(BookProps.STORE, DissociateAction.SET_NULL) ❷
+            .execute(); ❸
+        ```
+
+        -   ❶ 创建指令，但不执行
+
+        -   ❷ 配置指令，可以用链式API进行多个配置 *(这里仅仅示范了一个配置)*
+
+            :::info
+            该配置的作用会在后文阐述，读者可以先忽略它
+            :::
+        
+        -   ❸最终执行
+
+        kotlin不需要如此设计，因为其delete方法支持一个可选的Lambda参数用于配置，直接执行并附带上必要配置即可。
+
+        ```kotlin
+        val result = sqlClient
+            .entities
+            .delete(BookStore.class, 1L) {
+                setDissociateAction(Book::store, DissociateAction.SET_NULL)
+            }
+        ```
+
+-   在Spring Data API中，我们可以找到两个功能相同但名称不同的方法：`deleteByIds`和`deleteAllById`。
+
+    -   `deleteByIds`： 和Jimmer底层快捷API风格一致的方法
+
+    -   `deleteAllById`：继承`org.springframework.data.repository.CrudRepository`后必需拥有方法，可以理解成`deleteByIds`的别名。
+
+## 逻辑删除
+
+## 物理删除
+
+### 基本用法
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+DeleteResult result = sqlClient
+    .getEntities()
+    .batchDelete(Book.class, Arrays.asList(1L, 2L, 3L, 4L));
+
+System.out.println(
+    
+    "Affected row count: " + 
+    result.getTotalAffectedRowCount() +
+
+    "\nAffected row count of table 'BOOK': " +
+    result.getAffectedRowCount(AffectedTable.of(Book.class)) +
+    
+    "\nAffected row count of middle table 'BOOK_AUTHOR_MAPPING': " +
+    result.getAffectedRowCount(AffectedTable.of(BookProps.AUTHORS))
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .batchDelete(Book::class, listOf(1L, 2L, 3L, 4L))
+println(
+    """Affected row count: 
+        |${result.totalAffectedRowCount}
+        |Affected row count of table 'BOOK': 
+        |${result.affectedRowCount(Book::class)}
+        |Affected row count of middle table 'BOOK_AUTHOR_MAPPING': 
+        |${result.affectedRowCount(Book::authors)}
+    """.trimMargin()
+)
+```
+
+</TabItem>
+</Tabs>
+
+最终生成的SQL如下
+
+1. 
+    ```sql
+    delete from BOOK_AUTHOR_MAPPING 
+    where BOOK_ID in(?, ?, ?, ?)
+    ```
+
+2. 
+    ```sql
+    delete from BOOK 
+    where ID in(?, ?, ?, ?)
+    ```
+
+### 删除父对象时
+
+从上面的论述可以看到，delete指令有可能导致多对多关联中间表的数据的被删除，这是比较简单的情况。
+
+对于直接基于外键的一对一或一对多关联而言，需要处理的情况更复杂一些。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+DeleteResult result = sqlClient
+    .getEntities()
+    .delete(BookStore.class, 1L);
+
+System.out.println(
+
+    "Affected row count: " +
+            result.getTotalAffectedRowCount() +
+
+            "\nAffected row count of table 'BOOK_STORE': " +
+            result.getAffectedRowCount(AffectedTable.of(BookStore.class)) +
+
+            "\nAffected row count of table 'BOOK': " +
+            result.getAffectedRowCount(AffectedTable.of(Book.class)) +
+
+            "\nAffected row count of middle table 'BOOK_AUTHOR_MAPPING': " +
+            result.getAffectedRowCount(AffectedTable.of(BookProps.AUTHORS))
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .delete(BookStore::class, 1L)
+println(
+    """Affected row count: 
+        |${result.totalAffectedRowCount}
+        |Affected row count of table 'BOOK_STORE': 
+        |${result.affectedRowCount(BookStore::class)}
+        |Affected row count of table 'BOOK': 
+        |${result.affectedRowCount(Book::class)}
+        |Affected row count of middle table 'BOOK_AUTHOR_MAPPING': 
+        |${result.affectedRowCount(Book::authors)}
+    """.trimMargin()
+)
+```
+
+</TabItem>
+</Tabs>
+
+这段代码删除一个`BookStore`对象。
+
+由于`BookStore`对象存在一对多关联`BookStore.books`，如果被删除的对象在数据库中已经存在一些关联对象，Jimmer将抛弃这些对象。
+
+一对多关联`BookStore.books`不是基于中间表的映射，而是基于外键映射。Jimmer将如何抛弃这些`Book`对象呢？
+
+和JPA不同，Jimmer不允许直接使用`@OneToOne`和`@OneToMany`进行关联映射，`@OneToOne`和`@OneToMany`必须使用`mappedBy`属性。可以参考[@OneToMany](../mapping/base/association/one-to-many)以了解更多。
+
+这表示，通过一对多关联`BookStore.books`一定能找到与之对应的多对一关联`Book.store`。
+
+接下来，Jimmer会参考多对一关联属性`Book.store`上的[@OnDissociate](../basic/mapping#ondissociate)注解。
+
+1. 如果`Book.store`所对应的外键被[@OnDissociate](../basic/mapping#ondissociate)注解配置为`SET_NULL`，则，执行如下SQL
+
+    ```sql
+    update BOOK set STORE_ID = null where STORE_ID in(?)
+    ```
+    其中参数为被删除对象的id。这样，这些被抛弃对象的外键就被设置为null了。
+
+2. 否则，则先执行
+
+    ```sql
+    select ID from BOOK where STORE_ID in(?)
+    ```
+    其中参数为被删除对象的id。这样，就得到这些被抛弃对象的id了。
+
+    > 如果查询没有返回任何数据，就忽略后续步骤。
+
+    - 如果`Book.store`所对应的外键被[@OnDissociate](../basic/mapping#ondissociate)注解配置为`DELETE`，
+        运用新的delete指令删除这些被抛弃对象，其实这就是delete指令的自动递归执行能力。
+
+    - 否则，抛出异常。
+
+上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDissociate](../basic/mapping#ondissociate)。
+
+然而，你也可以选择不使用[@OnDissociate](../basic/mapping#ondissociate)注解，而动态地为delete指令指定dissociateAction配置。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+DeleteResult result = sqlClient
+    .getEntities()
+    .deleteCommand(BookStore.class, 1L)
+    .configure(it ->
+            it
+                // highlight-next-line
+                .setDissociateAction(
+                    BookProps.STORE,
+                    DissociateAction.SET_NULL
+                )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val result = sqlClient
+    .entities
+    .delete(BookStore::class, 1L) {
+        // highlight-next-line
+        setDissociateAction(
+            Book::store, 
+            DissociateAction.SET_NULL
+        )
+    }
+```
+
+</TabItem>
+</Tabs>
+
+这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../basic/mapping#ondissociate)并指定级联删除，效果完全一样。
+
+:::info
+1. 如果`setDissociateAction`方法最后一个参数为`DissociateAction.SET_NULL`，则被设置关联属性必须可空，否则会导致异常。
+
+2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDissociate](../basic/mapping#ondissociate)配置了删除规则，则动态配置优先。
+:::
