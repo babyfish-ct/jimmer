@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.generator
 
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.ParameterizedTypeName
@@ -12,13 +13,15 @@ import org.babyfish.jimmer.ksp.meta.MetaException
 import java.math.BigDecimal
 import java.math.BigInteger
 import javax.validation.ValidationException
-import javax.validation.constraints.*
 import kotlin.reflect.KClass
 
 class ValidationGenerator(
     private val prop: ImmutableProp,
     private val parent: CodeBlock.Builder
 ) {
+    private val annoMultiMap: Map<String, List<KSAnnotation>> =
+        prop.validationAnnotationMirrorMultiMap
+
     fun generate() {
         val nullityAnnotations = prop.annotations {
             val shortName = it.shortName.asString()
@@ -43,10 +46,7 @@ class ValidationGenerator(
     }
 
     private fun generateNotEmpty() {
-        val notEmpty = prop.annotation(NotEmpty::class)
-        if (notEmpty === null) {
-            return
-        }
+        val notEmpty = annoMultiMap["NotEmpty"]?.get(0) ?: return
         if (!isSimpleType(String::class) && !isSimpleType(List::class)) {
             throw MetaException(
                 prop.propDeclaration,
@@ -58,15 +58,12 @@ class ValidationGenerator(
         validate(
             "%L.isEmpty()",
             arrayOf(prop.name),
-            notEmpty[NotEmpty::message]
+            notEmpty["message"]
         ) { "it cannot be empty" }
     }
 
     private fun generateNotBlank() {
-        val notBlank = prop.annotation(NotBlank::class)
-        if (notBlank === null) {
-            return
-        }
+        val notBlank = annoMultiMap["NotBlank"]?.get(0) ?: return
         if (!isSimpleType(String::class)) {
             throw MetaException(
                 prop.propDeclaration,
@@ -78,12 +75,12 @@ class ValidationGenerator(
         validate(
             "%L.trim().isEmpty()",
             arrayOf(prop.name),
-            notBlank[NotBlank::message]
+            notBlank["message"]
         ) { "it cannot be empty" }
     }
 
     private fun generateSize() {
-        val sizes = prop.annotations(Size::class)
+        val sizes = annoMultiMap["Size"] ?: emptyList()
         if (sizes.isEmpty()) {
             return
         }
@@ -91,7 +88,7 @@ class ValidationGenerator(
             throw MetaException(
                 prop.propDeclaration,
                 "it's decorated by the annotation @" +
-                    Size::class.qualifiedName +
+                    sizes[0].fullName +
                     " but its type is neither string nor list"
             )
         }
@@ -100,15 +97,15 @@ class ValidationGenerator(
         var minMessage: String? = null
         var maxMessage: String? = null
         for (size in sizes) {
-            val sizeMin: Int = size[Size::min]!!
+            val sizeMin: Int = size["min"]!!
             if (sizeMin > min) {
                 min = sizeMin
-                minMessage = size[Size::message]
+                minMessage = size["message"]
             }
-            val sizeMax: Int = size[Size::max]!!
+            val sizeMax: Int = size["max"]!!
             if (sizeMax < max) {
                 max = sizeMax
-                maxMessage = size[Size::message]
+                maxMessage = size["message"]
             }
         }
         if (min > max) {
@@ -139,14 +136,14 @@ class ValidationGenerator(
     }
 
     private fun generateBound() {
-        val minArr = prop.annotations(Min::class)
-        val maxArr = prop.annotations(Max::class)
-        val positives = prop.annotations(Positive::class)
-        val positiveOrZeros = prop.annotations(PositiveOrZero::class)
-        val negatives = prop.annotations(Negative::class)
-        val negativeOrZeros = prop.annotations(NegativeOrZero::class)
+        val minList = annoMultiMap["Min"] ?: emptyList()
+        val maxList = annoMultiMap["Max"] ?: emptyList()
+        val positives = annoMultiMap["Positive"] ?: emptyList()
+        val positiveOrZeros = annoMultiMap["PositiveOrZero"] ?: emptyList()
+        val negatives = annoMultiMap["Negative"] ?: emptyList()
+        val negativeOrZeros = annoMultiMap["NegativeOrZero"] ?: emptyList()
         val annotations = listOf(
-            minArr, maxArr, 
+            minList, maxList,
             positives, positiveOrZeros, 
             negatives, negativeOrZeros
         ).flatten()
@@ -167,42 +164,42 @@ class ValidationGenerator(
         var minValue: Long? = null
         var maxValue: Long? = null
         var message: String? = null
-        for (min in minArr) {
-            val annoValue = min[Min::value]!!
+        for (min in minList) {
+            val annoValue: Long = min["value"]!!
             if (minValue == null || annoValue > minValue) {
                 minValue = annoValue
-                message = min[Min::message]
+                message = min["message"]
             }
         }
         for (positive in positives) {
             if (minValue == null || 1L > minValue) {
                 minValue = 1L
-                message = positive[Min::message]
+                message = positive["message"]
             }
         }
         for (positiveOrZero in positiveOrZeros) {
             if (minValue == null || 0L > minValue) {
                 minValue = 0L
-                message = positiveOrZero[Min::message]
+                message = positiveOrZero["message"]
             }
         }
-        for (max in maxArr) {
-            val annoValue = max[Max::value]!!
+        for (max in maxList) {
+            val annoValue: Long = max["value"]!!
             if (maxValue == null || annoValue < maxValue) {
                 maxValue = annoValue
-                message = max[Max::message]
+                message = max["message"]
             }
         }
         for (negative in negatives) {
             if (maxValue == null || -1L < maxValue) {
                 maxValue = -1L
-                message = negative[Max::message]
+                message = negative["message"]
             }
         }
         for (negativeOrZero in negativeOrZeros) {
             if (maxValue == null || 0L < maxValue) {
                 maxValue = 0L
-                message = negativeOrZero[Max::message]
+                message = negativeOrZero["message"]
             }
         }
         if ((minValue != null) && (maxValue != null) && (minValue > maxValue)) {
@@ -221,10 +218,7 @@ class ValidationGenerator(
     }
 
     private fun generateEmail() {
-        val email = prop.annotation(Email::class)
-        if (email === null) {
-            return
-        }
+        val email = annoMultiMap["Email"]?.get(0) ?: return
         if (!isSimpleType(String::class)) {
             throw MetaException(
                 prop.propDeclaration,
@@ -239,15 +233,12 @@ class ValidationGenerator(
                 DRAFT_FIELD_EMAIL_PATTERN,
                 prop.name
             ),
-            email[Email::message]
+            email["message"]
         ) { "it is not email address" }
     }
 
     private fun generatePattern() {
-        val patterns = prop.annotations(Pattern::class)
-        if (patterns.isEmpty()) {
-            return
-        }
+        val patterns = annoMultiMap["Pattern"] ?: return
         if (!isSimpleType(String::class)) {
             throw MetaException(
                 prop.propDeclaration,
@@ -260,10 +251,10 @@ class ValidationGenerator(
             validate(
                 "!%L.matcher(%L).matches()",
                 arrayOf(regexpPatternFieldName(prop, i), prop.name),
-                patterns[i][Pattern::message],
+                patterns[i]["message"],
             ) {
                 ("it does not match the regexp '" +
-                    patterns[i][Pattern::regexp]!!.replace("\\", "\\\\") +
+                    patterns[i].get<String>("regexp")!!.replace("\\", "\\\\") +
                     "'")
             }
         }
@@ -285,7 +276,6 @@ class ValidationGenerator(
         errorMessage: String?,
         defaultMessageSupplier: () -> String
     ) {
-        var errorMessage = errorMessage
         if (!prop.isNullable || prop.typeName().isBuiltInType(false)) {
             parent.beginControlFlow("if ($condition)", *args)
         } else {

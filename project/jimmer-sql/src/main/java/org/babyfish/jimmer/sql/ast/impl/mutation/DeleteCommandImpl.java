@@ -31,8 +31,7 @@ public class DeleteCommandImpl implements DeleteCommand {
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType immutableType,
-            Collection<?> ids,
-            DeleteMode mode
+            Collection<?> ids
     ) {
         Class<?> idClass = immutableType.getIdProp().getElementClass();
         for (Object id : ids) {
@@ -50,7 +49,7 @@ public class DeleteCommandImpl implements DeleteCommand {
         this.con = con;
         this.immutableType = immutableType;
         this.ids = ids;
-        this.data = new Data(sqlClient, mode).freeze();
+        this.data = new Data(sqlClient, DeleteMode.AUTO).freeze();
     }
 
     public DeleteCommandImpl(

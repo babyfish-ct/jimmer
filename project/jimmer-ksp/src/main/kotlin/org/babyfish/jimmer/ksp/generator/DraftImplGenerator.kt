@@ -7,8 +7,6 @@ import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
-import javax.validation.constraints.Email
-import javax.validation.constraints.Pattern
 import kotlin.reflect.KClass
 
 class DraftImplGenerator(
@@ -583,12 +581,12 @@ class DraftImplGenerator(
     private fun TypeSpec.Builder.addCompanionObject() {
         val emailPropMap = type.properties.values
             .associateBy({it}) {
-                it.annotation(Email::class)
+                it.validationAnnotationMirrorMultiMap["Email"]?.get(0)
             }
             .filterValues { it !== null } as Map<ImmutableProp, KSAnnotation>
         val patternPropMultiMap = type.properties.values
             .associateBy({it}) {
-                it.annotations(Pattern::class)
+                it.validationAnnotationMirrorMultiMap["Pattern"] ?: emptyList()
             }
             .filterValues { it.isNotEmpty() }
         if (emailPropMap.isNotEmpty() ||
@@ -613,7 +611,7 @@ class DraftImplGenerator(
                                 addProperty(
                                     PropertySpec
                                         .builder(regexpPatternFieldName(prop, i), PATTERN_CLASS_NAME, KModifier.PRIVATE)
-                                        .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, patterns[i][Pattern::regexp])
+                                        .initializer("%T.compile(%S)", PATTERN_CLASS_NAME, patterns[i]["regexp"])
                                         .build()
                                 )
                             }

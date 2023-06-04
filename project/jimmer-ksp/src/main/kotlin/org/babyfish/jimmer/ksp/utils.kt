@@ -90,6 +90,10 @@ operator fun <T> KSAnnotation.get(annoProp: KProperty1<out Annotation, T>): T? =
     arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as T?
 
 @Suppress("UNCHECKED_CAST")
+operator fun <T> KSAnnotation.get(name: String): T? =
+    arguments.firstOrNull { it.name?.asString() == name }?.value as T?
+
+@Suppress("UNCHECKED_CAST")
 fun KSAnnotation.getClassArgument(annoProp: KProperty1<out Annotation, KClass<*>>): KSClassDeclaration? =
     (arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as KSType?)?.declaration as KSClassDeclaration?
 

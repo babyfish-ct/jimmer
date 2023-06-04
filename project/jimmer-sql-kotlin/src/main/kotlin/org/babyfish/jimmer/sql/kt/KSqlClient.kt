@@ -18,7 +18,6 @@ import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
-import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

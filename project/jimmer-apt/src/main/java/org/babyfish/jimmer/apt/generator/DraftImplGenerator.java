@@ -12,16 +12,21 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
 import org.jetbrains.annotations.Nullable;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Pattern;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class DraftImplGenerator {
+
+    private static final Enum<?>[] EMPTY_ENUM_ARR = new Enum[0];
 
     private final ImmutableType type;
 
@@ -105,15 +110,32 @@ public class DraftImplGenerator {
     private void addStaticFields() {
         boolean hasEmail = false;
         for (ImmutableProp prop : type.getProps().values()) {
-            Email[] emails = prop.getAnnotations(Email.class);
-            Pattern[] patterns = prop.getAnnotations(Pattern.class);
-            if (emails.length != 0) {
+            Map<String, List<AnnotationMirror>> mirrorMultiMap =
+                    Annotations.validateAnnotationMirrorMultiMap(prop);
+            List<AnnotationMirror> emails = mirrorMultiMap.get("Email");
+            List<AnnotationMirror> patterns = mirrorMultiMap.get("Pattern");
+            if (emails != null) {
                 hasEmail = true;
             }
-            for (int i = 0; i < patterns.length; i++) {
+            if (patterns == null) {
+                patterns = Collections.emptyList();
+            }
+            for (int i = 0; i < patterns.size(); i++) {
                 int flags = 0;
-                for (Pattern.Flag flag : patterns[i].flags()) {
-                    flags |= flag.getValue();
+                for (Enum<?> flag : Annotations.annotationValue(patterns.get(i), "flags", EMPTY_ENUM_ARR)) {
+                    Method method;
+                    try {
+                        method = flag.getClass().getMethod("getValue");
+                    } catch (NoSuchMethodException ex) {
+                        throw new AssertionError("Internal bug", ex);
+                    }
+                    int flagValue;
+                    try {
+                        flagValue = (Integer)method.invoke(flag);
+                    } catch (IllegalAccessException | InvocationTargetException ex) {
+                        throw new AssertionError("Internal bug", ex);
+                    }
+                    flags |= flagValue;
                 }
                 FieldSpec.Builder builder = FieldSpec
                         .builder(
@@ -126,7 +148,7 @@ public class DraftImplGenerator {
                         .initializer(
                                 "$T.compile($S, $L)",
                                 java.util.regex.Pattern.class,
-                                patterns[i].regexp(),
+                                Annotations.annotationValue(patterns.get(i), "regexp", ""),
                                 flags
                         );
                 typeBuilder.addField(builder.build());
