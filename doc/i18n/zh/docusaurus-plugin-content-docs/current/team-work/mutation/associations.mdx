@@ -2,3 +2,552 @@
 sidebar_position: 5
 title: 直接修改中间表
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 本文讨论前提
+
+Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
+
+如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+
+本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+
+## 简述
+
+首先，中间表被对象模型隐藏，没有与之直接对应的实体类型。此问题已在[查询中间表](../query/associations)一文中被阐述，此处不作重复。
+
+另外，在[Save指令](./save-command)章节中，我们介绍了save指令。它能对比数据库现有数据和用户要保存的新数据，如果某个基于中间表的关联属性发生了变化，中间表就会被修改。
+
+诚然，Save指令功能非常强大，中间表的修改只是其中很小一个功能。然而，有时候，我们只是需要简单地对中间表进行插入或删除，我们不需要Save指令那么强大的功能。
+
+Jimmer允许开发人员用更简单的方式，直接对中间表的数据进行插入和删除。
+
+## 插入关联
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(BookProps.AUTHORS)
+    // highlight-next-line
+    .save(12L, 3L);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(Book::authors)
+    // highlight-next-line
+    .save(12L, 3L)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+insert into 
+    BOOK_AUTHOR_MAPPING(
+        /* highlight-next-line */
+        BOOK_ID, AUTHOR_ID
+    ) 
+    values (?, ?)
+```
+
+这个例子演示如何使用关联属性`Book.authors`操作中间表。
+
+同理我们也可以通过关联属性`Authors.books`达到相同目的：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(AuthorProps.BOOKS)
+    // highlight-next-line
+    .save(3L, 12L);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(Author::books)
+    // highlight-next-line
+    .save(3L, 12L)
+```
+
+</TabItem>
+</Tabs>
+
+注意，和上一个例子相比，因为关联的方向不同，所以`save`方法的参数顺序不同。
+
+生成的SQL如下
+
+```sql
+insert into 
+    BOOK_AUTHOR_MAPPING(
+        /* highlight-next-line */
+        AUTHOR_ID, BOOK_ID
+    )
+    values (?, ?)
+```
+
+不难发现，insert语句列的顺序也不同。
+
+## 逆变换
+
+对于双向关联，可以使用`reverse`在正反关联之间切换
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Associations bookToAuthor = sqlClient
+    .getAssociations(BookProps.AUTHORS);
+Associations authorToBook = sqlClient
+    .getAssociations(AuthorProps.BOOKS);
+Associations authorToBook2 = 
+    // highlight-next-line
+    bookToAuthor.reverse();
+Associations bookToAuthor2 =
+    // highlight-next-line
+    authorToBook.reverse();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookToAuthor = 
+    sqlClient.getAssociations(
+        Book::authors
+    )
+val authorToBook = 
+    sqlClient.getAssociations(
+        Author::books
+    )
+val authorToBook2 = 
+    // highlight-next-line
+    bookToAuthor.reverse()
+val bookToAuthor2 = 
+    // highlight-next-line
+    authorToBook.reverse()
+```
+
+</TabItem>
+</Tabs>
+
+这段代码中：
+- `bookToAuthor`和`bookToAuthor2`完全等价
+- `authorToBook`和`authorToBook2`完全等价
+
+## 批量插入
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(BookProps.AUTHORS)
+    // highlight-next-line
+    .batchSave(
+        Arrays.asList(
+            new Tuple2<>(10L, 1L),
+            new Tuple2<>(11L, 1L),
+            new Tuple2<>(12L, 1L),
+            new Tuple2<>(10L, 3L),
+            new Tuple2<>(11L, 3L),
+            new Tuple2<>(12L, 3L)
+        )
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchSave(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
+
+这里有3本书，两个作者，共6种组合方式。`batchSave`方法把这6种组合全部插入到中间表中，生成的SQL如下
+
+```sql
+insert into BOOK_AUTHOR_MAPPING(
+    BOOK_ID, AUTHOR_ID
+) values 
+    /* highlight-start */
+    (?, ?), 
+    (?, ?), 
+    (?, ?), 
+    (?, ?), 
+    (?, ?), 
+    (?, ?)
+    /* highlight-end */
+```
+
+上面这种写法很繁琐，`3 * 2 = 6`还可以接受，但`7 * 9 = 63`呢？难道构建63个元组吗？
+
+jimmer-sql提供一种快捷写法
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(BookProps.AUTHORS)
+    // 保存两个id集合的笛卡尔乘积
+    // highlight-next-line
+    .batchSave(
+        Arrays.asList(
+            10L, 11L, 12L
+        ),
+        Arrays.asList(
+            1L, 3L
+        )
+    );
+```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    )
+    // 保存两个id集合的笛卡尔乘积
+    // highlight-next-line
+    .batchSave(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L)
+    )
+```
+</TabItem>
+</Tabs>
+
+上面的`batchSave`方法接受两个集合参数，把这两个集合形成的笛卡尔乘积插入中间表，所以，功能和上一个例子的相同。
+
+## 检查存在性
+
+如果向中间表插入已经存在的id元组，数据库会被报错，因为违背了唯一性约束。
+
+为了解决这个问题，可以进行存在性检查。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(BookProps.AUTHORS)
+    .batchSaveCommand(
+        Arrays.asList(
+            10L, 11L, 12L
+        ),
+        Arrays.asList(
+            1L, 3L
+        )
+    )
+    // highlight-next-line
+    .checkExistence()
+    .execute();
+```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    )
+    // highlight-next-line
+    .batchSave(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L),
+        // highlight-next-line
+        checkExistence = true
+    )
+```
+</TabItem>
+</Tabs>
+
+这里`checkExistence()`表示先检查要插入的数据有哪些已经存在，然后只插入不存在的数据。
+
+生成的SQL语句如下
+
+1. 检查哪些待插入数据已经存在数据
+    ```sql
+    select 
+        BOOK_ID, AUTHOR_ID 
+    from BOOK_AUTHOR_MAPPING 
+    where 
+        (BOOK_ID, AUTHOR_ID) in(
+            (?, ?), 
+            (?, ?),
+            (?, ?)
+        )
+    ```
+
+2. 利用上一步的查询结果，可以计算得到真正需要插入的数据。如果没有需要插入的数据，跳过本步骤；否则，执行本步骤。
+
+    这里，假设判断后真正需要插入的数据还剩两条，生成的SQL为:
+
+    ```sql
+    insert into BOOK_AUTHOR_MAPPING(
+        BOOK_ID, AUTHOR_ID
+    ) values 
+        (?, ?), 
+        (?, ?)
+    ```
+
+## 删除关联
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(BookProps.AUTHORS)
+    // highlight-next-line
+    .delete(12L, 3L);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .delete(12L, 3L)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+delete from BOOK_AUTHOR_MAPPING 
+where 
+    (BOOK_ID, AUTHOR_ID) in (
+        (?, ?)
+    )
+```
+
+## 批量删除
+
+和批量插入类似，有两种批量删除的写法
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(
+        BookTableEx.claBookProps.AUTHORS)
+    // highlight-next-line
+    .batchDelete(
+        Arrays.asList(
+            new Tuple2<>(10L, 1L),
+            new Tuple2<>(11L, 1L),
+            new Tuple2<>(12L, 1L),
+            new Tuple2<>(10L, 3L),
+            new Tuple2<>(11L, 3L),
+            new Tuple2<>(12L, 3L),
+        )
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(
+            Tuple2(10L, 1L),
+            Tuple2(11L, 1L),
+            Tuple2(12L, 1L),
+            Tuple2(10L, 3L),
+            Tuple2(11L, 3L),
+            Tuple2(12L, 3L)
+        )
+    )
+```
+
+</TabItem>
+</Tabs>
+
+或
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient
+    .getAssociations(BookProps.AUTHORS)
+    // highlight-next-line
+    .batchDelete(
+        Arrays.asList(10L, 11L, 12L),
+        Arrays.asList(1L, 3L)
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient
+    .getAssociations(
+        Book::authors
+    ) 
+    // highlight-next-line
+    .batchDelete(
+        listOf(10L, 11L, 12L),
+        listOf(1L, 3L)
+    )
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+delete from BOOK_AUTHOR_MAPPING 
+where 
+    (BOOK_ID, AUTHOR_ID) in (
+        (?, ?), 
+        (?, ?)
+    )
+```
+
+## 注意事项
+
+:::cuation
+请不要滥用次功能，此功能仅仅适用于对中间表进行简单插入和删除的场合，即，推荐仅在面临最简单的增量操作时才使用。
+:::
+
+我们来看一个例子，如果需要和数据库现有数据做比对，该功能明显不是最优选择，代码会很繁琐，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="不良用法示范"
+public void setAuthors(long bookId, Collection<Long> authorIds) {
+
+    // Get old author ids
+    AssociationTable<Book, BookTableEx, Author, AuthorTableEx> table =
+                AssociationTable.of(BookTableEx.class, BookTableEx::authors);    
+    List<Long> oldAuthorIds = sqlClient
+            .createAssociationQuery(table)
+            .where(table.source().id().eq(1L))
+            .select(table.target().id())
+            .execute();
+
+    // Delete `oldAuthorIds - authorIds`
+    List<Long> detachedAuthorIds = new ArrayList<>(oldAuthorIds);
+    detachedAuthorIds.removeAll(authorIds);
+    sqlClient.getAssociations(BookProps.AUTHORS).batchDelete(
+            Collections.singleton(bookId),
+            detachedAuthorIds
+    );
+
+    // Insert `authorIds - oldAuthorIds`
+    List<Long> attachedAuthorIds = new ArrayList<>(authorIds);
+    attachedAuthorIds.removeAll(oldAuthorIds);
+    sqlClient.getAssociations(BookProps.AUTHORS).batchSave(
+            Collections.singleton(bookId),
+            attachedAuthorIds
+    );
+}
+```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="不良用法示范"
+fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
+    // Get old author ids
+    val oldAuthorIds = sqlClient.queries.forList(Book::authors) {
+        where(table.source.id eq bookId)
+        select(table.target.id)
+    }.execute().toSet()
+
+    // Delete `oldAuthorIds - authorIds`
+    sqlClient
+        .getAssociations(Book::authors)
+        .batchDelete(listOf(bookId), oldAuthorIds - authorIds)
+
+    // Insert `authorIds - oldAuthorIds`
+    sqlClient
+        .getAssociations(Book::authors)
+        .batchSave(listOf(bookId), authorIds - oldAuthorIds)
+}
+```
+</TabItem>
+</Tabs>
+
+很明显，这样处理很繁琐。
+
+:::tip
+当业务场景不再是简单的添加或删除时，[Save指令](./save-command)才是更好的选择，如下
+:::
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="不良用法示范"
+public void setAuthors(long bookId, Collection<Long> authorIds) {
+    sqlClient.save(
+        BookDraft.$.produce(book -> {
+            book.setId(bookId);
+            book.setAuthorIds(authorIds);
+        })
+    );
+}
+```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="不良用法示范"
+fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
+    sqlClient.save(
+        new(Book::class).by {
+            id = bookId
+            authorIds = authorIds
+        }
+    )
+}
+```
+</TabItem>
+</Tabs>

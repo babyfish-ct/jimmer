@@ -107,15 +107,17 @@ Java和Kotlin的过滤器定义略有不同
 
 `TenantFilter`内部，首先从提取当前操作者身份信息中提取其所属租户，如果所属租户非null，则使用它来过滤数据，只查询和指定租户匹配的数据。
 
-### 非Spring环境下配置过滤器
+### Spring环境下配置过滤器
 
 上文中，我们定义的类`TenantFilter`被`@Compoent`修饰，很明显这是一个Spring托管对象。
 
 :::info
-如果使用Jimmer的SpringBoot Starter且保证过滤器被Spring托管，那么Jimmer就会将注册它，无需而外的开发。
+如果使用Jimmer的SpringBoot Starter且保证过滤器被Spring托管，那么Jimmer就会将注册它，无需额外的配置。
 
 否则，必需手动注册
 :::
+
+### 非Spring环境下配置过滤器
 
 将过滤器挂接到SqlClient对象上，即可生效
 
