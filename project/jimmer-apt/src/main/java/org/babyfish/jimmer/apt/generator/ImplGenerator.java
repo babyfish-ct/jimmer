@@ -220,15 +220,13 @@ public class ImplGenerator {
             } else if (manyToManyViewBaseProp != null) {
                 builder.addStatement(
                         "return __isLoaded($T.byIndex($L)) && $L().stream().allMatch(__each -> \n$>" +
-                                "(($T)__each).__isLoaded($T.byIndex($T.$L))" +
+                                "(($T)__each).__isLoaded($L)" +
                                 "$<\n)",
                         PROP_ID_CLASS_NAME,
                         manyToManyViewBaseProp.getSlotName(),
                         manyToManyViewBaseProp.getGetterName(),
                         ImmutableSpi.class,
-                        PROP_ID_CLASS_NAME,
-                        prop.getManyToManyViewBaseDeeperProp().getDeclaringType().getProducerClassName(),
-                        prop.getManyToManyViewBaseDeeperProp().getSlotName()
+                        prop.getDeeperPropIdName()
                 );
             } else if (prop.isJavaFormula()) {
                 boolean first = true;

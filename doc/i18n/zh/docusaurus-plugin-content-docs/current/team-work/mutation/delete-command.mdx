@@ -151,9 +151,84 @@ Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction�
 
     -   `deleteAllById`：继承`org.springframework.data.repository.CrudRepository`后必需拥有方法，可以理解成`deleteByIds`的别名。
 
+-   删除指令支持两种操作
+
+    -   逻辑删除：并非真正删除数据，仅把对象的逻辑删除字段标记成“已经删除”。
+
+    -   物理删除：真正删除数据。
+
+    上述所有API，都通过Java方法重载或Kotlin默认参数支持一个可选的参数，其类型为`DeleteMode`，该参数类型为枚举，具有三个取值
+
+    -   `AUTO`: 不明确指定当前操作是逻辑删除还是物理删除
+    
+        -   如果被删除的实体类型具备[逻辑删除字段](../mapping/advanced/logical-deleted)，则执行逻辑删除
+
+        -   否则，执行物理删除
+
+    -   `LOGICAL`: 明确指定当前操作是逻辑删除
+
+        -   如果被删除的实体类型具备[逻辑删除字段](../mapping/advanced/logical-deleted)，则执行逻辑删除
+
+        -   否则，抛出异常，说明当前实体不支持逻辑删除
+
+    -   `PHYSICAL`: 明确指定当前操作是物理删除
+    
+        无论被删除的实体类型是否具备[逻辑删除字段](../mapping/advanced/logical-deleted)，都执行物理删除
+
 ## 逻辑删除
 
+假设实体具备[逻辑删除字段](../mapping/advanced/logical-deleted)，例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted("true")
+    boolean isDeleted();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @LogicalDeleted("true")
+    val isDeleted: Boolean
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+那么以下三种行为
+
+-   `sqlClient.deleteById(Book.class, 1L)`
+-   `sqlClient.deleteById(Book.class, 1L, DeleteMode.AUTO)`
+-   `sqlClient.deleteById(Book.class, 1L, DeleteMode.LOGICAL)`
+
+的功能一样，都表示逻辑删除，生成的sql如下
+
+```sql
+update BOOK 
+set DELETED = ? /* true */
+where ID in(?/* 1L*/)
+```
+
 ## 物理删除
+
+如果实体不具备[逻辑删除字段](../mapping/advanced/logical-deleted)，或删除模式被抢行指定为`DeleteMode.PHYSICAL`，则执行物理删除。
 
 ### 基本用法
 
@@ -276,9 +351,9 @@ println(
 
 这表示，通过一对多关联`BookStore.books`一定能找到与之对应的多对一关联`Book.store`。
 
-接下来，Jimmer会参考多对一关联属性`Book.store`上的[@OnDissociate](../basic/mapping#ondissociate)注解。
+接下来，Jimmer会参考多对一关联属性`Book.store`上的[@OnDissociate](../mapping/advanced/on-dissociate)注解。
 
-1. 如果`Book.store`所对应的外键被[@OnDissociate](../basic/mapping#ondissociate)注解配置为`SET_NULL`，则，执行如下SQL
+1. 如果`Book.store`所对应的外键被[@OnDissociate](../mapping/advanced/on-dissociate)注解配置为`SET_NULL`，则，执行如下SQL
 
     ```sql
     update BOOK set STORE_ID = null where STORE_ID in(?)
@@ -294,14 +369,14 @@ println(
 
     > 如果查询没有返回任何数据，就忽略后续步骤。
 
-    - 如果`Book.store`所对应的外键被[@OnDissociate](../basic/mapping#ondissociate)注解配置为`DELETE`，
+    - 如果`Book.store`所对应的外键被[@OnDissociate](../mapping/advanced/on-dissociate)注解配置为`DELETE`，
         运用新的delete指令删除这些被抛弃对象，其实这就是delete指令的自动递归执行能力。
 
     - 否则，抛出异常。
 
-上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDissociate](../basic/mapping#ondissociate)。
+上面所讨论的这些情况，都需要开发人员在`Book.store`属性上使用注解[@OnDissociate](../mapping/advanced/on-dissociate)。
 
-然而，你也可以选择不使用[@OnDissociate](../basic/mapping#ondissociate)注解，而动态地为delete指令指定dissociateAction配置。
+然而，你也可以选择不使用[@OnDissociate](../mapping/advanced/on-dissociate)注解，而动态地为delete指令指定dissociateAction配置。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -339,10 +414,10 @@ val result = sqlClient
 </TabItem>
 </Tabs>
 
-这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../basic/mapping#ondissociate)并指定级联删除，效果完全一样。
+这里，动态地调用指令的`setDissociateAction`方法，相比于静态地在`Book.store`属性上使用注解[@OnDissociate](../mapping/advanced/on-dissociate)并指定级联删除，效果完全一样。
 
 :::info
 1. 如果`setDissociateAction`方法最后一个参数为`DissociateAction.SET_NULL`，则被设置关联属性必须可空，否则会导致异常。
 
-2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDissociate](../basic/mapping#ondissociate)配置了删除规则，则动态配置优先。
+2. 如果既动态地为save指令配置了删除规则，又静态地在实体接口中通过注解[@OnDissociate](../mapping/advanced/on-dissociate)配置了删除规则，则动态配置优先。
 :::
