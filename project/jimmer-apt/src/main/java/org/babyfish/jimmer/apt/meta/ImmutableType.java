@@ -716,15 +716,6 @@ public class ImmutableType {
         return microServiceName;
     }
 
-    public void resolve(Context context, int step) {
-        for (ImmutableProp prop : redefinedProps.values()) {
-            prop.resolve(context, step);
-        }
-        for (ImmutableProp prop : declaredProps.values()) {
-            prop.resolve(context, step);
-        }
-    }
-
     @Override
     public String toString() {
         return typeElement.getQualifiedName().toString();

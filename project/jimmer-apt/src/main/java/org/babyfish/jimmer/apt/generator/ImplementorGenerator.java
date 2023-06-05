@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.squareup.javapoet.*;
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
@@ -12,8 +10,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import javax.lang.model.element.Modifier;
 
-import static org.babyfish.jimmer.apt.generator.Constants.MANY_TO_MANY_VIEW_LIST_CLASS_NAME;
-import static org.babyfish.jimmer.apt.generator.Constants.PROP_ID_CLASS_NAME;
+import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class ImplementorGenerator {
 
@@ -34,6 +31,7 @@ public class ImplementorGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
                 .addSuperinterface(type.getClassName())
                 .addSuperinterface(spiClassName);
+        addStaticFields();
         addGet(PropId.class);
         addGet(String.class);
         for (ImmutableProp prop : type.getProps().values()) {
@@ -42,6 +40,25 @@ public class ImplementorGenerator {
         addType();
         addDummyProp();
         parentBuilder.addType(typeBuilder.build());
+    }
+
+    private void addStaticFields() {
+        for (ImmutableProp prop : type.getProps().values()) {
+            if (prop.getDeeperPropIdName() != null) {
+                FieldSpec.Builder builder = FieldSpec
+                        .builder(
+                                PROP_ID_CLASS_NAME,
+                                prop.getDeeperPropIdName()
+                        )
+                        .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+                        .initializer(
+                                "$T.TYPE.getProp($S).getManyToManyViewBaseDeeperProp().getId()",
+                                type.getProducerClassName(),
+                                prop.getName()
+                        );
+                typeBuilder.addField(builder.build());
+            }
+        }
     }
 
     private void addGet(Class<?> argType) {
@@ -104,11 +121,9 @@ public class ImplementorGenerator {
                             .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
                             .returns(prop.getTypeName())
                             .addStatement(
-                                    "return new $T<>(\n$>$T.byIndex($T.$L), $L()$<\n)",
+                                    "return new $T<>(\n$>$L, $L()$<\n)",
                                     MANY_TO_MANY_VIEW_LIST_CLASS_NAME,
-                                    PROP_ID_CLASS_NAME,
-                                    prop.getManyToManyViewBaseDeeperProp().getDeclaringType().getProducerClassName(),
-                                    prop.getManyToManyViewBaseDeeperProp().getSlotName(),
+                                    prop.getDeeperPropIdName(),
                                     manyToManyViewBaseProp.getGetterName()
                             )
                             .build()

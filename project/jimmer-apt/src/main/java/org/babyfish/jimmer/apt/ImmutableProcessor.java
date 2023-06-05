@@ -113,14 +113,6 @@ public class ImmutableProcessor extends AbstractProcessor {
                 }
             }
         }
-        for (int step = 0; step < 4; step++) {
-            int ctxSize = context.getImmutableTypes().size();
-            do {
-                for (ImmutableType type : context.getImmutableTypes()) {
-                    type.resolve(context, step);
-                }
-            } while (ctxSize < context.getImmutableTypes().size());
-        }
         return map;
     }
 

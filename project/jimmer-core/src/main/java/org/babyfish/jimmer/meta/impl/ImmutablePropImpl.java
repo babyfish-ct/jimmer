@@ -894,6 +894,17 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                 "\""
                 );
             }
+            if (sqlTemplate != null &&
+                    declaringType.isEntity() &&
+                    !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName())) {
+                throw new ModelException(
+                        "Illegal association property \"" +
+                                this +
+                                "\", it is is remote association so that it cannot be decorated by \"@" +
+                                JoinSql.class.getName() +
+                                "\""
+                );
+            }
         }
         targetTypeResolved = true;
         return targetType;
