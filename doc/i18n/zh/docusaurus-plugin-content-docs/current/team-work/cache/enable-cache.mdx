@@ -2,3 +2,51 @@
 sidebar_position: 3
 title: 启用缓存
 ---
+
+## CacheFactory
+
+要启用缓存，首先需要实现`CacheFactory`接口，该接口定义如下
+
+```java title="CacheFactory.java"
+package org.babyfish.jimmer.sql.cache;
+
+import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+public interface CacheFactory {
+
+    @Nullable
+    default Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
+        return null;
+    }
+
+    @Nullable
+    default Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
+        return null;
+    }
+}
+```
+
+Jimmer调用此接口初始化缓存系统，用户实现此接口回答问题
+
+-   createObjectCache
+
+    给定一个实体类型，返回其对象缓存。
+
+    -   如过只想让部分实体类型而非所有实体支持
+
+    
