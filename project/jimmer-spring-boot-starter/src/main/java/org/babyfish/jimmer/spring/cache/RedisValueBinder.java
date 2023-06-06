@@ -51,6 +51,16 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
         this.operations = operations;
     }
 
+    public RedisValueBinder(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper,
+            ImmutableProp prop,
+            Duration duration
+    ) {
+        super(objectMapper,null, prop, duration, 30);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
+    }
+
     @Override
     protected List<byte[]> read(Collection<String> keys) {
         return operations.opsForValue().multiGet(keys);

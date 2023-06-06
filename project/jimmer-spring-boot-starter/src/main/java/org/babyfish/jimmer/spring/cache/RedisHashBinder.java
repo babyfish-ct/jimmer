@@ -53,6 +53,16 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
         this.operations = operations;
     }
 
+    public RedisHashBinder(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper,
+            ImmutableProp prop,
+            Duration duration
+    ) {
+        super(objectMapper, null, prop, duration, 30);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected List<byte[]> read(Collection<String> keys, String hashKey) {

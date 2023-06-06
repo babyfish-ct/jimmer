@@ -31,6 +31,7 @@ public class RedisCaches {
         template.setValueSerializer(NOP_SERIALIZER);
         template.setHashKeySerializer(StringRedisSerializer.UTF_8);
         template.setHashValueSerializer(NOP_SERIALIZER);
+        template.afterPropertiesSet();
         return template;
     }
 }
