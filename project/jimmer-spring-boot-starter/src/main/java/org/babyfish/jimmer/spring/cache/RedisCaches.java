@@ -8,29 +8,29 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 public class RedisCaches {
 
+    private static final RedisSerializer<byte[]> NOP_SERIALIZER =
+            new RedisSerializer<byte[]>() {
+        @Override
+        public byte[] serialize(byte[] t) throws SerializationException {
+            return t;
+        }
+        @Override
+        public byte[] deserialize(byte[] bytes) throws SerializationException {
+            return bytes;
+        }
+    };
+
     private RedisCaches() {}
 
-    public static RedisTemplate<String, byte[]> rawValueRedisTemplate(
+    public static RedisTemplate<String, byte[]> cacheRedisTemplate(
             RedisConnectionFactory connectionFactory
     ) {
-        RedisSerializer<byte[]> nopSerializer =
-                new RedisSerializer<byte[]>() {
-                    @Override
-                    public byte[] serialize(byte[] t) throws SerializationException {
-                        return t;
-                    }
-                    @Override
-                    public byte[] deserialize(byte[] bytes) throws SerializationException {
-                        return bytes;
-                    }
-                };
-
         RedisTemplate<String, byte[]> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(StringRedisSerializer.UTF_8);
-        template.setValueSerializer(nopSerializer);
+        template.setValueSerializer(NOP_SERIALIZER);
         template.setHashKeySerializer(StringRedisSerializer.UTF_8);
-        template.setHashValueSerializer(nopSerializer);
+        template.setHashValueSerializer(NOP_SERIALIZER);
         return template;
     }
 }

@@ -40,7 +40,7 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
             Duration duration
     ) {
         super(objectMapper, type, null, duration, 30);
-        this.operations = RedisCaches.rawValueRedisTemplate(connectionFactory);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
     }
 
     public RedisHashBinder(

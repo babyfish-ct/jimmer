@@ -64,7 +64,7 @@ class MiddleTableOperator {
         return tryGetImpl(sqlClient, con, prop, false, trigger);
     }
 
-    public static MiddleTableOperator tryGetByBackProp(
+    static MiddleTableOperator tryGetByBackProp(
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp backProp,
@@ -364,9 +364,13 @@ class MiddleTableOperator {
         return remove(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
     }
 
-    public int removeBySourceIds(Collection<Object> sourceIds) {
-        if (trigger != null) {
+    public int removeBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
+        boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
+        if (trigger != null || deletionBySourcePrevented) {
             IdPairReader reader = getIdPairReader(sourceIds);
+            if (deletionBySourcePrevented && reader.isReadable()) {
+                throw new DeletionPreventedException(middleTable, reader);
+            }
             return remove(reader);
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -521,6 +525,27 @@ class MiddleTableOperator {
         @Override
         public Object targetId() {
             return currentIdPair.get_2();
+        }
+    }
+
+    static class DeletionPreventedException extends Exception {
+
+        final MiddleTable middleTable;
+
+        final List<Tuple2<Object, Object>> idParis;
+
+        DeletionPreventedException(MiddleTable middleTable, IdPairReader reader) {
+            this.middleTable = middleTable;
+            List<Tuple2<Object, Object>> idParis = new ArrayList<>();
+            while (reader.read()) {
+                idParis.add(
+                        new Tuple2<>(
+                                reader.sourceId(),
+                                reader.targetId()
+                        )
+                );
+            }
+            this.idParis = Collections.unmodifiableList(idParis);
         }
     }
 }

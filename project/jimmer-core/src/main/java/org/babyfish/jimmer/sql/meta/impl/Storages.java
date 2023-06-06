@@ -267,7 +267,13 @@ public class Storages {
                     isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
             );
         }
-        return new MiddleTable(tableName, definition, targetDefinition);
+        return new MiddleTable(
+                tableName,
+                definition,
+                targetDefinition,
+                joinTable != null && joinTable.preventDeletionBySource(),
+                joinTable != null && joinTable.preventDeletionByTarget()
+        );
     }
 
     private static ColumnDefinition joinDefinition(

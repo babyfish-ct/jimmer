@@ -140,7 +140,27 @@ public class Deleter {
                     trigger
             );
             if (middleTableOperator != null) {
-                int affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                int affectedRowCount;
+                try {
+                    affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                } catch (MiddleTableOperator.DeletionPreventedException ex) {
+                    throw new ExecutionException(
+                            "Cannot delete rows from middle table \"" +
+                                    ex.middleTable.getTableName() +
+                                    "\" when the object of \"" +
+                                    immutableType +
+                                    "\" is being deleted, because the " +
+                                    (
+                                            backProp.getMappedBy() != null ?
+                                                    "`@JoinTable.preventDeletionBySource` of \"" +
+                                                            backProp.getMappedBy() +
+                                                            "\" is true" :
+                                                    "`@JoinTable.preventDeletionByTarget` of \"" +
+                                                            backProp +
+                                                            "\" is true"
+                                    )
+                    );
+                }
                 addOutput(AffectedTable.of(backProp), affectedRowCount);
             } else {
                 if (backProp.isReference(TargetLevel.PERSISTENT) &&
