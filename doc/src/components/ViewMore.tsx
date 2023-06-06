@@ -3,7 +3,6 @@ import React, { FC, memo, PropsWithChildren, useCallback, useState } from "react
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
 
-
 export const ViewMore: FC<
     PropsWithChildren<{
         readonly buttonText: string,

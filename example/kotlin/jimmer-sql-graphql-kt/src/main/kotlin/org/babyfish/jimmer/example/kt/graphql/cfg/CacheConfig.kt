@@ -13,6 +13,7 @@ import org.babyfish.jimmer.spring.cache.RedisValueBinder
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.cache.chain.*
+import org.babyfish.jimmer.sql.kt.cache.KCacheFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -32,11 +33,11 @@ class CacheConfig {
     fun cacheFactory(
         connectionFactory: RedisConnectionFactory,
         objectMapper: ObjectMapper
-    ): CacheFactory {
+    ): KCacheFactory {
 
         val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory);
         
-        return object : CacheFactory {
+        return object : KCacheFactory {
 
             // Id -> Object
             override fun createObjectCache(type: ImmutableType): Cache<*, *>? =

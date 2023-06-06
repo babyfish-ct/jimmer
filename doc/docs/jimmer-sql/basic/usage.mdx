@@ -360,7 +360,7 @@ public interface Author {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java title="Author.kt"
+```kotlin title="Author.kt"
 package org.babyfish.jimmer.sql.example.model
 
 import org.babyfish.jimmer.sql.Entity
@@ -368,7 +368,7 @@ import org.babyfish.jimmer.sql.Key
 import org.babyfish.jimmer.sql.ManyToMany
 
 @Entity
-public interface Author {
+interface Author {
 
     @Id
     val id: Long
@@ -406,7 +406,7 @@ public enum Gender {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java title="Gender.kt"
+```kotlin title="Gender.kt"
 package org.babyfish.jimmer.sql.example.model
 
 enum class Gender {
