@@ -35,7 +35,6 @@ public class CacheConfig {
             ObjectMapper objectMapper
     ) {
         RedisTemplate<String, byte[]> redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory);
-        redisTemplate.afterPropertiesSet();
         return new CacheFactory() {
 
             // Id -> Object
