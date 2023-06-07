@@ -28,6 +28,7 @@ import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -116,14 +117,22 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findById(fetcher, id);
     }
 
+    default <E> List<E> findByIds(Class<E> entityType, Collection<?> ids) {
+        return getEntities().findByIds(entityType, ids);
+    }
+
+    default <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+        return getEntities().findByIds(fetcher, ids);
+    }
+
     @Nullable
-    default <K, V> Map<K, V> findByIds(Class<V> entityType, Collection<K> ids) {
+    default <K, V> Map<K, V> findMapByIds(Class<V> entityType, Collection<K> ids) {
         return getEntities().findMapByIds(entityType, ids);
     }
 
     @Nullable
-    default <K, V> Map<K, V> findByIds(Fetcher<V> entityType, Collection<K> ids) {
-        return getEntities().findMapByIds(entityType, ids);
+    default <K, V> Map<K, V> findMapByIds(Fetcher<V> fetcher, Collection<K> ids) {
+        return getEntities().findMapByIds(fetcher, ids);
     }
 
     default <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {

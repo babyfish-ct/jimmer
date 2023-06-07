@@ -104,10 +104,16 @@ interface KSqlClient {
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
-    fun <K, V: Any> findByIds(entityType: KClass<V>, ids: Collection<K>): Map<K, V> =
+    fun <E: Any> findByIds(entityType: KClass<E>, ids: Collection<*>): List<E> =
+        entities.findByIds(entityType, ids)
+
+    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Collection<*>): List<E> =
+        entities.findByIds(fetcher, ids)
+
+    fun <K, V: Any> findMapByIds(entityType: KClass<V>, ids: Collection<K>): Map<K, V> =
         entities.findMapByIds(entityType, ids)
 
-    fun <K, V: Any> findByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
+    fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
     fun <E: Any> save(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
