@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
@@ -31,10 +32,6 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.cache.CacheConfig;
-import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
-import org.babyfish.jimmer.sql.cache.Caches;
-import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
@@ -149,10 +146,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         entities.forSqlClient(this) :
                         new EntitiesImpl(this);
         this.entityManager = entityManager;
-        this.caches =
-                caches != null ?
-                        caches :
-                        CachesImpl.of(triggers, entityManager, microServiceName, null);
+        this.caches = caches;
         this.triggers = triggers;
         this.transactionTriggers = transactionTriggers;
         this.metadataStrategy = metadataStrategy;
@@ -558,7 +552,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private EntityManager defaultEntityManager;
 
-        private Consumer<CacheConfig> cacheConfigLambda;
+        private CacheConfig cacheConfig = new CacheConfig();
 
         private TriggerType triggerType = TriggerType.BINLOG_ONLY;
 
@@ -833,7 +827,31 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            cacheConfigLambda = block;
+            block.accept(cacheConfig);
+            return this;
+        }
+
+        @Override
+        public Builder setCacheFactory(CacheFactory cacheFactory) {
+            cacheConfig.setCacheFactory(cacheFactory);
+            return this;
+        }
+
+        @Override
+        public Builder setCacheOperator(CacheOperator cacheOperator) {
+            cacheConfig.setCacheOperator(cacheOperator);
+            return this;
+        }
+
+        @Override
+        public Builder addCacheAbandonedCallback(CacheAbandonedCallback callback) {
+            cacheConfig.addAbandonedCallback(callback);
+            return this;
+        }
+
+        @Override
+        public Builder addCacheAbandonedCallbacks(Collection<? extends CacheAbandonedCallback> callbacks) {
+            cacheConfig.addAbandonedCallbacks(callbacks);
             return this;
         }
 
@@ -849,7 +867,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addFilters(Collection<Filter<?>> filters) {
+        public Builder addFilters(Collection<? extends Filter<?>> filters) {
             for (Filter<?> filter : filters) {
                 if (filter != null) {
                     this.filters.add(filter);
@@ -864,7 +882,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addDisabledFilters(Collection<Filter<?>> filters) {
+        public Builder addDisabledFilters(Collection<? extends Filter<?>> filters) {
             for (Filter<?> filter : filters) {
                 if (filter != null) {
                     this.filters.add(filter);
@@ -891,7 +909,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
+        public Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors) {
             for (DraftInterceptor<?> interceptor : interceptors) {
                 if (interceptor != null) {
                     this.interceptors.add(interceptor);
@@ -923,7 +941,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addCustomizers(Collection<Customizer> customizers) {
+        public Builder addCustomizers(Collection<? extends Customizer> customizers) {
             for (Customizer customizer : customizers) {
                 if (customizer != null) {
                     this.customizers.add(customizer);
@@ -943,7 +961,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addInitializers(Collection<Initializer> initializers) {
+        public Builder addInitializers(Collection<? extends Initializer> initializers) {
             for (Initializer initializer : initializers) {
                 if (initializer != null) {
                     this.initializers.add(initializer);
@@ -1013,10 +1031,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             validateAssociations(filterManager);
 
             createTriggers();
-            Caches caches = null;
-            if (cacheConfigLambda != null) {
-                caches = CachesImpl.of(triggers, entityManager(), microServiceName, cacheConfigLambda);
-            }
+            Caches caches = CachesImpl.of(cacheConfig, microServiceName, entityManager(), triggers);
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
                     entityManager(),

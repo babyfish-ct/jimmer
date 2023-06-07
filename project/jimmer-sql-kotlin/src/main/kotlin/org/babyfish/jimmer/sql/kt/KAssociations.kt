@@ -23,14 +23,14 @@ interface KAssociations {
     ): Int
 
     fun batchSave(
-        sourceIds: Collection<Any>,
-        targetIds: Collection<Any>,
+        sourceIds: Collection<*>,
+        targetIds: Collection<*>,
         checkExistence: Boolean? = null,
         con: Connection? = null
     ): Int
 
     fun batchSave(
-        idTuples: Collection<Tuple2<Any, Any>>,
+        idTuples: Collection<Tuple2<*, *>>,
         checkExistence: Boolean? = null,
         con: Connection? = null
     ): Int
@@ -42,13 +42,13 @@ interface KAssociations {
     ): Int
 
     fun batchDelete(
-        sourceIds: Collection<Any>,
-        targetIds: Collection<Any>,
+        sourceIds: Collection<*>,
+        targetIds: Collection<*>,
         con: Connection? = null
     ): Int
 
     fun batchDelete(
-        idTuples: Collection<Tuple2<Any, Any>>,
+        idTuples: Collection<Tuple2<*, *>>,
         con: Connection? = null
     ): Int
 }
