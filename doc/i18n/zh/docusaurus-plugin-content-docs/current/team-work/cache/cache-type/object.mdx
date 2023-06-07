@@ -2,3 +2,95 @@
 sidebar_position: 1
 title: 对象缓存 
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+所谓对象缓存，指把id映射为实体对象。这是最简单最基础的缓存
+
+![object-cache](@site/static/img/object-cache.jpeg)
+
+## 启用对象缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    return new CacheFactory() {
+
+        @Override
+        @Nullable
+        // highlight-next-line
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        type, 
+                        Duration.ofMinutes(30)
+                    )
+                )
+                .build();
+        }
+
+        ...省略其他代码...
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        // highlight-next-line
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        type, 
+                        Duration.ofMinutes(30)
+                    )
+                )
+                .build()
+
+        ...省略其他代码...
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 使用对象缓存
+
+有两者用法可以利用对象缓存
+
+-   按照
