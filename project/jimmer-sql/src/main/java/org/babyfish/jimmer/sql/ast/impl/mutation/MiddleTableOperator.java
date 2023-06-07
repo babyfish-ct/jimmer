@@ -164,7 +164,7 @@ class MiddleTableOperator {
         reader.reset();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        List<Tuple2<Object, Object>> tuples = Selectors.select(
+        List<Tuple2<?, ?>> tuples = Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
@@ -196,7 +196,7 @@ class MiddleTableOperator {
         builder.leave().leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        List<Tuple2<Object, Object>> tuples = Selectors.select(
+        List<Tuple2<?, ?>> tuples = Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
@@ -487,13 +487,13 @@ class MiddleTableOperator {
 
     public static class TupleReader implements MiddleTableOperator.IdPairReader {
 
-        private final Collection<Tuple2<Object, Object>> idTuples;
+        private final Collection<Tuple2<?, ?>> idTuples;
 
-        private Iterator<Tuple2<Object, Object>> idTupleItr;
+        private Iterator<Tuple2<?, ?>> idTupleItr;
 
-        private Tuple2<Object, Object> currentIdPair;
+        private Tuple2<?, ?> currentIdPair;
 
-        public TupleReader(Collection<Tuple2<Object, Object>> idTuples) {
+        public TupleReader(Collection<Tuple2<?, ?>> idTuples) {
             this.idTuples = idTuples;
             idTupleItr = idTuples.iterator();
         }

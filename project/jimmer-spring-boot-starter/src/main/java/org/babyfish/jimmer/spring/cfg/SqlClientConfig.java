@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
+import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -60,6 +61,7 @@ public class SqlClientConfig {
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
+            @Autowired(required = false) CacheOperator cacheOperator,
             @Autowired(required = false) MicroServiceExchange exchange,
             List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
@@ -103,6 +105,7 @@ public class SqlClientConfig {
                 executor,
                 sqlFormatter,
                 cacheFactory,
+                cacheOperator,
                 exchange,
                 callbacks,
                 providers,
@@ -132,6 +135,7 @@ public class SqlClientConfig {
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
+            @Autowired(required = false) CacheOperator cacheOperator,
             @Autowired(required = false) MicroServiceExchange exchange,
             List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
@@ -175,6 +179,7 @@ public class SqlClientConfig {
                     executor,
                     sqlFormatter,
                     cacheFactory,
+                    cacheOperator,
                     exchange,
                     callbacks,
                     providers,
@@ -211,6 +216,7 @@ public class SqlClientConfig {
             Executor executor,
             SqlFormatter sqlFormatter,
             CacheFactory cacheFactory,
+            CacheOperator cacheOperator,
             MicroServiceExchange exchange,
             List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
@@ -256,14 +262,9 @@ public class SqlClientConfig {
         }
         builder.setDatabaseValidationMode(properties.getDatabaseValidation().getMode());
         builder.setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog());
-        if (cacheFactory != null) {
-            builder.setCaches(cfg -> {
-                cfg.setCacheFactory(cacheFactory);
-                cfg.setAbandonedCallback(
-                        CacheAbandonedCallback.combine(callbacks)
-                );
-            });
-        }
+        builder.setCacheFactory(cacheFactory);
+        builder.setCacheOperator(cacheOperator);
+        builder.addCacheAbandonedCallbacks(callbacks);
 
         for (ScalarProvider<?, ?> provider : providers) {
             builder.addScalarProvider(provider);

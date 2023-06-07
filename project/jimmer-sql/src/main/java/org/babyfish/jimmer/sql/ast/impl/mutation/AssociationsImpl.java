@@ -79,14 +79,14 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public AssociationSaveCommand batchSaveCommand(Collection<?> sourceIds, Collection<?> targetIds) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(cartesianProduct(sourceIds, targetIds))
         );
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<?, ?>> idTuples) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(idTuples)
         );
@@ -103,16 +103,16 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public Executable<Integer> batchDeleteCommand(Collection<?> sourceIds, Collection<?> targetIds) {
         return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
     
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples) {
+    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<?, ?>> idTuples) {
         return deleteExecutable(idTuples);
     }
 
-    private AssociationExecutable saveExecutable(Collection<Tuple2<Object, Object>> idTuples) {
+    private AssociationExecutable saveExecutable(Collection<Tuple2<?, ?>> idTuples) {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
@@ -125,7 +125,7 @@ public class AssociationsImpl implements Associations {
         );
     }
 
-    private Executable<Integer> deleteExecutable(Collection<Tuple2<Object, Object>> idTuples) {
+    private Executable<Integer> deleteExecutable(Collection<Tuple2<?, ?>> idTuples) {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
@@ -138,11 +138,11 @@ public class AssociationsImpl implements Associations {
         );
     }
 
-    private Collection<Tuple2<Object, Object>> cartesianProduct(
-            Collection<Object> sourceIds,
-            Collection<Object> targetIds
+    private Collection<Tuple2<?, ?>> cartesianProduct(
+            Collection<?> sourceIds,
+            Collection<?> targetIds
     ) {
-        Set<Tuple2<Object, Object>> idTuples = new LinkedHashSet<>(
+        Set<Tuple2<?, ?>> idTuples = new LinkedHashSet<>(
                 (sourceIds.size() * targetIds.size() * 4 + 2) / 3
         );
         for (Object sourceId : sourceIds) {
@@ -153,7 +153,7 @@ public class AssociationsImpl implements Associations {
         return idTuples;
     }
 
-    private Collection<Tuple2<Object, Object>> validate(Collection<Tuple2<Object, Object>> idTuples) {
+    private Collection<Tuple2<?, ?>> validate(Collection<Tuple2<?, ?>> idTuples) {
         Class<?> sourceIdType = associationType.getSourceType().getIdProp().getElementClass();
         Class<?> targetIdType = associationType.getTargetType().getIdProp().getElementClass();
         if (reversed) {
@@ -161,7 +161,7 @@ public class AssociationsImpl implements Associations {
             sourceIdType = targetIdType;
             targetIdType = tmp;
         }
-        for (Tuple2<Object, Object> idTuple : idTuples) {
+        for (Tuple2<?, ?> idTuple : idTuples) {
             if (Converters.tryConvert(idTuple.get_1(), sourceIdType) == null) {
                 throw new IllegalArgumentException(
                         "sourceId \"" +

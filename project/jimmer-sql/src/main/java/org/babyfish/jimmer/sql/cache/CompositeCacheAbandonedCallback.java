@@ -2,11 +2,12 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-class CompositeCacheAbandonedCallback implements CacheAbandonedCallback {
+public class CompositeCacheAbandonedCallback implements CacheAbandonedCallback {
 
     private static final CacheAbandonedCallback[] EMPTY_CALLBACKS =
             new CacheAbandonedCallback[0];
@@ -39,5 +40,18 @@ class CompositeCacheAbandonedCallback implements CacheAbandonedCallback {
         for (CacheAbandonedCallback callback : callbacks) {
             callback.abandoned(prop, reason);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CompositeCacheAbandonedCallback that = (CompositeCacheAbandonedCallback) o;
+        return Arrays.equals(callbacks, that.callbacks);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(callbacks);
     }
 }

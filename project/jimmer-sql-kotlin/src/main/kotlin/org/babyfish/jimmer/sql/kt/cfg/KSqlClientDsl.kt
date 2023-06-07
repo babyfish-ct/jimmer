@@ -7,10 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
-import org.babyfish.jimmer.sql.cache.Cache
-import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback
-import org.babyfish.jimmer.sql.cache.CacheConfig
-import org.babyfish.jimmer.sql.cache.CacheFactory
+import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.kt.KSqlClient
@@ -134,6 +131,22 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setCaches {
             CacheDsl(it).block()
         }
+    }
+
+    fun setCacheFactory(cacheFactory: CacheFactory) {
+        javaBuilder.setCacheFactory(cacheFactory)
+    }
+
+    fun setCacheOperator(cacheOperator: CacheOperator) {
+        javaBuilder.setCacheOperator(cacheOperator)
+    }
+
+    fun addCacheAbandonedCallback(callback: CacheAbandonedCallback) {
+        javaBuilder.addCacheAbandonedCallback(callback)
+    }
+
+    fun addCacheAbandonedCallbacks(callbacks: Collection<CacheAbandonedCallback>) {
+        javaBuilder.addCacheAbandonedCallbacks(callbacks)
     }
 
     fun setTriggerType(triggerType: TriggerType) {
@@ -313,8 +326,12 @@ class KSqlClientDsl internal constructor(
             javaCfg.setCalculatedCache(prop.toImmutableProp(), cache)
         }
 
-        fun setAbandonedCallback(callback: CacheAbandonedCallback?) {
-            javaCfg.setAbandonedCallback(callback);
+        fun addAbandonedCallback(callback: CacheAbandonedCallback?) {
+            javaCfg.addAbandonedCallback(callback)
+        }
+
+        fun addAbandonedCallbacks(callbacks: List<CacheAbandonedCallback>) {
+            javaCfg.addAbandonedCallbacks(callbacks)
         }
     }
 

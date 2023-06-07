@@ -35,7 +35,7 @@ class AssociationExecutable implements Executable<Integer> {
 
     private final Boolean nullOrCheckedExistence;
 
-    private final Set<Tuple2<Object, Object>> idTuples;
+    private final Set<Tuple2<?, ?>> idTuples;
 
     public AssociationExecutable(
             JSqlClientImplementor sqlClient,
@@ -44,7 +44,7 @@ class AssociationExecutable implements Executable<Integer> {
             boolean reversed,
             boolean forDelete,
             boolean defaultCheckExistence,
-            Collection<Tuple2<Object, Object>> idTuples
+            Collection<Tuple2<?, ?>> idTuples
     ) {
         this(sqlClient, con, associationType, reversed, forDelete, defaultCheckExistence, null, idTuples);
     }
@@ -57,7 +57,7 @@ class AssociationExecutable implements Executable<Integer> {
             boolean forDelete,
             boolean defaultCheckExistence,
             Boolean nullOrCheckedExistence,
-            Collection<Tuple2<Object, Object>> idTuples
+            Collection<Tuple2<?, ?>> idTuples
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
@@ -67,7 +67,7 @@ class AssociationExecutable implements Executable<Integer> {
         this.defaultCheckExistence = defaultCheckExistence;
         this.nullOrCheckedExistence = nullOrCheckedExistence;
         this.idTuples = idTuples instanceof Set<?> ?
-                (Set<Tuple2<Object, Object>>)idTuples :
+                (Set<Tuple2<?, ?>>)idTuples :
                 new LinkedHashSet<>(idTuples);
     }
 
@@ -131,7 +131,7 @@ class AssociationExecutable implements Executable<Integer> {
             return affectedRowCount;
         }
 
-        Set<Tuple2<Object, Object>> addingPairs = idTuples;
+        Set<Tuple2<?, ?>> addingPairs = idTuples;
         if (nullOrCheckedExistence != null ? nullOrCheckedExistence : defaultCheckExistence) {
             addingPairs = new LinkedHashSet<>(addingPairs);
             Set<Tuple2<Object, Object>> existingPairs = new HashSet<>(find(con));
@@ -175,7 +175,7 @@ class AssociationExecutable implements Executable<Integer> {
                 .leave()
                 .sql(" in ");
         builder.enter(SqlBuilder.ScopeType.LIST);
-        for (Tuple2<Object, Object> idTuple : idTuples) {
+        for (Tuple2<?, ?> idTuple : idTuples) {
             builder
                     .separator()
                     .enter(SqlBuilder.ScopeType.TUPLE)

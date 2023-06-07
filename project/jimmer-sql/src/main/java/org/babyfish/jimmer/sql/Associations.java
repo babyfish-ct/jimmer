@@ -28,35 +28,35 @@ public interface Associations {
         return saveCommand(sourceId, targetId).execute();
     }
 
-    default int batchSave(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    default int batchSave(Collection<?> sourceIds, Collection<?> targetIds) {
         return batchSaveCommand(sourceIds, targetIds).execute();
     }
 
-    default int batchSave(Collection<Tuple2<Object, Object>> idTuples) {
+    default int batchSave(Collection<Tuple2<?, ?>> idTuples) {
         return batchSaveCommand(idTuples).execute();
     }
     
     AssociationSaveCommand saveCommand(Object sourceId, Object targetId);
 
-    AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
+    AssociationSaveCommand batchSaveCommand(Collection<?> sourceIds, Collection<?> targetIds);
 
-    AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples);
+    AssociationSaveCommand batchSaveCommand(Collection<Tuple2<?, ?>> idTuples);
 
     default int delete(Object sourceId, Object targetId) {
         return deleteCommand(sourceId, targetId).execute();
     }
 
-    default int batchDelete(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    default int batchDelete(Collection<?> sourceIds, Collection<?> targetIds) {
         return batchDeleteCommand(sourceIds, targetIds).execute();
     }
 
-    default int batchDelete(Collection<Tuple2<Object, Object>> idTuples) {
+    default int batchDelete(Collection<Tuple2<?, ?>> idTuples) {
         return batchDeleteCommand(idTuples).execute();
     }
 
     Executable<Integer> deleteCommand(Object sourceId, Object targetId);
 
-    Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds);
+    Executable<Integer> batchDeleteCommand(Collection<?> sourceIds, Collection<?> targetIds);
 
-    Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples);
+    Executable<Integer> batchDeleteCommand(Collection<Tuple2<?, ?>> idTuples);
 }
