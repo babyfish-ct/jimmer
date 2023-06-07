@@ -91,11 +91,89 @@ fun cacheFactory(
 
 ## 使用对象缓存
 
-有两者用法可以利用对象缓存
-
+有两种用法可以利用对象缓存
 
 -   按照id *(或其集合)* 查询实体对象 *(或其集合)*
 
 -   利用对象抓取器抓取关联对象的任何非id字段时。
 
 ### 基于id的查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Map<Long, Book> bookMap = sqlClient.findByIds(
+        Book.class,
+        Arrays.asList(1L, 2L, 3L, 4L)
+);
+System.out.println(bookMap);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.findByIds(
+    Book::class,
+    listOf(1L, 2L, 3L, 4L, 999L)
+)
+println(bookMap)
+```
+
+</TabItem>
+</Tabs>
+
+-   首次运行代码
+
+    在对象缓存已经开启的情况下，Jimmer会先到Redis中查找数据，被查找的键为`Book-1`、`Book-2`、`Book-3、`Book-4`和`Book-999`。
+
+    假设无法在Redis中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys Book-*
+    (empty array)
+    ```
+
+    所以，执行如下SQL，从数据库加载数据
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
+        tb_1_.STORE_ID
+    from BOOK tb_1_
+    where
+        tb_1_.ID in (
+            ? /* 1 */, ? /* 2 */, ? /* 3 */, ? /* 4 */, ? /* 999 */
+        )
+    ```
+
+    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+
+    ```
+    127.0.0.1:6379> keys Book-*
+    1) "Book-4"
+    2) "Book-2"
+    3) "Book-3"
+    4) "Book-1"
+    5) "Book-999"
+    127.0.0.1:6379> get Book-1
+    "{\"id\":1,\"name\":\"Learning GraphQL\",\"edition\":1,\"price\":50.00,\"store\":{\"id\":1}}"
+    127.0.0.1:6379> get Book-2
+    "{\"id\":2,\"name\":\"Learning GraphQL\",\"edition\":2,\"price\":55.00,\"store\":{\"id\":1}}"
+    127.0.0.1:6379> get Book-3
+    "{\"id\":3,\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":51.00,\"store\":{\"id\":1}}"
+    127.0.0.1:6379> get Book-4
+    "{\"id\":4,\"name\":\"Effective TypeScript\",\"edition\":1,\"price\":73.00,\"store\":{\"id\":1}}"
+    127.0.0.1:6379> get Book-999
+    "<null>"
+    127.0.0.1:6379>
+    ```
+    :::tip
+    其中，不存在数据`Book-999`也会以特殊值`<null>`被缓存起来 
+    :::
+
+-   再次运行代码
+
+    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回数据，无任何SQL被生成。
