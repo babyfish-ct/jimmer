@@ -103,7 +103,7 @@ fun cacheFactory(
 <TabItem value="java" label="Java">
 
 ```java
-Map<Long, Book> bookMap = sqlClient.findByIds(
+Map<Long, Book> bookMap = sqlClient.findMapByIds(
         Book.class,
         Arrays.asList(1L, 2L, 3L, 4L)
 );
@@ -114,7 +114,7 @@ System.out.println(bookMap);
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val bookMap = sqlClient.findByIds(
+val bookMap = sqlClient.findMapByIds(
     Book::class,
     listOf(1L, 2L, 3L, 4L, 999L)
 )
@@ -177,3 +177,39 @@ println(bookMap)
 -   再次运行代码
 
     毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回数据，无任何SQL被生成。
+
+### 使用对象抓取器
+
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+List<Book> books = sqlClient
+    .createQuery(table)
+    .where(table.name().like("GraphQL"))
+    .select(
+        BookFetcher.$
+            .allScalarFields()
+            // highlight-next-line
+            .store(
+                BookFetcher.$
+                    .name()
+            )
+    )
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.findMapByIds(
+    Book::class,
+    listOf(1L, 2L, 3L, 4L, 999L)
+)
+println(bookMap)
+```
+
+</TabItem>
+</Tabs>
