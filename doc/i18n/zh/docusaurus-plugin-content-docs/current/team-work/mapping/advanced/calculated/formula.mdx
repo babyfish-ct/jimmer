@@ -260,7 +260,9 @@ where tb_1_.ID = ?
     Java的`where(table.fullName().eq("Eve Procello"))`或Kotlin的`where(table.fullName eq "Eve Procello")`
 
     :::tip
-    所有计算属性中，只有基于SQL的简单计算属性可以被SQL DSL使用。但建议与支持函数索引的数据库并和函数索引结合使用。
+    所有计算属性中，只有基于SQL的简单计算属性可以被SQL DSL使用。
+    
+    建议使用支持函数索引的数据库，并和函数索引结合使用。
     :::
 
 因此，建议认真考虑@Formula计算属性应该基于Java/Kotlin计算还是基于SQL计算。
