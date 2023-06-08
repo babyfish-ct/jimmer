@@ -289,7 +289,7 @@ package com.example.model
 import org.babyfish.jimmer.sql.*
 
 @Entity
-interface Author {
+interface Book {
 
     ...省略其他属性...
 
@@ -322,7 +322,7 @@ interface Author {
 
 -   `Book.storeId`: 关联`Book.store`对象的id的视图。
 
-    - `storeId`本身以`Id`结尾，这种情况下，可以不指定`@IdView`注解的参数，Jimmer认为改视图属性的原始关联属性为`Book.store`。
+    - `storeId`本身以`Id`结尾，这种情况下，可以不指定`@IdView`注解的参数，Jimmer认为该视图属性的原始关联属性为`Book.store`。
 
     - 原始关联属性和IdView属性的可空性必须一致。
 
@@ -332,7 +332,7 @@ interface Author {
 
         否则，会导致编译错误。
 
--   `Book.authorIds`: 关联`Book.store`对象集合中，所有对象的id形成的视图。
+-   `Book.authorIds`: 关联`Book.authors`对象集合中，所有Auhtor对象的id形成的视图。
 
     `authorIds`本身不以`Id`结尾，必须指定`@IdView`注解的参数，明确表示其原始关联为`Book.authors`。
 
@@ -426,16 +426,16 @@ IdView属性和原始关联属性是联动的，设置一个，必然影响另�
             id = 10L
             name = "TURING"
         }
-        authorIds().addBy {
+        authors().addBy {
             id = 101L;
             firstName = "Fabrice"
             lastName = "Marguerie"
         }
-        draft.addIntoAuthors(author -> {
+        authors().addBy {
             id = 101L
             firstName = "Steve"
             lastName = "Eichert" 
-        });
+        }
     }
 
     // 打印视图属性

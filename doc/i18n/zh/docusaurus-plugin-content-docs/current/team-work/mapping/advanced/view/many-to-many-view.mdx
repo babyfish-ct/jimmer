@@ -350,7 +350,7 @@ alter table learning_link
 
 2.  使用`@ManyToManyView`：
 
-    然后，在第一步的基础上，采用`@ManyToManyView`快熟模拟出场景1的效果。
+    然后，在第一步的基础上，采用`@ManyToManyView`快速模拟出场景1的效果。
 
 ### 基础关系映射
 
@@ -578,7 +578,7 @@ alter table learning_link
             deeperProp = "student" ❷ -> ①
         )
         // highlight-next-line
-        val student: List<Student>
+        val students: List<Student>
 
         // 第一步中已经声明了一对多关联`learningLinks`
         @OneToMany(mappedBy = "course")
@@ -591,7 +591,7 @@ alter table learning_link
     </TabItem>
     </Tabs>
 
-    当前属性`Student.courses`可以分两步获取
+    当前属性`Course.students`可以分两步获取
 
     1.  `prop = "learningLinks"`
         

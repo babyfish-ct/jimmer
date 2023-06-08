@@ -106,7 +106,7 @@ fun cacheFactory(
 ```java
 Map<Long, Book> bookMap = sqlClient.findMapByIds(
         Book.class,
-        Arrays.asList(1L, 2L, 3L, 4L)
+        Arrays.asList(1L, 2L, 3L, 4L, 999L)
 );
 System.out.println(bookMap);
 ```
@@ -243,16 +243,16 @@ println(books)
     
     :::caution
     Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结构的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是框架能抽象的统一行为。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
     :::
 
 -   第二条SQL：抓取多对一关联`Book.store`
 
     上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到6个聚合根对象。
 
-    代码中的对象抓取器包含了多对一关联`Boook.store`，且期望查询关联对象的非id属性 *(当前表的外键无法表达的信息)*，所以，Jimmer会为所有聚合根对象查询关联对象。
+    代码中的对象抓取器包含了多对一关联`Book.store`，且期望查询关联对象的非id属性 *(当前表的外键无法表达的信息)*，所以，Jimmer会为所有聚合根对象查询关联对象。
 
-    幸运的是，关联属性`Book.store`基于外键，外键本身就表示了父对象的id，而无需通过额外查询或[关联缓存](./association)即可得到关联对象id。
+    幸运的是，关联属性`Book.store`基于真实外键，外键本身就表示了父对象的id，而无需通过额外查询或[关联缓存](./association)即可得到关联对象id。
 
     假设这6条BOOK数据所对应的外键`STORE_ID`去重后有两个值，1和2。
     
@@ -277,7 +277,7 @@ println(books)
         )
     ```
     :::info
-    如果没有私用缓存，生成的SQL会有差异
+    如果没有启用缓存，生成的SQL会有差异
     <ViewMore buttonText="不启用缓存的差异">
 
     有缓存模式下，这里生成的SQL为
@@ -359,7 +359,8 @@ println(books)
 
     毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
 
-最终，Jimmer把两条SQL的结果拼接在一起，作为最终返回给用户的数据
+最终，Jimmer把两个步骤的结果拼接在一起，作为最终返回给用户的数据
+
 ```json
 [
     {
@@ -407,9 +408,9 @@ println(books)
 
 -   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
     ```sql
-    update book_store 
-    set website = 'https://www.manning.com' 
-    where id = 2;
+    update BOOK_STORE 
+    set WEBSITE = 'https://www.manning.com' 
+    where ID = 2;
     ```
 
 -   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
