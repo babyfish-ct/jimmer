@@ -106,7 +106,7 @@ fun cacheFactory(
 ```java
 Map<Long, Book> bookMap = sqlClient.findMapByIds(
         Book.class,
-        Arrays.asList(1L, 2L, 3L, 4L)
+        Arrays.asList(1L, 2L, 3L, 4L, 999L)
 );
 System.out.println(bookMap);
 ```
@@ -243,7 +243,7 @@ println(books)
     
     :::caution
     Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结构的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是框架能抽象的统一行为。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
     :::
 
 -   第二条SQL：抓取多对一关联`Book.store`
@@ -277,7 +277,7 @@ println(books)
         )
     ```
     :::info
-    如果没有私用缓存，生成的SQL会有差异
+    如果没有启用缓存，生成的SQL会有差异
     <ViewMore buttonText="不启用缓存的差异">
 
     有缓存模式下，这里生成的SQL为
@@ -359,7 +359,7 @@ println(books)
 
     毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
 
-最终，Jimmer把两条SQL的结果拼接在一起，作为最终返回给用户的数据
+最终，Jimmer把两个步骤的结果拼接在一起，作为最终返回给用户的数据
 ```json
 [
     {
