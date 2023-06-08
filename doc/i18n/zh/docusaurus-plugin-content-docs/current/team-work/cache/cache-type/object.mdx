@@ -408,9 +408,9 @@ println(books)
 
 -   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
     ```sql
-    update book_store 
-    set website = 'https://www.manning.com' 
-    where id = 2;
+    update BOOK_STORE 
+    set WEBSITE = 'https://www.manning.com' 
+    where ID = 2;
     ```
 
 -   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
