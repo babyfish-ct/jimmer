@@ -27,7 +27,8 @@ public class AssociationEvent {
     public AssociationEvent(
             ImmutableProp prop,
             Object sourceId,
-            Connection con, Object reason
+            Connection con,
+            Object reason
     ) {
         validateConstructorArgs(prop, sourceId);
         this.prop = prop;
@@ -43,7 +44,8 @@ public class AssociationEvent {
             Object sourceId,
             Object detachedTargetId,
             Object attachedTargetId,
-            Connection con, Object reason
+            Connection con,
+            Object reason
     ) {
         validateConstructorArgs(prop, sourceId);
         if (detachedTargetId == null && attachedTargetId == null) {

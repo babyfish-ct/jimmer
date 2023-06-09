@@ -23,7 +23,7 @@ public class EntityEvent<E> {
 
     public EntityEvent(E oldEntity, E newEntity, Connection con, Object reason) {
         if (oldEntity == null && newEntity == null) {
-            throw new IllegalArgumentException("Both oldEntity and newEntity are null");
+            throw new IllegalArgumentException("Both `oldEntity` and `newEntity` are null");
         }
         if (oldEntity != null && !(oldEntity instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("oldEntity is not immutable object");
@@ -125,6 +125,17 @@ public class EntityEvent<E> {
         return Type.UPDATE;
     }
 
+    /**
+     * Get the unchanged ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a ref object which is the wrapper of unchanged value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @SuppressWarnings("unchecked")
     @Nullable
     public <T> Ref<T> getUnchangedRef(ImmutableProp prop) {
@@ -164,11 +175,34 @@ public class EntityEvent<E> {
         return null;
     }
 
+    /**
+     * Get the unchanged ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a ref object which is the wrapper of unchanged value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @Nullable
     public <T> Ref<T> getUnchangedRef(TypedProp.Single<?, T> prop) {
         return getUnchangedRef(prop.unwrap());
     }
 
+    /**
+     * Get the changed ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a changed ref object which is a wrapper of
+     * both old value and new value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @SuppressWarnings("unchecked")
     @Nullable
     public <T> ChangedRef<T> getChangedRef(ImmutableProp prop) {
@@ -215,19 +249,67 @@ public class EntityEvent<E> {
         }
     }
 
+    /**
+     * Get the changed ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a changed ref object which is a wrapper of
+     * both old value and new value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @Nullable
     public <T> ChangedRef<T> getChangedRef(TypedProp.Single<?, T> prop) {
         return getChangedRef(prop.unwrap());
     }
 
+    /**
+     * Is the value of specified property changed?
+     * <p>Note: If the declaring type
+     * of specified property is not assignable from the entity type
+     * of current event object, it returns false</p>
+     * @param prop The specified property
+     * @return Whether the declaring type
+     * of specified property is assignable from the entity type
+     * of current event object and the value of specified property is changed.
+     */
     public boolean isChanged(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+            return false;
+        }
         return getChangedRef(prop) != null;
     }
 
+    /**
+     * Is the value of specified property changed?
+     * <p>Note: If the declaring type
+     * of specified property is not assignable from the entity type
+     * of current event object, it returns false</p>
+     * @param prop The specified property
+     * @return Whether the declaring type
+     * of specified property is assignable from the entity type
+     * of current event object and the value of specified property is changed.
+     */
     public boolean isChanged(TypedProp.Single<?, ?> prop) {
         return getChangedRef(prop.unwrap()) != null;
     }
 
+    /**
+     * Get the value of specified property if it is not changed.
+     * @param prop The specified property
+     * @param <T> The return type of returned property
+     * @return The unchanged value of specified property
+     * @exception IllegalArgumentException
+     * <ul>
+     *     <li>The declaring type of
+     *     specified property is not assignable from the entity type
+     *     of current event object</li>
+     *     <li>The value of specified property is changed</li>
+     * </ul>
+     */
     public <T> T getUnchangedValue(ImmutableProp prop) {
         Ref<T> ref = getUnchangedRef(prop);
         if (ref == null) {
@@ -240,6 +322,19 @@ public class EntityEvent<E> {
         return ref.getValue();
     }
 
+    /**
+     * Get the value of specified property if it is not changed.
+     * @param prop The specified property
+     * @param <T> The return type of returned property
+     * @return The unchanged value of specified property
+     * @exception IllegalArgumentException
+     * <ul>
+     *     <li>The declaring type of
+     *     specified property is not assignable from the entity type
+     *     of current event object</li>
+     *     <li>The value of specified property is changed</li>
+     * </ul>
+     */
     public <T> T getUnchangedValue(TypedProp.Single<?, T> prop) {
         return getUnchangedValue(prop.unwrap());
     }
