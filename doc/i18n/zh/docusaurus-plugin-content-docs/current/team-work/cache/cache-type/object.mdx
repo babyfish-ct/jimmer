@@ -29,7 +29,6 @@ public CacheFactory cacheFactory(
     return new CacheFactory() {
 
         @Override
-        @Nullable
         // highlight-next-line
         public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
             return new ChainCacheBuilder<>()

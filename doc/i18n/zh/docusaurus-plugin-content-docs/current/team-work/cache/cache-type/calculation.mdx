@@ -2,3 +2,339 @@
 sidebar_position: 3
 title: 计算缓存
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+所谓对象缓存，指把当前对象id映射为用户定义的[复杂计算属性](../../mapping/advanced/calculated/transient)的计算值。
+
+![object-cache](@site/static/img/calculated-cache.png)
+
+## 计算属性回顾
+
+在[复杂计算属性](../../mapping/advanced/calculated/transient)一文中，我们详细地讲解了复杂计算属性。
+
+:::caution
+本文聚焦于计算缓存，并不重复介绍[复杂计算属性](../../mapping/advanced/calculated/transient)，请读者先了解[复杂计算属性](../../mapping/advanced/calculated/transient)再阅读此文
+:::
+
+在本文中，我们将为[复杂计算属性](../../mapping/advanced/calculated/transient)中定义的计算属性`BookStore.avgPrice`添加缓存支持。
+
+:::info
+问了简化文档，本文不讨论另外一个关联型计算属性`BookStore.newestBooks`的缓存支持，读者可阅读和运行如下官方例子
+-   example/java/jimmer-sql
+-   example/java/jimmer-sql-graphql
+-   example/kotlin/jimmer-sql-kt
+-   example/kotlin/jimmer-sql-graphql-kt
+:::
+
+## 启用计算缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    return new CacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...省略代码...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            ...省略代码...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            ...省略代码...
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(prop, Duration.ofSeconds(10));
+        }
+
+        private Cache<?, ?> createPropCache(ImmutableProp prop, Duration duration) {
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build();
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...省略代码...
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...省略代码...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            ...省略代码...
+
+        // highlight-next-line
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            return createPropCache(prop, Duration.ofSeconds(10))
+
+        private fun createPropCache(prop: ImmutableProp, duration: Duration): Cache<*, *> =
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build()
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 使用
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookStoreTable table = BookStoreTable.$;
+List<BookStore> stores = sqlClient
+    .createQuery(table)
+    .select(
+        table.fetch(
+            BookStoreFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .avgPrice()
+        )
+    )
+    .execute();
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                avgPrice()
+            }
+        )
+    }
+    .execute()
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+-   第一步：查询聚合根
+
+    首先查询聚合根对象，执行如下SQL
+    
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.WEBSITE
+    from BOOK_STORE tb_1_
+    ```
+
+    这里实现了代码中的模糊查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
+    
+    :::caution
+    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结构的一致性无法保证。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
+    :::
+
+-   第二步：通过计算缓存把当前对象id转化为计算值
+
+    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象。
+
+    代码中的对象抓取器包含了计算属性`BookStore.avgPrice`
+
+    这2条BOOK_STORE的主键`ID`为1和2。
+    
+    Jimmer先从Redis查找数据，被查找的键为`BookStore.avgPrice-1`和`BookStore.avgPrice-2`。
+
+    假设无法在Redis中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys BookStore.avgPrice-*
+    (empty array)
+    ```
+
+    所以，执行如下SQL，完成计算属性的计算
+    ```sql
+    select
+        tb_1_.ID,
+        avg(tb_2_.PRICE)
+    from BOOK_STORE tb_1_
+    left join BOOK tb_2_
+        on tb_1_.ID = tb_2_.STORE_ID
+    where
+        tb_1_.ID in (
+            ? /* 1 */, ? /* 2 */
+        )
+    group by
+        tb_1_.ID
+    ```
+
+    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    ```
+    127.0.0.1:6379> keys BookStore.avgPrice-*
+    1) "BookStore.avgPrice-2"
+    2) "BookStore.avgPrice-1"
+    127.0.0.1:6379> get BookStore.avgPrice-1
+    "41.964286"
+    127.0.0.1:6379> get BookStore.avgPrice-2
+    "74.250000"
+    127.0.0.1:6379>
+    ```
+
+    这样，我们就得到两个`BookStore`对象各自通过计算属性`BookStore.avgPrice`得到了各自书籍的平均价格。
+
+    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+
+最终，Jimmer把3个步骤的结果拼接在一起，作为最终返回给用户的数据
+
+```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        // highlight-next-line
+        "avgPrice":80.333333333333
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        // highlight-next-line
+        "avgPrice":57.944444444444
+    }
+]
+```
+
+## 一致性
+
+### 一致性实现
+
+:::caution
+和对象缓存、关联缓存那种全自动的缓存一致性不同，计算缓存的一致性维护需要用户辅助。
+
+这是因为计算属性引入了ORM框架无法理解的用户自定义计算规则
+:::
+
+就`BookStore.avgPrice`这个计算属性而言，以下两种情况都会导致计算缓存的失效
+
+-   修改`BOOK`记录的`PRICE`字段，其所属书店的`avgPrice`缓存数据需要被删除
+
+-   修改`BOOK`记录的`STORE_ID`外建字段，新旧值对应的两个书店的`avgPrice`缓存数据都需要被删除
+
+
+在[复杂计算属性](../../mapping/advanced/calculated/transient)一文中，为支持计算属性`BookStore.avgPrice`定义了一个类`BookStoreAvgPriceResolver`，其代码如下。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+package com.example.business.resolver;
+
+import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.TransientResolver;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
+    
+    @Override
+    public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
+        ...省略代码...
+    }
+
+    @Override
+    public BigDecimal getDefaultValue() {
+        return BigDecimal.ZERO;
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+package com.example.business.resolver
+
+import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.springframework.stereotype.Component
+
+@Component
+class BookStoreAvgPriceResolver(
+    ...略...
+) : KTransientResolver<Long, BigDecimal> {
+
+    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> {
+        ...省略代码...
+    }
+
+    override fun getDefaultValue(): BigDecimal =
+        BigDecimal.ZERO
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+
+### 修改BOOK.PRICE
+
+### 修改BOOK.STORE_ID

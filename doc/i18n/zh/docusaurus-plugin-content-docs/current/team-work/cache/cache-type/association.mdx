@@ -65,13 +65,13 @@ public CacheFactory cacheFactory(
     return new CacheFactory() {
 
         @Override
-        @Nullable
         public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
             ...省略代码...
         }
 
         // 将当前对象id映射为关联对象id
         // 适用于一对一和多对一关联属性
+        @Override
         // highlight-next-line
         public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
             return createPropCache(prop, Duration.ofMinutes(10));
@@ -79,6 +79,7 @@ public CacheFactory cacheFactory(
 
         // 将当前对象id映射为关联对象id集合
         // 适用于一对多和多对多关联属性
+        @Override
         // highlight-next-line
         public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
             return createPropCache(prop, Duration.ofMinutes(5));
@@ -134,7 +135,7 @@ fun cacheFactory(
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
             createPropCache(prop, Duration.ofMinutes(5))
 
-        private fun createPropCache(type: ImmutableType, duration: Duration): Cache<*, *> =
+        private fun createPropCache(prop: ImmutableProp, duration: Duration): Cache<*, *> =
             ChainCacheBuilder<Any, Any>()
                 .add(
                     CaffeineBinder(512, Duration.ofSeconds(1))
@@ -144,7 +145,7 @@ fun cacheFactory(
                         redisTemplate, 
                         objectMapper, 
                         prop, 
-                        Duration.ofMinutes(10)
+                        duration
                     )
                 )
                 .build()
