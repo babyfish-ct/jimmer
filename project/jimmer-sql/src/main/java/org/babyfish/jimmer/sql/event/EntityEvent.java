@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.util.Objects;
 
-public class EntityEvent<E> {
+public class EntityEvent<E> implements DatabaseEvent {
 
     private final Object id;
 
@@ -77,29 +77,26 @@ public class EntityEvent<E> {
         return this.id;
     }
 
-    /**
-     * Determine whether the trigger for sending the current event is within
-     * a transaction or based on binlog
-     *
-     * <ul>
-     *  <li>If the event is fired by binlog trigger, returns null</li>
-     *  <li>If the event is fired by transaction trigger, returns current trigger</li>
-     * </ul>
-     *
-     * <p>
-     *     Notes, If you use jimmer in spring-boot and accept events with `@EventListener`,
-     *     it will be very important to determine whether this property is null.
-     *     Because once the `triggerType` of `SqlClient` is set to `BOTH`, the same event
-     *     will be notified twice.
-     * </p>
-     *
-     * @return The current connection or null
-     */
+    @Override
+    public boolean isChanged(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+            return false;
+        }
+        return getChangedRef(prop) != null;
+    }
+
+    @Override
+    public boolean isChanged(TypedProp<?, ?> prop) {
+        return getChangedRef(prop.unwrap()) != null;
+    }
+
+    @Override
     @Nullable
     public Connection getConnection() {
         return con;
     }
 
+    @Override
     @Nullable
     public Object getReason() {
         return this.reason;
@@ -264,37 +261,6 @@ public class EntityEvent<E> {
     @Nullable
     public <T> ChangedRef<T> getChangedRef(TypedProp.Single<?, T> prop) {
         return getChangedRef(prop.unwrap());
-    }
-
-    /**
-     * Is the value of specified property changed?
-     * <p>Note: If the declaring type
-     * of specified property is not assignable from the entity type
-     * of current event object, it returns false</p>
-     * @param prop The specified property
-     * @return Whether the declaring type
-     * of specified property is assignable from the entity type
-     * of current event object and the value of specified property is changed.
-     */
-    public boolean isChanged(ImmutableProp prop) {
-        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
-            return false;
-        }
-        return getChangedRef(prop) != null;
-    }
-
-    /**
-     * Is the value of specified property changed?
-     * <p>Note: If the declaring type
-     * of specified property is not assignable from the entity type
-     * of current event object, it returns false</p>
-     * @param prop The specified property
-     * @return Whether the declaring type
-     * of specified property is assignable from the entity type
-     * of current event object and the value of specified property is changed.
-     */
-    public boolean isChanged(TypedProp.Single<?, ?> prop) {
-        return getChangedRef(prop.unwrap()) != null;
     }
 
     /**

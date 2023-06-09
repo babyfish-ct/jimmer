@@ -4,13 +4,14 @@ import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.Objects;
 
-public class AssociationEvent {
+public class AssociationEvent implements DatabaseEvent {
 
     private final ImmutableProp prop;
 
@@ -148,24 +149,16 @@ public class AssociationEvent {
         return attachedTargetId;
     }
 
-    /**
-     * Determine whether the trigger for sending the current event is within
-     * a transaction or based on binlog
-     *
-     * <ul>
-     *  <li>If the event is fired by binlog trigger, returns null</li>
-     *  <li>If the event is fired by transaction trigger, returns current trigger</li>
-     * </ul>
-     *
-     * <p>
-     *     Notes, If you use jimmer in spring-boot and accept events with `@EventListener`,
-     *     it will be very important to determine whether this property is null.
-     *     Because once the `triggerType` of `SqlClient` is set to `BOTH`, the same event
-     *     will be notified twice.
-     * </p>
-     *
-     * @return The current connection or null
-     */
+    @Override
+    public boolean isChanged(ImmutableProp prop) {
+        return this.prop == prop;
+    }
+
+    @Override
+    public boolean isChanged(TypedProp<?, ?> prop) {
+        return isChanged(prop.unwrap());
+    }
+
     @Nullable
     public Connection getConnection() {
         return this.con;

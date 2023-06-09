@@ -50,14 +50,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // its consistency requires manual assistance.
     // -----------------------------
 
+    // The association property `BookStore.books` is changed
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
         if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            // 1. Check whether the association `BookStore.books` is changed,
-            //    this event can be caused by 2 cases:
-            //    i. The foreign key `Book.store.id` is changed.
-            //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
-
             Caches caches = bookStoreRepository.sql().getCaches();
             caches
                     .getPropertyCache(BookStoreProps.AVG_PRICE)
@@ -65,19 +61,17 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         }
     }
 
+    // The scalar property `Book.price` is changed
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
-        if (e.getConnection() == null && e.getImmutableType().getJavaClass() == Book.class) {
-            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
+        if (e.getConnection() == null && e.isChanged(BookProps.PRICE)) {
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
-            if (store != null) { // foreign key does not change.
-                // 2, Check whether `Book.price` is changed
-                if (e.getChangedFieldRef(BookProps.PRICE) != null) {
-                    Caches caches = bookStoreRepository.sql().getCaches();
-                    caches
-                            .getPropertyCache(BookStoreProps.AVG_PRICE)
-                            .delete(store.id());
-                }
+            if (store != null) {
+                Caches caches = bookStoreRepository.sql().getCaches();
+                caches
+                    .getPropertyCache(BookStoreProps.AVG_PRICE)
+                    .delete(store.id());
             }
         }
     }

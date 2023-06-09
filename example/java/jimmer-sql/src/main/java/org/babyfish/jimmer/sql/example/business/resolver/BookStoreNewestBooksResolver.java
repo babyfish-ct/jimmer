@@ -58,12 +58,12 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
+        // The association property `BookStore.stores` is changed
+        //
+        // It is worth noting that
+        // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
+        // but also modifying the `TENANT` field of the BOOK table can trigger the event.
         if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            // 1. Check whether the association `BookStore.books` is changed,
-            //    this event can be caused by 2 cases:
-            //    i. The foreign key `Book.store.id` is changed.
-            //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
-
             Caches caches = bookStoreRepository.sql().getCaches();
             caches
                     .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
@@ -73,17 +73,15 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
-        if (e.getConnection() == null && e.getImmutableType().getJavaClass() == Book.class) {
-            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
+        // The scalar property `Book.edition` is changed.
+        if (e.getConnection() == null && e.isChanged(BookProps.EDITION)) {
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) { // foreign key does not change.
-                // 2, Check whether `Book.edition` is changed
-                if (e.getChangedFieldRef(BookProps.EDITION) != null) {
-                    Caches caches = bookStoreRepository.sql().getCaches();
-                    caches
-                            .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
-                            .delete(store.id());
-                }
+                Caches caches = bookStoreRepository.sql().getCaches();
+                caches
+                        .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
+                        .delete(store.id());
             }
         }
     }

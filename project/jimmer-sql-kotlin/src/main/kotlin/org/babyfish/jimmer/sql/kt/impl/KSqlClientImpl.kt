@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -83,6 +84,9 @@ internal class KSqlClientImpl(
 
     override fun getTriggers(transaction: Boolean): KTriggers =
         KTriggersImpl(javaClient.getTriggers(transaction))
+
+    override val triggerType: TriggerType
+        get() = javaClient.triggerType
 
     override val filters: KFilters
         get() = KFiltersImpl(javaClient.filters)
