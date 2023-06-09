@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.example.business.interceptor.output
 import org.babyfish.jimmer.sql.example.business.interceptor.TenantProvider
 import org.babyfish.jimmer.sql.event.EntityEvent
 import org.babyfish.jimmer.sql.example.model.common.TenantAware
-import org.babyfish.jimmer.sql.kt.event.getChangedFieldRef
+import org.babyfish.jimmer.sql.kt.event.isChanged
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
@@ -40,5 +40,5 @@ class TenantFilterForCacheMode(
         }
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-        e.getChangedFieldRef(TenantAware::tenant) !== null
+        e.isChanged(TenantAware::tenant)
 }

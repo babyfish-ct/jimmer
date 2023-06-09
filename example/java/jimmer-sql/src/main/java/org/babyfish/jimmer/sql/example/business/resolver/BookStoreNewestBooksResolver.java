@@ -1,11 +1,15 @@
 package org.babyfish.jimmer.sql.example.business.resolver;
 
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
+import org.babyfish.jimmer.sql.event.DatabaseEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.example.repository.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.model.Book;
 import org.babyfish.jimmer.sql.example.model.BookProps;
@@ -26,8 +30,11 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     private final BookStoreRepository bookStoreRepository;
 
+    private final JSqlClient sqlClient;
+
     public BookStoreNewestBooksResolver(BookStoreRepository bookStoreRepository) {
         this.bookStoreRepository = bookStoreRepository;
+        this.sqlClient = bookStoreRepository.sql(); // You can also inject it directly
     }
 
     @Override
@@ -58,12 +65,12 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
-        // The association property `BookStore.stores` is changed
+        // The association property `BookStore.books` is changed
         //
         // It is worth noting that
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
-        if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
+        if (isAffectedBy(e, BookStoreProps.BOOKS)) {
             Caches caches = bookStoreRepository.sql().getCaches();
             caches
                     .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
@@ -74,7 +81,7 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
         // The scalar property `Book.edition` is changed.
-        if (e.getConnection() == null && e.isChanged(BookProps.EDITION)) {
+        if (isAffectedBy(e, BookProps.EDITION)) {
             Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) { // foreign key does not change.
@@ -91,5 +98,10 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
         Filters filters = bookStoreRepository.sql().getFilters();
         return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
+    }
+
+    private boolean isAffectedBy(DatabaseEvent e, TypedProp<?, ?> prop) {
+        return (e.getConnection() == null || sqlClient.getTriggerType() == TriggerType.TRANSACTION_ONLY) &&
+                e.isChanged(prop);
     }
 }
