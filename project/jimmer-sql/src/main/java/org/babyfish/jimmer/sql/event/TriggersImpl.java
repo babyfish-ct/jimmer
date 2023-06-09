@@ -146,7 +146,7 @@ public class TriggersImpl implements Triggers {
         ImmutableType type = event.getImmutableType();
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isColumnDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
-                ChangedRef<Object> changedRef = event.getChangedFieldRef(prop);
+                ChangedRef<Object> changedRef = event.getChangedRef(prop);
                 if (changedRef != null) {
                     ChangedRef<Object> fkRef = changedRef.toIdRef();
                     throwable = fireForeignKeyChange(

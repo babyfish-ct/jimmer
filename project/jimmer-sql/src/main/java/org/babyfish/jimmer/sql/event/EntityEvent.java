@@ -125,20 +125,10 @@ public class EntityEvent<E> {
         return Type.UPDATE;
     }
 
-    @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(ImmutableProp prop) {
-        return getUnchangedFieldRef(prop.getId());
-    }
-
-    @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(TypedProp<?, ?> prop) {
-        return getUnchangedFieldRef(prop.unwrap().getId());
-    }
-
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(PropId propId) {
-        ImmutableProp prop = getImmutableType().getProp(propId);
+    public <T> Ref<T> getUnchangedRef(ImmutableProp prop) {
+        validateProp(prop);
         if (!prop.isColumnDefinition()) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
@@ -147,6 +137,7 @@ public class EntityEvent<E> {
                             "because it is not a property mapped by database columns"
             );
         }
+        PropId propId = prop.getId();
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
         ImmutableSpi ne = (ImmutableSpi) newEntity;
         boolean oldLoaded = oe != null && oe.__isLoaded(propId);
@@ -174,19 +165,14 @@ public class EntityEvent<E> {
     }
 
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(ImmutableProp prop) {
-        return getChangedFieldRef(prop.getId());
-    }
-
-    @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(TypedProp<?, ?> prop) {
-        return getChangedFieldRef(prop.unwrap().getId());
+    public <T> Ref<T> getUnchangedRef(TypedProp.Single<?, T> prop) {
+        return getUnchangedRef(prop.unwrap());
     }
 
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(PropId propId) {
-        ImmutableProp prop = getImmutableType().getProp(propId);
+    public <T> ChangedRef<T> getChangedRef(ImmutableProp prop) {
+        validateProp(prop);
         if (!prop.isColumnDefinition()) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
@@ -195,6 +181,7 @@ public class EntityEvent<E> {
                             "because it is not a property mapped by database columns"
             );
         }
+        PropId propId = prop.getId();
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
         ImmutableSpi ne = (ImmutableSpi) newEntity;
         if (oe == null) {
@@ -225,6 +212,48 @@ public class EntityEvent<E> {
                 return null;
             }
             return new ChangedRef<>(oldValue, newValue);
+        }
+    }
+
+    @Nullable
+    public <T> ChangedRef<T> getChangedRef(TypedProp.Single<?, T> prop) {
+        return getChangedRef(prop.unwrap());
+    }
+
+    public boolean isChanged(ImmutableProp prop) {
+        return getChangedRef(prop) != null;
+    }
+
+    public boolean isChanged(TypedProp.Single<?, ?> prop) {
+        return getChangedRef(prop.unwrap()) != null;
+    }
+
+    public <T> T getUnchangedValue(ImmutableProp prop) {
+        Ref<T> ref = getUnchangedRef(prop);
+        if (ref == null) {
+            throw new IllegalArgumentException(
+                    "Cannot get unchanged value of \"" +
+                            prop +
+                            "\", because the value of it is changed"
+            );
+        }
+        return ref.getValue();
+    }
+
+    public <T> T getUnchangedValue(TypedProp.Single<?, T> prop) {
+        return getUnchangedValue(prop.unwrap());
+    }
+
+    private void validateProp(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+            throw new IllegalArgumentException(
+                    "The argument `prop` cannot be \"prop" +
+                            "\", it declaring type \"" +
+                            prop.getDeclaringType() +
+                            "\" is not assignable from the current type \"" +
+                            getImmutableType() +
+                            "\""
+            );
         }
     }
 

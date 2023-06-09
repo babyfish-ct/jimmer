@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -632,7 +631,7 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
+            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
         }
     }
 
@@ -652,7 +651,7 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
+            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
         }
     }
 }

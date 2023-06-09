@@ -608,7 +608,7 @@ public class FilterManager implements Filters {
         if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             ImmutableProp mappedBy = prop.getMappedBy();
             if (mappedBy != null && mappedBy.isColumnDefinition()) {
-                if (e.getUnchangedFieldRef(mappedBy) == null) {
+                if (e.getUnchangedRef(mappedBy) == null) {
                     return;
                 }
             }
@@ -630,7 +630,7 @@ public class FilterManager implements Filters {
         Triggers triggers = sqlClient.getTriggers();
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null && mappedBy.isColumnDefinition()) {
-            Ref<Object> ref = e.getUnchangedFieldRef(mappedBy);
+            Ref<Object> ref = e.getUnchangedRef(mappedBy);
             if (ref != null) {
                 ImmutableSpi source = (ImmutableSpi) ref.getValue();
                 if (source != null) {
