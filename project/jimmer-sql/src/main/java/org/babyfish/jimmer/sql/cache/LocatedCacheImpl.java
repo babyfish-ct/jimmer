@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
 
-    private static final ThreadLocal<Set<LocatedCacheImpl<?, ?>>> LOADING_CACHES_LOCAL =
+    private static final ThreadLocal<Set<LocatedCache<?, ?>>> LOADING_CACHES_LOCAL =
         new ThreadLocal<>();
 
     protected final Cache<K, V> raw;
@@ -22,7 +22,9 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
 
     private final ImmutableProp prop;
 
-    public LocatedCacheImpl(Cache<K, V> raw, ImmutableType type, ImmutableProp prop) {
+    private final CacheOperator operator;
+
+    public LocatedCacheImpl(Cache<K, V> raw, ImmutableType type, ImmutableProp prop, CacheOperator operator) {
         if ((type == null) == (prop == null)) {
             throw new IllegalArgumentException("The nullity of type and prop must be different");
         }
@@ -34,33 +36,37 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         this.raw = Objects.requireNonNull(raw, "raw cannot be null");
         this.type = type;
         this.prop = prop;
+        this.operator = operator;
     }
 
     public static <K, V> LocatedCacheImpl<K, V> wrap(
             Cache<K, V> cache,
-            ImmutableType type
+            ImmutableType type,
+            CacheOperator operator
     ) {
-        return wrap(cache, type, null);
+        return wrap(cache, type, null, operator);
     }
 
     public static <K, V> LocatedCacheImpl<K, V> wrap(
             Cache<K, V> cache,
-            ImmutableProp prop
+            ImmutableProp prop,
+            CacheOperator operator
     ) {
-        return wrap(cache, null, prop);
+        return wrap(cache, null, prop, operator);
     }
 
     private static <K, V> LocatedCacheImpl<K, V> wrap(
             Cache<K, V> cache,
             ImmutableType type,
-            ImmutableProp prop
+            ImmutableProp prop,
+            CacheOperator operator
     ) {
         if (cache == null) {
             return null;
         }
         if (cache instanceof LocatedCache<?, ?>) {
             LocatedCacheImpl<K, V> wrapper = (LocatedCacheImpl<K, V>) cache;
-            if (wrapper.type == type && wrapper.prop.equals(prop)) {
+            if (wrapper.type == type && wrapper.prop == prop) {
                 return wrapper;
             }
             cache = ((LocatedCacheImpl<K, V>) cache).raw;
@@ -69,20 +75,21 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
             return new ParameterizedLocatedCacheImpl<>(
                     (Cache.Parameterized<K, V>)cache,
                     type,
-                    prop
+                    prop,
+                    operator
             );
         }
-        return new LocatedCacheImpl<>(cache, type, prop);
+        return new LocatedCacheImpl<>(cache, type, prop, operator);
     }
 
-    public static <K, V> LocatedCache<K, V> export(LocatedCache<K, V> cacheWrapper) {
-        if (cacheWrapper != null) {
-            Set<LocatedCacheImpl<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
-            if (disabledCaches != null && disabledCaches.contains(cacheWrapper)) {
+    public static <K, V> LocatedCache<K, V> export(LocatedCache<K, V> cache) {
+        if (cache != null) {
+            Set<LocatedCache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+            if (disabledCaches != null && disabledCaches.contains(cache)) {
                 return null;
             }
         }
-        return cacheWrapper;
+        return cache;
     }
 
     public static <K, V> Cache<K, V> unwrap(Cache<K, V> cache) {
@@ -103,6 +110,15 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         return prop;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public Class<K> getKeyClass() {
+        if (type != null) {
+            return (Class<K>) type.getIdProp().getElementClass();
+        }
+        return (Class<K>) prop.getDeclaringType().getIdProp().getElementClass();
+    }
+
     @NotNull
     @Override
     public Map<K, V> getAll(@NotNull Collection<K> keys, @NotNull CacheEnvironment<K, V> env) {
@@ -115,13 +131,58 @@ class LocatedCacheImpl<K, V> implements LocatedCache<K, V> {
         });
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public void delete(@NotNull K key) {
+        if (operator == null || CacheOperator.isSuspending()) {
+            raw.delete(key);
+        } else {
+            operator.delete((LocatedCache<Object, ?>) this, key, null);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void delete(@NotNull K key, Object reason) {
+        if (operator == null || CacheOperator.isSuspending()) {
+            raw.delete(key, reason);
+        } else {
+            operator.delete((LocatedCache<Object, ?>) this, key, reason);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void deleteAll(@NotNull Collection<K> keys) {
+        if (keys.isEmpty()) {
+            return;
+        }
+        if (keys.size() == 1) {
+            delete(keys.iterator().next());
+        } else if (operator == null || CacheOperator.isSuspending()) {
+            raw.deleteAll(keys);
+        } else {
+            operator.deleteAll((LocatedCache<Object, ?>) this, (Collection<Object>) keys, null);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public void deleteAll(@NotNull Collection<K> keys, @Nullable Object reason) {
-        raw.deleteAll(keys, reason);
+        if (keys.isEmpty()) {
+            return;
+        }
+        if (keys.size() == 1) {
+            delete(keys.iterator().next(), reason);
+        } else if (operator == null || CacheOperator.isSuspending()) {
+            raw.deleteAll(keys, reason);
+        } else {
+            operator.deleteAll((LocatedCache<Object, ?>) this, (Collection<Object>) keys, reason);
+        }
     }
 
     protected <R> R loading(Supplier<R> block) {
-        Set<LocatedCacheImpl<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
+        Set<LocatedCache<?, ?>> disabledCaches = LOADING_CACHES_LOCAL.get();
         if (disabledCaches == null) {
             disabledCaches = new HashSet<>();
             LOADING_CACHES_LOCAL.set(disabledCaches);

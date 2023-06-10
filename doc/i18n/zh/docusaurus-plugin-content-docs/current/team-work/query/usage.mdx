@@ -60,7 +60,7 @@ val books = sqlClient
 
 -   ❷处调用`select`，把可变查询对象转化为不可变查询对象。以该对象为目标的操作持续到❸处为止
 
-    所谓可变查询对象，指对其进行任何操作，比如，`distinct`, `limit`, `forUpdate`, `reselect`，`withoutSortingAndPaging`, `union`, `unionAll`, `minus`, `intersect`，都是不会改变当前查询对象，而是创建新的对象
+    所谓不可变查询对象，指对其进行任何操作，比如，`distinct`, `limit`, `forUpdate`, `reselect`，`withoutSortingAndPaging`, `union`, `unionAll`, `minus`, `intersect`，都是不会改变当前查询对象，而是创建新的对象
 
     例如 *(为了简短，这段伪码使用kotlin)*
     ```kotlin
@@ -85,9 +85,9 @@ val books = sqlClient
 
     除`execute`外，还有其他方法可以执行查询
 
-    -   `fetchOne`：假设查询必然返回一条数据，得到这条数据。如果实际执行后发现返回了0或多条数据，异常
+    -   `fetchOne`：假设查询必然返回一条数据，得到这条数据。如果实际执行后发现返回了0或多条数据，则抛出异常
 
-    -   `fetchOneOrNull`：假设查询必然返回0或1条数据，得到这条数据或null。如果实际执行后发现返回了多条数据，异常
+    -   `fetchOneOrNull`：假设查询必然返回0或1条数据，得到这条数据或null。如果实际执行后发现返回了多条数据，则抛出异常
 
     -   `fetchOptional`：功能同`fetchOneOrNull`类似，只是把返回类型从`null | T`变成了`java.util.Optional<T>`
 
@@ -108,7 +108,7 @@ val books = sqlClient
     :::tip
     上述所有用于执行查询的方法，都有两个重载版本
 
-    -   无参版本 *(上述代码所示)*，利用Jimmer的管理连接管理机制 *(通常对接spring事务管理机制)* 获取JDBC连接并执行。
+    -   无参版本 *(上述代码所示)*，利用Jimmer的连接管理机制 *(通常对接spring事务管理机制)* 获取JDBC连接并执行。
 
     -   有参数版本：参数接受一个JDBC连接。特殊情况下，开发人员可以弃Jimmer连接管理机制 *(通常对接spring事务管理机制)* 于不顾，在自己指定的JDBC连接上执行。
     :::

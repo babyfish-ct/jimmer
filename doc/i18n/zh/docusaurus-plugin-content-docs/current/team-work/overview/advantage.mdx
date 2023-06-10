@@ -37,7 +37,7 @@ import ImmutableSolution from '../_shared/immutable-solution.mdx';
 
 由于对象具备动态性，因此我们很容易表达任意形状的数据结构。
 
-<ViewMore title="动态对象导致数据结构的形状千变万化" buttonText="查看例子">
+<ViewMore title="动态对象提供的任意数据形状" buttonText="查看例子">
 <DynamicShape/>
 </ViewMore>
 
@@ -53,8 +53,8 @@ Jimmer对象的动态性，其实是把传统ORM中延迟属性的性质推广�
 -   Jimmer创建动态对象返回给开发人员
 
     即，查询任意形状的数据结构。此功能叫“对象抓取器”
-    
-    <ViewMore buttonText="查看更多">
+
+    <ViewMore title="对象抓取器" buttonText="查看例子">
     <ObjectFetcher/>
     </ViewMore>
 
@@ -62,11 +62,11 @@ Jimmer对象的动态性，其实是把传统ORM中延迟属性的性质推广�
 
     即，保存任意形状的数据结构。此功能叫“保存指令”
 
-    <ViewMore buttonText="查看更多">
+    <ViewMore title="保存指令" buttonText="查看例子">
     <SaveCommand/>
     </ViewMore>
 
-所以，无论输入还是输出，Jimemer的基本操作单元都是形状的数据结构，而非简单的实体对象。
+所以，无论输入还是输出，Jimmer的基本操作单元都是形状的数据结构，而非简单的实体对象。
 
 动态性是Jimmer和最重要底层特性，是其所有上层方案的基础。
 :::
@@ -102,7 +102,7 @@ Java从14开始支持不可变record类型，kotlin的data class可轻松实现�
 -   [Kopyk(Kotlin)](https://kopyk.at/)
 -   [MuteKt(Kotlin)](https://github.com/PatilShreyas/mutekt)
 
-Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题。为了同时为Java和Kotlin良好的支持，Jimmer并未使用它们中的任何一个，而是选择移植JavaScript/TypeScript领域的[https://github.com/immerjs/immer](https://github.com/immerjs/immer)。
+Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题。为了同时为Java和Kotlin良好的支持，Jimmer并未使用它们中的任何一个，而是选择移植JavaScript/TypeScript领域的[immer](https://github.com/immerjs/immer)。
 
 移植[immer](https://github.com/immerjs/immer)后，Java/Kotlin处理复杂不可变数据结构的能力会变得非常强大和简单。
 
@@ -113,7 +113,7 @@ Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题�
 这个移植是对JVM生态的有力补充。
 
 :::info
-本框架命名为Jimmer，即为致敬[Immer](https://github.com/immerjs/immer)
+本框架命名为Jimmer，即为致敬[immer](https://github.com/immerjs/immer)
 :::
 
 前文提到，Jimmer实体被设计不可变对象的目的是为了杜绝循环引用。其实，不可变对象的还有很多其他好处，这里稍加讨论，请点击按钮。
@@ -128,16 +128,16 @@ Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题�
 
 -   实际开发中还有一些长期持有对象的场合场合，虽然不依赖hashCode，但也会因长期持有对象而导致问题，比如：
 
-    -   利用Web Session中长期持有某些数据
+    -   利用WebSession中长期持有某些数据
 
     -   利用一级缓存，即，使用JVM内存的进程内缓存，长期持有某些数据
 
-    细心的开发人员肯定不希望Web Session或Cache中被长期持有数据的引用和泄漏到用户代码中的引用共享数据结构，进而导致不可控的彼此干扰。
-    
+    细心的开发人员肯定不希望WebSession或Cache中被长期持有数据的引用和泄漏到用户代码中的引用共享数据结构，进而导致不可控的彼此干扰。
+
     因此，对WebSession或Cache这类长期持有数据的结构进行读写操作时，细心的开发人员会将可变数据结构复制一次再进行保存或返回。其中，写入时复制尚可接受，但每次读取都复制一次显得昂贵。
 
     可见
-    
+
     -   使用可变对象，是否需要复制对象以保证必要安全性，依赖于开发人员的风险预知能力。然而，即便预知了风险，解决之道也没有客观标准，过于严格会导致浪费，过于宽松会导致BUG *(团队人数越多，越容易出错)*。而且，对于有一定体量的数据而言，团队内部对这种保护机制的严格程度也常有争论，具备很强的主观性。
 
     -   使用可不变对象，只有需要数据变化时才复制数据结构 *(Jimmer/Immer内部对此有优化，变化的部分才复制，未变的部分仍然共享重用)*，其余情况一律简单共享引用即可。具备非常严格的客观性。
@@ -180,7 +180,7 @@ Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题�
 
 -   Jimmer内置了一套和[graphql/datloader框架](https://github.com/graphql/dataloader)类似的机制，和普通的ORM属性一样，计算属性没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
 
--   计算过程可以使用任何技术完成计算，可以使用SQL之外的技术，比如OLAP相关技术，来完成计算
+-   计算过程可以使用任何技术来完成，可以是SQL之外的技术，比如OLAP相关技术等来完成计算
 
 -   计算属性既可以为简单类型，也可以为关联类型
 
@@ -244,7 +244,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 |  |    Entity A      |  |
 |  | (Aggregate-root) |  |
 |  +--------+---------+  |
-|           |            | 
+|           |            |
 |   (Local association)  |
 |           |            |
 |           ↓            |
@@ -262,7 +262,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 |  +------------------+  |
 |  |    Entity C      |  |
 |  +--------+---------+  |
-|           |            | 
+|           |            |
 |   (Local association)  |
 |           |            |
 |           ↓            |
@@ -280,7 +280,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 |  +------------------+  |
 |  |    Entity E      |  |
 |  +--------+---------+  |
-|           |            | 
+|           |            |
 |   (Local association)  |
 |           |            |
 |           ↓            |
@@ -295,7 +295,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 
 -   `Local assocaition`表示微服务(数据库)内部的ORM关联，这类关联的查询会被翻译为SQL或缓存操作
 
--   `Remote association`表示不同微服务（数据库）之间的远程关联，这类关联的查询会被翻译为远程数据获取。
+-   `Remote association`表示不同微服务（数据库）之间的远程关联，这类关联的查询会被翻译为远程数据获取
 
 然而，这一切，对用户透明。
 
@@ -305,7 +305,7 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 
 <Collapse title="完全透明的缓存">
 
-如果业务系统系统仅需操作数据库，绝大部分开发团队都能让代码保持相对良好的可维护性。  
+如果业务系统系统仅需操作数据库，绝大部分开发团队都能让代码保持相对良好的可维护性。
 
 然而，一旦为了提高抗压能力引入缓存技术后，业务代码就需要大量调整，可维护性变差，缓存一致性更是一个头疼的问题。
 
@@ -314,23 +314,23 @@ Jimmer不仅仅是一个单体应用（也可说单个微服务内部）的ORM�
 -   从底层实现看，Jimmer支持如下3种缓存
     -   对象缓存：将id映射为孤单（没有关联）对象
         <ViewMore buttonText="查看图片" title="对象缓存">
-        
+
         ![object-cache](@site/static/img/object-cache.jpeg)
-        
+
         </ViewMore>
     -   关联缓存：将当前对象id映射为关联对象的id或其集合，对one-to-one，one-to-many，many-to-one和many-to-many都有效。
         <ViewMore buttonText="查看图片" title="关联缓存">
-        
+
         ![association-cache](@site/static/img/association-cache.png)
-        
+
         </ViewMore>
     -   计算缓存：将当前对象id映射为计算属性的结果
         <ViewMore buttonText="查看图片" title="计算缓存">
-        
+
         ![association-cache](@site/static/img/calculated-cache.png)
-        
+
         </ViewMore>
-    
+
 -   从上层开发人员视角看，得到的是针对任意形状的数据结构的缓存。
 
 Jimmer缓存有如下特色
@@ -427,50 +427,50 @@ import type { Gender } from '../enums';
 export type BookDto = {
     // highlight-next-line
     'BookService/SIMPLE_FETCHER': {
-        readonly id: number, 
-        readonly name: string, 
+        readonly id: number,
+        readonly name: string,
         readonly edition: number
-    }, 
+    },
     // highlight-next-line
     'BookService/COMPLEX_FETCHER': {
-        readonly id: number, 
-        readonly createdTime: string, 
-        readonly modifiedTime: string, 
-        readonly name: string, 
-        readonly edition: number, 
-        readonly price: number, 
+        readonly id: number,
+        readonly createdTime: string,
+        readonly modifiedTime: string,
+        readonly name: string,
+        readonly edition: number,
+        readonly price: number,
         readonly store?: {
-            readonly id: number, 
-            readonly createdTime: string, 
-            readonly modifiedTime: string, 
-            readonly name: string, 
-            readonly website?: string, 
+            readonly id: number,
+            readonly createdTime: string,
+            readonly modifiedTime: string,
+            readonly name: string,
+            readonly website?: string,
             readonly avgPrice: number
-        }, 
+        },
         readonly authors: ReadonlyArray<{
-            readonly id: number, 
-            readonly createdTime: string, 
-            readonly modifiedTime: string, 
-            readonly firstName: string, 
-            readonly lastName: string, 
+            readonly id: number,
+            readonly createdTime: string,
+            readonly modifiedTime: string,
+            readonly firstName: string,
+            readonly lastName: string,
             readonly gender: Gender
         }>
-    }, 
+    },
     // highlight-next-line
     'BookService/DEFAULT_FETCHER': {
-        readonly id: number, 
-        readonly createdTime: string, 
-        readonly modifiedTime: string, 
-        readonly name: string, 
-        readonly edition: number, 
-        readonly price: number, 
+        readonly id: number,
+        readonly createdTime: string,
+        readonly modifiedTime: string,
+        readonly name: string,
+        readonly edition: number,
+        readonly price: number,
         readonly store?: {
-            readonly id: number, 
+            readonly id: number,
             readonly name: string
-        }, 
+        },
         readonly authors: ReadonlyArray<{
-            readonly id: number, 
-            readonly firstName: string, 
+            readonly id: number,
+            readonly firstName: string,
             readonly lastName: string
         }>
     }
@@ -530,11 +530,11 @@ export type BookDto = {
 -   不会因lazy-loading导致[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
 
     Jimmer不支持lazy-loading，被查询的数据结构的形状都是事先指定的。因为
-    
+
     -   B/S或微服务架构不允许实体对象持有数据库连接，lazy-loading方案无用
 
     -   一旦支持lazy-loading，新手就可能不做任何深入配置，放任lazy-loading机制频繁制造[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题。
-    
+
     Jimmer灵活控制被查询数据结构的形状，其内部机制对用户透明。底层查询可能涉及数据库访问，缓存访问，用户自定义计算甚至跨越微服务边界的远程调用。但无论是何种底层行为，都没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题，因为被查询的数据结构的形状总是事先指定的，而非查询后的lazy-loading。
 
     :::note
@@ -569,14 +569,14 @@ export type BookDto = {
 3.  所有框架每次都打开和关闭连接/会话，不做共享；靠连接池保证性能。
 
 4.  接入Spring的连接管理机制。因不同框架API不同，实现方法略有不同。
-    
+
     - 有的使用[DataSourceUtils](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/DataSourceUtils.html)的getConnection和releaseConnection
     - 有的使用[TransactionAwareDataSourceProxy](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/datasource/TransactionAwareDataSourceProxy.html)
-    
+
     但最终效果都一样
 
 5.  不使用事务
-    
+
     `Exposed`比较特殊，其API强制要求事务，给予假的实现。
 
 6.  使用嵌入的H2内数据库，尽可能压缩数据库的消耗，凸显ORM本身的性能，即映射的性能。

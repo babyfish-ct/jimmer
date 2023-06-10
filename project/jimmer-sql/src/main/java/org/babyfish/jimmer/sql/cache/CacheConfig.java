@@ -180,7 +180,7 @@ public class CacheConfig {
                     }
                 }
                 if (finalObjectCache != null) {
-                    finalObjectCacheMap.put(type, LocatedCacheImpl.unwrap(finalObjectCache));
+                    finalObjectCacheMap.put(type, finalObjectCache);
                 }
                 for (ImmutableProp prop : type.getProps().values()) {
                     Cache<?, ?> finalPropCache = propCacheMap.get(prop);
@@ -199,7 +199,7 @@ public class CacheConfig {
                                 );
                     }
                     if (finalPropCache != null) {
-                        finalPropCacheMap.put(prop, LocatedCacheImpl.unwrap(finalPropCache));
+                        finalPropCacheMap.put(prop, finalPropCache);
                     }
                 }
             }

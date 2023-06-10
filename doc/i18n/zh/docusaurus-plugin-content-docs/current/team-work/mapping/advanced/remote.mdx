@@ -7,7 +7,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::caution
-远程关联是Jimmer和微服务技术体系结合后的产物，会在[Spring Cloud和远程关联](../../spring/spring-cloud)中详细介绍。
+远程关联是Jimmer和微服务技术体系相结合后的产物，会在[Spring Cloud和远程关联](../../spring/spring-cloud)中详细介绍。
 
 本文的目的并非系统性讲解远程关联，仅仅介绍远程关联所需映射配置。
 :::
@@ -16,7 +16,7 @@ import TabItem from '@theme/TabItem';
 
 `@Entity`注解具备可选参数`microServiceName`，默认为""。
 
-关联属性设计两个实体类型，因为关联必然从源头方指向目标方 *(自关联属性比较特殊，源头方和目标方重合)*
+关联属性涉及两个实体类型，因为关联必然从源头方指向目标方 *(自关联属性比较特殊，源头方和目标方重合)*
 
 -   如果关联属性的源实体和目标实体的`microServiceName`相等，则该关联为本地关联 *（本文之前所有例子中的实体都采用默认的`microServiceName`，因此都是本地关联）*
 
@@ -59,7 +59,7 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
--   主动方 *(可选)*: `Author.authors`
+-   从动方 *(可选)*: `Author.authors`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -100,7 +100,7 @@ import TabItem from '@theme/TabItem';
 
 作为超类型的`MappedSuperclass`有两种用法
 
--   可以包含关联属性，但必需隶属于一个微服务
+-   可以包含关联属性，但必需隶属于同一个微服务
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">

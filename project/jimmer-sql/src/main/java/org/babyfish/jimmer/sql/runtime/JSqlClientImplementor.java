@@ -34,6 +34,8 @@ public interface JSqlClientImplementor extends JSqlClient {
 
     SqlFormatter getSqlFormatter();
 
+    TriggerType getTriggerType();
+
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 
     <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop);
@@ -47,8 +49,6 @@ public interface JSqlClientImplementor extends JSqlClient {
     int getDefaultListBatchSize();
 
     int getOffsetOptimizingThreshold();
-
-    TriggerType getTriggerType();
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 

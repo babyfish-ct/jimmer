@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.event.DatabaseEvent;
 
 public interface Caches {
 
@@ -19,4 +20,6 @@ public interface Caches {
     <K, V> Cache<K, V> getPropertyCache(ImmutableProp prop);
 
     CacheAbandonedCallback getAbandonedCallback();
+
+    boolean isAffectedBy(DatabaseEvent e);
 }

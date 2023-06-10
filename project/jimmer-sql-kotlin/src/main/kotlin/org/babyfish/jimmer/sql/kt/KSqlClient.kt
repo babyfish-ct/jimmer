@@ -5,6 +5,7 @@ import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -76,6 +77,8 @@ interface KSqlClient {
      * @return Trigger
      */
     fun getTriggers(transaction: Boolean): KTriggers
+
+    val triggerType: TriggerType
 
     val filters: KFilters
 

@@ -45,4 +45,6 @@ interface KTriggers {
     fun fireMiddleTableInsert(prop: ImmutableProp, sourceId: Any, targetId: Any, con: Connection? = null, reason: Any? = null)
 
     fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, reason: Any? = null)
+
+    val isTransaction: Boolean
 }

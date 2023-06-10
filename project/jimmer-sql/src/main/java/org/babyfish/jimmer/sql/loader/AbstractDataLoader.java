@@ -608,8 +608,9 @@ public abstract class AbstractDataLoader {
                     Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.eq(sourceId));
-                    applyPropFilter(q, association.target(), sourceIds);
-                    applyGlobalFilter(q, association.target());
+                    if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
+                        applyDefaultOrder(q, association.target());
+                    }
                     return q.select(targetIdExpr);
                 }).limit(limit, offset).execute(con);
                 return Utils.toTuples(sourceId, targetIds);
@@ -618,8 +619,9 @@ public abstract class AbstractDataLoader {
                 Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                 Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                 q.where(sourceIdExpr.in(sourceIds));
-                applyPropFilter(q, association.target(), sourceIds);
-                applyGlobalFilter(q, association.target());
+                if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
+                    applyDefaultOrder(q, association.target());
+                }
                 return q.select(sourceIdExpr, targetIdExpr);
             }).execute(con);
         }

@@ -116,7 +116,7 @@ public class BuiltinFiltersImpl implements BuiltInFilters {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getChangedFieldRef(info.getProp().getId()) != null;
+            return e.getChangedRef(info.getProp()) != null;
         }
     }
 
@@ -170,7 +170,7 @@ public class BuiltinFiltersImpl implements BuiltInFilters {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getChangedFieldRef(info.getProp().getId()) != null;
+            return e.getChangedRef(info.getProp()) != null;
         }
     }
 }

@@ -12,11 +12,10 @@ import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
 import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
-import org.babyfish.jimmer.sql.kt.event.getUnchangedFieldRef
+import org.babyfish.jimmer.sql.kt.event.getUnchangedRef
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
 import org.babyfish.jimmer.sql.kt.model.inheritance.*
-import org.babyfish.jimmer.sql.runtime.EntityManager
 import java.util.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -192,7 +191,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
             sortedMapOf("deleted" to false)
 
         override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-            e.getUnchangedFieldRef(NamedEntity::deleted) == null
+            e.getUnchangedRef(NamedEntity::deleted) == null
     }
 
     private class DeleteFilter : KCacheableFilter<NamedEntity> {
@@ -205,7 +204,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
             sortedMapOf("deleted" to true)
 
         override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-            e.getUnchangedFieldRef(NamedEntity::deleted) == null
+            e.getUnchangedRef(NamedEntity::deleted) == null
     }
 
     companion object {

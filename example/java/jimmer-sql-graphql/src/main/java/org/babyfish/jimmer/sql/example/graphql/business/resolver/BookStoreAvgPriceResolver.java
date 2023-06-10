@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.sql.example.graphql.business.resolver;
 
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.example.graphql.repository.BookStoreRepository;
-import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookProps;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreProps;
@@ -26,8 +26,11 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     private final BookStoreRepository bookStoreRepository;
 
+    private final JSqlClient sqlClient;
+
     public BookStoreAvgPriceResolver(BookStoreRepository bookStoreRepository) {
         this.bookStoreRepository = bookStoreRepository;
+        this.sqlClient = bookStoreRepository.sql(); // You can also inject it directly
     }
 
     @Override
@@ -52,12 +55,12 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
-        if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            // 1. Check whether the association `BookStore.books` is changed,
-            //    this event can be caused by 2 cases:
-            //    i. The foreign key `Book.store.id` is changed.
-            //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
-
+        // The association property `BookStore.books` is changed
+        //
+        // It is worth noting that
+        // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
+        // but also modifying the `TENANT` field of the BOOK table can trigger the event.
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
             Caches caches = bookStoreRepository.sql().getCaches();
             caches
                     .getPropertyCache(BookStoreProps.AVG_PRICE)
@@ -67,17 +70,15 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
-        if (e.getConnection() == null && e.getImmutableType().getJavaClass() == Book.class) {
-            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
+        // The scalar property `Book.price` is changed
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.PRICE)) {
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
-            if (store != null) { // foreign key does not change.
-                // 2, Check whether `Book.price` is changed
-                if (e.getChangedFieldRef(BookProps.PRICE) != null) {
-                    Caches caches = bookStoreRepository.sql().getCaches();
-                    caches
-                            .getPropertyCache(BookStoreProps.AVG_PRICE)
-                            .delete(store.id());
-                }
+            if (store != null) {
+                Caches caches = bookStoreRepository.sql().getCaches();
+                caches
+                        .getPropertyCache(BookStoreProps.AVG_PRICE)
+                        .delete(store.id());
             }
         }
     }

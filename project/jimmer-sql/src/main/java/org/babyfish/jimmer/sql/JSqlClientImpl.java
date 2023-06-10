@@ -1092,14 +1092,14 @@ class JSqlClientImpl implements JSqlClientImplementor {
             if (triggers == null) {
                 switch (triggerType) {
                     case TRANSACTION_ONLY:
-                        transactionTriggers = triggers = new TriggersImpl();
+                        transactionTriggers = triggers = new TriggersImpl(true);
                         break;
                     case BOTH:
-                        triggers = new TriggersImpl();
-                        transactionTriggers = new TriggersImpl();
+                        triggers = new TriggersImpl(false);
+                        transactionTriggers = new TriggersImpl(true);
                         break;
                     default:
-                        triggers = new TriggersImpl();
+                        triggers = new TriggersImpl(false);
                         break;
                 }
             }

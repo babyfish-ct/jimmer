@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-最初，人们直接用业务字段作为表的主键。这是最直接最容易立即的方式，但存在以下问题。
+最初，人们直接用业务字段作为表的主键。这是最直接最容易使用的方式，但存在以下问题。
 
 -   主键不稳定
 
@@ -90,7 +90,7 @@ interface TreeNode {
 </TabItem>
 </Tabs>
 
-这里，`TreeNode`实体的Id采用自动编号，并没有义务意义。所以，为了更好地配合保存指令，
+这里，`TreeNode`实体的Id采用自动编号，并没有业务意义。所以，为了更好地配合保存指令，
 这里指定了`key`，由两个属性构成：`name`和`parent`。
 
 对应的DDL是
@@ -121,7 +121,7 @@ alter table TREE_NODE
 
 -   Key可以由多个属性组成
 
--   外建业可以作为Key的一部分
+-   外键可以作为Key的一部分
 :::
 
 让我们再来看另外一个例子，在这个例子中，组成Key的属性全部是基于外建的属性

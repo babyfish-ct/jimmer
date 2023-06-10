@@ -37,7 +37,7 @@ public class TriggersTest {
     @BeforeEach
     public void initialize() {
 
-        triggers = new TriggersImpl();
+        triggers = new TriggersImpl(false);
         bookEvents = new ArrayList<>();
         bookStoreEvents = new ArrayList<>();
         storeBookListEvents = new ArrayList<>();

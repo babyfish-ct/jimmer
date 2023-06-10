@@ -25,7 +25,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 "InsertBookName",
-                event.getUnchangedFieldRef(BookProps.NAME).getValue()
+                event.getUnchangedRef(BookProps.NAME).getValue()
         );
     }
     
@@ -43,7 +43,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 "InsertBookName",
-                event.getUnchangedFieldRef(BookProps.NAME).getValue()
+                event.getUnchangedRef(BookProps.NAME).getValue()
         );
     }
 
@@ -60,7 +60,7 @@ public class EntityEventTest {
                 null
         );
         Assertions.assertNull(
-                event.getUnchangedFieldRef(BookProps.STORE).getValue()
+                event.getUnchangedRef(BookProps.STORE).getValue()
         );
     }
 
@@ -78,7 +78,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 manningId,
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE).getValue().id()
+                event.<BookStore>getUnchangedRef(BookProps.STORE).getValue().id()
         );
     }
 
@@ -95,7 +95,7 @@ public class EntityEventTest {
                 null
         );
         Assertions.assertNull(
-                event.getUnchangedFieldRef(BookProps.STORE).getValue()
+                event.getUnchangedRef(BookProps.STORE).getValue()
         );
     }
 
@@ -113,7 +113,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 manningId,
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE).getValue().id()
+                event.<BookStore>getUnchangedRef(BookProps.STORE).getValue().id()
         );
     }
 
@@ -135,7 +135,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 manningId,
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE).getValue().id()
+                event.<BookStore>getUnchangedRef(BookProps.STORE).getValue().id()
         );
     }
 
@@ -157,7 +157,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 null,
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE).getValue()
+                event.<BookStore>getUnchangedRef(BookProps.STORE).getValue()
         );
     }
 
@@ -178,7 +178,7 @@ public class EntityEventTest {
                 null
         );
         Assertions.assertNull(
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE)
+                event.<BookStore>getUnchangedRef(BookProps.STORE)
         );
     }
 
@@ -199,7 +199,7 @@ public class EntityEventTest {
                 null
         );
         Assertions.assertNull(
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE)
+                event.<BookStore>getUnchangedRef(BookProps.STORE)
         );
     }
 
@@ -220,7 +220,7 @@ public class EntityEventTest {
                 null
         );
         Assertions.assertNull(
-                event.<BookStore>getUnchangedFieldRef(BookProps.STORE)
+                event.<BookStore>getUnchangedRef(BookProps.STORE)
         );
     }
 }
