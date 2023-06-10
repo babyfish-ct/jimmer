@@ -78,8 +78,6 @@ interface KSqlClient {
      */
     fun getTriggers(transaction: Boolean): KTriggers
 
-    val triggerType: TriggerType
-
     val filters: KFilters
 
     val loaders: KLoaders

@@ -305,54 +305,143 @@ class MaxwellListener(sqlClient: KSqlClient) {
 
 ### 注册处理逻辑
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+-   Spring风格
 
-```java
-sqlClient.getTriggers().addEntityListener(Book.class, e -> {
-    System.out.println("The object `Book` is changed");
-    System.out.println("\told: " + e.getOldEntity());
-    System.out.println("\tnew: " + e.getNewEntity());
-});
-sqlClient.getTriggers().addAssociationListener(BookProps.STORE, e -> {
-    System.out.println("The many-to-one association `Book.store` is changed");
-    System.out.println("\tbook id: " + e.getSourceId());
-    System.out.println("\tdetached book store id: " + e.getDetachedTargetId());
-    System.out.println("\tattached book store id: " + e.getAttachedTargetId());
-});
-sqlClient.getTriggers().addAssociationListener(BookStoreProps.BOOKS, e -> {
-    System.out.println("The one-to-many association `BookStore.books` is changed");
-    System.out.println("\tbook store id: " + e.getSourceId());
-    System.out.println("\tdetached book id: " + e.getDetachedTargetId());
-    System.out.println("\tattached book id: " + e.getAttachedTargetId());
-});
-```
+    如果使用Jimmer的SpringBoot Starter，触发器事件会被作为Spring事件发送。
+    
+    因此，使用注解`@org.springframework.context.event.EventListener`响应Spring事件即可
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-```kotlin
-sqlClient.triggers.addEntityListener(Book::class) {
-    println("The object `Book` is changed");
-    println("\told: ${it.oldEntity}");
-    println("\tnew: ${it.newEntity}");
-}
-sqlClient.triggers.addAssociationListener(Book::store) {
-    println("The many-to-one association `Book.store` is changed");
-    println("\tbook id: ${it.sourceId}");
-    println("\tdetached book store id: ${it.detachedTargetId}");
-    println("\tattached book store id: ${it.attachedTargetId}");
-}
-sqlClient.triggers.addAssociationListener(BookStore::books) {
-    println("The one-to-many association `BookStore.books` is changed");
-    println("\tbook store id: ${it.sourceId}");
-    println("\tdetached book id: ${it.detachedTargetId}");
-    println("\tattached book id: ${it.attachedTargetId}");
-}
-```
+    ```java title="DatabaseListener.java"
+    @Component
+    public class DatabaseListener {
 
-</TabItem>
-</Tabs>
+        // highlight-next-line
+        @EventListener
+        public void onEntityChanged(EntityEvent<?> e) {
+            if (e.getImmutableType().getJavaClass() == Book.class) {
+                System.out.println("The object `Book` is changed");
+                System.out.println("\told: " + e.getOldEntity());
+                System.out.println("\tnew: " + e.getNewEntity());
+            }
+        }
+
+        // highlight-next-line
+        @EventListener
+        public void onAssociationChanged(AssociationEvent e) {
+            if (e.isChanged(BookProps.STORE)) {
+                System.out.println("The many-to-one association `Book.store` is changed");
+                System.out.println("\tbook id: " + e.getSourceId());
+                System.out.println("\tdetached book store id: " + e.getDetachedTargetId());
+                System.out.println("\tattached book store id: " + e.getAttachedTargetId());
+            } else if (e.isChanged(BookStoreProps.BOOKS)) {
+                System.out.println("The one-to-many association `BookStore.books` is changed");
+                System.out.println("\tbook store id: " + e.getSourceId());
+                System.out.println("\tdetached book id: " + e.getDetachedTargetId());
+                System.out.println("\tattached book id: " + e.getAttachedTargetId());
+            }
+        }
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="DatabaseListener.kt"
+    @Component
+    public class DatabaseListener {
+
+        // highlight-next-line
+        @EventListener
+        fun onEntityChanged(e: EntityEvent<*>) {
+            if (e.ImmutableType.javaClass == Book::class.java) {
+                println("The object `Book` is changed")
+                println("\told: ${it.oldEntity}")
+                println("\tnew: ${it.newEntity}")
+            }
+        }
+
+        // highlight-next-line
+        @EventListener
+        fun onAssociationChanged(e: AssociationEvent) {
+            if (e.isChanged(Book::store)) {
+                pprintln("The many-to-one association `Book.store` is changed")
+                println("\tbook id: ${it.sourceId}")
+                println("\tdetached book store id: ${it.detachedTargetId}")
+                println("\tattached book store id: ${it.attachedTargetId}")
+            } else if (e.isChanged(BookStoreProps.BOOKS)) {
+                println("The one-to-many association `BookStore.books` is changed")
+                println("\tbook store id: ${it.sourceId}")
+                println("\tdetached book id: ${it.detachedTargetId}")
+                println("\tattached book id: ${it.attachedTargetId}")
+            }
+        }
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   非Spring风格
+
+    如果不采用Jimmer的SpringBoot starter，需要手动注册事件响应代码。
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    // highlight-next-line
+    sqlClient.getTriggers().addEntityListener(Book.class, e -> {
+        System.out.println("The object `Book` is changed");
+        System.out.println("\told: " + e.getOldEntity());
+        System.out.println("\tnew: " + e.getNewEntity());
+    });
+    // highlight-next-line
+    sqlClient.getTriggers().addAssociationListener(BookProps.STORE, e -> {
+        System.out.println("The many-to-one association `Book.store` is changed");
+        System.out.println("\tbook id: " + e.getSourceId());
+        System.out.println("\tdetached book store id: " + e.getDetachedTargetId());
+        System.out.println("\tattached book store id: " + e.getAttachedTargetId());
+    });
+    // highlight-next-line
+    sqlClient.getTriggers().addAssociationListener(BookStoreProps.BOOKS, e -> {
+        System.out.println("The one-to-many association `BookStore.books` is changed");
+        System.out.println("\tbook store id: " + e.getSourceId());
+        System.out.println("\tdetached book id: " + e.getDetachedTargetId());
+        System.out.println("\tattached book id: " + e.getAttachedTargetId());
+    });
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    // highlight-next-line
+    sqlClient.triggers.addEntityListener(Book::class) {
+        println("The object `Book` is changed")
+        println("\told: ${it.oldEntity}")
+        println("\tnew: ${it.newEntity}")
+    }
+    // highlight-next-line
+    sqlClient.triggers.addAssociationListener(Book::store) {
+        println("The many-to-one association `Book.store` is changed")
+        println("\tbook id: ${it.sourceId}")
+        println("\tdetached book store id: ${it.detachedTargetId}")
+        println("\tattached book store id: ${it.attachedTargetId}")
+    }
+    // highlight-next-line
+    sqlClient.triggers.addAssociationListener(BookStore::books) {
+        println("The one-to-many association `BookStore.books` is changed")
+        println("\tbook store id: ${it.sourceId}")
+        println("\tdetached book id: ${it.detachedTargetId}")
+        println("\tattached book id: ${it.attachedTargetId}")
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
 
 其中`sqlClient.getTriggers()`或`sqClient.triggers`用于将处理逻辑注册到默认的触发器上。
 
