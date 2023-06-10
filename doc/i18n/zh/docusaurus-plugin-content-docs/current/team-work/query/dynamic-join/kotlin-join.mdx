@@ -5,7 +5,7 @@ title: Kotlin表连接特有功能
 
 ## 抉择
 
-为了充分利用kotlin的语言优势充分优化其开发体验，Jimmer对Java和Kotlin提供不同的API，但二者本质相同。
+为了充分利用kotlin的语言优势，充分发挥其开发体验，Jimmer对Java和Kotlin提供不同的API，但二者本质相同。
 
 然而，外连接却是唯一的例外，对于这个细节，Java API和Kotlin API的行为并不一样
 
@@ -18,7 +18,7 @@ title: Kotlin表连接特有功能
 
     -   相比于实体属性名后面多了一个`?`的DSL属性表示左连接
 
-    即，Kotlin DSL不支持`RIGHT`和`FULL`，这种牺牲是仔细权衡后的结果，目的为了换取在对Kotlin而言更重要的功能：把kotlin的null safety和SQL DSL完美结合。
+    即，Kotlin DSL不支持`RIGHT`和`FULL`，这种牺牲是仔细权衡后的结果，目的为了换取在对Kotlin而言更重要的功能：把Kotlin的null safety和SQL DSL完美结合。
 
 ## 初识DSL的null safety
 
@@ -49,18 +49,18 @@ public val KProps<BookStore>.website: KNullablePropExpression<String>
     get() = get("website")
 ```
 
-请先忽略忽略这里生成的代码中各细节的具体作用，我们可以看到大量名称包含`NoNull`或`Nullable`的类型。
+请先忽略这里生成的代码各细节的具体作用，我们可以看到大量名称包含`NoNull`或`Nullable`的类型。
 
 :::tip
 在Jimmer的Kotlin SQL DSL中，几乎所有AST类型都具备`NoNull`或`Nullable`两种实现。
 
-这意味着，Kotlin SQL DSL具备和kotlin语言对等的的null safety特性，SQL风格的查询的代码具备完整的null saftey自检能力。
+这意味着，Kotlin SQL DSL具备和Kotlin语言对等的null safety特性，使SQL风格的查询代码具备完整的null saftey自检能力。
 :::
 
 让我们先看一个简单的例子
 
 ```kotlin
-val tuples = sqlClient
+val bookStores = sqlClient
     .createQuery(BookStore::class) {
         select(
             table.name,
@@ -68,7 +68,7 @@ val tuples = sqlClient
         )
     }
     .execute()
-for ((name, website) in books) { ❷
+for ((name, website) in bookStores) { ❷
     println("Length of name: ${name.length}")
     // 编译报错
     // highlight-next-line
@@ -99,8 +99,8 @@ println("Length of website: ${website?.length}")
 ### 内连接
 
 ```kotlin
-val tuples = sqlClient
-    .createQuery(BookStore::class) {
+val books = sqlClient
+    .createQuery(Book::class) {
         select(
             table.name,
             table.store.name ❶
@@ -122,8 +122,8 @@ for ((name, storeName) in books) { ❷
 让我们修改一下代码，把内连接改为外连接
 
 ```kotlin
-val tuples = sqlClient
-    .createQuery(BookStore::class) {
+val books = sqlClient
+    .createQuery(Book::class) {
         select(
             table.name,
             table.`store?`.name ❶
