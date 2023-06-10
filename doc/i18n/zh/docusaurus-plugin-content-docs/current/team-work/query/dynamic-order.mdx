@@ -272,21 +272,21 @@ fun findBooks(sort: Sort): List<Book> =
 
 -   Java:
 
-    Jimmer的Java API提供了一个工具类，`org.babyfish.jimmer.spring.repository.SpringOrders`，其静态方法`toOrders`把spring-data的`Sort`对象装化成成Jimmer SQL DSL中的`Oder`对象数组。
+    Jimmer的Java API提供了一个工具类，`org.babyfish.jimmer.spring.repository.SpringOrders`，其静态方法`toOrders`把spring-data的`Sort`对象转化成Jimmer SQL DSL中的`Order`对象数组。
 
-    `SpingOrders.toOrders`具备两个参数
+    `SpringOrders.toOrders`具备两个参数
 
     -   `table`: SQL DSL中的主表
 
     -   `sort`：外部传递的spring-data之`Sort`对象
 
-    `SpingOrders.toOrders`把spring dataa的`Sort`对象转化为Jimmer SQL DSL的`Order`对象数组后，就可以用Jimmer查询对象的`orderBy`实现排序。
+    `SpringOrders.toOrders`把Spring Data的`Sort`对象转化为Jimmer SQL DSL的`Order`对象数组后，就可以用Jimmer查询对象的`orderBy`实现排序。
 
 -   Kotlin
 
-    Jimmer的Kotlin API扩展了Jimmer查询对象，可以直接按照spring data的`Sort`对象排序。
+    Jimmer的Kotlin API扩展了Jimmer查询对象，可以直接按照Spring Data的`Sort`对象排序。
 
-至此，我们已经示范了如何把spring data的`Sort`对象转化为Jimmer中的排序操作。
+至此，我们已经示范了如何把Spring Data的`Sort`对象转化为Jimmer中的排序操作。
 
 为了进一步简化用户代码，Jimmer还提供了工具类`org.babyfish.jimmer.spring.model.SortUtils`, 其静态方法`toSort`可以把客户端传递的排序字符串转化为spring-data的`Sort`对象。比如
 
