@@ -96,10 +96,10 @@ val tuples: List<Tuple2<Long, BigDecimal>> = sqlClient
 </TabItem>
 </Tabs>
 
--   ❶ 按照`BOOK`表的外建`STORE_ID`分组
+-   ❶ 按照`BOOK`表的外键`STORE_ID`分组
 
     :::info
-    这里，Jimmer不会把`table.store`视为表连接操作，而是整体视`table.store.id`为外建字段
+    这里，Jimmer不会把`table.store`视为表连接操作，而是整体视`table.store.id`为外键字段
 
     请参见[幻连接](./dynamic-join/optimization#幻连接)
     :::
