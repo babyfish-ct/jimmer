@@ -65,8 +65,8 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
         if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
-            Caches caches = bookStoreRepository.sql().getCaches();
-            caches
+            sqlClient
+                    .getCaches()
                     .getPropertyCache(BookStoreProps.AVG_PRICE)
                     .delete(e.getSourceId());
         }
@@ -79,10 +79,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
             Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) {
-                Caches caches = bookStoreRepository.sql().getCaches();
-                caches
-                    .getPropertyCache(BookStoreProps.AVG_PRICE)
-                    .delete(store.id());
+                sqlClient
+                        .getCaches()
+                        .getPropertyCache(BookStoreProps.AVG_PRICE)
+                        .delete(store.id());
             }
         }
     }

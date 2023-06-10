@@ -52,7 +52,8 @@ class BookStoreAvgPriceResolver(
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(BookStore::books)) {
-            sqlClient.caches
+            sqlClient
+                .caches
                 .getPropertyCache<Any, Any>(BookStore::avgPrice)
                 ?.delete(e.sourceId)
         }
@@ -64,7 +65,8 @@ class BookStoreAvgPriceResolver(
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(Book::price)) {
             val storeId = e.getUnchangedRef(Book::store)?.value?.id
             if (storeId !== null) {
-                sqlClient.caches
+                sqlClient
+                    .caches
                     .getPropertyCache<Any, Any>(BookStore::avgPrice)
                     ?.delete(storeId)
             }

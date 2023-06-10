@@ -47,7 +47,8 @@ class BookStoreNewestBooksResolver(
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(BookStore::books)) {
-            sqlClient.caches
+            sqlClient
+                .caches
                 .getPropertyCache<Any, Any>(BookStore::newestBooks)
                 ?.delete(e.sourceId)
         }
@@ -59,7 +60,8 @@ class BookStoreNewestBooksResolver(
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(Book::edition)) {
             val storeId = e.getUnchangedRef(Book::store)?.value?.id
             if (storeId !== null) {
-                sqlClient.caches
+                sqlClient
+                    .caches
                     .getPropertyCache<Any, Any>(BookStore::newestBooks)
                     ?.delete(storeId)
             }
