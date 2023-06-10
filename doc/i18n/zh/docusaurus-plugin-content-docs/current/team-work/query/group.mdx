@@ -113,7 +113,7 @@ val tuples: List<Tuple2<Long, BigDecimal>> = sqlClient
 
     在Jimmer的Kotlin DSL中，聚合函数`avg` *(以及`sum`、`min`、`max`)* 返回类型都是Nullable的。在不使用分组的前提下，对没有数据的表的任何列进行聚合运算都会得到null。
 
-    然而，和分组配合使用后不再如此。分组后，每一组内部至少有一条数据，如果被聚合的原始字段本身非null，则聚合后的结果仍为null。
+    然而，和分组配合使用后不再如此。分组后，每一组内部至少有一条数据，如果被聚合的原始字段本身非null，则聚合后的结果不会为null。
 
     所以，这里通过`asNonNull()`将Nullable表达式转换为NonNull表达式，最终`execute()`函数查询到的数据类型是`List<Tuple2<Long, BigDecimal>>`，和第一行明确指定变量`tuples`的类型相同。
         
