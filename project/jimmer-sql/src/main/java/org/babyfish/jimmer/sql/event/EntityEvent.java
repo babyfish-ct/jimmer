@@ -87,7 +87,7 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @Override
     public boolean isChanged(TypedProp<?, ?> prop) {
-        return getChangedRef(prop.unwrap()) != null;
+        return isChanged(prop.unwrap());
     }
 
     @Override
@@ -308,7 +308,8 @@ public class EntityEvent<E> implements DatabaseEvent {
     private void validateProp(ImmutableProp prop) {
         if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
             throw new IllegalArgumentException(
-                    "The argument `prop` cannot be \"prop" +
+                    "The argument `prop` cannot be \"" +
+                            prop +
                             "\", it declaring type \"" +
                             prop.getDeclaringType() +
                             "\" is not assignable from the current type \"" +
