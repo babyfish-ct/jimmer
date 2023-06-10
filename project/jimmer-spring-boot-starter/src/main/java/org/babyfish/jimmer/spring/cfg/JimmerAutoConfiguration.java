@@ -19,25 +19,10 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties(JimmerProperties.class)
 @Import({SqlClientConfig.class, SpringDocConfig.class, JimmerRepositoriesConfig.class})
 public class JimmerAutoConfiguration {
-
     @ConditionalOnMissingBean(ImmutableModule.class)
     @Bean
     public ImmutableModule immutableModule() {
         return new ImmutableModule();
-    }
-
-    @Conditional(MicroServiceCondition.class)
-    @ConditionalOnMissingBean(MicroServiceExporterController.class)
-    @Bean
-    public MicroServiceExporterController microServiceExporterController(
-            @Autowired(required = false) JSqlClient jSqlClient,
-            @Autowired(required = false) KSqlClient kSqlClient,
-            ObjectMapper objectMapper
-    ) {
-        return new MicroServiceExporterController(
-                jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient(),
-                objectMapper
-        );
     }
 }
 

@@ -1,9 +1,13 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
+import org.babyfish.jimmer.spring.cloud.MicroServiceExporterController;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -29,6 +33,20 @@ public class ServletControllerConfiguration {
     @Bean
     public JavaFeignController javaFeignController(Metadata metadata, JimmerProperties properties) {
         return new JavaFeignController(metadata, properties);
+    }
+
+    @Conditional(MicroServiceCondition.class)
+    @ConditionalOnMissingBean(MicroServiceExporterController.class)
+    @Bean
+    public MicroServiceExporterController microServiceExporterController(
+            @Autowired(required = false) JSqlClient jSqlClient,
+            @Autowired(required = false) KSqlClient kSqlClient,
+            ObjectMapper objectMapper
+    ) {
+        return new MicroServiceExporterController(
+                jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient(),
+                objectMapper
+        );
     }
 
     @Conditional(MetadataCondition.class)
