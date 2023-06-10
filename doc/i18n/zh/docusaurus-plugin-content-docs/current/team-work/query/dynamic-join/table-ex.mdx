@@ -14,7 +14,7 @@ import TabItem from '@theme/TabItem';
 
 这里，我们先介绍两种关联属性，引用关联和集合关联。
 
--   被`@OneToOne`或`@ManyToOne`修饰的关联属性，称为集合关联
+-   被`@OneToOne`或`@ManyToOne`修饰的关联属性，称为引用关联
 -   被`@OneToMany`或`@ManyToMany`修饰的关联属性，称为集合关联
 
 请参考例子, 
@@ -113,9 +113,9 @@ interface Book {
 
 ### 集合JOIN导致重复查询结果
 
-如果我们把当前被查询的第一张表所对应的实体对象称为聚合根对象，引用关联和集合关联之间有如下差异
+如果我们把当前被查询的第一张表所对应的实体对象称为聚合根对象，引用关联和集合关联之间有如下差异：
 
--   查询一个对象，通过引用关联进行table join，在SQL查询结果中，当前主对象不会出现重复记录。例如
+-   查询一个对象，通过引用关联进行table join，在SQL查询结果中，当前主对象不会出现重复记录。例如：
 
     ```sql
     select 
@@ -134,7 +134,7 @@ interface Book {
     |---|---|---|---|
     |1|Learning GraphQL|1|O'REILLY|
 
--   查询一个对象，通过集合关联进行table join，在SQL查询结果中，当前主对象会出现重复记录。
+-   查询一个对象，通过集合关联进行table join，在SQL查询结果中，当前主对象会出现重复记录：
 
     ```sql
     select 
@@ -151,7 +151,7 @@ interface Book {
     where b.id = 1;
     ```
 
-    查询结果如下，聚合根对象有可能出现重复
+    查询结果如下，聚合根对象有可能出现重复：
 
     |root_id|root_name|associated_id|associated_first_name|associated_last_name|
     |---|---|---|---|
@@ -165,7 +165,7 @@ interface Book {
 1.  如果开发者忘记去重，就会引入bug。
 
 2.  即便开发者没有忘记去重，在客户端使用`java.util.LinkedHashSet`进行去重，也并非一个好的选择。
-    因为事后的去重操作不能改遍数据库返回的的原始结果包含重复数据的既定事实，具备额外的网络传输和JVM数据处理成本。
+    因为事后的去重操作也不能改变数据库返回的原始结果包含重复数据既定事实，且会消耗额外的网络传输和JVM处理数据的成本。
 
 3.  **最重要的一点，对分页查询不友好**。
 
@@ -194,7 +194,7 @@ interface Book {
 
 -   Table
 
-    特点：只能通过引用关联进行join，无法通过关联属性进行join
+    特点：只能通过引用关联进行join，无法通过集合关联属性进行join
 
     Java类型：org.babyfish.jimmer.sql.ast.table.Table&lt;E&gt;
 
@@ -456,7 +456,7 @@ where
 and 
     tb_2_.NAME = ?
 ```
-### 允许基于TableEx创建的子查询
+### 允许基于TableEx创建子查询
 
 和顶级查询不同，子查询、update语句和delete语句允许使用TableEx。
 
