@@ -23,7 +23,7 @@ class BookStoreAvgPriceResolver(
     private val bookStoreRepository: BookStoreRepository
 ) : KTransientResolver<Long, BigDecimal> {
 
-    // You can also inject id directly
+    // You can also inject it directly
     private val sqlClient = bookStoreRepository.sql
 
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =

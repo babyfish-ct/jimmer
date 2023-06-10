@@ -57,7 +57,6 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // its consistency requires manual assistance.
     // -----------------------------
 
-    // The association property `BookStore.books` is changed
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
         // The association property `BookStore.books` is changed
