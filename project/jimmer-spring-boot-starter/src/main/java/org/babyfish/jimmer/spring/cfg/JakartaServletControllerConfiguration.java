@@ -1,7 +1,14 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.Servlet;
 import org.babyfish.jimmer.client.meta.Metadata;
-import org.babyfish.jimmer.spring.client.*;
+import org.babyfish.jimmer.spring.client.JakartaJavaFeignController;
+import org.babyfish.jimmer.spring.client.JakartaMetadataFactoryBean;
+import org.babyfish.jimmer.spring.client.JakartaTypeScriptController;
+import org.babyfish.jimmer.spring.cloud.JakartaMicroServiceExporterController;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -10,8 +17,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.ParameterNameDiscoverer;
-
-import jakarta.servlet.Servlet;
 
 @ConditionalOnClass(Servlet.class)
 public class JakartaServletControllerConfiguration {
@@ -27,6 +32,20 @@ public class JakartaServletControllerConfiguration {
     @Bean
     public JakartaJavaFeignController javaFeignController(Metadata metadata, JimmerProperties properties) {
         return new JakartaJavaFeignController(metadata, properties);
+    }
+
+    @Conditional(MicroServiceCondition.class)
+    @ConditionalOnMissingBean(JakartaMicroServiceExporterController.class)
+    @Bean
+    public JakartaMicroServiceExporterController microServiceExporterController(
+            @Autowired(required = false) JSqlClient jSqlClient,
+            @Autowired(required = false) KSqlClient kSqlClient,
+            ObjectMapper objectMapper
+    ) {
+        return new JakartaMicroServiceExporterController(
+                jSqlClient != null ? jSqlClient : kSqlClient.getJavaClient(),
+                objectMapper
+        );
     }
 
     @Conditional(MetadataCondition.class)
