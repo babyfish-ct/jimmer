@@ -70,7 +70,7 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
         // It is worth noting that
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
-        if (isAffectedBy(e, BookStoreProps.BOOKS)) {
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
             Caches caches = bookStoreRepository.sql().getCaches();
             caches
                     .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
@@ -81,7 +81,7 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
         // The scalar property `Book.edition` is changed.
-        if (isAffectedBy(e, BookProps.EDITION)) {
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.EDITION)) {
             Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) { // foreign key does not change.
@@ -98,10 +98,5 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
         Filters filters = bookStoreRepository.sql().getFilters();
         return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
-    }
-
-    private boolean isAffectedBy(DatabaseEvent e, TypedProp<?, ?> prop) {
-        return (e.getConnection() == null || sqlClient.getTriggerType() == TriggerType.TRANSACTION_ONLY) &&
-                e.isChanged(prop);
     }
 }

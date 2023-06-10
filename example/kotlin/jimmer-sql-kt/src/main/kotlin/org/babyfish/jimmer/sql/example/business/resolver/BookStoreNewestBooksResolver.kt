@@ -48,7 +48,7 @@ class BookStoreNewestBooksResolver(
         // It is worth noting that
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
-        if (isAffectedBy(e, BookStore::books)) {
+        if (sqlClient.caches.isAffectedBy(e) && e.isChanged(BookStore::books)) {
             sqlClient.caches
                 .getPropertyCache<Any, Any>(BookStore::newestBooks)
                 ?.delete(e.sourceId)
@@ -58,7 +58,7 @@ class BookStoreNewestBooksResolver(
     @EventListener
     fun onEntityChange(e: EntityEvent<*>) {
         // The association property `Book.edition` is changed
-        if (isAffectedBy(e, Book::edition)) {
+        if (sqlClient.caches.isAffectedBy(e) && e.isChanged(Book::edition)) {
             val storeId = e.getUnchangedRef(Book::store)?.value?.id
             if (storeId !== null) {
                 sqlClient.caches
@@ -73,8 +73,4 @@ class BookStoreNewestBooksResolver(
         val filters = bookStoreRepository.sql.filters
         return filters.getTargetParameterMapRef(BookStore::books)
     }
-
-    private fun isAffectedBy(e: DatabaseEvent, prop: KProperty1<*, *>): Boolean =
-        (e.connection === null || sqlClient.triggerType == TriggerType.TRANSACTION_ONLY) &&
-            e.isChanged(prop)
 }

@@ -65,7 +65,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         // It is worth noting that
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
-        if (isAffectedBy(e, BookStoreProps.BOOKS)) {
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
             Caches caches = bookStoreRepository.sql().getCaches();
             caches
                     .getPropertyCache(BookStoreProps.AVG_PRICE)
@@ -76,7 +76,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
         // The scalar property `Book.price` is changed
-        if (isAffectedBy(e, BookProps.PRICE)) {
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.PRICE)) {
             Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) {
@@ -93,10 +93,5 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
         Filters filters = bookStoreRepository.sql().getFilters();
         return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
-    }
-
-    private boolean isAffectedBy(DatabaseEvent e, TypedProp<?, ?> prop) {
-        return (e.getConnection() == null || sqlClient.getTriggerType() == TriggerType.TRANSACTION_ONLY) &&
-                e.isChanged(prop);
     }
 }
