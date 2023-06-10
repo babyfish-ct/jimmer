@@ -277,6 +277,12 @@ println(stores)
 -   修改`BOOK`记录的`PRICE`字段，其所属书店的`avgPrice`缓存数据需要被删除
 
 -   修改`BOOK`记录的`STORE_ID`外建字段，新旧值对应的两个书店的`avgPrice`缓存数据都需要被删除
+    
+    :::tip
+    如果考虑监听多对一关联`Book.store`的变更，不但要考虑新旧连个目标对象id，还要考虑它们是否为null。
+
+    幸运的是，本文的例子中，存在逆向的一对多关联`BookStore.books`，如果监听这个关联的变更，就只需考虑当前表表对象id，代码可以得到简化。
+    :::
 
 
 在[复杂计算属性](../../mapping/advanced/calculated/transient)一文中，为支持计算属性`BookStore.avgPrice`定义了一个类`BookStoreAvgPriceResolver`，其代码如下。
@@ -301,7 +307,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @Override
     public BigDecimal getDefaultValue() {
-        return BigDecimal.ZERO;
+        ...省略代码...
     }
 }
 ```
@@ -326,14 +332,53 @@ class BookStoreAvgPriceResolver(
     }
 
     override fun getDefaultValue(): BigDecimal =
-        BigDecimal.ZERO
+        ...省略代码...
 }
 ```
 
 </TabItem>
 </Tabs>
 
+我们需要修改此类，添加两个Spring事件监听方法
 
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+package com.example.business.resolver;
+
+import org.babyfish.jimmer.sql.*;
+import org.babyfish.jimmer.sql.TransientResolver;
+import org.springframework.stereotype.Component;
+
+@Component
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
+    
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+package com.example.business.resolver
+
+import org.babyfish.jimmer.sql.*
+import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.springframework.stereotype.Component
+
+@Component
+class BookStoreAvgPriceResolver(
+    ...略...
+) : KTransientResolver<Long, BigDecimal> {
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
 
 ### 修改BOOK.PRICE
 
