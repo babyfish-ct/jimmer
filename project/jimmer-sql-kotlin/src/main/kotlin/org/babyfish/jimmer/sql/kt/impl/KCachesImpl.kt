@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.Caches
+import org.babyfish.jimmer.sql.event.DatabaseEvent
 import org.babyfish.jimmer.sql.kt.KCaches
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -24,4 +25,7 @@ internal class KCachesImpl(
 
     override fun <K, V> getPropertyCache(prop: ImmutableProp): Cache<K, V>? =
         javaCaches.getPropertyCache(prop)
+
+    override fun isAffectedBy(e: DatabaseEvent): Boolean =
+        javaCaches.isAffectedBy(e)
 }

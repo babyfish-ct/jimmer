@@ -53,4 +53,7 @@ internal class KTriggersImpl(
     override fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, reason: Any?) {
         javaTriggers.fireAssociationEvict(prop, sourceId, reason);
     }
+
+    override val isTransaction: Boolean
+        get() = javaTriggers.isTransaction
 }

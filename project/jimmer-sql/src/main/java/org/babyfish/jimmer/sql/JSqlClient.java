@@ -84,8 +84,6 @@ public interface JSqlClient extends SubQueryProvider {
      */
     Triggers getTriggers(boolean transaction);
 
-    TriggerType getTriggerType();
-
     Associations getAssociations(TypedProp.Association<?, ?> prop);
 
     Associations getAssociations(ImmutableProp immutableProp);

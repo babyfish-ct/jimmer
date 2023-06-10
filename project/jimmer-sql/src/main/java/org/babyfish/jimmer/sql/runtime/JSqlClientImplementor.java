@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -32,6 +33,8 @@ public interface JSqlClientImplementor extends JSqlClient {
     List<String> getExecutorContextPrefixes();
 
     SqlFormatter getSqlFormatter();
+
+    TriggerType getTriggerType();
 
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 

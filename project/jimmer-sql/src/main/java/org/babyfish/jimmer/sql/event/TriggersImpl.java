@@ -15,6 +15,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TriggersImpl implements Triggers {
 
+    private final boolean transaction;
+
     private final CopyOnWriteArrayList<EntityListener<ImmutableSpi>> globalEntityListeners =
             new CopyOnWriteArrayList<>();
 
@@ -26,6 +28,10 @@ public class TriggersImpl implements Triggers {
 
     private final ConcurrentMap<ImmutableProp, CopyOnWriteArrayList<AssociationListener>> associationListenerMultiMap =
             new ConcurrentHashMap<>();
+
+    public TriggersImpl(boolean transaction) {
+        this.transaction = transaction;
+    }
 
     @Override
     public void addEntityListener(EntityListener<?> listener) {
@@ -360,5 +366,10 @@ public class TriggersImpl implements Triggers {
             listeners.addAll(list);
         }
         return listeners;
+    }
+
+    @Override
+    public boolean isTransaction() {
+        return transaction;
     }
 }

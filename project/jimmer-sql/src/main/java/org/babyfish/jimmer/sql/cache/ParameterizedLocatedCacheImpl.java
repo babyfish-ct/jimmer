@@ -10,8 +10,8 @@ import java.util.SortedMap;
 
 class ParameterizedLocatedCacheImpl<K, V> extends LocatedCacheImpl<K, V> implements Cache.Parameterized<K, V> {
 
-    public ParameterizedLocatedCacheImpl(Cache.Parameterized<K, V> raw, ImmutableType type, ImmutableProp prop) {
-        super(raw, type, prop);
+    public ParameterizedLocatedCacheImpl(Cache.Parameterized<K, V> raw, ImmutableType type, ImmutableProp prop, CacheOperator operator) {
+        super(raw, type, prop, operator);
     }
 
     @Override
