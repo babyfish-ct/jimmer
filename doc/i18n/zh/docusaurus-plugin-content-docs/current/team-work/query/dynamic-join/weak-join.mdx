@@ -17,7 +17,7 @@ import TabItem from '@theme/TabItem';
 -   利用[@JoinSql](../../mapping/advanced/join-sql)声明和主外键无关的ManyToMany关联属性，然后利用关联属性进行join
 
     :::info
-    第种方法适合于高重用性的场合。即，对应的连接操作多个业务场景都需要。
+    这种方法适合于高重用性的场合。即，对应的连接操作多个业务场景都需要。
     :::
 
 -   无需声明实体之间的关联属性，直接用本文讲解的弱连接
@@ -70,7 +70,7 @@ abstract class KWeakJoin<S: Any, T: Any> /* 省略超类型 */ {
 </TabItem>
 </Tabs>
 
--   对于Java而言，`WeakJoin`接口的范型参数应为是预编译器为当前表实体和目标实体生成的`Table`类，例如
+-   对于Java而言，`WeakJoin`接口的范型参数应是预编译器为当前表实体和目标实体生成的`Table`类，例如
 
     `WeakJoin<BookTable, AuthorTable>`
 
@@ -123,7 +123,7 @@ private class BookAuthorJoin : KWeakJoin<Book, Author> {
 
     如果该类没有任何复用价值，建议定义为私有的静态内部类
 
--   该类本身不的带范型参数，但是，必需明确指定超接口/超类的范型参数
+-   该类本身不带范型参数，但是，必需明确指定超接口/超类的范型参数
 
 后续论述中，会解释为什么有前两点限制
 :::
