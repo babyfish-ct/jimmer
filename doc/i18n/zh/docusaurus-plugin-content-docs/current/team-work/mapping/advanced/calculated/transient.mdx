@@ -62,7 +62,7 @@ Jimmer为复杂计算属性提供了接口:
 
 该接口让用户自定义数据计算过程。
 
-用户开发一个类实现此接口，并让让此类收到Spring托管。
+用户开发一个类实现此接口，并让让此类受到Spring托管。
 
 该类如何实现会在后文详细讲解，但这里为了便于表达，先假设用户实现此接口的类的是`CustomerDataResolver`，`@Transient`注解的参数应该如此书写
 
@@ -142,7 +142,7 @@ class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
 
         本例中，即将被定义的`BookStore.avgPrice`的类型为`BigDecmial`，所以这里范型参数为`BigDecimal`
 
--   `resolve`是基接口的一个必须实现的方法，用户考此方法完成计算。
+-   `resolve`是基接口的一个必须实现的方法，用户靠此方法完成计算。
 
     :::info
     `resolve`方法的参数类型为`Collection<Long>`，而非`Long`；其返回类型为`Map<Long, BigDecimal>`。
@@ -193,7 +193,7 @@ public interface BookStoreRepository implements JRepository<BookStore, Long> {
     
     BookStoreTable table = BookStoreTable.$;
     
-    default List<Tuple2<Long, BigDecimal>> findTuplesWithIdAndAvgBookPrice(
+    default List<Tuple2<Long, BigDecimal>> findIdAndAvgBookPrice(
         Collection<Long> ids
     ) {
         return sql().createQuery(table)
@@ -223,7 +223,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*
 
 interface BookStoreRepository : KRepository<BookStore, Long> {
 
-    fun findTuplesWithIdAndAvgBookPrice(
+    fun findIdAndAvgBookPrice(
         ids: Collection<Long>
     ): List<Tuple2<Long, BigDecimal>> =
         sql.createQuery(BookStore::class) {
@@ -242,7 +242,7 @@ interface BookStoreRepository : KRepository<BookStore, Long> {
 </TabItem>
 </Tabs>
 
-1.  限定查询范围，仅对为当前需要计算的书店计算平均书籍的计算价格，而非为数据库中所有书店计算
+1.  限定查询范围，仅对当前需要计算的书店计算它所属书籍的平均价格，而非数据库中所有书店
 
 2.  按照`BookStore.id`分组
 
@@ -301,7 +301,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
         // Tuple -> Map 
         return bookStoreRepository
-            .findIdAndAvgBookPriceTuples(ids)
+            .findIdAndAvgBookPrice(ids)
             .stream()
             .collect(
                     Collectors.toMap(
@@ -587,7 +587,7 @@ println(store)
 
 现在我们期望新建一个靠计算而得的`BookStore.newestBooks`关联属性，它保证返回的书籍集合没有同名问题，每个名称对一的书籍中，只取最高的发行版的，即`edition`最大的。
 
-由于之前我们已经讲解了`BookStore.avgPrice`，对计算属性、Resolver和Repository之间的联系有了了解。所以，这个例子不再采用一变开发一边讲解的顺序，而是直接采用实际开发的顺序：
+由于之前我们已经讲解了`BookStore.avgPrice`，对计算属性、Resolver和Repository之间的联系有了了解。所以，这个例子不再采用一边开发一边讲解的顺序，而是直接采用实际开发的顺序：
 
 -   为`BookStoreRepository`添加查询逻辑，实现计算逻辑
 -   实现`BookStoreNewestBooksResolver`类
@@ -616,7 +616,7 @@ public interface BookStoreRepository implements JRepository<BookStore, Long> {
     
     BookStoreTable table = BookStoreTable.$;
     
-    default List<Tuple2<Long, Long>> findTuplesWithIdAndNewestBookId(
+    default List<Tuple2<Long, Long>> findIdAndNewestBookId(
         Collection<Long> ids
     ) {
         BookTableEx book = BookTableEx.$;
@@ -664,7 +664,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.*
 
 interface BookStoreRepository : KRepository<BookStore, Long> {
 
-    fun findTuplesWithIdAndNewestBookId(
+    fun findIdAndNewestBookId(
         ids: Collection<Long>
     ): List<Tuple2<Long, Long>> =
         sql.createQuery(BookStore::class) {
@@ -698,7 +698,7 @@ interface BookStoreRepository : KRepository<BookStore, Long> {
 
 2.  元组有两列，类型为String和int；子查询也有两列，类型也是String和int。二者完全匹配，可以使用in操作符。
 
-3.  限定查询范围，仅对为当前需要计算的书店计算平均书籍的计算价格，而非为数据库中所有书店计算。
+3.  限定查询范围，仅针对当前需要查询最新版本书籍的，而非数据库中所有书店。
 
     在子查询上施加计算范围限定条件，性能优于在父查询上施加。
 
@@ -738,7 +738,7 @@ implements TransientResolver<Long, List<Long>> { ❶
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
         // Tuple -> MultiMap 
         return bookStoreRepository
-                .findTuplesWithIdAndNewestBookId(ids)
+                .findIdAndNewestBookId(ids)
                 .stream()
                 .collect(
                         Collectors.groupingBy( ❷
@@ -779,7 +779,7 @@ class BookStoreAvgPriceResolver(
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
         // Tuple -> MultiMap
         bookStoreRepository
-            .findTuplesWithIdAndNewestBookId(ids)
+            .findIdAndNewestBookId(ids)
             .groupBy({it._1}) { ❷
                 it._2
             }
