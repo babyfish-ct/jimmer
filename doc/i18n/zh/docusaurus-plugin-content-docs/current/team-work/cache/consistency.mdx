@@ -10,3 +10,6 @@ title: 保证缓存一致性
 
 本文讨论的焦点是，Jimmer如何保证已发出的缓存数据删除行为最终一定能成功。
 :::
+
+无论是[对象缓存](./cache-type/object)和[关联缓存](./cache-type/association)中那种全自动的一致性，还是[计算缓存](./cache-type/calculation)中那种需要用户辅助的一致性，Jimmer的缓存一致性都是由[触发器](../mutation/trigger)驱动的。
+
