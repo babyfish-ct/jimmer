@@ -4,15 +4,26 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
+import org.babyfish.jimmer.sql.cache.spi.AbstractCacheOperator;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class BinLog {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BinLog.class);
+
+    private static final Set<String> EXCLUDED_TABLE_NAMES =
+            standardTableNames(
+                    TransactionCacheOperator.TABLE_NAME
+            );
 
     private final EntityManager entityManager;
 
@@ -50,11 +61,13 @@ public class BinLog {
         }
         ImmutableType type = entityManager.getTypeByServiceAndTable(microServiceName, tableName, strategy);
         if (type == null) {
-            LOGGER.warn(
-                    "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
-                    tableName,
-                    microServiceName
-            );
+            if (!EXCLUDED_TABLE_NAMES.contains(DatabaseIdentifiers.comparableIdentifier(tableName))) {
+                LOGGER.warn(
+                        "Illegal table name \"{}\" of micro service \"{}\", it is not managed by current entity manager",
+                        tableName,
+                        microServiceName
+                );
+            }
             return;
         }
         if (type instanceof AssociationType) {
@@ -87,5 +100,13 @@ public class BinLog {
                     reason
             );
         }
+    }
+
+    private static Set<String> standardTableNames(String ... tableNames) {
+        Set<String> set = new HashSet<>();
+        for (String tableName: tableNames) {
+            set.add(DatabaseIdentifiers.comparableIdentifier(tableName));
+        }
+        return set;
     }
 }

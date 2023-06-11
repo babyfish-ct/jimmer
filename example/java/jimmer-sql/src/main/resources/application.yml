@@ -30,6 +30,7 @@ jimmer:
   pretty-sql: true
   executor-context-prefixes:
     - org.babyfish.jimmer.sql.example.business
+  trigger-type: TRANSACTION_ONLY
   client:
     ts:
       path: /ts.zip

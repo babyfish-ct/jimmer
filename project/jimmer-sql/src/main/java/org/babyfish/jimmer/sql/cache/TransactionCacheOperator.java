@@ -85,6 +85,10 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         this(null, 32);
     }
 
+    public TransactionCacheOperator(int batchSize) {
+        this(null, batchSize);
+    }
+
     public TransactionCacheOperator(ObjectMapper mapper) {
         this(mapper, 32);
     }
@@ -180,7 +184,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
                         stmt.setString(1, type != null ? type.toString() : null);
                         stmt.setString(2, prop != null ? prop.toString() : null);
                         stmt.setString(3, mapper.writeValueAsString(key));
-                        stmt.setString(4, REASON);
+                        stmt.setString(4, reason);
                         stmt.addBatch();
                     }
                     stmt.executeBatch();
