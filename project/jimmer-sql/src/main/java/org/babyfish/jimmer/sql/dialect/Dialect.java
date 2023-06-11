@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Types;
 
 public interface Dialect {
@@ -59,5 +61,13 @@ public interface Dialect {
 
     default Reader<?> unknownReader(Class<?> sqlType) {
         return null;
+    }
+
+    default String transCacheOperatorTableDDL() {
+        throw new UnsupportedOperationException(
+                "The current dialect \"" +
+                        getClass().getName() +
+                        "\" does not know how to create table `JIMMER_TRANS_CACHE_OPERATOR`"
+        );
     }
 }

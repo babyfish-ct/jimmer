@@ -22,7 +22,6 @@ import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtens
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

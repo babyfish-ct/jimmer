@@ -25,4 +25,15 @@ public class MySqlDialect implements Dialect {
     public boolean isDeletedAliasRequired() {
         return true;
     }
+
+    @Override
+    public String transCacheOperatorTableDDL() {
+        return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
+                "\tID bigint unsigned not null auto_increment primary key,\n" +
+                "\tIMMUTABLE_TYPE varchar(128),\n" +
+                "\tIMMUTABLE_PROP varchar(128),\n" +
+                "\tCACHE_KEY varchar(64) not null,\n" +
+                "\tREASON varchar(32)\n" +
+                ") engine=innodb";
+    }
 }

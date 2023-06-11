@@ -38,6 +38,9 @@ public class JimmerProperties {
     private final TriggerType triggerType;
 
     @NotNull
+    private final int transactionCacheOperatorFixedDelay;
+
+    @NotNull
     private final EnumType.Strategy defaultEnumStrategy;
 
     private final int defaultBatchSize;
@@ -66,6 +69,7 @@ public class JimmerProperties {
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
+            @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
@@ -142,6 +146,10 @@ public class JimmerProperties {
                     );
         }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
+        this.transactionCacheOperatorFixedDelay =
+                transactionCacheOperatorFixedDelay != null ?
+                        transactionCacheOperatorFixedDelay :
+                        5000;
         this.defaultEnumStrategy =
                 defaultEnumStrategy != null ?
                         defaultEnumStrategy :

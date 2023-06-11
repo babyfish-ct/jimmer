@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -62,5 +63,16 @@ public class PostgresDialect extends DefaultDialect {
             return (rs, col) -> rs.getObject(col.get(), PGobject.class);
         }
         return null;
+    }
+
+    @Override
+    public String transCacheOperatorTableDDL() {
+        return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
+                "\tID bigint generated always as identity,\n" +
+                "\tIMMUTABLE_TYPE text,\n" +
+                "\tIMMUTABLE_PROP text,\n" +
+                "\tCACHE_KEY text not null,\n" +
+                "\tREASON text\n" +
+                ")";
     }
 }

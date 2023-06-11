@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.DatabaseEvent;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -17,6 +18,8 @@ public class CachesImpl implements Caches {
     private final Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheMap;
 
     private final Map<ImmutableProp, LocatedCacheImpl<?, ?>> propCacheMap;
+
+    private final CacheOperator operator;
 
     private final CacheAbandonedCallback abandonedCallback;
 
@@ -33,6 +36,12 @@ public class CachesImpl implements Caches {
             CacheOperator operator,
             CacheAbandonedCallback abandonedCallback
     ) {
+        if (operator == null &&
+                triggers.isTransaction() &&
+                (!objectCacheMap.isEmpty() || !propCacheMap.isEmpty())
+        ) {
+            operator = new TransactionCacheOperator();
+        }
         Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
             ImmutableType type = e.getKey();
@@ -46,6 +55,7 @@ public class CachesImpl implements Caches {
         this.triggers = triggers;
         this.objectCacheMap = objectCacheWrapperMap;
         this.propCacheMap = propCacheWrapperMap;
+        this.operator = operator;
         this.abandonedCallback = abandonedCallback;
         this.disableAll = false;
         this.disabledTypes = Collections.emptySet();
@@ -59,6 +69,7 @@ public class CachesImpl implements Caches {
         triggers = base.triggers;
         objectCacheMap = base.objectCacheMap;
         propCacheMap = base.propCacheMap;
+        operator = base.operator;
         abandonedCallback = base.abandonedCallback;
         disableAll = cfg.isDisableAll();
         disabledTypes = cfg.getDisabledTypes();
@@ -159,6 +170,10 @@ public class CachesImpl implements Caches {
         return wrapper;
     }
 
+    public CacheOperator getOperator() {
+        return operator;
+    }
+
     public static Caches of(
             CacheConfig cacheConfig,
             String microServiceName,
@@ -166,5 +181,18 @@ public class CachesImpl implements Caches {
             Triggers triggers
     ) {
         return cacheConfig.build(microServiceName, entityManager, triggers);
+    }
+
+    public static boolean isEmpty(Caches caches) {
+        CachesImpl impl = (CachesImpl) caches;
+        return impl.objectCacheMap.isEmpty() && impl.propCacheMap.isEmpty();
+    }
+
+    public static void initialize(Caches caches, JSqlClient sqlClient) {
+        CachesImpl impl = (CachesImpl) caches;
+        CacheOperator operator = impl.operator;
+        if (operator != null) {
+            operator.initialize(sqlClient);
+        }
     }
 }

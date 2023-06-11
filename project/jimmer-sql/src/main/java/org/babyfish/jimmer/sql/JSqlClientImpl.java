@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
+import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
@@ -40,7 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -292,6 +295,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public Entities getEntities() {
         return entities;
+    }
+
+    @Override
+    public CacheOperator getCacheOperator() {
+        return ((CachesImpl)caches).getOperator();
     }
 
     @Override
@@ -1071,6 +1079,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     microServiceName,
                     microServiceExchange
             );
+            CachesImpl.initialize(caches, sqlClient);
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient, binLogObjectMapper);
             transientResolverManager.initialize(sqlClient);

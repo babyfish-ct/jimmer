@@ -1,8 +1,12 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.sql.JSqlClient;
+
 import java.util.Collection;
 
 public interface CacheOperator {
+
+    default void initialize(JSqlClient sqlClient) {}
 
     void delete(LocatedCache<Object, ?> cache, Object key, Object reason);
 
