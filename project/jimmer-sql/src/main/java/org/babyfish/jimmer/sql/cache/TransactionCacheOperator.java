@@ -13,10 +13,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 public class TransactionCacheOperator extends AbstractCacheOperator {
@@ -197,41 +194,44 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
 
     @SuppressWarnings("unchecked")
     public void flush() {
+        sqlClient().getConnectionManager().execute(con -> {
+            flush(con);
+            return null;
+        });
+    }
 
-        List<Long> ids = selectOperationIds();
+    private void flush(Connection con) {
 
+        List<Long> ids = selectOperationIds(con);
         if (ids.isEmpty()) {
             return;
         }
 
-        Map<MergedKey, Set<Object>> keyMap = getAndLockOperationKeyMap(ids);
-
+        Map<MergedKey, Set<Object>> keyMap = getAndLockOperationKeyMap(ids, con);
         CacheOperator.suspending(() -> {
             executeOperations(keyMap);
         });
 
-        deleteOperations(ids);
+        deleteOperations(ids, con);
     }
 
-    private List<Long> selectOperationIds() {
+    private List<Long> selectOperationIds(Connection con) {
         String sql = SELECT_ID_PREFIX + batchSize;
-        return sqlClient().getConnectionManager().execute(con -> {
-            List<Long> ids = new ArrayList<>();
-            try (PreparedStatement stmt = con.prepareStatement(sql)) {
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        ids.add(rs.getLong(1));
-                    }
+        List<Long> ids = new ArrayList<>();
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getLong(1));
                 }
-            } catch (SQLException ex) {
-                LOGGER.warn("Failed to flush transaction cache operator", ex);
             }
-            return ids;
-        });
+        } catch (SQLException ex) {
+            LOGGER.warn("Failed to flush transaction cache operator", ex);
+        }
+        return ids;
     }
 
     @SuppressWarnings("unchecked")
-    private Map<MergedKey, Set<Object>> getAndLockOperationKeyMap(Collection<Long> ids) {
+    private Map<MergedKey, Set<Object>> getAndLockOperationKeyMap(Collection<Long> ids, Connection con) {
         StringBuilder builder = new StringBuilder();
         builder.append(SELECT_PREFIX).append('(');
         for (int i = ids.size(); i > 0; --i) {
@@ -241,35 +241,33 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
             }
         }
         builder.append(") for update");
-        return sqlClient().getConnectionManager().execute(con -> {
-            Map<MergedKey, Set<Object>> keyMap = new LinkedHashMap<>();
-            try (PreparedStatement stmt = con.prepareStatement(builder.toString())) {
-                int index = 0;
-                for (Long id : ids) {
-                    stmt.setLong(++index, id);
-                }
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        ImmutableType type = typeFromString(rs.getString(2));
-                        ImmutableProp prop = propFromString(rs.getString(3));
-                        String json = rs.getString(4);
-                        Object key = mapper.readValue(
-                                json,
-                                type != null ?
-                                        (Class<Object>)type.getIdProp().getElementClass() :
-                                        (Class<Object>)prop.getDeclaringType().getIdProp().getElementClass()
-                        );
-                        String reason = rs.getString(5);
-                        keyMap
-                                .computeIfAbsent(new MergedKey(type, prop, reason), it -> new LinkedHashSet<>())
-                                .add(key);
-                    }
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to flush transaction cache operator", ex);
+        Map<MergedKey, Set<Object>> keyMap = new LinkedHashMap<>();
+        try (PreparedStatement stmt = con.prepareStatement(builder.toString())) {
+            int index = 0;
+            for (Long id : ids) {
+                stmt.setLong(++index, id);
             }
-            return keyMap;
-        });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ImmutableType type = typeFromString(rs.getString(2));
+                    ImmutableProp prop = propFromString(rs.getString(3));
+                    String json = rs.getString(4);
+                    Object key = mapper.readValue(
+                            json,
+                            type != null ?
+                                    (Class<Object>)type.getIdProp().getElementClass() :
+                                    (Class<Object>)prop.getDeclaringType().getIdProp().getElementClass()
+                    );
+                    String reason = rs.getString(5);
+                    keyMap
+                            .computeIfAbsent(new MergedKey(type, prop, reason), it -> new LinkedHashSet<>())
+                            .add(key);
+                }
+            }
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to flush transaction cache operator", ex);
+        }
+        return keyMap;
     }
 
     private void executeOperations(Map<MergedKey, Set<Object>> keyMap) {
@@ -291,7 +289,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         }
     }
 
-    private void deleteOperations(Collection<Long> ids) {
+    private void deleteOperations(Collection<Long> ids, Connection con) {
         StringBuilder builder = new StringBuilder();
         builder.append(DELETE_PREFIX).append('(');
         for (int i = ids.size(); i > 0; --i) {
@@ -301,18 +299,15 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
             }
         }
         builder.append(')');
-        sqlClient().getConnectionManager().execute(con -> {
-            try (PreparedStatement stmt = con.prepareStatement(builder.toString())) {
-                int index = 0;
-                for (Long id : ids) {
-                    stmt.setLong(++index, id);
-                }
-                stmt.executeUpdate();
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete transaction cache operations", ex);
+        try (PreparedStatement stmt = con.prepareStatement(builder.toString())) {
+            int index = 0;
+            for (Long id : ids) {
+                stmt.setLong(++index, id);
             }
-            return null;
-        });
+            stmt.executeUpdate();
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to delete transaction cache operations", ex);
+        }
     }
 
     private static ImmutableType typeFromString(String typeName) throws Exception {
