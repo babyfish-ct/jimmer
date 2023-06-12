@@ -196,19 +196,19 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         });
     }
 
-    @SuppressWarnings("unchecked")
     public void flush() {
-        sqlClient().getConnectionManager().execute(con -> {
-            flush(con);
-            return null;
-        });
+        for (int i = 0; i < 10; i++) {
+            if (sqlClient().getConnectionManager().execute(this::flush) < batchSize) {
+                break;
+            }
+        }
     }
 
-    private void flush(Connection con) {
+    private int flush(Connection con) {
 
         List<Long> ids = selectOperationIds(con);
         if (ids.isEmpty()) {
-            return;
+            return 0;
         }
 
         Map<MergedKey, Set<Object>> keyMap = getAndLockOperationKeyMap(ids, con);
@@ -217,6 +217,7 @@ public class TransactionCacheOperator extends AbstractCacheOperator {
         });
 
         deleteOperations(ids, con);
+        return ids.size();
     }
 
     private List<Long> selectOperationIds(Connection con) {
