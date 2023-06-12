@@ -19,12 +19,13 @@ public interface CacheOperator {
     static void suspending(Runnable block) {
         if (Suspending.LOCAL.get() != null) {
             block.run();
-        }
-        Suspending.LOCAL.set(Suspending.INSTANCE);
-        try {
-            block.run();
-        } finally {
-            Suspending.LOCAL.remove();
+        } else {
+            Suspending.LOCAL.set(Suspending.INSTANCE);
+            try {
+                block.run();
+            } finally {
+                Suspending.LOCAL.remove();
+            }
         }
     }
 }

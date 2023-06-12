@@ -135,7 +135,7 @@ public class CachesImpl implements Caches {
         );
         triggers.addEntityListener(type, e -> {
             ImmutableSpi oldEntity = (ImmutableSpi) e.getOldEntity();
-            if (oldEntity != null) {
+            if (oldEntity != null && isAffectedBy(e)) {
                 Object id = e.getId();
                 wrapper.delete(id, e.getReason());
             }
@@ -163,8 +163,10 @@ public class CachesImpl implements Caches {
         );
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             triggers.addAssociationListener(prop, e -> {
-                Object id = e.getSourceId();
-                wrapper.delete(id, e.getReason());
+                if (isAffectedBy(e)) {
+                    Object id = e.getSourceId();
+                    wrapper.delete(id, e.getReason());
+                }
             });
         }
         return wrapper;
