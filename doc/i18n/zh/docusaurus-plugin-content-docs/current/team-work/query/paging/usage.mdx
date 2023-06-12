@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 ## Jimmer分页的特色
 
-分页查询是Jimmer一个很有特色的的功能，能大幅提升开发效率。
+分页查询是Jimmer一个很有特色的功能，能大幅提升开发效率。
 
 分页需要执行两条SQL查询
 
@@ -30,23 +30,23 @@ Jimer分页的特色：开发人员只需编写`data-query`，框架自动生成
 
 另外，`count-query`其实是可以优化的。
 
-让我们来看一个可以优化的场景，在data-query中有存在一个JOIN，如果它同满足如下面的条件
+让我们来看一个可以优化的场景，在data-query中有存在一个JOIN，如果它同时满足如下条件：
 
 -   此JOIN操作得到的表，并没有被`where`条件使用，而是在其他不会影响记录行数的地方被使用，比如`orderBy`
 
 -   此JOIN的方向是从子表指向父表 *(即多对一和一对一关联)*，连接结果不会出现数据重复。也就是说，此JOIN不会导致数据变多
 
--   此JOIN的外建是真的 *(即存在外建约束，请参见[真假外建](../../mapping/base/foreignkey))* 且非null。那么此JOIN不会导致数据变少
+-   此JOIN的外键是真的 *(即存在外键约束，请参见[真假外键](../../mapping/base/foreignkey))* 且非null。那么此JOIN不会导致数据变少
 
 则可以安全地从count-query中剔除它，达到优化目的
 
 :::tip
-Jimmer不但可以自动生成`count-query`，还可以做的优化`count-query`
+Jimmer不但可以自动生成`count-query`，还可以做到优化`count-query`
 :::
 
 ## 配合SpringBoot使用时
 
-配合SpringBoot使用时，开发人员从`JRepository/KRepository`派生自定义的Repository接口，为自定义接口添加查询方法有两种选择
+配合SpringBoot使用时，开发人员从`JRepository/KRepository`派生自定义的Repository接口，为自定义接口添加查询方法有两种选择：
 
 -   按照一定的约定声明抽象方法，交由Jimmer自动实现
 
@@ -131,7 +131,7 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
 
 -   ❶ 调用超接口的`pager`方法创建一个辅助对象，并调用该对象的方法`execute`实现分页查询。
 
-    `execute`的参数是一个未执行的查询，该查询作为`data-query`的模板。
+    `execute`的参数是一个未执行的查询，该查询作为`data-query`的模板：
     
     -   首先，由于`data-query`模板尚未执行，Jimmer有机会根据它自动创建`count-query`，查询出分页前的数据总行数。
 
@@ -139,7 +139,7 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
 
     -   最后，Jimmer将数据总行数和当前页类的数据组合，创建Spring Data的`Page`对象并返回。
 
--   ❷ 由于Spring Data的`Pageabe`包含了动态排序，所以需要应用动态排序
+-   ❷ 由于Spring Data的`Pageabe`包含了动态排序，所以需要应用动态排序。
 
 -   ❸ `select`之后并没有调用查询本身的`execute`，说明这是一个未执行的查询。
 
@@ -520,7 +520,7 @@ limit ?, ?
 Jimmer在分页查询完成后启动对其他关联度对象的查询，只针对单页之内的对象。
 :::
 
-以SpringBoot模式为例，现在，让我们修改之前讨论多的`BookRepository`，让其支持对象抓取器
+以SpringBoot模式为例，现在，让我们修改之前讨论过的`BookRepository`，让其支持对象抓取器
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -574,7 +574,7 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
     fun findBooks(
         pageable: Pageable,
         // highlight-next-line
-        fetcher: fetcher<Book>? = null,
+        fetcher: Fetcher<Book>? = null,
         name: String? = null,
         storeName: String? = null
     ): Page<Book> =
