@@ -628,7 +628,7 @@ where (tb_1_.NAME, tb_1_.EDITION) in (
 ```
 
 :::note
-除了和数据集合配合使用外，in还可以可以子查询配合使用。
+除了和数据集合配合使用外，`in`还可以与子查询配合一起使用。
 
 这部分内容会在[子查询](../query/sub-query)相关文档中详细介绍，本文不做重复介绍。
 :::
@@ -778,7 +778,7 @@ where(
 </TabItem>
 </Tabs>
 
-并不总是需要调用`not()`函数。很多时候有快捷方式可用，比如
+并不总是需要调用`not()`函数。很多时候有快捷方式可用，比如：
 1. `.eq(value).not()`可以简写成`.ne(value)`
 2. `.isNull().not()`可以简写成`.isNotNull(value)`
 3. `.exists().not()`可以简写成`.notExists()` *(exists会在[子查询](../query/sub-query)中介绍，本文不会介绍)*
