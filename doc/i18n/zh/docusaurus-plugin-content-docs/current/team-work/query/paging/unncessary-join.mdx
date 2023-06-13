@@ -3,6 +3,9 @@ sidebar_position: 2
 title: 表连接优化
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 在上一篇文章中，我们提及，Jimmer不仅能根据`data-query`自动生成`count-query`，还能自动优化`count-query`。
 
 由于`count-query`只关心数据的总行数，不在乎数据的顺序和格式。所以，原`data-query`中的某些table join可能不需要复制到`count-query`中。
