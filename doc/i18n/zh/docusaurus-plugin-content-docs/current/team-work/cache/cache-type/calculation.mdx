@@ -64,7 +64,7 @@ public CacheFactory cacheFactory(
         @Override
         // highlight-next-line
         public Cache<?, ?> createResolverCache(ImmutableProp prop) {
-            return createPropCache(prop, Duration.ofSeconds(10));
+            return createPropCache(prop, Duration.ofHours(1));
         }
 
         private <K, V> Cache<K, V> createPropCache(ImmutableProp prop, Duration duration) {
@@ -111,7 +111,7 @@ fun cacheFactory(
 
         // highlight-next-line
         override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
-            return createPropCache(prop, Duration.ofSeconds(10))
+            return createPropCache(prop, Duration.ofHours(1))
 
         private fun <K, V> createPropCache(prop: ImmutableProp, duration: Duration): Cache<K, V> =
             ChainCacheBuilder<Any, Any>()
