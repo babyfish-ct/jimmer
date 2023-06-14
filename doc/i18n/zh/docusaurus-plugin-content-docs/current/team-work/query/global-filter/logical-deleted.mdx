@@ -46,7 +46,7 @@ interface Book {
 </Tabs>
 
 :::info
-这里的`useMultiViewCache`将会在[多视角缓存](./multiview-cache)中介绍，这里请读者先先忽略之。
+这里的`useMultiViewCache`将会在[多视角缓存](./multiview-cache)中介绍，这里请读者先忽略之。
 :::
 
 ## 使用
@@ -215,7 +215,7 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
--   ❶ 在不影响当前`sqlClien`的前提下，调整过滤器配置，创建新的临时`sqlClient`
+-   ❶ 在不影响当前`sqlClient`的前提下，调整过滤器配置，创建新的临时`sqlClient`
 
 -   ❷ 禁用参数所代表的全局过滤器
 
@@ -240,13 +240,13 @@ from BOOK tb_1_
 
 事实上，Jimmer为逻辑删除提供了两个过滤器
 
--   NotDeleteFilter: 查询未被删除的数据，默认启用
+-   `NotDeletedFilter`: 查询未被删除的数据，默认启用
     
     这也是上一个例子我们手动禁用的过滤器
 
--   AlreadDeletedFilter: 查询已经被删除的数据，默认禁用
+-   `AlreadyDeletedFilter`: 查询已经被删除的数据，默认禁用
 
-接下来，我们继续禁用`NotDeleteFilter`，同时启用`AlreadyDeletedFilter`
+接下来，我们继续禁用`NotDeletedFilter`，同时启用`AlreadyDeletedFilter`
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
