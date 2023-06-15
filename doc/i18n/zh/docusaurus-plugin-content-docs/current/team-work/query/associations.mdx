@@ -210,7 +210,7 @@ public class Association<S, T> {
 
 这个例子中，我们只查询了中间表本身。所以，`source`和`target`对象中只有id。
 
-要获获取完整的`source`和`target`对象，可以表连接，然后利用元组进行返回。
+要获取完整的`source`和`target`对象，可以表连接，然后利用元组进行返回。
 
 代码如下
 
@@ -318,7 +318,7 @@ Tuple2{
 }
 ```
 
-:::cuation
+:::caution
 关联对象`Association<S, T>`很简单也很特殊，不支持也不需要[对象抓取器](./object-fetcher)。
 
 注意，这里仅指`Association<S, T>`对象<b>本身</b>不支持，其关联属性`source`和`target`仍然支持[对象抓取器](./object-fetcher)，如：

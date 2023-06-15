@@ -357,7 +357,7 @@ val tmpSqlClient =
 
 Jimmer提供按照id *(或id集合)* 查询实体 *(或实体集合)* 的简单API。
 
-默认情况下，这类API是特殊的，它们无视全局过滤器。因为，因为id唯一确定了对象，按照id查询对象忽略过滤器是正确的。
+默认情况下，这类API是特殊的，它们无视全局过滤器。因为id唯一确定了对象，按照id查询对象忽略过滤器是正确的。
 
 然而，如果JDBC层面使用了[sharding-jdbc](https://shardingsphere.apache.org/document/4.1.1/en/manual/sharding-jdbc/)技术，且在过滤器中被用作筛选条件的字段就是sharding-jdbc中分库分表的字段，这时，仅仅根据id查询会导致sharding-jdbc查询多个分片，这是灾难。
 
