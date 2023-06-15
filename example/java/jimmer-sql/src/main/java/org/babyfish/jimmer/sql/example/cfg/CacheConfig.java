@@ -7,12 +7,11 @@ import org.babyfish.jimmer.spring.cache.CaffeineBinder;
 import org.babyfish.jimmer.spring.cache.RedisCaches;
 import org.babyfish.jimmer.spring.cache.RedisHashBinder;
 import org.babyfish.jimmer.spring.cache.RedisValueBinder;
+import org.babyfish.jimmer.sql.cache.AbstractCacheFactory;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.chain.*;
 import org.babyfish.jimmer.sql.example.model.BookStoreProps;
-import org.babyfish.jimmer.sql.example.model.common.TenantAware;
-import org.babyfish.jimmer.sql.filter.FilterRangeAwareCacheFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +20,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Set;
 
 // -----------------------------
 // If you are a beginner, please ignore this class,
@@ -37,14 +35,7 @@ public class CacheConfig {
             ObjectMapper objectMapper
     ) {
         RedisTemplate<String, byte[]> redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory);
-        return new FilterRangeAwareCacheFactory() {
-
-            private Set<ImmutableType> affectedTypes;
-
-            @Override
-            public void setAffectedTypes(Set<ImmutableType> affectedTypes) {
-                this.affectedTypes = affectedTypes;
-            }
+        return new AbstractCacheFactory() {
 
             // Id -> Object
             @Override
@@ -59,7 +50,7 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
                 return createPropCache(
-                        affectedTypes.contains(prop.getTargetType()),
+                        getFilterState().isAffected(prop.getTargetType()),
                         prop,
                         redisTemplate,
                         objectMapper,
@@ -71,7 +62,7 @@ public class CacheConfig {
             @Override
             public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
                 return createPropCache(
-                        affectedTypes.contains(prop.getTargetType()),
+                        getFilterState().isAffected(prop.getTargetType()),
                         prop,
                         redisTemplate,
                         objectMapper,
