@@ -663,11 +663,16 @@ public class FilterManager implements Filters {
         }
     }
 
-    public Set<ImmutableType> getAffectedTypes() {
-        Set<ImmutableType> types = new HashSet<>();
-        for (ImmutableType type : filterMap.keySet()) {
-            types.addAll(type.getAllTypes());
+    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
+        Set<ImmutableType> affectTypes = new HashSet<>();
+        for (ImmutableType type : allTypes) {
+            for (ImmutableType upcastType : type.getAllTypes()) {
+                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType)) {
+                    affectTypes.add(type);
+                    break;
+                }
+            }
         }
-        return types;
+        return affectTypes;
     }
 }

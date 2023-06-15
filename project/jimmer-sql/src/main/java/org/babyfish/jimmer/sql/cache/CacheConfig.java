@@ -172,7 +172,11 @@ public class CacheConfig {
         Map<ImmutableProp, Cache<?, ?>> finalPropCacheMap = new LinkedHashMap<>();
 
         if (cacheFactory instanceof FilterRangeAware) {
-            ((FilterRangeAware)cacheFactory).setAffectedTypes(filterManager.getAffectedTypes());
+            ((FilterRangeAware)cacheFactory).setAffectedTypes(
+                    filterManager.getAffectedTypes(
+                            entityManager.getAllTypes(microServiceName)
+                    )
+            );
         }
 
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.common.ParameterizedCaches;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
+import org.babyfish.jimmer.sql.filter.FilterRangeAwareCacheFactory;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -36,7 +38,13 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
             it.ignoreBuiltInFilters();
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
-                        new CacheFactory() {
+                        new FilterRangeAwareCacheFactory() {
+
+                            @Override
+                            public void setAffectedTypes(Set<ImmutableType> types) {
+
+                            }
+
                             @Override
                             public @Nullable Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
                                 return new CacheImpl<>(type);
