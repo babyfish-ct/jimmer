@@ -16,11 +16,11 @@ title: 基本概念
 ![multi-view-cache](@site/static/img/multi-view-cache.png)
 
 :::caution
-和之前讨论的缓存可以分为[对象缓存](./cache-type/object)、[关联缓存](./cache-type/association)和[计算缓存](./cache-type/calculation)不同，
+和之前讨论的缓存可以分为[对象缓存](../cache-type/object)、[关联缓存](../cache-type/association)和[计算缓存](../cache-type/calculation)不同，
 多视图缓存并不是为已有的分类集合添加一种新的分类，而是另外一个维度的特性。
 :::
 
-除了[对象缓存](./cache-type/object)外，[关联缓存](./cache-type/association)和[计算缓存](./cache-type/calculation)都可以和多视图缓存相结合
+除了[对象缓存](../cache-type/object)外，[关联缓存](../cache-type/association)和[计算缓存](../cache-type/calculation)都可以和多视图缓存相结合
 
 ||单视图缓存|多视图缓存|
 |---|---|---|
@@ -40,18 +40,20 @@ title: 基本概念
 
 只要某个实体被施加了[全局过滤器](../../query/global-filter)，所有以它作为目标类型的关联缓存以及依赖这些关联缓存的计算缓存都需要多视图化。
 
-比如，如果为`Book`添加全局过滤器，那么如下这些缓存将会被需要被多视图化
+比如，如果为`Book`添加全局过滤器，那么如下这些属性
 
 -   以`Book`作为目标类型的关联属性。比如，`BookStore.books`、`Author.books`
 
 -   依赖于上述关联属性的计算属性。比如，`BookStore.avgPrice`、`BookStore.newestBooks`*(文档没提及`newestBook`，可参见例子)*
 
+都会被对过滤器敏感，即，不同的过滤条件会导致不同的客户端看到不同的数据。
+
+:::caution
+这些对过滤器敏感的属性，要么不支持缓存，要么就支持多视角缓存。如果为其需要配置单视图缓存，将被视为无效操作，缓存配置会被忽略。
+
+然而，无需担心，Jimmer会告诉开发人员为什么属性级缓存未生效。
+:::
+
 这里所讨论的[全局过滤器](../../query/global-filter)，不但包含用户自定义的过滤器，还包括[逻辑删除](../../mapping/advanced/logical-deleted)所隐含的内置过滤器。
 
 后续文档会从[逻辑删除](../../mapping/advanced/logical-deleted)和用户自定义过滤器两个方面入手，介绍多视图缓存。
-
-:::caution
-对于需要多视图缓存的属性而言，如果为其需要配置单视图缓存，将被视为无效操作，缓存配置会被忽略。
-
-不要担心，Jimmer会告诉开发人员为什么属性级缓存未生效。
-:::
