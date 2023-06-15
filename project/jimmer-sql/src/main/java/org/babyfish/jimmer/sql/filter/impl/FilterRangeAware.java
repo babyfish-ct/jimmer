@@ -9,5 +9,5 @@ import java.util.Set;
  */
 public interface FilterRangeAware {
 
-    boolean setAffectedTypes(Set<ImmutableType> types);
+    void setAffectedTypes(Set<ImmutableType> types);
 }

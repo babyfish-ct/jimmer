@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.DatabaseEvent;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.event.Triggers;
 
@@ -181,13 +182,13 @@ public class CachesImpl implements Caches {
             String microServiceName,
             EntityManager entityManager,
             Triggers triggers,
-            Set<ImmutableType> typesAffectedByFilters
+            FilterManager filterManager
     ) {
         return cacheConfig.build(
                 microServiceName,
                 entityManager,
                 triggers,
-                typesAffectedByFilters
+                filterManager
         );
     }
 

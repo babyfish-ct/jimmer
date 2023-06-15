@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.filter.impl.FilterRangeAware;
 import org.babyfish.jimmer.sql.meta.JoinTemplate;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -160,7 +161,7 @@ public class CacheConfig {
             String microServiceName,
             EntityManager entityManager,
             Triggers triggers,
-            Set<ImmutableType> typesAffectedByFilters
+            FilterManager filterManager
     ) {
 
         CacheFactory cacheFactory = this.cacheFactory;
@@ -171,7 +172,7 @@ public class CacheConfig {
         Map<ImmutableProp, Cache<?, ?>> finalPropCacheMap = new LinkedHashMap<>();
 
         if (cacheFactory instanceof FilterRangeAware) {
-            ((FilterRangeAware)cacheFactory).setAffectedTypes(typesAffectedByFilters);
+            ((FilterRangeAware)cacheFactory).setAffectedTypes(filterManager.getAffectedTypes());
         }
 
         for (ImmutableType type : entityManager.getAllTypes(microServiceName)) {

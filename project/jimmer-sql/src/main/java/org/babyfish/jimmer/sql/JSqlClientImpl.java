@@ -1044,7 +1044,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     microServiceName,
                     entityManager(),
                     triggers,
-                    filterManager.getAffectedTypes()
+                    filterManager
             );
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(

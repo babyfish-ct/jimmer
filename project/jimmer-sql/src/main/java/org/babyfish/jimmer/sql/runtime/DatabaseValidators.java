@@ -50,11 +50,11 @@ public class DatabaseValidators {
             MetadataStrategy strategy,
             String catalog,
             Connection con
-    ) {
+    ) throws SQLException {
         this.entityManager = entityManager;
         this.microServiceName = microServiceName;
         this.strategy = strategy;
-        this.catalog = catalog;
+        this.catalog = catalog != null ? catalog : con.getCatalog();
         this.con = con;
         this.items = new ArrayList<>();
     }
@@ -354,7 +354,7 @@ public class DatabaseValidators {
         if (catalog != null && !catalog.isEmpty()) {
             return tables
                     .stream()
-                    .filter(it -> it.catalog.equals(catalog))
+                    .filter(it -> it.catalog.equalsIgnoreCase(catalog))
                     .collect(Collectors.toSet());
         }
         return tables;
