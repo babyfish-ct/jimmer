@@ -180,9 +180,15 @@ public class CachesImpl implements Caches {
             CacheConfig cacheConfig,
             String microServiceName,
             EntityManager entityManager,
-            Triggers triggers
+            Triggers triggers,
+            Set<ImmutableType> typesAffectedByFilters
     ) {
-        return cacheConfig.build(microServiceName, entityManager, triggers);
+        return cacheConfig.build(
+                microServiceName,
+                entityManager,
+                triggers,
+                typesAffectedByFilters
+        );
     }
 
     public static boolean isEmpty(Caches caches) {
