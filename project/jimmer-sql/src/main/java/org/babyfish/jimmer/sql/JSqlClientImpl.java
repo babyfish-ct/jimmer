@@ -1039,7 +1039,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
             validateAssociations(filterManager);
 
             createTriggers();
-            Caches caches = CachesImpl.of(cacheConfig, microServiceName, entityManager(), triggers);
+            Caches caches = CachesImpl.of(
+                    cacheConfig,
+                    microServiceName,
+                    entityManager(),
+                    triggers,
+                    filterManager
+            );
             BinLogParser binLogParser = new BinLogParser();
             BinLog binLog = new BinLog(
                     entityManager(),

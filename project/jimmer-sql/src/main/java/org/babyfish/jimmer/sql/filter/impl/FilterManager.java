@@ -452,7 +452,7 @@ public class FilterManager implements Filters {
         Map<ImmutableType, List<Filter<Props>>> map = new HashMap<>();
         for (Filter<?> filter : filters) {
             if (filter != null && !disabledFilters.contains(filter)) {
-                ImmutableType immutableType = getImmutableType((Filter<Props>) filter);
+                ImmutableType immutableType = getImmutableType(filter);
                 map
                         .computeIfAbsent(immutableType, it -> new ArrayList<>())
                         .add((Filter<Props>) filter);
@@ -661,5 +661,18 @@ public class FilterManager implements Filters {
                 }
             }
         }
+    }
+
+    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
+        Set<ImmutableType> affectTypes = new HashSet<>();
+        for (ImmutableType type : allTypes) {
+            for (ImmutableType upcastType : type.getAllTypes()) {
+                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType)) {
+                    affectTypes.add(type);
+                    break;
+                }
+            }
+        }
+        return affectTypes;
     }
 }

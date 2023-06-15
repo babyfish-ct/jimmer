@@ -12,8 +12,7 @@ import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.CacheFactory
 import org.babyfish.jimmer.sql.cache.chain.*
 import org.babyfish.jimmer.sql.example.model.BookStore
-import org.babyfish.jimmer.sql.example.model.common.TenantAware
-import org.babyfish.jimmer.sql.kt.cache.KCacheFactory
+import org.babyfish.jimmer.sql.kt.cache.AbstractKCacheFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -37,7 +36,7 @@ class CacheConfig {
 
         val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
 
-        return object : KCacheFactory {
+        return object : AbstractKCacheFactory() {
 
             // Id -> Object
             override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
@@ -49,7 +48,7 @@ class CacheConfig {
             // Id -> TargetId, for one-to-one/many-to-one
             override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
                 createPropCache<Any, Any>(
-                    TenantAware::class.java.isAssignableFrom(prop.targetType.javaClass),
+                    filterState.isAffected(prop.targetType),
                     prop,
                     redisTemplate,
                     objectMapper,
@@ -59,7 +58,7 @@ class CacheConfig {
             // Id -> TargetId list, for one-to-many/many-to-many
             override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
                 createPropCache<Any, List<*>>(
-                    TenantAware::class.java.isAssignableFrom(prop.targetType.javaClass),
+                    filterState.isAffected(prop.targetType),
                     prop,
                     redisTemplate,
                     objectMapper,

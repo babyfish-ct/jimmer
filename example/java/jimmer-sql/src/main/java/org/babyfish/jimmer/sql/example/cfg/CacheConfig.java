@@ -7,11 +7,11 @@ import org.babyfish.jimmer.spring.cache.CaffeineBinder;
 import org.babyfish.jimmer.spring.cache.RedisCaches;
 import org.babyfish.jimmer.spring.cache.RedisHashBinder;
 import org.babyfish.jimmer.spring.cache.RedisValueBinder;
+import org.babyfish.jimmer.sql.cache.AbstractCacheFactory;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.chain.*;
 import org.babyfish.jimmer.sql.example.model.BookStoreProps;
-import org.babyfish.jimmer.sql.example.model.common.TenantAware;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,7 +35,7 @@ public class CacheConfig {
             ObjectMapper objectMapper
     ) {
         RedisTemplate<String, byte[]> redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory);
-        return new CacheFactory() {
+        return new AbstractCacheFactory() {
 
             // Id -> Object
             @Override
@@ -50,7 +50,7 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
                 return createPropCache(
-                        TenantAware.class.isAssignableFrom(prop.getTargetType().getJavaClass()),
+                        getFilterState().isAffected(prop.getTargetType()),
                         prop,
                         redisTemplate,
                         objectMapper,
@@ -62,7 +62,7 @@ public class CacheConfig {
             @Override
             public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
                 return createPropCache(
-                        TenantAware.class.isAssignableFrom(prop.getTargetType().getJavaClass()),
+                        getFilterState().isAffected(prop.getTargetType()),
                         prop,
                         redisTemplate,
                         objectMapper,

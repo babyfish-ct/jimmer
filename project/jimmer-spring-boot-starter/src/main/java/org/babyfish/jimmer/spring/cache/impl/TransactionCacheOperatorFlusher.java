@@ -12,6 +12,8 @@ public class TransactionCacheOperatorFlusher {
 
     private final List<TransactionCacheOperator> operators;
 
+    private final ThreadLocal<Boolean> dirtyLocal = new ThreadLocal<>();
+
     public TransactionCacheOperatorFlusher(List<TransactionCacheOperator> operators) {
         if (operators.isEmpty()) {
             throw new IllegalArgumentException("`operators` cannot be empty");
@@ -19,9 +21,17 @@ public class TransactionCacheOperatorFlusher {
         this.operators = operators;
     }
 
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    public void beforeCommit(DatabaseEvent e) {
+        dirtyLocal.set(Boolean.TRUE);
+    }
+
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void afterCommit(DatabaseEvent e) {
-        flush();
+        if (dirtyLocal.get() != null) {
+            dirtyLocal.remove();
+            flush();
+        }
     }
 
     @Scheduled(

@@ -36,7 +36,8 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
             it.ignoreBuiltInFilters();
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
-                        new CacheFactory() {
+                        new AbstractCacheFactory() {
+
                             @Override
                             public @Nullable Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
                                 return new CacheImpl<>(type);
