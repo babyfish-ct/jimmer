@@ -49,6 +49,14 @@ public class BookStoreService {
         );
     }
 
+    @GetMapping("/complexList")
+    public List<@FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore> findComplexStores() {
+        return bookStoreRepository.findAll(
+                WITH_ALL_BOOKS_FETCHER,
+                BookStoreProps.NAME
+        );
+    }
+
     @GetMapping("/{id}/withAllBooks")
     @Nullable
     public @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore findComplexStoreWithAllBooks(

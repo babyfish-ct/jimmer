@@ -13,7 +13,7 @@ import TabItem from '@theme/TabItem';
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java title="TenantAware.java"
 @MappedSuperclass
 public interface TenantAware {
 
@@ -24,11 +24,38 @@ public interface TenantAware {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin title="TenantAware.kt"
 @MappedSuperclass
 interface TenantAware {
 
     val tenant: String
+}
+```
+
+</TabItem>
+</Tabs>
+
+任何需要支持多租户的实体类型都可以继承`TenantAware`，例如`Book`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book extends TenantAware {
+
+    ...省略代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book : TenantAware {
+    
+    ...省略代码...
 }
 ```
 
@@ -125,7 +152,7 @@ Java和Kotlin的过滤器定义略有不同
 <TabItem value="java" label="Java">
 
 ```java
-JSqlClient sqlCLient = JSqlBuilder
+JSqlClient sqlClient = JSqlBuilder
     .newBuilder()
     // highlight-next-line
     .addFilter(new CustmerFilter())
@@ -152,7 +179,7 @@ val sqlClient =
 
 过滤聚合根对象是全局过滤器最简单的用法。
 
-假设`Book`实体继承了`TenantAware`，用法如下
+由于`Book`实体继承了`TenantAware`，其查询会受到此过滤器的影响。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

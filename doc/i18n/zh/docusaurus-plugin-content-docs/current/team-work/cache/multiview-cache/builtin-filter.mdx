@@ -64,7 +64,7 @@ interface Book {
 :::caution
 上述代码中的`useMultiViewCache = true`非常重要。
 
-该属性默认值为`false`，表示所有受对过滤器敏感的属性 *（`BookStore.books`、`Author.books`、`BookStore.avgPrice`和`BookStore.newestBooks`）* 均不支持缓存，这是比较保守的选项。
+该属性默认值为`false`，表示所有对此过滤器敏感的属性 *（`BookStore.books`、`Author.books`、`BookStore.avgPrice`和`BookStore.newestBooks`）* 均不支持缓存，这是比较保守的选项。
 
 要让这些属性都支持缓存 *(当然也必须支持多视角属性)*，就必须配置`useMultiViewCache = true`。
 :::
@@ -936,7 +936,7 @@ println(stores)
         `{"logicalDeleted":true}`为当前例子的对应的Hash Key，，表示当前缓存项的值并非依赖所有关联数据，而是依赖于已被逻辑删除的数据，这种行为和默认过滤器的逻辑刚好相反。
 
     :::tip
-    读者可以仔细看看这些`redis-cli`命令，很容易发现，HashKey`{"logicalDeleted":false}`的数据和HashKey`{"logicalDeleted":true}`合并起来刚好就是HashKey`{}`的数据。
+    读者可以仔细看看这些`redis-cli`命令，很容易发现，HashKey`{"logicalDeleted":false}`的数据和HashKey`{"logicalDeleted":true}`的数据合并起来刚好就是HashKey`{}`的数据。
     :::
 
 ## 一致性

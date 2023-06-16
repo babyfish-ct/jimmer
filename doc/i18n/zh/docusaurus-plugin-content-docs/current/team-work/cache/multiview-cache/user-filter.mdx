@@ -2,3 +2,452 @@
 sidebar_position: 3
 title: 支持自定义过滤器
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 缓存友好过滤器
+
+### 基本概念
+
+在[全局过滤器](../../query/global-filter/user-filter)一文中，我们介绍了自定义全局过滤器需要实现`Filter/KFilter`接口。
+
+然而，使用该接口定义的普通过滤器并不是缓存友好的。
+
+以`Book`实体为例，如果为其设置缓存不友好的全局过滤器，将会导致以下所有对过滤器敏感的属性
+
+-   以`Book`作为目标类型的关联属性。比如，`BookStore.books`、`Author.books`
+
+-   依赖于上述关联属性的计算属性。比如，`BookStore.avgPrice`、`BookStore.newestBooks`*(文档没提及`newestBook`，可参见例子)*
+
+都无法支持缓存。
+
+Jimmer采用`CachableFilter/KCacheableFitler接口`如下接口定义缓存友好的过滤器
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="CachableFilter.java"
+package org.babyfish.jimmer.sql.filter;
+
+import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.sql.event.EntityEvent;
+
+import java.util.SortedMap;
+
+public interface CacheableFilter<P extends Props> extends Filter<P> {
+
+    SortedMap<String, Object> getParameters();
+
+    boolean isAffectedBy(EntityEvent<?> e);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="KCachableFilter.kt"
+package org.babyfish.jimmer.sql.kt.filter
+
+import org.babyfish.jimmer.sql.event.EntityEvent
+import java.util.*
+
+interface KCacheableFilter<E: Any> : KFilter<E> {
+
+    fun getParameters(): SortedMap<String, Any>?
+
+    fun isAffectedBy(e: EntityEvent<*>): Boolean
+}
+```
+
+</TabItem>
+</Tabs>
+
+该接口从`Filter/KFilter`接口继承，在其基础上，添加了两个新方法
+
+-   `getParameters`: 该过滤器的为缓存中嵌套Map结构的内层Key *(比如，Redis Hash结构HashKey)* 贡献的的
+
+-   `isAffectedBy`: 接受一个被过滤实体被修改的事件，判断当前过滤器所依赖的过滤字段是否被修改。
+
+:::info
+一个实体类型允许被多个全局过滤器处理，如果出现了多个全局过滤器
+
+-   任何一个全局过滤器对缓存不友好，都会导致对此过滤器敏感的其他属性都无法支持缓存
+
+    因此，这些全局过滤器，要么都是缓存不友好的`Filter/KFilter`，要么都是缓存友好的`CachableFilter/KCachableFilter`；二者混用没有意义
+
+    如果不小心导致这种无意义的混用，Jimmer会告诉开发人员为什么缓存没有生效
+
+-   当所有全局过滤器都缓存友好时，所有`CachableFilter/KCachableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为缓存中嵌套Map结构的内层Key *(比如，Redis Hash结构HashKey)*
+
+    例如，实体同时被两个过滤器处理。一个是[逻辑删除](../../query/global-filter/logical-deleted)所隐含的过滤器，记为`a`；另外一个是用户自定义过滤器，记为`b`。
+
+    假如
+
+    -   `a`的`getParameters()`返回`{"logicalDeleted":false}`
+
+    -   `b`的`getParameters()`返回`{"tenant":"a"}`，
+    
+    那么最终缓存中嵌套Map结构的内层Key *(比如，Redis Hash结构HashKey)*为
+    
+    `{"logicalDeleted":false,"tenant":"a"}`
+:::
+
+### 再论逻辑删除
+
+在上一篇文章[支持内置过滤器](./builtin-filter)中，我们谈到`@LogicalDelete`注解有一个参数`useMultiViewCache`，默认为`false`。如果要让所有对此内置过滤器敏感的属性都支持多视图缓存，一定要将`useMultiViewCache`配置为true，这点非常重要。
+
+现在，我们可以对此给予解释。
+
+-   如果`@LogicalDeleted`注解的`useMultiViewCache`为false，则对应的内置过滤器仅实现`Filter/KFilter`接口，对缓存不友好。
+
+-   如果`@LogicalDeleted`注解的`useMultiViewCache`为true，则对应的内置过滤器仅实现`CacheableFilter/KCachableFilter`接口，对缓存友好。
+
+### 定义缓存友好过滤器
+
+在[查询篇/自定义过滤器]一文中，我们为实体定义了一个超类型`TenantAware`，让我们再次回顾其代码，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="TenantAware.java"
+@MappedSuperclass
+public interface TenantAware {
+
+    String tenant();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TenantAware.kt"
+@MappedSuperclass
+interface TenantAware {
+
+    val tenant: String
+}
+```
+
+</TabItem>
+</Tabs>
+
+任何需要支持多租户的实体类型都可以继承`TenantAware`，例如`Book`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book extends TenantAware {
+
+    ...省略代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book : TenantAware {
+    
+    ...省略代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+假设Spring上下文中有一个类型为`TenantProvider`的对象，其Java方法`get()`和kotlin属性`tenant`用于从当前操作者身份信息中提取所属租户。定义如下过滤器
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Component
+public class TenantFilter implements CachableFilter<TenantAwareProps> {
+
+    private final TenantProvider tenantProvider;
+
+    public TenantFilter(TenantProvider tenantProvider) {
+        this.tenantProvider = tenantProvider;
+    }
+
+    @Override
+    public void filter(FilterArgs<TenantAwareProps> args) {
+        String tenant = tenantProvider.get();
+        if (tenant != null) {
+            args.where(args.getTable().tenant().eq(tenant));
+        }
+    }
+
+    @Override
+    // highlight-next-line
+    public SortedMap<String, Object> getParameters() {
+        String tenant = tenantProvider.get();
+        if (tenant == null) {
+            return null;
+        }
+        SortedMap<String, Object> map = new TreeMap<>();
+        map.put("tenant", tenant);
+        return map;
+    }
+
+    @Override 
+    // highlight-next-line
+    public boolean isAffectedBy(EntityEvent<?> e) {
+        return e.isChanged(TenantAwareProps.TENANT)
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Component
+class TenantFilter(
+    private val tenantProvider: TenantProvider
+) : KCachableFilter<TenantAware> {
+
+    override fun filter(args: KFilterArgs<TenantAware>) {
+        tenantProvider.tenant?.let {
+            args.apply {
+                where(table.tenant.eq(it))
+            }
+        }
+    }
+
+    // highlight-next-line
+    overide fun getParameters(): SortedMap<String, Any>? =
+        tenantProvider.tenant?.let {
+            sortedMapOf("tenant" to it)
+        }
+
+    // highlight-next-line
+    override fun isAffectedBy(e: EntityEvent<*>): Boolean =
+        e.isChanged(TenantAware::tenant)
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 启用多视图缓存
+
+我们需要在`CacheFactory/KCacheFactory`中对关联缓存和计算缓存启用多视图缓存。
+
+这部分内容和上一篇文档[查询篇/自定义过滤器]中论述完全一样，本文没必要重复，略过。
+
+## 使用
+
+现在，我们已经让关联属性`BookStore.books`和计算属性`BookStore.avgPrice`都支持了多视角缓存，让我们使用对象抓取器来查询它们
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookStoreTable table = BookStoreTable.$;
+List<BookStore> stores = sqlClient
+    .createQuery(table)
+    .select(
+        table.fetch(
+            BookStoreFetcher.$
+                .allScalarFields()
+                .books( ❶
+                    BookFetcher.$
+                        .allScalarFields()
+                )
+                .avgPrice() ❷
+        )
+    )
+    .execute();
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.fetchBy {
+                allScalarFields()
+                books { ❶
+                    allScalarFields()
+                }
+                avgPrice() ❷
+            }
+        )
+    }
+    .execute()
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+有了前面文档的大量基础，本文打算简化讨论，只展示Redis中的数据和最终返回给用户的JSON。不再逐步跟踪SQL。
+:::
+
+前文假设Spring上下文中有一个类型为`TenantProvider`的对象，其Java方法`get()`和kotlin属性`tenant`用于从当前操作者身份信息中提取所属租户。
+
+我们可以把上述代码执行3次，每一次都让`TenantProvider`返回不同信息以模拟三种不同的用户身份。
+
+三次调用中，让`TenantProvider`分别返回null、"a"和"b"。
+
+:::info
+对于官方附带例子而言，`TenantProvider`基于HTTP请求头实现，并附有swagger界面的支持，用三种不同的用户身份执行三次很容易。
+:::
+
+打开redis-cli，我们可以验证Redis中的数据
+
+```sh
+127.0.0.1:6379> keys BookStore.books-*
+1) "BookStore.books-2"
+2) "BookStore.books-1"
+
+127.0.0.1:6379> hgetall BookStore.books-1
+1) "{\"tenant\":\"b\"}"
+2) "[6,4,2,8]"
+3) "{\"tenant\":\"a\"}"
+4) "[5,3,1,9,7]"
+5) "{}"
+6) "[6,5,4,3,2,1,9,8,7]"
+
+127.0.0.1:6379> hgetall BookStore.books-2
+1) "{\"tenant\":\"b\"}"
+2) "[12,10]"
+3) "{\"tenant\":\"a\"}"
+4) "[11]"
+5) "{}"
+6) "[12,11,10]"
+
+127.0.0.1:6379> keys BookStore.avgPrice-*
+1) "BookStore.avgPrice-2"
+2) "BookStore.avgPrice-1"
+
+127.0.0.1:6379> hgetall BookStore.avgPrice-1
+1) "{\"tenant\":\"b\"}"
+2) "58.500000"
+3) "{\"tenant\":\"a\"}"
+4) "58.500000"
+5) "{}"
+6) "58.500000"
+
+127.0.0.1:6379> hgetall BookStore.avgPrice-2
+1) "{\"tenant\":\"b\"}"
+2) "80.333333"
+3) "{\"tenant\":\"a\"}"
+4) "80.333333"
+5) "{}"
+6) "80.333333"
+```
+
+:::tip
+读者可以仔细看看这些`redis-cli`命令，很容易发现，HashKey`{"tenant":"a"}`的数据和HashKey`{"tenant":"b"}`的数据合并起来刚好就是HashKey`{}`的数据。
+:::
+
+这三次调用返回给用户的数据为
+
+<Tabs groupId="language">
+<TabItem value="tenant_null" label="filter.tenent=null">
+
+```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":12,
+                "name":"GraphQL in Action",
+                "edition":3,
+                "price":80,
+            },
+            {
+                "id":11,
+                ...略...
+            },
+            {
+                "id":10,
+                ...略...
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":80.333333
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":6,
+                "name":"Effective TypeScript",
+                "edition":3,
+                "price":88
+            },
+            {
+                "id":5,
+                ...略...
+            },
+            {
+                "id":4,
+                ...略...
+            },
+            {
+                "id":3,
+                "name":"Learning GraphQL",
+                "edition":3,
+                "price":51
+            },
+            {
+                "id":2,
+                ...略...
+            },
+            {
+                "id":1,
+                ...略...
+            },
+            {
+                "id":9,
+                "name":"Programming TypeScript",
+                "edition":3,
+                "price":48
+            },
+            {
+                "id":8,
+                ...略...
+            },
+            {
+                "id":7,
+                ...略...
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":58.5
+    }
+]
+```
+
+</TabItem>
+<TabItem value="tenant_a" label="filter.tenent=a">
+
+```json
+```
+
+</TabItem>
+<TabItem value="tenant_b" label="filter.tenent=b">
+
+```json
+```
+
+</TabItem>
+</Tabs>
