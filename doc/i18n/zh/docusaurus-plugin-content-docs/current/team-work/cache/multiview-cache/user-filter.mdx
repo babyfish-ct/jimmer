@@ -240,6 +240,66 @@ class TenantFilter(
 
 这部分内容和上一篇文档[查询篇/自定义过滤器]中论述完全一样，本文没必要重复，略过。
 
+## 计算属性的SubKey
+
+我们在`TenantFilter`中定义了`getParameters`方法，所有受影响的关联属性都会自动为其关联缓存指定`SubKey`。
+
+然而，不幸的是，由于计算属性引入了框架无法理解的用户自定义计算规则，开发人员必须手动为计算属性的`Resolver`实现指定`SubKey`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreAvgPriceResolver.java"
+@Component
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
+    
+    private final JSqlClient sqlClient;
+
+    @Override
+    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+        return sqlClient
+            .getFilters()
+            // highlight-next-line
+            .getTargetParameterMapRef(BookStoreProps.BOOKS);
+    }
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreAvgPriceResolver.kt"
+@Compoent
+class BookStoreAvgPriceResolver(
+    private val sqlClient: KSqlClient
+) : KTransientResolver<Long, BigDecimal> {
+
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
+        return sqlClient
+            .filters
+            // highlight-next-line
+            .getTargetParameterMapRef(BookStore::books)
+    }
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+很明显，计算属性`BookStore.avgPrice`其实是由关联属性`BookStore.books`决定的，随后者的变化而变化。
+
+因此，在当前调用上下文中，`BookStore.books`为多视图缓存系统指定什么`SubKey`，`BookStore.avgPrice`就指定什么。
+
+:::note
+`BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。
+
+然而，`Book.price`是对象的非关联信息，而非关联信息，非关联信息一定和多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
+:::
+
 ## 使用
 
 现在，我们已经让关联属性`BookStore.books`和计算属性`BookStore.avgPrice`都支持了多视角缓存，让我们使用对象抓取器来查询它们
@@ -332,17 +392,17 @@ println(stores)
 
 127.0.0.1:6379> hgetall BookStore.avgPrice-1
 1) "{\"tenant\":\"b\"}"
-2) "58.500000"
+2) "65.25"
 3) "{\"tenant\":\"a\"}"
-4) "58.500000"
+4) "53.1"
 5) "{}"
 6) "58.500000"
 
 127.0.0.1:6379> hgetall BookStore.avgPrice-2
 1) "{\"tenant\":\"b\"}"
-2) "80.333333"
+2) "80"
 3) "{\"tenant\":\"a\"}"
-4) "80.333333"
+4) "81"
 5) "{}"
 6) "80.333333"
 ```
@@ -441,13 +501,221 @@ println(stores)
 <TabItem value="tenant_a" label="filter.tenent=a">
 
 ```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":11,
+                "name":"GraphQL in Action",
+                "edition":2,
+                "price":81
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":81
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":5,
+                "name":"Effective TypeScript",
+                "edition":2,
+                "price":69
+            },
+            {
+                "id":3,
+                ...略...
+            },
+            {
+                "id":1,
+                ...略...
+            },
+            {
+                "id":9,
+                ...略...
+            },
+            {
+                "id":7,
+                ...略...
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":53.1
+    }
+]
 ```
 
 </TabItem>
 <TabItem value="tenant_b" label="filter.tenent=b">
 
 ```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":12,
+                "name":"GraphQL in Action",
+                "edition":3,
+                "price":80
+            },
+            {
+                "id":10,
+                ...略...
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":80
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":6,
+                "name":"Effective TypeScript",
+                "edition":3,
+                "price":88
+            },
+            {
+                "id":4,
+                ...略...
+            },
+            {
+                "id":2,
+                ...略...
+            },
+            {
+                "id":8,
+                ...略...
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":65.25
+    }
+]
 ```
 
 </TabItem>
 </Tabs>
+
+## 一致性
+
+现在，让我们来修改id为6的`Book`对象的`tenant`属性, 从"b"改为"a"。
+
+由于`Book-6`隶属于`BookStore-1`，所以可以预见的是，属性`BookStore.books-1`和`BookStore.avgPrice-1`所对应的多视角缓存必然失效。
+
+-   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+    ```sql
+    update BOOK
+    set TENANT = 'a' 
+    where ID = 6;
+    ```
+
+-   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    sqlClient.save(
+        BookDraft.$.produce(draft -> {
+            draft.setId(6L);
+            draft.setTenant("a");
+        })
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient.save(
+        new(Book::class).by {
+            id = 6L
+            tenant = "a"
+        }
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+无论通过上述何种方式修改数据，你都会在看到如下日志输出
+
+```
+Delete data from redis: [Book-6] ❶
+Delete data from redis: [Author.books-3] ❷
+Delete data from redis: [BookStore.books-1] ❸
+Delete data from redis: [BookStore.avgPrice-1] ❹
+```
+
+-   ❶ 更新被修改实体的对象缓存
+
+-   ❷ 所有目标类型为`Book`的关联属性必然被影响，当然包括`Author.books`
+
+    按数据库现有数据，受影响的`Author`对象的id为3
+
+-   ❸ 所有目标类型为`Book`的关联属性必然被影响，当然包括`BookStore.books`
+
+    按数据库现有数据，受影响的`BookStore`对象的id为1
+
+-   ❹ id为1的`BookStore`对象的计算缓存`BookStore.avgPrice`也被影响了，这是最奇妙的特征。
+
+    虽然框架并不知道用户在计算属性中使用何种计算方法，但是在[计算缓存](../cache-type/calculation)一文中，我们在`BookStoreAvgPriceResolver`类中讨论过如下代码
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    @EventListener
+    public void onAssociationChange(AssociationEvent e) {
+        if (sqlClient.getCaches().isAffectedBy(e) && 
+            // highlight-next-line
+            e.isChanged(BookStoreProps.BOOKS) 
+        ) {
+            ...省略...
+        }
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    @EventListener
+    fun onAssociationChange(e: AssociationEvent) {
+        if (sqlClient.caches.isAffectedBy(e) &&
+            // highlight-next-line
+            e.isChanged(BookStore::books)
+        ) {
+            ...省略...
+        }
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    如果忘记了这段代码的具体逻辑，可以回顾[计算缓存](../cache-type/calculation)一文，这里关注高量的那行代码即可。这里，当前计算属性对`BookStore.books`关联的变化感兴趣。
+
+    :::tip
+    修改表之间关联字段并非触发关联属性变更事件的唯一方法，修改关联对象中能影响全局过滤器的被过滤字段，*比如这里的`TENANT`*，也可以触发关联属性变更事件。
+
+    这是Jimmer触发器机制中一个非常重要的特性！
+    :::
+
+    很明显，❸处已经感知到了`BookStore.books`关联属性发生了变更，因此，会进一步导致此处计算属性也会受影响。

@@ -382,8 +382,7 @@ import org.springframework.stereotype.Component
 @Component
 class BookStoreAvgPriceResolver(
     // 构造注入sqlClient
-    private val sqlClient KSqlClient, 
-    ...略...
+    private val sqlClient KSqlClient
 ) : KTransientResolver<Long, BigDecimal> {
 
     ...省略其他代码...
