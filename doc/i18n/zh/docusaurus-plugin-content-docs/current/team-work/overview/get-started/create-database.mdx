@@ -49,7 +49,7 @@ alter table book
 ;
 alter table book
     add constraint fk_book__book_store
-        /* 从书籍指向书店的外建 */
+        /* 从书籍指向书店的外键 */
         /* highlight-next-line */
         foreign key(store_id)
             references book_store(id)

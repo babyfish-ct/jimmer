@@ -58,19 +58,19 @@ public interface DatabaseNamingStrategy {
 
 -   columName: 已知一个非关联属性，其列名是什么？
 
--   foreignKeyColumnName: 已知一个基于外建的关联属性，其列名是什么？
+-   foreignKeyColumnName: 已知一个基于外键的关联属性，其列名是什么？
 
 -   middleTableName: 已知一个基于中间表的关联属性，其中间表表名是什么？
 
--   middleTableBackRefColumnName: 已知一个基于中间表的关联属性，中间表中指向当前实体的外建的列名是什么？
+-   middleTableBackRefColumnName: 已知一个基于中间表的关联属性，中间表中指向当前实体的外键的列名是什么？
 
--   middleTableTargetRefColumnName: 已知一个基于中间表的关联属性，中间表中指向关联实体的外建的列名是什么？
+-   middleTableTargetRefColumnName: 已知一个基于中间表的关联属性，中间表中指向关联实体的外键的列名是什么？
 
 ## 默认命名策略
 
 大部分情况下，开发人员都无需直接实现此接口，Jimmer内置的`org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy`类已经实现了此接口。
 
-DefaultDatabaseNamingStrategy类有两个静态字字段
+DefaultDatabaseNamingStrategy类有两个静态字段
 
 -   UPPER_CASE: 
     

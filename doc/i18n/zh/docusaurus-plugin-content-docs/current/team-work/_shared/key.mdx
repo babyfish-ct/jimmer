@@ -7,7 +7,7 @@ import TabItem from '@theme/TabItem';
 
     由于主键本身是业务字段，所以会被修改，这就导致主键不稳定。
 
-    虽然数据库中引用它的外建可以使用`on update cascade`来保持一致，
+    虽然数据库中引用它的外键可以使用`on update cascade`来保持一致，
     但是对于数据库外的系统，比如缓存，主键不稳定会导致很多问题。
 
     即使从技术层面能抽象出主键不稳定问题的统一解决办法，也不推荐，因为这样系统难以理解。
@@ -124,7 +124,7 @@ alter table TREE_NODE
 -   外键可以作为Key的一部分
 :::
 
-让我们再来看另外一个例子，在这个例子中，组成Key的属性全部是基于外建的属性
+让我们再来看另外一个例子，在这个例子中，组成Key的属性全部是基于外键的属性
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

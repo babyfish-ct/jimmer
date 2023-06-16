@@ -398,7 +398,7 @@ interface Chapter {
 :::caution
 和我们之前讲解过的所有例子不同，这里@JoinColumn注解的`referencedColumnName`被指定了。
 
-当外建由多列构成时，就需要使用多个`@JoinColumn`注解，其中，每个`@JoinColumn`必须指定`referencedColumnName`。
+当外键由多列构成时，就需要使用多个`@JoinColumn`注解，其中，每个`@JoinColumn`必须指定`referencedColumnName`。
 :::
 
 如果外键是真的，对应的约束为
@@ -480,7 +480,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-如果外建是真的，中间表的DDL如下
+如果外键是真的，中间表的DDL如下
 
 ```sql
 create table book_author_mapping(
