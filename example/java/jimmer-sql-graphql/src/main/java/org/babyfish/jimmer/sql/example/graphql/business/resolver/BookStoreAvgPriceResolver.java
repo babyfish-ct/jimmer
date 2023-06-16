@@ -3,14 +3,12 @@ package org.babyfish.jimmer.sql.example.graphql.business.resolver;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.example.graphql.repository.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookProps;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreProps;
+import org.babyfish.jimmer.sql.example.graphql.repository.BookRepository;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -19,34 +17,34 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.stream.Collectors;
 
 @Component
 public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
 
-    private final BookStoreRepository bookStoreRepository;
+    private final BookRepository bookRepository;
 
     private final JSqlClient sqlClient;
 
-    public BookStoreAvgPriceResolver(BookStoreRepository bookStoreRepository) {
-        this.bookStoreRepository = bookStoreRepository;
-        this.sqlClient = bookStoreRepository.sql(); // You can also inject it directly
+    public BookStoreAvgPriceResolver(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+        this.sqlClient = bookRepository.sql(); // You can also inject it directly
     }
 
     @Override
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
-        return bookStoreRepository.findIdAndAvgBookPrice(ids)
-                .stream()
-                .collect(
-                        Collectors.toMap(Tuple2::get_1, Tuple2::get_2)
-                );
+        return bookRepository.findAvgPriceGroupByStoreId(ids);
+    }
+
+    @Override
+    public BigDecimal getDefaultValue() {
+        return BigDecimal.ZERO;
     }
 
     // -----------------------------
     // If you are a beginner, you can ignore all the following code.
     //
     // The following code is only used for cache mode(start the application
-    // by `application-cache.yml`).
+    // by `application.yml`).
     //
     // Unlike the fully automatic cache consistency maintenance of
     // ordinary associated property, if a calculated property uses cache,
@@ -86,7 +84,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
-        Filters filters = bookStoreRepository.sql().getFilters();
+        Filters filters = sqlClient.getFilters();
         return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }

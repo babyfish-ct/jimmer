@@ -2,12 +2,10 @@ package org.babyfish.jimmer.sql.example.business.resolver
 
 import org.babyfish.jimmer.lang.Ref
 import org.babyfish.jimmer.sql.event.AssociationEvent
-import org.babyfish.jimmer.sql.event.DatabaseEvent
 import org.babyfish.jimmer.sql.event.EntityEvent
-import org.babyfish.jimmer.sql.event.TriggerType
-import org.babyfish.jimmer.sql.example.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.Book
 import org.babyfish.jimmer.sql.example.model.BookStore
+import org.babyfish.jimmer.sql.example.repository.BookRepository
 import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.event.getUnchangedRef
 import org.babyfish.jimmer.sql.kt.event.isChanged
@@ -15,23 +13,20 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
-import kotlin.reflect.KProperty1
-
 
 @Component
 class BookStoreAvgPriceResolver(
-    private val bookStoreRepository: BookStoreRepository
+    private val bookRepository: BookRepository
 ) : KTransientResolver<Long, BigDecimal> {
 
     // You can also inject it directly
-    private val sqlClient = bookStoreRepository.sql
+    private val sqlClient = bookRepository.sql
 
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
-        bookStoreRepository
-            .findIdAndAvgBookPrice(ids)
-            .associateBy({it._1}) {
-                it._2
-            }
+        bookRepository.findAvgPriceGroupByStoreIds(ids)
+
+    override fun getDefaultValue(): BigDecimal =
+        BigDecimal.ZERO
 
     // -----------------------------
     // If you are a beginner, you can ignore all the following code.
@@ -75,7 +70,6 @@ class BookStoreAvgPriceResolver(
 
     // Contribute part of the secondary hash key to multiview-cache
     override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
-        val filters = bookStoreRepository.sql.filters
-        return filters.getTargetParameterMapRef(BookStore::books)
+        return sqlClient.filters.getTargetParameterMapRef(BookStore::books)
     }
 }
