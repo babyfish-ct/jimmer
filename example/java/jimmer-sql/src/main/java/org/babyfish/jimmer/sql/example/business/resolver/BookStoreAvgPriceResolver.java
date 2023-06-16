@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.example.repository.BookRepository;
 import org.babyfish.jimmer.sql.example.model.BookProps;
 import org.babyfish.jimmer.sql.example.model.BookStore;
 import org.babyfish.jimmer.sql.example.model.BookStoreProps;
-import org.babyfish.jimmer.sql.filter.Filters;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -84,7 +83,6 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
-        Filters filters = sqlClient.getFilters();
-        return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
+        return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }

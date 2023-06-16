@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.bll.resolver
 
-import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
+import org.babyfish.jimmer.example.kt.graphql.dal.BookRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
 import org.babyfish.jimmer.lang.Ref
@@ -15,18 +15,17 @@ import java.util.*
 
 @Component
 class BookStoreNewestBooksResolver(
-    private val bookStoreRepository: BookStoreRepository
+    private val bookRepository: BookRepository
 ) : KTransientResolver<Long, List<Long>> {
 
     // You can also inject it directly
-    private val sqlClient = bookStoreRepository.sql
+    private val sqlClient = bookRepository.sql
 
     override fun resolve(ids: Collection<Long>): Map<Long, List<Long>> =
-        bookStoreRepository
-            .findIdAndNewestBookId(ids)
-            .groupBy({it._1}) {
-                it._2
-            }
+        bookRepository.findNewestIdsGroupByStoreIds(ids)
+
+    override fun getDefaultValue(): List<Long> =
+        emptyList()
 
     // -----------------------------
     // If you are a beginner, you can ignore all the following code.
@@ -70,7 +69,6 @@ class BookStoreNewestBooksResolver(
 
     // Contribute part of the secondary hash key to multiview-cache
     override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
-        val filters = bookStoreRepository.sql.filters
-        return filters.getTargetParameterMapRef(BookStore::books)
+        return sqlClient.filters.getTargetParameterMapRef(BookStore::books)
     }
 }

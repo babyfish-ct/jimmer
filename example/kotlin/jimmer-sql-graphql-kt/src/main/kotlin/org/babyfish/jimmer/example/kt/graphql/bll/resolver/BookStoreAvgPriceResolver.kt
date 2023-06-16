@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.example.kt.graphql.bll.resolver
 
-import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
+import org.babyfish.jimmer.example.kt.graphql.dal.BookRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.Book
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
 import org.babyfish.jimmer.lang.Ref
@@ -16,18 +16,17 @@ import java.util.*
 
 @Component
 class BookStoreAvgPriceResolver(
-    private val bookStoreRepository: BookStoreRepository
+    private val bookRepository: BookRepository
 ) : KTransientResolver<Long, BigDecimal> {
 
     // You can also inject it directly
-    private val sqlClient = bookStoreRepository.sql
+    private val sqlClient = bookRepository.sql
 
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
-        bookStoreRepository
-            .findIdAndAvgBookPrice(ids)
-            .associateBy({it._1}) {
-                it._2
-            }
+        bookRepository.findAvgPriceGroupByStoreIds(ids)
+
+    override fun getDefaultValue(): BigDecimal =
+        BigDecimal.ZERO
 
     // -----------------------------
     // If you are a beginner, you can ignore all the following code.
@@ -48,7 +47,8 @@ class BookStoreAvgPriceResolver(
         // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
         // but also modifying the `TENANT` field of the BOOK table can trigger the event.
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(BookStore::books)) {
-            sqlClient.caches
+            sqlClient
+                .caches
                 .getPropertyCache<Any, Any>(BookStore::avgPrice)
                 ?.delete(e.sourceId)
         }
@@ -60,7 +60,8 @@ class BookStoreAvgPriceResolver(
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(Book::price)) {
             val storeId = e.getUnchangedRef(Book::store)?.value?.id
             if (storeId !== null) {
-                sqlClient.caches
+                sqlClient
+                    .caches
                     .getPropertyCache<Any, Any>(BookStore::avgPrice)
                     ?.delete(storeId)
             }
@@ -69,7 +70,6 @@ class BookStoreAvgPriceResolver(
 
     // Contribute part of the secondary hash key to multiview-cache
     override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
-        val filters = bookStoreRepository.sql.filters
-        return filters.getTargetParameterMapRef(BookStore::books)
+        return sqlClient.filters.getTargetParameterMapRef(BookStore::books)
     }
 }
