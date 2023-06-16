@@ -276,7 +276,7 @@ println(stores)
 
 就`BookStore.avgPrice`这个计算属性而言，以下两种情况都会导致计算缓存的失效
 
--   修改`BOOK`记录的`STORE_ID`外建字段，新旧值对应的两个书店的`avgPrice`缓存数据都需要被删除
+-   修改`BOOK`记录的`STORE_ID`外键字段，新旧值对应的两个书店的`avgPrice`缓存数据都需要被删除
 
 -   修改`BOOK`记录的`PRICE`字段，其所属书店的`avgPrice`缓存数据需要被删除
 
@@ -501,7 +501,7 @@ class BookStoreAvgPriceResolver(
 
 ### 修改BOOK.STORE_ID
 
-用户可以通过修改`BOOK`表的外建`STORE_ID`来改变`BOOK_STORE`和`BOOK`之间的关联，这必然会影响某些书店的`BookStore.avgPrice`。
+用户可以通过修改`BOOK`表的外键`STORE_ID`来改变`BOOK_STORE`和`BOOK`之间的关联，这必然会影响某些书店的`BookStore.avgPrice`。
 
 对此，我们可以通过`onAssociationChange`方法来了解对象之间的关系变化。
 
@@ -712,7 +712,7 @@ fun onEntityChange(e: EntityEvent<*>) {
 -   ❹ 如果被修改的数据的的外键未被修改且非null
 
     :::tip
-    这里无需考虑外建字段被修改的情况，因为前面我们已经讨论过的`onAssociationChange`会妥善处理这种情况。
+    这里无需考虑外键字段被修改的情况，因为前面我们已经讨论过的`onAssociationChange`会妥善处理这种情况。
     :::
 
 -   ❺ 获得计算属性`BookStore.avgPrice`所对应的计算缓存

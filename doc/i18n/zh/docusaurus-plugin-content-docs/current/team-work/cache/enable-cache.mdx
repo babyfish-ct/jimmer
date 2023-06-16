@@ -64,7 +64,7 @@ Jimmer调用此接口初始化缓存系统，用户实现此接口回答问题
     所谓<ViewMore buttonText="对象缓存"><img src={ObjectCache}/></ViewMore>，指把id映射为实体对象
     
     :::note
-    该实体对象是孤单的，除了当前表自身的外建所对应的多对一 *(或一对一)* 关联表现为只有id的关联对象外，没有其他关联属性。
+    该实体对象是孤单的，除了当前表自身的外键所对应的多对一 *(或一对一)* 关联表现为只有id的关联对象外，没有其他关联属性。
     :::
 
 -   createAssociatedIdCache和createAssociatedIdListCache：启用关联缓存

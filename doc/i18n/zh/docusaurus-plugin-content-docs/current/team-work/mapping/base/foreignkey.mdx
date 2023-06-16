@@ -8,15 +8,15 @@ import TabItem from '@theme/TabItem';
 
 通过[关联映射](./association)的论述中，我们知道关联映射需要大量的外键。
 
-Jimmer中外建有两种
+Jimmer中外键有两种
 
 -   真外键：
 
-    数据库中存在对应的外建约束
+    数据库中存在对应的外键约束
 
 -   伪外键：
 
-    在开发人员意识中是外键，但是数据库中并没有对应的外建约束
+    在开发人员意识中是外键，但是数据库中并没有对应的外键约束
 
 :::info
 在保存数据时
@@ -30,7 +30,7 @@ Jimmer中外建有两种
 
 ## 明确指定真外键
 
--   基于外建的关联属性
+-   基于外键的关联属性
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -118,23 +118,23 @@ Jimmer中外建有两种
     
     -   配置`JoinTable.joinColumns`而非`JoinTable.joinColumnName`
 
-        如果外建只有一列且不想明确指定外键的真伪，`joinColumnName`是一种简化配置；否则，应使用`joinColumns`
+        如果外键只有一列且不想明确指定外键的真伪，`joinColumnName`是一种简化配置；否则，应使用`joinColumns`
 
     -   配置`JoinTable.inverseJoinColumns`而非`JoinTable.inverseColumnName`
 
-        如果外建只有一列且不想明确指定外键的真伪，`inverseColumnName`是一种简化配置；否则，应使用`inverseJoinColumns`
+        如果外键只有一列且不想明确指定外键的真伪，`inverseColumnName`是一种简化配置；否则，应使用`inverseJoinColumns`
 
     :::
 
 :::caution
-如果数据方言不支持外建， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则不能明确指定真外建。
+如果数据方言不支持外键， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则不能明确指定真外键。
 
-因为，作为一个分布式关系型数据库，TiDB不支持外建约束。
+因为，作为一个分布式关系型数据库，TiDB不支持外键约束。
 :::
 
 ## 明确指定伪外键
 
--   基于外建的关联属性
+-   基于外键的关联属性
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -218,17 +218,17 @@ Jimmer中外建有两种
     </TabItem>
     </Tabs>
 
-## 不明确指定外建的真伪
+## 不明确指定外键的真伪
 
-如果不想明确指定外建的真伪，可使用`@JoinColumn(foreignKeyType = ForeignKeyType.AUTO)`。
+如果不想明确指定外键的真伪，可使用`@JoinColumn(foreignKeyType = ForeignKeyType.AUTO)`。
 
 由于`ForeignKeyType.AUTO`是`@JoinColumn`注解的默认配置，所以，更好的选择是对此不做任何配置。
 
 因此，代码和[关联映射](./association)中的示范的代码无差异，这里无需再做示范代码。
 
-如果没有明确指定外建的真伪，则通过以下两个步骤自动决定外键的真伪
+如果没有明确指定外键的真伪，则通过以下两个步骤自动决定外键的真伪
 
-1.  如果数据库方言不支持外建， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则判定为伪外键。
+1.  如果数据库方言不支持外键， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则判定为伪外键。
 
     此时，已经有了判定结果，提前返回，不会执行步骤2
 

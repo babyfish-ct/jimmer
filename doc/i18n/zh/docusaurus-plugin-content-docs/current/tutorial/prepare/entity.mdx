@@ -6,7 +6,7 @@ title: 定义实体
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-和以`JPA/Hibenrate`为代表的ORM不同，Jimmer中的实体定义采用interface，而非class。原因在[下一节](#为什么实体是interface)讨论。
+和以`JPA/Hibernate`为代表的ORM不同，Jimmer中的实体定义采用interface，而非class。原因在[下一节](#为什么实体是interface)讨论。
 
 在定义实体之前，需要声明两个概念：
 
@@ -302,7 +302,7 @@ import TabItem from '@theme/TabItem';
     如果Java/Kotlin属性名和数据库列名无法自动匹配，请用`@org.babyfish.jimmer.sql.Column`修饰属性。
 
     :::note
-    注意：改注解即可用于修饰非关联字段，而非下文要讨论的外建字段
+    注意：改注解即可用于修饰非关联字段，而非下文要讨论的外键字段
     :::
 
 -   Jimmer实体是动态对象，没有id的对象，就是id未被设置的对象，而非id被设置为null的对象。Jimmer不需要让id可以为null。
@@ -310,7 +310,7 @@ import TabItem from '@theme/TabItem';
     所以，代码中id属性的类型为不能为null的`long`，而非可以为null的`Long`，否则框架会报错提示。
     
     :::note
-    有JPA/Hibenrate背景知识的读者需注意这个细节。
+    有JPA/Hibernate背景知识的读者需注意这个细节。
     :::
 
 ## 多对一关联`Book.store`
