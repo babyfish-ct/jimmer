@@ -639,7 +639,7 @@ println(stores)
 
     -   外层结构的Redis Key，`BookStore.books-1`和`BookStore.books-2`，和单视图缓存的RedisKey无异。
 
-    -   内层结构的Hash Key，为全局过滤器的参数。
+    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
 
         这里，`{"logicalDeleted":false}`由逻辑删除所对应的内置全局过滤器提供，表示当前缓存项的值并非所有关联对象的id集合，而仅仅包含未被逻辑删除的关联对象的id。
     :::
@@ -716,7 +716,7 @@ println(stores)
 
     -   外层结构的Redis Key，`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
 
-    -   内层结构的Hash Key，为全局过滤器的参数。
+    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
 
         这里，`{"logicalDeleted":false}`由逻辑删除所对应的内置全局过滤器提供，表示当前缓存项的值并非依赖所有关联数据，而是依赖于未被逻辑删除的数据。
     :::
@@ -879,9 +879,9 @@ println(stores)
 
     -   外层结构的Redis Key，`BookStore.books-1`、`BookStore.books-2`、`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
 
-    -   内层结构的Hash Key，为全局过滤器的参数。
+    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
 
-        `{}`为当前例子的对应的Hash Key，响应的缓存值为过滤器被忽略后的数据。这也是我们在单视图缓存相关文档中我们看到的数据
+        `{}`为当前例子的对应的SubKey，响应的缓存值为过滤器被忽略后的数据。这也是我们在单视图缓存相关文档中我们看到的数据
 
 -   反转过滤行为
 
@@ -991,12 +991,12 @@ println(stores)
 
     -   外层结构的Redis Key，`BookStore.books-1`、`BookStore.books-2`、`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
 
-    -   内层结构的Hash Key，为全局过滤器的参数。
+    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
 
-        `{"logicalDeleted":true}`为当前例子的对应的Hash Key，，表示当前缓存项的值并非依赖所有关联数据，而是依赖于已被逻辑删除的数据，这种行为和默认过滤器的逻辑刚好相反。
+        `{"logicalDeleted":true}`为当前例子的对应的SubKey，表示当前缓存项的值并非依赖所有关联数据，而是依赖于已被逻辑删除的数据，这种行为和默认过滤器的逻辑刚好相反。
 
     :::tip
-    读者可以仔细看看这些`redis-cli`命令，很容易发现，HashKey`{"logicalDeleted":false}`的数据和HashKey`{"logicalDeleted":true}`的数据合并起来刚好就是HashKey`{}`的数据。
+    读者可以仔细看看这些`redis-cli`命令，很容易发现，SubKey`{"logicalDeleted":false}`的数据和SubKey`{"logicalDeleted":true}`的数据合并起来刚好就是SubKey`{}`的数据。
     :::
 
 ## 一致性

@@ -65,7 +65,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
 该接口从`Filter/KFilter`接口继承，在其基础上，添加了两个新方法
 
--   `getParameters`: 该过滤器的为缓存中嵌套Map结构的内层Key *(比如，Redis Hash结构HashKey)* 贡献的的
+-   `getParameters`: 该过滤器的为多视图缓存贡献的`SubKey`片段。
 
 -   `isAffectedBy`: 接受一个被过滤实体被修改的事件，判断当前过滤器所依赖的过滤字段是否被修改。
 
@@ -78,7 +78,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
     如果不小心导致这种无意义的混用，Jimmer会告诉开发人员为什么缓存没有生效
 
--   当所有全局过滤器都缓存友好时，所有`CachableFilter/KCachableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为缓存中嵌套Map结构的内层Key *(比如，Redis Hash结构HashKey)*
+-   当所有全局过滤器都缓存友好时，所有`CachableFilter/KCachableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为多视图缓存的`SubKey`
 
     例如，实体同时被两个过滤器处理。一个是[逻辑删除](../../query/global-filter/logical-deleted)所隐含的过滤器，记为`a`；另外一个是用户自定义过滤器，记为`b`。
 
@@ -88,7 +88,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
     -   `b`的`getParameters()`返回`{"tenant":"a"}`，
     
-    那么最终缓存中嵌套Map结构的内层Key *(比如，Redis Hash结构HashKey)*为
+    那么最终多视图缓存中的`SubKey`为
     
     `{"logicalDeleted":false,"tenant":"a"}`
 :::
@@ -408,7 +408,7 @@ println(stores)
 ```
 
 :::tip
-读者可以仔细看看这些`redis-cli`命令，很容易发现，HashKey`{"tenant":"a"}`的数据和HashKey`{"tenant":"b"}`的数据合并起来刚好就是HashKey`{}`的数据。
+读者可以仔细看看这些`redis-cli`命令，很容易发现，Subey`{"tenant":"a"}`的数据和SubKey`{"tenant":"b"}`的数据合并起来刚好就是SubKey`{}`的数据。
 :::
 
 这三次调用返回给用户的数据为
