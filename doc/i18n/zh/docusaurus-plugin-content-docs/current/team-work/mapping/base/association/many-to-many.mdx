@@ -124,22 +124,22 @@ alter table AUTHOR_MAPPING
     add constraint PK_AUTHOR_MAPPING
         primary(BOOK_ID, AUTHOR_ID);
 
-// 如果指向当前对象的外建是真的，建立外键约束
+// 如果指向当前对象的外键是真的，建立外键约束
 alter table BOOK_AUTHOR_MAPPING
     add constraint FK_BOOK_AUTHOR_MAPPING__BOOK
         foreign key(BOOK_ID)
             references BOOK(ID);
 
-// 如果指向关联对象的外建是真的，建立外键约束
+// 如果指向关联对象的外键是真的，建立外键约束
 alter table BOOK_AUTHOR_MAPPING
     add constraint FK_BOOK_AUTHOR_MAPPING__AUTHOR
         foreign key(AUTHOR_ID)
             references AUTHOR(ID);
 ```
 
--   中间表的只有两个外建，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+-   中间表的只有两个外键，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
 
--   中间表没有对应的ORM实体，无需独立主键，两个外建联合作为主键即可
+-   中间表没有对应的ORM实体，无需独立主键，两个外键联合作为主键即可
 
 :::caution
 注意
@@ -261,6 +261,6 @@ interface Author {
 
 ## 如果想为中间表加入业务字段
 
-对于本文所讨论的多对多关联而言，除了两个外建外，中间表不得定义其他业务字段。
+对于本文所讨论的多对多关联而言，除了两个外键外，中间表不得定义其他业务字段。
 
 如果想在多对多关联中间表中定义更多的其他业务字段，请参见[ManyToManyView](../../advanced/view/many-to-many-view)
