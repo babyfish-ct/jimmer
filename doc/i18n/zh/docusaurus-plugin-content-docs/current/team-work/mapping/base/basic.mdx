@@ -350,7 +350,7 @@ interface Book {
 public interface Book {
 
     @Id
-    @GeneratedValue(generateType = UUIDIdGenerator.class)
+    @GeneratedValue(generatorType = UUIDIdGenerator.class)
     UUID id();
 }
 ```
@@ -363,7 +363,7 @@ public interface Book {
 interface Book {
 
     @Id
-    @GeneratedValue(generateType = UUIDIdGenerator::class)
+    @GeneratedValue(generatorType = UUIDIdGenerator::class)
     val id: UUID
 }
 ```
