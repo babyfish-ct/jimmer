@@ -36,7 +36,7 @@ Jimmer本身支持自关联属性的递归查询，然而，截止到目前为�
 
 使用Jimmer构建REST服务，由客户端指定需要的对象的形状
 
-这种方法其实是为REST赋予GraphQL的能力，客户端传递一个字符串，服务调调用将其解析为Fetcher即可
+这种方法其实是为REST赋予GraphQL的能力，客户端传递一个字符串，服务端通过`org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler`将其解析为Fetcher即可
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -94,32 +94,32 @@ fun findBookById(
 :::caution
 虽然这种做法可以为REST赋予类似于GraphQL的能力，非常灵活。但它只是方便了服务端的书写，客户端会得到混乱的类型系统，因此不推荐。
 
-如果因为某些历史包袱导致客户端采用JavaScript而非TypeScript，而且在可预见的未来看不到任何可改进的希望，可以考虑这种用法。
+如果因为某些历史包袱导致客户端采用JavaScript而非TypeScript，而且在可预见的未来看不到任何改进的希望，可以考虑这种用法。
 :::
 
 ### 方案三(本文议题)
 
 使用Jimmer构建REST服务，由服务端罗列客户端所需对象的所有形状
 
-这种用法比较符合REST协议的初衷，也比较便于权限管理 *(前面两种用法虽然灵活，但权限控制时各难题)*，也是本文要讨论的话题。
+这种用法比较符合REST协议的初衷，也比较便于权限管理 *(前面两种用法虽然灵活，但权限控制很难)*，也是本文要讨论的话题。
 
 让我们先来看一个矛盾
 
--   Jimmer采用动态实体，只要聚合根类型相同，任何形状的数据结构都用同一个类型表达。
+-   Jimmer采用动态实体，只要聚合根类型相同，任何形状的数据结构都用同一个Java/Kotlin类型表达。
 
 -   客户端需要看到丰富的数据类型，同一个实体类型的不同在不同的HTTP接口中返回的形状不一样。
 
-这个矛盾，本质上就是服务端和客户端对<ViewMore buttonText="DTO爆炸"><img src={DtoExplosion}/></ViewMore>的方法得认知不同
+这个矛盾，本质上就是服务端和客户端对<ViewMore buttonText="DTO爆炸"><img src={DtoExplosion}/></ViewMore>的认知不同
 
--   服务端视角，其实是生产者视角。
+-   服务端视角，即，生产者视角。
 
     在生产者眼中，DTO爆炸是一个非常头疼的问题，这意味着自己的开发成本也会急剧上升。
     
     因此，Jimmer使用动态实体配合[对象抓取器](../query/object-fetcher)，在服务端消灭了DTO爆炸。
 
--   前端视角，其实是消费者视角。
+-   前端视角，即，消费者视角。
 
-    在消费者眼中，DTO爆炸是有益的，每一个业务场景都有精确的返回类型，使用起来体验非常好。
+    在消费者眼中，DTO爆炸是有益的，每一个业务场景都有精确的返回类型，使用起来体验非常好。*（实现不容易？和我有什么关系？）*
 
     因此，Jimmer服务端能自动生成TypeScript代码，把服务端消灭掉的DTO爆炸在客户端中恢复出来。
 
@@ -282,9 +282,9 @@ companion object {
     作为对外承诺的❶和作为内部实现的❷必须一致
     :::
 
--   ❸ 对外承诺，如果`GET /book/{id}`返回非null, 其形状为静态常量`SIMPLE_FETCHER`所表达的形状
+-   ❸ 对外承诺，如果`GET /book/{id}`返回非null, 其形状为静态常量`COMPLEX_FETCHER`所表达的形状
 
--   ❹ 内部实现，`GET /book/{id}`内部使用静态常量`SIMPLE_FETCHER`查询数据
+-   ❹ 内部实现，`GET /book/{id}`内部使用静态常量`COMPLEX_FETCHER`查询数据
 
     :::caution
     作为对外承诺的❸和作为内部实现的❹必须一致
@@ -295,9 +295,9 @@ companion object {
 通过@FetchBy的修饰，Jimmer就明白每个对象对外返回的数据的具体形状了，它就可以为客户端生成代码了，包括TypeScript。
 
 :::info
-在这个例子中，使用注解的`@FetchBy`和用静态常量声明对象的形状的类是同一个类。
+在这个例子中，使用注解`@FetchBy`的类和用静态常量声明对象的形状的类是同一个类。
 
-若非，可以使用`@FetchBy`的`ownerType`参数，例如
+若非如此，可以使用`@FetchBy`的`ownerType`参数，例如
 
 `@FetchBy(value = "COMPLEX_FETCHER", ownerType = FetcherConstants.class)`
 :::
@@ -318,9 +318,9 @@ jimmer:
 
 目前，Jimmer支持生成两种客户端代码，TypeScript和Spring Cloud所需的Java Feign Client代码
 
--   ❶ 可通过http://localhost:8080/ts.zip下载Web客户端所需的TypeScript代码
+-   ❶ 可通过 http://localhost:8080/ts.zip 下载Web客户端所需的TypeScript代码
 
--   ❷ 可通过http://localhost:8080/java-feign.zipSpring Cloud所需的Java Feign Client代码
+-   ❷ 可通过 http://localhost:8080/java-feign.zip 下载Spring Cloud所需的Java Feign Client代码
 
 接下来，我们讨论TypeScript代码。
 
@@ -479,16 +479,16 @@ export type BookServiceOptions = {
     这样，每次服务端团队通知REST API发生变化时，都可以简单地执行`yarn api`刷新本地的TypeScript客户端代码
 
     :::caution
-    这个方法仅仅使用规模很少的前端团队，如果前端对象人数较多，更推荐的做法是借助CI环境来实现
-
-    对CI环境做出某些改进，每次服务端特定分支代码被提交后，由CI环境编译并启动后端服务，然后，下载ts代码，解压，并提交到git中。最后，前端工程师统一从git拉取最新代码即可。
+    这个方法仅仅使用规模很少的前端团队，如果前端对象人数较多，更推荐的做法是对CI环境实施二次开发，实现如下功能：
+    
+    每次服务端特定分支代码被提交后，由CI环境编译并启动后端服务，然后，下载ts代码，解压，并提交到git中。最后，前端工程师统一从git拉取最新代码即可。
     :::
 
 3.  创建全局API对象
 
     生成的TypeScript代码中，有一个`__generated/Api.ts`文件，需要用该类实例化一个全局变量并完成必要的配置。
 
-    在`src`下创建`ApiInstance.ts`，到处全部变量`api`
+    在`src`下创建`ApiInstance.ts`，定义并导出全部变量`api`
 
     ```ts title="src/ApiInstance.ts"
     import { Api } from "../__generated";
@@ -499,12 +499,11 @@ export type BookServiceOptions = {
     // highlight-next-line
     export const api = 
         new Api(async({uri, method, body}) => {
-            const tenant = (window as any).__tenant as string | undefined;
             const response = await fetch(`${BASE_URL}${uri}`, {
                 body: body !== undefined ? JSON.stringify(body) : undefined,
                 headers: {
                     'content-type': 'application/json;charset=UTF-8',
-                    ...其他重要HTTP请求头，比如Athorization...
+                    ...其他重要HTTP请求头，比如Authorization...
                 }
             });
             if (response.status !== 200) {
@@ -617,7 +616,7 @@ export type BookServiceOptions = {
     :::tip
     可见，任何REST API调用都会返回严格的数据类型定义，这些严格的类型定义也会影响`tsx`文件中React UI模板代码。
 
-    这会充分发挥TypeScript的优势，让前端项目具备良好的智能提示，并保证在编译时发现所有问题，具备优秀的开发体验。
+    这会充分发挥TypeScript的优势，让前端项目具备良好的IDE智能提示，并保证在编译时发现所有问题，具备良好的开发体验。
     :::
 
 ## 和自定义数据结合
@@ -684,14 +683,16 @@ fun findMostActiveAuthorInfos(
 很明显，这个数据结构和底层实体模型差异较大。在实体模型中，`BookStore`和`Book`之间存在关联，`Book`和`Author`之间也存在关联，但是，`BookStore`和`Author`之间并不存在关联。
 
 :::tip
-某些情况下，客户端需要的数据可能包含多种实体对象，它们之间并不存在直接的ORM关联，只是业务层面的一种的联系。
+某些情况下，客户端需要的数据可能包含多种实体对象，它们之间并不存在直接的ORM关联，只是特定业务层面的一种的联系。
+
+如果这种特定业务层面的联系毫无通用性，那么为实体定义[复杂计算属性](../mapping/advanced/calculated/transient)也并非一个好的选择。
 
 这时，我们可以打破实体对象图的定式思维，用自定义数据表示返回结果，就如同这里的`ActiveAutorInfo`
 :::
 
 然而，`ActiveAutorInfo`并不是纯粹的用户自定义数据类型，其内部混合使用了Jimmer实体。我们不妨称之为为混合类型。
 
-可以为这种混合类型的字段使用`@FetchBy`，比如
+可以用`@FetchBy`注解修饰这种混合类型的字段，比如
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -747,7 +748,7 @@ data class ActiveAutorInfo(
 </TabItem>
 </Tabs>
 
-最终，`ActiveAutorInfo`所生成的TypeScript类型为 *(为了方便，这里混合了多个TypeScript文件的代码)*
+最终，`ActiveAutorInfo`所生成的TypeScript相关类型如下 *(为了方便，这里混合了多个TypeScript文件的代码)*
 
 ```ts
 export interface ActiveAutorInfo {
