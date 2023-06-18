@@ -57,7 +57,6 @@ public Book findBookById(
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="BookController.kt"
-@Supress("UNCHECKED_CAST")
 @GetMapping("/book/{id}")
 fun findBookById(
     @PathVariable id: Long,
@@ -623,3 +622,161 @@ export type BookServiceOptions = {
 
 ## 和自定义数据结合
 
+虽然`@FetchBy`和Jimmer动态实体相结合能够在客户端代码中还原DTO类型定义，但仍然需要认真考虑一种情况：返回的数据类型和底层实体模型差异很大。例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="ActiveAutorInfo.java"
+@lombok.Data
+public class ActiveAutorInfo {
+
+    private Author raw;
+
+    private List<BookStore> stores;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="ActiveAutorInfo.kt"
+data class ActiveAutorInfo(
+    val raw: Author,
+    val stores: List<BookStore>
+)
+```
+
+</TabItem>
+</Tabs>
+
+在这个例子中，`ActiveAutorInfo`表示活跃度很高的作者，里面包含了作者的原始信息`raw`，以及所有售卖他/她的书籍的书店的集合。
+
+对应的HTTP服务接口为
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="AuthorController.java"
+@GetMapping("/authors/mostActive")
+public List<ActiveAutorInfo> findMostActiveAuthorInfos(
+    @RequestParam(defaultValue = "10") int limit
+) {
+    ...略...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="AuthorController.kt"
+@GetMapping("/authors/mostActive")
+fun findMostActiveAuthorInfos(
+    @RequestParam(defaultValue = "10") limit: Int
+): List<ActiveAutorInfo> {
+    ...略...
+}
+```
+
+</TabItem>
+</Tabs>
+
+很明显，这个数据结构和底层实体模型差异较大。在实体模型中，`BookStore`和`Book`之间存在关联，`Book`和`Author`之间也存在关联，但是，`BookStore`和`Author`之间并不存在关联。
+
+:::tip
+某些情况下，客户端需要的数据可能包含多种实体对象，它们之间并不存在直接的ORM关联，只是业务层面的一种的联系。
+
+这时，我们可以打破实体对象图的定式思维，用自定义数据表示返回结果，就如同这里的`ActiveAutorInfo`
+:::
+
+然而，`ActiveAutorInfo`并不是纯粹的用户自定义数据类型，其内部混合使用了Jimmer实体。我们不妨称之为为混合类型。
+
+可以为这种混合类型的字段使用`@FetchBy`，比如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="ActiveAutorInfo.java"
+@lombok.Data
+public class ActiveAutorInfo {
+
+    // highlight-next-line
+    private @FetchBy("AUTHOR_FETCHER") Author raw;
+
+    // highlight-next-line
+    private List<@FetchBy("STORE_FETCHER") BookStore> stores;
+
+    private static final Fetcher<Author> AUTHOR_FETCHER = 
+        AuthorFetcher.$
+            .firstName()
+            .lastName();
+
+    private static final Fetcher<BookStore> STORE_FETCHER = 
+        AuthorFetcher.$.name();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="ActiveAutorInfo.kt"
+data class ActiveAutorInfo(
+    
+    // highlight-next-line
+    val raw: @FetchBy("AUTHOR_FETCHER") Author,
+
+    // highlight-next-line
+    val stores: List<@FetchBy("STORE_FETCHER") BookStore>
+) {
+    companion object {
+
+        private val AUTHOR_FECHER =
+            newFetcher(Author::class) {
+                firstName()
+                lastName()
+            }
+
+        private val STORE_FETCHER = 
+            new Fetcher(BookStore::class) {
+                name()
+            }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+最终，`ActiveAutorInfo`所生成的TypeScript类型为 *(为了方便，这里混合了多个TypeScript文件的代码)*
+
+```ts
+export interface ActiveAutorInfo {
+
+    // highlight-next-line
+    readonly raw: AuthorDto['ActiveAutorInfo/AUTHOR_FETCHER'];
+
+    readonly stores: ReadonlyArray<
+        // highlight-next-line
+        BookStoreDto['ActiveAutorInfo/STORE_FETCHER']
+    >;
+}
+
+export type AuthorDto {
+    // highlight-next-line
+    'ActiveAutorInfo/AUTHOR_FETCHER': {
+        readonly id: number,
+        readonly firstName: string,
+        readonly lastName: string
+    },
+    ...省略其他DTO类型定义...
+}
+
+export type BookStoreDto {
+    // highlight-next-line
+    'ActiveAutorInfo/STORE_FETCHER': {
+        readonly id: number,
+        readonly name: string
+    },
+    ...省略其他DTO类型定义...
+}
+```

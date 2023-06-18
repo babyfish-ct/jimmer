@@ -2,16 +2,18 @@ import type { Dynamic, Executor } from '../';
 import type { AuthorDto } from '../model/dto';
 import type { Author } from '../model/entities';
 import type { Gender } from '../model/enums';
-import type { AuthorInput } from '../model/static';
+import type { AuthorInput, Unit } from '../model/static';
 
 export class AuthorService {
     
     constructor(private executor: Executor) {}
     
-    async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<void> {
+    async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<
+        Unit
+    > {
         let _uri = '/author/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'})) as void
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as Unit
     }
     
     async findAuthors(options: AuthorServiceOptions['findAuthors']): Promise<
@@ -63,30 +65,7 @@ export class AuthorService {
         Dynamic<Author>
     > {
         let _uri = '/author/';
-        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
-        let _value: any = undefined;
-        _value = options.input.firstName;
-        if (_value !== undefined && _value !== null) {
-            _uri += _separator
-            _uri += 'firstName='
-            _uri += encodeURIComponent(_value);
-            _separator = '&';
-        }
-        _value = options.input.id;
-        if (_value !== undefined && _value !== null) {
-            _uri += _separator
-            _uri += 'id='
-            _uri += encodeURIComponent(_value);
-            _separator = '&';
-        }
-        _value = options.input.lastName;
-        if (_value !== undefined && _value !== null) {
-            _uri += _separator
-            _uri += 'lastName='
-            _uri += encodeURIComponent(_value);
-            _separator = '&';
-        }
-        return (await this.executor({uri: _uri, method: 'PUT'})) as Dynamic<Author>
+        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Author>
     }
 }
 
@@ -100,5 +79,5 @@ export type AuthorServiceOptions = {
     },
     'findComplexAuthor': {readonly id: number},
     'findSimpleAuthors': {},
-    'saveAuthor': {readonly input: AuthorInput}
+    'saveAuthor': {readonly body: AuthorInput}
 }

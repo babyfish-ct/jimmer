@@ -1,16 +1,18 @@
 import type { Dynamic, Executor } from '../';
 import type { BookStoreDto } from '../model/dto';
 import type { BookStore } from '../model/entities';
-import type { BookStoreInput } from '../model/static';
+import type { BookStoreInput, Unit } from '../model/static';
 
 export class BookStoreService {
     
     constructor(private executor: Executor) {}
     
-    async deleteBookStore(options: BookStoreServiceOptions['deleteBookStore']): Promise<void> {
+    async deleteBookStore(options: BookStoreServiceOptions['deleteBookStore']): Promise<
+        Unit
+    > {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'})) as void
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as Unit
     }
     
     async findComplexStoreWithAllBooks(options: BookStoreServiceOptions['findComplexStoreWithAllBooks']): Promise<
@@ -29,13 +31,6 @@ export class BookStoreService {
         _uri += encodeURIComponent(options.id);
         _uri += '/withNewestBooks';
         return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
-    }
-    
-    async findComplexStores(): Promise<
-        ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>
-    > {
-        let _uri = '/bookStore/complexList';
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>
     }
     
     async findSimpleStores(): Promise<
@@ -64,7 +59,6 @@ export type BookStoreServiceOptions = {
     'deleteBookStore': {readonly id: number},
     'findComplexStoreWithAllBooks': {readonly id: number},
     'findComplexStoreWithNewestBooks': {readonly id: number},
-    'findComplexStores': {},
     'findSimpleStores': {},
     'findStores': {},
     'saveBookStore': {readonly body: BookStoreInput}

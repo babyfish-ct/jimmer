@@ -281,7 +281,7 @@ export type ApiErrors = {
                 readonly [key:string]: any
             }
         ),
-        "saveCompositeBook": AllErrors & (
+        "saveBook_2": AllErrors & (
             {
                 readonly family: 'SaveErrorCode',
                 readonly code: 'NULL_TARGET',

@@ -1,16 +1,18 @@
 import type { Dynamic, Executor } from '../';
 import type { TreeNodeDto } from '../model/dto';
 import type { TreeNode } from '../model/entities';
-import type { RecursiveTreeInput } from '../model/static';
+import type { RecursiveTreeInput, Unit } from '../model/static';
 
 export class TreeService {
     
     constructor(private executor: Executor) {}
     
-    async deleteTree(options: TreeServiceOptions['deleteTree']): Promise<void> {
-        let _uri = '/tree/';
+    async deleteTree(options: TreeServiceOptions['deleteTree']): Promise<
+        Unit
+    > {
+        let _uri = '/tree/tree/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'})) as void
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as Unit
     }
     
     async findRootTrees(options: TreeServiceOptions['findRootTrees']): Promise<
