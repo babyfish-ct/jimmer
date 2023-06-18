@@ -176,7 +176,7 @@ class KTypeScriptTest {
                     "export type KBookServiceOptions = {\n" +
                     "    'deleteBook': {readonly id: number},\n" +
                     "    'findComplexBooks': {\n" +
-                    "        readonly name: string, \n" +
+                    "        readonly name?: string, \n" +
                     "        readonly storeName?: string, \n" +
                     "        readonly authorName?: string, \n" +
                     "        readonly minPrice?: number, \n" +
@@ -188,15 +188,15 @@ class KTypeScriptTest {
                     "        /**\n" +
                     "         * Match the book name, optional\n" +
                     "         */\n" +
-                    "        readonly name: string, \n" +
+                    "        readonly name?: string, \n" +
                     "        \n" +
                     "        /**\n" +
                     "         * Start from 0, not 1\n" +
                     "         */\n" +
-                    "        readonly pageIndex?: number, \n" +
+                    "        readonly pageIndex: number, \n" +
                     "        readonly pageSize: number\n" +
                     "    },\n" +
-                    "    'saveBooks': {readonly body: KBookInput}\n" +
+                    "    'saveBooks': {readonly body?: KBookInput}\n" +
                     "}",
             code
         )

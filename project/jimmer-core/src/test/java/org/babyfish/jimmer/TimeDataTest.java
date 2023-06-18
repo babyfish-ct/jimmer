@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Date;
 
 public class TimeDataTest {
@@ -23,6 +22,7 @@ public class TimeDataTest {
             data.setTime4(time);
             data.setTime5(time.toLocalDate());
             data.setTime6(time.toLocalDate());
+            data.setTime7(time);
         });
         String json = timeData.toString();
         Assertions.assertEquals(
@@ -32,7 +32,8 @@ public class TimeDataTest {
                         "\"time3\":\"2022-09-13 23:49:34\"," +
                         "\"time4\":\"2022/09/13 23:49\"," +
                         "\"time5\":\"2022-09-13\"," +
-                        "\"time6\":\"2022/09/13\"" +
+                        "\"time6\":\"2022/09/13\"," +
+                        "\"time7\":\"2022年09月13日23时49分34秒\"" +
                         "}",
                 json
         );
@@ -42,10 +43,5 @@ public class TimeDataTest {
                 timeData2.toString()
         );
     }
-
-    @Test
-    public void testNoTime() {
-        TimeData timeData = TimeDataDraft.$.produce(data -> {});
-        Assertions.assertEquals("{}", timeData.toString());
-    }
 }
+

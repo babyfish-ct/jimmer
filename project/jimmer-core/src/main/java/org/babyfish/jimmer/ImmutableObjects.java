@@ -336,6 +336,10 @@ public class ImmutableObjects {
         return MAPPER.readValue(json, type);
     }
 
+    public static <I> I fromString(Class<I> type, String json, ObjectMapper mapper) throws JsonProcessingException {
+        return mapper.readValue(json, type);
+    }
+
     static {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

@@ -5,7 +5,6 @@ import org.babyfish.jimmer.Immutable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.Date;
 
 @Immutable
@@ -28,4 +27,7 @@ public interface TimeData {
 
     @JsonFormat(pattern = "yyyy/MM/dd")
     LocalDate time6();
+
+    @JsonFormat(pattern = "yyyy年MM月dd日HH时mm分ss秒")
+    LocalDateTime time7();
 }
