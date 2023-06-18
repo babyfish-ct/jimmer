@@ -12,7 +12,7 @@ Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction�
 
 如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
 
-本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+本文所讨论若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
 
 ## 基本用法
 
@@ -315,7 +315,7 @@ println("Affected row count: $affectedRowCount")
 
 1. 只能在`where`子句中使用表连接，不能在`set`子句中使用表连接。即Postgres还是只允许修改当前表的字段，支持连接到其它表仅仅是为了做条件过滤。
 
-2. 连接路径的可以具有多级，如`author.books().store()`，其中，`books()`是第1级，`store()`是第2级。其中，第一级连接的类型必须是`inner join`。
+2. 连接路径可以具有多级，如`author.books().store()`，其中，`books()`是第1级，`store()`是第2级。其中，第一级连接的类型必须是`inner join`。
 :::
 
 最终生成针对Postgres的SQL语句，如下：

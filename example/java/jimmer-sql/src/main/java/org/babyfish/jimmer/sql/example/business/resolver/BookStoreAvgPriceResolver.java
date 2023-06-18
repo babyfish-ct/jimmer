@@ -80,7 +80,6 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         }
     }
 
-    // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
         return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);

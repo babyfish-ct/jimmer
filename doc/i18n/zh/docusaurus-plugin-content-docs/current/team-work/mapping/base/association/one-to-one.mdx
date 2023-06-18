@@ -67,7 +67,7 @@ interface Customer {
 
 这里并没有配合使用`@JoinColumn`明确指定外键列名，Jimmer会根据[命名策略](../naming-strategy)推导`address`属性对应的列名。
 
-如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`address`的外建列名为`ADDRESS_ID`。所以，之前的代码和这里的代码等价。
+如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`address`的外键列名为`ADDRESS_ID`。所以，之前的代码和这里的代码等价。
 
 因此，上面的代码和下面的代码等价
 
@@ -106,10 +106,10 @@ interface Customer {
 </TabItem>
 </Tabs>
 
-外建可真可假。伪外建在后续文档中讨论，这里假设外建是真实的，则数据库中对应的约束为
+外键可真可假。伪外键在后续文档中讨论，这里假设外键是真实的，则数据库中对应的约束为
 
 ```sql
-// 如果指向关联对象的外建是真的，建立外建约束
+// 如果指向关联对象的外键是真的，建立外键约束
 alter table CUSTOMER
     add constraint FK_CUSTOMER__ADDRESS
         /* highlight-next-line */
@@ -223,13 +223,13 @@ alter table ADDRESS_MAPPING
     add constraint PK_ADDRESS_MAPPING
         primary(CUSTOMER_ID, ADDRESS_ID);
 
-// 如果指向当前对象的外建是真的，建立外键约束
+// 如果指向当前对象的外键是真的，建立外键约束
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint FK_CUSTOMER_ADDRESS_MAPPING__CUSTOMER
         foreign key(CUSTOMER_ID)
             references CUSTOMER(ID);
 
-// 如果指向关联对象的外建是真的，建立外键约束
+// 如果指向关联对象的外键是真的，建立外键约束
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint FK_CUSTOMER_ADDRESS_MAPPING__ADDRESS
         foreign key(ADDRESS_ID)
@@ -245,16 +245,16 @@ alter table CUSTOMER_ADDRESS_MAPPING
         unique(CUSTOMER_ID);
 ```
 
--   中间表的只有两个外建，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+-   中间表的只有两个外键，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
 
--   中间表没有对应的ORM实体，无需独立主键，两个外建联合作为主键即可
+-   中间表没有对应的ORM实体，无需独立主键，两个外键联合作为主键即可
 
--   默认情况下，中间表表示多对多关联。要让其退化为一对一关联，必须为中间表的每一个外建都指定唯一约束
+-   默认情况下，中间表表示多对多关联。要让其退化为一对一关联，必须为中间表的每一个外键都指定唯一约束
 
 :::caution
 注意
 
--   除非为了兼容已有数据库设计，一对一关联都建议直接使用外建，而非中间表
+-   除非为了兼容已有数据库设计，一对一关联都建议直接使用外键，而非中间表
 
 -   一旦使用中间表映射一对一关联，Jimmer关联属性必须可null，因为数据库无法保证任何实体在中间表中一定有对应数据
 :::

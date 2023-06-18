@@ -8,18 +8,22 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Configuration
 public class GraphQLConfig {
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private static final GraphQLScalarType GRAPHQL_LOCAL_DATE_TIME =
             GraphQLScalarType.newScalar()
                     .name("LocalDateTime").description("java.time.LocalDateTime")
                     .coercing(
-                            new Coercing<LocalDateTime, LocalDateTime>() {
+                            new Coercing<LocalDateTime, String>() {
                                 @Override
-                                public LocalDateTime serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException {
-                                    return (LocalDateTime) dataFetcherResult;
+                                public String serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException {
+                                    return DATE_TIME_FORMATTER.format((LocalDateTime)dataFetcherResult);
                                 }
 
                                 @Override

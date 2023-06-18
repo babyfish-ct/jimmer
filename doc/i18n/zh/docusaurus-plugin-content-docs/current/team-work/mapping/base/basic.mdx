@@ -350,7 +350,7 @@ interface Book {
 public interface Book {
 
     @Id
-    @GeneratedValue(generateType = UUIDIdGenerator.class)
+    @GeneratedValue(generatorType = UUIDIdGenerator.class)
     UUID id();
 }
 ```
@@ -363,7 +363,7 @@ public interface Book {
 interface Book {
 
     @Id
-    @GeneratedValue(generateType = UUIDIdGenerator::class)
+    @GeneratedValue(generatorType = UUIDIdGenerator::class)
     val id: UUID
 }
 ```
@@ -391,7 +391,7 @@ public interface UserIdGenerator<T> extends IdGenerator {
 ```java title="MyGenerator.java"
 package com.mycompany.myproject.common;
 
-public interface MyIdGenerator implements UserIdGenerator<Long> {
+public class MyIdGenerator implements UserIdGenerator<Long> {
 
     @Override
     public Long generate(Class<?> entityType) {

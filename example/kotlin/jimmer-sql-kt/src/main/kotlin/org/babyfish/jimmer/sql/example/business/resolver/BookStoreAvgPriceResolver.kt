@@ -68,7 +68,6 @@ class BookStoreAvgPriceResolver(
         }
     }
 
-    // Contribute part of the secondary hash key to multiview-cache
     override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
         return sqlClient.filters.getTargetParameterMapRef(BookStore::books)
     }
