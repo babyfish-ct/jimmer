@@ -31,6 +31,13 @@ export class BookStoreService {
         return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
     }
     
+    async findComplexStores(): Promise<
+        ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>
+    > {
+        let _uri = '/bookStore/complexList';
+        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>
+    }
+    
     async findSimpleStores(): Promise<
         ReadonlyArray<BookStoreDto['BookStoreService/SIMPLE_FETCHER']>
     > {
@@ -57,6 +64,7 @@ export type BookStoreServiceOptions = {
     'deleteBookStore': {readonly id: number},
     'findComplexStoreWithAllBooks': {readonly id: number},
     'findComplexStoreWithNewestBooks': {readonly id: number},
+    'findComplexStores': {},
     'findSimpleStores': {},
     'findStores': {},
     'saveBookStore': {readonly body: BookStoreInput}
