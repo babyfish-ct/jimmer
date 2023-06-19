@@ -7,7 +7,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.7.99"
+    jimmerVersion = "0.7.100"
 }
 
 group 'org.babyfish.jimmer'
@@ -19,11 +19,7 @@ repositories {
 
 dependencies {
 
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:$jimmerVersion") {
-        exclude group: "org.babyfish.jimmer", module:"jimmer-sql"
-    }
-    implementation(files("/Users/chentao/projects/git/jimmer/project/jimmer-sql/build/libs/jimmer-sql-0.7.99.jar"))
-
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:$jimmerVersion")
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:$jimmerVersion"
     ksp "org.babyfish.jimmer:jimmer-ksp:$jimmerVersion"
 
