@@ -129,16 +129,19 @@ class BaseEntityDraftInterceptor(
         if (!isLoaded(draft, BaseEntity::modifiedTime)) {
             draft.modifiedTime = LocalDateTime.now()
         }
-        if (!isLoaded(draft, BaseEntity::editor)) {
+
+        if (!isLoaded(draft, BaseEntity::modifiedBy)) {
             draft.modifiedBy().apply {
                 id = userService.currentUserId
             }
         }
+
         if (isNew) {
             if (!isLoaded(draft, BaseEntity::createdTime)) {
                 draft.createdTime = LocalDateTime.now()
             }
-            if (!isLoaded(draft, BaseEntity::creator)) {
+
+            if (!isLoaded(draft, BaseEntity::createdBy)) {
                 draft.createdBy().apply {
                     id = userService.currentUserId
                 }
@@ -151,7 +154,7 @@ class BaseEntityDraftInterceptor(
 </TabItem>
 </Tabs>
 
-其中，`beforeSave`方法在某个对象被保存之前被调用，用户可以即将保存的数据做出最后调整。
+其中，`beforeSave`方法在某个对象被保存之前被调用，用户可以对即将保存的数据做出最后调整。
 
 如果参数`isNew`为true，则表示稍后操作是insert操作；否则，是update操作。
 
