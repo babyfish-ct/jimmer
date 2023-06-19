@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.benchmark;
 
+import com.easy.query.core.api.client.EasyQueryClient;
+import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
+import com.easy.query.h2.config.H2DatabaseConfiguration;
+import org.babyfish.jimmer.benchmark.easyquery.EasyQueryTest;
 import org.babyfish.jimmer.benchmark.exposed.ExposedDataTable;
 import org.babyfish.jimmer.benchmark.exposed.ExposedJavaHelperKt;
 import org.babyfish.jimmer.benchmark.jdbc.JdbcDao;
@@ -61,6 +65,8 @@ public class OrmBenchmark {
     private NutDao nutDao;
 
     private JdbcDao jdbcDao;
+    private EasyQueryTest easyQueryTest;
+    private EasyQueryClient easyQueryClient;
 
     @Setup
     public void initialize() throws SQLException, IOException {
@@ -81,6 +87,13 @@ public class OrmBenchmark {
         ExposedJavaHelperKt.connect(transactionAwareDataSource);
         nutDao = new NutDao(transactionAwareDataSource);
         jdbcDao = new JdbcDao(transactionAwareDataSource);
+        easyQueryClient= EasyQueryBootstrapper.defaultBuilderConfiguration().setDefaultDataSource(ctx.getBean(DataSource.class))
+                .optionConfigure(op->{
+                    op.setPrintSql(false);
+                })
+                .useDatabaseConfigure(new H2DatabaseConfiguration())
+                .build();
+        easyQueryTest=new EasyQueryTest(easyQueryClient);
 
         FakeObjSqlLoggerFactory.init();
     }
@@ -195,5 +208,14 @@ public class OrmBenchmark {
     @Benchmark
     public void runJdbcByColumnName() throws SQLException {
         jdbcDao.findAllByColumnName();
+    }
+    @Benchmark
+    public void runEasyQuery(){
+        easyQueryTest.selectAll();
+    }
+
+    @TearDown
+    public void shutdown(){
+        easyQueryClient.getRuntimeContext().getEasyTimeJobManager().shutdown();
     }
 }
