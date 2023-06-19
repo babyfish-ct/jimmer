@@ -33,7 +33,7 @@ public class DraftConsumerUncheckedException extends RuntimeException {
      *
      * @param ex Original exception
      */
-    public static void rethrow(Throwable ex) {
+    public static RuntimeException rethrow(Throwable ex) {
         if (ex instanceof RuntimeException) {
             throw (RuntimeException)ex;
         }

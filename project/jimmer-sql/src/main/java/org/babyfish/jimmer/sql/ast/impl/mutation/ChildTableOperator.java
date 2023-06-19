@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -334,7 +335,7 @@ class ChildTableOperator {
                             List<Object> list = new ArrayList<>();
                             try (ResultSet rs = stmt.executeQuery()) {
                                 while (rs.next()) {
-                                    Object id = pkReader.read(rs, new Reader.Col());
+                                    Object id = pkReader.read(rs, new Reader.Context(null, true));
                                     if (id == null) {
                                         throw new ExecutionException(
                                                 "Cannot convert " + id + " to the type of " + idProp

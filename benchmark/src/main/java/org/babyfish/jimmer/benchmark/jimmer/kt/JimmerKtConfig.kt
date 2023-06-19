@@ -3,6 +3,7 @@ package org.babyfish.jimmer.benchmark.jimmer.kt
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.newKSqlClient
+import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.datasource.DataSourceUtils
@@ -15,6 +16,7 @@ open class JimmerKtConfig {
     open fun kSqlClient(dataSource: DataSource): KSqlClient =
         newKSqlClient {
             setDialect(H2Dialect())
+            setEntityManager(EntityManager(JimmerKtData::class.java))
             setConnectionManager {
                 val con = DataSourceUtils.getConnection(dataSource)
                 try {

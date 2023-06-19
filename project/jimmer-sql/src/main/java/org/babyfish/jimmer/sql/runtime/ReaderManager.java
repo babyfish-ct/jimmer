@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -178,16 +179,16 @@ public class ReaderManager {
     private static class BooleanReader implements Reader<Boolean> {
 
         @Override
-        public Boolean read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Boolean.class);
+        public Boolean read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Boolean.class);
         }
     }
 
     private static class CharReader implements Reader<Character> {
 
         @Override
-        public Character read(ResultSet rs, Col col) throws SQLException {
-            String str = rs.getString(col.get());
+        public Character read(ResultSet rs, Context ctx) throws SQLException {
+            String str = rs.getString(ctx.col());
             return str != null ? str.charAt(0) : null;
         }
     }
@@ -195,72 +196,72 @@ public class ReaderManager {
     private static class ByteReader implements Reader<Byte> {
 
         @Override
-        public Byte read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Byte.class);
+        public Byte read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Byte.class);
         }
     }
 
     private static class ByteArrayReader implements Reader<byte[]> {
 
         @Override
-        public byte[] read(ResultSet rs, Col col) throws SQLException {
-            return rs.getBytes(col.get());
+        public byte[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getBytes(ctx.col());
         }
     }
 
     private static class BoxedByteArrayReader implements Reader<Byte[]> {
 
         @Override
-        public Byte[] read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Byte[].class);
+        public Byte[] read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Byte[].class);
         }
     }
 
     private static class ShortReader implements Reader<Short> {
 
         @Override
-        public Short read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Short.class);
+        public Short read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Short.class);
         }
     }
 
     private static class IntReader implements Reader<Integer> {
 
         @Override
-        public Integer read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Integer.class);
+        public Integer read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Integer.class);
         }
     }
 
     private static class LongReader implements Reader<Long> {
 
         @Override
-        public Long read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Long.class);
+        public Long read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Long.class);
         }
     }
 
     private static class FloatReader implements Reader<Float> {
 
         @Override
-        public Float read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Float.class);
+        public Float read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Float.class);
         }
     }
 
     private static class DoubleReader implements Reader<Double> {
 
         @Override
-        public Double read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), Double.class);
+        public Double read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), Double.class);
         }
     }
 
     private static class BigIntegerReader implements Reader<BigInteger> {
 
         @Override
-        public BigInteger read(ResultSet rs, Col col) throws SQLException {
-            BigDecimal decimal = rs.getBigDecimal(col.get());
+        public BigInteger read(ResultSet rs, Context ctx) throws SQLException {
+            BigDecimal decimal = rs.getBigDecimal(ctx.col());
             return decimal.toBigInteger();
         }
     }
@@ -268,24 +269,24 @@ public class ReaderManager {
     private static class BigDecimalReader implements Reader<BigDecimal> {
 
         @Override
-        public BigDecimal read(ResultSet rs, Col col) throws SQLException {
-            return rs.getBigDecimal(col.get());
+        public BigDecimal read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getBigDecimal(ctx.col());
         }
     }
 
     private static class StringReader implements Reader<String> {
 
         @Override
-        public String read(ResultSet rs, Col col) throws SQLException {
-            return rs.getString(col.get());
+        public String read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getString(ctx.col());
         }
     }
 
     private static class UUIDReader implements Reader<UUID> {
 
         @Override
-        public UUID read(ResultSet rs, Col col) throws SQLException {
-            Object obj = rs.getObject(col.get());
+        public UUID read(ResultSet rs, Context ctx) throws SQLException {
+            Object obj = rs.getObject(ctx.col());
             if (obj == null) {
                 return null;
             }
@@ -302,39 +303,39 @@ public class ReaderManager {
     private static class BlobReader implements Reader<Blob> {
 
         @Override
-        public Blob read(ResultSet rs, Col col) throws SQLException {
-            return rs.getBlob(col.get());
+        public Blob read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getBlob(ctx.col());
         }
     }
 
     private static class SqlDateReader implements Reader<java.sql.Date> {
 
         @Override
-        public java.sql.Date read(ResultSet rs, Col col) throws SQLException {
-            return rs.getDate(col.get());
+        public java.sql.Date read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getDate(ctx.col());
         }
     }
 
     private static class SqlTimeReader implements Reader<java.sql.Time> {
 
         @Override
-        public java.sql.Time read(ResultSet rs, Col col) throws SQLException {
-            return rs.getTime(col.get());
+        public java.sql.Time read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getTime(ctx.col());
         }
     }
 
     private static class SqlTimestampReader implements Reader<java.sql.Timestamp> {
 
         @Override
-        public Timestamp read(ResultSet rs, Col col) throws SQLException {
-            return rs.getTimestamp(col.get());
+        public Timestamp read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getTimestamp(ctx.col());
         }
     }
 
     private static class DateReader implements Reader<java.util.Date> {
         @Override
-        public java.util.Date read(ResultSet rs, Col col) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(col.get());
+        public java.util.Date read(ResultSet rs, Context ctx) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
             return timestamp != null ? new java.util.Date(timestamp.getTime()) : null;
         }
     }
@@ -342,8 +343,8 @@ public class ReaderManager {
     private static class LocalDateReader implements Reader<LocalDate> {
 
         @Override
-        public LocalDate read(ResultSet rs, Col col) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(col.get());
+        public LocalDate read(ResultSet rs, Context ctx) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
             return timestamp != null ? timestamp.toLocalDateTime().toLocalDate() : null;
         }
     }
@@ -351,8 +352,8 @@ public class ReaderManager {
     private static class LocalTimeReader implements Reader<LocalTime> {
 
         @Override
-        public LocalTime read(ResultSet rs, Col col) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(col.get());
+        public LocalTime read(ResultSet rs, Context ctx) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
             return timestamp != null ? timestamp.toLocalDateTime().toLocalTime() : null;
         }
     }
@@ -360,8 +361,8 @@ public class ReaderManager {
     private static class LocalDateTimeReader implements Reader<LocalDateTime> {
 
         @Override
-        public LocalDateTime read(ResultSet rs, Col col) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(col.get());
+        public LocalDateTime read(ResultSet rs, Context ctx) throws SQLException {
+            Timestamp timestamp = rs.getTimestamp(ctx.col());
             return timestamp != null ? timestamp.toLocalDateTime() : null;
         }
     }
@@ -369,16 +370,16 @@ public class ReaderManager {
     private static class OffsetDateTimeReader implements Reader<OffsetDateTime> {
 
         @Override
-        public OffsetDateTime read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), OffsetDateTime.class);
+        public OffsetDateTime read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), OffsetDateTime.class);
         }
     }
 
     private static class ZonedDateTimeReader implements Reader<ZonedDateTime> {
 
         @Override
-        public ZonedDateTime read(ResultSet rs, Col col) throws SQLException {
-            return rs.getObject(col.get(), ZonedDateTime.class);
+        public ZonedDateTime read(ResultSet rs, Context ctx) throws SQLException {
+            return rs.getObject(ctx.col(), ZonedDateTime.class);
         }
     }
 
@@ -394,8 +395,8 @@ public class ReaderManager {
         }
 
         @Override
-        public T read(ResultSet rs, Col col) throws SQLException {
-            S sqlValue = sqlReader.read(rs, col);
+        public T read(ResultSet rs, Context ctx) throws SQLException {
+            S sqlValue = sqlReader.read(rs, ctx);
             try {
                 return sqlValue != null ? scalarProvider.toScalar(sqlValue) : null;
             } catch (Exception ex) {
@@ -423,14 +424,18 @@ public class ReaderManager {
         }
 
         @Override
-        public Object read(ResultSet rs, Col col) throws SQLException {
-            Object fk = foreignKeyReader.read(rs, col);
+        public Object read(ResultSet rs, Context ctx) throws SQLException {
+            Object fk = foreignKeyReader.read(rs, ctx);
             if (fk == null) {
                 return null;
             }
-            return Internal.produce(targetType, null, draft -> {
-                ((DraftSpi) draft).__set(targetType.getIdProp().getId(), fk);
-            });
+            DraftSpi spi = (DraftSpi) targetType.getDraftFactory().apply(ctx.draftContext(), null);
+            try {
+                spi.__set(targetType.getIdProp().getId(), fk);
+            } catch (Throwable ex) {
+                throw DraftConsumerUncheckedException.rethrow(ex);
+            }
+            return ctx.resolve(spi);
         }
     }
 
@@ -458,9 +463,9 @@ public class ReaderManager {
         }
 
         @Override
-        public Association<?, ?> read(ResultSet rs, Col col) throws SQLException {
-            Object source = sourceReader.read(rs, col);
-            Object target = targetReader.read(rs, col);
+        public Association<?, ?> read(ResultSet rs, Context ctx) throws SQLException {
+            Object source = sourceReader.read(rs, ctx);
+            Object target = targetReader.read(rs, ctx);
             return new Association<>(source, target);
         }
     }
@@ -485,17 +490,20 @@ public class ReaderManager {
         }
 
         @Override
-        public Object read(ResultSet rs, Col col) throws SQLException {
-            Object embeddable = Internal.produce(targetType, null, draft -> {
-                DraftSpi spi = (DraftSpi) draft;
+        public Object read(ResultSet rs, Context ctx) throws SQLException {
+            DraftSpi spi = (DraftSpi) targetType.getDraftFactory().apply(ctx.draftContext(), null);
+            try {
                 for (Map.Entry<ImmutableProp, Reader<?>> e : readerMap.entrySet()) {
                     ImmutableProp prop = e.getKey();
-                    Object value = e.getValue().read(rs, col);
+                    Object value = e.getValue().read(rs, ctx);
                     if (value != null || prop.isNullable()) {
                         spi.__set(prop.getId(), value);
                     }
                 }
-            });
+            } catch (Throwable ex) {
+                return DraftConsumerUncheckedException.rethrow(ex);
+            }
+            Object embeddable = ctx.resolve(spi);
             return EmbeddableObjects.isCompleted(embeddable) ? embeddable : null;
         }
     }
