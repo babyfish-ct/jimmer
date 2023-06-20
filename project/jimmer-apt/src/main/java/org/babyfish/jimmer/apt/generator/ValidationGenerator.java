@@ -60,6 +60,7 @@ public class ValidationGenerator {
         generateEmail();
         generatePattern();
         generateConstraints();
+        generateAssert();
     }
 
     private void generateNotEmpty() {
@@ -321,6 +322,33 @@ public class ValidationGenerator {
                     Constants.validatorFieldName(prop, e.getKey()),
                     prop.getName()
             );
+        }
+    }
+
+    private void generateAssert() {
+        List<AnnotationMirror> assertFalse = mirrorMultiMap.get("AssertFalse");
+        List<AnnotationMirror> assertTrue = mirrorMultiMap.get("AssertTrue");
+
+        if (assertFalse != null) {
+            assertFalse.forEach(mirror -> {
+                validate(
+                        valueName + " != false",
+                        null,
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "it is not false"
+                );
+            });
+        }
+
+        if (assertTrue != null) {
+            assertTrue.forEach(mirror -> {
+                validate(
+                        valueName + " != true",
+                        null,
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "it is not true"
+                );
+            });
         }
     }
 
