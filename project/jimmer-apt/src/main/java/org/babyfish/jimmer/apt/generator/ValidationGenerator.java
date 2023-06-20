@@ -11,6 +11,9 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.validation.ValidationException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +65,7 @@ public class ValidationGenerator {
         generateConstraints();
         generateAssert();
         generateDigits();
+        generateTime();
     }
 
     private void generateNotEmpty() {
@@ -439,6 +443,142 @@ public class ValidationGenerator {
                         new Object[]{BigDecimal.class, valueName, integer},
                         Annotations.annotationValue(mirror, "message", ""),
                         () -> "its integer digits is greater than " + integer
+                );
+            }
+        });
+    }
+
+    private void generateTime() {
+        List<AnnotationMirror> pastOrPresent = mirrorMultiMap.get("PastOrPresent");
+        List<AnnotationMirror> past = mirrorMultiMap.get("Past");
+        List<AnnotationMirror> futureOrPresent = mirrorMultiMap.get("FutureOrPresent");
+        List<AnnotationMirror> future = mirrorMultiMap.get("Future");
+
+        List<AnnotationMirror>[] allMirrors = new List[]{
+                pastOrPresent,
+                past,
+                futureOrPresent,
+                future,
+        };
+
+        AnnotationMirror mirror = Arrays.stream(allMirrors)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .findFirst()
+                .orElse(null);
+
+
+        if (mirror == null) {
+            return;
+        }
+
+        if (!prop.getTypeName().equals(TypeName.get(LocalDate.class))
+                && !prop.getTypeName().equals(TypeName.get(LocalDateTime.class))
+                && !prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+            throw new MetaException(
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
+                            Annotations.qualifiedName(mirror) +
+                            " but its type is not LocalDate, LocalDateTime or LocalTime"
+            );
+        }
+
+        Annotations.nonNullList(pastOrPresent).forEach(m -> {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isAfter($T.now())",
+                        new Object[]{valueName, LocalDate.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not before or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isAfter($T.now())",
+                        new Object[]{valueName, LocalDateTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not before or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isAfter($T.now())",
+                        new Object[]{valueName, LocalTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not before or equal to now"
+                );
+            }
+        });
+
+        Annotations.nonNullList(past).forEach(m -> {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isAfter($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDate.class, valueName, LocalDate.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not before now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isAfter($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDateTime.class, valueName, LocalDateTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not before now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isAfter($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalTime.class, valueName, LocalTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not before now"
+                );
+            }
+        });
+
+        Annotations.nonNullList(futureOrPresent).forEach(m -> {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isBefore($T.now())",
+                        new Object[]{valueName, LocalDate.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not after or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isBefore($T.now())",
+                        new Object[]{valueName, LocalDateTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not after or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isBefore($T.now())",
+                        new Object[]{valueName, LocalTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not after or equal to now"
+                );
+            }
+        });
+
+        Annotations.nonNullList(future).forEach(m -> {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isBefore($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDate.class, valueName, LocalDate.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not after now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isBefore($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDateTime.class, valueName, LocalDateTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not after now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isBefore($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalTime.class, valueName, LocalTime.class},
+                        Annotations.annotationValue(m, "message", ""),
+                        () -> "it is not after now"
                 );
             }
         });
