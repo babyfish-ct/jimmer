@@ -44,6 +44,7 @@ class ValidationGenerator(
         generatePattern()
         generateConstraints()
         generateAssert()
+        generateDigits()
     }
 
     private fun generateNotEmpty() {
@@ -323,6 +324,70 @@ class ValidationGenerator(
                     emptyArray(),
                     assertTrue["message"],
             ) { "it is not true" }
+        }
+    }
+
+    private fun generateDigits() {
+        val digits = annoMultiMap["Digits"]?.get(0) ?: return
+
+        if (!prop.typeName().isBuiltInType()
+                && !isSimpleType(BigDecimal::class)
+                && !isSimpleType(BigInteger::class)
+                && !isSimpleType(CharSequence::class)) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "it's decorated by the annotation @" +
+                            digits.fullName +
+                            " but its type is not BigDecimal"
+            )
+        }
+
+        val integer = digits["integer"] ?: 0
+        val fraction = digits["fraction"] ?: 0
+
+        if (integer < 0 || fraction < 0) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "its numeric range validation rules is illegal " +
+                            "so that there is not valid number"
+            )
+        }
+
+        if (integer == 0 && fraction == 0) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "its numeric range validation rules is illegal " +
+                            "so that there is not valid number"
+            )
+        }
+
+        if (prop.typeName(overrideNullable = false) == BIG_DECIMAL_CLASS_NAME) {
+            if (integer > 0) {
+                validate(
+                        "%L.precision() > %L",
+                        arrayOf(prop.name, integer),
+                        digits["message"],
+                ) { "it's precision is less than $integer" }
+            }
+            if (fraction > 0) {
+                validate(
+                        "%L.scale() > %L",
+                        arrayOf(prop.name, fraction),
+                        digits["message"],
+                ) { "it's scale is less than $fraction" }
+            }
+        } else if (prop.typeName(overrideNullable = false) == BIG_INTEGER_CLASS_NAME) {
+            validate(
+                    "%L.precision() > %L",
+                    arrayOf(prop.name, integer),
+                    digits["message"],
+            ) { "it's precision is less than $integer" }
+        } else {
+            validate(
+                    "%L.toString().length > %L",
+                    arrayOf(prop.name, integer + fraction),
+                    digits["message"],
+            ) { "it's length is less than ${integer + fraction}" }
         }
     }
 
