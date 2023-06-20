@@ -12,6 +12,9 @@ import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.MetaException
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.validation.ValidationException
 import kotlin.reflect.KClass
 
@@ -45,6 +48,7 @@ class ValidationGenerator(
         generateConstraints()
         generateAssert()
         generateDigits()
+        generateTime()
     }
 
     private fun generateNotEmpty() {
@@ -388,6 +392,118 @@ class ValidationGenerator(
                     arrayOf(prop.name, integer + fraction),
                     digits["message"],
             ) { "it's length is less than ${integer + fraction}" }
+        }
+    }
+
+    private fun generateTime() {
+        val pastOrPresents = annoMultiMap["PastOrPresent"] ?: emptyList()
+        val pasts = annoMultiMap["Past"] ?: emptyList()
+        val futureOrPresents = annoMultiMap["FutureOrPresent"] ?: emptyList()
+        val futures = annoMultiMap["Future"] ?: emptyList()
+
+        val annotations = listOf(pastOrPresents, pasts, futureOrPresents, futures).flatten()
+
+        if (annotations.isEmpty()) {
+            return
+        }
+
+        if (!isSimpleType(LocalDate::class)
+                && !isSimpleType(LocalDateTime::class)
+                && !isSimpleType(LocalTime::class)) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "it's decorated by the annotation @" +
+                            annotations[0].fullName +
+                            " but its type is not date or time"
+            )
+        }
+
+        for (pastOrPresent in pastOrPresents) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        pastOrPresent["message"],
+                ) { "it is not before or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        pastOrPresent["message"],
+                ) { "it is not before or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        pastOrPresent["message"],
+                ) { "it is not before or equal to now" }
+            }
+        }
+
+        for (past in pasts) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        past["message"],
+                ) { "it is not before now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        past["message"],
+                ) { "it is not before now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        past["message"],
+                ) { "it is not before now" }
+            }
+        }
+
+        for (futureOrPresent in futureOrPresents) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        futureOrPresent["message"],
+                ) { "it is not after or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        futureOrPresent["message"],
+                ) { "it is not after or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        futureOrPresent["message"],
+                ) { "it is not after or equal to now" }
+            }
+        }
+
+        for (future in futures) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        future["message"],
+                ) { "it is not after now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        future["message"],
+                ) { "it is not after now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        future["message"],
+                ) { "it is not after now" }
+            }
         }
     }
 
