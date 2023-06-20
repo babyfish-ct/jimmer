@@ -383,9 +383,9 @@ public class ValidationGenerator {
 
         if (!prop.getTypeName().isPrimitive()
                 && !prop.getTypeName().isBoxedPrimitive()
-                && !prop.getTypeName().equals(TypeName.get(BigDecimal.class))
-                && !prop.getTypeName().equals(TypeName.get(BigInteger.class))
-                && !prop.getTypeName().equals(TypeName.get(CharSequence.class))) {
+                && !isSimpleClass(BigDecimal.class)
+                && !isSimpleClass(BigInteger.class)
+                && !isSimpleClass(CharSequence.class)) {
             throw new MetaException(
                     prop.toElement(),
                     "it's decorated by the annotation @Digits " +
@@ -472,9 +472,9 @@ public class ValidationGenerator {
             return;
         }
 
-        if (!prop.getTypeName().equals(TypeName.get(LocalDate.class))
-                && !prop.getTypeName().equals(TypeName.get(LocalDateTime.class))
-                && !prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+        if (!isSimpleClass(LocalDate.class)
+                && isSimpleClass(LocalDateTime.class)
+                && isSimpleClass(LocalTime.class)) {
             throw new MetaException(
                     prop.toElement(),
                     "it's decorated by the annotation @" +
