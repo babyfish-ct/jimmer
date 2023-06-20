@@ -7,11 +7,14 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.MetaException;
 
-import javax.lang.model.element.*;
+import javax.lang.model.element.AnnotationMirror;
 import javax.validation.ValidationException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ValidationGenerator {
@@ -74,7 +77,7 @@ public class ValidationGenerator {
         }
         validate(
                 "$L.isEmpty()",
-                new Object[]{ valueName },
+                new Object[]{valueName},
                 Annotations.annotationValue(mirrors.get(0), "message", ""),
                 () -> "it cannot be empty"
         );
@@ -95,7 +98,7 @@ public class ValidationGenerator {
         }
         validate(
                 "$L.trim().isEmpty()",
-                new Object[]{ valueName },
+                new Object[]{valueName},
                 Annotations.annotationValue(mirrors.get(0), "message", ""),
                 () -> "it cannot be empty"
         );
@@ -145,7 +148,7 @@ public class ValidationGenerator {
             final int finalValue = min;
             validate(
                     "$L.$L() < $L",
-                    new Object[]{ valueName, sizeFun, finalValue },
+                    new Object[]{valueName, sizeFun, finalValue},
                     minMessage,
                     () -> "it cannot be less than " + finalValue
             );
@@ -154,7 +157,7 @@ public class ValidationGenerator {
             final int finalValue = max;
             validate(
                     "$L.$L() > $L",
-                    new Object[]{ valueName, sizeFun, finalValue },
+                    new Object[]{valueName, sizeFun, finalValue},
                     maxMessage,
                     () -> "it cannot be greater than " + finalValue
             );
@@ -170,7 +173,9 @@ public class ValidationGenerator {
         List<AnnotationMirror> positiveOrZeros = mirrorMultiMap.get("PositiveOrZero");
         List<AnnotationMirror> negatives = mirrorMultiMap.get("Negative");
         List<AnnotationMirror> negativeOrZeros = mirrorMultiMap.get("NegativeOrZero");
-        List<AnnotationMirror>[] allMirrors = new List[] { minList, maxList, positives, positiveOrZeros, negatives, negativeOrZeros};
+        List<AnnotationMirror> decimalMinList = mirrorMultiMap.get("DecimalMin");
+        List<AnnotationMirror> decimalMaxList = mirrorMultiMap.get("DecimalMax");
+        List<AnnotationMirror>[] allMirrors = new List[]{minList, maxList, positives, positiveOrZeros, negatives, negativeOrZeros, decimalMinList, decimalMaxList};
         AnnotationMirror mirror = Arrays.stream(allMirrors)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)
@@ -191,48 +196,62 @@ public class ValidationGenerator {
             );
         }
 
-        Long minValue = null;
-        Long maxValue = null;
+        BigDecimal minValue = null;
+        BigDecimal maxValue = null;
         String message = null;
         for (AnnotationMirror min : Annotations.nonNullList(minList)) {
-            long mirrorMinValue = Annotations.annotationValue(min, "value", 0L);
-            if (minValue == null || mirrorMinValue > minValue) {
+            BigDecimal mirrorMinValue = new BigDecimal(Annotations.annotationValue(min, "value", "0"));
+            if (minValue == null || mirrorMinValue.compareTo(minValue) > 0) {
                 minValue = mirrorMinValue;
                 message = Annotations.annotationValue(min, "message", "");
             }
         }
+        for (AnnotationMirror decimalMin : Annotations.nonNullList(decimalMinList)) {
+            BigDecimal mirrorDecimalMinValue = new BigDecimal(Annotations.annotationValue(decimalMin, "value", "0"));
+            if (minValue == null || mirrorDecimalMinValue.compareTo(minValue) > 0) {
+                minValue = mirrorDecimalMinValue;
+                message = Annotations.annotationValue(decimalMin, "message", "");
+            }
+        }
         for (AnnotationMirror positive : Annotations.nonNullList(positives)) {
-            if (minValue == null || 1L > minValue) {
-                minValue = 1L;
+            if (minValue == null || new BigDecimal(1L).compareTo(minValue) > 0) {
+                minValue = new BigDecimal(1L);
                 message = Annotations.annotationValue(positive, "message", "");
             }
         }
         for (AnnotationMirror positiveOrZero : Annotations.nonNullList(positiveOrZeros)) {
-            if (minValue == null || 0L > minValue) {
-                minValue = 0L;
+            if (minValue == null || new BigDecimal(0L).compareTo(minValue) > 0) {
+                minValue = new BigDecimal(0L);
                 message = Annotations.annotationValue(positiveOrZero, "message", "");
             }
         }
         for (AnnotationMirror max : Annotations.nonNullList(maxList)) {
-            long mirrorMaxValue = Annotations.annotationValue(max, "value", 0L);
-            if (maxValue == null || mirrorMaxValue < maxValue) {
+            BigDecimal mirrorMaxValue = new BigDecimal(Annotations.annotationValue(max, "value", "0"));
+            if (maxValue == null || mirrorMaxValue.compareTo(maxValue) < 0) {
                 maxValue = mirrorMaxValue;
                 message = Annotations.annotationValue(max, "message", "");
             }
         }
+        for (AnnotationMirror decimalMax : Annotations.nonNullList(decimalMaxList)) {
+            BigDecimal mirrorDecimalMaxValue = new BigDecimal(Annotations.annotationValue(decimalMax, "value", "0"));
+            if (maxValue == null || mirrorDecimalMaxValue.compareTo(maxValue) < 0) {
+                maxValue = mirrorDecimalMaxValue;
+                message = Annotations.annotationValue(decimalMax, "message", "");
+            }
+        }
         for (AnnotationMirror negative : Annotations.nonNullList(negatives)) {
-            if (maxValue == null || -1L < maxValue) {
-                maxValue = -1L;
+            if (maxValue == null || new BigDecimal(-1L).compareTo(maxValue) < 0) {
+                maxValue = new BigDecimal(-1L);
                 message = Annotations.annotationValue(negative, "message", "");
             }
         }
         for (AnnotationMirror negativeOrZero : Annotations.nonNullList(negativeOrZeros)) {
-            if (maxValue == null || 0L < maxValue) {
-                maxValue = 0L;
+            if (maxValue == null || new BigDecimal(0L).compareTo(maxValue) < 0) {
+                maxValue = new BigDecimal(0L);
                 message = Annotations.annotationValue(negativeOrZero, "message", "");
             }
         }
-        if (minValue != null && maxValue != null && minValue > maxValue) {
+        if (minValue != null && maxValue != null && minValue.compareTo(maxValue) > 0) {
             throw new MetaException(
                     prop.toElement(),
                     "its numeric range validation rules is illegal " +
@@ -262,7 +281,7 @@ public class ValidationGenerator {
         }
         validate(
                 "!$L.matcher($L).matches()",
-                new Object[]{ Constants.DRAFT_FIELD_EMAIL_PATTERN, valueName },
+                new Object[]{Constants.DRAFT_FIELD_EMAIL_PATTERN, valueName},
                 Annotations.annotationValue(mirrors.get(0), "message", ""),
                 () -> "it is not email address"
         );
@@ -285,7 +304,7 @@ public class ValidationGenerator {
             final int index = i;
             validate(
                     "!$L.matcher($L).matches()",
-                    new Object[]{ Constants.regexpPatternFieldName(prop, i), valueName },
+                    new Object[]{Constants.regexpPatternFieldName(prop, i), valueName},
                     Annotations.annotationValue(mirrors.get(i), "message", ""),
                     () -> "it does not match the regexp '" +
                             Annotations.annotationValue(mirrors.get(index), "regexp", "")
@@ -345,9 +364,9 @@ public class ValidationGenerator {
         TypeName typeName = prop.getTypeName();
         ClassName className;
         if (typeName instanceof ClassName) {
-            className = ((ClassName)typeName);
+            className = ((ClassName) typeName);
         } else if (typeName instanceof ParameterizedTypeName) {
-            className = ((ParameterizedTypeName)typeName).rawType;
+            className = ((ParameterizedTypeName) typeName).rawType;
         } else {
             return false;
         }
@@ -356,30 +375,26 @@ public class ValidationGenerator {
                 className.simpleName().equals(type.getSimpleName());
     }
 
-    private void validateBound(long bound, String cmp, String message) {
+    private void validateBound(BigDecimal bound, String cmp, String message) {
         String bigNumLiteral;
         if (prop.getTypeName().equals(ClassName.get(BigDecimal.class))) {
-            if (bound == 0) {
+            if (bound.compareTo(BigDecimal.ZERO) == 0) {
                 bigNumLiteral = "$T.ZERO";
-            } else if (bound == 1) {
+            } else if (bound.compareTo(BigDecimal.ONE) == 0) {
                 bigNumLiteral = "$T.ONE";
-            } else if (bound == 2) {
-                bigNumLiteral = "$T.TWO";
-            } else if (bound == 10) {
+            } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
                 bigNumLiteral = "$T.valueOf(" + bound + ")";
             }
         } else if (prop.getTypeName().equals(ClassName.get(BigInteger.class))) {
-            if (bound == -1) {
+            if (bound.compareTo(new BigDecimal(-1L)) == 0) {
                 bigNumLiteral = "$T.NEGATIVE_ONE";
-            } else if (bound == 0) {
+            } else if (bound.compareTo(BigDecimal.ZERO) == 0) {
                 bigNumLiteral = "$T.ZERO";
-            } else if (bound == 1) {
+            } else if (bound.compareTo(BigDecimal.ONE) == 0) {
                 bigNumLiteral = "$T.ONE";
-            } else if (bound == 2) {
-                bigNumLiteral = "$T.TWO";
-            } else if (bound == 10) {
+            } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
                 bigNumLiteral = "$T.valueOf(" + bound + ", 0)";
@@ -392,8 +407,8 @@ public class ValidationGenerator {
                         "$L.compareTo(" + bigNumLiteral + ") $L 0" :
                         "$L $L $L",
                 bigNumLiteral != null ?
-                        new Object[] { valueName, prop.getElementType(), cmp } :
-                        new Object[] { valueName, cmp, bound },
+                        new Object[]{valueName, prop.getElementType(), cmp} :
+                        new Object[]{valueName, cmp, bound},
                 message,
                 () -> "it cannot be " +
                         (cmp.equals("<") ? "less than" : "greater than") +
