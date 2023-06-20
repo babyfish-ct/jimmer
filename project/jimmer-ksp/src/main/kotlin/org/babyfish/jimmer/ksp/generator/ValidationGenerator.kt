@@ -43,6 +43,7 @@ class ValidationGenerator(
         generateEmail()
         generatePattern()
         generateConstraints()
+        generateAssert()
     }
 
     private fun generateNotEmpty() {
@@ -286,6 +287,42 @@ class ValidationGenerator(
                 validatorFieldName(prop, e.key),
                 prop.name
             )
+        }
+    }
+
+    private fun generateAssert() {
+        val assertFalseList = annoMultiMap["AssertFalse"] ?: emptyList()
+        val assertTrueList = annoMultiMap["AssertTrue"] ?: emptyList()
+
+        val annotations = listOf(assertFalseList, assertTrueList).flatten()
+
+        if (annotations.isEmpty()) {
+            return
+        }
+
+        if (!isSimpleType(Boolean::class)) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "it's decorated by the annotation @" +
+                            annotations[0].fullName +
+                            " but its type is not boolean"
+            )
+        }
+
+        for (assertFalse in assertFalseList) {
+            validate(
+                    "${prop.name} != false",
+                    emptyArray(),
+                    assertFalse["message"],
+            ) { "it is not false" }
+        }
+
+        for (assertTrue in assertTrueList) {
+            validate(
+                    "${prop.name} != true",
+                    emptyArray(),
+                    assertTrue["message"],
+            ) { "it is not true" }
         }
     }
 
