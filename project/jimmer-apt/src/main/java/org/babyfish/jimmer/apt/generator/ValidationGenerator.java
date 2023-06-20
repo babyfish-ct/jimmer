@@ -331,12 +331,12 @@ public class ValidationGenerator {
     }
 
     private void generateAssert() {
-        List<AnnotationMirror> assertFalse = mirrorMultiMap.get("AssertFalse");
-        List<AnnotationMirror> assertTrue = mirrorMultiMap.get("AssertTrue");
+        List<AnnotationMirror> assertFalseList = mirrorMultiMap.get("AssertFalse");
+        List<AnnotationMirror> assertTrueList = mirrorMultiMap.get("AssertTrue");
 
         List<AnnotationMirror>[] allMirrors = new List[]{
-                assertFalse,
-                assertTrue
+                assertFalseList,
+                assertTrueList
         };
 
         AnnotationMirror mirror = Arrays.stream(allMirrors)
@@ -359,25 +359,29 @@ public class ValidationGenerator {
             );
         }
 
-        Annotations.nonNullList(assertFalse).forEach(m -> validate(
-                valueName + " != false",
-                null,
-                Annotations.annotationValue(m, "message", ""),
-                () -> "it is not false"
-        ));
+        for (AnnotationMirror assertFalse : Annotations.nonNullList(assertFalseList)) {
+            validate(
+                    valueName + " != false",
+                    null,
+                    Annotations.annotationValue(assertFalse, "message", ""),
+                    () -> "it is not false"
+            );
+        }
 
-        Annotations.nonNullList(assertTrue).forEach(m -> validate(
-                valueName + " != true",
-                null,
-                Annotations.annotationValue(m, "message", ""),
-                () -> "it is not true"
-        ));
+        for (AnnotationMirror assertTrue : Annotations.nonNullList(assertTrueList)) {
+            validate(
+                    valueName + " != true",
+                    null,
+                    Annotations.annotationValue(assertTrue, "message", ""),
+                    () -> "it is not true"
+            );
+        }
     }
 
     private void generateDigits() {
-        List<AnnotationMirror> digits = mirrorMultiMap.get("Digits");
+        List<AnnotationMirror> digitsList = mirrorMultiMap.get("Digits");
 
-        if (digits == null) {
+        if (digitsList == null) {
             return;
         }
 
@@ -392,9 +396,9 @@ public class ValidationGenerator {
                             "but its type is not primitive, boxed primitive, BigDecimal, BigInteger or CharSequence");
         }
 
-        digits.forEach(mirror -> {
-            int integer = Annotations.annotationValue(mirror, "integer", 0);
-            int fraction = Annotations.annotationValue(mirror, "fraction", 0);
+        for (AnnotationMirror digits : digitsList) {
+            int integer = Annotations.annotationValue(digits, "integer", 0);
+            int fraction = Annotations.annotationValue(digits, "fraction", 0);
             if (integer < 0 || fraction < 0) {
                 throw new MetaException(
                         prop.toElement(),
@@ -414,51 +418,51 @@ public class ValidationGenerator {
                 validate(
                         "$L.precision() > $L",
                         new Object[]{valueName, integer},
-                        Annotations.annotationValue(mirror, "message", ""),
+                        Annotations.annotationValue(digits, "message", ""),
                         () -> "its integer digits is greater than " + integer
                 );
                 validate(
                         "$L.scale() > $L",
                         new Object[]{valueName, fraction},
-                        Annotations.annotationValue(mirror, "message", ""),
+                        Annotations.annotationValue(digits, "message", ""),
                         () -> "its fraction digits is greater than " + fraction
                 );
             } else if (prop.getTypeName().equals(TypeName.get(BigInteger.class))) {
                 validate(
                         "$L.bitLength() > $L",
                         new Object[]{valueName, integer},
-                        Annotations.annotationValue(mirror, "message", ""),
+                        Annotations.annotationValue(digits, "message", ""),
                         () -> "its integer digits is greater than " + integer
                 );
             } else if (prop.getTypeName().equals(TypeName.get(CharSequence.class))) {
                 validate(
                         "$L.length() > $L",
                         new Object[]{valueName, integer},
-                        Annotations.annotationValue(mirror, "message", ""),
+                        Annotations.annotationValue(digits, "message", ""),
                         () -> "its integer digits is greater than " + integer
                 );
             } else if (prop.getTypeName().isPrimitive() || prop.getTypeName().isBoxedPrimitive()) {
                 validate(
                         "new $T($L).precision() > $L",
                         new Object[]{BigDecimal.class, valueName, integer},
-                        Annotations.annotationValue(mirror, "message", ""),
+                        Annotations.annotationValue(digits, "message", ""),
                         () -> "its integer digits is greater than " + integer
                 );
             }
-        });
+        }
     }
 
     private void generateTime() {
-        List<AnnotationMirror> pastOrPresent = mirrorMultiMap.get("PastOrPresent");
-        List<AnnotationMirror> past = mirrorMultiMap.get("Past");
-        List<AnnotationMirror> futureOrPresent = mirrorMultiMap.get("FutureOrPresent");
-        List<AnnotationMirror> future = mirrorMultiMap.get("Future");
+        List<AnnotationMirror> pastOrPresents = mirrorMultiMap.get("PastOrPresent");
+        List<AnnotationMirror> pasts = mirrorMultiMap.get("Past");
+        List<AnnotationMirror> futureOrPresents = mirrorMultiMap.get("FutureOrPresent");
+        List<AnnotationMirror> futures = mirrorMultiMap.get("Future");
 
         List<AnnotationMirror>[] allMirrors = new List[]{
-                pastOrPresent,
-                past,
-                futureOrPresent,
-                future,
+                pastOrPresents,
+                pasts,
+                futureOrPresents,
+                futures,
         };
 
         AnnotationMirror mirror = Arrays.stream(allMirrors)
@@ -483,105 +487,106 @@ public class ValidationGenerator {
             );
         }
 
-        Annotations.nonNullList(pastOrPresent).forEach(m -> {
+        for (AnnotationMirror pastOrPresent : Annotations.nonNullList(pastOrPresents)) {
             if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
                 validate(
                         "$L.isAfter($T.now())",
                         new Object[]{valueName, LocalDate.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(pastOrPresent, "message", ""),
                         () -> "it is not before or equal to now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
                 validate(
                         "$L.isAfter($T.now())",
                         new Object[]{valueName, LocalDateTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(pastOrPresent, "message", ""),
                         () -> "it is not before or equal to now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
                 validate(
                         "$L.isAfter($T.now())",
                         new Object[]{valueName, LocalTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(pastOrPresent, "message", ""),
                         () -> "it is not before or equal to now"
                 );
             }
-        });
+        }
 
-        Annotations.nonNullList(past).forEach(m -> {
+
+        for (AnnotationMirror past : Annotations.nonNullList(pasts)) {
             if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
                 validate(
                         "$L.isAfter($T.now()) || $L.isEqual($T.now())",
                         new Object[]{valueName, LocalDate.class, valueName, LocalDate.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(past, "message", ""),
                         () -> "it is not before now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
                 validate(
                         "$L.isAfter($T.now()) || $L.isEqual($T.now())",
                         new Object[]{valueName, LocalDateTime.class, valueName, LocalDateTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(past, "message", ""),
                         () -> "it is not before now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
                 validate(
                         "$L.isAfter($T.now()) || $L.isEqual($T.now())",
                         new Object[]{valueName, LocalTime.class, valueName, LocalTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(past, "message", ""),
                         () -> "it is not before now"
                 );
             }
-        });
+        }
 
-        Annotations.nonNullList(futureOrPresent).forEach(m -> {
+        for (AnnotationMirror futureOrPresent : Annotations.nonNullList(futureOrPresents)) {
             if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
                 validate(
                         "$L.isBefore($T.now())",
                         new Object[]{valueName, LocalDate.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(futureOrPresent, "message", ""),
                         () -> "it is not after or equal to now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
                 validate(
                         "$L.isBefore($T.now())",
                         new Object[]{valueName, LocalDateTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(futureOrPresent, "message", ""),
                         () -> "it is not after or equal to now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
                 validate(
                         "$L.isBefore($T.now())",
                         new Object[]{valueName, LocalTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(futureOrPresent, "message", ""),
                         () -> "it is not after or equal to now"
                 );
             }
-        });
+        }
 
-        Annotations.nonNullList(future).forEach(m -> {
+        for (AnnotationMirror future : Annotations.nonNullList(futures)) {
             if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
                 validate(
                         "$L.isBefore($T.now()) || $L.isEqual($T.now())",
                         new Object[]{valueName, LocalDate.class, valueName, LocalDate.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(future, "message", ""),
                         () -> "it is not after now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
                 validate(
                         "$L.isBefore($T.now()) || $L.isEqual($T.now())",
                         new Object[]{valueName, LocalDateTime.class, valueName, LocalDateTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(future, "message", ""),
                         () -> "it is not after now"
                 );
             } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
                 validate(
                         "$L.isBefore($T.now()) || $L.isEqual($T.now())",
                         new Object[]{valueName, LocalTime.class, valueName, LocalTime.class},
-                        Annotations.annotationValue(m, "message", ""),
+                        Annotations.annotationValue(future, "message", ""),
                         () -> "it is not after now"
                 );
             }
-        });
+        }
     }
 
     private void validate(
