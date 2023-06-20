@@ -61,6 +61,7 @@ public class ValidationGenerator {
         generatePattern();
         generateConstraints();
         generateAssert();
+        generateDigits();
     }
 
     private void generateNotEmpty() {
@@ -350,6 +351,80 @@ public class ValidationGenerator {
                 );
             });
         }
+    }
+
+    private void generateDigits() {
+        List<AnnotationMirror> digits = mirrorMultiMap.get("Digits");
+
+        if (!prop.getTypeName().isPrimitive()
+                && !prop.getTypeName().isBoxedPrimitive()
+                && !prop.getTypeName().equals(TypeName.get(BigDecimal.class))
+                && !prop.getTypeName().equals(TypeName.get(BigInteger.class))
+                && !prop.getTypeName().equals(TypeName.get(CharSequence.class))) {
+            throw new MetaException(
+                    prop.toElement(),
+                    "it's decorated by the annotation @Digits " +
+                            "but its type is not primitive, boxed primitive, BigDecimal, BigInteger or CharSequence");
+        }
+
+        if (digits == null) {
+            return;
+        }
+
+        digits.forEach(mirror -> {
+            int integer = Annotations.annotationValue(mirror, "integer", 0);
+            int fraction = Annotations.annotationValue(mirror, "fraction", 0);
+            if (integer < 0 || fraction < 0) {
+                throw new MetaException(
+                        prop.toElement(),
+                        "its numeric range validation rules is illegal " +
+                                "so that there is not valid number"
+                );
+            }
+            if (integer == 0 && fraction == 0) {
+                throw new MetaException(
+                        prop.toElement(),
+                        "its numeric range validation rules is illegal " +
+                                "so that there is not valid number"
+                );
+            }
+
+            if (prop.getTypeName().equals(TypeName.get(BigDecimal.class))) {
+                validate(
+                        "$L.precision() > $L",
+                        new Object[]{valueName, integer},
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+                validate(
+                        "$L.scale() > $L",
+                        new Object[]{valueName, fraction},
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "its fraction digits is greater than " + fraction
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(BigInteger.class))) {
+                validate(
+                        "$L.bitLength() > $L",
+                        new Object[]{valueName, integer},
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(CharSequence.class))) {
+                validate(
+                        "$L.length() > $L",
+                        new Object[]{valueName, integer},
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+            } else if (prop.getTypeName().isPrimitive() || prop.getTypeName().isBoxedPrimitive()) {
+                validate(
+                        "new $T($L).precision() > $L",
+                        new Object[]{BigDecimal.class, valueName, integer},
+                        Annotations.annotationValue(mirror, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+            }
+        });
     }
 
     private void validate(
