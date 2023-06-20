@@ -200,7 +200,7 @@ public class ValidationGenerator {
         BigDecimal maxValue = null;
         String message = null;
         for (AnnotationMirror min : Annotations.nonNullList(minList)) {
-            BigDecimal mirrorMinValue = new BigDecimal(Annotations.annotationValue(min, "value", "0"));
+            BigDecimal mirrorMinValue = new BigDecimal(Annotations.annotationValue(min, "value", 0L));
             if (minValue == null || mirrorMinValue.compareTo(minValue) > 0) {
                 minValue = mirrorMinValue;
                 message = Annotations.annotationValue(min, "message", "");
@@ -226,7 +226,7 @@ public class ValidationGenerator {
             }
         }
         for (AnnotationMirror max : Annotations.nonNullList(maxList)) {
-            BigDecimal mirrorMaxValue = new BigDecimal(Annotations.annotationValue(max, "value", "0"));
+            BigDecimal mirrorMaxValue = new BigDecimal(Annotations.annotationValue(max, "value", 0L));
             if (maxValue == null || mirrorMaxValue.compareTo(maxValue) < 0) {
                 maxValue = mirrorMaxValue;
                 message = Annotations.annotationValue(max, "message", "");
@@ -385,7 +385,7 @@ public class ValidationGenerator {
             } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
-                bigNumLiteral = "$T.valueOf(" + bound + ")";
+                bigNumLiteral = "$T.valueOf(" + bound + ", 0)";
             }
         } else if (prop.getTypeName().equals(ClassName.get(BigInteger.class))) {
             if (bound.compareTo(new BigDecimal(-1L)) == 0) {
@@ -397,7 +397,7 @@ public class ValidationGenerator {
             } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
-                bigNumLiteral = "$T.valueOf(" + bound + ", 0)";
+                bigNumLiteral = "$T.valueOf(" + bound + ")";
             }
         } else {
             bigNumLiteral = null;
