@@ -330,31 +330,52 @@ public class ValidationGenerator {
         List<AnnotationMirror> assertFalse = mirrorMultiMap.get("AssertFalse");
         List<AnnotationMirror> assertTrue = mirrorMultiMap.get("AssertTrue");
 
-        if (assertFalse != null) {
-            assertFalse.forEach(mirror -> {
-                validate(
-                        valueName + " != false",
-                        null,
-                        Annotations.annotationValue(mirror, "message", ""),
-                        () -> "it is not false"
-                );
-            });
+        List<AnnotationMirror>[] allMirrors = new List[]{
+                assertFalse,
+                assertTrue
+        };
+
+        AnnotationMirror mirror = Arrays.stream(allMirrors)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .findFirst()
+                .orElse(null);
+
+        if (mirror == null) {
+            return;
         }
 
-        if (assertTrue != null) {
-            assertTrue.forEach(mirror -> {
-                validate(
-                        valueName + " != true",
-                        null,
-                        Annotations.annotationValue(mirror, "message", ""),
-                        () -> "it is not true"
-                );
-            });
+        if (!prop.getTypeName().equals(TypeName.BOOLEAN)
+                && !prop.getTypeName().equals(TypeName.BOOLEAN.box())) {
+            throw new MetaException(
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
+                            Annotations.qualifiedName(mirror) +
+                            " but its type is not boolean"
+            );
         }
+
+        Annotations.nonNullList(assertFalse).forEach(m -> validate(
+                valueName + " != false",
+                null,
+                Annotations.annotationValue(m, "message", ""),
+                () -> "it is not false"
+        ));
+
+        Annotations.nonNullList(assertTrue).forEach(m -> validate(
+                valueName + " != true",
+                null,
+                Annotations.annotationValue(m, "message", ""),
+                () -> "it is not true"
+        ));
     }
 
     private void generateDigits() {
         List<AnnotationMirror> digits = mirrorMultiMap.get("Digits");
+
+        if (digits == null) {
+            return;
+        }
 
         if (!prop.getTypeName().isPrimitive()
                 && !prop.getTypeName().isBoxedPrimitive()
@@ -365,10 +386,6 @@ public class ValidationGenerator {
                     prop.toElement(),
                     "it's decorated by the annotation @Digits " +
                             "but its type is not primitive, boxed primitive, BigDecimal, BigInteger or CharSequence");
-        }
-
-        if (digits == null) {
-            return;
         }
 
         digits.forEach(mirror -> {
