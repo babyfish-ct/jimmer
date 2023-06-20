@@ -15,6 +15,9 @@ import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import org.babyfish.jimmer.sql.collection.MutableIdViewList
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.regex.Pattern
 
 internal const val DRAFT = "Draft"
@@ -59,6 +62,9 @@ internal val ID_VIEW_CLASS_NAME = IdViewList::class.asClassName()
 internal val MUTABLE_ID_VIEW_CLASS_NAME = MutableIdViewList::class.asClassName()
 internal val MANY_TO_MANY_VIEW_CLASS_NAME = ManyToManyView::class.asClassName()
 internal val MANY_TO_MANY_VIEW_LIST_CLASS_NAME = ManyToManyViewList::class.asClassName()
+internal val LOCAL_DATE_CLASS_NAME = LocalDate::class.asClassName()
+internal val LOCAL_DATE_TIME_CLASS_NAME = LocalDateTime::class.asClassName()
+internal val LOCAL_TIME_CLASS_NAME = LocalTime::class.asClassName()
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"
