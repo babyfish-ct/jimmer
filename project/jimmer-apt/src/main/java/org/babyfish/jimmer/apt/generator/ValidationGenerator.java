@@ -220,14 +220,14 @@ public class ValidationGenerator {
             }
         }
         for (AnnotationMirror positive : Annotations.nonNullList(positives)) {
-            if (minValue == null || new BigDecimal(1L).compareTo(minValue) > 0) {
-                minValue = new BigDecimal(1L);
+            if (minValue == null || BigDecimal.ONE.compareTo(minValue) > 0) {
+                minValue = BigDecimal.ONE;
                 message = Annotations.annotationValue(positive, "message", "");
             }
         }
         for (AnnotationMirror positiveOrZero : Annotations.nonNullList(positiveOrZeros)) {
-            if (minValue == null || new BigDecimal(0L).compareTo(minValue) > 0) {
-                minValue = new BigDecimal(0L);
+            if (minValue == null || BigDecimal.ZERO.compareTo(minValue) > 0) {
+                minValue = BigDecimal.ZERO;
                 message = Annotations.annotationValue(positiveOrZero, "message", "");
             }
         }
@@ -246,14 +246,14 @@ public class ValidationGenerator {
             }
         }
         for (AnnotationMirror negative : Annotations.nonNullList(negatives)) {
-            if (maxValue == null || new BigDecimal(-1L).compareTo(maxValue) < 0) {
-                maxValue = new BigDecimal(-1L);
+            if (maxValue == null || BigDecimal.ONE.negate().compareTo(maxValue) < 0) {
+                maxValue = BigDecimal.ONE.negate();
                 message = Annotations.annotationValue(negative, "message", "");
             }
         }
         for (AnnotationMirror negativeOrZero : Annotations.nonNullList(negativeOrZeros)) {
-            if (maxValue == null || new BigDecimal(0L).compareTo(maxValue) < 0) {
-                maxValue = new BigDecimal(0L);
+            if (maxValue == null || BigDecimal.ZERO.compareTo(maxValue) < 0) {
+                maxValue = BigDecimal.ZERO;
                 message = Annotations.annotationValue(negativeOrZero, "message", "");
             }
         }
@@ -650,10 +650,10 @@ public class ValidationGenerator {
             } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
-                bigNumLiteral = "$T.valueOf(" + bound + ", 0)";
+                bigNumLiteral = "$T.valueOf(" + bound + ")";
             }
         } else if (prop.getTypeName().equals(ClassName.get(BigInteger.class))) {
-            if (bound.compareTo(new BigDecimal(-1L)) == 0) {
+            if (bound.compareTo(BigDecimal.ONE.negate()) == 0) {
                 bigNumLiteral = "$T.NEGATIVE_ONE";
             } else if (bound.compareTo(BigDecimal.ZERO) == 0) {
                 bigNumLiteral = "$T.ZERO";
