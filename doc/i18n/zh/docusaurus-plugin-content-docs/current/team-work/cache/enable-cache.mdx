@@ -50,7 +50,7 @@ public interface CacheFactory {
 ```
 
 :::info
-对于Kotin而言，为了在覆盖`createAssociatedIdListCache`让IDE生成更好的代码，请实现`org.babyfish.jimmer.sql.kt.cache.KCacheFactory`接口。
+对于Kotin而言，为了在覆盖`createAssociatedIdListCache`时让IDE生成更好的代码，请实现`org.babyfish.jimmer.sql.kt.cache.KCacheFactory`接口。
 
 否则，IDE生成的override方法代码时，返回类型是`Cache<*, MutableList<*>>`，而非期望的`Cache<*, List<*>>`
 :::
@@ -69,9 +69,9 @@ Jimmer调用此接口初始化缓存系统，用户实现此接口回答问题
 
 -   createAssociatedIdCache和createAssociatedIdListCache：启用关联缓存
 
-    createAssociatedIdCache和createAssociatedIdListCache都用于启用关联缓存。二者唯一的区别是，前者针对一对一和多对一关联，后者针对一对多和多对多关联。
+    `createAssociatedIdCache`和`createAssociatedIdListCache`都用于启用关联缓存。二者唯一的区别是，前者针对一对一或多对一关联，后者针对一对多或多对多关联。
 
-    参数指定一个[关联属性](../mapping/base/association)，如果想让它支持关联缓存，就创建缓存并返回；否则，返回null。
+    参数指定一个[关联属性](../mapping/base/association)，如果想让它支持关联缓存，就创建缓存并返回；否则返回null。
 
     所谓<ViewMore buttonText="关联缓存"><img src={AssociationCache}/></ViewMore>，指把id映射为关联id *(或其集合)*
 
@@ -177,7 +177,7 @@ public class ChainCacheBuilder<K, V> {
 
 -   ❷ 处代码仅被[多视角缓存](./multiview-cache)使用，读者可以先行忽略
 
--   ❸ `org.babyfish.jimmer.sql.cache.chain.SimpleBinder`是一个接口，任何不具备自动值加载值行为缓存技术都可以通过该接口适配。
+-   ❸ `org.babyfish.jimmer.sql.cache.chain.SimpleBinder`是一个接口，任何不具备自动加载值行为的缓存技术都可以通过该接口适配。
 
     几乎所有远程缓存，都不具备自动加载能力。比如上文代码中所用的[Redis](https://redis.io/)。
 
@@ -199,7 +199,7 @@ public class ChainCacheBuilder<K, V> {
 
 ## 配置`CacheFactory`
 
-现在，我们已经介绍了`CacheFactory`接口和多级缓存架构，但离弃用缓存还差最后一步。
+现在，我们已经介绍了`CacheFactory`接口和多级缓存架构，但离启用缓存还差最后一步。
 
 最后一步，为Jimmer把注册`CacheFactory`。
 
