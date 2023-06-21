@@ -377,13 +377,13 @@ public class ImplGenerator {
                 continue;
             }
             if (prop.isLoadedStateRequired()) {
-                builder.addStatement("boolean __$L = $L", prop.getLoadedStateName(), prop.getLoadedStateName());
+                builder.addStatement("boolean $L = this.$L", prop.getLoadedStateName(), prop.getLoadedStateName());
             } else {
-                builder.addStatement("boolean __$L = $L != null", prop.getLoadedStateName(true), prop.getName());
+                builder.addStatement("boolean $L = $L != null", prop.getLoadedStateName(true), prop.getName());
             }
             builder
                     .beginControlFlow(
-                            "if (__$L != __other.__isLoaded($T.byIndex($L)))",
+                            "if ($L != __other.__isLoaded($T.byIndex($L)))",
                             prop.getLoadedStateName(true),
                             PROP_ID_CLASS_NAME,
                             prop.getSlotName()
@@ -393,14 +393,14 @@ public class ImplGenerator {
             if (shallow || prop.getReturnType() instanceof PrimitiveType) {
                 if (!shallow && prop.getAnnotation(Id.class) != null) {
                     builder
-                            .beginControlFlow("if (__$L)", prop.getLoadedStateName(true))
+                            .beginControlFlow("if ($L)", prop.getLoadedStateName(true))
                             .addComment("If entity-id is loaded, return directly")
                             .addStatement("return $L == __other.$L()", prop.getName(), prop.getGetterName())
                             .endControlFlow();
                 } else {
                     builder
                             .beginControlFlow(
-                                    "if (__$L && $L != __other.$L())",
+                                    "if ($L && $L != __other.$L())",
                                     prop.getLoadedStateName(true),
                                     prop.getName(),
                                     prop.getGetterName()
@@ -411,7 +411,7 @@ public class ImplGenerator {
             } else if (prop.getAnnotation(Id.class) != null) {
                 builder
                         .beginControlFlow(
-                                "if (__$L)",
+                                "if ($L)",
                                 prop.getLoadedStateName(true)
                         )
                         .addComment("If entity-id is loaded, return directly")
@@ -425,7 +425,7 @@ public class ImplGenerator {
             } else {
                 builder
                         .beginControlFlow(
-                                "if (__$L && !$T.equals($L, __other.$L()))",
+                                "if ($L && !$T.equals($L, __other.$L()))",
                                 prop.getLoadedStateName(true),
                                 Objects.class,
                                 prop.getName(),
