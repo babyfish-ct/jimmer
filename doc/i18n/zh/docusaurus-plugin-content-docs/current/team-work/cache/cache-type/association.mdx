@@ -22,13 +22,13 @@ import Divider from '@mui/material/Divider';
 :::caution
 和其他关联缓存不同，有一种场景不需要使用一对一或多对一关联缓存。
 
-如果一对一或多对一关联基于真实外键，在数据库中存在对应的外间约束，那么外键本身就是关联对象id，无需使用关联缓存。
+如果一对一或多对一关联基于真实外键，在数据库中存在对应的外键约束，那么外键本身就是关联对象id，无需使用关联缓存。
 
-其他情况下，Jimmer都会使用一对一或多对一关联缓存，这些情况包括
+其他情况下，Jimmer都会使用一对一或多对一关联缓存，这些情况包括：
 
 -   关联属性是反向映射
 
-    即`@OneToOne`或`@ManyToOne`的`mappedBy`被配置
+    即`@OneToOne`或`@OneToMany`的`mappedBy`被配置
 
 -   关联属性基于伪外键
 
@@ -43,7 +43,7 @@ import Divider from '@mui/material/Divider';
     这种特殊的案例，在[用Jimmer实现GraphQL](../../graphql)时会出现，其他情况下基本不会出现
 :::
 
-在附带的官方示例子中，多对一关联`Book.store`基于真实外键，所以，其多对一缓存不会被使用。
+在附带的官方示例中，多对一关联`Book.store`基于真实外键，所以，其多对一缓存不会被使用。
 
 因此，本文的例子基于一对多关联`BookStore.books`和多对多关联`Book.authors`。
 
@@ -163,7 +163,7 @@ fun cacheFactory(
 :::caution
 对于集合类型的关联，如果我们使用[对象抓取器](../../query/object-fetcher)的字段级过滤器来实现关联级排序，将会导致Jimmer无视关联缓存。
 
-如果既要充分利用关联缓存，又要让[对象抓取器](../../query/object-fetcher)查询返回的关联对象集合的的排序可控，可以在实体上使用静态配置制定默认排序。
+如果既要充分利用关联缓存，又要让[对象抓取器](../../query/object-fetcher)查询返回的关联对象集合的排序可控，可以在实体上使用静态配置制定默认排序。
 :::
 
 -   `BookStore.books`
@@ -325,7 +325,7 @@ println(stores)
     
     :::caution
     Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务需要，不应由框架抽象并统一其行为。
     :::
 
 -   第二步：通过关联缓存把当前对象id转化为关联对象id
@@ -362,7 +362,7 @@ println(stores)
         tb_1_.EDITION desc
     ```
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys BookStore.books-*
     1) "BookStore.books-2"
@@ -468,7 +468,7 @@ println(stores)
 
 <Divider><Chip label="缓存模式"/></Divider>
 
-在缓存模式下，这个例子的具有三个执行步骤
+在缓存模式下，这个例子具有三个执行步骤：
 
 1.  从数据库查询聚合根
     
@@ -599,7 +599,7 @@ println(books)
     
     :::caution
     Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不应由框架抽象并统一其行为。
     :::
 
 -   第二步：通过关联缓存把当前对象id转化为关联对象id
@@ -638,7 +638,7 @@ println(books)
     如果不通过`@ManyToMany.orderedProps`为关联属性`Book.authors`指定默认排序，这里就的`join`不会出现
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys Book.authors-*
     1) "Book.authors-4"
@@ -727,7 +727,7 @@ println(books)
 
 <Divider><Chip label="缓存模式"/></Divider>
 
-在缓存模式下，这个例子的具有三个执行步骤
+在缓存模式下，这个例子具有三个执行步骤：
 
 1.  从数据库查询聚合根
     
