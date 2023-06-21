@@ -7,11 +7,17 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.MetaException;
 
-import javax.lang.model.element.*;
+import javax.lang.model.element.AnnotationMirror;
 import javax.validation.ValidationException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class ValidationGenerator {
@@ -57,6 +63,9 @@ public class ValidationGenerator {
         generateEmail();
         generatePattern();
         generateConstraints();
+        generateAssert();
+        generateDigits();
+        generateTime();
     }
 
     private void generateNotEmpty() {
@@ -74,7 +83,7 @@ public class ValidationGenerator {
         }
         validate(
                 "$L.isEmpty()",
-                new Object[]{ valueName },
+                new Object[]{valueName},
                 Annotations.annotationValue(mirrors.get(0), "message", ""),
                 () -> "it cannot be empty"
         );
@@ -95,7 +104,7 @@ public class ValidationGenerator {
         }
         validate(
                 "$L.trim().isEmpty()",
-                new Object[]{ valueName },
+                new Object[]{valueName},
                 Annotations.annotationValue(mirrors.get(0), "message", ""),
                 () -> "it cannot be empty"
         );
@@ -145,7 +154,7 @@ public class ValidationGenerator {
             final int finalValue = min;
             validate(
                     "$L.$L() < $L",
-                    new Object[]{ valueName, sizeFun, finalValue },
+                    new Object[]{valueName, sizeFun, finalValue},
                     minMessage,
                     () -> "it cannot be less than " + finalValue
             );
@@ -154,7 +163,7 @@ public class ValidationGenerator {
             final int finalValue = max;
             validate(
                     "$L.$L() > $L",
-                    new Object[]{ valueName, sizeFun, finalValue },
+                    new Object[]{valueName, sizeFun, finalValue},
                     maxMessage,
                     () -> "it cannot be greater than " + finalValue
             );
@@ -170,7 +179,9 @@ public class ValidationGenerator {
         List<AnnotationMirror> positiveOrZeros = mirrorMultiMap.get("PositiveOrZero");
         List<AnnotationMirror> negatives = mirrorMultiMap.get("Negative");
         List<AnnotationMirror> negativeOrZeros = mirrorMultiMap.get("NegativeOrZero");
-        List<AnnotationMirror>[] allMirrors = new List[] { minList, maxList, positives, positiveOrZeros, negatives, negativeOrZeros};
+        List<AnnotationMirror> decimalMinList = mirrorMultiMap.get("DecimalMin");
+        List<AnnotationMirror> decimalMaxList = mirrorMultiMap.get("DecimalMax");
+        List<AnnotationMirror>[] allMirrors = new List[]{minList, maxList, positives, positiveOrZeros, negatives, negativeOrZeros, decimalMinList, decimalMaxList};
         AnnotationMirror mirror = Arrays.stream(allMirrors)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)
@@ -191,48 +202,62 @@ public class ValidationGenerator {
             );
         }
 
-        Long minValue = null;
-        Long maxValue = null;
+        BigDecimal minValue = null;
+        BigDecimal maxValue = null;
         String message = null;
         for (AnnotationMirror min : Annotations.nonNullList(minList)) {
-            long mirrorMinValue = Annotations.annotationValue(min, "value", 0L);
-            if (minValue == null || mirrorMinValue > minValue) {
+            BigDecimal mirrorMinValue = new BigDecimal(Annotations.annotationValue(min, "value", 0L));
+            if (minValue == null || mirrorMinValue.compareTo(minValue) > 0) {
                 minValue = mirrorMinValue;
                 message = Annotations.annotationValue(min, "message", "");
             }
         }
+        for (AnnotationMirror decimalMin : Annotations.nonNullList(decimalMinList)) {
+            BigDecimal mirrorDecimalMinValue = new BigDecimal(Annotations.annotationValue(decimalMin, "value", "0"));
+            if (minValue == null || mirrorDecimalMinValue.compareTo(minValue) > 0) {
+                minValue = mirrorDecimalMinValue;
+                message = Annotations.annotationValue(decimalMin, "message", "");
+            }
+        }
         for (AnnotationMirror positive : Annotations.nonNullList(positives)) {
-            if (minValue == null || 1L > minValue) {
-                minValue = 1L;
+            if (minValue == null || BigDecimal.ONE.compareTo(minValue) > 0) {
+                minValue = BigDecimal.ONE;
                 message = Annotations.annotationValue(positive, "message", "");
             }
         }
         for (AnnotationMirror positiveOrZero : Annotations.nonNullList(positiveOrZeros)) {
-            if (minValue == null || 0L > minValue) {
-                minValue = 0L;
+            if (minValue == null || BigDecimal.ZERO.compareTo(minValue) > 0) {
+                minValue = BigDecimal.ZERO;
                 message = Annotations.annotationValue(positiveOrZero, "message", "");
             }
         }
         for (AnnotationMirror max : Annotations.nonNullList(maxList)) {
-            long mirrorMaxValue = Annotations.annotationValue(max, "value", 0L);
-            if (maxValue == null || mirrorMaxValue < maxValue) {
+            BigDecimal mirrorMaxValue = new BigDecimal(Annotations.annotationValue(max, "value", 0L));
+            if (maxValue == null || mirrorMaxValue.compareTo(maxValue) < 0) {
                 maxValue = mirrorMaxValue;
                 message = Annotations.annotationValue(max, "message", "");
             }
         }
+        for (AnnotationMirror decimalMax : Annotations.nonNullList(decimalMaxList)) {
+            BigDecimal mirrorDecimalMaxValue = new BigDecimal(Annotations.annotationValue(decimalMax, "value", "0"));
+            if (maxValue == null || mirrorDecimalMaxValue.compareTo(maxValue) < 0) {
+                maxValue = mirrorDecimalMaxValue;
+                message = Annotations.annotationValue(decimalMax, "message", "");
+            }
+        }
         for (AnnotationMirror negative : Annotations.nonNullList(negatives)) {
-            if (maxValue == null || -1L < maxValue) {
-                maxValue = -1L;
+            if (maxValue == null || BigDecimal.ONE.negate().compareTo(maxValue) < 0) {
+                maxValue = BigDecimal.ONE.negate();
                 message = Annotations.annotationValue(negative, "message", "");
             }
         }
         for (AnnotationMirror negativeOrZero : Annotations.nonNullList(negativeOrZeros)) {
-            if (maxValue == null || 0L < maxValue) {
-                maxValue = 0L;
+            if (maxValue == null || BigDecimal.ZERO.compareTo(maxValue) < 0) {
+                maxValue = BigDecimal.ZERO;
                 message = Annotations.annotationValue(negativeOrZero, "message", "");
             }
         }
-        if (minValue != null && maxValue != null && minValue > maxValue) {
+        if (minValue != null && maxValue != null && minValue.compareTo(maxValue) > 0) {
             throw new MetaException(
                     prop.toElement(),
                     "its numeric range validation rules is illegal " +
@@ -262,7 +287,7 @@ public class ValidationGenerator {
         }
         validate(
                 "!$L.matcher($L).matches()",
-                new Object[]{ Constants.DRAFT_FIELD_EMAIL_PATTERN, valueName },
+                new Object[]{Constants.DRAFT_FIELD_EMAIL_PATTERN, valueName},
                 Annotations.annotationValue(mirrors.get(0), "message", ""),
                 () -> "it is not email address"
         );
@@ -285,7 +310,7 @@ public class ValidationGenerator {
             final int index = i;
             validate(
                     "!$L.matcher($L).matches()",
-                    new Object[]{ Constants.regexpPatternFieldName(prop, i), valueName },
+                    new Object[]{Constants.regexpPatternFieldName(prop, i), valueName},
                     Annotations.annotationValue(mirrors.get(i), "message", ""),
                     () -> "it does not match the regexp '" +
                             Annotations.annotationValue(mirrors.get(index), "regexp", "")
@@ -302,6 +327,265 @@ public class ValidationGenerator {
                     Constants.validatorFieldName(prop, e.getKey()),
                     prop.getName()
             );
+        }
+    }
+
+    private void generateAssert() {
+        List<AnnotationMirror> assertFalseList = mirrorMultiMap.get("AssertFalse");
+        List<AnnotationMirror> assertTrueList = mirrorMultiMap.get("AssertTrue");
+
+        List<AnnotationMirror>[] allMirrors = new List[]{
+                assertFalseList,
+                assertTrueList
+        };
+
+        AnnotationMirror mirror = Arrays.stream(allMirrors)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .findFirst()
+                .orElse(null);
+
+        if (mirror == null) {
+            return;
+        }
+
+        if (!prop.getTypeName().equals(TypeName.BOOLEAN)
+                && !prop.getTypeName().equals(TypeName.BOOLEAN.box())) {
+            throw new MetaException(
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
+                            Annotations.qualifiedName(mirror) +
+                            " but its type is not boolean"
+            );
+        }
+
+        for (AnnotationMirror assertFalse : Annotations.nonNullList(assertFalseList)) {
+            validate(
+                    valueName + " != false",
+                    null,
+                    Annotations.annotationValue(assertFalse, "message", ""),
+                    () -> "it is not false"
+            );
+        }
+
+        for (AnnotationMirror assertTrue : Annotations.nonNullList(assertTrueList)) {
+            validate(
+                    valueName + " != true",
+                    null,
+                    Annotations.annotationValue(assertTrue, "message", ""),
+                    () -> "it is not true"
+            );
+        }
+    }
+
+    private void generateDigits() {
+        List<AnnotationMirror> digitsList = mirrorMultiMap.get("Digits");
+
+        if (digitsList == null) {
+            return;
+        }
+
+        if (!prop.getTypeName().isPrimitive()
+                && !prop.getTypeName().isBoxedPrimitive()
+                && !isSimpleClass(BigDecimal.class)
+                && !isSimpleClass(BigInteger.class)
+                && !isSimpleClass(CharSequence.class)) {
+            throw new MetaException(
+                    prop.toElement(),
+                    "it's decorated by the annotation @Digits " +
+                            "but its type is not primitive, boxed primitive, BigDecimal, BigInteger or CharSequence");
+        }
+
+        for (AnnotationMirror digits : digitsList) {
+            int integer = Annotations.annotationValue(digits, "integer", 0);
+            int fraction = Annotations.annotationValue(digits, "fraction", 0);
+            if (integer < 0 || fraction < 0) {
+                throw new MetaException(
+                        prop.toElement(),
+                        "its numeric range validation rules is illegal " +
+                                "so that there is not valid number"
+                );
+            }
+            if (integer == 0 && fraction == 0) {
+                throw new MetaException(
+                        prop.toElement(),
+                        "its numeric range validation rules is illegal " +
+                                "so that there is not valid number"
+                );
+            }
+
+            if (prop.getTypeName().equals(TypeName.get(BigDecimal.class))) {
+                validate(
+                        "$L.precision() > $L",
+                        new Object[]{valueName, integer},
+                        Annotations.annotationValue(digits, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+                validate(
+                        "$L.scale() > $L",
+                        new Object[]{valueName, fraction},
+                        Annotations.annotationValue(digits, "message", ""),
+                        () -> "its fraction digits is greater than " + fraction
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(BigInteger.class))) {
+                validate(
+                        "$L.bitLength() > $L",
+                        new Object[]{valueName, integer},
+                        Annotations.annotationValue(digits, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(CharSequence.class))) {
+                validate(
+                        "$L.length() > $L",
+                        new Object[]{valueName, integer},
+                        Annotations.annotationValue(digits, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+            } else if (prop.getTypeName().isPrimitive() || prop.getTypeName().isBoxedPrimitive()) {
+                validate(
+                        "new $T($L).precision() > $L",
+                        new Object[]{BigDecimal.class, valueName, integer},
+                        Annotations.annotationValue(digits, "message", ""),
+                        () -> "its integer digits is greater than " + integer
+                );
+            }
+        }
+    }
+
+    private void generateTime() {
+        List<AnnotationMirror> pastOrPresents = mirrorMultiMap.get("PastOrPresent");
+        List<AnnotationMirror> pasts = mirrorMultiMap.get("Past");
+        List<AnnotationMirror> futureOrPresents = mirrorMultiMap.get("FutureOrPresent");
+        List<AnnotationMirror> futures = mirrorMultiMap.get("Future");
+
+        List<AnnotationMirror>[] allMirrors = new List[]{
+                pastOrPresents,
+                pasts,
+                futureOrPresents,
+                futures,
+        };
+
+        AnnotationMirror mirror = Arrays.stream(allMirrors)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .findFirst()
+                .orElse(null);
+
+
+        if (mirror == null) {
+            return;
+        }
+
+        if (!isSimpleClass(LocalDate.class)
+                && isSimpleClass(LocalDateTime.class)
+                && isSimpleClass(LocalTime.class)) {
+            throw new MetaException(
+                    prop.toElement(),
+                    "it's decorated by the annotation @" +
+                            Annotations.qualifiedName(mirror) +
+                            " but its type is not LocalDate, LocalDateTime or LocalTime"
+            );
+        }
+
+        for (AnnotationMirror pastOrPresent : Annotations.nonNullList(pastOrPresents)) {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isAfter($T.now())",
+                        new Object[]{valueName, LocalDate.class},
+                        Annotations.annotationValue(pastOrPresent, "message", ""),
+                        () -> "it is not before or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isAfter($T.now())",
+                        new Object[]{valueName, LocalDateTime.class},
+                        Annotations.annotationValue(pastOrPresent, "message", ""),
+                        () -> "it is not before or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isAfter($T.now())",
+                        new Object[]{valueName, LocalTime.class},
+                        Annotations.annotationValue(pastOrPresent, "message", ""),
+                        () -> "it is not before or equal to now"
+                );
+            }
+        }
+
+
+        for (AnnotationMirror past : Annotations.nonNullList(pasts)) {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isAfter($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDate.class, valueName, LocalDate.class},
+                        Annotations.annotationValue(past, "message", ""),
+                        () -> "it is not before now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isAfter($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDateTime.class, valueName, LocalDateTime.class},
+                        Annotations.annotationValue(past, "message", ""),
+                        () -> "it is not before now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isAfter($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalTime.class, valueName, LocalTime.class},
+                        Annotations.annotationValue(past, "message", ""),
+                        () -> "it is not before now"
+                );
+            }
+        }
+
+        for (AnnotationMirror futureOrPresent : Annotations.nonNullList(futureOrPresents)) {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isBefore($T.now())",
+                        new Object[]{valueName, LocalDate.class},
+                        Annotations.annotationValue(futureOrPresent, "message", ""),
+                        () -> "it is not after or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isBefore($T.now())",
+                        new Object[]{valueName, LocalDateTime.class},
+                        Annotations.annotationValue(futureOrPresent, "message", ""),
+                        () -> "it is not after or equal to now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isBefore($T.now())",
+                        new Object[]{valueName, LocalTime.class},
+                        Annotations.annotationValue(futureOrPresent, "message", ""),
+                        () -> "it is not after or equal to now"
+                );
+            }
+        }
+
+        for (AnnotationMirror future : Annotations.nonNullList(futures)) {
+            if (prop.getTypeName().equals(TypeName.get(LocalDate.class))) {
+                validate(
+                        "$L.isBefore($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDate.class, valueName, LocalDate.class},
+                        Annotations.annotationValue(future, "message", ""),
+                        () -> "it is not after now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalDateTime.class))) {
+                validate(
+                        "$L.isBefore($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalDateTime.class, valueName, LocalDateTime.class},
+                        Annotations.annotationValue(future, "message", ""),
+                        () -> "it is not after now"
+                );
+            } else if (prop.getTypeName().equals(TypeName.get(LocalTime.class))) {
+                validate(
+                        "$L.isBefore($T.now()) || $L.isEqual($T.now())",
+                        new Object[]{valueName, LocalTime.class, valueName, LocalTime.class},
+                        Annotations.annotationValue(future, "message", ""),
+                        () -> "it is not after now"
+                );
+            }
         }
     }
 
@@ -345,9 +629,9 @@ public class ValidationGenerator {
         TypeName typeName = prop.getTypeName();
         ClassName className;
         if (typeName instanceof ClassName) {
-            className = ((ClassName)typeName);
+            className = ((ClassName) typeName);
         } else if (typeName instanceof ParameterizedTypeName) {
-            className = ((ParameterizedTypeName)typeName).rawType;
+            className = ((ParameterizedTypeName) typeName).rawType;
         } else {
             return false;
         }
@@ -356,33 +640,29 @@ public class ValidationGenerator {
                 className.simpleName().equals(type.getSimpleName());
     }
 
-    private void validateBound(long bound, String cmp, String message) {
+    private void validateBound(BigDecimal bound, String cmp, String message) {
         String bigNumLiteral;
         if (prop.getTypeName().equals(ClassName.get(BigDecimal.class))) {
-            if (bound == 0) {
+            if (bound.compareTo(BigDecimal.ZERO) == 0) {
                 bigNumLiteral = "$T.ZERO";
-            } else if (bound == 1) {
+            } else if (bound.compareTo(BigDecimal.ONE) == 0) {
                 bigNumLiteral = "$T.ONE";
-            } else if (bound == 2) {
-                bigNumLiteral = "$T.TWO";
-            } else if (bound == 10) {
+            } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
                 bigNumLiteral = "$T.valueOf(" + bound + ")";
             }
         } else if (prop.getTypeName().equals(ClassName.get(BigInteger.class))) {
-            if (bound == -1) {
+            if (bound.compareTo(BigDecimal.ONE.negate()) == 0) {
                 bigNumLiteral = "$T.NEGATIVE_ONE";
-            } else if (bound == 0) {
+            } else if (bound.compareTo(BigDecimal.ZERO) == 0) {
                 bigNumLiteral = "$T.ZERO";
-            } else if (bound == 1) {
+            } else if (bound.compareTo(BigDecimal.ONE) == 0) {
                 bigNumLiteral = "$T.ONE";
-            } else if (bound == 2) {
-                bigNumLiteral = "$T.TWO";
-            } else if (bound == 10) {
+            } else if (bound.compareTo(BigDecimal.TEN) == 0) {
                 bigNumLiteral = "$T.TEN";
             } else {
-                bigNumLiteral = "$T.valueOf(" + bound + ", 0)";
+                bigNumLiteral = "$T.valueOf(" + bound + ")";
             }
         } else {
             bigNumLiteral = null;
@@ -392,8 +672,8 @@ public class ValidationGenerator {
                         "$L.compareTo(" + bigNumLiteral + ") $L 0" :
                         "$L $L $L",
                 bigNumLiteral != null ?
-                        new Object[] { valueName, prop.getElementType(), cmp } :
-                        new Object[] { valueName, cmp, bound },
+                        new Object[]{valueName, prop.getElementType(), cmp} :
+                        new Object[]{valueName, cmp, bound},
                 message,
                 () -> "it cannot be " +
                         (cmp.equals("<") ? "less than" : "greater than") +

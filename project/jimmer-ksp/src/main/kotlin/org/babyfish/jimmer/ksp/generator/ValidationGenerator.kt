@@ -12,6 +12,9 @@ import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.MetaException
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.validation.ValidationException
 import kotlin.reflect.KClass
 
@@ -43,6 +46,9 @@ class ValidationGenerator(
         generateEmail()
         generatePattern()
         generateConstraints()
+        generateAssert()
+        generateDigits()
+        generateTime()
     }
 
     private fun generateNotEmpty() {
@@ -142,10 +148,13 @@ class ValidationGenerator(
         val positiveOrZeros = annoMultiMap["PositiveOrZero"] ?: emptyList()
         val negatives = annoMultiMap["Negative"] ?: emptyList()
         val negativeOrZeros = annoMultiMap["NegativeOrZero"] ?: emptyList()
+        val decimalMinList = annoMultiMap["DecimalMin"] ?: emptyList()
+        val decimalMaxList = annoMultiMap["DecimalMax"] ?: emptyList()
         val annotations = listOf(
             minList, maxList,
-            positives, positiveOrZeros, 
-            negatives, negativeOrZeros
+            positives, positiveOrZeros,
+            negatives, negativeOrZeros,
+            decimalMinList, decimalMaxList
         ).flatten()
         if (annotations.isEmpty()) {
             return
@@ -161,44 +170,60 @@ class ValidationGenerator(
                     " but its type is numeric"
             )
         }
-        var minValue: Long? = null
-        var maxValue: Long? = null
+        var minValue: BigDecimal? = null
+        var maxValue: BigDecimal? = null
         var message: String? = null
         for (min in minList) {
             val annoValue: Long = min["value"]!!
-            if (minValue == null || annoValue > minValue) {
-                minValue = annoValue
+            if (minValue == null || BigDecimal(annoValue) > minValue) {
+                minValue = BigDecimal(annoValue)
                 message = min["message"]
             }
         }
+        for (decimalMin in decimalMinList) {
+            val annoValue: String = decimalMin["value"]!!
+            val value = BigDecimal(annoValue)
+            if (minValue == null || value > minValue) {
+                minValue = value
+                message = decimalMin["message"]
+            }
+        }
         for (positive in positives) {
-            if (minValue == null || 1L > minValue) {
-                minValue = 1L
+            if (minValue == null || BigDecimal.ONE > minValue) {
+                minValue = BigDecimal.ONE
                 message = positive["message"]
             }
         }
         for (positiveOrZero in positiveOrZeros) {
-            if (minValue == null || 0L > minValue) {
-                minValue = 0L
+            if (minValue == null || BigDecimal.ZERO > minValue) {
+                minValue = BigDecimal.ZERO
                 message = positiveOrZero["message"]
             }
         }
         for (max in maxList) {
             val annoValue: Long = max["value"]!!
-            if (maxValue == null || annoValue < maxValue) {
-                maxValue = annoValue
+            if (maxValue == null || BigDecimal(annoValue) < maxValue) {
+                maxValue = BigDecimal(annoValue)
                 message = max["message"]
             }
         }
+        for (decimalMax in decimalMaxList) {
+            val annoValue: String = decimalMax["value"]!!
+            val value = BigDecimal(annoValue)
+            if (maxValue == null || value < maxValue) {
+                maxValue = value
+                message = decimalMax["message"]
+            }
+        }
         for (negative in negatives) {
-            if (maxValue == null || -1L < maxValue) {
-                maxValue = -1L
+            if (maxValue == null || BigDecimal.ONE.negate() < maxValue) {
+                maxValue = BigDecimal.ONE.negate()
                 message = negative["message"]
             }
         }
         for (negativeOrZero in negativeOrZeros) {
-            if (maxValue == null || 0L < maxValue) {
-                maxValue = 0L
+            if (maxValue == null || BigDecimal.ZERO < maxValue) {
+                maxValue = BigDecimal.ZERO
                 message = negativeOrZero["message"]
             }
         }
@@ -270,6 +295,218 @@ class ValidationGenerator(
         }
     }
 
+    private fun generateAssert() {
+        val assertFalseList = annoMultiMap["AssertFalse"] ?: emptyList()
+        val assertTrueList = annoMultiMap["AssertTrue"] ?: emptyList()
+
+        val annotations = listOf(assertFalseList, assertTrueList).flatten()
+
+        if (annotations.isEmpty()) {
+            return
+        }
+
+        if (!isSimpleType(Boolean::class)) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "it's decorated by the annotation @" +
+                            annotations[0].fullName +
+                            " but its type is not boolean"
+            )
+        }
+
+        for (assertFalse in assertFalseList) {
+            validate(
+                    "${prop.name} != false",
+                    emptyArray(),
+                    assertFalse["message"],
+            ) { "it is not false" }
+        }
+
+        for (assertTrue in assertTrueList) {
+            validate(
+                    "${prop.name} != true",
+                    emptyArray(),
+                    assertTrue["message"],
+            ) { "it is not true" }
+        }
+    }
+
+    private fun generateDigits() {
+        val digits = annoMultiMap["Digits"]?.get(0) ?: return
+
+        if (!prop.typeName().isBuiltInType()
+                && !isSimpleType(BigDecimal::class)
+                && !isSimpleType(BigInteger::class)
+                && !isSimpleType(CharSequence::class)) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "it's decorated by the annotation @" +
+                            digits.fullName +
+                            " but its type is not BigDecimal"
+            )
+        }
+
+        val integer = digits["integer"] ?: 0
+        val fraction = digits["fraction"] ?: 0
+
+        if (integer < 0 || fraction < 0) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "its numeric range validation rules is illegal " +
+                            "so that there is not valid number"
+            )
+        }
+
+        if (integer == 0 && fraction == 0) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "its numeric range validation rules is illegal " +
+                            "so that there is not valid number"
+            )
+        }
+
+        if (prop.typeName(overrideNullable = false) == BIG_DECIMAL_CLASS_NAME) {
+            if (integer > 0) {
+                validate(
+                        "%L.precision() > %L",
+                        arrayOf(prop.name, integer),
+                        digits["message"],
+                ) { "it's precision is less than $integer" }
+            }
+            if (fraction > 0) {
+                validate(
+                        "%L.scale() > %L",
+                        arrayOf(prop.name, fraction),
+                        digits["message"],
+                ) { "it's scale is less than $fraction" }
+            }
+        } else if (prop.typeName(overrideNullable = false) == BIG_INTEGER_CLASS_NAME) {
+            validate(
+                    "%L.precision() > %L",
+                    arrayOf(prop.name, integer),
+                    digits["message"],
+            ) { "it's precision is less than $integer" }
+        } else {
+            validate(
+                    "%L.toString().length > %L",
+                    arrayOf(prop.name, integer + fraction),
+                    digits["message"],
+            ) { "it's length is less than ${integer + fraction}" }
+        }
+    }
+
+    private fun generateTime() {
+        val pastOrPresents = annoMultiMap["PastOrPresent"] ?: emptyList()
+        val pasts = annoMultiMap["Past"] ?: emptyList()
+        val futureOrPresents = annoMultiMap["FutureOrPresent"] ?: emptyList()
+        val futures = annoMultiMap["Future"] ?: emptyList()
+
+        val annotations = listOf(pastOrPresents, pasts, futureOrPresents, futures).flatten()
+
+        if (annotations.isEmpty()) {
+            return
+        }
+
+        if (!isSimpleType(LocalDate::class)
+                && !isSimpleType(LocalDateTime::class)
+                && !isSimpleType(LocalTime::class)) {
+            throw MetaException(
+                    prop.propDeclaration,
+                    "it's decorated by the annotation @" +
+                            annotations[0].fullName +
+                            " but its type is not date or time"
+            )
+        }
+
+        for (pastOrPresent in pastOrPresents) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        pastOrPresent["message"],
+                ) { "it is not before or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        pastOrPresent["message"],
+                ) { "it is not before or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        pastOrPresent["message"],
+                ) { "it is not before or equal to now" }
+            }
+        }
+
+        for (past in pasts) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        past["message"],
+                ) { "it is not before now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        past["message"],
+                ) { "it is not before now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isAfter(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        past["message"],
+                ) { "it is not before now" }
+            }
+        }
+
+        for (futureOrPresent in futureOrPresents) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        futureOrPresent["message"],
+                ) { "it is not after or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        futureOrPresent["message"],
+                ) { "it is not after or equal to now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        futureOrPresent["message"],
+                ) { "it is not after or equal to now" }
+            }
+        }
+
+        for (future in futures) {
+            if (prop.typeName(overrideNullable = false) == LOCAL_DATE_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDate::class),
+                        future["message"],
+                ) { "it is not after now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_DATE_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalDateTime::class),
+                        future["message"],
+                ) { "it is not after now" }
+            } else if (prop.typeName(overrideNullable = false) == LOCAL_TIME_CLASS_NAME) {
+                validate(
+                        "%L.isBefore(%T.now()) || %L.isEqual(%T.now())",
+                        arrayOf(prop.name, LocalTime::class),
+                        future["message"],
+                ) { "it is not after now" }
+            }
+        }
+    }
+
     private fun validate(
         condition: String,
         args: Array<Any>,
@@ -317,23 +554,21 @@ class ValidationGenerator(
         return className == type.asClassName()
     }
 
-    private fun validateBound(bound: Long, cmp: String, message: String?) {
+    private fun validateBound(bound: BigDecimal, cmp: String, message: String?) {
         val bigNumLiteral = when {
             prop.typeName(overrideNullable = false) == BIG_DECIMAL_CLASS_NAME ->
                 when (bound) {
-                    0L -> "%T.ZERO"
-                    1L -> "%T.ONE"
-                    2L -> "%T.TWO"
-                    10L -> "%T.TEN"
+                    BigDecimal.ZERO -> "%T.ZERO"
+                    BigDecimal.ONE -> "%T.ONE"
+                    BigDecimal.TEN -> "%T.TEN"
                     else -> "%T.valueOf($bound)"
                 }
             prop.typeName(overrideNullable = false) == BIG_INTEGER_CLASS_NAME ->
                 when (bound) {
-                    -1L -> "%T.NEGATIVE_ONE"
-                    0L -> "%T.ZERO"
-                    1L -> "%T.ONE"
-                    2L -> "%T.TWO"
-                    10L -> "%T.TEN"
+                    BigDecimal.ONE.negate() -> "%T.NEGATIVE_ONE"
+                    BigDecimal.ZERO -> "%T.ZERO"
+                    BigDecimal.ONE -> "%T.ONE"
+                    BigDecimal.TEN -> "%T.TEN"
                     else -> "%T.valueOf($bound)"
                 }
             else ->
