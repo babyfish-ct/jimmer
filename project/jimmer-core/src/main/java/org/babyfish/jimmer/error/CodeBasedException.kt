@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.error
 
-import kotlin.reflect.KClass
-
 abstract class CodeBasedException protected constructor(
     message: String,
     cause: Throwable?
@@ -10,16 +8,6 @@ abstract class CodeBasedException protected constructor(
     abstract val code: Enum<*>
 
     abstract val fields: Map<String, Any?>
-
-    val exportedError: ExportedError
-        get() {
-            val code = code
-            return ExportedError(
-                familyName(code.javaClass.simpleName),
-                code.name,
-                fields
-            )
-        }
 
     companion object {
 

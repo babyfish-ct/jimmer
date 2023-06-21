@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.kotlin.service
 
 import org.babyfish.jimmer.client.Doc
 import org.babyfish.jimmer.client.FetchBy
+import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.client.kotlin.model.*
 import org.babyfish.jimmer.client.meta.common.*
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
@@ -43,6 +44,7 @@ interface KBookService {
     ): KPage<Tuple2<out @FetchBy("COMPLEX_FETCHER") KBook, out @FetchBy("AUTHOR_FETCHER") KAuthor>>
 
     @PutMapping("/book")
+    @ThrowsAll(KBusinessError::class)
     fun saveBooks(@RequestBody input: KBookInput?): KBook?
 
     @DeleteMapping("/book/{id}")

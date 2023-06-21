@@ -8,11 +8,13 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
 import org.babyfish.jimmer.error.CodeBasedException
+import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.error.ErrorField
 import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.getClassArgument
+import org.babyfish.jimmer.ksp.meta.MetaException
 import java.io.OutputStreamWriter
 
 class ErrorGenerator(
@@ -258,12 +260,6 @@ class ErrorGenerator(
 
     companion object {
 
-        private val EMPTY_MAP = MemberName("kotlin.collections", "emptyMap")
-
-        private val MAP_OF = MemberName("kotlin.collections", "mapOf")
-
-        private val TO = MemberName("kotlin", "to")
-
         private val KSClassDeclaration.longSimpleName: String
             get() = (parentDeclaration?.takeIf { it is KSClassDeclaration }?.let {
                 (it as KSClassDeclaration).longSimpleName + "_"
@@ -292,7 +288,20 @@ class ErrorGenerator(
 
         private fun fieldsOf(item: KSClassDeclaration): List<Pair<String, TypeName>> =
             item.annotations(ErrorField::class).map { anno ->
-                anno[ErrorField::name]!! to
+                anno[ErrorField::name]!!.also {
+                    if (it == "family" || it == "code") {
+                        throw MetaException(
+                            item,
+                            "The enum constant \"" +
+                                item.parentDeclaration?.qualifiedName?.asString() +
+                                '.' +
+                                item.simpleName.asString() +
+                                "\" is illegal, it cannot be decorated by \"@" +
+                                ErrorFamily::class.java.name +
+                                "\" with the name \"family\" or \"code\""
+                        )
+                    }
+                } to
                     anno.getClassArgument(ErrorField::type)!!.toClassName()
                         .let {
                             if (anno[ErrorField::list] == true) {

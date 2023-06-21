@@ -440,6 +440,23 @@ class DraftImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
+                            add("val __visibility = %L.__visibility\n", UNMODIFIED)
+                            indent()
+                            add("?: if (visible) {\n")
+                            indent()
+                            add("null\n")
+                            unindent()
+                            add("} else {\n")
+                            indent()
+                            add("%T.of(%L).also{\n", VISIBILITY_CLASS_NAME, type.properties.size)
+                            indent()
+                            add("%L.__visibility = it", MODIFIED)
+                            unindent()
+                            add("}\n")
+                            unindent()
+                            add("}\n")
+                            addStatement("?: return")
+                            unindent()
                             val appender = CaseAppender(this, type, argType)
                             if (argType == PropId::class) {
                                 beginControlFlow("when (prop.asIndex())")
@@ -450,7 +467,7 @@ class DraftImplGenerator(
                             }
                             for (prop in type.propsOrderById) {
                                 appender.addCase(prop)
-                                addStatement("%L.__visibility.show(%L, visible)", MODIFIED, prop.slotName)
+                                addStatement("__visibility.show(%L, visible)", prop.slotName)
                             }
                             add("else -> throw IllegalArgumentException(\n")
                             indent()

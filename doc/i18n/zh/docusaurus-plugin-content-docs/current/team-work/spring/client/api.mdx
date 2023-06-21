@@ -1,11 +1,11 @@
 ---
-sidebar_position: 3
-title: 前后端API免对接
+sidebar_position: 1
+title: 生成前端API
 ---
 
-import DtoExplosion from '@site/static/img/dto-explosion.png';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import DtoExplosion from '@site/static/img/dto-explosion.png';
 import { ViewMore } from '@site/src/components/ViewMore';
 
 ## 基本概念
@@ -24,7 +24,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 使用Jimmer构建GraphQL服务
 
-服务端：[使用Jimmer开发GraphQL服务端](../graphql)
+服务端：[使用Jimmer开发GraphQL服务端](../../graphql)
 
 客户端：有大量的客户端框架可以选择。其中，使用我的[graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client)可以获得极致的TypeScript开发体验
 
@@ -64,6 +64,7 @@ fun findBookById(
 ): Book? =
     bookRepository.findNullable(
         id, 
+        // highlight-next-line
         FetcherCompiler.compile(fetcherCode, Book::class.java)
     )
 ```
@@ -115,7 +116,7 @@ fun findBookById(
 
     在生产者眼中，DTO爆炸是一个非常头疼的问题，这意味着自己的开发成本也会急剧上升。
     
-    因此，Jimmer使用动态实体配合[对象抓取器](../query/object-fetcher)，在服务端消灭了DTO爆炸。
+    因此，Jimmer使用动态实体配合[对象抓取器](../../query/object-fetcher)，在服务端消灭了DTO爆炸。
 
 -   前端视角，即，消费者视角。
 
@@ -685,7 +686,7 @@ fun findMostActiveAuthorInfos(
 :::tip
 某些情况下，客户端需要的数据可能包含多种实体对象，它们之间并不存在直接的ORM关联，只是特定业务层面的一种的联系。
 
-如果这种特定业务层面的联系毫无通用性，那么为实体定义[复杂计算属性](../mapping/advanced/calculated/transient)也并非一个好的选择。
+如果这种特定业务层面的联系毫无通用性，那么为实体定义[复杂计算属性](../../mapping/advanced/calculated/transient)也并非一个好的选择。
 
 这时，我们可以打破实体对象图的定式思维，用自定义数据表示返回结果，就如同这里的`ActiveAutorInfo`
 :::

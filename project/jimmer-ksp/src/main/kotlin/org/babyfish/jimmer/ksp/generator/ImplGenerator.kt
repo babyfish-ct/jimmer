@@ -23,15 +23,16 @@ class ImplGenerator(
                 .apply {
                     addProperty(
                         PropertySpec
-                            .builder("__visibility", VISIBILITY_CLASS_NAME)
+                            .builder("__visibility", VISIBILITY_CLASS_NAME.copy(nullable = true))
                             .addModifiers(KModifier.INTERNAL)
+                            .mutable()
                             .addAnnotation(
                                 AnnotationSpec
                                     .builder(JSON_IGNORE_CLASS_NAME)
                                     .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                                     .build()
                             )
-                            .initializer("%T.of(%L)", VISIBILITY_CLASS_NAME, type.properties.size)
+                            .initializer("null")
                             .build()
                     )
                     for (prop in type.properties.values) {
@@ -113,10 +114,14 @@ class ImplGenerator(
             FunSpec
                 .constructorBuilder()
                 .apply {
-                    for (prop in type.properties.values) {
-                        if (prop.valueFieldName === null) {
-                            addStatement("__visibility.show(%L, false)", prop.slotName)
+                    if (type.properties.values.any { it.valueFieldName == null }) {
+                        addStatement("val __visibility = %T.of(%L)", VISIBILITY_CLASS_NAME, type.properties.size)
+                        for (prop in type.properties.values) {
+                            if (prop.valueFieldName === null) {
+                                addStatement("__visibility.show(%L, false)", prop.slotName)
+                            }
                         }
+                        addStatement("this.__visibility = __visibility")
                     }
                 }
                 .build()
@@ -308,6 +313,7 @@ class ImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
+                            addStatement("val __visibility = this.__visibility ?: return true")
                             val appender = CaseAppender(this, type, argType)
                             add("return ")
                             if (argType == PropId::class) {
@@ -344,7 +350,7 @@ class ImplGenerator(
                     CodeBlock
                         .builder()
                         .apply {
-                            addStatement("var hash = __visibility.hashCode()")
+                            addStatement("var hash = __visibility?.hashCode() ?: 0")
                             for (prop in type.properties.values) {
                                 if (prop.valueFieldName === null) {
                                     continue
@@ -410,7 +416,8 @@ class ImplGenerator(
                             endControlFlow()
                             for (prop in type.properties.values) {
                                 beginControlFlow(
-                                    "if (__visibility.visible(%L) != __other.__isVisible(%T.byIndex(%L)))",
+                                    "if (__isVisible(%T.byIndex(%L)) != __other.__isVisible(%T.byIndex(%L)))",
+                                    PROP_ID_CLASS_NAME,
                                     prop.slotName,
                                     PROP_ID_CLASS_NAME,
                                     prop.slotName
