@@ -26,6 +26,9 @@ public class ErrorDebugInfo {
 
     @Nullable
     public static ErrorDebugInfo of(@Nullable Throwable ex) {
+        if (ex == null) {
+            return null;
+        }
         ErrorDebugInfo causeBy = of(ex.getCause());
         StringBuilder builder = new StringBuilder();
         for (StackTraceElement element : ex.getStackTrace()) {
