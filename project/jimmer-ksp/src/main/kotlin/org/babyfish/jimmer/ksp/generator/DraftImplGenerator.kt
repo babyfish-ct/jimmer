@@ -538,11 +538,7 @@ class DraftImplGenerator(
                                                 "resolveObject"
                                             }
                                         )
-                                        if (prop.isList) {
-                                            add("if (oldValue !== newValue)")
-                                        } else {
-                                            add("if (!%T.equals(oldValue, newValue, true))", IMMUTABLE_SPI_CLASS_NAME)
-                                        }
+                                        add("if (oldValue !== newValue)")
                                         beginControlFlow("")
                                         addStatement("%L = newValue", prop.name)
                                         endControlFlow()
@@ -575,7 +571,7 @@ class DraftImplGenerator(
                                 endControlFlow()
                             }
                             beginControlFlow(
-                                "if (base !== null && (__tmpModified === null || \n\t%T.equals(base, __tmpModified, true)))",
+                                "if (base !== null && __tmpModified === null)",
                                 IMMUTABLE_SPI_CLASS_NAME
                             )
                             addStatement("return base")

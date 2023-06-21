@@ -814,14 +814,7 @@ public class DraftImplGenerator {
                             DRAFT_FIELD_CTX,
                             prop.isList() ? "resolveList" : "resolveObject"
                     );
-                    if (prop.isList()) {
-                        builder.beginControlFlow("if (oldValue != newValue)");
-                    } else {
-                        builder.beginControlFlow(
-                                "if (!$T.equals(oldValue, newValue, true))",
-                                ImmutableSpi.class
-                        );
-                    }
+                    builder.beginControlFlow("if (oldValue != newValue)");
                     builder.addStatement("$L(newValue)", prop.getSetterName());
                     builder.endControlFlow();
                     builder.endControlFlow();
@@ -859,10 +852,8 @@ public class DraftImplGenerator {
 
         builder
                 .beginControlFlow(
-                        "if (" +
-                                DRAFT_FIELD_BASE +
-                                " != null && (__tmpModified == null || $T.equals(base, __tmpModified, true)))",
-                        ImmutableSpi.class
+                        "if ($L != null && __tmpModified == null)",
+                        DRAFT_FIELD_BASE
                 )
                 .addStatement("return base")
                 .endControlFlow();

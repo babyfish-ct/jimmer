@@ -16,55 +16,64 @@ public class CodeBasedExceptionAdvice {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CodeBasedExceptionAdvice.class);
 
-    private final JimmerProperties.ErrorTranslator errorTranslator;
+    protected final JimmerProperties.ErrorTranslator errorTranslator;
 
     public CodeBasedExceptionAdvice(JimmerProperties properties) {
         this.errorTranslator = properties.getErrorTranslator();
         if (errorTranslator.isDebugInfoSupported()) {
-            StringBuilder builder = new StringBuilder("\n");
-            builder.append("------------------------------------------------\n");
-            builder.append("|                                              |\n");
-            builder.append("|`jimmer.error-translator.debug-info-supported`|\n");
-            builder.append("|has been turned on, this is dangerous, please |\n");
-            builder.append("|make sure the current environment is          |\n");
-            builder.append("|NOT PRODUCTION!                               |\n");
-            builder.append("|                                              |\n");
-            builder.append("------------------------------------------------\n");
-            LOGGER.info(builder.toString());
+            notice();
         }
     }
 
     @ExceptionHandler
     public ResponseEntity<Map<String, Object>> handle(CodeBasedException ex) {
-        Map<String, Object> outputMap = new LinkedHashMap<>();
-        outputMap.put(
-                "family",
-                StringUtil.snake(ex.getCode().getDeclaringClass().getSimpleName(), StringUtil.SnakeCase.UPPER)
-        );
-        outputMap.put(
-                "code",
-                ex.getCode().name()
-        );
-        outputMap.putAll(ex.getFields());
-        if (errorTranslator.isDebugInfoSupported()) {
-            outputMap.put("debugInfo", debugInfo(ex));
-        }
         return new ResponseEntity<>(
-                outputMap,
+                resultMap(ex),
                 errorTranslator.getHttpStatus()
         );
     }
 
-    private static Map<String, Object> debugInfo(Throwable ex) {
+    protected void notice() {
+        String builder = "\n" + "------------------------------------------------\n" +
+                "|                                              |\n" +
+                "|`jimmer.error-translator.debug-info-supported`|\n" +
+                "|has been turned on, this is dangerous, please |\n" +
+                "|make sure the current environment is          |\n" +
+                "|NOT PRODUCTION!                               |\n" +
+                "|                                              |\n" +
+                "------------------------------------------------\n";
+        LOGGER.info(builder);
+    }
+
+    protected Map<String, Object> resultMap(CodeBasedException ex) {
+        Map<String, Object> resultMap = new LinkedHashMap<>();
+        resultMap.put(
+                "family",
+                StringUtil.snake(ex.getCode().getDeclaringClass().getSimpleName(), StringUtil.SnakeCase.UPPER)
+        );
+        resultMap.put(
+                "code",
+                ex.getCode().name()
+        );
+        resultMap.putAll(ex.getFields());
+        if (errorTranslator.isDebugInfoSupported()) {
+            resultMap.put("debugInfo", debugInfoMap(ex));
+        }
+        return resultMap;
+    }
+
+    protected Map<String, Object> debugInfoMap(Throwable ex) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("message", ex.getMessage());
-        List<String> stackFrames = new ArrayList<>();
-        for (StackTraceElement element : ex.getStackTrace()) {
-            stackFrames.add(element.toString());
+        StackTraceElement[] elements = ex.getStackTrace();
+        int size = Math.min(elements.length, errorTranslator.getDebugInfoMaxStackTraceCount());
+        List<String> stackFrames = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            stackFrames.add(elements[i].toString());
         }
         map.put("stackFrames", stackFrames);
         if (ex.getCause() != null) {
-            map.put("causeBy", debugInfo(ex.getCause()));
+            map.put("causeBy", debugInfoMap(ex.getCause()));
         }
         return map;
     }

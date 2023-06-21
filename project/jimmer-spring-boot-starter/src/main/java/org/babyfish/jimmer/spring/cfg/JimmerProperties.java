@@ -181,7 +181,7 @@ public class JimmerProperties {
                         microServiceName :
                         "";
         if (errorTranslator == null) {
-            this.errorTranslator = new ErrorTranslator(null, null);
+            this.errorTranslator = new ErrorTranslator(null, null, null, null);
         } else {
             this.errorTranslator = errorTranslator;
         }
@@ -375,15 +375,32 @@ public class JimmerProperties {
 
     @ConstructorBinding
     public static class ErrorTranslator {
+
+        private final boolean disabled;
+
         @NotNull
         private final HttpStatus httpStatus;
 
-        @NotNull
         private final boolean debugInfoSupported;
 
-        public ErrorTranslator(HttpStatus httpStatus, Boolean debugInfoSupported) {
+        private final int debugInfoMaxStackTraceCount;
+
+        public ErrorTranslator(
+                Boolean disabled,
+                HttpStatus httpStatus,
+                Boolean debugInfoSupported,
+                Integer debugInfoMaxStackTraceCount
+        ) {
+            this.disabled = disabled != null ? disabled : false;
             this.httpStatus = httpStatus != null ? httpStatus : HttpStatus.INTERNAL_SERVER_ERROR;
             this.debugInfoSupported = debugInfoSupported != null ? debugInfoSupported : false;
+            this.debugInfoMaxStackTraceCount = debugInfoMaxStackTraceCount != null ?
+                    debugInfoMaxStackTraceCount :
+                    Integer.MAX_VALUE;
+        }
+
+        public boolean isDisabled() {
+            return disabled;
         }
 
         @NotNull
@@ -393,6 +410,10 @@ public class JimmerProperties {
 
         public boolean isDebugInfoSupported() {
             return debugInfoSupported;
+        }
+
+        public int getDebugInfoMaxStackTraceCount() {
+            return debugInfoMaxStackTraceCount;
         }
 
         @Override

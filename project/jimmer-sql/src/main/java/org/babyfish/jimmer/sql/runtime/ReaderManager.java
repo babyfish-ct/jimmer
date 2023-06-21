@@ -176,31 +176,6 @@ public class ReaderManager {
         return reader;
     }
 
-    private static class BooleanReader implements Reader<Boolean> {
-
-        @Override
-        public Boolean read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Boolean.class);
-        }
-    }
-
-    private static class CharReader implements Reader<Character> {
-
-        @Override
-        public Character read(ResultSet rs, Context ctx) throws SQLException {
-            String str = rs.getString(ctx.col());
-            return str != null ? str.charAt(0) : null;
-        }
-    }
-
-    private static class ByteReader implements Reader<Byte> {
-
-        @Override
-        public Byte read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Byte.class);
-        }
-    }
-
     private static class ByteArrayReader implements Reader<byte[]> {
 
         @Override
@@ -217,11 +192,48 @@ public class ReaderManager {
         }
     }
 
+    private static class BooleanReader implements Reader<Boolean> {
+
+        @Override
+        public Boolean read(ResultSet rs, Context ctx) throws SQLException {
+            boolean value = rs.getBoolean(ctx.col());
+            if (!value && rs.wasNull()) {
+                return null;
+            }
+            return value;
+        }
+    }
+
+    private static class CharReader implements Reader<Character> {
+
+        @Override
+        public Character read(ResultSet rs, Context ctx) throws SQLException {
+            String str = rs.getString(ctx.col());
+            return str != null ? str.charAt(0) : null;
+        }
+    }
+
+    private static class ByteReader implements Reader<Byte> {
+
+        @Override
+        public Byte read(ResultSet rs, Context ctx) throws SQLException {
+            byte value = rs.getByte(ctx.col());
+            if (value == 0 && rs.wasNull()) {
+                return null;
+            }
+            return value;
+        }
+    }
+
     private static class ShortReader implements Reader<Short> {
 
         @Override
         public Short read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Short.class);
+            short value = rs.getShort(ctx.col());
+            if (value == 0 && rs.wasNull()) {
+                return null;
+            }
+            return value;
         }
     }
 
@@ -229,7 +241,11 @@ public class ReaderManager {
 
         @Override
         public Integer read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Integer.class);
+            int value = rs.getInt(ctx.col());
+            if (value == 0 && rs.wasNull()) {
+                return null;
+            }
+            return value;
         }
     }
 
@@ -237,7 +253,11 @@ public class ReaderManager {
 
         @Override
         public Long read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Long.class);
+            long value = rs.getLong(ctx.col());
+            if (value == 0 && rs.wasNull()) {
+                return null;
+            }
+            return value;
         }
     }
 
@@ -245,7 +265,11 @@ public class ReaderManager {
 
         @Override
         public Float read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Float.class);
+            float value = rs.getFloat(ctx.col());
+            if (value == 0 && rs.wasNull()) {
+                return null;
+            }
+            return value;
         }
     }
 
@@ -253,7 +277,11 @@ public class ReaderManager {
 
         @Override
         public Double read(ResultSet rs, Context ctx) throws SQLException {
-            return rs.getObject(ctx.col(), Double.class);
+            double value = rs.getDouble(ctx.col());
+            if (value == 0 && rs.wasNull()) {
+                return null;
+            }
+            return value;
         }
     }
 
