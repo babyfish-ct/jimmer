@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Import;
 @Import({
         SqlClientConfig.class,
         JimmerRepositoriesConfig.class,
-        ErrorWrapperConfig.class,
+        ErrorTranslatorConfig.class,
         SpringDocConfig.class
 })
 public class JimmerAutoConfiguration {

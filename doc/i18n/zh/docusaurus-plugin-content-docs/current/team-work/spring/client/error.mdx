@@ -5,6 +5,7 @@ title: 生成前端异常
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
 
 这部分功能其实和ORM没有关系。
 
@@ -648,20 +649,286 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 
 ### 将异常消息写入HTTP响应
 
-:::warning
-下个版本这部分会自动化，这里象征性给出Java代码即可
+:::tip
+只要使用了Jimmer的Spring Boot Starter，无需任何工作，服务抛出任何继承自`CodeBasedException`的异常都会被自动翻译。
 :::
 
-```java
-@ControllerAdvice
-public class CodeBasedExceptionAdvice {
+翻译结果为
 
-    @ExceptionHandler
-    public ResponseEntity<ExportedError> handle(CodeBasedException ex) {
-        return new ResponseEntity<>(ex.getExportedError(), HttpStatus.INTERNAL_SERVER_ERROR);
+```json
+{
+    "family":"GEOGRAPHY_ERROR_CODE",
+    "code":"ILLEGAL_POSITION",
+    "longitude":104.06,
+    "latitude":30.67
+}
+```
+
+为了方便开发和测试，可以在`application.yml`或`appliction.properties`中配置
+```
+jimmer:
+    error-translator:
+        debug-info-supported: true
+```
+
+此配置将会在HTTP返回中附带便于在开发和测试阶段定位问题的信息。由于内容较长，请点击下面的结果查看例子。
+
+<ViewMore buttonText="查看结果" title="附带调试信息的异常返回">
+
+```json
+{
+    "family":"GEOGRAPHY_ERROR_CODE",
+    "code":"ILLEGAL_POSITION",
+    "longitude":104.06,
+    "latitude":30.67,
+    "debugInfo":{
+        "message":"Illegal geography position which is already marked",
+        "stackFrames":[
+            "org.babyfish.jimmer.spring.java.bll.GeographyException.illegalPosition(GeographyException.java:35)",
+            "org.babyfish.jimmer.spring.java.bll.ErrorService.test(ErrorService.java:18)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+            "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+            "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+            "org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205)",
+            "org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:150)",
+            "org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)",
+            "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:895)",
+            "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:808)",
+            "org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)",
+            "org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)",
+            "org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:963)",
+            "org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)",
+            "org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898)",
+            "javax.servlet.http.HttpServlet.service(HttpServlet.java:655)",
+            "org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)",
+            "org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)",
+            "javax.servlet.http.HttpServlet.service(HttpServlet.java:764)",
+            "org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:167)",
+            "org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:134)",
+            "org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:199)",
+            "org.babyfish.jimmer.spring.java.SpringJavaTest.testError(SpringJavaTest.java:632)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+            "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+            "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+            "org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:725)",
+            "org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)",
+            "org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)",
+            "org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:149)",
+            "org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:140)",
+            "org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:84)",
+            "org.junit.jupiter.engine.execution.ExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(ExecutableInvoker.java:115)",
+            "org.junit.jupiter.engine.execution.ExecutableInvoker.lambda$invoke$0(ExecutableInvoker.java:105)",
+            "org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)",
+            "org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)",
+            "org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)",
+            "org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)",
+            "org.junit.jupiter.engine.execution.ExecutableInvoker.invoke(ExecutableInvoker.java:104)",
+            "org.junit.jupiter.engine.execution.ExecutableInvoker.invoke(ExecutableInvoker.java:98)",
+            "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:214)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:210)",
+            "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:135)",
+            "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:66)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)",
+            "org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)",
+            "java.base/java.util.ArrayList.forEach(ArrayList.java:1511)",
+            "org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)",
+            "org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)",
+            "java.base/java.util.ArrayList.forEach(ArrayList.java:1511)",
+            "org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)",
+            "org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)",
+            "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)",
+            "org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)",
+            "org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)",
+            "org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)",
+            "org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)",
+            "org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108)",
+            "org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:88)",
+            "org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:54)",
+            "org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:67)",
+            "org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:52)",
+            "org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:96)",
+            "org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:75)",
+            "org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.processAllTestClasses(JUnitPlatformTestClassProcessor.java:99)",
+            "org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.access$000(JUnitPlatformTestClassProcessor.java:79)",
+            "org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor.stop(JUnitPlatformTestClassProcessor.java:75)",
+            "org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.stop(SuiteTestClassProcessor.java:61)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+            "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+            "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+            "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)",
+            "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)",
+            "org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)",
+            "org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:94)",
+            "jdk.proxy1/jdk.proxy1.$Proxy2.stop(Unknown Source)",
+            "org.gradle.api.internal.tasks.testing.worker.TestWorker.stop(TestWorker.java:135)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+            "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+            "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+            "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+            "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)",
+            "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)",
+            "org.gradle.internal.remote.internal.hub.MessageHubBackedObjectConnection$DispatchWrapper.dispatch(MessageHubBackedObjectConnection.java:182)",
+            "org.gradle.internal.remote.internal.hub.MessageHubBackedObjectConnection$DispatchWrapper.dispatch(MessageHubBackedObjectConnection.java:164)",
+            "org.gradle.internal.remote.internal.hub.MessageHub$Handler.run(MessageHub.java:414)",
+            "org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)",
+            "org.gradle.internal.concurrent.ManagedExecutorImpl$1.run(ManagedExecutorImpl.java:48)",
+            "java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)",
+            "java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:630)",
+            "org.gradle.internal.concurrent.ThreadFactoryImpl$ManagedThreadRunnable.run(ThreadFactoryImpl.java:56)",
+            "java.base/java.lang.Thread.run(Thread.java:831)"
+        ],
+        "causeBy":{
+            "message":null,
+            "stackFrames":[
+                "org.babyfish.jimmer.spring.java.bll.ErrorService.validatePosition(ErrorService.java:28)",
+                "org.babyfish.jimmer.spring.java.bll.ErrorService.test(ErrorService.java:16)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+                "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+                "org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:205)",
+                "org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:150)",
+                "org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)",
+                "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:895)",
+                "org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:808)",
+                "org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)",
+                "org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1067)",
+                "org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:963)",
+                "org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)",
+                "org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:898)",
+                "javax.servlet.http.HttpServlet.service(HttpServlet.java:655)",
+                "org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)",
+                "org.springframework.test.web.servlet.TestDispatcherServlet.service(TestDispatcherServlet.java:72)",
+                "javax.servlet.http.HttpServlet.service(HttpServlet.java:764)",
+                "org.springframework.mock.web.MockFilterChain$ServletFilterProxy.doFilter(MockFilterChain.java:167)",
+                "org.springframework.mock.web.MockFilterChain.doFilter(MockFilterChain.java:134)",
+                "org.springframework.test.web.servlet.MockMvc.perform(MockMvc.java:199)",
+                "org.babyfish.jimmer.spring.java.SpringJavaTest.testError(SpringJavaTest.java:632)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+                "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+                "org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:725)",
+                "org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)",
+                "org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)",
+                "org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:149)",
+                "org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:140)",
+                "org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:84)",
+                "org.junit.jupiter.engine.execution.ExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(ExecutableInvoker.java:115)",
+                "org.junit.jupiter.engine.execution.ExecutableInvoker.lambda$invoke$0(ExecutableInvoker.java:105)",
+                "org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)",
+                "org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)",
+                "org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)",
+                "org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)",
+                "org.junit.jupiter.engine.execution.ExecutableInvoker.invoke(ExecutableInvoker.java:104)",
+                "org.junit.jupiter.engine.execution.ExecutableInvoker.invoke(ExecutableInvoker.java:98)",
+                "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:214)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:210)",
+                "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:135)",
+                "org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:66)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)",
+                "org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)",
+                "java.base/java.util.ArrayList.forEach(ArrayList.java:1511)",
+                "org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)",
+                "org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)",
+                "java.base/java.util.ArrayList.forEach(ArrayList.java:1511)",
+                "org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)",
+                "org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)",
+                "org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)",
+                "org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)",
+                "org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)",
+                "org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)",
+                "org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)",
+                "org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108)",
+                "org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:88)",
+                "org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:54)",
+                "org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:67)",
+                "org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:52)",
+                "org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:96)",
+                "org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:75)",
+                "org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.processAllTestClasses(JUnitPlatformTestClassProcessor.java:99)",
+                "org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor$CollectAllTestClassesExecutor.access$000(JUnitPlatformTestClassProcessor.java:79)",
+                "org.gradle.api.internal.tasks.testing.junitplatform.JUnitPlatformTestClassProcessor.stop(JUnitPlatformTestClassProcessor.java:75)",
+                "org.gradle.api.internal.tasks.testing.SuiteTestClassProcessor.stop(SuiteTestClassProcessor.java:61)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+                "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+                "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)",
+                "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)",
+                "org.gradle.internal.dispatch.ContextClassLoaderDispatch.dispatch(ContextClassLoaderDispatch.java:33)",
+                "org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler.invoke(ProxyDispatchAdapter.java:94)",
+                "jdk.proxy1/jdk.proxy1.$Proxy2.stop(Unknown Source)",
+                "org.gradle.api.internal.tasks.testing.worker.TestWorker.stop(TestWorker.java:135)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
+                "java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "java.base/java.lang.reflect.Method.invoke(Method.java:567)",
+                "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:36)",
+                "org.gradle.internal.dispatch.ReflectionDispatch.dispatch(ReflectionDispatch.java:24)",
+                "org.gradle.internal.remote.internal.hub.MessageHubBackedObjectConnection$DispatchWrapper.dispatch(MessageHubBackedObjectConnection.java:182)",
+                "org.gradle.internal.remote.internal.hub.MessageHubBackedObjectConnection$DispatchWrapper.dispatch(MessageHubBackedObjectConnection.java:164)",
+                "org.gradle.internal.remote.internal.hub.MessageHub$Handler.run(MessageHub.java:414)",
+                "org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)",
+                "org.gradle.internal.concurrent.ManagedExecutorImpl$1.run(ManagedExecutorImpl.java:48)",
+                "java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)",
+                "java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:630)",
+                "org.gradle.internal.concurrent.ThreadFactoryImpl$ManagedThreadRunnable.run(ThreadFactoryImpl.java:56)",
+                "java.base/java.lang.Thread.run(Thread.java:831)"
+            ]
+        }
     }
 }
 ```
+
+</ViewMore>
+
+:::warning
+此配置仅用于辅助开发和测试，绝不能在生产环境中开启此开关！
+
+比如，请在`application-dev.yml`和`application-test.yml`中开启此开关，但绝对不能在`application-prod.yml`中开启。
+:::
 
 ## 客户端
 
@@ -670,20 +937,20 @@ public class CodeBasedExceptionAdvice {
 ```ts
 export type AllErrors = ❶
     {
-        readonly family: "PlatformErrorCode", ❷
+        readonly family: "PLATFORM_ERROR_CODE", ❷
         readonly code: "SERVICE_IS_SUSPENDED" ❸
     } | 
     {
-        readonly family: "UserInfoErrorCode",
+        readonly family: "USER_INFO_ERROR_CODE",
         readonly code: "ILLEGAL_USER_NAME",
         readonly "illegalChars": ReadonlyArray<number> ❹
     } | 
     {
-        readonly family: "UserInfoErrorCode",
+        readonly family: "USER_INFO_ERROR_CODE",
         readonly code: "PASSWORDS_NOT_SAME"
     } | 
     {
-        readonly family: "UserInfoErrorCode",
+        readonly family: "USER_INFO_ERROR_CODE",
         readonly code: "PASSWORD_TOO_SHORT"
     } |
     ...省略其他代码...
@@ -693,22 +960,22 @@ export type ApiErrors = { ❺
     "userController": { ❻
         "registerUser": AllErrors & ( ❼
             {
-                readonly family: 'UserInfoErrorCode',
+                readonly family: 'USER_INFO_ERROR_CODE',
                 readonly code: 'ILLEGAL_USER_NAME',
                 readonly [key:string]: any
             } | 
             {
-                readonly family: 'UserInfoErrorCode',
+                readonly family: 'USER_INFO_ERROR_CODE',
                 readonly code: 'PASSWORD_TOO_SHORT',
                 readonly [key:string]: any
             } | 
             {
-                readonly family: 'UserInfoErrorCode',
+                readonly family: 'USER_INFO_ERROR_CODE',
                 readonly code: 'PASSWORDS_NOT_SAME',
                 readonly [key:string]: any
             } | 
             {
-                readonly family: 'PlatformErrorCode',
+                readonly family: 'PLATFORM_ERROR_CODE',
                 readonly code: 'SERVICE_IS_SUSPENDED',
                 readonly [key:string]: any
             }
@@ -763,7 +1030,7 @@ export type ApiErrors = { ❺
 
     ![api](@site/static/img/vs-code/api.jpeg)
 
--   `ApiErrors["userController"]["registerUser"]`的`family`字段有两个选项: `UserInfoErrorCode`和`PlatformErrorCode`
+-   `ApiErrors["userController"]["registerUser"]`的`family`字段有两个选项: `USER_INFO_ERROR_CODE`和`PLATFORM_ERROR_CODE`
 
     ![family](@site/static/img/vs-code/family.jpeg)
 

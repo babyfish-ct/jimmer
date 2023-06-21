@@ -6,6 +6,7 @@ import org.babyfish.jimmer.client.meta.NullableType;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.Service;
 import org.babyfish.jimmer.error.CodeBasedException;
+import org.babyfish.jimmer.impl.util.StringUtil;
 
 import java.util.*;
 
@@ -59,7 +60,14 @@ public class ModuleErrorsWriter extends TsCodeWriter {
     private void writeError(EnumBasedError error) {
         scope(ScopeType.OBJECT, ",", true, () -> {
             separator();
-            code("readonly family: \"").code(error.getRawError().getClass().getSimpleName()).code('"');
+            code("readonly family: \"")
+                    .code(
+                            StringUtil.snake(
+                                    error.getRawError().getClass().getSimpleName(),
+                                    StringUtil.SnakeCase.UPPER
+                            )
+                    )
+                    .code('"');
             separator();
             code("readonly code: \"").code(error.getRawError().name()).code('"');
             for (EnumBasedError.Field field : error.getFields().values()) {
@@ -95,7 +103,12 @@ public class ModuleErrorsWriter extends TsCodeWriter {
                                     scope(ScopeType.OBJECT, ",", true, () -> {
                                         code("readonly family: ")
                                                 .code('\'')
-                                                .code(error.getRawError().getClass().getSimpleName())
+                                                .code(
+                                                        StringUtil.snake(
+                                                                error.getRawError().getClass().getSimpleName(),
+                                                                StringUtil.SnakeCase.UPPER
+                                                        )
+                                                )
                                                 .code('\'');
                                         separator();
                                         code("readonly code: ").code('\'').code(error.getRawError().name()).code('\'');

@@ -765,6 +765,12 @@ class Context {
                             ex.getMessage()
             );
         }
+        if (field.list()) {
+            type = new ArrayTypeImpl(type);
+        }
+        if (field.nullable()) {
+            type = NullableTypeImpl.of(type);
+        }
         return new EnumBasedError.Field(field.name(), type);
     }
 

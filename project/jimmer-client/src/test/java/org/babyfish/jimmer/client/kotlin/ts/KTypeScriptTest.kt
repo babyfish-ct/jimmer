@@ -44,6 +44,49 @@ class KTypeScriptTest {
     }
 
     @Test
+    fun testModuleErrors() {
+        val out = ByteArrayOutputStream()
+        val ctx = createContext(out)
+        ModuleErrorsWriter(ctx).flush()
+        val code = out.toString()
+        Assertions.assertEquals(
+            "export type AllErrors = \n" +
+                "    {\n" +
+                "        readonly family: \"KBUSINESS_ERROR\",\n" +
+                "        readonly code: \"DATA_IS_FROZEN\"\n" +
+                "    } | \n" +
+                "    {\n" +
+                "        readonly family: \"KBUSINESS_ERROR\",\n" +
+                "        readonly code: \"SERVICE_IS_SUSPENDED\",\n" +
+                "        readonly \"planedResumeTime\"?: string | undefined\n" +
+                "    }\n" +
+                ";\n" +
+                "\n" +
+                "export type ApiErrors = {\n" +
+                "    \"karrayService\": {\n" +
+                "    },\n" +
+                "    \"kbookService\": {\n" +
+                "        \"saveBooks\": AllErrors & (\n" +
+                "            {\n" +
+                "                readonly family: 'KBUSINESS_ERROR',\n" +
+                "                readonly code: 'DATA_IS_FROZEN',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'KBUSINESS_ERROR',\n" +
+                "                readonly code: 'SERVICE_IS_SUSPENDED',\n" +
+                "                readonly [key:string]: any\n" +
+                "            }\n" +
+                "        )\n" +
+                "    },\n" +
+                "    \"kbookStoreService\": {\n" +
+                "    }\n" +
+                "};\n",
+            code
+        )
+    }
+
+    @Test
     fun testKBookService() {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)

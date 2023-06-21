@@ -9,19 +9,6 @@ abstract class CodeBasedException protected constructor(
 
     abstract val fields: Map<String, Any?>
 
-    // In order to support the overload version for java,
-    // the default argument of kotlin is not used
-    fun toExportedError(): ExportedError =
-        toExportedError(false)
-
-    fun toExportedError(withDebugInfo: Boolean): ExportedError =
-        ExportedError(
-            familyName(code.javaClass.simpleName),
-            code.name,
-            fields,
-            if (withDebugInfo) ErrorDebugInfo.of(this) else null
-        )
-
     companion object {
 
         @JvmStatic

@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.MetaException;
 import org.babyfish.jimmer.error.CodeBasedException;
+import org.babyfish.jimmer.error.ErrorFamily;
 import org.babyfish.jimmer.error.ErrorField;
 import org.babyfish.jimmer.error.ErrorFields;
 import org.jetbrains.annotations.NotNull;
@@ -360,7 +361,20 @@ public class ErrorGenerator {
                 String key = e.getKey().getSimpleName().toString();
                 Object value = e.getValue().getValue();
                 if (key.equals("name")) {
-                    name = (String)value;
+                    String str = (String)value;
+                    if (str.equals("family") || str.equals("code")) {
+                        throw new MetaException(
+                                constantElement,
+                                "The enum constant \"" +
+                                        constantElement.getEnclosingElement().getSimpleName().toString() +
+                                        '.' +
+                                        constantElement.getSimpleName().toString() +
+                                        "\" is illegal, it cannot be decorated by \"@" +
+                                        ErrorFamily.class.getName() +
+                                        "\" with the name \"family\" or \"code\""
+                        );
+                    }
+                    name = str;
                 } else if (key.equals("type")) {
                     typeName = typeName(value.toString());
                 } else if (key.equals("nullable")) {
@@ -369,6 +383,7 @@ public class ErrorGenerator {
                     isList = (boolean) value;
                 }
             }
+            assert typeName != null;
             if (isList) {
                 if (typeName.isPrimitive()) {
                     throw new MetaException(

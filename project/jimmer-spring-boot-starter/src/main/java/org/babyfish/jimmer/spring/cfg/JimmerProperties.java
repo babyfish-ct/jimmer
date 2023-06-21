@@ -58,7 +58,7 @@ public class JimmerProperties {
     private final String microServiceName;
 
     @NotNull
-    private final ErrorWrapper errorWrapper;
+    private final ErrorTranslator errorTranslator;
 
     @NotNull
     private final Client client;
@@ -81,7 +81,7 @@ public class JimmerProperties {
             @Nullable Boolean isForeignKeyEnabledByDefault,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
-            @Nullable ErrorWrapper errorWrapper,
+            @Nullable ErrorTranslator errorTranslator,
             @Nullable Client client,
             @Nullable Map<String, Client> clients
     ) {
@@ -180,10 +180,10 @@ public class JimmerProperties {
                 microServiceName != null ?
                         microServiceName :
                         "";
-        if (errorWrapper == null) {
-            this.errorWrapper = new ErrorWrapper(null, null);
+        if (errorTranslator == null) {
+            this.errorTranslator = new ErrorTranslator(null, null);
         } else {
-            this.errorWrapper = errorWrapper;
+            this.errorTranslator = errorTranslator;
         }
         if (client == null) {
             this.client = new Client(null, null);
@@ -308,8 +308,8 @@ public class JimmerProperties {
     }
 
     @NotNull
-    public ErrorWrapper getErrorWrapper() {
-        return errorWrapper;
+    public ErrorTranslator getErrorTranslator() {
+        return errorTranslator;
     }
 
     @NotNull
@@ -334,7 +334,7 @@ public class JimmerProperties {
                 ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +
-                ", errorWrapper=" + errorWrapper +
+                ", errorTranslator=" + errorTranslator +
                 ", client=" + client +
                 ", clients=" + clients +
                 '}';
@@ -374,14 +374,14 @@ public class JimmerProperties {
     }
 
     @ConstructorBinding
-    public static class ErrorWrapper {
+    public static class ErrorTranslator {
         @NotNull
         private final HttpStatus httpStatus;
 
         @NotNull
         private final boolean debugInfoSupported;
 
-        public ErrorWrapper(HttpStatus httpStatus, Boolean debugInfoSupported) {
+        public ErrorTranslator(HttpStatus httpStatus, Boolean debugInfoSupported) {
             this.httpStatus = httpStatus != null ? httpStatus : HttpStatus.INTERNAL_SERVER_ERROR;
             this.debugInfoSupported = debugInfoSupported != null ? debugInfoSupported : false;
         }
@@ -397,7 +397,7 @@ public class JimmerProperties {
 
         @Override
         public String toString() {
-            return "ErrorWrapper{" +
+            return "ErrorTranslator{" +
                     "httpStatus=" + httpStatus +
                     ", debugInfoSupported=" + debugInfoSupported +
                     '}';
