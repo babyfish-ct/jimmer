@@ -23,7 +23,7 @@ public class ExportedError {
             @JsonProperty(value = "family", required = true) @NotNull String family,
             @JsonProperty(value = "code", required = true) @NotNull String code,
             @JsonProperty(value = "fields", required = true) @NotNull Map<String, Object> fields,
-            @JsonProperty(value = "debugInfo", required = false) ErrorDebugInfo debugInfo
+            @JsonProperty(value = "debugInfo") ErrorDebugInfo debugInfo
     ) {
         this.family = Objects.requireNonNull(family, "`family` cannot be null");
         this.code = Objects.requireNonNull(code, "`code` cannot be null");

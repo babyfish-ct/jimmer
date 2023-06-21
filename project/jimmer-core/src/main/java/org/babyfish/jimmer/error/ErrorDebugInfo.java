@@ -15,9 +15,9 @@ public class ErrorDebugInfo {
     private final ErrorDebugInfo causeBy;
 
     public ErrorDebugInfo(
-            @JsonProperty(value = "family", required = false) @Nullable String message,
-            @JsonProperty(value = "family", required = true) @NotNull String stackTrace,
-            @JsonProperty(value = "family", required = false) @Nullable ErrorDebugInfo causeBy
+            @JsonProperty(value = "message", required = false) @Nullable String message,
+            @JsonProperty(value = "stackTrace", required = true) @NotNull String stackTrace,
+            @JsonProperty(value = "causeBy") @Nullable ErrorDebugInfo causeBy
     ) {
         this.message = message;
         this.stackTrace = Objects.requireNonNull(stackTrace, "`stackTrace` cannot be null");
