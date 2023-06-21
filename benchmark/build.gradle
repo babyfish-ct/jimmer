@@ -7,7 +7,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.7.102"
+    jimmerVersion = "0.7.105"
 }
 
 group 'org.babyfish.jimmer'
