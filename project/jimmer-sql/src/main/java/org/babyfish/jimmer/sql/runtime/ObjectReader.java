@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 
 import java.sql.ResultSet;
@@ -11,22 +12,20 @@ import java.util.Map;
 
 class ObjectReader implements Reader<Object> {
 
-    private static final ImmutableProp[] EMPTY_PROPS = new ImmutableProp[0];
-
     private static final Reader<?>[] EMPTY_READERS = new Reader[0];
 
     private final ImmutableType type;
 
     private final Reader<?> idReader;
 
-    private final ImmutableProp[] nonIdProps;
+    private final PropId[] nonIdPropIds;
 
     private final Reader<?>[] nonIdReaders;
 
     ObjectReader(ImmutableType type, Reader<?> idReader, Map<ImmutableProp, Reader<?>> nonIdReaders) {
         this.type = type;
         this.idReader = idReader;
-        this.nonIdProps = nonIdReaders.keySet().toArray(EMPTY_PROPS);
+        this.nonIdPropIds = nonIdReaders.keySet().stream().map(ImmutableProp::getId).toArray(PropId[]::new);
         this.nonIdReaders = nonIdReaders.values().toArray(EMPTY_READERS);
     }
 
@@ -43,7 +42,7 @@ class ObjectReader implements Reader<Object> {
             int size = nonIdReaders.length;
             for (int i = 0; i < size; i++) {
                 Object value = nonIdReaders[i].read(rs, ctx);
-                spi.__set(nonIdProps[i].getId(), value);
+                spi.__set(nonIdPropIds[i], value);
             }
         } catch (Throwable ex) {
             throw DraftConsumerUncheckedException.rethrow(ex);

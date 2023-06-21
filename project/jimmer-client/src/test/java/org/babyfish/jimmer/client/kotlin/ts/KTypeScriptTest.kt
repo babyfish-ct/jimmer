@@ -437,15 +437,12 @@ class KTypeScriptTest {
         val code = out.toString()
         Assertions.assertEquals(
             "import type { Executor } from '../';\n" +
-                    "import type { Unit } from '../model/static';\n" +
                     "\n" +
                     "export class KArrayService {\n" +
                     "    \n" +
                     "    constructor(private executor: Executor) {}\n" +
                     "    \n" +
-                    "    async saveIds(options: KArrayServiceOptions['saveIds']): Promise<\n" +
-                    "        Unit\n" +
-                    "    > {\n" +
+                    "    async saveIds(options: KArrayServiceOptions['saveIds']): Promise<void> {\n" +
                     "        let _uri = '/insert/ids';\n" +
                     "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                     "        let _value: any = undefined;\n" +
@@ -456,7 +453,7 @@ class KTypeScriptTest {
                     "            _uri += encodeURIComponent(_value);\n" +
                     "            _separator = '&';\n" +
                     "        }\n" +
-                    "        return (await this.executor({uri: _uri, method: 'GET'})) as Unit\n" +
+                    "        return (await this.executor({uri: _uri, method: 'GET'})) as void\n" +
                     "    }\n" +
                     "}\n" +
                     "\n" +

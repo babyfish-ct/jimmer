@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
+import org.springframework.http.HttpStatus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -57,6 +58,9 @@ public class JimmerProperties {
     private final String microServiceName;
 
     @NotNull
+    private final ErrorWrapper errorWrapper;
+
+    @NotNull
     private final Client client;
 
     private final Map<String, Client> clients;
@@ -77,6 +81,7 @@ public class JimmerProperties {
             @Nullable Boolean isForeignKeyEnabledByDefault,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
+            @Nullable ErrorWrapper errorWrapper,
             @Nullable Client client,
             @Nullable Map<String, Client> clients
     ) {
@@ -175,6 +180,11 @@ public class JimmerProperties {
                 microServiceName != null ?
                         microServiceName :
                         "";
+        if (errorWrapper == null) {
+            this.errorWrapper = new ErrorWrapper(null, null);
+        } else {
+            this.errorWrapper = errorWrapper;
+        }
         if (client == null) {
             this.client = new Client(null, null);
         } else {
@@ -298,6 +308,11 @@ public class JimmerProperties {
     }
 
     @NotNull
+    public ErrorWrapper getErrorWrapper() {
+        return errorWrapper;
+    }
+
+    @NotNull
     public Client getClient() {
         return client;
     }
@@ -308,14 +323,18 @@ public class JimmerProperties {
                 "language='" + language + '\'' +
                 ", dialect=" + dialect +
                 ", showSql=" + showSql +
+                ", prettySql=" + prettySql +
                 ", databaseValidation=" + databaseValidation +
                 ", triggerType=" + triggerType +
+                ", transactionCacheOperatorFixedDelay=" + transactionCacheOperatorFixedDelay +
                 ", defaultEnumStrategy=" + defaultEnumStrategy +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
                 ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
+                ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +
+                ", errorWrapper=" + errorWrapper +
                 ", client=" + client +
                 ", clients=" + clients +
                 '}';
@@ -350,6 +369,37 @@ public class JimmerProperties {
             return "Validation{" +
                     "mode=" + mode +
                     ", catalog='" + catalog + '\'' +
+                    '}';
+        }
+    }
+
+    @ConstructorBinding
+    public static class ErrorWrapper {
+        @NotNull
+        private final HttpStatus httpStatus;
+
+        @NotNull
+        private final boolean debugInfoSupported;
+
+        public ErrorWrapper(HttpStatus httpStatus, Boolean debugInfoSupported) {
+            this.httpStatus = httpStatus != null ? httpStatus : HttpStatus.INTERNAL_SERVER_ERROR;
+            this.debugInfoSupported = debugInfoSupported != null ? debugInfoSupported : false;
+        }
+
+        @NotNull
+        public HttpStatus getHttpStatus() {
+            return httpStatus;
+        }
+
+        public boolean isDebugInfoSupported() {
+            return debugInfoSupported;
+        }
+
+        @Override
+        public String toString() {
+            return "ErrorWrapper{" +
+                    "httpStatus=" + httpStatus +
+                    ", debugInfoSupported=" + debugInfoSupported +
                     '}';
         }
     }

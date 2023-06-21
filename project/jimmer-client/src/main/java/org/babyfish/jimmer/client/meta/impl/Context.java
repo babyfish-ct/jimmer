@@ -390,6 +390,9 @@ class Context {
         if (type.getClassifier() instanceof KClass<?>) {
             kotlinClass = (KClass<?>) type.getClassifier();
             javaClass = JvmClassMappingKt.getJavaClass(kotlinClass);
+            if (javaClass.getName().equals("kotlin.Unit")) {
+                javaClass = void.class;
+            }
             immutableType = ImmutableType.tryGet(javaClass);
         }
         if (fetchBy != null && (immutableType == null || !immutableType.isEntity())) {

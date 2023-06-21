@@ -472,9 +472,15 @@ public class ReaderManager {
 
     private static class EmbeddedReader implements Reader<Object> {
 
+        private static final ImmutableProp[] EMPTY_PROPS = new ImmutableProp[0];
+
+        private static final Reader<?>[] EMPTY_READERS = new Reader[0];
+
         private final ImmutableType targetType;
 
-        private Map<ImmutableProp, Reader<?>> readerMap;
+        private ImmutableProp[] props;
+
+        private Reader<?>[] readers;
 
         EmbeddedReader(ImmutableType targetType, ReaderManager readerManager) {
             this.targetType = targetType;
@@ -486,16 +492,18 @@ public class ReaderManager {
                     map.put(childProp, readerManager.scalarReader(childProp));
                 }
             }
-            this.readerMap = map;
+            props = map.keySet().toArray(EMPTY_PROPS);
+            readers = map.values().toArray(EMPTY_READERS);
         }
 
         @Override
         public Object read(ResultSet rs, Context ctx) throws SQLException {
             DraftSpi spi = (DraftSpi) targetType.getDraftFactory().apply(ctx.draftContext(), null);
             try {
-                for (Map.Entry<ImmutableProp, Reader<?>> e : readerMap.entrySet()) {
-                    ImmutableProp prop = e.getKey();
-                    Object value = e.getValue().read(rs, ctx);
+                int size = readers.length;
+                for (int i = 0; i < size; i++) {
+                    ImmutableProp prop = props[i];
+                    Object value = readers[i].read(rs, ctx);
                     if (value != null || prop.isNullable()) {
                         spi.__set(prop.getId(), value);
                     }

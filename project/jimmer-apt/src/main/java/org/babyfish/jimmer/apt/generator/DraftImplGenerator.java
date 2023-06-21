@@ -664,6 +664,18 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(TypeName.BOOLEAN, "visible");
+        builder.addStatement("$T __visibility = $L.__visibility", VISIBILITY_CLASS_NAME, UNMODIFIED);
+        builder.beginControlFlow("if (__visibility == null)", UNMODIFIED);
+        builder.beginControlFlow("if (visible)");
+        builder.addStatement("return");
+        builder.endControlFlow();
+        builder.addStatement(
+                "$L().__visibility = __visibility = $T.of($L)",
+                DRAFT_FIELD_MODIFIED,
+                VISIBILITY_CLASS_NAME,
+                type.getProps().size()
+        );
+        builder.endControlFlow();
         CaseAppender appender = new CaseAppender(builder, type, argType);
         if (argType == PropId.class) {
             builder.addStatement("int __propIndex = prop.asIndex()");
@@ -677,8 +689,7 @@ public class DraftImplGenerator {
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             builder.addStatement(
-                    "$L().__visibility.show($L, visible);break",
-                    DRAFT_FIELD_MODIFIED,
+                    "__visibility.show($L, visible);break",
                     prop.getSlotName()
             );
         }

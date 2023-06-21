@@ -11,7 +11,12 @@ import org.springframework.context.annotation.Import;
 
 @AutoConfiguration(after = DataSourceAutoConfiguration.class)
 @EnableConfigurationProperties(JimmerProperties.class)
-@Import({SqlClientConfig.class, SpringDocConfig.class, JimmerRepositoriesConfig.class})
+@Import({
+        SqlClientConfig.class,
+        JimmerRepositoriesConfig.class,
+        ErrorWrapperConfig.class,
+        SpringDocConfig.class
+})
 public class JimmerAutoConfiguration {
 
     @ConditionalOnMissingBean(ImmutableModule.class)

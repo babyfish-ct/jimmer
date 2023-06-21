@@ -354,7 +354,7 @@ public class DatabaseValidators {
         if (catalog != null && !catalog.isEmpty()) {
             return tables
                     .stream()
-                    .filter(it -> it.catalog.equalsIgnoreCase(catalog))
+                    .filter(it -> it.catalog == null || it.catalog.equalsIgnoreCase(catalog))
                     .collect(Collectors.toSet());
         }
         return tables;
