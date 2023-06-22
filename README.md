@@ -44,7 +44,7 @@ Please view [**documentation**](https://babyfish-ct.github.io/jimmer/)*(Both eng
 </kbd>
 
 > 
-> - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer-doc/docs/benchmark) please.
+> - If you want to view full benchmark report, click [here](https://babyfish-ct.github.io/jimmer/docs/benchmark) please.
 > 
 > - If you want to run the benchmark, run the project under the sub directory [benchmark](./benchmark) please.
 
