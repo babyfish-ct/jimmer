@@ -380,10 +380,92 @@ companion object {
 因此，即使不为另外两个微服务`book-service`和`author-service`编写任何Java/Kotlin代码，只要修改它们的配置文件支持了微服务，本服务的此方法也可以正确运行。
 :::
 
-### 效果
+### 运行效果
 
 假如`store-service`在本机被启动且端口为7001，访问`http://localhost:7001/store/1/detail`，得到的结果为
 
 ```json
-
+{
+    "id":1,
+    "name":"O'REILLY",
+    "website":null,
+    // highlight-next-line
+    "books":[
+        {
+            "id":1,
+            "name":"Learning GraphQL",
+            "edition":1,
+            "price":50,
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":1,
+                    "firstName":"Eve",
+                    "lastName":"Procello",
+                    "gender":"FEMALE"
+                },
+                {
+                    "id":2,
+                    "firstName":"Alex",
+                    "lastName":"Banks",
+                    "gender":"MALE"
+                }
+            ]
+        },
+        {
+            "id":2,
+            ...略...
+        },
+        {
+            "id":3,
+            ...略...
+        },
+        {
+            "id":4,
+            "name":"Effective TypeScript",
+            "edition":1,
+            "price":73,
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":3,
+                    "firstName":"Dan",
+                    "lastName":"Vanderkam",
+                    "gender":"MALE"
+                }
+            ]
+        },
+        {
+            "id":5,
+            ...略...
+        },
+        {
+            "id":6,
+            ...略...
+        },
+        {
+            "id":7,
+            "name":"Programming TypeScript",
+            "edition":1,
+            "price":47.5,
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":4,
+                    "firstName":"Boris",
+                    "lastName":"Cherny",
+                    "gender":"MALE"
+                }
+            ]
+        },
+        {
+            "id":8,
+            ...略...
+        },
+        {
+            "id":9,
+            ...略...
+        }
+    ]
+}
 ```
