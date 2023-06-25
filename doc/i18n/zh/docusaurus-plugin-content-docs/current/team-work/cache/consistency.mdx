@@ -4,14 +4,14 @@ title: 保证缓存一致性
 ---
 
 :::caution
-之前，我们已经通过[对象缓存](./cache-type/object)、[关联缓存](./cache-type/association)和[计算缓存](./cache-type/calculation)三篇文章详细讲解了Jimmer如何在数据被修改是自动删除受影响的缓存。
+之前，我们已经通过[对象缓存](./cache-type/object)、[关联缓存](./cache-type/association)和[计算缓存](./cache-type/calculation)三篇文章详细讲解了Jimmer如何在数据被修改时自动删除受影响的缓存。
 
 所以，这里不再重复讨论Jimmer是如何智能地删除受影响的缓存。
 
 本文讨论的焦点是，Jimmer如何保证已发出的缓存数据删除行为最终一定能成功。
 :::
 
-无论是[对象缓存](./cache-type/object)和[关联缓存](./cache-type/association)中那种全自动的一致性，还是[计算缓存](./cache-type/calculation)中那种需要用户辅助的一致性，Jimmer的缓存一致性都是由[触发器](../mutation/trigger)驱动的。
+无论是[对象缓存](./cache-type/object)和[关联缓存](./cache-type/association)那种全自动的一致性，还是[计算缓存](./cache-type/calculation)那种需要用户辅助的一致性，Jimmer的缓存一致性都是由[触发器](../mutation/trigger)驱动的。
 
 Jimmer的触发器分为BinLog触发器和Transaction触发器。
 
@@ -30,7 +30,7 @@ Jimmer的触发器分为BinLog触发器和Transaction触发器。
 
 当`trigger-type`为`TRANSACTION_ONLY`时，Jimmer会**被迫**使用Transaction触发器删除失效缓存。
 
-对于Transaction触发器而言
+对于Transaction触发器而言：
 
 -   只有用户在当前App内调用Jimmer API导致的修改才做才会发起触发器回调，包括缓存删除。
 
@@ -54,7 +54,7 @@ Jimmer会自动创建``JIMMER_TRANS_CACHE_OPERATOR`表。
 
 所谓`Flush`操作，就是从`JIMMER_TRANS_CACHE_OPERATOR`表中获取尚未执行的用户认知中的缓存删除操作，执行真正的缓存删除操作，如果成功，删除相关记录。
 
-对于事务提交后立即执行的`Flush`操作而言
+对于事务提交后立即执行的`Flush`操作而言：
 
 -   如果成功自然最好，这时拥有良好的实时性。大部分情况下也应该如此。
 
