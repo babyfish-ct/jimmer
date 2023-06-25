@@ -43,16 +43,16 @@ import TabItem from '@theme/TabItem';
 
 只要某个实体被施加了[全局过滤器](../../query/global-filter)，所有以它作为目标类型的关联缓存以及依赖这些关联缓存的计算缓存都需要多视图化。
 
-比如，如果为`Book`添加全局过滤器，那么如下这些属性
+比如，如果为`Book`添加全局过滤器，那么如下这些属性：
 
 -   以`Book`作为目标类型的关联属性。比如，`BookStore.books`、`Author.books`
 
 -   依赖于上述关联属性的计算属性。比如，`BookStore.avgPrice`、`BookStore.newestBooks`*(文档没提及`newestBook`，可参见例子)*
 
-都会被对过滤器敏感，即，不同的过滤条件会导致不同的客户端看到不同的数据。
+都会对过滤器敏感，即不同的过滤条件会导致不同的客户端看到不同的数据。
 
 :::caution
-这些对过滤器敏感的属性，要么不支持缓存，要么就支持多视角缓存。如果为其需要配置单视图缓存，将被视为无效操作，缓存配置会被忽略。
+这些对过滤器敏感的属性，要么不支持缓存，要么就支持多视角缓存。如果为其配置单视图缓存，将被视为无效操作，缓存配置会被忽略。
 
 然而，无需担心，Jimmer会告诉开发人员为什么属性级缓存未生效。
 :::
@@ -171,9 +171,9 @@ import TabItem from '@theme/TabItem';
 多视图缓存不再是简单的KV结构，而是嵌套的两级KV结构。
 
 :::tip
-对于redis而言，这种结构就是[Redis Hashes](https://redis.io/docs/data-types/hashes/)。
+对于Redis而言，这种结构就是[Redis Hashes](https://redis.io/docs/data-types/hashes/)。
 
-此时表格中的`SubKey`就是Reids中的`Hash Key`
+此时表格中的`SubKey`就是Redis中的`Hash Key`
 :::
 
 很明显，相比于单视图缓存而言，多视图缓存按照SubKey对数据进行了更细的分化，让不同的客户端看到不同的数据。
@@ -288,7 +288,7 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
 
 该方法返回`SortedMap`的`Ref`包装器
 
--   如果`Ref`本身为null，表示获取SubKey遇到困难，无法为计算属性应用多试图缓存
+-   如果`Ref`本身为null，表示获取SubKey遇到困难，无法为计算属性应用多视图缓存
 
     :::info
     这种情况下，Jimmer会告诉开发人员为什么计算属性的缓存未生效
