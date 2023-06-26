@@ -186,7 +186,7 @@ fun cacheFactory(
             createPropCache(
                 /* highlight-start */
                 prop === BookStore::books.toImmutableProp() ||
-                    prop === Author::authors.toImmutableProp(), 
+                    prop === Author::books.toImmutableProp(), 
                 /* highlight-end */
                 prop,
                 Duration.ofHours(1)
@@ -509,7 +509,7 @@ class BookStoreAvgPriceResolver(
 :::note
 `BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。
 
-然而，`Book.price`是对象的非关联信息，而非关联信息，非关联信息一定和多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
+然而，`Book.price`是对象的非关联属性，而非关联属性一定与多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
 :::
 
 ## 使用
@@ -1091,7 +1091,7 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
     </TabItem>
     </Tabs>
 
-    如果忘记了这段代码的具体逻辑，可以回顾[计算缓存](../cache-type/calculation)一文，这里关注高量的那行代码即可。这里，当前计算属性对`BookStore.books`关联的变化感兴趣。
+    如果忘记了这段代码的具体逻辑，可以回顾[计算缓存](../cache-type/calculation)一文，这里关注高亮的那行代码即可。这里，当前计算属性对`BookStore.books`关联的变化感兴趣。
 
     :::tip
     修改表之间关联字段并非触发关联属性变更事件的唯一方法，修改关联对象中能影响全局过滤器的被过滤字段，*比如这里的`DELETED`*，也可以触发关联属性变更事件。
