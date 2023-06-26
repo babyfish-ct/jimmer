@@ -3,5 +3,469 @@ sidebar_position: 4
 title: Spring Cloud和远程关联
 ---
 
-远程关联是Jimmer对微服务架构的首次思考
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
+远程关联是Jimmer对微服务架构的首次思考。
+
+通过垂直切分，实体类型可以被划分到不同的微服务，也可以说被划分到不同的数据库中。隶属于不同的微服务实体类型之间关联 *(包括一对一、多对一、一对多和多对多)* 就是远程关联。
+
+:::tip
+Jimmer自动实现远程关联数据的自动查询。
+
+即，如果[对象抓取器](../query/object-fetcher)中包含任意深度的远程关联属性，就会跨越多个微服务查询数据的不同部分，最后将不同部分的查询结果合并成对象抓取器所期望的数据结构作为一个整体返回。无需开发人员自己实现远程查询和数据拼接。
+:::
+
+## 数据库
+
+在本文中，各实体如此划分
+
+![cloud.jpg](@site/static/img/cloud.jpg)
+
+:::info
+-   `BOOK_AUTHOR_MAPPING`作为多对多关联中间表，既可以划分给`book-service`服务，也可以划分给`author-service`服务。本例将之划分给`book-service`服务，原因会在后问阐述。
+
+-   实线箭头表示同意一个数据内部的外建引用，真伪可以由开发人员自由选择。
+
+-   虚线箭头表示跨越数据库边界的外建引用，只能是伪外键。
+:::
+
+为了简化讨论，三个服务的数据库初始化脚本如下
+
+<table>
+    <thead>
+        <tr>
+            <th>语言</th>
+            <th>例子</th>
+            <th>服务(子项目)</th>
+            <th>数据库初始化SQL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">Java</td>
+            <td rowspan="3">
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud">
+                    example/java/jimmer-cloud
+                </a>
+            </td>
+            <td>store-service</td>
+            <td>
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud/store-service/src/main/resources/store.sql">
+                    jimmer-cloud/store-service/src/main/resources/store.sql
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>book-service</td>
+            <td>
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud/book-service/src/main/resources/book.sql">
+                    jimmer-cloud/book-service/src/main/resources/book.sql
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>author-service</td>
+            <td>
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud/author-service/src/main/resources/author.sql">
+                    jimmer-cloud/author-service/src/main/resources/author.sql
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td rowspan="3">Kotlin</td>
+            <td rowspan="3">
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt">
+                    example/kotlin/jimmer-cloud-kt
+                </a>
+            </td>
+            <td>store-service</td>
+            <td>
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt/store-service/src/main/resources/store.sql">
+                    jimmer-cloud-kt/store-service/src/main/resources/store.sql
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>book-service</td>
+            <td>
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt/book-service/src/main/resources/book.sql">
+                    jimmer-cloud-kt/book-service/src/main/resources/book.sql
+                </a>
+            </td>
+        </tr>
+        <tr>
+            <td>author-service</td>
+            <td>
+                <a href="https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt/author-service/src/main/resources/author.sql">
+                    jimmer-cloud-kt/author-service/src/main/resources/author.sql
+                </a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+:::info
+附带的例子[example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud)
+或[example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt)
+使用H2，各服务启动后回自动初始化各自的数据库。
+:::
+
+## 实体定义
+
+在一个独立的子项目中 *(附带例子为
+[example/java/jimmer-cloud/model](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-cloud/model)或
+[example/kotin/jimmer-cloud-kt/model](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt/model)
+)*，定义所有实体类型。
+
+这些实体类型构成了全局模型，实体类型隶属于不同的微服务。隶属于不同微服务的实体之间构成了远程关联，其实可以理解成定义不同微服务之间的彼此交互契约。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+// highlight-next-line
+@Entity(microServiceName = "store-service")
+public interface BookStore {
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "store")
+    List<Book> books();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+// highlight-next-line
+@Entity(microServiceName = "store-service")
+interface BookStore {
+
+    // highlight-next-line
+    @OneToMany(mappedBy = "store")
+    val books: List<Book>
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+// highlight-next-line
+@Entity(microServiceName = "book-service")
+public interface Book {
+
+    @Nullable
+    // highlight-next-line
+    @ManyToOne
+    BookStore store();
+
+    // highlight-next-line
+    @ManyToMany
+    List<Author> authors();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+// highlight-next-line
+@Entity(microServiceName = "book-service")
+interface Book {
+
+    // highlight-next-line
+    @ManyToOne
+    val store: BookStore?
+
+    // highlight-next-line
+    val authors: List<Author>
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+// highlight-next-line
+@Entity(microServiceName = "author-service")
+public interface Book {
+
+    // highlight-next-line
+    // @ManyToMany(mappedBy = "authors")
+    List<Book> books();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+// highlight-next-line
+@Entity(microServiceName = "author-service")
+interface Author {
+
+    // highlight-next-line
+    // @ManyToMany(mappedBy = "authors")
+    val books: List<Book>
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   实体类的`@Entity`注解的`microServiceName`被指定，这样，说明每个实体属于那个微服务，即属于那个数据库。
+
+    在本例中，实体类型`BookStore`、`Book`和`Author`分别隶属于为服务`store-service`、`book-service`和`author-service`。
+
+    这里的微服务，就是注册中心中每个服务的名称，对于spring-cloud而言，就是全局配置`sping.application.name`。
+
+-   隶属于不同的实体类型之间的关联，就是远程关联。
+
+    -   `BookStore.books`和`Book.store`: `BookStore`隶属于`store-service`，而`Book`隶属于`book-service`
+
+    -   `Book.authors`和`Author.books`: `Book`隶属于`book-service`，而`Author`隶属于`author-service`
+
+-   多对一关联`Book.store`可以为null，因为远程关系表示其外键必然引用另外一个数据库的数据，也就是说必然为伪外键。而Jimmer中伪外键所对应的字段必须可null。
+
+    请参考[真假外键](../mapping/base/foreignkey)
+
+-   对于书籍和作者之间的双向多对多关联而言，`Book.authors`是主动方，而`Author.books`是从动方 *(`@ManyToMany`的`mappedBy`被配置)*。
+
+    :::info
+    Jimmer规定远程关联的中间表必须隶属主动方实体所属的微服务。
+    :::
+
+    这里回答了是前文留下的问题，为何在本例中中间表`BOOK_AUTOHOR_MAPPING`定义在微服务`book-service`的数据库中，而不定义在`author-service`的数据库中。
+
+## 注册中心
+
+微服务应用需要一个注册中心，这是微服务架构的基本特征，本文无需做任何阐述。
+
+附带例子中，为[example/java/jimmer-cloud/registry-center](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud/registry-center)
+或[example/kotlin/jimmer-cloud-kt/registry-center](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt/registry-center)
+
+## 实现各服务
+
+由于微服务`store-service`、`book-service`和`author-service`的实现方式高度雷同，所以本文档仅讲解如何实现`store-service`。
+
+:::note
+虽然本文只讲解`store-service`，但要运行起来体验远程关联的效果，需要把三个服务都实现完。
+
+完整的代码可参见附带的例子[example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud)
+或[example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt)。
+:::
+
+### 让Jimmer支持微服务
+
+任何一个微服务，都必须让Jimmer支持微服务。
+
+这非常简单，简单修改spring配置文件`application.yml`或`application.properties`即可。
+
+```sh
+spring:
+  application:
+    # highlight-next-line
+    name: store-service
+
+jimmer:
+  # highlight-next-line
+  micro-service-name: ${spring.application.name}
+  ...省略其他配置...
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:7000/eureka/
+```
+
+这里，"store-service"既作为当前服务在spring-clound注册中心的名称，又作为Jimmer的微服务配置。
+
+一旦配置了`jimmer.micro-service-name`, Jimmer就明白了哪些实体类型隶属于当前服务 *(这里是`BookStore`)*。
+
+-   使用Jimmer的ORM API操作当前微服务的实体类型，将会正确执行，如同之前所有文档所讲那样。
+
+-   使用Jimmer的ORM API操作其他微服务的实体类型，将会抛出异常。
+
+:::tip
+只要每个服务都保证`spring.application.name`和`jimmer.micro-service-name`相同，Jimmer就会自动实现远程关联数据的自动查询，无需开发人员编写任何代码。
+:::
+
+### 实现业务的查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreService.java"
+@GetMapping("/store/{id}/detail")
+public @FetchBy("COMPLEX_FETCHER") BookStore findStoreDetail(
+        @PathVariable("id") long id
+) {
+    return storeRepository.findNullable(id, COMPLEX_FETCHER);
+}
+
+public static final Fetcher<BookStore> COMPLEX_FETCHER =
+    BookStoreFetcher.$ ❶
+        .allScalarFields()
+        .books( ❷
+            BookFetcher.$
+                .allScalarFields()
+                .authors( ❸
+                    AuthorFetcher.$
+                        .allScalarFields()
+                )
+        );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreService.kt"
+@GetMapping("/store/{id}/detail")
+fun findStoreDetail(
+    @PathVariable("id") id: Long
+): @FetchBy("COMPLEX_FETCHER") BookStore? =
+    storeRepository.findNullable(id, COMPLEX_FETCHER)
+
+companion object {
+
+    val COMPLEX_FETCHER = 
+        newFetcher(BookStore::class).by { ❶
+            allScalarFields()
+            books { ❷
+                allScalarFields()
+                authors { ❸
+                    allScalarFields()
+                }
+            }
+        }
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ 聚合根查询，从当前服务`store-service`所属数据库中直接查询
+
+-   ❷ 通过远程关联属性`BookStore.books`查询关联对象
+
+    通过HTTP协议访问远程微服务`book-service`间接获取数据
+
+-   ❸ 通过远程关联属性`Book.authors`查询关联对象
+
+    通过HTTP协议访问远程微服务`author-service`间接获取数据
+
+:::tip
+用户只需要实现聚合根对象的查询，关联属性 *(包括远程关联)* 的查询由Jimmer全自动化。
+
+因此，即使不为另外两个微服务`book-service`和`author-service`编写任何Java/Kotlin代码，只要修改它们的配置文件支持了微服务，本服务的此方法也可以正确运行。
+:::
+
+### 运行效果
+
+假如`store-service`在本机被启动且端口为7001，访问`http://localhost:7001/store/1/detail`，得到的结果为
+
+```json
+{
+    "id":1,
+    "name":"O'REILLY",
+    "website":null,
+    // highlight-next-line
+    "books":[
+        {
+            "id":1,
+            "name":"Learning GraphQL",
+            "edition":1,
+            "price":50,
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":1,
+                    "firstName":"Eve",
+                    "lastName":"Procello",
+                    "gender":"FEMALE"
+                },
+                {
+                    "id":2,
+                    "firstName":"Alex",
+                    "lastName":"Banks",
+                    "gender":"MALE"
+                }
+            ]
+        },
+        {
+            "id":2,
+            ...略...
+        },
+        {
+            "id":3,
+            ...略...
+        },
+        {
+            "id":4,
+            "name":"Effective TypeScript",
+            "edition":1,
+            "price":73,
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":3,
+                    "firstName":"Dan",
+                    "lastName":"Vanderkam",
+                    "gender":"MALE"
+                }
+            ]
+        },
+        {
+            "id":5,
+            ...略...
+        },
+        {
+            "id":6,
+            ...略...
+        },
+        {
+            "id":7,
+            "name":"Programming TypeScript",
+            "edition":1,
+            "price":47.5,
+            // highlight-next-line
+            "authors":[
+                {
+                    "id":4,
+                    "firstName":"Boris",
+                    "lastName":"Cherny",
+                    "gender":"MALE"
+                }
+            ]
+        },
+        {
+            "id":8,
+            ...略...
+        },
+        {
+            "id":9,
+            ...略...
+        }
+    ]
+}
+```
