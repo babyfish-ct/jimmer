@@ -27,7 +27,7 @@ Jimmer采用`CachableFilter/KCacheableFitler接口`如下接口定义缓存友�
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="CachableFilter.java"
+```java title="CacheableFilter.java"
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -46,7 +46,7 @@ public interface CacheableFilter<P extends Props> extends Filter<P> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="KCachableFilter.kt"
+```kotlin title="KCacheableFilter.kt"
 package org.babyfish.jimmer.sql.kt.filter
 
 import org.babyfish.jimmer.sql.event.EntityEvent
@@ -63,7 +63,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 </TabItem>
 </Tabs>
 
-该接口从`Filter/KFilter`接口继承，在其基础上，添加了两个新方法
+该接口从`Filter/KFilter`接口继承，在其基础上，添加了两个新方法：
 
 -   `getParameters`: 该过滤器的为多视图缓存贡献的`SubKey`片段。
 
@@ -74,13 +74,13 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
 -   任何一个全局过滤器对缓存不友好，都会导致对此过滤器敏感的其他属性都无法支持缓存
 
-    因此，这些全局过滤器，要么都是缓存不友好的`Filter/KFilter`，要么都是缓存友好的`CachableFilter/KCachableFilter`；二者混用没有意义
+    因此，这些全局过滤器，要么都是缓存不友好的`Filter/KFilter`，要么都是缓存友好的`CacheableFilter/KCacheableFilter`；二者混用没有意义。
 
-    如果不小心导致这种无意义的混用，Jimmer会告诉开发人员为什么缓存没有生效
+    如果不小心导致这种无意义的混用，Jimmer会告诉开发人员为什么缓存没有生效。
 
--   当所有全局过滤器都缓存友好时，所有`CachableFilter/KCachableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为多视图缓存的`SubKey`
+-   当所有全局过滤器都缓存友好时，所有`CacheableFilter/KCacheableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为多视图缓存的`SubKey`
 
-    例如，实体同时被两个过滤器处理。一个是[逻辑删除](../../query/global-filter/logical-deleted)所隐含的过滤器，记为`a`；另外一个是用户自定义过滤器，记为`b`。
+    例如，实体同时被两个全局过滤器处理。一个是[逻辑删除](../../query/global-filter/logical-deleted)所隐含的过滤器，记为`a`；另外一个是用户自定义过滤器，记为`b`。
 
     假如
 
@@ -95,13 +95,13 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
 ### 再论逻辑删除
 
-在上一篇文章[支持内置过滤器](./builtin-filter)中，我们谈到`@LogicalDelete`注解有一个参数`useMultiViewCache`，默认为`false`。如果要让所有对此内置过滤器敏感的属性都支持多视图缓存，一定要将`useMultiViewCache`配置为true，这点非常重要。
+在上一篇文章[支持内置过滤器](./builtin-filter)中，我们谈到`@LogicalDeleted`注解有一个参数`useMultiViewCache`，默认为`false`。如果要让所有对此内置过滤器敏感的属性都支持多视图缓存，一定要将`useMultiViewCache`配置为true，这点非常重要。
 
 现在，我们可以对此给予解释。
 
 -   如果`@LogicalDeleted`注解的`useMultiViewCache`为false，则对应的内置过滤器仅实现`Filter/KFilter`接口，对缓存不友好。
 
--   如果`@LogicalDeleted`注解的`useMultiViewCache`为true，则对应的内置过滤器仅实现`CacheableFilter/KCachableFilter`接口，对缓存友好。
+-   如果`@LogicalDeleted`注解的`useMultiViewCache`为true，则对应的内置过滤器仅实现`CacheableFilter/KCacheableFilter`接口，对缓存友好。
 
 ### 定义缓存友好过滤器
 
@@ -166,7 +166,7 @@ interface Book : TenantAware {
 
 ```java
 @Component
-public class TenantFilter implements CachableFilter<TenantAwareProps> {
+public class TenantFilter implements CacheableFilter<TenantAwareProps> {
 
     private final TenantProvider tenantProvider;
 
@@ -209,7 +209,7 @@ public class TenantFilter implements CachableFilter<TenantAwareProps> {
 @Component
 class TenantFilter(
     private val tenantProvider: TenantProvider
-) : KCachableFilter<TenantAware> {
+) : KCacheableFilter<TenantAware> {
 
     override fun filter(args: KFilterArgs<TenantAware>) {
         tenantProvider.tenant?.let {
@@ -297,7 +297,7 @@ class BookStoreAvgPriceResolver(
 :::note
 `BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。
 
-然而，`Book.price`是对象的非关联信息，而非关联信息，非关联信息一定和多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
+然而，`Book.price`是对象的非关联属性，而非关联属性一定和多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
 :::
 
 ## 使用
