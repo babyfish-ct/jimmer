@@ -509,7 +509,7 @@ class BookStoreAvgPriceResolver(
 :::note
 `BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。
 
-然而，`Book.price`是对象的非关联属性，而非关联属性一定与多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
+然而，`Book.price`是对象的非关联属性，而非关联属性，故与多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
 :::
 
 ## 使用
