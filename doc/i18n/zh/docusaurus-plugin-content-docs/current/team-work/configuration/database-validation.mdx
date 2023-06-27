@@ -2,3 +2,167 @@
 sidebar_position: 8
 title: 数据库验证
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 功能介绍
+
+诚然，Jimmer的强类型SQL DSL能在编译时尽可能暴露问题，大部分错误能够在测试之前就被杜绝。但，这是不够的。
+
+强类型SQL DSL仅仅能提高`实体模型->业务代码`环节的可靠性，但无法保证`数据库结构->实体模型`环节的可靠性。
+
+还有一个衍生问题，如果开发人员再测试环境中得到可靠的应用，那么，如何保证应用被移植到生产环境后仍然可靠？
+
+数据库验证是一个非常重要的功能，它用于验证数据库结构和实体模型定义的一致性。
+
+:::info
+验证规则
+
+-   验证表名、列名、序列名是否和实体模型中的定义一致
+
+-   验证列的nullity是否和实体模型中属性的定义一致
+
+-   对于实体模型中各实体的id属性，验证数据库是否有存在完全匹配的的主键约束
+
+-   对于实体模型中定义的真外键 *(参见[真假外键](../mapping/base/foreignkey))* 而言，验证数据库中是否存在完全匹配的的外建约束
+:::
+
+## 开启验证
+
+有两种方法开始验证
+
+-   使用Jimmer的Spring Boot Starter时
+
+    修改`application.yml` *(或application.properties)*
+
+    ```
+    jimmer:
+      database-validation-mode: ERROR
+    ```
+
+-   不使用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setDatabaseValidationMode(
+            DatabaseValidationMode.ERROR
+        )
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setDatabaseValidationMode(
+            DatabaseValidationMode.ERROR
+        )
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+`DatabaseValidationMode`是枚举类型，有三个取值
+
+-   NONE: 不验证数据库结构，这是默认行为
+
+-   WARNNING: 验证数据库结构，如果数据库结构和实体模型定义不一致，不阻止程序运行，只是在日志中打印告警信息
+
+-   ERROR: 验证数据库结构，如果数据库结构和实体模型定义不一致，抛出异常，阻止程序运行
+
+## 解决表冲突
+
+-   实体类型必然对应于数据库的某张表，无论是候开发人员通过`@Table`显式配置表名还是由[命名策略](../mapping/base/naming-strategy)自动决定
+
+-   基于中间表的关联属性必然对应于数据库的某张表，无论是候开发人员通过`@JoinTable`显式配置表名还是由[命名策略](../mapping/base/naming-strategy)自动决定
+
+-   自动增长策略为`SEQUENCE`的ID必然对应于数据库的某个序列，无论是候开发人员通过`@GeneratedValue`显式配置序列名还是由[命名策略](../mapping/base/naming-strategy)自动决定
+
+程序启动时，Jimmer需要查询数据库以验证这些表或序列是否存在。以及，如果存在，其内部结构是否正确 *(针对表)*。
+
+然而，由于数据库服务往往支持多个子库，子库之间还可以彼此授权，所以JDBC连接可能在不同的数据库用户看到同名的表，比如，`db1.BOOK`、`db2.BOOK`和`db3.BOOK`。这叫表冲突。
+
+当然，Jimmer会优先从JDBC连接的元数据中提取字库名称，比如，从`jdbc:mysql://localhost:3306/db1`中可以提取到"db1"，优先在自动提取到的子库中查找表信息用于验证。
+然而，该方法并不总是有效，只要当前子库中无法查找到指定的表，就会到其他子库中查找，这就可能导致表冲突问题。
+
+要解决此问题，以下两种方法可供选择
+
+-   明确指定严格的表名或序列名，例如
+
+    -   将`@Table(name = "BOOK")`修改为`@Table(name = "db1.BOOK")`
+
+    -   将`@JoinTable(name = "BOOK_AUTHOR_MAPPING")`修改为`@JoinTable(name = "db1.BOOK_AUTHOR_MAPPING")`
+
+    -   将`@GeneratedValue(sequenceName = "BOOK_ID_SEQ")`修改为`@GeneratedValue(sequenceName = "db1.BOOK_ID_SEQ")`
+
+-   明确指定被用于验证的子库名，这又可分为两种方法
+
+    有两种方法开始验证
+
+    -   使用Jimmer的Spring Boot Starter时
+
+        修改`application.yml` *(或application.properties)*
+
+        ```sh
+        jimmer:
+          database-validation: 
+            mode: ERROR
+            # highlight-next-line
+            catalog: db1
+        ```
+        :::info
+        `jimmer.database-validation-mode`和`jimmer.database-validation.mode`等价
+        :::
+
+    -   不使用Spring Boot Starter时
+
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        JSqlClient sqlClient = JSqlClient
+            .newBuilder()
+            .setDatabaseValidationMode(
+                DatabaseValidationMode.ERROR
+            )
+            // highlight-next-line
+            .setDatabaseValidationCatalog("db1")
+            ...省略其他配置...
+            .build();
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val sqlClient = newKSqlClient {
+            setDatabaseValidationMode(
+                DatabaseValidationMode.ERROR
+            )
+            // highlight-next-line
+            setDatabaseValidationCatalog("db1")
+            ...省略其他配置...
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+
+## 暂时忽略局部验证
+
+有的时候，开发人员正在开发一个新功能，它还没有完成固无法验证。开发人员自然不会去运行还未完成的功能，单期望未完成的部门不要方案验证。
+
+对此，Jimmer提供注解`@org.babyfish.jimmer.sql.DatabaseValidationIgnore`，改注解有以下两种用法
+
+-   修饰实体接口，表示整个实体不用验证
+
+-   修饰实体属性，表示特定属性不用验证

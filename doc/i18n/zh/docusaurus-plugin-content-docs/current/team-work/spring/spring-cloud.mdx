@@ -277,28 +277,56 @@ interface Author {
 
 ### 让Jimmer支持微服务
 
-任何一个微服务，都必须让Jimmer支持微服务。
+任何一个微服务，都必须让Jimmer支持微服务。有两种做法
 
-这非常简单，简单修改spring配置文件`application.yml`或`application.properties`即可。
+-   使用Jimmer的Spring Boot Starter时
 
-```sh
-spring:
-  application:
+    修改spring配置文件`application.yml` *(或`application.properties`)*
+
+    ```sh
+    spring:
+    application:
+        # highlight-next-line
+        name: store-service
+
+    jimmer:
     # highlight-next-line
-    name: store-service
+    micro-service-name: ${spring.application.name}
+    ...省略其他配置...
 
-jimmer:
-  # highlight-next-line
-  micro-service-name: ${spring.application.name}
-  ...省略其他配置...
+    eureka:
+    client:
+        serviceUrl:
+        defaultZone: http://localhost:7000/eureka/
+    ```
 
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:7000/eureka/
-```
+    这里，"store-service"既作为当前服务在spring-clound注册中心的名称，又作为Jimmer的微服务配置。
 
-这里，"store-service"既作为当前服务在spring-clound注册中心的名称，又作为Jimmer的微服务配置。
+-   不使用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setMicroServiceName("...")
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setMicroServiceName("...")
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
 
 一旦配置了`jimmer.micro-service-name`, Jimmer就明白了哪些实体类型隶属于当前服务 *(这里是`BookStore`)*。
 

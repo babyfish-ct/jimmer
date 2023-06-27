@@ -2,3 +2,302 @@
 sidebar_position: 4
 title: SQL日志
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+对于ORM而言，在日志中打印生成的SQL很重要。
+
+## 开启SQL日志
+
+有两个方法开启SQL日志
+
+-   使用Jimmer的Spring Boot Starter时，又有两种方法可以实现配置
+
+    -   修改`application.yml` *(或application.properties)*
+
+        ```
+        jimmer:
+        show-sql: true
+        ```
+
+    -   配置全局Bean
+
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        @Bean
+        public Executor executor() {
+            return Executor.log();
+        }
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        @Bean
+        fun executor(): Executor =
+            Executor.log()
+        ```
+
+        </TabItem>
+        </Tabs>
+
+    :::info
+    如果同时采用以上两种方法 *(不推荐)*，则第二种方法优先
+    :::
+
+-   不使用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setExecutor(Executor.log())
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setExecutor(Executor.log())
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+实际打印日志如下：
+
+```
+jimmer> sql: select tb_1_.ID, tb_1_.CREATED_TIME, 
+tb_1_.MODIFIED_TIME, tb_1_.NAME, tb_1_.EDITION, 
+tb_1_.PRICE, tb_1_.STORE_ID 
+from BOOK tb_1_ 
+where lower(tb_1_.NAME) like ? 
+order by tb_1_.NAME asc, tb_1_.EDITION desc 
+limit ?, ?, 
+variables: [%graphql%, 0, 10], 
+purpose: QUERY
+```
+
+:::caution
+如果仅仅开启SQL日志，上面日志不会换行。
+
+为提高本文档的可读性，上述日志被人为换行，并非真实的情况。
+:::
+
+日志有三个部分：
+
+-   `sql`: 本执行的SQL语句
+
+-   `variables`: 和`sql`配套的JDBC参数，为一个数组，其长度和`sql`中"?"字符的数量相同。
+
+-   `purpose`: SQL被执行的原因，是一个枚举类型，有以下取值
+
+    -   `QUERY`: 开发人员直接执行的查询
+
+    -   `UPDATE`: 开发人员通过[update语句](../mutation/update-statement)执行的操作
+
+    -   `DELETE`: 开发人员通过[delete语句](../mutation/delete-statement)执行的操作
+
+    -   `LOAD`: Jimmer自动执行的查询，用于获取[对象抓取器](../query/object-fetcher)中关联属性或计算属性的值。
+
+    -   `EXPORT`: 用户对其他微服务发起查询，其[对象抓取器](../query/object-fetcher)包含指向当前服务的远程关联，Jimmer自动将本服务的数据暴露出去。
+
+    -   `MUTATE`: 开发人员通过[save指令](../mutation/save-command)指定的操作
+
+    -   `EVICT`: 某些情况下，单凭Jimmer触发器的事件信息无法判断哪些缓存应该被清理，Jimmer会自动执行一些查询用于精确判断哪些缓存应该被清理
+
+## 格式化SQL
+
+之前的例子中，SQL日志被打印为一行，*(为提高本文档的可读性，上个例子的日志被人为换行，并非真实的情况。)*，可读性不佳。
+
+因此，需要格式化SQL。有两种实现方法
+
+-   使用Jimmer的Spring Boot Starter时
+
+    修改`application.yml` *(或application.properties)*
+
+    ```sh
+    jimmer:
+      show-sql: true
+      # highlight-next-line
+      pretty-sql: true
+    ```
+
+-   不使用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setExecutor(Executor.log())
+        // highlight-next-line
+        .setSqlFormatter(SqlFormatter.PRETTY)
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setExecutor(Executor.log())
+        // highlight-next-line
+        setSqlFormatter(SqlFormatter.PRETTY)
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+日志打印结果如下
+
+```
+Execute SQL===>
+Purpose: QUERY
+SQL: select
+    tb_1_.ID,
+    tb_1_.CREATED_TIME,
+    tb_1_.MODIFIED_TIME,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+where
+    lower(tb_1_.NAME) like ? /* %graphql% */ ❶
+order by
+    tb_1_.NAME asc,
+    tb_1_.EDITION desc
+limit ? /* 0 */ ❷, ? /* 10 */ ❸
+JDBC response status: success
+Time cost: 8ms
+<===Execute SQL
+```
+
+在这种模式下
+
+-   SQL语句会被自动格式化，自动换行，自动缩进。
+
+-   ❶❷❸ 和上个例子不同，不再集中打印所有JDBC参数，而是将参数以注释的方式植入原始SQL中。
+
+-   会打印其他信息，比如SQL执行是否成功、SQL执行总耗时。对于insert、update、delete操作，还会打印影响行数。
+
+## 嵌入堆栈信息
+
+除了编写代码外，开发人员常常需要排除问题。无论是功能错误问题，还是性能问题，都需要开发人员排查。
+
+如果SQL日志仅打印以SQL为核心的JDBC信息，那么用户无法将SQL日志和应用代码关联起来，这不利于用户排查问题。
+
+Jimmer提供了一个配置选项，如果被指定，当jimmer在执行SQL之前，它将检查当前线程的堆栈跟踪信息。
+
+然而，这些堆栈跟踪信息包含太多信息，包括以jdk、jdbc驱动程序、jimmer和spring为代表的基础架构调用帧，而开发人员关心的业务相关信息将被淹没在信息的海洋中。
+
+此配置类型为`java.util.Collection<String>`，允许开发人员指定多个包或类前缀，jimmer将用它们顾虑堆栈跟踪信息，如果某个调用帧能通过过滤，Jimmer就会认为它和用户业务相关，从而在执行前的回调参数中包含它。
+
+对于SQL日志打印而言，能通过过滤的调用帧将会出现在打印结果中，帮助用户排查问题。
+
+有两种实现方法
+
+-   使用Jimmer的Spring Boot Starter时
+
+    修改`application.yml` *(或application.properties)*
+
+    ```sh
+    jimmer:
+      show-sql: true
+      pretty-sql: true
+      # highlight-next-line
+      executor-context-prefixes:
+        # highlight-next-line
+        - com.example.business
+    ```
+
+-   不使用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setExecutor(Executor.log())
+        .setSqlFormatter(SqlFormatter.PRETTY)
+        // highlight-next-line
+        .setExecutorContextPrefixes(
+            Collections.singleton(
+                // highlight-next-line
+                "com.example.business"
+            )
+        )
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setExecutor(Executor.log())
+        setSqlFormatter(SqlFormatter.PRETTY)
+        // highlight-next-line
+        setExecutorContextPrefixes(
+            listOf(
+                // highlight-next-line
+                "com.example.business"
+            )
+        )
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+日志打印结果如下
+
+```
+Execute SQL===>
+--- Business related stack trace information --- ❶
+com.example.business.BookService.findBooks(BookService.java:55) ❷
+Purpose: QUERY
+SQL: select
+    tb_1_.ID,
+    tb_1_.CREATED_TIME,
+    tb_1_.MODIFIED_TIME,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+where
+    lower(tb_1_.NAME) like ? /* %graphql% */
+order by
+    tb_1_.NAME asc,
+    tb_1_.EDITION desc
+limit ? /* 0 */, ? /* 10 */
+JDBC response status: success
+Time cost: 9ms
+<===Execute SQL
+```
+
+在❶和❷处，打印了执行SQL操作的线程的堆栈跟踪信息。
+
+:::tip
+然而，并没有盲目打印大量的堆栈跟踪信息，只打印了用户关心的。
+:::

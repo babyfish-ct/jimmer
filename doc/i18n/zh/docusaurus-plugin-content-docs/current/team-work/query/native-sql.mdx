@@ -9,6 +9,8 @@ import TabItem from '@theme/TabItem';
 
 NativeSQL表达式是一个重要的功能，数据库产品总会有特有的功能，需要把数据库产品特有的能力发挥出来。
 
+## 例子一：正则表达式匹配
+
 这个例子，演示如何使用Oracle和HSQLDB的正则表达式匹配。
 
 <Tabs groupId="language">
@@ -85,6 +87,8 @@ where
     /* highlight-next-line */
     regexp_like(tb_1_.FIRST_NAME, ?)
 ```
+
+## 例子二：分析函数
 
 让我们再来看一个例子，使用分析函数
 
