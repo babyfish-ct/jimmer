@@ -292,7 +292,7 @@ fun sqlClient() : KSqlClient =
 
 上面的方式很直观，但是是手动注册的，Spring自动这册的方式可以用于注册属性级`ScalarProvider`吗？
 
-当然。只需要覆盖`ScalarProvider`的方法`getHandledProps`，就可以用注册全局级`ScalarProvider`的方法注册属性级`ScalarProvider`。例如当前数据库不支持UUID类型，例如
+当然。只需要覆盖`ScalarProvider`的方法`getHandledProps`，就可以用注册全局级`ScalarProvider`的方法注册属性级`ScalarProvider`。例如
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

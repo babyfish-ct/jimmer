@@ -34,6 +34,8 @@ interface BookRepository : KRepository<Book, Long> {
                     )
                 )
             }
+            orderBy(table.name)
+            orderBy(table.edition.desc())
             select(table)
         }.execute()
 
