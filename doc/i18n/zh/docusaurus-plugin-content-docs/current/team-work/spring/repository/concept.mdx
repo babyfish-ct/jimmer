@@ -150,11 +150,11 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </Tabs>
 
 :::note
-和其他spring-data相同，定义好接口即可，**无需**用`@org.springframework.stereotype.Repository`修饰。Jimmer会自动实现这些接口并注册到Spring中。
+其他与spring-data相同，定义好接口即可，**无需**用`@org.springframework.stereotype.Repository`修饰。Jimmer会自动实现这些接口并注册到Spring中。
 
 但是有一个注意事项：
 
-- 默认情况下，自定义Repository所属的必须是SpringBoot主类所在包或其子包。
+- 默认情况下，自定义Repository所属的包必须是SpringBoot主类所在包或子包。
 
 - 否则，需要用`@org.babyfish.jimmer.spring.repository.EnableJimmerRepositories`修饰SpringBoot主类或其他Spring配置类，明确指定自定义Repository接口所在的包。
 :::
