@@ -14,7 +14,7 @@ import TabItem from '@theme/TabItem';
 
 ### 不使用Spring Boot Starter
 
-如果仅使用Spring，并未Jimmer提供的Spring Boot Starter。那么需要自己编码将Jimmer接入Spring的事务管理机制。
+如果仅使用Spring，并未使用Jimmer提供的Spring Boot Starter。那么需要自己编码将Jimmer接入Spring的事务管理机制。
 
 开发人员需要创建`JSqlClient/KSqlClient`，并设置其`ConnectionManager`，在`ConnectionManager`中，利用Spring的`org.springframework.jdbc.datasource.DataSourceUtils`打开和关闭连接。
 
