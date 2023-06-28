@@ -141,7 +141,7 @@ interface BookRepository : KRepository<Book, Long> {
 
     ```kotlin
     val books = bookRepository
-        .findByNameOrderByEditionDesc()
+        .findByNameLikeIgnoreCaseAndPriceBetween()
     ```
 
     </TabItem>
@@ -172,7 +172,7 @@ interface BookRepository : KRepository<Book, Long> {
 
     ```kotlin
     val books = bookRepository
-        .findByNameOrderByEditionDesc(name = "G")
+        .findByNameLikeIgnoreCaseAndPriceBetween(name = "G")
     ```
 
     </TabItem>
@@ -204,7 +204,7 @@ interface BookRepository : KRepository<Book, Long> {
 
     ```kotlin
     val books = bookRepository
-        .findByNameOrderByEditionDesc(
+        .findByNameLikeIgnoreCaseAndPriceBetween(
             minPice = BigDecimal(40)
         )
     ```
@@ -238,7 +238,7 @@ interface BookRepository : KRepository<Book, Long> {
 
     ```kotlin
     val books = bookRepository
-        .findByNameOrderByEditionDesc(
+        .findByNameLikeIgnoreCaseAndPriceBetween(
             maxPice = BigDecimal(60)
         )
     ```
@@ -273,7 +273,7 @@ interface BookRepository : KRepository<Book, Long> {
 
     ```kotlin
     val books = bookRepository
-        .findByNameOrderByEditionDesc(
+        .findByNameLikeIgnoreCaseAndPriceBetween(
             null,
             BigDecimal(40),
             BigDecimal(60)
@@ -312,7 +312,7 @@ interface BookRepository : KRepository<Book, Long> {
 
     ```kotlin
     val books = bookRepository
-        .findByNameOrderByEditionDesc(
+        .findByNameLikeIgnoreCaseAndPriceBetween(
             "G",
             BigDecimal(40),
             BigDecimal(60)
@@ -336,7 +336,7 @@ interface BookRepository : KRepository<Book, Long> {
 
 ## 动态JOIN
 
-用户不但可以对当前被查询的对象的属性施加过滤条件，还可以对关联对象的的属性施加过滤条件，比如
+用户不但可以对当前被查询对象的属性施加过滤条件，还可以对关联对象的属性施加过滤条件，比如:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -391,7 +391,7 @@ interface BookRepository : KRepository<Book, Long> {
 :::note
 -   仅当`storeName`参数被指定时，才会在SQL种生成JOIN
 
--   能够被约定方法采用的关联必须是非集合关联（一对一、一对多）
+-   能够被约定方法采用的关联必须是非集合关联（一对一、多对一）
 :::
 
 让我们看看如何使用
