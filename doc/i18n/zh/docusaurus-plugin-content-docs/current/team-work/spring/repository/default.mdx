@@ -86,7 +86,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
 1.
 
-    -   Java: 父查询基于的表对象`BookTable.$`，为了编程方便，重命名为`table`。
+    -   Java: 父查询基于表对象`BookTable.$`，为了编程方便，重命名为`table`。
 
         这个重命名对当前接口所有default方法都有用，将之声明为接口静态变量较为合适。
 
@@ -326,7 +326,7 @@ order by
 
 ## 子查询
 
-接下来，为这个查询方法添加一个`authorName`参数，过滤当前`Book`通过属性`Book.authorName`关联到的`Author`的firstName或lastName属性。
+接下来，为这个查询方法添加一个`authorName`参数，过滤当前`Book`通过属性`Book.authors`关联到的`Author`的firstName或lastName属性。
 
 :::note
 很遗憾，如果你效仿上一个例子中的`table.store.name`，尝试书写`table.authors.firstName`，你会发现`table`的IDE智能提示下并没有`table.authors`选项。
