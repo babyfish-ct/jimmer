@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.impl.util.Classes;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
@@ -21,8 +21,8 @@ class TransientResolverManager {
 
     private JSqlClient sqlClient;
 
-    private final StaticCache<ImmutableProp, TransientResolver<?, ?>> resolverCache =
-            new StaticCache<>(this::createResolver, true);
+    private final PropCache<TransientResolver<?, ?>> resolverCache =
+            new PropCache<>(this::createResolver, true);
 
     TransientResolverManager(TransientResolverProvider provider) {
         this.provider = provider;

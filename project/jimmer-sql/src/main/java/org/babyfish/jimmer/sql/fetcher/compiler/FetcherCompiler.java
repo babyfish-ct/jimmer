@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 
 import java.util.List;
 import java.util.Objects;
@@ -49,7 +50,7 @@ public class FetcherCompiler {
         parser.addErrorListener(new ErrorListenerImpl());
 
         FetcherParser.FetcherContext ctx = parser.fetcher();
-        Fetcher<?> fetcher = new FetcherImpl<>((Class<Object>) type(ctx, classLoader, type));
+        FetcherImplementor<?> fetcher = new FetcherImpl<>((Class<Object>) type(ctx, classLoader, type));
         fetcher = addFields(fetcher, ctx.body);
         return fetcher;
     }
@@ -119,7 +120,7 @@ public class FetcherCompiler {
         return javaType;
     }
 
-    private static Fetcher<?> addFields(Fetcher<?> fetcher, FetcherParser.FetchBodyContext body) {
+    private static FetcherImplementor<?> addFields(FetcherImplementor<?> fetcher, FetcherParser.FetchBodyContext body) {
         for (FetcherParser.FieldContext field : body.fields) {
             fetcher = addField(fetcher, field);
         }
@@ -127,7 +128,7 @@ public class FetcherCompiler {
     }
 
     @SuppressWarnings("unchecked")
-    private static Fetcher<?> addField(Fetcher<?> fetcher, FetcherParser.FieldContext field) {
+    private static FetcherImplementor<?> addField(FetcherImplementor<?> fetcher, FetcherParser.FieldContext field) {
         String propName = field.prop.getText();
         ImmutableProp prop = fetcher.getImmutableType().getProps().get(propName);
         if (prop == null) {
@@ -255,7 +256,7 @@ public class FetcherCompiler {
                     field.prop.getCharPositionInLine()
             );
         }
-        Fetcher<?> childFetcher = null;
+        FetcherImplementor<?> childFetcher = null;
         FetcherParser.FetchBodyContext body = field.body;
         if (body != null) {
             if (!prop.isAssociation(TargetLevel.ENTITY) || (prop.isTransient() && !prop.hasTransientResolver())) {

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Entities;
@@ -11,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 
 import java.util.Collection;
 import java.util.List;
@@ -29,10 +31,11 @@ public class MicroServiceExporter {
             Collection<?> ids,
             Fetcher<?> fetcher
     ) {
+        ImmutableType fetchedType = fetcher.getImmutableType();
         JSqlClient client =
-                sqlClient.getFilters().getFilter(fetcher.getImmutableType()) == null ?
+                sqlClient.getFilters().getFilter(fetchedType) == null ?
                         sqlClient :
-                        sqlClient.caches(cfg -> cfg.disable(fetcher.getImmutableType()));
+                        sqlClient.caches(cfg -> cfg.disable(fetchedType));
         Entities entities = ((EntitiesImpl) client.getEntities()).forExporter();
         return entities.findByIds((Fetcher<ImmutableSpi>) fetcher, ids);
     }
@@ -43,10 +46,11 @@ public class MicroServiceExporter {
             Collection<?> targetIds,
             Fetcher<?> fetcher
     ) {
-        if (prop.getDeclaringType() != fetcher.getImmutableType()) {
+        ImmutableType fetchedType = fetcher.getImmutableType();
+        if (prop.getDeclaringType() != fetchedType) {
             throw new IllegalArgumentException(
                     "The root entity type of fetcher is \"" +
-                            fetcher.getImmutableType() +
+                            fetchedType +
                             "\" is not declaring type of \"" +
                             prop +
                             "\""

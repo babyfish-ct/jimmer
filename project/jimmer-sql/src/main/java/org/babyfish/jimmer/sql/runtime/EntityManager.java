@@ -46,6 +46,17 @@ public class EntityManager {
         if (!(classes instanceof Set<?>)) {
             classes = new LinkedHashSet<>(classes);
         }
+        Set<String> qualifiedNames = new HashSet<>();
+        for (Class<?> clazz : classes) {
+            if (!qualifiedNames.add(clazz.getName())) {
+                throw new IllegalArgumentException(
+                        "Multiple classes with the same qualified name \"" +
+                                clazz.getName() +
+                                "\" but belonging to different class loaders " +
+                                "cannot be registered into the entity manager"
+                );
+            }
+        }
         Map<ImmutableType, ImmutableTypeInfo> map = new LinkedHashMap<>();
         for (Class<?> clazz : classes) {
             if (clazz != null) {

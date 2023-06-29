@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.JimmerVersion;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -24,18 +25,42 @@ public interface ImmutableType {
     }
 
     static Builder newBuilder(
+            String jimmerVersion,
             Class<?> javaClass,
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
+        if (!JimmerVersion.CURRENT.toString().equals(jimmerVersion)) {
+            throw new IllegalStateException(
+                    "The version of the annotation processor for handling type \"" +
+                            javaClass.getName() +
+                            "\" is \"" +
+                            jimmerVersion +
+                            "\", but the current version of jimmer is \"" +
+                            JimmerVersion.CURRENT +
+                            "\""
+            );
+        }
         return Metadata.newTypeBuilder(javaClass, superTypes, draftFactory);
     }
 
     static Builder newBuilder(
+            String jimmerVersion,
             KClass<?> kotlinClass,
             Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
+        if (!JimmerVersion.CURRENT.toString().equals(jimmerVersion)) {
+            throw new IllegalStateException(
+                    "The version of the KSP for handling type \"" +
+                            kotlinClass.getQualifiedName() +
+                            "\" is \"" +
+                            jimmerVersion +
+                            "\", but the current version of jimmer is \"" +
+                            JimmerVersion.CURRENT +
+                            "\""
+            );
+        }
         return Metadata.newTypeBuilder(kotlinClass, superTypes, draftFactory);
     }
 

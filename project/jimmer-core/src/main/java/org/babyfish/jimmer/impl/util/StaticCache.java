@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.impl.util;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -20,9 +19,9 @@ public class StaticCache<K, V> {
 
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     
-    private final Map<K, V> positiveCacheMap = new HashMap<>();
+    private final Map<K, V> positiveMap = new HashMap<>();
 
-    private Map<K, Void> negativeCacheMap;
+    private final Map<K, Void> negativeMap;
 
     public StaticCache(Function<K, V> creator) {
         this(creator, true);
@@ -30,9 +29,7 @@ public class StaticCache<K, V> {
 
     public StaticCache(Function<K, V> creator, boolean nullable) {
         this.creator = creator;
-        if (nullable) {
-             negativeCacheMap = new LRUMap<>();
-        }
+        negativeMap = nullable ? new LRUMap<>() : null;
     }
     
     public V get(K key) {
@@ -42,10 +39,10 @@ public class StaticCache<K, V> {
 
         (lock = cacheLock.readLock()).lock();
         try {
-            if (negativeCacheMap != null && negativeCacheMap.containsKey(key)) {
+            if (negativeMap != null && negativeMap.containsKey(key)) {
                 return null;
             }
-            value = positiveCacheMap.get(key);
+            value = positiveMap.get(key);
         } finally {
             lock.unlock();
         }
@@ -53,16 +50,16 @@ public class StaticCache<K, V> {
         if (value == null) {
             (lock = cacheLock.writeLock()).lock();
             try {
-                if (negativeCacheMap != null && negativeCacheMap.containsKey(key)) {
+                if (negativeMap != null && negativeMap.containsKey(key)) {
                     return null;
                 }
-                value = positiveCacheMap.get(key);
+                value = positiveMap.get(key);
                 if (value == null) {
                     value = creator.apply(key);
                     if (value != null) {
-                        positiveCacheMap.put(key, value);
-                    } else if (negativeCacheMap != null) {
-                        negativeCacheMap.put(key, null);
+                        positiveMap.put(key, value);
+                    } else if (negativeMap != null) {
+                        negativeMap.put(key, null);
                     } else {
                         throw new IllegalStateException(
                                 "The creator cannot return null because current static cache does not accept null values"
@@ -74,17 +71,5 @@ public class StaticCache<K, V> {
             }
         }
         return value;
-    }
-
-    private static class LRUMap<K, V> extends LinkedHashMap<K, V> {
-
-        LRUMap() {
-            super((128 * 4 + 2) / 3, .75F, true);
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry eldest) {
-            return true;
-        }
     }
 }

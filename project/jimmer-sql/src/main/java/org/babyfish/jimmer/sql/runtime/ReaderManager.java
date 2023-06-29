@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
+import org.babyfish.jimmer.impl.util.PropCache;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
-import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
@@ -12,7 +13,6 @@ import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
 import org.babyfish.jimmer.sql.meta.Storage;
-import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -30,11 +30,11 @@ public class ReaderManager {
 
     private final JSqlClientImplementor sqlClient;
 
-    private StaticCache<ImmutableType, Reader<?>> typeReaderCache =
-            new StaticCache<>(this::createTypeReader, true);
+    private TypeCache<Reader<?>> typeReaderCache =
+            new TypeCache<>(this::createTypeReader, true);
     
-    private StaticCache<ImmutableProp, Reader<?>> propReaderCache =
-            new StaticCache<>(this::createPropReader, true);
+    private PropCache<Reader<?>> propReaderCache =
+            new PropCache<>(this::createPropReader, true);
 
     public ReaderManager(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;

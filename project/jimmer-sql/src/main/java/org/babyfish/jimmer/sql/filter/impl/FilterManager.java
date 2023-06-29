@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -21,7 +22,6 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.ParameterizedType;
@@ -39,14 +39,14 @@ public class FilterManager implements Filters {
 
     private final Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap;
 
-    private final StaticCache<ImmutableType, Filter<Props>> cache =
-            new StaticCache<>(this::create, true);
+    private final TypeCache<Filter<Props>> cache =
+            new TypeCache<>(this::create, true);
 
-    private final StaticCache<ImmutableType, Filter<Props>> shardingOnlyCache =
-            new StaticCache<>(this::createShardingOnly, true);
+    private final TypeCache<Filter<Props>> shardingOnlyCache =
+            new TypeCache<>(this::createShardingOnly, true);
 
-    private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
-            new StaticCache<>(this::createAllCacheable, false);
+    private final TypeCache<List<Filter<Props>>> allCacheableCache =
+            new TypeCache<>(this::createAllCacheable, false);
 
     private final BuiltInFilters builtIns;
 

@@ -15,15 +15,15 @@ public interface Fetcher<E> {
 
     Map<String, Field> getFieldMap();
 
+    @NewChain
+    Fetcher<E> allScalarFields();
+
     /**
      * allScalars + allForeignKeys
      * @return A new fetcher
      */
     @NewChain
     Fetcher<E> allTableFields();
-
-    @NewChain
-    Fetcher<E> allScalarFields();
 
     /**
      * Fetch a property without child fetcher,
@@ -33,14 +33,6 @@ public interface Fetcher<E> {
      */
     @NewChain
     Fetcher<E> add(String prop);
-
-    /**
-     * Unfetch a property
-     * @param prop Property name
-     * @return A new fetcher
-     */
-    @NewChain
-    Fetcher<E> remove(String prop);
 
     /**
      * Fetch a property with child fetcher,
@@ -71,10 +63,12 @@ public interface Fetcher<E> {
     );
 
     /**
-     * Are all fetched properties simple fields?
-     * @return Checked result
+     * Unfetch a property
+     * @param prop Property name
+     * @return A new fetcher
      */
-    boolean isSimpleFetcher();
+    @NewChain
+    Fetcher<E> remove(String prop);
 
     String toString(boolean multiLine);
 }

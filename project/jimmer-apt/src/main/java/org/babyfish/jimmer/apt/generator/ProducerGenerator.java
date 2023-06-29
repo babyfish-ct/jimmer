@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.JimmerVersion;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ImmutablePropCategory;
@@ -109,6 +110,7 @@ public class ProducerGenerator {
                 .indent()
                 .add(".newBuilder(\n")
                 .indent()
+                .add("$S,\n", JimmerVersion.CURRENT.toString())
                 .add("$T.class,\n", type.getClassName());
         switch (type.getSuperTypes().size()) {
             case 0:

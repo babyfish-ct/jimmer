@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.Dependency;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ManyToManyView;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -14,7 +11,7 @@ import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class FetcherImpl<E> implements Fetcher<E> {
+public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     final FetcherImpl<E> prev;
 
@@ -37,6 +34,12 @@ public class FetcherImpl<E> implements Fetcher<E> {
     final FetcherImpl<?> childFetcher;
 
     private Map<String, Field> fieldMap;
+
+    private Map<String, Field> unresolvedFieldMap;
+
+    private List<PropId> shownPropIds;
+
+    private List<PropId> hiddenPropIds;
 
     private Boolean isSimpleFetcher;
 
@@ -222,7 +225,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
                             extensionFields.add(dependencyField);
                         }
                     } else if (dependency.getDeeperProp() != null) {
-                        Fetcher<?> childFetcher = dependencyField.getChildFetcher();
+                        FetcherImplementor<?> childFetcher = (FetcherImplementor<?>) dependencyField.getChildFetcher();
                         String conflictCfgName = null;
                         if (dependencyField.getBatchSize() != field.getBatchSize()) {
                             conflictCfgName = "batchSize";
@@ -303,11 +306,73 @@ public class FetcherImpl<E> implements Fetcher<E> {
         return map;
     }
 
+    @Override
+    public Map<String, Field> __unresolvedFieldMap() {
+        Map<String, Field> map = unresolvedFieldMap;
+        if (map == null) {
+            map = new LinkedHashMap<>();
+            for (Map.Entry<String, Field> e : getFieldMap().entrySet()) {
+                Field field = e.getValue();
+                if (field.getProp().getDependencies().isEmpty() && (
+                        !field.isSimpleField() || field.getProp().getTargetType() != null)
+                ) {
+                    map.put(e.getKey(), field);
+                }
+            }
+            if (map.isEmpty()) {
+                map = Collections.emptyMap();
+            } else {
+                map = Collections.unmodifiableMap(map);
+            }
+            unresolvedFieldMap = map;
+        }
+        return map;
+    }
 
+    @Override
+    public List<PropId> __shownPropIds() {
+        List<PropId> list = shownPropIds;
+        if (list == null) {
+            list = new ArrayList<>();
+            for (Field field : getFieldMap().values()) {
+                ImmutableProp prop = field.getProp();
+                if (!prop.getDependencies().isEmpty()) {
+                    list.add(prop.getId());
+                }
+            }
+            if (list.isEmpty()) {
+                list = Collections.emptyList();
+            } else {
+                list = Collections.unmodifiableList(list);
+            }
+            shownPropIds = list;
+        }
+        return list;
+    }
+
+    @Override
+    public List<PropId> __hiddenPropIds() {
+        List<PropId> list = hiddenPropIds;
+        if (list == null) {
+            list = new ArrayList<>();
+            for (Field field : getFieldMap().values()) {
+                if (field.isImplicit()) {
+                    list.add(field.getProp().getId());
+                }
+            }
+            if (list.isEmpty()) {
+                list = Collections.emptyList();
+            } else {
+                list = Collections.unmodifiableList(list);
+            }
+            hiddenPropIds = list;
+        }
+        return list;
+    }
 
     @NewChain
     @Override
-    public Fetcher<E> allTableFields() {
+    public FetcherImplementor<E> allTableFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
             fetcher = fetcher.addImpl(prop, null);
@@ -317,7 +382,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     @NewChain
     @Override
-    public Fetcher<E> allScalarFields() {
+    public FetcherImplementor<E> allScalarFields() {
         FetcherImpl<E> fetcher = this;
         for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
             if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.isLogicalDeleted()) {
@@ -329,14 +394,14 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     @NewChain
     @Override
-    public Fetcher<E> add(String prop) {
+    public FetcherImplementor<E> add(String prop) {
         ImmutableProp immutableProp = immutableType.getProp(prop);
         return addImpl(immutableProp, false);
     }
 
     @NewChain
     @Override
-    public Fetcher<E> remove(String prop) {
+    public FetcherImplementor<E> remove(String prop) {
         ImmutableProp immutableProp = immutableType.getProp(prop);
         if (immutableProp.isId()) {
             throw new IllegalArgumentException(
@@ -350,14 +415,14 @@ public class FetcherImpl<E> implements Fetcher<E> {
 
     @NewChain
     @Override
-    public Fetcher<E> add(String prop, Fetcher<?> childFetcher) {
+    public FetcherImplementor<E> add(String prop, Fetcher<?> childFetcher) {
         return add(prop, childFetcher, null);
     }
 
     @NewChain
     @SuppressWarnings("unchecked")
     @Override
-    public Fetcher<E> add(
+    public FetcherImplementor<E> add(
             String prop,
             Fetcher<?> childFetcher,
             Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
@@ -457,7 +522,7 @@ public class FetcherImpl<E> implements Fetcher<E> {
     }
 
     @Override
-    public boolean isSimpleFetcher() {
+    public boolean __isSimpleFetcher() {
         Boolean isSimple = isSimpleFetcher;
         if (isSimple == null) {
             isSimple = true;

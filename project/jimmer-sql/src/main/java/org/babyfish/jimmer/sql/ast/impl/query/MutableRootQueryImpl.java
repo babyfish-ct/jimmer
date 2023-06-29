@@ -49,7 +49,6 @@ public class MutableRootQueryImpl<T extends Table<?>>
         ctx = new StatementContext(purpose, ignoreFilter);
     }
 
-    @SuppressWarnings("unchecked")
     public MutableRootQueryImpl(
             StatementContext ctx,
             JSqlClientImplementor sqlClient,

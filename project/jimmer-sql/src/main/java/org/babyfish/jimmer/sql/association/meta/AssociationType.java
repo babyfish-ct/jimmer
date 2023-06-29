@@ -1,11 +1,11 @@
 package org.babyfish.jimmer.sql.association.meta;
 
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
@@ -18,8 +18,8 @@ import java.util.function.BiFunction;
 
 public class AssociationType extends AbstractImmutableTypeImpl {
 
-    private static final StaticCache<ImmutableProp, AssociationType> CACHE =
-            new StaticCache<>(AssociationType::new, false);
+    private static final PropCache<AssociationType> CACHE =
+            new PropCache<>(AssociationType::new, false);
 
     private final ImmutableProp baseProp;
 

@@ -2,8 +2,8 @@ package org.babyfish.jimmer.sql;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
@@ -13,8 +13,8 @@ class DraftInterceptorManager {
 
     private final Map<ImmutableType, List<DraftInterceptor<?>>> interceptorMap;
 
-    private final StaticCache<ImmutableType, DraftInterceptor<?>> cache =
-            new StaticCache<>(this::create, true);
+    private final TypeCache<DraftInterceptor<?>> cache =
+            new TypeCache<>(this::create, true);
 
     DraftInterceptorManager(Collection<DraftInterceptor<?>> interceptors) {
         Map<ImmutableType, List<DraftInterceptor<?>>> interceptorMap = new HashMap<>();

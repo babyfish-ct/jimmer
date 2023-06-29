@@ -32,7 +32,7 @@ class FetcherMergeContext {
             }
             Field field2 = fieldMap2.get(field1.getProp().getName());
             if (field2 == null) {
-                fetcher2 = fetcher2.add(
+                fetcher2 = ((FetcherImplementor<?>)fetcher2).add(
                         field1.getProp().getName(),
                         field1.getChildFetcher()
                 );
@@ -52,7 +52,7 @@ class FetcherMergeContext {
                 if (conflictCfgName != null) {
                     throw new ConflictException(path, conflictCfgName);
                 }
-                fetcher2 = fetcher2.add(
+                fetcher2 = ((FetcherImplementor<?>)fetcher2).add(
                         field1.getProp().getName(),
                         subContext(field1.getProp().getName()).merge(
                                 field1.getChildFetcher(),

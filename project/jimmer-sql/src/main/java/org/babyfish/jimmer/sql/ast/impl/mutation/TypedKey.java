@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.Key;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 
 import java.util.Arrays;
@@ -45,8 +46,12 @@ class TypedKey {
                                 type +
                                 "\", in an idempotent save command, " +
                                 "if the saved associated object does not have id, " +
-                                "either configure the key properties for the type of associated object, " +
-                                "or set the handle mode of association to `AppendOnly`"
+                                "either let the associated entity \"" +
+                                type +
+                                "\" have some properties decorated by \"@" +
+                                Key.class.getName() +
+                                "\" (recommended), or set the operation mode of the corresponding association " +
+                                "to `AppendOnly` (not recommended)"
                 );
             }
             return null;
