@@ -2,3 +2,12 @@
 sidebar_position: 3
 title: Mutation
 ---
+
+[GraphQL](https://graphql.org/)绝大部分特新都是针对Query而非Mutation的，要实现Mutation操作，使用[Spring GraphQL](https://spring.io/projects/spring-graphql)提供的`@MutationMapping`注解即可，这很简单，本无需阐述。
+
+然而，Jimmer通过[保存指令](../mutation/save-command)对修改操作进行了强大的支持，可以大幅简化GraphQL mutation操作的实现。
+
+:::info
+本文重点讨论如何使用[保存指令](../mutation/save-command)实现GraphQL Mutation，至于其他更简单的实现方法，请参考官方示例。
+:::
+

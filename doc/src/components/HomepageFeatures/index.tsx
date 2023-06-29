@@ -1,4 +1,17 @@
 import React from 'react';
+import styles from './styles.module.css';
+import { MindMap } from '../MindMap';
+
+export default function HomepageFeatures(): JSX.Element {
+  return (
+    <section className={styles.features}>
+      <MindMap initialExpandLevel={4}/>
+    </section>
+  );
+}
+
+/*
+import React from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.css';
 
@@ -71,3 +84,4 @@ export default function HomepageFeatures(): JSX.Element {
     </section>
   );
 }
+*/

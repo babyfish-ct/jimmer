@@ -1,9 +1,7 @@
 ---
 sidebar_position: 10
-title: Team work(Newest)
+title: Final Documentation(Writing...)
 ---
-
-
 
 Jimmer is not only a revolutionary ORM but also an integrated solution based on ORM. Its complete and detailed documentation covers beyond the design scope that can be handled by my personal energy.
 

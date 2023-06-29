@@ -189,6 +189,7 @@ interface Book {
     val store: BookStore?
 
     // highlight-next-line
+    @ManyToMany
     val authors: List<Author>
 
     ...省略其他代码...
@@ -207,7 +208,7 @@ interface Book {
 public interface Book {
 
     // highlight-next-line
-    // @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors")
     List<Book> books();
 
     ...省略其他代码...
@@ -223,7 +224,7 @@ public interface Book {
 interface Author {
 
     // highlight-next-line
-    // @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors")
     val books: List<Book>
 
     ...省略其他代码...
