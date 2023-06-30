@@ -1,0 +1,12 @@
+---
+sidebar_position: 2
+title: 现状
+---
+
+import ImmutableProblem from "../../_shared/immutable-problem.mdx";
+
+Java从14开始支持不可变record类型，kotlin的data class可轻松实现不可变类，甚至支持copy函数。然而，它们都是为简单的不可变对象而设计，处理复杂的的深层次不可变对象会面临问题。
+
+深层次的复杂不可变对象难以处理的原因，不是如何从头创建一个全新的数据结构，这对任何编程语言而言都很简单。真正的难点在于，期望对已有的数据结构做一些局部调整，构建新的数据结构。这对当前的Java和Kotlin而言很难处理，请参见
+
+<ImmutableProblem/>
