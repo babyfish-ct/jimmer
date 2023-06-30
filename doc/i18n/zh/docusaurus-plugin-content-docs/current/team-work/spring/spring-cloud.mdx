@@ -25,9 +25,9 @@ Jimmer自动实现远程关联数据的自动查询。
 :::info
 -   `BOOK_AUTHOR_MAPPING`作为多对多关联中间表，既可以划分给`book-service`服务，也可以划分给`author-service`服务。本例将之划分给`book-service`服务，原因会在后问阐述。
 
--   实线箭头表示同意一个数据内部的外建引用，真伪可以由开发人员自由选择。
+-   实线箭头表示同意一个数据库中的外键引用，真伪可以由开发人员自由选择。
 
--   虚线箭头表示跨越数据库边界的外建引用，只能是伪外键。
+-   虚线箭头表示跨越数据库边界的外键引用，只能是伪外键。
 :::
 
 为了简化讨论，三个服务的数据库初始化脚本如下
@@ -108,7 +108,7 @@ Jimmer自动实现远程关联数据的自动查询。
 :::info
 附带的例子[example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud)
 或[example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt)
-使用H2，各服务启动后回自动初始化各自的数据库。
+使用H2，各服务启动后会自动初始化各自的数据库。
 :::
 
 ## 实体定义
@@ -118,7 +118,7 @@ Jimmer自动实现远程关联数据的自动查询。
 [example/kotin/jimmer-cloud-kt/model](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt/model)
 )*，定义所有实体类型。
 
-这些实体类型构成了全局模型，实体类型隶属于不同的微服务。隶属于不同微服务的实体之间构成了远程关联，其实可以理解成定义不同微服务之间的彼此交互契约。
+这些实体类型构成了全局模型，实体类型隶属于不同的微服务。隶属于不同微服务中的实体之间构成了远程关联，其实可以理解成定义在不同微服务之间的实体彼此交互契约。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -240,23 +240,23 @@ interface Author {
 
     这里的微服务，就是注册中心中每个服务的名称，对于spring-cloud而言，就是全局配置`sping.application.name`。
 
--   隶属于不同的实体类型之间的关联，就是远程关联。
+-   隶属于不同微服务中的实体之间的关联，就是远程关联。
 
     -   `BookStore.books`和`Book.store`: `BookStore`隶属于`store-service`，而`Book`隶属于`book-service`
 
     -   `Book.authors`和`Author.books`: `Book`隶属于`book-service`，而`Author`隶属于`author-service`
 
--   多对一关联`Book.store`可以为null，因为远程关系表示其外键必然引用另外一个数据库的数据，也就是说必然为伪外键。而Jimmer中伪外键所对应的字段必须可null。
+-   多对一关联`Book.store`必须可`null`，因为远程关联表示其外键必然引用另外一个数据库中的数据，也就是说必然为伪外键。而Jimmer中伪外键所对应的字段必须可`null`。
 
     请参考[真假外键](../mapping/base/foreignkey)
 
 -   对于书籍和作者之间的双向多对多关联而言，`Book.authors`是主动方，而`Author.books`是从动方 *(`@ManyToMany`的`mappedBy`被配置)*。
 
     :::info
-    Jimmer规定远程关联的中间表必须隶属主动方实体所属的微服务。
+    Jimmer规定远程关联的中间表必须隶属于主动方实体所属的微服务。
     :::
 
-    这里回答了是前文留下的问题，为何在本例中中间表`BOOK_AUTOHOR_MAPPING`定义在微服务`book-service`的数据库中，而不定义在`author-service`的数据库中。
+    这里回答了前文留下的问题，为何在本例中中间表`BOOK_AUTOHOR_MAPPING`定义在微服务`book-service`的数据库中，而不定义在`author-service`的数据库中。
 
 ## 注册中心
 
@@ -278,7 +278,7 @@ interface Author {
 
 ### 让Jimmer支持微服务
 
-任何一个微服务，都必须让Jimmer支持微服务。有两种做法
+任何一个微服务，都必须让Jimmer支持微服务。有两种做法：
 
 -   使用Jimmer的Spring Boot Starter时
 
@@ -286,19 +286,19 @@ interface Author {
 
     ```sh
     spring:
-    application:
+        application:
         # highlight-next-line
-        name: store-service
+            name: store-service
 
     jimmer:
     # highlight-next-line
-    micro-service-name: ${spring.application.name}
+        micro-service-name: ${spring.application.name}
     ...省略其他配置...
 
     eureka:
-    client:
-        serviceUrl:
-        defaultZone: http://localhost:7000/eureka/
+        client:
+            serviceUrl:
+            defaultZone: http://localhost:7000/eureka/
     ```
 
     这里，"store-service"既作为当前服务在spring-clound注册中心的名称，又作为Jimmer的微服务配置。
