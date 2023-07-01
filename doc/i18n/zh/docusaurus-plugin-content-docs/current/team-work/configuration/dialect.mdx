@@ -6,7 +6,7 @@ title: 方言
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-不同的数据库，对SQL的的支持大相径庭，因此Jimmer采用方言配置来适配不同的数据库。
+不同的数据库，对SQL的支持大相径庭，因此Jimmer采用方言配置来适配不同的数据库。
 
 ## 设置方言
 
@@ -77,16 +77,14 @@ import TabItem from '@theme/TabItem';
 
 -   org.babyfish.jimmer.sql.dialect.DefaultDialect
 
-    这是未指定方言配置时，Jimmer所采用的默认方言，因此，无需显式指定
+    这是未指定方言配置时，Jimmer所采用的默认方言，因此，无需显式指定。
 
     :::warning
-    默认配置仅能用于学习最初阶段的简单demo，绝不能用户实际项目。以下情况都会导致异常:
+    默认配置仅能用于学习最初阶段的简单demo，绝不能用于实际项目。以下情况都会导致异常:
 
     -   代码中对Jimmer的操作会导致生成依赖性特定数据库产品的SQL，而非完美的跨数据库SQL
 
-    -   将[触发器](../mutation/trigger)的类型设置为`TRANSACTION_ONLY`并使用缓存时
-    
-        此时，Jimmer启动时会自动创建`JIMMER_TRANS_CACHE_OPERATOR`表，`DefaultDialect`并不支持此操作，请参考[缓存一致性](../cache/consistency)
+    -   将[触发器](../mutation/trigger)的类型设置为`TRANSACTION_ONLY`并使用缓存时，Jimmer启动时会自动创建`JIMMER_TRANS_CACHE_OPERATOR`表，`DefaultDialect`并不支持此操作，请参考[缓存一致性](../cache/consistency)
     :::
 
 -   org.babyfish.jimmer.sql.dialect.H2Dialect
@@ -99,11 +97,11 @@ import TabItem from '@theme/TabItem';
 
 -   org.babyfish.jimmer.sql.dialect.TiDBDialect
 
-    因为TiDB是一个分布式数据库，无法支持外键约束，因此，真外键不被支持此方言支持。请参见[真假外键](../mapping/base/foreignkey)
+    因为TiDB是一个分布式数据库，无法支持外键约束，因此，真外键不被此方言支持。请参见[真假外键](../mapping/base/foreignkey)
 
     除此之外，`TiDBDialect`和`MySqlDialect`没有任何差异。
     
--   至于其他数据库，用户可以自行扩展方言。但，需要数据库支持多列`in`表达式，比如
+-   至于其他数据库，用户可以自行扩展方言。但需要数据库支持多列`in`表达式，比如
 
     ```sql
     where (a, b) in ((3, 4), (8, 13))
