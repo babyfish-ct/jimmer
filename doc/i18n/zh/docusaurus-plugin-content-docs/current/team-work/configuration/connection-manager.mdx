@@ -111,9 +111,9 @@ interface KExecutable<R> {
 :::info
 要使用第1种行为，无需对SqlClient做出特别配置。
 
-要使用第2种行为，必须为SqlClient配置ConnectionManager。否则将会导致异常。
+要使用第2种行为，必须为SqlClient配置`ConnectionManager`。否则将会导致异常。
 
-毫无疑问，第2种方式更符合业务系统开发要求，更推荐得使用。所以，强烈建议为SqlClient配置ConnectionManager。
+毫无疑问，第2种方式更符合业务系统开发要求，推荐使用。所以强烈建议为SqlClient配置`ConnectionManager`。
 :::
 
 ## 简单的ConnectionManager
