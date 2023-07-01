@@ -120,7 +120,7 @@ public class BookInput implements Input<Book> { ❶
 
 ```kotlin title="BookInput.kt"
 data class BookInput(
-    val id: Long?,
+    val id: Long? = null,
     val name: String,
     val edition: Int,
     val price: BigDecimal,

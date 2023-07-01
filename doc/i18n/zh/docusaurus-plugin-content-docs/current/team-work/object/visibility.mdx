@@ -1,0 +1,360 @@
+---
+sidebar_position: 6
+title: 可见性 
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+之前文档已经详细讨论了Jimmer属性的[动态性](./dynamic)和不可变性(./immutable)，这里介绍一个新的特性：可见性。
+
+## 纠缠属性
+
+对于Jimmer实体而言，虽然大部分情况下属性之间是彼此独立的，但也一些情况，会导致多个属性共享同一份私有数据，从而导致彼此影响，可能为多个属性之间才生了纠缠。
+
+这些情况包括
+
+-   基于Java/Kotlin的计算属性 *([回顾所有细节](../mapping/advanced/calculated/formula#基于javakotlin的计算))*
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Author.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.*;
+
+    @Entity
+    public interface Author {
+
+        String firstName();
+
+        String lastName();
+
+        // highlight-next-line
+        @Formula(dependencies = {"firstName", "lastName"})
+        default String fullName() {
+            return firstName() + ' ' + lastName();
+        }
+
+        ...省略其他属性...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Author.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.*
+
+    @Entity
+    interface Author {
+
+        val firstName: String
+
+        val lastName: String
+
+        // highlight-next-line
+        @Formula(dependencies = ["firstName", "lastName"])
+        val fullName: String
+            get() = "$firstName $lastName"
+
+        ...省略其他属性...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    `Author.fullName`属性只是一个计算规则，并没有自己的私有数据。它依赖于`Author.firstName`和`Author.lastName`。
+
+    虽然`Author.fullName`这种基于Java/Kotin计算规则的属性被定义为计算属性，但是换一个思考角度，也可以认为它是视图属性。
+
+    如果将`Author.firstName`和`Author.lastName`的视为原始属性，那么也可以认为`Author.fullName`是基于它们的视图属性。
+
+-   @IdView视图属性 *([回顾所有细节](../mapping/advanced/view/id-view))*
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    package com.example.model;
+
+    import org.babyfish.jimmer.sql.*;
+    import org.jetbrains.annotations.Nullable;
+
+    @Entity
+    public interface Book {
+
+        ...省略其他属性...
+
+        @ManyToOne
+        @Nullable
+        BookStore store();
+
+        @ManyToMany
+        @JoinTable(
+            name = "BOOK_AUTHOR_MAPPING",
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_id"
+        )
+        List<Author> authors();
+
+        // highlight-next-line
+        @IdView // 关联对象store的id的视图
+        Long storeId();
+
+        // 关联对象集合authors中所有对象的id的视图
+        // highlight-next-line
+        @IdView("authors") 
+        List<Long> authorIds();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    package com.example.model
+
+    import org.babyfish.jimmer.sql.*
+
+    @Entity
+    interface Book {
+
+        ...省略其他属性...
+
+        @ManyToOne
+        val store: BookStore?
+
+        @ManyToMany
+        @JoinTable(
+            name = "BOOK_AUTHOR_MAPPING",
+            joinColumnName = "BOOK_ID",
+            inverseJoinColumnName = "AUTHOR_id"
+        )
+        val authors: List<Auhtor>
+
+        // highlight-next-line
+        @IdView // 关联对象store的id的视图
+        val storeId: Long?
+
+        // 关联对象集合authors中所有对象的id的视图
+        // highlight-next-line
+        @IdView("authors") 
+        val authorIds: List<Long>
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    -   `Book.store`是原始属性，`Book.storeId`是基于它们的视图属性
+
+    -   `Book.authors`是原始属性，`Book.authorIds`是基于它们的视图属性
+
+-   @ManyToManyView视图属性 *([回顾所有细节](../mapping/advanced/view/many-to-many-view))*
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Student.java"
+    @Entity
+    public interface Student {
+
+        // 第一步中，已经声明了一对多关联`learningLinks`
+        @OneToMany(mappedBy = "student")
+        List<LearningLink> learningLinks();
+
+        // highlight-next-line
+        @ManyToManyView(
+            prop = "learningLinks",
+            deeperProp = "course"
+        )
+        
+        List<Course> courses();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```java title="Student.kt"
+    @Entity
+    interface Student {
+
+        @OneToMany(mappedBy = "student")
+        val learningLinks: List<LearningLink>
+
+        // highlight-next-line
+        @ManyToManyView(
+            prop = "learningLinks",
+            deeperProp = "course"
+        )
+        val courses: List<Course>
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    `Student.learningLinks`是原始属性，`Student.courses`是基于它的视图属性。
+
+上面的这类例子，我们可以总结出共同特点，存在原始属性和视图属性。
+
+原始属性具备自己的私有数据，而视图属性没有，它只是换用另外一个视角观察原始属性的值而已。
+
+从内部实现机制的层面讲，视图属性其实和原始属性共享同一份私有数据。这表示，知道其中一个的值，必然知道另外一个值的部分信息，因此，可以形象地称它们为纠缠属性。
+
+## 对象抓取器和纠缠属性
+
+之前我们已经介绍了纠缠属性，有原始属性和视图属性。真正的数据被原始数据持有，视图属性只有一个观察者。
+
+如果在利用[对象抓取器](../query/object-fetcher)抓取视图属性，其内部逻辑会将之换转化为对原始属性的抓取，例如
+
+-   抓取`Author.fullName`，内部逻辑视为抓取`Author.firstName`和`Author.lastName`
+
+-   抓取`Book.storeId`，内部逻辑视为抓取`Book.store`
+
+-   抓取`Book.authorIds`，内部逻辑视为抓取`Book.authors`
+
+-   抓取`Student.courses`，内部逻辑视为抓取`Student.learningLinks`
+
+我们从中选取`Book.authorIds`和`Book.authors`，来展示[对象抓取器](../query/object-fetcher)对原始属性和视图属性的处理有何不同
+
+-   抓取原始属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = sqlClient.findById(
+        BookFetcher.$
+            .allScalarFields()
+            // highlight-next-line
+            .authors(), // 只有id的关联对象
+        1L
+    );
+    System.out.println(book);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = sqlClient.findById(
+        newFetcher(Book::class).by {
+            allScalarFields()
+            // highlight-next-line
+            authors() // 只有id的关联对象
+        },
+        1L
+    )
+    println(book)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    对象抓取器中的`authors()`没有任何参数，表示是抓取只有id属性的author对象的集合，结果如下 *(为提高本稳定可读性，人为进行了格式化)*
+
+    ```json
+    {
+        "id":1,
+        "name":"Learning GraphQL",
+        "edition":1,
+        "price":50,
+        "authors":[
+            // highlight-next-line
+            { "id":2 },
+            // highlight-next-line
+            { "id":1 }
+        ]
+    }
+    ```
+
+-   抓取视图属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = sqlClient.findById(
+        BookFetcher.$
+            .allScalarFields()
+            // highlight-next-line
+            .authorIds(), // 关联id，不是对象
+        1L
+    );
+    System.out.println(book);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = sqlClient.findById(
+        newFetcher(Book::class).by {
+            allScalarFields()
+            // highlight-next-line
+            authorIds() // 关联id，不是对象
+        },
+        1L
+    )
+    println(book)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这次结果为 *(为提高本稳定可读性，人为进行了格式化)*
+
+    ```json
+    {
+        "id":1,
+        "name":"Learning GraphQL",
+        "edition":1,
+        "price":50,
+        "authorIds":[
+            // highlight-next-line
+            2, 1
+        ]
+    }
+    ```
+
+虽然两次查询饭回的数据是等价的，但格式完全不同。
+
+前面说过，[对象抓取器](../query/object-fetcher)抓取视图属性，其内部逻辑会将之换转化为对原始属性的抓取。
+
+既然如此，二者底层逻辑应该完全一样，这种差异从何而来？
+
+## 属性可见性
+
+前面提出一个一个问题，底层逻辑完全一样的两次查询，为什么返回的数据格式有差异。
+
+Jimmer可以控制每个属性的可见性，让其显示或隐藏。
+
+和[动态性](./dynamic)中提及的属性可以具备已加载和未加载两种状态不同，可见性是另外一个纬度的特性，和动态性毫无关系。
+
+可见性仅仅影响对象的[Jackson序列化](./jackson) *(包括对象自己的toString行为)*，决定对象的属性是否被序列化。除此之外，不会影响对象的其他任何行为。
+
+:::tip
+只有下面两个条件同时满足时，属性才会参与Jackson序列化
+
+-   动态性：属性被设置
+-   可见性：属性被显示
+
+可以参考[工具方法](./tool)，了解如何自己控制Jimmer对象属性的可见性
+:::
+
+因此，之前例子就很容易解释了
+
+-   第一次查询：`Book.authors`被显示，`Book.authorIds`被隐藏
+
+-   第二次查询：`Book.authors`被隐藏，`Book.authorIds`被显示
