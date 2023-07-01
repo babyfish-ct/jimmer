@@ -27,10 +27,10 @@ export const MindMap: FC<{
         setMaximized(false);
     }, []);
 
-    if (maximized) {
-        return (
+    return (
+        <>
             <Dialog 
-            open={true} 
+            open={maximized} 
             onClose={onRestore} 
             fullScreen={true}>
                 <AppBar sx={{ position: 'relative' }}>
@@ -47,11 +47,8 @@ export const MindMap: FC<{
                 <MindMapCore/>
                 </DialogContent>
             </Dialog>
-        );
-    }
-
-    return (
-        <MindMapCore initialExpandLevel={initialExpandLevel} onMaximize={onMaximize}/>
+            <MindMapCore initialExpandLevel={initialExpandLevel} onMaximize={onMaximize}/>
+        </>
     );
 });
 

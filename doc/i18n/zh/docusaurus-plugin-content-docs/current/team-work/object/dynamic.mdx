@@ -2,3 +2,62 @@
 sidebar_position: 1
 title: 动态性
 ---
+
+import DynamicShape from '../_shared/dynamic-shape.mdx';
+import ObjectFetcher from '../_shared/object-fetcher.mdx';
+import SaveCommand from '../_shared/save-command.mdx';
+import DynamicCore from '../_shared/dynamic-core.md';
+
+:::info
+本文的示例代码使用了一个名为`BookDraft`的类型，该接口是Jimmer根据用户定义的类型`Book`自动生成的接口类型。
+
+读者可先行忽略这个自动生成的接口，后续文档[Draft](./draft)会对其做出介绍
+:::
+
+## 基本概念
+
+<DynamicShape/>
+
+## 动态对象的特性
+
+<DynamicCore/>
+
+对于缺失的属性而言
+
+-   使用代码直接访问，将会得到异常`org.babyfish.jimmer.UnloadedException`
+
+    :::note
+    如果读者有Hibernate经历，可以将其理解为`org.hibernate.LazyInitializationException`
+    :::
+
+-   在[Jackson](https://github.com/FasterXML/jackson)序列化中，将会被自动忽略。
+
+    :::info
+    这要求对[Jackson](https://github.com/FasterXML/jackson)做一点配置。由于这个细节非常重要，已经被独立成一篇文档，请参阅[和Jackson协同](./jackson)
+    :::
+
+## 和ORM的互动
+
+动态性是Jimmer对象的内禀特征，具有普适性，ORM框架本身和开发人员双方都可以轻松构建动态对象给对方使用。
+
+-   Jimmer创建动态对象，返回给开发人员
+
+    即，查询任意形状的数据结构。此功能叫[对象抓取器](../query/object-fetcher)
+
+-   开发人员创建动态对象，传递给Jimmer
+
+    即，保存任意形状的数据结构。此功能叫[保存指令](../mutation/save-command)
+
+### 对象抓取器
+
+Jimmer创建动态对象，返回给开发人员
+
+<ObjectFetcher/>
+
+### 保存指令
+
+开发人员创建动态对象，传递给Jimmer
+
+<SaveCommand/>
+
+

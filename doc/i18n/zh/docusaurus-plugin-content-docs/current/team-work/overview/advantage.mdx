@@ -19,6 +19,7 @@ import SaveCommand from '../_shared/save-command.mdx';
 import DynamicJoinProblem from '../_shared/dynamic-join-problem.mdx';
 import ImmutableProblem from '../_shared/immutable-problem.mdx';
 import ImmutableSolution from '../_shared/immutable-solution.mdx';
+import ImmutableOtherBenefit from '../_shared/immutable-other-benefit.md';
 
 ## 基础能力变革
 
@@ -121,29 +122,7 @@ Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题�
 
 <ViewMore title="其他好处" buttonText="其他好处">
 
--   多线程安全性，这点很好理解，不用解释。
-
--   对于Set、Map这类依赖hashCode的集合容器而言，迫切需要对象的不可变性。
-
-    一旦集合容器保存了可变对象，开发人员就必须小心翼翼地确保不去修改被这些容器共享的数据。如果不慎犯了错误，通常需要debug跟踪来发现问题，这往往会浪费时间影响效率。
-
--   实际开发中还有一些长期持有对象的场合场合，虽然不依赖hashCode，但也会因长期持有对象而导致问题，比如：
-
-    -   利用WebSession中长期持有某些数据
-
-    -   利用一级缓存，即，使用JVM内存的进程内缓存，长期持有某些数据
-
-    细心的开发人员肯定不希望WebSession或Cache中被长期持有数据的引用和泄漏到用户代码中的引用共享数据结构，进而导致不可控的彼此干扰。
-
-    因此，对WebSession或Cache这类长期持有数据的结构进行读写操作时，细心的开发人员会将可变数据结构复制一次再进行保存或返回。其中，写入时复制尚可接受，但每次读取都复制一次显得昂贵。
-
-    可见
-
-    -   使用可变对象，是否需要复制对象以保证必要安全性，依赖于开发人员的风险预知能力。然而，即便预知了风险，解决之道也没有客观标准，过于严格会导致浪费，过于宽松会导致BUG *(团队人数越多，越容易出错)*。而且，对于有一定体量的数据而言，团队内部对这种保护机制的严格程度也常有争论，具备很强的主观性。
-
-    -   使用可不变对象，只有需要数据变化时才复制数据结构 *(Jimmer/Immer内部对此有优化，变化的部分才复制，未变的部分仍然共享重用)*，其余情况一律简单共享引用即可。具备非常严格的客观性。
-
-    毫无疑问，基于客观规律进行开发，必然优于依赖主观感觉进行开发。
+<ImmutableOtherBenefit/>
 
 </ViewMore>
 

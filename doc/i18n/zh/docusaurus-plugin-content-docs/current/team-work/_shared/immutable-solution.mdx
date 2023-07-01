@@ -1,11 +1,21 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-import Divider from '@mui/material/Divider';
-import Chip from '@mui/material/Chip';
 
-<Divider>
-<Chip label="前提假设"/>
-</Divider>
+为了解决JVM生态目前对复杂不可变对象二次"修改" *(基于另一个不可变对象创建新的不可变对象)* 不便的问题，诞生了一些不可变对象框架
+
+-   [Immutables](https://immutables.github.io/immutable.html)
+-   [FreeBuilder](https://github.com/inferred/FreeBuilder)
+-   [Arrow-Kt(Kotlin)](https://arrow-kt.io/learn/immutable-data/intro/)
+-   [Kopyk(Kotlin)](https://kopyk.at/)
+-   [MuteKt(Kotlin)](https://github.com/PatilShreyas/mutekt)
+
+Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题，所以，Jimmer必须完成类似的工作。
+
+Jimmer需要同时为Java和Kotlin提供优雅的双语支持，上述所有方案都无法达到这个要求，因此Jimmer并未使用它们中的任何一个，而是选择移植JavaScript/TypeScript领域的[immer](https://github.com/immerjs/immer)。
+
+移植[immer](https://github.com/immerjs/immer)后，二次"修改"深层次不可变数据结构的变得非常强大和优雅。
+
+## 前提假设
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -54,9 +64,7 @@ interface TreeNode {
 </TabItem>
 </Tabs>
 
-<Divider>
-<Chip label="使用方法"/>
-</Divider>
+## 使用方法
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -141,10 +149,7 @@ println("newTreeNode: $newTreeNode")
 </TabItem>
 </Tabs>
 
-
-<Divider>
-<Chip label="执行结果"/>
-</Divider>
+## 执行结果
 
 输出结果（实际打印结果是紧凑的，但为了方便阅读，这里进行了格式化）
 
@@ -186,3 +191,9 @@ newTreeNode: {
     ]
 }
 ```
+
+:::info
+这个移植是对JVM生态的有力补充。
+
+本框架命名为Jimmer，即为致敬[immer](https://github.com/immerjs/immer)
+:::

@@ -2,3 +2,86 @@
 sidebar_position: 4
 title: 和Jackson协同
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Jimmer对象是动态的，并不是对象的所有属性都需要初始化，它允许缺少一些属性。
+
+- 未指定的属性在直接被代码访问时会导致异常
+
+- 未指定的属性在JSON序列化中自动忽略，不会异常
+
+这里提到了JSON序列化，指[jackson](https://github.com/FasterXML/jackson)。
+
+jimmer-core定义了一个jackson模块：`org.babyfish.jimmer.jackson.ImmutableModule`，利用该模块可以为jackson增加序列化/反序列化jimmer不可变对象的能力。
+
+分两种情况
+
+-   使用Jimmer的Spring Boot Starter是
+
+    在这种情况下，Jimmer已经注为Spring这册了ImmutableModule，如下
+
+    ```java
+    // Jimmer内部代码，非用户代码
+    @ConditionalOnMissingBean(ImmutableModule.class)
+    @Bean
+    public ImmutableModule immutableModule() {
+        return new ImmutableModule();
+    }
+    ```
+
+    因此，Spring默认的`ObjectMapper`已经可以序列化/反序列化Jimmer动态对象，而绝大部分对象的序列化/序列化工作都是在HTTP交互时由Spring自动完成的，所以无需任何开发。
+
+    :::caution
+    Spring默认的Json处理库就是[jackson](https://github.com/FasterXML/jackson)，勿替换。
+    :::
+
+-   不实用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    ObjectMapper mapper = new ObjectMapper()
+        // highlight-next-line
+        .registerModule(new ImmutableModule());
+
+    TreeNode treeNode = TreeNodeDraft.$.produce(
+        draft -> draft.setName("Root Node")
+    );
+
+    // 系列化
+    String json = mapper.writeValueAsString(treeNode);
+
+    // 反序列化
+    TreeNode deserializedTreeNode = 
+        mapper.readValue(json, TreeNode.class);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val mapper = ObjectMapper()
+        // highlight-next-line
+        .registerModule(ImmutableModule())
+
+    val treeNode = new(TreeNode::class).by {
+        name = "Root Node"
+    }
+
+    // 序列化
+    val json = mapper.writeValueAsString(treeNode);
+
+    // 反序列化
+    TreeNode deserializedTreeNode = 
+        mapper.readValue(json, TreeNode::class.java);
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::tip
+- 对于序列化操作而言，有一个便捷方式，就是jimmer对象的`toString`方法。
+:::
