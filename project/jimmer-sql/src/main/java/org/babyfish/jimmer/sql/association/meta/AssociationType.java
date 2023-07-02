@@ -142,6 +142,11 @@ public class AssociationType extends AbstractImmutableTypeImpl {
     }
 
     @Override
+    public Map<String, ImmutableProp> getSelectableScalarProps() {
+        return Collections.emptyMap();
+    }
+
+    @Override
     public Map<String, ImmutableProp> getSelectableReferenceProps() {
         return props;
     }

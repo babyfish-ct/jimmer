@@ -3,3 +3,130 @@ sidebar_position: 3
 title: 深分页优化
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+分页查询有一个问题，在表的数据量很大的情况下，如果分页区间太靠后 *（即offset太大）*，会引起性能问题。
+
+因此，Jimmer支持深分页优化，为分页查询的offset设置一个阈值`offset-optimizing-hreshold`，一旦offset达到这个阈值，改变分页查询的实现方式。
+
+## 设置阈值
+
+-   使用Jimmer的Spring Boot Starter时
+
+    修改`application.yml` *(或application.properties)*，添加配置项目`offset-optimizing-hreshold`，如下
+
+    ```
+    jimmer:
+        offset-optimizing-hreshold: 1000
+    ```
+
+-   不使用Spring Boot Starter时
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setOffsetOptimizingThreshold(1000)
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setOffsetOptimizingThreshold(1000)
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::info
+如果不设置这个阈值，其默认值为`Integer.MAX_VALUE`，这表示没有分页查询可以启用该功能。
+:::
+
+## 效用
+
+讨论此功能无需count-query，关注于data-query即可。让我们来看这个简单的分页查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public List<Book> findBooks(int limit, int offset) {
+    BookTable table = BookTable.$;
+    return sqlClient
+            .createQuery(table)
+            .select(table)
+            .limit(limit, offset)
+            .execute();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(limit: Int, offset: Int): List<Book> =
+    sqlClient.createQuery(Book::class) {
+        select(table)
+    }
+    .limit(limit, offset)
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+
+不同的方言对分页查询的支持不相同，其中，Oracle还比复杂。请参见[分页查询/用法#方言](./usage#方言)
+
+为了简化讨论，我们假设用户采用`org.babyfish.jimmer.sql.H2Dialect`，该方言下的分页查询生成的SQL很简单。
+
+假如`offset-optimizing-hreshold`被设置为1000
+
+-   当offset小于1000时，比如调用`findBooks(10, 90)`，生成的SQL如下
+
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
+        tb_1_.STORE_ID
+    from BOOK tb_1_
+    limit ? /* 10 */ offset ? /* 90 */
+    ```
+
+
+-   当offset大约或等于1000时，比如调用`findBooks(10, 1000)`，生成的SQL如下
+  
+    ```sql
+    select
+        optimize_.ID,
+        optimize_.NAME,
+        optimize_.EDITION,
+        optimize_.PRICE,
+        optimize_.STORE_ID
+    from (
+    select
+        tb_1_.ID optimize_core_id_
+        from BOOK tb_1_
+    limit ? /* 10 */ offset ? /* 1000 */
+    ) optimize_core_ inner join BOOK optimize_
+        on optimize_.ID = optimize_core_.optimize_core_id_
+    ```
+
+由此可见，当offset过大时，Jimmer会先对id列进行分页查询，再把分页后的id集合转化为对象集合。当表的数据量很大时，这何用。
+
+## 设置为0
+
+对于某些数据库 *(比如MySQL)* 而言，只要表的数据量大，哪怕查询第一页 *(offset为0)*，性能也不理想。
+
+这时，不妨直接将`offset-optimizing-hreshold`设置成0。

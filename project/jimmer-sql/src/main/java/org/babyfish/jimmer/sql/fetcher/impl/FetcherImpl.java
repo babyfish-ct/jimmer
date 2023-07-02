@@ -384,10 +384,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     @Override
     public FetcherImplementor<E> allScalarFields() {
         FetcherImpl<E> fetcher = this;
-        for (ImmutableProp prop : immutableType.getSelectableProps().values()) {
-            if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.isLogicalDeleted()) {
-                fetcher = fetcher.addImpl(prop, null);
-            }
+        for (ImmutableProp prop : immutableType.getSelectableScalarProps().values()) {
+            fetcher = fetcher.addImpl(prop, null);
         }
         return fetcher;
     }

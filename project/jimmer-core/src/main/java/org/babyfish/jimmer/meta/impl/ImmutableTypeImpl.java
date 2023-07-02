@@ -57,6 +57,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private Map<String, ImmutableProp> selectableProps;
 
+    private Map<String, ImmutableProp> selectableScalarProps;
+
     private Map<String, ImmutableProp> selectableReferenceProps;
 
     private ImmutableProp idProp;
@@ -342,6 +344,21 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 }
             }
             selectableProps = map = Collections.unmodifiableMap(map);
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableScalarProps() {
+        Map<String, ImmutableProp> map = selectableScalarProps;
+        if (map == null) {
+            map = new LinkedHashMap<>();
+            for (ImmutableProp prop : getSelectableProps().values()) {
+                if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.isLogicalDeleted()) {
+                    map.put(prop.getName(), prop);
+                }
+            }
+            selectableScalarProps = map = Collections.unmodifiableMap(map);
         }
         return map;
     }

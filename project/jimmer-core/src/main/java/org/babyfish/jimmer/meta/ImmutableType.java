@@ -144,6 +144,8 @@ public interface ImmutableType {
 
     Map<String, ImmutableProp> getSelectableProps();
 
+    Map<String, ImmutableProp> getSelectableScalarProps();
+
     Map<String, ImmutableProp> getSelectableReferenceProps();
 
     String getMicroServiceName();

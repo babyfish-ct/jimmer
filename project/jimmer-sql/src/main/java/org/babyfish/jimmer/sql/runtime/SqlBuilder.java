@@ -618,11 +618,14 @@ public class SqlBuilder {
         SqlBuilder p = this.parent;
         if (p != null) {
             preAppend();
+            if (p.variablePositions != null) {
+                int base = p.builder.length();
+                for (Integer position : result.get_3()) {
+                    p.variablePositions.add(base + position);
+                }
+            }
             p.builder.append(result.get_1());
             p.variables.addAll(result.get_2());
-            if (p.variablePositions != null) {
-                p.variablePositions.addAll(result.get_3());
-            }
             while (p != null) {
                 --p.childBuilderCount;
                 p = p.parent;
