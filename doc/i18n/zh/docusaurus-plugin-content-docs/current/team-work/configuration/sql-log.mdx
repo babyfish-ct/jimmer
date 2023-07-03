@@ -10,15 +10,15 @@ import TabItem from '@theme/TabItem';
 
 ## 开启SQL日志
 
-有两个方法开启SQL日志
+有两个方法开启SQL日志：
 
--   使用Jimmer的Spring Boot Starter时，又有两种方法可以实现配置
+-   使用Jimmer的Spring Boot Starter时，又有两种方法可以实现配置：
 
     -   修改`application.yml` *(或application.properties)*
 
         ```
         jimmer:
-        show-sql: true
+            show-sql: true
         ```
 
     -   配置全局Bean
@@ -46,7 +46,7 @@ import TabItem from '@theme/TabItem';
         </Tabs>
 
     :::info
-    如果同时采用以上两种方法 *(不推荐)*，则第二种方法优先
+    如果同时采用以上两种方法 *(不推荐)*，则第二种方法优先。
     :::
 
 -   不使用Spring Boot Starter时
@@ -207,11 +207,11 @@ Jimmer提供了一个配置选项，如果被指定，当jimmer在执行SQL之�
 
 然而，这些堆栈跟踪信息包含太多信息，包括以jdk、jdbc驱动程序、jimmer和spring为代表的基础架构调用帧，而开发人员关心的业务相关信息将被淹没在信息的海洋中。
 
-此配置类型为`java.util.Collection<String>`，允许开发人员指定多个包或类前缀，jimmer将用它们顾虑堆栈跟踪信息，如果某个调用帧能通过过滤，Jimmer就会认为它和用户业务相关，从而在执行前的回调参数中包含它。
+此配置类型为`java.util.Collection<String>`，允许开发人员指定多个包或类前缀，jimmer将用它们过滤堆栈跟踪信息，如果某个调用帧能通过过滤，Jimmer就会认为它和用户业务相关，从而在执行前的回调参数中包含它。
 
 对于SQL日志打印而言，能通过过滤的调用帧将会出现在打印结果中，帮助用户排查问题。
 
-有两种实现方法
+有两种实现方法：
 
 -   使用Jimmer的Spring Boot Starter时
 
