@@ -29,7 +29,7 @@ public class MaxwellListener {
     }
 
     @KafkaListener(topics = "maxwell")
-    public void onHandle(
+    public void onMaxwellEvent(
             String json,
             Acknowledgment acknowledgment
     ) throws JsonProcessingException {
@@ -49,5 +49,21 @@ public class MaxwellListener {
                 break;
         }
         acknowledgment.acknowledge();
+    }
+
+    @KafkaListener(topicPattern = "debezium.*")
+    public void onDebeziumEvent(
+            String json,
+            Acknowledgment acknowledgment
+    ) {
+        System.out.println(json);
+    }
+
+    @KafkaListener(topics = "debezium")
+    public void onDebeziumEvent2(
+            String json,
+            Acknowledgment acknowledgment
+    ) {
+        System.out.println(json);
     }
 }

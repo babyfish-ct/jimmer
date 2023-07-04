@@ -11,11 +11,10 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
-import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableRootQueryImplementor
+import org.babyfish.jimmer.sql.kt.ast.query.executePagingQuery
 import org.springframework.core.GenericTypeResolver
 import org.springframework.data.domain.*
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty1
 
 open class KRepositoryImpl<E: Any, ID: Any> (
     override val sql: KSqlClient,
@@ -175,29 +174,20 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         private val pageSize: Int
     ) : KRepository.Pager {
 
-        override fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T> {
-            if (pageSize == 0) {
-                return PageImpl(query.execute())
+        override fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T> =
+            executePagingQuery(query, pageIndex, pageSize) { entities, totalCount, queryImplementor ->
+                PageImpl(
+                    entities,
+                    PageRequest.of(
+                        pageIndex,
+                        pageSize,
+                        Utils.toSort(
+                            queryImplementor.javaOrders,
+                            queryImplementor.javaSqlClient.metadataStrategy
+                        )
+                    ),
+                    totalCount.toLong()
+                )
             }
-            val offset = pageIndex * pageSize
-            require(offset <= Int.MAX_VALUE - pageSize) { "offset is too big" }
-            val total = query.count()
-            val content = query
-                .limit(pageSize, offset)
-                .execute()
-            val queryImplementor = query as KConfigurableRootQueryImplementor<*, *>
-            return PageImpl(
-                content,
-                PageRequest.of(
-                    pageIndex,
-                    pageSize,
-                    Utils.toSort(
-                        queryImplementor.javaOrders,
-                        queryImplementor.javaSqlClient.metadataStrategy
-                    )
-                ),
-                total.toLong()
-            )
-        }
     }
 }

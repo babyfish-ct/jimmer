@@ -45,7 +45,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
     @Override
     public List<Selection<?>> getSelections() {
-        return data.getSelections();
+        return data.selections;
     }
 
     @Override
@@ -57,10 +57,10 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             if (idOnlySelection != null) {
                 baseQuery.accept(visitor, Collections.singletonList(idOnlySelection), false);
             } else {
-                for (Selection<?> selection : data.getSelections()) {
+                for (Selection<?> selection : data.selections) {
                     Ast.from(selection, visitor.getAstContext()).accept(visitor);
                 }
-                baseQuery.accept(visitor, data.getOldSelections(), data.isWithoutSortingAndPaging());
+                baseQuery.accept(visitor, data.oldSelections, data.withoutSortingAndPaging);
             }
         } finally {
             astContext.popStatement();
@@ -72,7 +72,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         AstContext astContext = builder.getAstContext();
         astContext.pushStatement(getBaseQuery());
         try {
-            if (data.isWithoutSortingAndPaging() || data.getLimit() == Integer.MAX_VALUE) {
+            if (data.withoutSortingAndPaging || data.limit == Integer.MAX_VALUE) {
                 renderWithoutPaging(builder, null);
             } else {
                 PropExpressionImplementor<?> idPropExpr = idOnlyPropExprByOffset();
@@ -84,8 +84,8 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     subBuilder.build(result -> {
                         PaginationContextImpl ctx = new PaginationContextImpl(
                                 getBaseQuery().getSqlClient().getSqlFormatter(),
-                                data.getLimit(),
-                                data.getOffset(),
+                                data.limit,
+                                data.offset,
                                 result.get_1(),
                                 result.get_2(),
                                 result.get_3(),
@@ -96,7 +96,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     });
                 }
             }
-            if (data.isForUpdate()) {
+            if (data.forUpdate) {
                 builder.sql(" for update");
             }
         } finally {
@@ -105,7 +105,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
     }
 
     private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {
-        builder.enter(data.isDistinct() ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
+        builder.enter(data.distinct ? SqlBuilder.ScopeType.SELECT_DISTINCT : SqlBuilder.ScopeType.SELECT);
         if (idPropExpr != null) {
             TableImplementor<?> tableImplementor = TableProxies.resolve(
                     idPropExpr.getTable(),
@@ -119,7 +119,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                     OffsetOptimizationWriter::idAlias
             );
         } else {
-            for (Selection<?> selection : data.getSelections()) {
+            for (Selection<?> selection : data.selections) {
                 builder.separator();
                 if (selection instanceof TableSelection) {
                     TableSelection tableSelection = (TableSelection) selection;
@@ -141,11 +141,11 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             }
         }
         builder.leave();
-        baseQuery.renderTo(builder, data.isWithoutSortingAndPaging());
+        baseQuery.renderTo(builder, data.withoutSortingAndPaging, data.reverseSorting);
     }
 
     private PropExpressionImplementor<?> idOnlyPropExprByOffset() {
-        if (data.getOffset() >= baseQuery.getSqlClient().getOffsetOptimizingThreshold()) {
+        if (data.offset >= baseQuery.getSqlClient().getOffsetOptimizingThreshold()) {
             return data.getIdOnlyExpression();
         }
         return null;
@@ -170,8 +170,8 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 builder.getAstContext()
         );
         builder.enter(SqlBuilder.ScopeType.SELECT);
-        if (data.getSelections().get(0) instanceof FetcherSelection<?>) {
-            for (Field field : ((FetcherSelection<?>)data.getSelections().get(0)).getFetcher().getFieldMap().values()) {
+        if (data.selections.get(0) instanceof FetcherSelection<?>) {
+            for (Field field : ((FetcherSelection<?>)data.selections.get(0)).getFetcher().getFieldMap().values()) {
                 writer.prop(field.getProp(), OffsetOptimizationWriter.ALIAS, false);
             }
         } else {
@@ -186,8 +186,8 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         subBuilder.build(result -> {
             PaginationContextImpl ctx = new PaginationContextImpl(
                     getBaseQuery().getSqlClient().getSqlFormatter(),
-                    data.getLimit(),
-                    data.getOffset(),
+                    data.limit,
+                    data.offset,
                     result.get_1(),
                     result.get_2(),
                     result.get_3(),

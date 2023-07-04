@@ -213,7 +213,7 @@ public abstract class AbstractMutableQueryImpl
         }
     }
 
-    void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging) {
+    void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
 
         Predicate predicate = getPredicate();
         Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
@@ -244,17 +244,17 @@ public abstract class AbstractMutableQueryImpl
             for (Order order : orders) {
                 builder.separator();
                 ((Ast)order.getExpression()).renderTo(builder);
-                if (order.getOrderMode() == OrderMode.ASC) {
-                    builder.sql(" asc");
+                if (order.getOrderMode() == OrderMode.DESC) {
+                    builder.sql(reverseOrder ? " asc" : " desc");
                 } else {
-                    builder.sql(" desc");
+                    builder.sql(reverseOrder ? " desc" : " asc");
                 }
                 switch (order.getNullOrderMode()) {
                     case NULLS_FIRST:
-                        builder.sql(" nulls first");
+                        builder.sql(reverseOrder ? " nulls last" : " nulls first");
                         break;
                     case NULLS_LAST:
-                        builder.sql(" nulls last");
+                        builder.sql(reverseOrder ? " nulls first" : " nulls last");
                         break;
                 }
             }

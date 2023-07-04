@@ -55,6 +55,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private ImmutableProp[] propArr;
 
+    private Map<String, ImmutableProp> entityProps;
+
     private Map<String, ImmutableProp> selectableProps;
 
     private Map<String, ImmutableProp> selectableScalarProps;
@@ -331,6 +333,23 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             propArr = arr;
         }
         return arr;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, ImmutableProp> getEntityProps() {
+        Map<String, ImmutableProp> map = entityProps;
+        if (map == null) {
+            if (isEntity) {
+                map = primarySuperType != null && primarySuperType.isEntity() ?
+                        declaredProps :
+                        props;
+            } else {
+                map = Collections.emptyMap();
+            }
+            entityProps = map;
+        }
+        return map;
     }
 
     public Map<String, ImmutableProp> getSelectableProps() {

@@ -38,6 +38,7 @@ dependencies {
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
     testImplementation("org.postgresql:postgresql:42.3.6")
+    testImplementation("org.apache.kafka:connect-api:0.10.0.0")
     // testImplementation(files("/Users/chentao/Downloads/ojdbc8-21.9.0.0.jar"))
 }
 

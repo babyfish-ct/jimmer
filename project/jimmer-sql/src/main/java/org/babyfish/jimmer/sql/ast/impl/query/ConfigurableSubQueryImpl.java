@@ -28,7 +28,7 @@ public class ConfigurableSubQueryImpl<R>
             MutableSubQueryImpl baseQuery
     ) {
         super(data, baseQuery);
-        List<Selection<?>> selections = data.getSelections();
+        List<Selection<?>> selections = data.selections;
         switch (selections.size()) {
             case 1:
                 Selection<?> selection = selections.get(0);
@@ -81,7 +81,7 @@ public class ConfigurableSubQueryImpl<R>
     @Override
     public ConfigurableSubQuery<R> limit(int limit, int offset) {
         TypedQueryData data = getData();
-        if (data.getLimit() == limit && data.getOffset() == offset) {
+        if (data.limit == limit && data.offset == offset) {
             return this;
         }
         if (limit < 0) {
@@ -102,7 +102,7 @@ public class ConfigurableSubQueryImpl<R>
     @Override
     public ConfigurableSubQuery<R> distinct() {
         TypedQueryData data = getData();
-        if (data.isDistinct()) {
+        if (data.distinct) {
             return this;
         }
         return new ConfigurableSubQueryImpl<>(

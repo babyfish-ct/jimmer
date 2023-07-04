@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -336,6 +337,15 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setBinLogObjectMapper(ObjectMapper mapper);
+
+        @OldChain
+        Builder setBinLogPropReader(ImmutableProp prop, BinLogPropReader reader);
+
+        @OldChain
+        Builder setBinLogPropReader(TypedProp.Scalar<?, ?> prop, BinLogPropReader reader);
+
+        @OldChain
+        Builder setBinLogPropReader(Class<?> propType, BinLogPropReader reader);
 
         @OldChain
         Builder setForeignKeyEnabledByDefault(boolean enabled);

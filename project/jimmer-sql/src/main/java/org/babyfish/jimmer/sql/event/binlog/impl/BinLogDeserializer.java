@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.event.binlog;
+package org.babyfish.jimmer.sql.event.binlog.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -11,23 +11,22 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.io.IOException;
 import java.util.*;
 
 class BinLogDeserializer extends StdDeserializer<Object> {
 
-    private final JSqlClientImplementor sqlClient;
+    private final BinLogParser parser;
 
     private final ImmutableType immutableType;
 
     public BinLogDeserializer(
-            JSqlClientImplementor sqlClient,
+            BinLogParser parser,
             ImmutableType immutableType
     ) {
         super(immutableType.getJavaClass());
-        this.sqlClient = sqlClient;
+        this.parser = parser;
         this.immutableType = immutableType;
     }
 
@@ -36,7 +35,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
             JsonParser jp,
             DeserializationContext ctx
     ) throws IOException {
-        MetadataStrategy strategy = sqlClient.getMetadataStrategy();
+        MetadataStrategy strategy = parser.sqlClient().getMetadataStrategy();
         JsonNode node = jp.getCodec().readTree(jp);
         return Internal.produce(immutableType, null, draft -> {
             Iterator<Map.Entry<String, JsonNode>> itr = node.fields();
@@ -45,7 +44,7 @@ class BinLogDeserializer extends StdDeserializer<Object> {
                 String columnName = fieldEntry.getKey();
                 JsonNode childNode = fieldEntry.getValue();
                 List<ImmutableProp> chain = immutableType.getPropChain(columnName, strategy);
-                ValueParser.addEntityProp((DraftSpi) draft, chain, childNode, sqlClient);
+                ValueParser.addEntityProp((DraftSpi) draft, chain, childNode, parser);
             }
             for (ImmutableProp prop : immutableType.getProps().values()) {
                 if (prop.isMutable() && prop.isEmbedded(EmbeddedLevel.BOTH)) {

@@ -136,6 +136,12 @@ public class AssociationType extends AbstractImmutableTypeImpl {
         return props;
     }
 
+    @NotNull
+    @Override
+    public Map<String, ImmutableProp> getEntityProps() {
+        return props;
+    }
+
     @Override
     public Map<String, ImmutableProp> getSelectableProps() {
         return props;

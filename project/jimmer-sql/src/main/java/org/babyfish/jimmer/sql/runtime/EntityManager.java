@@ -321,15 +321,71 @@ public class EntityManager {
             String tableName,
             MetadataStrategy strategy
     ) {
-        Map<Key, ImmutableType> typeMap = data.getTypeMap(strategy);
-        return typeMap.get(
-                new Key(
-                        Objects.requireNonNull(microServiceName, "`microServiceName` cannot be null"),
-                        DatabaseIdentifiers.comparableIdentifier(
-                                Objects.requireNonNull(tableName, "`tableName` cannot be null")
-                        )
-                )
+        Objects.requireNonNull(microServiceName, "`microServiceName` cannot be null");
+        tableName = DatabaseIdentifiers.comparableIdentifier(
+                Objects.requireNonNull(tableName, "`tableName` cannot be null")
         );
+        try {
+            while (true) {
+                ImmutableType type = getTypeByServiceAndTableImpl(microServiceName, tableName, strategy);
+                if (type != null) {
+                    return type;
+                }
+                int index = tableName.indexOf('.');
+                if (index == -1) {
+                    break;
+                }
+                tableName = tableName.substring(index + 1);
+                if (tableName.isEmpty()) {
+                    break;
+                }
+            }
+        } catch (ConflictTableException ex) {
+            if (ex.searchedTableName.equals(tableName)) {
+                throw new IllegalArgumentException(
+                        "There are multiple types of tables named \"" +
+                                tableName +
+                                "\" in microservice \"" +
+                                microServiceName +
+                                "\": " +
+                                ex.conflictTypes
+                );
+            } else {
+                throw new IllegalArgumentException(
+                        "Trying to find the type of the table name \"" +
+                                tableName +
+                                "\" in microservice \"" +
+                                microServiceName +
+                                "\" failed, and turned to query table \"" +
+                                ex.searchedTableName +
+                                "\", but found these conflicting types: " +
+                                ex.conflictTypes
+                );
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private ImmutableType getTypeByServiceAndTableImpl(
+            String microServiceName,
+            String tableName,
+            MetadataStrategy strategy
+    ) throws ConflictTableException {
+        Map<Key, Object> typeMap = data.getTypeMap(strategy);
+        Object result = typeMap.get(
+                new Key(microServiceName, tableName)
+        );
+        if (result == null) {
+            return null;
+        }
+        if (result instanceof List<?>) {
+            throw new ConflictTableException(
+                    tableName,
+                    (List<ImmutableType>) result
+            );
+        }
+        return (ImmutableType) result;
     }
 
     @NotNull
@@ -431,7 +487,7 @@ public class EntityManager {
 
         final Map<String, ImmutableType> typeMapForSpringDevTools;
 
-        final MetaCache<Map<Key, ImmutableType>> typeMapCache =
+        final MetaCache<Map<Key, Object>> typeMapCache =
                 new MetaCache<>(this::createTypeMap);
 
         Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
@@ -439,11 +495,46 @@ public class EntityManager {
             this.typeMapForSpringDevTools = typeMapForSpringDevTools;
         }
 
-        public Map<Key, ImmutableType> getTypeMap(MetadataStrategy strategy) {
+        public Map<Key, Object> getTypeMap(MetadataStrategy strategy) {
             return typeMapCache.get(strategy);
         }
 
-        private Map<Key, ImmutableType> createTypeMap(MetadataStrategy strategy) {
+        @SuppressWarnings("unchecked")
+        private Map<Key, Object> createTypeMap(MetadataStrategy strategy) {
+
+            Map<Key, ImmutableType> rawTypeMap = createRawTypeMap(strategy);
+            Map<Key, Object> typeMap = new HashMap<>(rawTypeMap);
+
+            for (Map.Entry<Key, ImmutableType> e : rawTypeMap.entrySet()) {
+                String tableName = e.getKey().tableName;
+                while (true) {
+                    int index = tableName.indexOf('.');
+                    if (index == -1) {
+                        break;
+                    }
+                    tableName = tableName.substring(index + 1);
+                    if (tableName.isEmpty()) {
+                        break;
+                    }
+                    Key newKey = new Key(e.getKey().microServiceName, tableName);
+                    ImmutableType type = e.getValue();
+                    Object oldTypeOrList = typeMap.get(newKey);
+                    if (oldTypeOrList instanceof List<?>) {
+                        ((List<Object>)oldTypeOrList).add(type);
+                    } else if (oldTypeOrList != null) {
+                        List<Object> list = new ArrayList<>();
+                        list.add(oldTypeOrList);
+                        list.add(type);
+                        typeMap.put(newKey, list);
+                    } else {
+                        typeMap.put(newKey, type);
+                    }
+                }
+            }
+            return typeMap;
+        }
+
+        private Map<Key, ImmutableType> createRawTypeMap(MetadataStrategy strategy) {
             Map<Key, ImmutableType> typeMap = new HashMap<>();
             for (ImmutableType type : map.keySet()) {
                 if (!type.isEntity()) {
@@ -536,6 +627,18 @@ public class EntityManager {
                 }
             }
             return typeMap;
+        }
+    }
+
+    private static class ConflictTableException extends Exception {
+
+        final String searchedTableName;
+
+        final List<ImmutableType> conflictTypes;
+
+        private ConflictTableException(String searchedTableName, List<ImmutableType> conflictTypes) {
+            this.searchedTableName = searchedTableName;
+            this.conflictTypes = conflictTypes;
         }
     }
 }

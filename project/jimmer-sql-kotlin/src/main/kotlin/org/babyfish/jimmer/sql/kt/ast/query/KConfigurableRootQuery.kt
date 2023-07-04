@@ -25,6 +25,12 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
     @NewChain
     fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R>
 
+    /**
+     * @return If the original query does not have `order by` clause, returns null
+     */
+    @NewChain
+    fun reverseSorting(): KConfigurableRootQuery<E, R>?
+
     @NewChain
     fun forUpdate(forUpdate: Boolean = true): KConfigurableRootQuery<E, R>
 }

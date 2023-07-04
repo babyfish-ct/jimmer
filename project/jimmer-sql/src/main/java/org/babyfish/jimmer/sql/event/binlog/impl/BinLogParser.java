@@ -1,38 +1,45 @@
-package org.babyfish.jimmer.sql.event.binlog;
+package org.babyfish.jimmer.sql.event.binlog.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.babyfish.jimmer.meta.EmbeddedLevel;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.impl.util.PropCache;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 public class BinLogParser {
 
+    private final Map<String, BinLogPropReader> readerMap = new HashMap<>();
+
+    private final Map<Class<?>, BinLogPropReader> typeReaderMap = new HashMap<>();
+
+    private final PropCache<BinLogPropReader> readerCache = new PropCache<>(this::createReader, true);
+
     private ObjectMapper mapper;
 
     private JSqlClientImplementor sqlClient;
 
-    public BinLogParser initialize(JSqlClientImplementor sqlClient) {
-        return initialize(sqlClient, null);
-    }
-
-    public BinLogParser initialize(JSqlClientImplementor sqlClient, ObjectMapper mapper) {
+    public BinLogParser initialize(
+            JSqlClientImplementor sqlClient,
+            ObjectMapper mapper,
+            Map<ImmutableProp, BinLogPropReader> propReaderMap,
+            Map<Class<?>, BinLogPropReader> typePropReaderMap
+    ) {
         if (sqlClient == null) {
             throw new IllegalArgumentException("`sqlClient` cannot be null");
         }
@@ -40,11 +47,30 @@ public class BinLogParser {
                 new ObjectMapper(mapper) {} :
                 new ObjectMapper();
         clonedMapper
-                .registerModule(new BinLogModule(sqlClient))
+                .registerModule(new BinLogModule(this))
                 .registerModule(new JavaTimeModule());
         this.mapper = clonedMapper;
         this.sqlClient = sqlClient;
+        Map<String, BinLogPropReader> propNameReaderMap = new HashMap<>();
+        for (ImmutableType type : sqlClient.getEntityManager().getAllTypes(sqlClient.getMicroServiceName())) {
+            for (ImmutableProp prop : type.getEntityProps().values()) {
+                BinLogPropReader reader = reader(prop, propReaderMap);
+                if (reader != null) {
+                    propNameReaderMap.put(prop.toString(), reader);
+                }
+            }
+        }
+        this.readerMap.putAll(propNameReaderMap);
+        this.typeReaderMap.putAll(typePropReaderMap);
         return this;
+    }
+
+    public JSqlClientImplementor sqlClient() {
+        return sqlClient;
+    }
+
+    public BinLogPropReader reader(ImmutableProp prop) {
+        return readerCache.get(prop);
     }
 
     public <T> T parseEntity(@NotNull Class<T> type, String json) {
@@ -103,7 +129,7 @@ public class BinLogParser {
                                 (DraftSpi) draft,
                                 chain.subList(2, chain.size()),
                                 e.getValue(),
-                                sqlClient
+                                this
                         );
                     }
                 }
@@ -128,7 +154,7 @@ public class BinLogParser {
                                 (DraftSpi) draft,
                                 chain.subList(2, chain.size()),
                                 e.getValue(),
-                                sqlClient
+                                this
                         );
                     }
                 }
@@ -150,9 +176,9 @@ public class BinLogParser {
                 ImmutableProp prop = chain.get(0);
                 if (prop == sourceProp) {
                     sourceId = ValueParser.parseSingleValue(
-                            sqlClient,
+                            this,
                             e.getValue(),
-                            sourceIdProp.getElementClass(),
+                            sourceIdProp,
                             false
                     );
                     if (sourceId == null) {
@@ -164,9 +190,9 @@ public class BinLogParser {
                     }
                 } else if (prop == targetProp) {
                     targetId = ValueParser.parseSingleValue(
-                            sqlClient,
+                            this,
                             e.getValue(),
-                            targetIdProp.getElementClass(),
+                            targetIdProp,
                             false
                     );
                     if (targetId == null) {
@@ -210,5 +236,39 @@ public class BinLogParser {
 
     public <S, T> Tuple2<S, T> parseIdPair(@NotNull ImmutableProp prop, String json) {
         return parseIdPair(AssociationType.of(prop), json);
+    }
+
+    private static BinLogPropReader reader(
+            ImmutableProp prop,
+            Map<ImmutableProp, BinLogPropReader> configuredReaderMap
+    ) {
+        BinLogPropReader reader = configuredReaderMap.get(prop);
+        if (reader != null) {
+            return reader;
+        }
+        for (ImmutableType superType : prop.getDeclaringType().getSuperTypes()) {
+            ImmutableProp superProp = superType.getProps().get(prop.getName());
+            if (superProp != null) {
+                BinLogPropReader superReader = reader(superProp, configuredReaderMap);
+                if (reader == null) {
+                    reader = superReader;
+                } else if (!reader.equals(superReader)) {
+                    throw new ModelException(
+                            "Conflict super binlog reader for property \"" +
+                                    prop +
+                                    "\""
+                    );
+                }
+            }
+        }
+        return reader;
+    }
+
+    private BinLogPropReader createReader(ImmutableProp prop) {
+        BinLogPropReader reader = readerMap.get(prop.toString());
+        if (reader != null) {
+            return reader;
+        }
+        return typeReaderMap.get(prop.getElementClass());
     }
 }

@@ -1,3 +1,8 @@
+create schema if not exists A;
+create schema if not exists B;
+create schema if not exists C;
+create schema if not exists D;
+
 drop alias contains_id if exists;
 drop table category if exists;
 drop table post if exists;
@@ -29,27 +34,27 @@ drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
 drop sequence tree_node_id_seq if exists;
-drop table D if exists;
-drop table C if exists;
-drop table B if exists;
-drop table A if exists;
+drop table D.TABLE_ if exists;
+drop table C.TABLE_ if exists;
+drop table B.TABLE_ if exists;
+drop table A.TABLE_ if exists;
 
-create table A(
+create table A.TABLE_(
     id bigint not null primary key,
     deleted boolean not null
 );
 
-create table B(
+create table B.TABLE_(
     id bigint not null primary key,
     status varchar(7) not null
 );
 
-create table C(
+create table C.TABLE_(
     id bigint not null primary key,
     deleted_time datetime
 );
 
-create table D(
+create table D.TABLE_(
     id bigint not null primary key,
     created_time datetime
 );

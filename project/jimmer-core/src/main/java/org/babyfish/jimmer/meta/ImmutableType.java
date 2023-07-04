@@ -137,6 +137,9 @@ public interface ImmutableType {
     Map<String, ImmutableProp> getProps();
 
     @NotNull
+    Map<String, ImmutableProp> getEntityProps();
+
+    @NotNull
     ImmutableProp getProp(String name);
 
     @NotNull

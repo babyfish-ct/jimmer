@@ -10,13 +10,11 @@ import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
-import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
-import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
+import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -365,30 +363,23 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
         @Override
         public <T> Page<T> execute(ConfigurableRootQuery<?, T> query) {
-            if (pageSize == 0) {
-                return new PageImpl<>(query.execute());
-            }
-            long offset = (long)pageIndex * pageSize;
-            if (offset > Integer.MAX_VALUE - pageSize) {
-                throw new IllegalArgumentException("offset is too big");
-            }
-            int total = query.count();
-            List<T> content =
-                    query
-                            .limit(pageSize, (int)offset)
-                            .execute();
-            ConfigurableRootQueryImplementor<?, ?> queryImplementor = (ConfigurableRootQueryImplementor<?, ?>) query;
-            return new PageImpl<>(
-                    content,
-                    PageRequest.of(
-                            pageIndex,
-                            pageSize,
-                            Utils.toSort(
-                                    queryImplementor.getOrders(),
-                                    queryImplementor.getSqlClient().getMetadataStrategy()
-                            )
-                    ),
-                    total
+            return PagingQueries.execute(
+                    query,
+                    pageIndex,
+                    pageSize,
+                    (entities, totalCount, queryImplementor) ->
+                        new PageImpl<>(
+                                entities,
+                                PageRequest.of(
+                                        pageIndex,
+                                        pageSize,
+                                        Utils.toSort(
+                                                queryImplementor.getOrders(),
+                                                queryImplementor.getSqlClient().getMetadataStrategy()
+                                        )
+                                ),
+                                totalCount
+                        )
             );
         }
     }
