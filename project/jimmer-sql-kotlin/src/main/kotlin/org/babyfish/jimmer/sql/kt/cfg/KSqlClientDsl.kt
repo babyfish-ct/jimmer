@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.impl.JavaCustomizer
 import org.babyfish.jimmer.sql.kt.cfg.impl.JavaInitializer
@@ -187,6 +188,14 @@ class KSqlClientDsl internal constructor(
 
     fun setBinLogObjectMapper(mapper: ObjectMapper) {
         javaBuilder.setBinLogObjectMapper(mapper)
+    }
+
+    fun setBinLogPropReader(prop: KProperty1<*, *>, reader: BinLogPropReader) {
+        javaBuilder.setBinLogPropReader(prop.toImmutableProp(), reader)
+    }
+
+    fun setBinLogPropReader(type: KClass<*>, reader: BinLogPropReader) {
+        javaBuilder.setBinLogPropReader(type.java, reader)
     }
 
     /**
