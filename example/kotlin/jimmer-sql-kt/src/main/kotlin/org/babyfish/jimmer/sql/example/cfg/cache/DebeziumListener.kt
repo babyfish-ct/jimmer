@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.example.cfg.cache
 
-import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.sql.event.binlog.BinLog
@@ -8,6 +7,7 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
+import org.springframework.stereotype.Component
 
 
 // -----------------------------
@@ -18,12 +18,12 @@ import org.springframework.kafka.support.Acknowledgment
     name = ["spring.profiles.active"],
     havingValue = "debezium"
 )
+@Component
 class DebeziumListener(sqlClient: KSqlClient) {
 
     private val binLog: BinLog = sqlClient.binLog
 
     @KafkaListener(topicPattern = """debezium\..*""")
-    @Throws(JsonProcessingException::class)
     fun onDebeziumEvent(
         json: String,
         acknowledgment: Acknowledgment

@@ -4,15 +4,15 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:4001/jimmer_demo
+    url: jdbc:mysql://localhost:4200/jimmer_demo
     username: root
     password: 123456
   redis:
     host: localhost
-    port: 4004
+    port: 4400
   kafka:
     consumer:
-      bootstrap-servers: localhost:4003
+      bootstrap-servers: localhost:4100
       group-id: jimmer-demo/sql-kt
       enable-auto-commit: false
       auto-offset-reset: latest

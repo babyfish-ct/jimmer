@@ -22,7 +22,7 @@ class MaxwellListener(sqlClient: KSqlClient) {
     private val binLog: BinLog = sqlClient.binLog
 
     @KafkaListener(topics = ["maxwell"])
-    fun onHandle(
+    fun onMaxwellEvent(
         json: String,
         acknowledgment: Acknowledgment
     ) {

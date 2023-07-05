@@ -21,3 +21,4 @@ spring:
 
 jimmer:
   dialect: org.babyfish.jimmer.sql.dialect.PostgresDialect
+  database-validation-mode: NONE
