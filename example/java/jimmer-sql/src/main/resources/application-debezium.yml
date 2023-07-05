@@ -3,16 +3,16 @@
 
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:4001/jimmer_demo
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5200/jimmer_demo
     username: root
     password: 123456
   redis:
     host: localhost
-    port: 4004
+    port: 5400
   kafka:
     consumer:
-      bootstrap-servers: localhost:4003
+      bootstrap-servers: localhost:5100
       group-id: jimmer-demo/sql
       enable-auto-commit: false
       auto-offset-reset: latest

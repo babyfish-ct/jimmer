@@ -4,7 +4,7 @@
                         "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
                         "plugin.name": "pgoutput",
                         "tasks.max": "1",
-                        "database.hostname": "db",
+                        "database.hostname": "postgres",
                         "database.port": "5432",
                         "database.dbname": "jimmer_demo",
                         "database.user": "root",

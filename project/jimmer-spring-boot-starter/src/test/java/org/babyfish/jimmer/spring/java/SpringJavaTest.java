@@ -73,7 +73,7 @@ import java.util.List;
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
         "spring.application.name=java-client",
         "jimmer.clients.first.ts.path=/my-ts1.zip",
-        "jimmer.clients.seond.ts.path=/my-ts2.zip"
+        "jimmer.clients.second.ts.path=/my-ts2.zip"
 })
 @SpringBootConfiguration
 @AutoConfigurationPackage
@@ -437,12 +437,12 @@ public class SpringJavaTest extends AbstractTest {
                 "select count(tb_1_.ID) " +
                         "from BOOK tb_1_ " +
                         "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
-                        "where lower(tb_1_.NAME) like ? " +
+                        "where tb_1_.NAME ilike ? " +
                         "and tb_2_.NAME = ?",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
                         "from BOOK tb_1_ " +
                         "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
-                        "where lower(tb_1_.NAME) like ? " +
+                        "where tb_1_.NAME ilike ? " +
                         "and tb_2_.NAME = ? " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                         "limit ?",

@@ -1,35 +1,30 @@
+create database jimmer_demo;
+use jimmer_demo;
+
 create table book_store(
-    id bigserial not null,
-    name text not null,
-    website text,
-    created_time timestamp not null,
-    modified_time timestamp not null
-);
-alter sequence book_store_id_seq restart with 100;
-alter table book_store
-    add constraint pk_book_store
-        primary key(id)
-;
+    id bigint unsigned not null auto_increment primary key,
+    name varchar(50) not null,
+    website varchar(100),
+    created_time datetime not null,
+    modified_time datetime not null
+) engine=innodb;
+alter table book_store auto_increment = 100;
 alter table book_store
     add constraint business_key_book_store
         unique(name)
 ;
 
 create table book(
-    id bigserial not null,
-    name text not null,
+    id bigint unsigned not null auto_increment primary key,
+    name varchar(50) not null,
     edition integer not null,
     price numeric(10, 2) not null,
-    store_id bigint,
-    tenant text not null,
-    created_time timestamp not null,
-    modified_time timestamp not null 
-);
-alter sequence book_id_seq restart with 100;
-alter table book
-    add constraint pk_book
-        primary key(id)
-;
+    store_id bigint unsigned,
+    tenant varchar(20) not null,
+    created_time datetime not null,
+    modified_time datetime not null 
+) engine=innodb;
+alter table book auto_increment = 100;
 alter table book
     add constraint business_key_book
         unique(name, edition)
@@ -41,18 +36,14 @@ alter table book
 ;
 
 create table author(
-    id bigserial not null,
-    first_name text not null,
-    last_name text not null,
+    id bigint unsigned not null auto_increment primary key,
+    first_name varchar(25) not null,
+    last_name varchar(25) not null,
     gender char(1) not null,
-    created_time timestamp not null,
-    modified_time timestamp not null 
-);
-alter sequence author_id_seq restart with 100;
-alter table author
-    add constraint pk_author
-        primary key(id)
-;
+    created_time datetime not null,
+    modified_time datetime not null 
+) engine=innodb;
+alter table author auto_increment = 100;
 alter table author
     add constraint business_key_author
         unique(first_name, last_name)
@@ -62,9 +53,9 @@ alter table author
         check (gender in('M', 'F'));
 
 create table book_author_mapping(
-    book_id bigint not null,
-    author_id bigint not null
-);
+    book_id bigint unsigned not null,
+    author_id bigint unsigned not null
+) engine=innodb;
 alter table book_author_mapping
     add constraint pk_book_author_mapping
         primary key(book_id, author_id)
@@ -83,17 +74,13 @@ alter table book_author_mapping
 ;
 
 create table tree_node(
-    node_id bigserial not null,
-    name text not null,
-    parent_id bigint,
-    created_time timestamp not null,
-    modified_time timestamp not null 
-);
-alter sequence tree_node_node_id_seq restart with 100;
-alter table tree_node
-    add constraint pk_tree_node
-        primary key(node_id)
-;
+    node_id bigint unsigned not null auto_increment primary key,
+    name varchar(20) not null,
+    parent_id bigint unsigned,
+    created_time datetime not null,
+    modified_time datetime not null 
+) engine=innodb;
+alter table tree_node auto_increment = 100;
 alter table tree_node
     add constraint business_key_tree_node
         unique(parent_id, name);

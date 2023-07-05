@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cfg;
+package org.babyfish.jimmer.sql.example.cfg.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,7 +15,10 @@ import org.springframework.stereotype.Component;
 // If you are a beginner, please ignore this class,
 // for non-cache mode, this class will never be used.
 // -----------------------------
-@ConditionalOnProperty("spring.redis.host")
+@ConditionalOnProperty(
+        name = "spring.profiles.active",
+        havingValue = "maxwell"
+)
 @Component
 public class MaxwellListener {
 
@@ -49,21 +52,5 @@ public class MaxwellListener {
                 break;
         }
         acknowledgment.acknowledge();
-    }
-
-    @KafkaListener(topicPattern = "debezium.*")
-    public void onDebeziumEvent(
-            String json,
-            Acknowledgment acknowledgment
-    ) {
-        System.out.println(json);
-    }
-
-    @KafkaListener(topics = "debezium")
-    public void onDebeziumEvent2(
-            String json,
-            Acknowledgment acknowledgment
-    ) {
-        System.out.println(json);
     }
 }

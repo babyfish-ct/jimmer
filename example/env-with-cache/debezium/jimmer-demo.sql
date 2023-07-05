@@ -183,3 +183,10 @@ insert into tree_node(
                     (23, 'Suit', 22, now(), now()),
                     (24, 'Shirt', 22, now(), now())
 ;
+
+alter system set wal_level = 'logical';
+alter table book_store replica identity full;
+alter table book replica identity full;
+alter table author replica identity full;
+alter table book_author_mapping replica identity full;
+alter table tree_node replica identity full;

@@ -55,6 +55,8 @@ public interface Dialect {
         return true;
     }
 
+    default boolean isIgnoreCaseLikeSupported() { return false; }
+
     default int resolveUnknownJdbcType(Class<?> sqlType) {
         return Types.OTHER;
     }

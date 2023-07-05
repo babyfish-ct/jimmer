@@ -76,14 +76,19 @@ class LikePredicate extends AbstractPredicate {
         if (pattern.equals("%")) {
             builder.sql("1 = 1");
         } else {
-            if (insensitive) {
+            boolean ignoreCaseLikeSupported = builder.getAstContext().getSqlClient().getDialect().isIgnoreCaseLikeSupported();
+            if (insensitive && !ignoreCaseLikeSupported) {
                 builder.sql("lower(");
                 renderChild((Ast) expression, builder);
                 builder.sql(")");
             } else {
                 renderChild((Ast) expression, builder);
             }
-            builder.sql(negative ? " not like " : " like ");
+            if (insensitive && ignoreCaseLikeSupported) {
+                builder.sql(negative ? " not ilike " : " ilike ");
+            } else {
+                builder.sql(negative ? " not like " : " like ");
+            }
             builder.variable(pattern);
         }
     }

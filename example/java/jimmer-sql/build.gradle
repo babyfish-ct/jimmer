@@ -30,10 +30,13 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.5.3.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
 
+    implementation 'org.apache.kafka:connect-api:0.10.0.0'
+
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
     runtimeOnly 'mysql:mysql-connector-java:8.0.30'
+    runtimeOnly 'org.postgresql:postgresql:42.6.0'
     runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
     runtimeOnly 'com.github.ben-manes.caffeine:caffeine:2.9.1'
 }
