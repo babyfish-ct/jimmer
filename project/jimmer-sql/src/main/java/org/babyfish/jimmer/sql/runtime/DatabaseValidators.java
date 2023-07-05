@@ -7,12 +7,14 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DatabaseValidationIgnore;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.*;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class DatabaseValidators {
@@ -298,6 +300,21 @@ public class DatabaseValidators {
     }
 
     private Set<Table> tablesOf(String catalogName, String schemaName, String tableName) throws SQLException {
+        Set<Tuple3<String, String, String>> tuples = new LinkedHashSet<>();
+        new TableNameCollector(
+                new String[] { catalogName, schemaName, tableName },
+                arr -> tuples.add(new Tuple3<>(arr[0], arr[1], arr[2]))
+        ).emit();
+        for (Tuple3<String, String, String> tuple : tuples) {
+            Set<Table> tables = tablesOf0(tuple.get_1(), tuple.get_2(), tuple.get_3());
+            if (!tables.isEmpty()) {
+                return tables;
+            }
+        }
+        return Collections.emptySet();
+    }
+
+    private Set<Table> tablesOf0(String catalogName, String schemaName, String tableName) throws SQLException {
         Set<Table> tables = new LinkedHashSet<>();
         try (ResultSet rs = con.getMetaData().getTables(
                 catalogName,
@@ -315,46 +332,11 @@ public class DatabaseValidators {
                 );
             }
         }
-        if (tables.isEmpty()) {
-            try (ResultSet rs = con.getMetaData().getTables(
-                    catalogName,
-                    schemaName,
-                    tableName,
-                    null
-            )) {
-                while (rs.next()) {
-                    tables.add(
-                            new Table(
-                                    rs.getString("TABLE_CAT").toUpperCase(),
-                                    rs.getString("TABLE_SCHEM").toUpperCase(),
-                                    rs.getString("TABLE_NAME").toUpperCase()
-                            )
-                    );
-                }
-            }
-        }
-        if (tables.isEmpty()) {
-            try (ResultSet rs = con.getMetaData().getTables(
-                    catalogName,
-                    schemaName,
-                    tableName,
-                    null
-            )) {
-                while (rs.next()) {
-                    tables.add(
-                            new Table(
-                                    rs.getString("TABLE_CAT"),
-                                    rs.getString("TABLE_SCHEM"),
-                                    rs.getString("TABLE_NAME").toUpperCase()
-                            )
-                    );
-                }
-            }
-        }
         if (catalog != null && !catalog.isEmpty()) {
             return tables
                     .stream()
-                    .filter(it -> it.catalog == null || it.catalog.equalsIgnoreCase(catalog))
+                    .filter(it -> it.catalog == null || catalogName == null || it.catalog.equalsIgnoreCase(catalog))
+                    .filter(it -> it.schema == null || catalogName == null || it.schema.equalsIgnoreCase(schemaName))
                     .collect(Collectors.toSet());
         }
         return tables;
@@ -371,7 +353,7 @@ public class DatabaseValidators {
             while (rs.next()) {
                 Column column = new Column(
                         table,
-                        rs.getString("COLUMN_NAME"),
+                        rs.getString("COLUMN_NAME").toUpperCase(),
                         rs.getInt("NULLABLE") == DatabaseMetaData.columnNullable
                 );
                 columnMap.put(column.name.toUpperCase(), column);
@@ -404,18 +386,18 @@ public class DatabaseValidators {
                 table.name
         )) {
             while (rs.next()) {
-                String constraintName = rs.getString("FK_NAME");
+                String constraintName = rs.getString("FK_NAME").toUpperCase();
                 Table referencedTable = tablesOf(
-                        rs.getString("PKTABLE_CAT"),
-                        rs.getString("PKTABLE_SCHEM"),
-                        rs.getString("PKTABLE_NAME")
+                        upper(rs.getString("PKTABLE_CAT")),
+                        upper(rs.getString("PKTABLE_SCHEM")),
+                        rs.getString("PKTABLE_NAME").toUpperCase()
                 ).iterator().next();
-                String columnName = rs.getString("FKCOLUMN_NAME").toUpperCase();
-                String referencedColumnName = rs.getString("PKCOLUMN_NAME").toUpperCase();
+                String columnName = upper(rs.getString("FKCOLUMN_NAME"));
+                String referencedColumnName = upper(rs.getString("PKCOLUMN_NAME"));
                 map.computeIfAbsent(
                         new Tuple2<>(constraintName, referencedTable),
-                        it -> new LinkedHashMap<>()).put(columnName, referencedColumnName
-                );
+                        it -> new LinkedHashMap<>()
+                ).put(columnName, referencedColumnName);
             }
         }
         if (map.isEmpty()) {
@@ -442,12 +424,19 @@ public class DatabaseValidators {
         return foreignKeyMap;
     }
 
+    private static String upper(String text) {
+        return text == null ? null : text.toUpperCase();
+    }
+
     private static class Table {
 
+        // keep the same case
         final String catalog;
 
+        // keep the same case
         final String schema;
 
+        // keep the same case
         final String name;
 
         final Map<String, Column> columnMap;
@@ -542,25 +531,29 @@ public class DatabaseValidators {
 
         final Table table;
 
+        // Always capitalized
         final String name;
 
         final boolean nullable;
 
         private Column(Table table, String name, boolean nullable) {
             this.table = table;
-            this.name = name;
+            this.name = name.toUpperCase();
             this.nullable = nullable;
         }
     }
 
     private static class ForeignKey {
 
+        // Always capitalized
         final String constraintName;
 
+        // Always capitalized
         final Set<String> columnNames;
 
         final Table referencedTable;
 
+        // Always capitalized
         final Set<String> referenceColumNames;
 
         ForeignKey(
@@ -615,6 +608,52 @@ public class DatabaseValidators {
             this.databaseValidators = databaseValidators;
             this.type = type;
             this.prop = prop;
+        }
+    }
+
+    private class TableNameCollector {
+
+        private final String[] originalNames;
+
+        private final String[] currentNames;
+
+        private final Consumer<String[]> emitter;
+
+        private TableNameCollector(String[] originalNames, Consumer<String[]> emitter) {
+            this.originalNames = originalNames;
+            this.currentNames = new String[originalNames.length];
+            this.emitter = emitter;
+        }
+
+        public void emit() {
+            emit(0);
+        }
+
+        private void emit(int depth) {
+
+            String text = originalNames[depth];
+            currentNames[depth] = text;
+            if (depth + 1 < originalNames.length) {
+                emit(depth + 1);
+            } else {
+                emitter.accept(currentNames);
+            }
+
+            if (text != null && !text.isEmpty()) {
+                currentNames[depth] = text.toUpperCase();
+                if (depth + 1 < originalNames.length) {
+                    emit(depth + 1);
+                } else {
+                    emitter.accept(currentNames);
+                }
+
+                currentNames[depth] = text.toLowerCase();
+                if (depth + 1 < originalNames.length) {
+                    emit(depth + 1);
+                } else {
+                    emitter.accept(currentNames);
+                }
+            }
         }
     }
 }

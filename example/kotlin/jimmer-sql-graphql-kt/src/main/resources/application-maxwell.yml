@@ -1,0 +1,23 @@
+## The profile with cache requires mysql, redis, zookeeper, kafka and maxwell.
+## You can run `<jimmer_home>/example/env-with-cache/maxwell/install.sh` to install them in docker
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:4200/jimmer_demo
+    username: root
+    password: 123456
+  redis:
+    host: localhost
+    port: 4400
+  kafka:
+    consumer:
+      bootstrap-servers: localhost:4100
+      group-id: jimmer-demo/sql-graphql-kt
+      enable-auto-commit: false
+      auto-offset-reset: latest
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+jimmer:
+  dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect

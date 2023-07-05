@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.function.BiFunction;
@@ -46,6 +47,13 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
 
     @NewChain
     ConfigurableRootQuery<T, R> withoutSortingAndPaging();
+
+    /**
+     * @return If the original query does not have `order by` clause, returns null
+     */
+    @NewChain
+    @Nullable
+    ConfigurableRootQuery<T, R> reverseSorting();
 
     @NewChain
     default ConfigurableRootQuery<T, R> forUpdate() {

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
-import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.ast.impl.query.ConfigurableRootQueryImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery
@@ -37,6 +36,11 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
 
     override fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.withoutSortingAndPaging())
+
+    override fun reverseSorting(): KConfigurableRootQuery<E, R>? =
+        javaQuery.reverseSorting()?.let {
+            KConfigurableRootQueryImpl(it)
+        }
 
     override fun forUpdate(forUpdate: Boolean): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.forUpdate(forUpdate))

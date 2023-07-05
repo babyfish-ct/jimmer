@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -11,12 +12,13 @@ import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
-import org.babyfish.jimmer.sql.cache.TransactionCacheOperator;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
-import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
+import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
+import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.filter.BuiltInFilters;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -41,9 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -578,6 +578,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private ObjectMapper binLogObjectMapper;
 
+        private Map<ImmutableProp, BinLogPropReader> binLogPropReaderMap = new HashMap<>();
+
+        private Map<Class<?>, BinLogPropReader> typeBinLogPropReaderMap = new HashMap<>();
+
         private boolean isForeignKeyEnabledByDefault = true;
 
         private final Set<Customizer> customizers = new LinkedHashSet<>();
@@ -933,6 +937,56 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setBinLogPropReader(ImmutableProp prop, BinLogPropReader reader) {
+            if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for embedded property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (!prop.isScalar(TargetLevel.ENTITY)) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for non-scalar property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (!prop.isColumnDefinition()) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for property \"" +
+                                prop +
+                                "\" which is not column definition"
+                );
+            }
+            if (prop instanceof AssociationProp) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for association property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            binLogPropReaderMap.put(prop, reader);
+            return this;
+        }
+
+        @Override
+        public Builder setBinLogPropReader(TypedProp.Scalar<?, ?> prop, BinLogPropReader reader) {
+            return setBinLogPropReader(prop.unwrap(), reader);
+        }
+
+        @Override
+        public Builder setBinLogPropReader(Class<?> propType, BinLogPropReader reader) {
+            if (propType == void.class) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for void type"
+                );
+            }
+            typeBinLogPropReaderMap.put(propType, reader);
+            return this;
+        }
+
+        @Override
         public Builder setForeignKeyEnabledByDefault(boolean enabled) {
             this.isForeignKeyEnabledByDefault = enabled;
             return this;
@@ -1047,7 +1101,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     filterManager
             );
             BinLogParser binLogParser = new BinLogParser();
-            BinLog binLog = new BinLog(
+            BinLog binLog = new BinLogImpl(
                     entityManager(),
                     microServiceName,
                     metadataStrategy,
@@ -1087,7 +1141,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             );
             CachesImpl.initialize(caches, sqlClient);
             filterManager.initialize(sqlClient);
-            binLogParser.initialize(sqlClient, binLogObjectMapper);
+            binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
             transientResolverManager.initialize(sqlClient);
             for (Initializer initializer : initializers) {
                 try {

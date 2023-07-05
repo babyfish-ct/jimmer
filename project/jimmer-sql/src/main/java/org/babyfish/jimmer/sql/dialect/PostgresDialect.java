@@ -47,6 +47,11 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
+    public boolean isIgnoreCaseLikeSupported() {
+        return true;
+    }
+
+    @Override
     public int resolveUnknownJdbcType(Class<?> sqlType) {
         if (sqlType.getName().equals("org.postgresql.util.PGobject")) {
             return Types.NULL;

@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     public <X> ConfigurableRootQuery<T, X> reselect(
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, X>> block
     ) {
-        if (getData().getOldSelections() != null) {
+        if (getData().oldSelections != null) {
             throw new IllegalStateException("The current query has been reselected, it cannot be reselect again");
         }
         MutableRootQueryImpl<T> baseQuery = getBaseQuery();
@@ -55,7 +56,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         AstVisitor visitor = new ReselectValidator(astContext);
         astContext.pushStatement(baseQuery);
         try {
-            for (Selection<?> selection : getData().getSelections()) {
+            for (Selection<?> selection : getData().selections) {
                 Ast.from(selection, visitor.getAstContext()).accept(visitor);
             }
         } finally {
@@ -65,7 +66,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 baseQuery,
                 baseQuery.getTable()
         );
-        List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>)reselected).getData().getSelections();
+        List<Selection<?>> selections = ((ConfigurableRootQueryImpl<T, X>)reselected).getData().selections;
         return new ConfigurableRootQueryImpl<>(
                 getData().reselect(selections),
                 baseQuery
@@ -75,7 +76,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public ConfigurableRootQuery<T, R> distinct() {
         TypedQueryData data = getData();
-        if (data.isDistinct()) {
+        if (data.distinct) {
             return this;
         }
         return new ConfigurableRootQueryImpl<>(
@@ -87,7 +88,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public ConfigurableRootQuery<T, R> limit(int limit, int offset) {
         TypedQueryData data = getData();
-        if (data.getLimit() == limit && data.getOffset() == offset) {
+        if (data.limit == limit && data.offset == offset) {
             return this;
         }
         if (limit < 0) {
@@ -108,11 +109,27 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public ConfigurableRootQuery<T, R> withoutSortingAndPaging() {
         TypedQueryData data = getData();
-        if (data.isWithoutSortingAndPaging()) {
+        if (data.withoutSortingAndPaging) {
             return this;
         }
         return new ConfigurableRootQueryImpl<>(
                 data.withoutSortingAndPaging(),
+                getBaseQuery()
+        );
+    }
+
+    @Override
+    @Nullable
+    public ConfigurableRootQuery<T, R> reverseSorting() {
+        TypedQueryData data = this.getData();
+        if (data.reverseSorting) {
+            return this;
+        }
+        if (getBaseQuery().getOrders().isEmpty()) {
+            return null;
+        }
+        return new ConfigurableRootQueryImpl<>(
+                data.reverseSorting(),
                 getBaseQuery()
         );
     }
@@ -133,7 +150,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     public List<R> execute() {
         return getBaseQuery()
                 .getSqlClient()
-                .getSlaveConnectionManager(getData().isForUpdate())
+                .getSlaveConnectionManager(getData().forUpdate)
                 .execute(this::executeImpl);
     }
 
@@ -144,13 +161,13 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         }
         return getBaseQuery()
                 .getSqlClient()
-                .getSlaveConnectionManager(getData().isForUpdate())
+                .getSlaveConnectionManager(getData().forUpdate)
                 .execute(this::executeImpl);
     }
 
     private List<R> executeImpl(Connection con) {
         TypedQueryData data = getData();
-        if (data.getLimit() == 0) {
+        if (data.limit == 0) {
             return Collections.emptyList();
         }
         JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
@@ -161,7 +178,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 sqlResult.get_3(),
-                data.getSelections(),
+                data.selections,
                 getBaseQuery().getPurpose()
         );
     }
@@ -179,7 +196,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     @Override
     public void forEach(Connection con, int batchSize, Consumer<R> consumer) {
         TypedQueryData data = getData();
-        if (data.getLimit() == 0) {
+        if (data.limit == 0) {
             return;
         }
         JSqlClientImplementor sqlClient = getBaseQuery().getSqlClient();
@@ -187,7 +204,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         if (con != null) {
             forEachImpl(con, finalBatchSize, consumer);
         } else {
-            sqlClient.getSlaveConnectionManager(getData().isForUpdate()).execute(newConn -> {
+            sqlClient.getSlaveConnectionManager(getData().forUpdate).execute(newConn -> {
                 forEachImpl(newConn, finalBatchSize, consumer);
                 return (Void) null;
             });
@@ -203,7 +220,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
                 sqlResult.get_1(),
                 sqlResult.get_2(),
                 sqlResult.get_3(),
-                getData().getSelections(),
+                getData().selections,
                 getBaseQuery().getPurpose(),
                 batchSize,
                 consumer
@@ -239,7 +256,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
 
     @Override
     public boolean isForUpdate() {
-        return getData().isForUpdate();
+        return getData().forUpdate;
     }
 
     @Override

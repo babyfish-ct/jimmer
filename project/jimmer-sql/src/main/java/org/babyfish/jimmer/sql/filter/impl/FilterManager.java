@@ -35,9 +35,9 @@ public class FilterManager implements Filters {
 
     private final Set<Filter<?>> disabledFilters;
 
-    private final Map<ImmutableType, List<Filter<Props>>> filterMap;
+    private final Map<String, List<Filter<Props>>> filterMap;
 
-    private final Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap;
+    private final Map<String, List<Filter<Props>>> allCacheableFilterMap;
 
     private final TypeCache<Filter<Props>> cache =
             new TypeCache<>(this::create, true);
@@ -71,8 +71,8 @@ public class FilterManager implements Filters {
             BuiltInFilters builtIns,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
-            Map<ImmutableType, List<Filter<Props>>> filterMap,
-            Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap
+            Map<String, List<Filter<Props>>> filterMap,
+            Map<String, List<Filter<Props>>> allCacheableFilterMap
     ) {
         this.builtIns = builtIns;
         this.allFilters = filters;
@@ -260,7 +260,7 @@ public class FilterManager implements Filters {
 
     public boolean contains(ImmutableType type) {
         for (ImmutableType t : type.getAllTypes()) {
-            if (filterMap.containsKey(t)) {
+            if (filterMap.containsKey(t.toString())) {
                 // No matter enabled or disabled
                 return true;
             }
@@ -281,7 +281,7 @@ public class FilterManager implements Filters {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
         if (type != null) {
             for (ImmutableType t : type.getAllTypes()) {
-                List<Filter<Props>> list = filterMap.get(t);
+                List<Filter<Props>> list = filterMap.get(t.toString());
                 if (list != null) {
                     for (Filter<Props> filter : list) {
                         if ((!shardingOnly || filter instanceof ShardingFilter<?>) &&
@@ -307,7 +307,7 @@ public class FilterManager implements Filters {
     private List<Filter<Props>> createAllCacheable(ImmutableType type) {
         List<Filter<Props>> filters = new ArrayList<>();
         for (ImmutableType t : type.getAllTypes()) {
-            List<Filter<Props>> list = allCacheableFilterMap.get(t);
+            List<Filter<Props>> list = allCacheableFilterMap.get(t.toString());
             if (list != null) {
                 for (Filter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
@@ -445,16 +445,16 @@ public class FilterManager implements Filters {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<ImmutableType, List<Filter<Props>>> filterMap(
+    private static Map<String, List<Filter<Props>>> filterMap(
             Collection<Filter<?>> filters,
             Collection<Filter<?>> disabledFilters
     ) {
-        Map<ImmutableType, List<Filter<Props>>> map = new HashMap<>();
+        Map<String, List<Filter<Props>>> map = new HashMap<>();
         for (Filter<?> filter : filters) {
             if (filter != null && !disabledFilters.contains(filter)) {
                 ImmutableType immutableType = getImmutableType(filter);
                 map
-                        .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                        .computeIfAbsent(immutableType.toString(), it -> new ArrayList<>())
                         .add((Filter<Props>) filter);
             }
         }
@@ -667,7 +667,7 @@ public class FilterManager implements Filters {
         Set<ImmutableType> affectTypes = new HashSet<>();
         for (ImmutableType type : allTypes) {
             for (ImmutableType upcastType : type.getAllTypes()) {
-                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType)) {
+                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType.toString())) {
                     affectTypes.add(type);
                     break;
                 }

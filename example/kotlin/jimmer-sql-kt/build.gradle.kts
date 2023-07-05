@@ -9,7 +9,7 @@ plugins {
 	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
-val jimmerVersion = "0.7.107"
+val jimmerVersion = "0.7.112"
 
 group = "org.babyfish.jimmer.example.kt"
 version = jimmerVersion
@@ -24,6 +24,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.data:spring-data-redis")
 	implementation("org.springframework.kafka:spring-kafka:2.9.0")
+	implementation("org.apache.kafka:connect-api:0.10.0.0")
 
 	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}")
 	ksp("org.babyfish.jimmer:jimmer-ksp:${jimmerVersion}")
@@ -39,6 +40,7 @@ dependencies {
 
 	runtimeOnly("com.h2database:h2:2.1.212")
 	runtimeOnly("mysql:mysql-connector-java:8.0.30")
+	runtimeOnly("org.postgresql:postgresql:42.6.0")
 	runtimeOnly("io.lettuce:lettuce-core:6.2.0.RELEASE")
 	runtimeOnly("com.github.ben-manes.caffeine:caffeine:2.9.1")
 

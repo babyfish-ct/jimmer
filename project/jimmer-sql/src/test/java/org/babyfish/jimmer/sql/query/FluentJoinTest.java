@@ -99,7 +99,7 @@ public class FluentJoinTest extends AbstractQueryTest {
                                     "inner join BOOK tb_2_ on tb_1_.ID = tb_2_.STORE_ID " +
                                     "inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.BOOK_ID " +
                                     "inner join AUTHOR tb_4_ on tb_3_.AUTHOR_ID = tb_4_.ID " +
-                                    "where tb_2_.PRICE >= ? and tb_2_.PRICE <= ? and lower(tb_4_.FIRST_NAME) like ?"
+                                    "where tb_2_.PRICE >= ? and tb_2_.PRICE <= ? and tb_4_.FIRST_NAME ilike ?"
                     );
                     ctx.variables(
                             new BigDecimal(20), new BigDecimal(30), "%alex%"
@@ -143,7 +143,7 @@ public class FluentJoinTest extends AbstractQueryTest {
                                     "inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID " +
                                     "inner join BOOK tb_3_ on tb_2_.BOOK_ID = tb_3_.ID " +
                                     "inner join BOOK_STORE tb_4_ on tb_3_.STORE_ID = tb_4_.ID " +
-                                    "where tb_3_.PRICE >= ? and tb_3_.PRICE <= ? and lower(tb_4_.NAME) like ?"
+                                    "where tb_3_.PRICE >= ? and tb_3_.PRICE <= ? and tb_4_.NAME ilike ?"
                     );
                     ctx.variables(new BigDecimal(20), new BigDecimal(30), "%manning%");
                 }
@@ -281,7 +281,7 @@ public class FluentJoinTest extends AbstractQueryTest {
                                     "from BOOK tb_1_ " +
                                     "left join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.STORE_ID is not null " +
-                                    "or lower(tb_2_.NAME) like ?"
+                                    "or tb_2_.NAME ilike ?"
                     );
                     ctx.variables("%manning%");
                 }

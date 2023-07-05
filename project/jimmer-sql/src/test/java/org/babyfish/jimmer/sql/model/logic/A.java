@@ -1,10 +1,9 @@
 package org.babyfish.jimmer.sql.model.logic;
 
-import org.babyfish.jimmer.sql.Entity;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.LogicalDeleted;
+import org.babyfish.jimmer.sql.*;
 
 @Entity
+@Table(name ="A.TABLE_")
 public interface A {
 
     @Id

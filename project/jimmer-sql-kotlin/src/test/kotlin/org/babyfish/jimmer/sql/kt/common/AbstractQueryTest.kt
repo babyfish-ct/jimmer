@@ -7,6 +7,7 @@ import java.util.function.Consumer
 import kotlin.math.max
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.expect
 
 abstract class AbstractQueryTest : AbstractTest() {
 
@@ -135,6 +136,23 @@ abstract class AbstractQueryTest : AbstractTest() {
         fun rows(count: Int): QueryTestContext<R> {
             assertEquals(count, rows.size)
             return this
+        }
+    }
+
+    companion object {
+
+        @JvmStatic
+        protected fun  expectJson(
+            json: String,
+            obj: Any
+        ) {
+            expect(
+                json.replace("--->", "")
+                    .replace("\r", "")
+                    .replace("\n", "")
+            ) {
+                obj.toString()
+            }
         }
     }
 }

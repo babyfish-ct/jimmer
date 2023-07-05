@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.common;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
+import org.babyfish.jimmer.sql.dialect.H2Dialect;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.Executable;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
@@ -80,6 +81,7 @@ public class AbstractTest {
     protected JSqlClient getSqlClient(Consumer<JSqlClient.Builder> block) {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
                 .setExecutor(new ExecutorImpl())
+                .setDialect(new H2Dialect())
                 .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setTransientResolverProvider(
                         new DefaultTransientResolverProvider() {
