@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.7.110"
+    jimmerVersion = "0.7.111"
 }
 
 group 'org.babyfish.jimmer.example.sql'
@@ -20,6 +20,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.data:spring-data-redis'
     implementation 'org.springframework.kafka:spring-kafka:2.9.0'
+    implementation 'org.apache.kafka:connect-api:0.10.0.0'
 
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
@@ -29,8 +30,6 @@ dependencies {
 
     implementation 'org.mapstruct:mapstruct:1.5.3.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-
-    implementation 'org.apache.kafka:connect-api:0.10.0.0'
 
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
 

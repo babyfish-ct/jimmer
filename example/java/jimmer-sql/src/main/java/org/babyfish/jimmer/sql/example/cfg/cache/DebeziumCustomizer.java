@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
 
+// -----------------------------
+// If you are a beginner, please ignore this class,
+// for non-cache mode, this class will never be used.
+// -----------------------------
 @ConditionalOnProperty(
         name = "spring.profiles.active",
         havingValue = "debezium"

@@ -388,12 +388,12 @@ public class DatabaseValidators {
             while (rs.next()) {
                 String constraintName = rs.getString("FK_NAME").toUpperCase();
                 Table referencedTable = tablesOf(
-                        rs.getString("PKTABLE_CAT").toUpperCase(),
-                        rs.getString("PKTABLE_SCHEM").toUpperCase(),
+                        upper(rs.getString("PKTABLE_CAT")),
+                        upper(rs.getString("PKTABLE_SCHEM")),
                         rs.getString("PKTABLE_NAME").toUpperCase()
                 ).iterator().next();
-                String columnName = rs.getString("FKCOLUMN_NAME").toUpperCase();
-                String referencedColumnName = rs.getString("PKCOLUMN_NAME").toUpperCase();
+                String columnName = upper(rs.getString("FKCOLUMN_NAME"));
+                String referencedColumnName = upper(rs.getString("PKCOLUMN_NAME"));
                 map.computeIfAbsent(
                         new Tuple2<>(constraintName, referencedTable),
                         it -> new LinkedHashMap<>()
@@ -422,6 +422,10 @@ public class DatabaseValidators {
             );
         }
         return foreignKeyMap;
+    }
+
+    private static String upper(String text) {
+        return text == null ? null : text.toUpperCase();
     }
 
     private static class Table {

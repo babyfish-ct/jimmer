@@ -36,6 +36,7 @@ docker run \
     -d \
     --name maxwell-demo-mysql \
     -p 4200:3306 \
+    -e MYSQL_DATABASE=jimmer_demo \
     -e MYSQL_ROOT_PASSWORD=123456 \
     mysql \
     --lower_case_table_names=1

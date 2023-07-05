@@ -1,4 +1,3 @@
-create database jimmer_demo;
 use jimmer_demo;
 
 create table book_store(
