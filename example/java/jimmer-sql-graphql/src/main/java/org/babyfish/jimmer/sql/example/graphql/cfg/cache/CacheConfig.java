@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.graphql.cfg;
+package org.babyfish.jimmer.sql.example.graphql.cfg.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;

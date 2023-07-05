@@ -1,8 +1,9 @@
-package org.babyfish.jimmer.sql.example.graphql.cfg;
+package org.babyfish.jimmer.sql.example.graphql.cfg.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,38 +15,34 @@ import org.springframework.stereotype.Component;
 // If you are a beginner, please ignore this class,
 // for non-cache mode, this class will never be used.
 // -----------------------------
-@ConditionalOnProperty("spring.redis.host")
+@ConditionalOnProperty(
+        name = "spring.profiles.active",
+        havingValue = "debezium"
+)
 @Component
-public class MaxwellListener {
+public class DebeziumListener {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
     private final BinLog binLog;
 
-    public MaxwellListener(JSqlClient sqlClient) {
+    public DebeziumListener(JSqlClient sqlClient) {
         this.binLog = sqlClient.getBinLog();
     }
 
-    @KafkaListener(topics = "maxwell")
-    public void onHandle(
+    @KafkaListener(topicPattern = "debezium\\..*")
+    public void onDebeziumEvent(
             String json,
             Acknowledgment acknowledgment
     ) throws JsonProcessingException {
         JsonNode node = MAPPER.readTree(json);
-        String tableName = node.get("table").asText();
-        String type = node.get("type").asText();
-        JsonNode data = node.get("data");
-        switch (type) {
-            case "insert":
-                binLog.accept(tableName, null, data);
-                break;
-            case "update":
-                binLog.accept(tableName, node.get("old"), data);
-                break;
-            case "delete":
-                binLog.accept(tableName, data, null);
-                break;
-        }
+        String tableName = node.get("source").get("table").asText();
+        binLog.accept(
+                tableName,
+                node.get("before"),
+                node.get("after")
+        );
         acknowledgment.acknowledge();
     }
 }
