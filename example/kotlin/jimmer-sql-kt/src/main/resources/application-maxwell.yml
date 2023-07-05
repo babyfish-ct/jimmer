@@ -1,5 +1,5 @@
 ## The profile with cache requires mysql, redis, zookeeper, kafka and maxwell.
-## You can run `<jimmer_home>/example/env-with-cache/install.sh` to install them in docker
+## You can run `<jimmer_home>/example/env-with-cache/maxwell/install.sh` to install them in docker
 
 spring:
   datasource:

@@ -43,6 +43,7 @@ interface BookRepository : KRepository<Book, Long> {
         sql
             .createQuery(Book::class) {
                 where(table.store.id valueIn storeIds)
+                groupBy(table.store.id)
                 select(
                     table.store.id,
                     avg(table.price).asNonNull()

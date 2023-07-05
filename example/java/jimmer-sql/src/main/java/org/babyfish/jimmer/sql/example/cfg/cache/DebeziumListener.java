@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.example.cfg.cache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,8 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DebeziumListener {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final BinLog binLog;
 

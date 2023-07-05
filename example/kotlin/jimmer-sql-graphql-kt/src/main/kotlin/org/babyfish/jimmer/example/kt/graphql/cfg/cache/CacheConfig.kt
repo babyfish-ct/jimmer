@@ -1,8 +1,7 @@
-package org.babyfish.jimmer.example.kt.graphql.cfg
+package org.babyfish.jimmer.example.kt.graphql.cfg.cache
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
-import org.babyfish.jimmer.example.kt.graphql.entities.common.TenantAware
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType

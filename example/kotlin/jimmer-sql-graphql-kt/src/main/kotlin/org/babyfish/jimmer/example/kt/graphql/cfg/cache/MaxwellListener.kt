@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.example.kt.graphql.cfg
+package org.babyfish.jimmer.example.kt.graphql.cfg.cache
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.sql.event.binlog.BinLog
@@ -12,14 +12,17 @@ import org.springframework.stereotype.Component
 // If you are a beginner, please ignore this class,
 // for non-cache mode, this class will never be used.
 // -----------------------------
-@ConditionalOnProperty("spring.redis.host")
+@ConditionalOnProperty(
+    name = ["spring.profiles.active"],
+    havingValue = "maxwell"
+)
 @Component
 class MaxwellListener(sqlClient: KSqlClient) {
 
     private val binLog: BinLog = sqlClient.binLog
 
     @KafkaListener(topics = ["maxwell"])
-    fun onHandle(
+    fun onMaxwellEvent(
         json: String,
         acknowledgment: Acknowledgment
     ) {
