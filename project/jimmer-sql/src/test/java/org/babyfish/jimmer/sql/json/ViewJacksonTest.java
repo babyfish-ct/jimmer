@@ -21,10 +21,10 @@ public class ViewJacksonTest {
                 "{\"id\":\"1639d9d5-7b92-43cf-a03f-25314832f794\"}" +
                 "]" +
                 "}";
-        Book book = MAPPER.readValue(json, Book.class);
+        Book book2 = MAPPER.readValue(json, Book.class);
         Assertions.assertEquals(
                 json,
-                book.toString()
+                book2.toString()
         );
     }
 

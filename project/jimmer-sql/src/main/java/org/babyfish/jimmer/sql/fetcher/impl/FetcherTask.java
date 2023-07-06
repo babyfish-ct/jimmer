@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -55,7 +56,7 @@ class FetcherTask {
         }
         Object value = cache.get(field, key);
         if (value != null) {
-            setDraftProp(draft, FetchingCache.unwrap(value));
+            setDraftProp(draft, FetchingCache.unwrap(value), field.isImplicit());
             return;
         }
         pendingMap.computeIfAbsent(key, it -> new TaskData(key, depth)).getDrafts().add(draft);
@@ -154,7 +155,7 @@ class FetcherTask {
             cache.put(field, taskData.getKey(), value);
         }
         for (DraftSpi draft : taskData.getDrafts()) {
-            setDraftProp(draft, value);
+            setDraftProp(draft, value, field.isImplicit());
         }
         RecursionStrategy<Object> recursionStrategy =
                 (RecursionStrategy<Object>) field.getRecursionStrategy();
@@ -195,11 +196,15 @@ class FetcherTask {
         return size;
     }
 
-    private void setDraftProp(DraftSpi draft, Object value) {
+    private void setDraftProp(DraftSpi draft, Object value, boolean isImplicit) {
+        PropId propId = field.getProp().getId();
         if (value == null && field.getProp().isReferenceList(TargetLevel.PERSISTENT)) {
-            draft.__set(field.getProp().getId(), Collections.emptyList());
+            draft.__set(propId, Collections.emptyList());
         } else {
-            draft.__set(field.getProp().getId(), value);
+            draft.__set(propId, value);
+        }
+        if (!isImplicit) {
+            draft.__show(propId, true);
         }
     }
 
