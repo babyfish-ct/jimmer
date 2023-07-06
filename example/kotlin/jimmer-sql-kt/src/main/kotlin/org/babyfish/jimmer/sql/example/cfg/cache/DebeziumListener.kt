@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
+import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.stereotype.Component
 
 
@@ -25,16 +26,18 @@ class DebeziumListener(sqlClient: KSqlClient) {
 
     @KafkaListener(topicPattern = """debezium\..*""")
     fun onDebeziumEvent(
-        json: String,
+        @Payload(required = false) json: String?,
         acknowledgment: Acknowledgment
     ) {
-        val node: JsonNode = MAPPER.readTree(json)
-        val tableName: String = node["source"]["table"].asText()
-        binLog.accept(
-            tableName,
-            node["before"],
-            node["after"]
-        )
+        if (json !== null) {
+            val node: JsonNode = MAPPER.readTree(json)
+            val tableName: String = node["source"]["table"].asText()
+            binLog.accept(
+                tableName,
+                node["before"],
+                node["after"]
+            )
+        }
         acknowledgment.acknowledge()
     }
 

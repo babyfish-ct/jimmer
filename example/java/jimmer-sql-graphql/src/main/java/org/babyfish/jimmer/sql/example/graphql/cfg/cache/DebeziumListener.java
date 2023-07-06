@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 // -----------------------------
@@ -33,16 +34,18 @@ public class DebeziumListener {
 
     @KafkaListener(topicPattern = "debezium\\..*")
     public void onDebeziumEvent(
-            String json,
+            @Payload(required = false) String json,
             Acknowledgment acknowledgment
     ) throws JsonProcessingException {
-        JsonNode node = MAPPER.readTree(json);
-        String tableName = node.get("source").get("table").asText();
-        binLog.accept(
-                tableName,
-                node.get("before"),
-                node.get("after")
-        );
+        if (json != null) {
+            JsonNode node = MAPPER.readTree(json);
+            String tableName = node.get("source").get("table").asText();
+            binLog.accept(
+                    tableName,
+                    node.get("before"),
+                    node.get("after")
+            );
+        }
         acknowledgment.acknowledge();
     }
 }
