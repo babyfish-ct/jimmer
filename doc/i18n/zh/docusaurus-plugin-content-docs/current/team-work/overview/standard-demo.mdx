@@ -90,6 +90,14 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
     </tbody>
 </table>
 
+## 非缓存模式
+
+非缓存模式是所有例子的默认运行方式，无需安装任何外部环境，所有例子都可以直接运行。
+
+如果某个例子依赖于数据库，非缓存模式下它会使用H2内存数据，并在启动时刻自动创建数据库。
+
+可见，非缓存模式非常简单，非常适合快速熟悉例子。
+
 ## 缓存模式
 
 上文介绍了10个附带例子，其中有4个例子可以演示Jimmer的缓存及其一致性保证。
@@ -102,16 +110,82 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 
 默认情况下，它们不使用缓存，基于内嵌的内存数据库运行且自动初始化数据库，这保证了无需安装任何外部环境，单击运行按钮即可示范。
 
-你也可以让它们用缓存模式启动，只需要将spring-boot的profile设置为`cache`即可。然而，缓存模式需要安装外部环境。
+你也可以让它们用缓存模式启动，只需要将spring-boot的profile设置为`maxwell`或`debezium`即可。然而，缓存模式需要安装外部环境。
 
-缓存模式环境安装方法
+启用缓存模式需要搭建外部环境。
 
-1.  在本机安装docker
+1.  首先，你需要在本机安装docker
 
-2.  打开命令行，进入[env-with-cache](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/)所对应的本地目录，执行
-    ```
-    ./install.sh
-    ```
+2.  安装外部环境
 
-    这个脚本会自动安装缓存模式需要的MySQL、Redis、Kafka和MaxWell
+    为了让例子程序展现出Jimmer强大的缓存一致性维护功能，需要利用业界已有的技术把数据库的变化推送给Jimmer。
+    
+    :::tip
+    事实上，通过外部手段把数据库的变化推送给Jimmer并不是必须的，也可以让Jimmer通过其的内部机制发现数据库的变化。
+    
+    -   Jimmer自己捕获数据变化的功能叫`Transaction触发器`
+    
+    -   通过外部手段把数据库的变化推送给Jimmer的功能叫`BinLog触发器`
+    
+    请参见[触发器分类](../mutation/trigger#触发器分类)。
+
+    `BinLog触发器`既具有更好的性能，又具备更好的普适性 *(即使绕过Jimmer通过其他方式修改数据库，也可以被拦截)*，是推荐方案。
+    
+    因此，官方附带例子使用`BinLog触发器`来同步缓存，我们需要通过外部手段把数据库的变化推送给Jimmer。
+    :::
+
+    附带例子支持两种外部环境，你可以随意选择一种方式体验例子的缓存模式
+
+### Maxwell + MySQL
+
+虽然Maxwell只支持MySQL，但它是所有数据库变更推送技术中最简单的。因此，有示范价值。
+
+打开命令行，进入[example/env-with-cache/maxwell](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/maxwell)所对应的本地目录，执行
+```
+bash ./install.sh
+```
+
+安装完成后，docker宿主机的端口暂用启用如下
+
+|容器名|端口|描述|
+|-----|---|----|
+|maxwell-demo-zookeeper|4000|支撑Kafka，用户不会直接使用|
+|maxwell-demo-kafka|4100|对外暴露的地址为localhost，即，假设docker宿主是你的本机。如果要使用远程服务器作为docker宿主，需自行修改install.sh中的kafka安装命令，并修改例子中的spring-boot配置文件|
+|maxwell-demo-kafdrop|4101|一个Kafka图形界面工具，用浏览器访问http://localhost:4101即可|
+|maxwell-demo-mysql|4200|此模式下的数据库服务|
+|maxwell-demo-maxwell|NA|负责把MySQL的变化事件推送给Kafka的后台服务|
+|maxwell-demo-redis|4400|此模式下的缓存服务|
+
+### Debezium + Postgres
+
+Debezium支持很多种数据库，具备很好的普通性，例子使用它来支持Postgres的变更推送。
+
+:::info
+Postgres是一个非常优秀的开源数据库。如果你的项目是全新的，没有任何历史包袱，可以考虑尝试使用Postgres。这也是Jimmer的例子使用Debezium支持Postgres的原因。
+:::
+
+打开命令行，进入[example/env-with-cache/debezium](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/debezium)所对应的本地目录，执行
+```
+bash ./install.sh
+```
+
+安装完成后，docker宿主机的端口暂用启用如下
+
+|容器名|端口|描述|
+|-----|---|----|
+|debezium-demo-zookeeper|5000|支撑Kafka，用户不会直接使用|
+|debezium-demo-kafka|5100|对外暴露的地址为localhost，即，假设docker宿主是你的本机。如果要使用远程服务器作为docker宿主，需自行修改install.sh中的kafka安装命令，并修改例子中的spring-boot配置文件|
+|debezium-demo-kafdrop|5101|一个Kafka图形界面工具，用浏览器访问http://localhost:5101即可|
+|debezium-demo-postgres|5200|此模式下的数据库服务|
+|debezium-demo-connect|5300|负责把MySQL的变化事件推送给Kafka的kafka-connector，可以通过http://localhost:5300/connectors来检验名为`debezium-connector`的pg-connector是否成功安装|
+|debezium-demo-redis|5400|此模式下的缓存服务|
+    
+## 注意事项
+:::caution
+如果把`Maxwell + MySQL`和`Debezium + Postgres`的外部环境都安装了，有可能因内存不足导致部分容器无法启动。
+
+以我的Mac为例，默认情况下，Mac为docker分配2GB内存，把上述容器都安装并启动，再加上几个其他与此无关的容器，导致内存不足，设置为3GB后问题解决。
+:::
+
+    
 

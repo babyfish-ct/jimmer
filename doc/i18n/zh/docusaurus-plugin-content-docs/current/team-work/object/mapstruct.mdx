@@ -35,7 +35,7 @@ Jimmer选择以[MapStruct](https://github.com/mapstruct/mapstruct)作为和静�
 ...省略其他代码...
 
 <build>
-    <depdencies>
+    <dependencies>
         <dependency> ➀
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -47,7 +47,7 @@ Jimmer选择以[MapStruct](https://github.com/mapstruct/mapstruct)作为和静�
             <version>${mapstruct.version}</version>
         </dependency>
         ...省略其他依赖...
-    </depdencies>
+    </dependencies>
     <plugins>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -106,14 +106,14 @@ dependencies {
     <sourceDirectory>src/main/kotlin</sourceDirectory>
     <testSourceDirectory>src/test/kotlin</testSourceDirectory>
 
-    <depdencies>
+    <dependencies>
         <dependency> ➊
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
         ...省略其他依赖...
-    </depdencies>
+    </dependencies>
 
     <plugins>
         <plugin>
@@ -182,7 +182,7 @@ plugins {
 
     ...省略其他插件...
 }
-depdencies {
+dependencies {
     
     implementation "org.mapstruct:mapstruct:${mapstructVersion}" ➊
 

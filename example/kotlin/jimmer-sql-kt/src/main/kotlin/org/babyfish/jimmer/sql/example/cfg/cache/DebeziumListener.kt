@@ -29,11 +29,11 @@ class DebeziumListener(sqlClient: KSqlClient) {
         acknowledgment: Acknowledgment
     ) {
         val node: JsonNode = MAPPER.readTree(json)
-        val tableName: String = node.get("source").get("table").asText()
+        val tableName: String = node["source"]["table"].asText()
         binLog.accept(
             tableName,
-            node.get("before"),
-            node.get("after")
+            node["before"],
+            node["after"]
         )
         acknowledgment.acknowledge()
     }

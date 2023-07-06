@@ -27,10 +27,10 @@ jimmer-sql内容相对较多，后续文章会逐步讲解。本文对其部分�
 <TabItem value="java" label="Java(Gradle)">
 
 ```groovy title="build.gradle"
-depdencies {
+dependencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-sql:0.7.108'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.7.108'
+    implementation 'org.babyfish.jimmer:jimmer-sql:0.7.112'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.7.112'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -44,7 +44,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql</artifactId>
-        <version>0.7.108</version>
+        <version>0.7.112</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -65,7 +65,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.7.108</version>
+                        <version>0.7.112</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -84,13 +84,13 @@ plugins {
 
     ...ommit other plugins...
 }
-depdencies {
+dependencies {
     
     // 第二步: 添加jimmer-sql-kotlin
-    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.7.108")
+    implementation("org.babyfish.jimmer:jimmer-sql-kotlin:0.7.112")
 
     // 第三步: 应用ksp插件
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.7.108")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.7.112")
 
     runtimeOnly("com.h2database:h2:2.1.212")
 
@@ -116,7 +116,7 @@ kotlin {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-sql-kotlin</artifactId>
-        <version>0.7.108</version>
+        <version>0.7.112</version>
     </dependency>
     <dependency>
         <groupId>com.h2database</groupId>
@@ -165,7 +165,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.7.108</version>
+                    <version>0.7.112</version>
                 </dependency>
             </dependencies>
         </plugin>
