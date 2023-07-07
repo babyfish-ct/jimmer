@@ -42,6 +42,14 @@ import { ViewMore } from '@site/src/components/ViewMore';
     npm install --global yarn
     ```
 
+-   查看yarn是否安装成功
+
+    ```
+    yarn -v
+    ```
+
+    当出现对应版本号说明安装成功
+
 -   安装VS Code
 
     :::caution
@@ -59,7 +67,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
 -   进入`<jimmer-home2>`, 切换到`orphan`分支，这是一个孤儿分支，切换到这个分支会导致之前clone到本地的所有代码被清空，替换为若干图片文件(PNG, JPEG, SVG)
 
     :::note
-    为防止图片文件让git历史变大大致下载困难，`orphan`被设计为一个孤儿分支，专门保存图片文件，这就是为什么要两次For Jimmer代码的原因
+    为防止图片文件让git历史变大大致下载困难，`orphan`被设计为一个孤儿分支，专门保存图片文件，这就是为什么要两次Fork Jimmer代码的原因
     :::
 
 -   将目录孤儿分支目录`<jimmer-home2>/doc/static/img`下所有图片文件复制到代码分支目录`<jimmer-home1>/doc/static/img`下，此时代码分支才具备完整的资源
@@ -68,6 +76,15 @@ import { ViewMore } from '@site/src/components/ViewMore';
     >-  如果后续步骤无误，`<jimmer-home2>`可以永久从本机删除
 
 -   打开命令行，进入`<jimmer-home1>/doc`。再次强调，`doc`分支。
+
+    -   安装`package.json`中声明的所有依赖包
+        ```
+        yarn
+        ```
+
+        :::caution
+        没有这一步将导致下方`yarn start`等命令报错：`docusaurus`不是内部或外部命令。
+        :::
 
     -   运行英文文档
         ```

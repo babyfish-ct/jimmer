@@ -2,3 +2,251 @@
 sidebar_position: 1
 title: 基本用法
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+##   常规方式
+在了解对象抓取器之前，有必要先了解常规的字段查询。
+
+我们先来写一个SQL：
+
+```sql
+select b.id, b.name, b.price, b.edition from book b where b.edition = 3;
+```
+
+对应的Jimmer写法：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+
+BookTable book = BookTable.$;
+List<Tuple4<Long, String, BigDecimal, Integer>> resultList = sqlClient.createQuery(book)
+    .where(book.edition().eq(3))
+    // 在此处直接写需要抓取的属性
+    // highlight-next-line
+    .select(book.id(), book.name(), book.price(), book.edition())
+    .execute();
+System.out.println(toJson(resultList));
+
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        // highlight-next-line
+        select(
+            table.id
+            table.name
+            table.price
+            table.edition
+        )
+    }
+    .execute()
+
+```
+
+</TabItem>
+</Tabs>
+
+打印输出为：
+```
+[
+    {
+        "_1" : 3,
+        "_2" : "Learning GraphQL",
+        "_3" : 51.00,
+        "_4" : 3
+    }
+    ...省略其他对象
+]
+```
+
+在没有使用对象抓取器时，可以在`select()`中写需要返回的属性，但此时不会转换为对象，将以元组的形式返回。
+元组中属性的顺序对应`selece()`中的顺序，在上述例子中，每一个元组中的对应关系为:
+```
+_1 -> id
+_2 -> name
+_3 -> price
+_4 -> edition
+```
+
+与传统常规操作中，书写原生SQL得到返回值为`Object[]`相似，需要在手动获取返回值中的每一个属性，再进行映射，这是相当繁琐的事情:
+```java
+List<BookDto> bookDtoList = resultList.stream()
+        .map(tuple -> {
+            BookDto bookDto = new BookDto();
+            bookDto.setId(tuple.get_1());
+            bookDto.setName(tuple.get_2());
+            bookDto.setPrice(tuple.get_3());
+            bookDto.setEdition(tuple.get_4());
+            return bookDto;
+        })
+        .toList();
+System.out.println(toJson(bookDtoList));
+```
+转化后的结果才是我们需要的类型：
+```
+[
+    {
+        "id" : 3,
+        "name" : "Learning GraphQL",
+        "edition" : 3,
+        "price" : 51.00
+    }
+    ...省略其他对象
+]
+```
+
+尽管JPA与MyBatis都有各自的一套映射方法，但是都有各自的局限性：
+
+-   JPA默认返回对象的所有属性，想要自定义返回属性的话，
+    -   要么使用HQL，要么使用接口
+    -   或者使用`query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
+-   MyBatis需要在xml中写类型映射，MyBatis-Plus提供了一些封装可以简化这一流程
+
+但是不论是JPA还是MyBatis亦或是MyBatis-Plus都避免不了需要额外再写一个DTO类，接下来我们使用对象抓取器来简化这一流程。
+
+## 使用对象抓取器
+
+Jimmer会根据每个实体接口，生成对应的Fetcher类，这些Fetcher就是对象抓取器。
+
+对象抓取器会根据抓取的字段，自动封装成对象，免去了手动映射以及编写额外DTO类的烦恼。
+
+### 抓取指定属性
+
+:::note
+Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
+:::
+
+上方示例中的查询，以对象抓取器的形式可以写成：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+private void getBookWithFetcher() {
+    BookTable book = BookTable.$;
+    List<Book> list = sqlClient.createQuery(book)
+            .where(book.edition().eq(3))
+            // highlight-next-line
+            .select(book.fetch(BookFetcher.$.name().price().edition()))
+            .execute();
+    System.out.println(toJson(list));
+}
+```
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            // highlight-next-line
+            table.fetchBy {
+                name
+                price
+                edition
+            }
+        )
+    }
+    .execute()
+```
+</TabItem>
+</Tabs>
+
+可以看到得到的返回值就是`Book`类型，不需要再进行映射，这为日常编码节省了很多时间。
+
+输出结果如下：
+```
+[
+    {
+        "id" : 3,
+        "name" : "Learning GraphQL",
+        "edition" : 3,
+        "price" : 51.00
+    }
+    ...省略其他对象
+]
+```
+
+而在日常工作中，经常会遇到一些对象大部分属性都是相似的，只有小部分属性不同。换做以往的实现方式，需要编写各自对应的DTO，然后去映射。
+
+但在Jimmer中，完全不需要如此，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
+
+例如当只需要抓取书籍名称、书籍价格，而不需要抓取书籍版本时：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+private void getBookWithFetcher() {
+    BookTable book = BookTable.$;
+    List<Book> list = sqlClient.createQuery(book)
+        .where(book.edition().eq(3))
+        // highlight-next-line
+        .select(book.fetch(BookFetcher.$.name().price()))
+        .execute();
+
+    System.out.println(toJson(list));
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            // highlight-next-line
+            table.fetchBy {
+                name
+                price
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+此时输出的JSON为：
+
+```json
+[
+    {
+        "id" : 3,
+        "name" : "Learning GraphQL",
+        "price" : 51.00
+    }
+]
+```
+
+借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO并进行映射，只需要改变对象抓取器的属性即可。
+
+### 抓取所有属性
+
+通过对象抓取器选择要抓取的属性时，如果属性很多，每一个都手动写也很繁琐，因此Jimmer也提供了两个API用于抓取所有属性。
+
+`allScalarFields`抓取所有标量字段，不包含关联属性。
+
+`allTableFields`抓取表定义中的所有字段，也包含基于外键的一对一/多对一属性，但不包含一对多和多对多关联属性。
+
+这两个API将在以下位置做详细介绍：
+
+`allScalarFields`在[抓取所有标量字段](props#抓取所有标量字段)
+
+`allTableFields`在[抓取所有表定义的字段](association#抓取所有表定义字段)
+
+[二者的区别](association#allscalarfields与alltablefields的区别)
