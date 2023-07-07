@@ -20,8 +20,8 @@ BookTable book = BookTable.$;
 List<Book> books = sqlClient
     .createQuery(book)
     .select(
-        // highlight-next-line
         book.fetch(
+            // highlight-next-line
             BookFetcher.$.name()
         )
     )
@@ -38,8 +38,8 @@ val books = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
         select(
-            // highlight-next-line
             table.fetchBy { 
+                // highlight-next-line
                 name()
             }
         )
@@ -52,7 +52,7 @@ val books = sqlClient
 </Tabs>
 
 :::note
-Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
+对Java而言，Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
 :::
 
 生成的SQL如下:
@@ -60,6 +60,7 @@ Annotation processor会为每一个实体接口自动生成一个Fetcher类，�
 ```sql
 select 
     tb_1_.ID, 
+    /* highlight-next-line */
     tb_1_.NAME 
 from BOOK as tb_1_ 
 where tb_1_.EDITION = ?
@@ -75,12 +76,15 @@ id属性被特殊对待，总是会被查询，并不受对象抓取器的控制
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 
-```
-{
-    "id":3,
-    "name":"Learning GraphQL"
-}
-// 省略其他对象
+```json
+[
+    {
+        "id":3,
+        // highlight-next-line
+        "name":"Learning GraphQL"
+    },
+    ...省略其他对象...
+]
 ```
 
 ### 抓取多个字段
@@ -95,8 +99,11 @@ List<Book> books = sqlClient
     .createQuery(book)
     .select(
         book.fetch(
-            // highlight-next-line
-            BookFetcher.$.name().price()
+            BookFetcher.$
+                // highlight-next-line
+                .name()
+                // highlight-next-line
+                .edition()
         )
     )
     .execute();
@@ -111,9 +118,10 @@ val books = sqlClient
         where(table.edition.eq(3))
         select(
             table.fetchBy {
+                // highlight-next-line
                 name()
                 // highlight-next-line
-                price()
+                edition()
             }
         )
     }
@@ -127,9 +135,9 @@ val books = sqlClient
 对象抓取器是不可变对象，每一次链式调用都会返回一个新的对象抓取器。
 
 即，上述**Java**代码中
-1. `BookFetcher.$`
-2. `BookFetcher.$.name()`
-3. `BookFetcher.$.name().price()`
+-   `BookFetcher.$`
+-   `BookFetcher.$.name()`
+-   `BookFetcher.$.name().edition()`
 
 是三个不同的对象抓取器，每一个都是不可变的。
 
@@ -141,21 +149,27 @@ val books = sqlClient
 ```sql
 select 
     tb_1_.ID, 
+    /* highlight-next-line */
     tb_1_.NAME,
-    tb_1_.PRICE  
+    /* highlight-next-line */
+    tb_1_.EDITION  
 from BOOK as tb_1_ 
 where tb_1_.EDITION = ?
 ```
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 
-```
-{
-    "id":3,
-    "name":"Learning GraphQL",
-    "price":51.00
-}
-// 省略其他对象
+```json
+[
+    {
+        "id":3,
+        // highlight-next-line
+        "name":"Learning GraphQL",
+        // highlight-next-line
+        "edition":1
+    },
+    ...省略其他对象...
+]
 ```
 
 ### 抓取所有标量字段
@@ -205,28 +219,32 @@ val books = sqlClient
 ```sql
 select 
     tb_1_.ID, 
+    // highlight-start
     tb_1_.NAME, 
     tb_1_.EDITION, 
-    tb_1_.PRICE   
+    tb_1_.PRICE
+    // highlight-end
 from BOOK as tb_1_ 
 where tb_1_.EDITION = ?
 ```
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
-```
+```json
 {
     "id":3,
+    // highlight-start
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00
+    // highlight-end
 }
 // 省略其他对象
 ```
 
-:::note
-`allScalarFields()`只会加载非关联字段，示例中可以看到查询了id, name, edition, price，但是并没有查询store和authors这两个关联属性。
+:::info
+`allScalarFields()`只会加载非关联字段，示例中可以看到查询了`id`, `name`, `edition`, `price`，但是并没有查询`store`和`authors`这两个关联属性。
 
-抓取关联属性将在下一章节介绍。
+抓取关联属性将在[下一篇文档](./association)中介绍。
 :::
 
 
@@ -279,13 +297,14 @@ val books = sqlClient
 `edition(false)`使用参数false，这就是负属性。
 
 - `allScalarFields()`的属性是`id + name + edition + price`
+
 - `edition(false)`表示`-edition`
 
 所以，最终并在一起，最终被抓取的属性是`id + name + price`
 
-:::note
-1. 对于正属性而言，`edition()`和`edition(true)`等价。
-2. 当大部分属性需要抓取，只有少部分属性不需要抓取时，负属性会非常有用。
+:::info
+-   对于正属性而言，`edition()`和`edition(true)`等价
+-   当大部分属性需要抓取，只有少部分属性不需要抓取时，`allScalarFields`和负属性结合使用会非常有用
 :::
 
 生成的SQL如下:
@@ -301,13 +320,15 @@ where tb_1_.EDITION = ?
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 
-```
-{
-    "id":3,
-    "name":"Learning GraphQL",
-    "price":51.00
-}
-...省略其他对象
-
+```json
+[
+    {
+        "id":3,
+        "name":"Learning GraphQL",
+        "price":51.00
+        // 这里没有`edition`
+    },
+    ...省略其他对象...
+]
 ```
 

@@ -5,101 +5,184 @@ title: 基本用法
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
+import DtoExplosion from '@site/static/img/dto-explosion.png';
 
-##   常规方式
-在了解对象抓取器之前，有必要先了解常规的字段查询。
+## 引入对象抓取器的原因
 
-我们先来写一个SQL：
+在了解对象抓取器之前，有必要先了解常规的属性查询。
+
+例如，我需要这样一个SQL：
 
 ```sql
-select b.id, b.name, b.price, b.edition from book b where b.edition = 3;
+select 
+    b.id, 
+    b.name, 
+    b.edition 
+    // 不需要`b.price`和`b.store_id`
+from book b 
+where b.edition = 3;
 ```
 
-对应的Jimmer写法：
+在这个SQL中，我们只查询部分列，对应的Jimmer写法：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-
-BookTable book = BookTable.$;
-List<Tuple4<Long, String, BigDecimal, Integer>> resultList = sqlClient.createQuery(book)
-    .where(book.edition().eq(3))
-    // 在此处直接写需要抓取的属性
+BookTable table = BookTable.$;
+List<Tuple3<Long, String, Integer>> tuples = sqlClient
+    .createQuery(book)
+    .where(table.edition().eq(3))
     // highlight-next-line
-    .select(book.id(), book.name(), book.price(), book.edition())
+    .select(
+        table.id(), 
+        table.name(), 
+        table.edition()
+    )
     .execute();
-System.out.println(toJson(resultList));
-
+System.out.println(tuples);
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-
-val books = sqlClient
+val tuples = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
         // highlight-next-line
         select(
             table.id
             table.name
-            table.price
             table.edition
         )
     }
     .execute()
-
+println(tuples)
 ```
 
 </TabItem>
 </Tabs>
 
-打印输出为：
+打印输出为 *(为了方便乐队，这里认为进行了格式化)*：
 ```
 [
     {
         "_1" : 3,
         "_2" : "Learning GraphQL",
-        "_3" : 51.00,
-        "_4" : 3
+        "_3" : 3
     }
     ...省略其他对象
 ]
 ```
 
-在没有使用对象抓取器时，可以在`select()`中写需要返回的属性，但此时不会转换为对象，将以元组的形式返回。
+:::info
+由于只查询对象的部分属性，所以无法简单地使用`select(table)`，而是用了`select(expr1, expr2, ..., expr3)`。
+
+然而，这会导致返回的结果类型是元组，而非Book对象。
+:::
+
 元组中属性的顺序对应`selece()`中的顺序，在上述例子中，每一个元组中的对应关系为:
+
 ```
 _1 -> id
 _2 -> name
-_3 -> price
-_4 -> edition
+_3 -> edition
 ```
 
-与传统常规操作中，书写原生SQL得到返回值为`Object[]`相似，需要在手动获取返回值中的每一个属性，再进行映射，这是相当繁琐的事情:
-```java
-List<BookDto> bookDtoList = resultList.stream()
-        .map(tuple -> {
-            BookDto bookDto = new BookDto();
-            bookDto.setId(tuple.get_1());
-            bookDto.setName(tuple.get_2());
-            bookDto.setPrice(tuple.get_3());
-            bookDto.setEdition(tuple.get_4());
-            return bookDto;
-        })
-        .toList();
-System.out.println(toJson(bookDtoList));
+如果我们需要返回对象，则必须定义一个BookDTO类型 *(假设Java版使用了lombok)*
+
+和原始的实体类型`Book`不同，`BookDTO`仅仅包含我们需要的属性，而非所有属性。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookDTO.java"
+@Data
+public class BookDTO {
+    private long id;
+    private String name;
+    private int edtion;
+}
 ```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookDTO.kt"
+data class BookDTO(
+    val id: Long,
+    val name: String,
+    val edition: Int
+)
+```
+
+</TabItem>
+</Tabs>
+
+再把元祖转化为`BookDTO`对象，有两种办法
+
+-   不修改之前的代码，先查询出`Tuple3<Long, String, Integer>`集合，再用Stream API转换
+
+-   利用Jimmer的快捷API，直接转换查询结果
+
+这里，我们采用第二种方式，代码如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+List<BookDTO> bookDTOs = sqlClient
+    .createQuery(book)
+    .where(table.edition().eq(3))
+    .select(
+        table.id(), 
+        table.name(), 
+        table.edition()
+    )
+    // highlight-next-line
+    .map(tuple -> {
+        BookDTO dto = new BookDTO();
+        dto.setId(tuple.get_1());
+        dto.setName(tuple.get_2());
+        dto.setEdition(tuple.get_3());
+    });
+System.out.println(bookDTOs);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookDTOs = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.id
+            table.name
+            table.edition
+        )
+    }
+    // highlight-next-line
+    .map {
+        BookDTO(it._1, it._2, it._3)
+    }
+println(tuples)
+```
+
+</TabItem>
+</Tabs>
+
 转化后的结果才是我们需要的类型：
+
 ```
 [
     {
         "id" : 3,
         "name" : "Learning GraphQL",
-        "edition" : 3,
-        "price" : 51.00
+        "edition" : 3
     }
     ...省略其他对象
 ]
@@ -108,17 +191,25 @@ System.out.println(toJson(bookDtoList));
 尽管JPA与MyBatis都有各自的一套映射方法，但是都有各自的局限性：
 
 -   JPA默认返回对象的所有属性，想要自定义返回属性的话，
+
     -   要么使用HQL，要么使用接口
+
     -   或者使用`query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
+
 -   MyBatis需要在xml中写类型映射，MyBatis-Plus提供了一些封装可以简化这一流程
 
 但是不论是JPA还是MyBatis亦或是MyBatis-Plus都避免不了需要额外再写一个DTO类，接下来我们使用对象抓取器来简化这一流程。
+
+:::info
+不幸的是，查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
+最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>
+:::
 
 ## 使用对象抓取器
 
 Jimmer会根据每个实体接口，生成对应的Fetcher类，这些Fetcher就是对象抓取器。
 
-对象抓取器会根据抓取的字段，自动封装成对象，免去了手动映射以及编写额外DTO类的烦恼。
+对象抓取器会根据抓取的属性，自动封装成对象，免去了手动映射以及编写额外DTO类的烦恼。
 
 ### 抓取指定属性
 
@@ -132,15 +223,20 @@ Annotation processor会为每一个实体接口自动生成一个Fetcher类，�
 <TabItem value="java" label="Java">
 
 ```java
-private void getBookWithFetcher() {
-    BookTable book = BookTable.$;
-    List<Book> list = sqlClient.createQuery(book)
-            .where(book.edition().eq(3))
+BookTable table = BookTable.$;
+List<Book> books = sqlClient.createQuery(table)
+        .where(table.edition().eq(3))
+        .select(
             // highlight-next-line
-            .select(book.fetch(BookFetcher.$.name().price().edition()))
-            .execute();
-    System.out.println(toJson(list));
-}
+            table.fetch(
+                BookFetcher.$
+                    // id是隐含的、强制的
+                    .name()
+                    .edition()
+            )
+        )
+        .execute();
+System.out.println(books);
 ```
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
@@ -152,13 +248,14 @@ val books = sqlClient
         select(
             // highlight-next-line
             table.fetchBy {
+                // id是隐含的、强制的
                 name
-                price
                 edition
             }
         )
     }
     .execute()
+println(books)
 ```
 </TabItem>
 </Tabs>
@@ -178,28 +275,28 @@ val books = sqlClient
 ]
 ```
 
-而在日常工作中，经常会遇到一些对象大部分属性都是相似的，只有小部分属性不同。换做以往的实现方式，需要编写各自对应的DTO，然后去映射。
+在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
 
-但在Jimmer中，完全不需要如此，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
-
-例如当只需要抓取书籍名称、书籍价格，而不需要抓取书籍版本时：
+例如，我们可以修改一下代码，不抓取书籍版本时，而抓取书籍价格：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-private void getBookWithFetcher() {
-    BookTable book = BookTable.$;
-    List<Book> list = sqlClient.createQuery(book)
-        .where(book.edition().eq(3))
-        // highlight-next-line
-        .select(book.fetch(BookFetcher.$.name().price()))
+BookTable table = BookTable.$;
+List<Book> books = sqlClient.createQuery(table)
+        .where(table.edition().eq(3))
+        .select(
+            // highlight-next-line
+            table.fetch(
+                BookFetcher.$
+                    .name()
+                    .price()
+            )
+        )
         .execute();
-
-    System.out.println(toJson(list));
-}
+System.out.println(books);
 ```
-
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -216,8 +313,8 @@ val books = sqlClient
         )
     }
     .execute()
+println(books)
 ```
-
 </TabItem>
 </Tabs>
 
@@ -233,20 +330,48 @@ val books = sqlClient
 ]
 ```
 
+:::tip
 借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO并进行映射，只需要改变对象抓取器的属性即可。
+
+对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>能极大地提高服务端的生产效率。
+:::
 
 ### 抓取所有属性
 
-通过对象抓取器选择要抓取的属性时，如果属性很多，每一个都手动写也很繁琐，因此Jimmer也提供了两个API用于抓取所有属性。
+上面的写法存在一个问题，如果需要查询的属性很多，每一个都手动抓取会非常繁琐。
 
-`allScalarFields`抓取所有标量字段，不包含关联属性。
+:::info
+这也是[GraphQL](https://graphql.org/)的问题之一。
+:::
 
-`allTableFields`抓取表定义中的所有字段，也包含基于外键的一对一/多对一属性，但不包含一对多和多对多关联属性。
+为解决这个问题，Jimmer也提供了如下两个API用于快速抓取大量属性。
 
-这两个API将在以下位置做详细介绍：
+由于这些特性会在后续文档中详细讲述，这里只给出链接即可。这两个API是：
 
-`allScalarFields`在[抓取所有标量字段](props#抓取所有标量字段)
+-   `allScalarFields`
+    
+    抓取所有标量属性，不包含关联属性、计算属性和视图属性。
 
-`allTableFields`在[抓取所有表定义的字段](association#抓取所有表定义字段)
+    请查看[抓取所有标量属性](./props#抓取所有标量属性)以了解更多。
 
-[二者的区别](association#allscalarfields与alltablefields的区别)
+-   `allTableFields`
+
+    抓取表定义中的所有属性，包含所有标量属性、基于外键的一对一/多对一属性，但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
+
+    请查看[抓取所有表定义的属性](./association#抓取所有表定义属性)以了解更多。
+
+也可以参考[二者的区别](association#allscalarfields与alltablefields的区别)
+
+## 和JPA的差别
+
+当对象抓取器用于抓取关联属性时 *(后续文档讨论，本文未示范)*，和[JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)比较类似，但存在如下差异
+
+-   对象抓取器使用`batch-load`策略加载关联对象，而非使用JPA中`join-fetch`的概念，这很重要，因为
+
+    -   抓取集合关联属性不会像[JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)那样[破坏分页查询](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html)
+    
+    -   对[关联缓存](../../cache/cache-type/association)和[远程关联](../../spring/spring-cloud)友好
+
+-   JPA的EntityGraph仅仅控制关联属性，但对象抓取器可以控制任何属性，和GraphQL一样，精确控制到每个属性
+
+-   对于因为自关联属性导致的无限递归结构，对象抓取器支持[递归查询](./recursive)
