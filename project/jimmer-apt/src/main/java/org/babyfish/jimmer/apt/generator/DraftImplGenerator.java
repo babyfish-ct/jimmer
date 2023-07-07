@@ -5,22 +5,28 @@ import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.NonSharedList;
 import org.jetbrains.annotations.Nullable;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Pattern;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class DraftImplGenerator {
+
+    private static final Enum<?>[] EMPTY_ENUM_ARR = new Enum[0];
 
     private final ImmutableType type;
 
@@ -36,7 +42,7 @@ public class DraftImplGenerator {
     public void generate(TypeSpec.Builder parentBuilder) {
         typeBuilder = TypeSpec.classBuilder("DraftImpl")
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                .superclass(type.getImplementorClassName())
+                .addSuperinterface(type.getImplementorClassName())
                 .addSuperinterface(draftSpiClassName)
                 .addSuperinterface(type.getDraftClassName());
         addFields();
@@ -50,11 +56,11 @@ public class DraftImplGenerator {
             addUtilMethod(prop, false);
             addUtilMethod(prop, true);
         }
-        addSet(int.class);
+        addSet(PropId.class);
         addSet(String.class);
-        addShow(int.class);
+        addShow(PropId.class);
         addShow(String.class);
-        addUnload(int.class);
+        addUnload(PropId.class);
         addUnload(String.class);
         addDraftContext();
         addResolve();
@@ -104,15 +110,32 @@ public class DraftImplGenerator {
     private void addStaticFields() {
         boolean hasEmail = false;
         for (ImmutableProp prop : type.getProps().values()) {
-            Email[] emails = prop.getAnnotations(Email.class);
-            Pattern[] patterns = prop.getAnnotations(Pattern.class);
-            if (emails.length != 0) {
+            Map<String, List<AnnotationMirror>> mirrorMultiMap =
+                    Annotations.validateAnnotationMirrorMultiMap(prop);
+            List<AnnotationMirror> emails = mirrorMultiMap.get("Email");
+            List<AnnotationMirror> patterns = mirrorMultiMap.get("Pattern");
+            if (emails != null) {
                 hasEmail = true;
             }
-            for (int i = 0; i < patterns.length; i++) {
+            if (patterns == null) {
+                patterns = Collections.emptyList();
+            }
+            for (int i = 0; i < patterns.size(); i++) {
                 int flags = 0;
-                for (Pattern.Flag flag : patterns[i].flags()) {
-                    flags |= flag.getValue();
+                for (Enum<?> flag : Annotations.annotationValue(patterns.get(i), "flags", EMPTY_ENUM_ARR)) {
+                    Method method;
+                    try {
+                        method = flag.getClass().getMethod("getValue");
+                    } catch (NoSuchMethodException ex) {
+                        throw new AssertionError("Internal bug", ex);
+                    }
+                    int flagValue;
+                    try {
+                        flagValue = (Integer)method.invoke(flag);
+                    } catch (IllegalAccessException | InvocationTargetException ex) {
+                        throw new AssertionError("Internal bug", ex);
+                    }
+                    flags |= flagValue;
                 }
                 FieldSpec.Builder builder = FieldSpec
                         .builder(
@@ -125,7 +148,7 @@ public class DraftImplGenerator {
                         .initializer(
                                 "$T.compile($S, $L)",
                                 java.util.regex.Pattern.class,
-                                patterns[i].regexp(),
+                                Annotations.annotationValue(patterns.get(i), "regexp", ""),
                                 flags
                         );
                 typeBuilder.addField(builder.build());
@@ -182,12 +205,13 @@ public class DraftImplGenerator {
                                 Modifier.FINAL
                         )
                         .initializer(
-                                "\n    new $T<>($T.class, $S, $T.class, $L)",
+                                "\n    new $T<>($T.class, $S, $T.class, $T.byIndex($L))",
                                 VALIDATOR_CLASS_NAME,
                                 e.getKey(),
                                 e.getValue(),
                                 type.getClassName(),
-                                prop.getId()
+                                PROP_ID_CLASS_NAME,
+                                prop.getSlotName()
                         );
                 typeBuilder.addField(builder.build());
             }
@@ -215,7 +239,7 @@ public class DraftImplGenerator {
                         .methodBuilder("__isLoaded")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addParameter(int.class, "prop")
+                        .addParameter(PropId.class, "prop")
                         .returns(boolean.class)
                         .addStatement("return $L.__isLoaded(prop)", UNMODIFIED)
                         .build()
@@ -235,7 +259,7 @@ public class DraftImplGenerator {
                         .methodBuilder("__isVisible")
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addParameter(int.class, "prop")
+                        .addParameter(PropId.class, "prop")
                         .returns(boolean.class)
                         .addStatement("return $L.__isVisible(prop)", UNMODIFIED)
                         .build()
@@ -288,6 +312,15 @@ public class DraftImplGenerator {
                         .addParameter(boolean.class, "shallow")
                         .returns(boolean.class)
                         .addStatement("return $L.__equals(obj, shallow)", UNMODIFIED)
+                        .build()
+        );
+        typeBuilder.addMethod(
+                MethodSpec
+                        .methodBuilder("toString")
+                        .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
+                        .returns(String.class)
+                        .addStatement("return $T.toString($L)", ImmutableObjects.class, UNMODIFIED)
                         .build()
         );
     }
@@ -370,6 +403,10 @@ public class DraftImplGenerator {
         if (!prop.isAssociation(false) && !prop.isList()) {
             return;
         }
+        ImmutableProp realProp = prop.getIdViewBaseProp();
+        if (realProp == null) {
+            realProp = prop;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getGetterName())
                 .addModifiers(Modifier.PUBLIC)
@@ -378,41 +415,52 @@ public class DraftImplGenerator {
                 .returns(prop.getDraftTypeName(true));
         if (prop.isNullable()) {
             builder.beginControlFlow(
-                    "if (autoCreate && (!__isLoaded($L) || $L() == null))",
-                    prop.getId(),
-                    prop.getGetterName()
+                    "if (autoCreate && (!__isLoaded($T.byIndex($L)) || $L() == null))",
+                    PROP_ID_CLASS_NAME,
+                    realProp.getSlotName(),
+                    realProp.getGetterName()
             );
         } else {
             builder.beginControlFlow(
-                    "if (autoCreate && (!__isLoaded($L)))",
-                    prop.getId()
+                    "if (autoCreate && (!__isLoaded($T.byIndex($L))))",
+                    PROP_ID_CLASS_NAME,
+                    realProp.getSlotName()
             );
         }
         if (prop.isList()) {
             builder.addStatement(
                     "$L(new $T<>())",
-                    prop.getSetterName(),
+                    realProp.getSetterName(),
                     ArrayList.class
             );
         } else {
             builder.addStatement(
                     "$L($T.$L.produce(null, null))",
-                    prop.getSetterName(),
-                    prop.getDraftElementTypeName(),
+                    realProp.getSetterName(),
+                    realProp.getDraftElementTypeName(),
                     "$"
             );
         }
         builder.endControlFlow();
         if (prop.isList()) {
-            builder.addCode(
-                    "return $L.$L($L.$L(), $T.class, $L);",
-                    DRAFT_FIELD_CTX,
-                    "toDraftList",
-                    UNMODIFIED,
-                    prop.getGetterName(),
-                    prop.getElementType(),
-                    prop.isAssociation(false)
-            );
+            if (realProp != prop) {
+                builder.addStatement(
+                        "return new $T<>($T.TYPE, $L())",
+                        MUTABLE_ID_VIEW_LIST_CLASS_NAME,
+                        realProp.getTargetType().getProducerClassName(),
+                        realProp.getGetterName()
+                );
+            } else {
+                builder.addCode(
+                        "return $L.$L($L.$L(), $T.class, $L);",
+                        DRAFT_FIELD_CTX,
+                        "toDraftList",
+                        UNMODIFIED,
+                        prop.getGetterName(),
+                        prop.getElementType(),
+                        prop.isAssociation(false)
+                );
+            }
         } else {
             builder.addCode(
                     "return $L.$L($L.$L());",
@@ -562,8 +610,16 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(Object.class, "value");
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("__set(prop.asName(), value)");
+            builder.addStatement("return");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             Object castTo = prop.getBoxType();
             if (castTo == null) {
@@ -608,25 +664,41 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop")
                 .addParameter(TypeName.BOOLEAN, "visible");
-        builder.beginControlFlow("switch (prop)");
+        builder.addStatement("$T __visibility = $L.__visibility", VISIBILITY_CLASS_NAME, UNMODIFIED);
+        builder.beginControlFlow("if (__visibility == null)", UNMODIFIED);
+        builder.beginControlFlow("if (visible)");
+        builder.addStatement("return");
+        builder.endControlFlow();
+        builder.addStatement(
+                "$L().__visibility = __visibility = $T.of($L)",
+                DRAFT_FIELD_MODIFIED,
+                VISIBILITY_CLASS_NAME,
+                type.getProps().size()
+        );
+        builder.endControlFlow();
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("__show(prop.asName(), visible)");
+            builder.addStatement("return");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
-            if (prop.isVisibilityControllable()) {
-                appender.addCase(prop);
-                builder.addStatement(
-                        "$L().$L = visible;break",
-                        DRAFT_FIELD_MODIFIED,
-                        prop.getVisibleName()
-                );
-            }
+            appender.addCase(prop);
+            builder.addStatement(
+                    "__visibility.show($L, visible);break",
+                    prop.getSlotName()
+            );
         }
         builder.addStatement(
-                "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S + \n$S\n$<)",
+                "default: throw new IllegalArgumentException(\n$>$S + \nprop + \n$S\n$<)",
                 "Illegal property " +
                         (argType == String.class ? "name" : "id") +
                         " for \"" + type + "\": \"",
-                "\",it does not exists or the visibility of that property is not controllable",
-                "(Only non-abstract formula property can be used)"
+                "\",it does not exists"
         );
         builder.endControlFlow();
         typeBuilder.addMethod(builder.build());
@@ -638,14 +710,23 @@ public class DraftImplGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(argType, "prop");
-        builder.beginControlFlow("switch (prop)");
         CaseAppender appender = new CaseAppender(builder, type, argType);
+        if (argType == PropId.class) {
+            builder.addStatement("int __propIndex = prop.asIndex()");
+            builder.beginControlFlow("switch (__propIndex)");
+            appender.addIllegalCase();
+            builder.addStatement("__unload(prop.asName())");
+            builder.addStatement("return");
+        } else {
+            builder.beginControlFlow("switch (prop)");
+        }
         for (ImmutableProp prop : type.getPropsOrderById()) {
             appender.addCase(prop);
             if (prop.getBaseProp() != null) {
                 builder.addStatement(
-                        "__unload($L);break",
-                        prop.getBaseProp().getId()
+                        "__unload($T.byIndex($L));break",
+                        PROP_ID_CLASS_NAME,
+                        prop.getBaseProp().getSlotName()
                 );
             } else if (prop.isJavaFormula()) {
                 builder.addStatement("break");
@@ -717,7 +798,11 @@ public class DraftImplGenerator {
             builder.beginControlFlow("if (__tmpModified == null)");
             for (ImmutableProp prop : type.getProps().values()) {
                 if (prop.isValueRequired() && (prop.isAssociation(false) || prop.isList())) {
-                    builder.beginControlFlow("if (base.__isLoaded($L))", prop.getId());
+                    builder.beginControlFlow(
+                            "if (base.__isLoaded($T.byIndex($L)))",
+                            PROP_ID_CLASS_NAME,
+                            prop.getSlotName()
+                    );
                     builder.addStatement(
                             "$T oldValue = base.$L()",
                             prop.getTypeName(),
@@ -729,14 +814,7 @@ public class DraftImplGenerator {
                             DRAFT_FIELD_CTX,
                             prop.isList() ? "resolveList" : "resolveObject"
                     );
-                    if (prop.isList()) {
-                        builder.beginControlFlow("if (oldValue != newValue)");
-                    } else {
-                        builder.beginControlFlow(
-                                "if (!$T.equals(oldValue, newValue, true))",
-                                ImmutableSpi.class
-                        );
-                    }
+                    builder.beginControlFlow("if (oldValue != newValue)");
                     builder.addStatement("$L(newValue)", prop.getSetterName());
                     builder.endControlFlow();
                     builder.endControlFlow();
@@ -774,10 +852,8 @@ public class DraftImplGenerator {
 
         builder
                 .beginControlFlow(
-                        "if (" +
-                                DRAFT_FIELD_BASE +
-                                " != null && (__tmpModified == null || $T.equals(base, __tmpModified, true)))",
-                        ImmutableSpi.class
+                        "if ($L != null && __tmpModified == null)",
+                        DRAFT_FIELD_BASE
                 )
                 .addStatement("return base")
                 .endControlFlow();

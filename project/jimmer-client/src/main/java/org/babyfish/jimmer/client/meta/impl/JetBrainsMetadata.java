@@ -7,9 +7,7 @@ import kotlin.reflect.full.KClasses;
 import kotlin.reflect.jvm.ReflectJvmMapping;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.impl.asm.*;
-import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -130,7 +128,10 @@ class JetBrainsMetadata {
     public boolean isNullable(Method method, int parameterIndex) {
         if (kCallableMap != null) {
             KCallable<?> callable = kCallableMap.get(method);
-            return callable != null && callable.getParameters().get(parameterIndex).getType().isMarkedNullable();
+            if (callable != null) {
+                int baseIndex = callable.getParameters().size() - method.getParameters().length;
+                return callable.getParameters().get(baseIndex + parameterIndex).getType().isMarkedNullable();
+            }
         }
         Set<Integer> indices = getNullity().nullableParameterIndices.get(method);
         return indices != null && indices.contains(parameterIndex);
@@ -162,16 +163,26 @@ class JetBrainsMetadata {
 
                                 @Override
                                 public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-                                    return (access & Opcodes.ACC_STATIC) == 0 ?
-                                            new FieldVisitorImpl(accessibleObjectMap.get(new Member(name, descriptor))) :
-                                            null;
+                                    if ((access & Opcodes.ACC_STATIC) != 0) {
+                                        return null;
+                                    }
+                                    AccessibleObject field = accessibleObjectMap.get(new Member(name, descriptor));
+                                    if (field == null) {
+                                        return null;
+                                    }
+                                    return new FieldVisitorImpl(field);
                                 }
 
                                 @Override
                                 public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                                    return (access & Opcodes.ACC_STATIC) == 0 ?
-                                            new MethodVisitorImpl(accessibleObjectMap.get(new Member(name, descriptor))) :
-                                            null;
+                                    if ((access & Opcodes.ACC_STATIC) != 0) {
+                                        return null;
+                                    }
+                                    AccessibleObject method = accessibleObjectMap.get(new Member(name, descriptor));
+                                    if (method == null) {
+                                        return null;
+                                    }
+                                    return new MethodVisitorImpl(method);
                                 }
                             },
                             ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG

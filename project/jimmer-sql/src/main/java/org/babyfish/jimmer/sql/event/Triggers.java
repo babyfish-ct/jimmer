@@ -66,4 +66,6 @@ public interface Triggers {
     }
 
     void fireAssociationEvict(ImmutableProp prop, Object sourceId, Object reason);
+
+    boolean isTransaction();
 }

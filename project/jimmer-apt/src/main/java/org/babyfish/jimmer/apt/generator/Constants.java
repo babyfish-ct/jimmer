@@ -5,13 +5,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
-import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
+import org.babyfish.jimmer.runtime.Visibility;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
+import org.babyfish.jimmer.sql.collection.IdViewList;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
+import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 
 import java.beans.ConstructorProperties;
 import java.util.*;
@@ -52,15 +55,6 @@ class Constants {
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
 
-    public static final ClassName INPUT_CLASS_NAME =
-            ClassName.get(Input.class);
-
-    public static final ClassName STATIC_METADATA_CLASS_NAME =
-            ClassName.get(
-                    "org.babyfish.jimmer.sql.fetcher",
-                    "StaticMetadata"
-            );
-
     public static final ClassName DRAFT_CONTEXT_CLASS_NAME =
             ClassName.get(DraftContext.class);
 
@@ -70,8 +64,20 @@ class Constants {
     public static final ClassName RUNTIME_TYPE_CLASS_NAME =
             ClassName.get(org.babyfish.jimmer.meta.ImmutableType.class);
 
+    public static final ClassName VISIBILITY_CLASS_NAME =
+            ClassName.get(Visibility.class);
+
+    public static final ClassName PROP_ID_CLASS_NAME =
+            ClassName.get(PropId.class);
+
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
+
+    public static final ClassName ID_VIEW_LIST_CLASS_NAME =
+            ClassName.get(IdViewList.class);
+
+    public static final ClassName MUTABLE_ID_VIEW_LIST_CLASS_NAME =
+            ClassName.get(MutableIdViewList.class);
 
     public static final ClassName MANY_TO_MANY_VIEW_LIST_CLASS_NAME =
             ClassName.get(ManyToManyViewList.class);

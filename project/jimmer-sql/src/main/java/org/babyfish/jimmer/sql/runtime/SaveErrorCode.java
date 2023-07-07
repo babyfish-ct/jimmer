@@ -29,6 +29,8 @@ public enum SaveErrorCode {
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
     ILLEGAL_GENERATED_ID,
 
+    @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
+    EMPTY_OBJECT,
 
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
     NO_KEY_PROPS,

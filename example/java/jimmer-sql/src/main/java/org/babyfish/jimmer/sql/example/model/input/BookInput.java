@@ -1,16 +1,10 @@
 package org.babyfish.jimmer.sql.example.model.input;
 
 import lombok.Data;
-import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.sql.example.model.Author;
 import org.babyfish.jimmer.sql.example.model.Book;
-import org.babyfish.jimmer.sql.example.model.BookStore;
 import org.jetbrains.annotations.Nullable;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;

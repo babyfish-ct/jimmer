@@ -5,6 +5,7 @@ import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.DraftConsumerUncheckedException;
 import org.babyfish.jimmer.meta.ImmutableType;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -96,6 +97,24 @@ public class Internal {
         }
     }
 
+    public static <T> T usingSqlDraftContext(
+            SqlDraftContextFunction<T> block
+    ) throws SQLException {
+        DraftContext ctx = DRAFT_CONTEXT_LOCAL.get();
+        if (ctx != null) {
+            return block.execute(ctx, false);
+        }
+        ctx = new DraftContext(null);
+        DRAFT_CONTEXT_LOCAL.set(ctx);
+        try {
+            T result = block.execute(ctx, true);
+            ctx.dispose();
+            return result;
+        } finally {
+            DRAFT_CONTEXT_LOCAL.remove();
+        }
+    }
+
     public static <T> T requiresNewDraftContext(
             Function<DraftContext, T> block
     ) {
@@ -113,7 +132,7 @@ public class Internal {
         }
     }
 
-    private static Draft createDraft(
+    public static Draft createDraft(
             DraftContext ctx,
             ImmutableType type,
             Object base) {
@@ -141,5 +160,9 @@ public class Internal {
                 DraftConsumerUncheckedException.rethrow(ex);
             }
         }
+    }
+
+    public interface SqlDraftContextFunction<T> {
+        T execute(DraftContext draftContext, boolean isRoot) throws SQLException;
     }
 }

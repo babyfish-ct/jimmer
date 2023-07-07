@@ -2,10 +2,6 @@ import type { ExportedSavePath } from './model/static';
 
 export type AllErrors = 
     {
-        readonly family: "BusinessErrorCode",
-        readonly code: "GLOBAL_TENANT_REQUIRED"
-    } | 
-    {
         readonly family: "SaveErrorCode",
         readonly code: "CANNOT_CREATE_TARGET",
         readonly "exportedPath": ExportedSavePath
@@ -13,6 +9,16 @@ export type AllErrors =
     {
         readonly family: "SaveErrorCode",
         readonly code: "CANNOT_DISSOCIATE_TARGETS",
+        readonly "exportedPath": ExportedSavePath
+    } | 
+    {
+        readonly family: "SaveErrorCode",
+        readonly code: "EMPTY_OBJECT",
+        readonly "exportedPath": ExportedSavePath
+    } | 
+    {
+        readonly family: "SaveErrorCode",
+        readonly code: "FAILED_REMOTE_VALIDATION",
         readonly "exportedPath": ExportedSavePath
     } | 
     {
@@ -38,6 +44,11 @@ export type AllErrors =
     {
         readonly family: "SaveErrorCode",
         readonly code: "KEY_NOT_UNIQUE",
+        readonly "exportedPath": ExportedSavePath
+    } | 
+    {
+        readonly family: "SaveErrorCode",
+        readonly code: "LONG_REMOTE_ASSOCIATION",
         readonly "exportedPath": ExportedSavePath
     } | 
     {
@@ -68,6 +79,16 @@ export type AllErrors =
     {
         readonly family: "SaveErrorCode",
         readonly code: "NULL_TARGET",
+        readonly "exportedPath": ExportedSavePath
+    } | 
+    {
+        readonly family: "SaveErrorCode",
+        readonly code: "REVERSED_REMOTE_ASSOCIATION",
+        readonly "exportedPath": ExportedSavePath
+    } | 
+    {
+        readonly family: "SaveErrorCode",
+        readonly code: "UNSTRUCTURED_ASSOCIATION",
         readonly "exportedPath": ExportedSavePath
     }
 ;
@@ -112,6 +133,11 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SaveErrorCode',
+                readonly code: 'EMPTY_OBJECT',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
                 readonly code: 'NO_KEY_PROPS',
                 readonly [key:string]: any
             } | 
@@ -138,6 +164,26 @@ export type ApiErrors = {
             {
                 readonly family: 'SaveErrorCode',
                 readonly code: 'NEITHER_ID_NOR_KEY',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'REVERSED_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'LONG_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'FAILED_REMOTE_VALIDATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'UNSTRUCTURED_ASSOCIATION',
                 readonly [key:string]: any
             }
         )
@@ -181,6 +227,11 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SaveErrorCode',
+                readonly code: 'EMPTY_OBJECT',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
                 readonly code: 'NO_KEY_PROPS',
                 readonly [key:string]: any
             } | 
@@ -210,8 +261,23 @@ export type ApiErrors = {
                 readonly [key:string]: any
             } | 
             {
-                readonly family: 'BusinessErrorCode',
-                readonly code: 'GLOBAL_TENANT_REQUIRED',
+                readonly family: 'SaveErrorCode',
+                readonly code: 'REVERSED_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'LONG_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'FAILED_REMOTE_VALIDATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'UNSTRUCTURED_ASSOCIATION',
                 readonly [key:string]: any
             }
         ),
@@ -253,6 +319,11 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SaveErrorCode',
+                readonly code: 'EMPTY_OBJECT',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
                 readonly code: 'NO_KEY_PROPS',
                 readonly [key:string]: any
             } | 
@@ -282,8 +353,23 @@ export type ApiErrors = {
                 readonly [key:string]: any
             } | 
             {
-                readonly family: 'BusinessErrorCode',
-                readonly code: 'GLOBAL_TENANT_REQUIRED',
+                readonly family: 'SaveErrorCode',
+                readonly code: 'REVERSED_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'LONG_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'FAILED_REMOTE_VALIDATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'UNSTRUCTURED_ASSOCIATION',
                 readonly [key:string]: any
             }
         )
@@ -327,6 +413,11 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SaveErrorCode',
+                readonly code: 'EMPTY_OBJECT',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
                 readonly code: 'NO_KEY_PROPS',
                 readonly [key:string]: any
             } | 
@@ -353,6 +444,26 @@ export type ApiErrors = {
             {
                 readonly family: 'SaveErrorCode',
                 readonly code: 'NEITHER_ID_NOR_KEY',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'REVERSED_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'LONG_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'FAILED_REMOTE_VALIDATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'UNSTRUCTURED_ASSOCIATION',
                 readonly [key:string]: any
             }
         )
@@ -396,6 +507,11 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SaveErrorCode',
+                readonly code: 'EMPTY_OBJECT',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
                 readonly code: 'NO_KEY_PROPS',
                 readonly [key:string]: any
             } | 
@@ -422,6 +538,26 @@ export type ApiErrors = {
             {
                 readonly family: 'SaveErrorCode',
                 readonly code: 'NEITHER_ID_NOR_KEY',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'REVERSED_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'LONG_REMOTE_ASSOCIATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'FAILED_REMOTE_VALIDATION',
+                readonly [key:string]: any
+            } | 
+            {
+                readonly family: 'SaveErrorCode',
+                readonly code: 'UNSTRUCTURED_ASSOCIATION',
                 readonly [key:string]: any
             }
         )

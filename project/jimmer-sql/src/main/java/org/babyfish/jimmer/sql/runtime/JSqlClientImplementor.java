@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
+import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -34,6 +35,10 @@ public interface JSqlClientImplementor extends JSqlClient {
 
     SqlFormatter getSqlFormatter();
 
+    CacheOperator getCacheOperator();
+
+    TriggerType getTriggerType();
+
     <T, S> ScalarProvider<T, S> getScalarProvider(Class<T> scalarType);
 
     <T, S> ScalarProvider<T, S> getScalarProvider(TypedProp<T, ?> prop);
@@ -47,8 +52,6 @@ public interface JSqlClientImplementor extends JSqlClient {
     int getDefaultListBatchSize();
 
     int getOffsetOptimizingThreshold();
-
-    TriggerType getTriggerType();
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -21,7 +22,6 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.ParameterizedType;
@@ -35,18 +35,18 @@ public class FilterManager implements Filters {
 
     private final Set<Filter<?>> disabledFilters;
 
-    private final Map<ImmutableType, List<Filter<Props>>> filterMap;
+    private final Map<String, List<Filter<Props>>> filterMap;
 
-    private final Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap;
+    private final Map<String, List<Filter<Props>>> allCacheableFilterMap;
 
-    private final StaticCache<ImmutableType, Filter<Props>> cache =
-            new StaticCache<>(this::create, true);
+    private final TypeCache<Filter<Props>> cache =
+            new TypeCache<>(this::create, true);
 
-    private final StaticCache<ImmutableType, Filter<Props>> shardingOnlyCache =
-            new StaticCache<>(this::createShardingOnly, true);
+    private final TypeCache<Filter<Props>> shardingOnlyCache =
+            new TypeCache<>(this::createShardingOnly, true);
 
-    private final StaticCache<ImmutableType, List<Filter<Props>>> allCacheableCache =
-            new StaticCache<>(this::createAllCacheable, false);
+    private final TypeCache<List<Filter<Props>>> allCacheableCache =
+            new TypeCache<>(this::createAllCacheable, false);
 
     private final BuiltInFilters builtIns;
 
@@ -71,8 +71,8 @@ public class FilterManager implements Filters {
             BuiltInFilters builtIns,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
-            Map<ImmutableType, List<Filter<Props>>> filterMap,
-            Map<ImmutableType, List<Filter<Props>>> allCacheableFilterMap
+            Map<String, List<Filter<Props>>> filterMap,
+            Map<String, List<Filter<Props>>> allCacheableFilterMap
     ) {
         this.builtIns = builtIns;
         this.allFilters = filters;
@@ -259,8 +259,8 @@ public class FilterManager implements Filters {
     }
 
     public boolean contains(ImmutableType type) {
-        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
-            if (filterMap.containsKey(t)) {
+        for (ImmutableType t : type.getAllTypes()) {
+            if (filterMap.containsKey(t.toString())) {
                 // No matter enabled or disabled
                 return true;
             }
@@ -279,13 +279,15 @@ public class FilterManager implements Filters {
     @SuppressWarnings("unchecked")
     private Filter<Props> create(ImmutableType type, boolean shardingOnly) {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
-        for (ImmutableType t = type; t != null; t = t.getSuperType()) {
-            List<Filter<Props>> list = filterMap.get(t);
-            if (list != null) {
-                for (Filter<Props> filter : list) {
-                    if ((!shardingOnly || filter instanceof ShardingFilter<?>) &&
-                            !disabledFilters.contains(filter)) {
-                        filters.add(filter);
+        if (type != null) {
+            for (ImmutableType t : type.getAllTypes()) {
+                List<Filter<Props>> list = filterMap.get(t.toString());
+                if (list != null) {
+                    for (Filter<Props> filter : list) {
+                        if ((!shardingOnly || filter instanceof ShardingFilter<?>) &&
+                                !disabledFilters.contains(filter)) {
+                            filters.add(filter);
+                        }
                     }
                 }
             }
@@ -304,8 +306,8 @@ public class FilterManager implements Filters {
     @SuppressWarnings("unchecked")
     private List<Filter<Props>> createAllCacheable(ImmutableType type) {
         List<Filter<Props>> filters = new ArrayList<>();
-        while (type != null) {
-            List<Filter<Props>> list = allCacheableFilterMap.get(type);
+        for (ImmutableType t : type.getAllTypes()) {
+            List<Filter<Props>> list = allCacheableFilterMap.get(t.toString());
             if (list != null) {
                 for (Filter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
@@ -313,7 +315,6 @@ public class FilterManager implements Filters {
                     }
                 }
             }
-            type = type.getSuperType();
         }
         return filters;
     }
@@ -444,16 +445,16 @@ public class FilterManager implements Filters {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<ImmutableType, List<Filter<Props>>> filterMap(
+    private static Map<String, List<Filter<Props>>> filterMap(
             Collection<Filter<?>> filters,
             Collection<Filter<?>> disabledFilters
     ) {
-        Map<ImmutableType, List<Filter<Props>>> map = new HashMap<>();
+        Map<String, List<Filter<Props>>> map = new HashMap<>();
         for (Filter<?> filter : filters) {
             if (filter != null && !disabledFilters.contains(filter)) {
-                ImmutableType immutableType = getImmutableType((Filter<Props>) filter);
+                ImmutableType immutableType = getImmutableType(filter);
                 map
-                        .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                        .computeIfAbsent(immutableType.toString(), it -> new ArrayList<>())
                         .add((Filter<Props>) filter);
             }
         }
@@ -607,7 +608,7 @@ public class FilterManager implements Filters {
         if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
             ImmutableProp mappedBy = prop.getMappedBy();
             if (mappedBy != null && mappedBy.isColumnDefinition()) {
-                if (e.getUnchangedFieldRef(mappedBy) == null) {
+                if (e.getUnchangedRef(mappedBy) == null) {
                     return;
                 }
             }
@@ -629,7 +630,7 @@ public class FilterManager implements Filters {
         Triggers triggers = sqlClient.getTriggers();
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null && mappedBy.isColumnDefinition()) {
-            Ref<Object> ref = e.getUnchangedFieldRef(mappedBy);
+            Ref<Object> ref = e.getUnchangedRef(mappedBy);
             if (ref != null) {
                 ImmutableSpi source = (ImmutableSpi) ref.getValue();
                 if (source != null) {
@@ -660,5 +661,18 @@ public class FilterManager implements Filters {
                 }
             }
         }
+    }
+
+    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
+        Set<ImmutableType> affectTypes = new HashSet<>();
+        for (ImmutableType type : allTypes) {
+            for (ImmutableType upcastType : type.getAllTypes()) {
+                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType.toString())) {
+                    affectTypes.add(type);
+                    break;
+                }
+            }
+        }
+        return affectTypes;
     }
 }

@@ -14,6 +14,7 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public class Context {
 
     private final TypeMirror comparableType;
 
-    private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
+    private final Map<String, ImmutableType> immutableTypeMap = new HashMap<>();
 
     private final boolean keepIsPrefix;
 
@@ -130,12 +131,24 @@ public class Context {
         return types.isSubtype(type, superType);
     }
 
+    public Collection<ImmutableType> getImmutableTypes() {
+        return Collections.unmodifiableCollection(immutableTypeMap.values());
+    }
+
     public ImmutableType getImmutableType(TypeElement typeElement) {
         if (getImmutableAnnotationType(typeElement) != null) {
-            ImmutableType type = immutableTypeMap.get(typeElement);
+            String qualifiedName = typeElement.getQualifiedName().toString();
+            ImmutableType type = immutableTypeMap.get(qualifiedName);
             if (type == null) {
                 type = new ImmutableType(this, typeElement);
-                immutableTypeMap.put(typeElement, type);
+                if (immutableTypeMap.put(qualifiedName, type) != null) {
+                    throw new MetaException(
+                            typeElement,
+                            "Conflict qualified immutable type name \"" +
+                                    qualifiedName +
+                                    "\""
+                    );
+                }
             }
             return type;
         }

@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.util.Objects;
 
-public class EntityEvent<E> {
+public class EntityEvent<E> implements DatabaseEvent {
 
     private final Object id;
 
@@ -26,7 +23,7 @@ public class EntityEvent<E> {
 
     public EntityEvent(E oldEntity, E newEntity, Connection con, Object reason) {
         if (oldEntity == null && newEntity == null) {
-            throw new IllegalArgumentException("Both oldEntity and newEntity are null");
+            throw new IllegalArgumentException("Both `oldEntity` and `newEntity` are null");
         }
         if (oldEntity != null && !(oldEntity instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("oldEntity is not immutable object");
@@ -41,7 +38,7 @@ public class EntityEvent<E> {
                 throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
             }
         }
-        int idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
+        PropId idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
         Object oldId = null;
         if (oe != null && oe.__isLoaded(idPropId)) {
             oldId = oe.__get(idPropId);
@@ -80,29 +77,26 @@ public class EntityEvent<E> {
         return this.id;
     }
 
-    /**
-     * Determine whether the trigger for sending the current event is within
-     * a transaction or based on binlog
-     *
-     * <ul>
-     *  <li>If the event is fired by binlog trigger, returns null</li>
-     *  <li>If the event is fired by transaction trigger, returns current trigger</li>
-     * </ul>
-     *
-     * <p>
-     *     Notes, If you use jimmer in spring-boot and accept events with `@EventListener`,
-     *     it will be very important to determine whether this property is null.
-     *     Because once the `triggerType` of `SqlClient` is set to `BOTH`, the same event
-     *     will be notified twice.
-     * </p>
-     *
-     * @return The current connection or null
-     */
+    @Override
+    public boolean isChanged(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+            return false;
+        }
+        return getChangedRef(prop) != null;
+    }
+
+    @Override
+    public boolean isChanged(TypedProp<?, ?> prop) {
+        return isChanged(prop.unwrap());
+    }
+
+    @Override
     @Nullable
     public Connection getConnection() {
         return con;
     }
 
+    @Override
     @Nullable
     public Object getReason() {
         return this.reason;
@@ -128,20 +122,21 @@ public class EntityEvent<E> {
         return Type.UPDATE;
     }
 
-    @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(ImmutableProp prop) {
-        return getUnchangedFieldRef(prop.getId());
-    }
-
-    @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(TypedProp<?, ?> prop) {
-        return getUnchangedFieldRef(prop.unwrap().getId());
-    }
-
+    /**
+     * Get the unchanged ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a ref object which is the wrapper of unchanged value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> Ref<T> getUnchangedFieldRef(int propId) {
-        ImmutableProp prop = getImmutableType().getProp(propId);
+    public <T> Ref<T> getUnchangedRef(ImmutableProp prop) {
+        validateProp(prop);
         if (!prop.isColumnDefinition()) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
@@ -150,6 +145,7 @@ public class EntityEvent<E> {
                             "because it is not a property mapped by database columns"
             );
         }
+        PropId propId = prop.getId();
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
         ImmutableSpi ne = (ImmutableSpi) newEntity;
         boolean oldLoaded = oe != null && oe.__isLoaded(propId);
@@ -176,20 +172,38 @@ public class EntityEvent<E> {
         return null;
     }
 
+    /**
+     * Get the unchanged ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a ref object which is the wrapper of unchanged value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(ImmutableProp prop) {
-        return getChangedFieldRef(prop.getId());
+    public <T> Ref<T> getUnchangedRef(TypedProp.Single<?, T> prop) {
+        return getUnchangedRef(prop.unwrap());
     }
 
-    @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(TypedProp<?, ?> prop) {
-        return getChangedFieldRef(prop.unwrap().getId());
-    }
-
+    /**
+     * Get the changed ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a changed ref object which is a wrapper of
+     * both old value and new value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
     @SuppressWarnings("unchecked")
     @Nullable
-    public <T> ChangedRef<T> getChangedFieldRef(int propId) {
-        ImmutableProp prop = getImmutableType().getProp(propId);
+    public <T> ChangedRef<T> getChangedRef(ImmutableProp prop) {
+        validateProp(prop);
         if (!prop.isColumnDefinition()) {
             throw new IllegalArgumentException(
                     "Cannot get the unchanged the value of \"" +
@@ -198,6 +212,7 @@ public class EntityEvent<E> {
                             "because it is not a property mapped by database columns"
             );
         }
+        PropId propId = prop.getId();
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
         ImmutableSpi ne = (ImmutableSpi) newEntity;
         if (oe == null) {
@@ -228,6 +243,79 @@ public class EntityEvent<E> {
                 return null;
             }
             return new ChangedRef<>(oldValue, newValue);
+        }
+    }
+
+    /**
+     * Get the changed ref of specified property
+     * @param prop The specified property
+     * @param <T> The return type of specified property
+     * @return If the value of specified property is NOT changed,
+     * return a changed ref object which is a wrapper of
+     * both old value and new value;
+     * otherwise, return null.
+     * @exception IllegalArgumentException The declaring type of
+     * specified property is not assignable from the entity type
+     * of current event object
+     */
+    @Nullable
+    public <T> ChangedRef<T> getChangedRef(TypedProp.Single<?, T> prop) {
+        return getChangedRef(prop.unwrap());
+    }
+
+    /**
+     * Get the value of specified property if it is not changed.
+     * @param prop The specified property
+     * @param <T> The return type of returned property
+     * @return The unchanged value of specified property
+     * @exception IllegalArgumentException
+     * <ul>
+     *     <li>The declaring type of
+     *     specified property is not assignable from the entity type
+     *     of current event object</li>
+     *     <li>The value of specified property is changed</li>
+     * </ul>
+     */
+    public <T> T getUnchangedValue(ImmutableProp prop) {
+        Ref<T> ref = getUnchangedRef(prop);
+        if (ref == null) {
+            throw new IllegalArgumentException(
+                    "Cannot get unchanged value of \"" +
+                            prop +
+                            "\", because the value of it is changed"
+            );
+        }
+        return ref.getValue();
+    }
+
+    /**
+     * Get the value of specified property if it is not changed.
+     * @param prop The specified property
+     * @param <T> The return type of returned property
+     * @return The unchanged value of specified property
+     * @exception IllegalArgumentException
+     * <ul>
+     *     <li>The declaring type of
+     *     specified property is not assignable from the entity type
+     *     of current event object</li>
+     *     <li>The value of specified property is changed</li>
+     * </ul>
+     */
+    public <T> T getUnchangedValue(TypedProp.Single<?, T> prop) {
+        return getUnchangedValue(prop.unwrap());
+    }
+
+    private void validateProp(ImmutableProp prop) {
+        if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
+            throw new IllegalArgumentException(
+                    "The argument `prop` cannot be \"" +
+                            prop +
+                            "\", it declaring type \"" +
+                            prop.getDeclaringType() +
+                            "\" is not assignable from the current type \"" +
+                            getImmutableType() +
+                            "\""
+            );
         }
     }
 
@@ -266,7 +354,7 @@ public class EntityEvent<E> {
         if (a == null || b == null) {
             return false;
         }
-        int targetIdPropId = prop.getTargetType().getIdProp().getId();
+        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
         Object targetId1 = ((ImmutableSpi) a).__get(targetIdPropId);
         Object targetId2 = ((ImmutableSpi) b).__get(targetIdPropId);
         return targetId1.equals(targetId2);

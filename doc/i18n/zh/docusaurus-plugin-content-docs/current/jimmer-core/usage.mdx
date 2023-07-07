@@ -12,10 +12,10 @@ import TabItem from '@theme/TabItem';
 <TabItem value="java" label="Java(Gradle)">
 
 ```groovy title="build.gradle"
-depdencies {
+dependencies {
     
-    implementation 'org.babyfish.jimmer:jimmer-core:0.7.65'
-    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.7.65'
+    implementation 'org.babyfish.jimmer:jimmer-core:0.7.112'
+    annotationProcessor 'org.babyfish.jimmer:jimmer-apt:0.7.112'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
 }
@@ -29,7 +29,7 @@ depdencies {
     <dependency>
         <groupId>org.babyfish.jimmer</groupId>
         <artifactId>jimmer-core</artifactId>
-        <version>0.7.65</version>
+        <version>0.7.112</version>
     </dependency>
 </dependencies>
 
@@ -44,7 +44,7 @@ depdencies {
                     <path>
                         <groupId>org.babyfish.jimmer</groupId>
                         <artifactId>jimmer-apt</artifactId>
-                        <version>0.7.65</version>
+                        <version>0.7.112</version>
                     </path>
                 </annotationProcessorPaths>
             </configuration>
@@ -63,13 +63,13 @@ plugins {
 
     ...省略其他插件...
 }
-depdencies {
+dependencies {
     
     // 第二步: 添加jimmer-core-kotlin
-    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.7.65")
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:0.7.112")
 
     // 第三步: 应用ksp插件
-	ksp("org.babyfish.jimmer:jimmer-ksp:0.7.65")
+	ksp("org.babyfish.jimmer:jimmer-ksp:0.7.112")
 
     ...ommit other dependency...
 }
@@ -91,7 +91,7 @@ kotlin {
 <dependency>
     <groupId>org.babyfish.jimmer</groupId>
     <artifactId>jimmer-core-kotlin</artifactId>
-    <version>0.7.65</version>
+    <version>0.7.112</version>
 </dependency>
 
 <build>
@@ -133,7 +133,7 @@ kotlin {
                 <dependency>
                     <groupId>org.babyfish.jimmer</groupId>
                     <artifactId>jimmer-ksp</artifactId>
-                    <version>0.7.65</version>
+                    <version>0.7.112</version>
                 </dependency>
             </dependencies>
         </plugin>

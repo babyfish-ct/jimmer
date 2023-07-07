@@ -58,6 +58,19 @@ public abstract class CompositePredicate extends AbstractPredicate {
 
     protected abstract SqlBuilder.ScopeType scopeType();
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+        CompositePredicate that = (CompositePredicate) o;
+        return Arrays.equals(predicates, that.predicates);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(predicates);
+    }
+
     static class And extends CompositePredicate {
 
         And(Predicate ... predicates) {

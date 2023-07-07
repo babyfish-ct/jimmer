@@ -1,0 +1,60 @@
+---
+sidebar_position: 11
+title: OnDissociate
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::info
+@`org.babyfish.jimmer.sql.OnDissociate`用于和[修改篇/保存指令](../../mutation/save-command)和[修改篇/删除指令](../../mutation/delete-command)配合
+:::
+
+`@OnDissociate`只能用在基于外键映射的多对一关联上，比如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Null
+    @ManyToOne
+    @OnDissociate(DissociateAction.SET_NULL)
+    BookStore store();
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToOne
+    @OnDissociate(DissociateAction.SET_NULL)
+    val store: BookStore?
+    ...
+}
+```
+
+</TabItem>
+</Tabs>
+
+当
+
+- 父对象被删除时
+- 或父抛弃某些子对象时（基于save command指令的对象树覆盖行为）
+
+子对象会被脱钩。
+
+DissociateAction具有3个选项，对应数据库的外键行为：
+
+- NONE: 当前外键不支持脱钩行为，阻止其父对象被删除。
+- SET_NULL: 自动清空外键。对于父对象的删除操作而言，看起来很像`on delete set null`。
+- DELETE: 自动删除子对象。对于父对象的删除操作而言，看起来很像`on delete cascade`。
+
+本文只介绍OnDissociate的配置，至于如何进一步使用，请参见[删除指令](../../mutation/delete-command)。

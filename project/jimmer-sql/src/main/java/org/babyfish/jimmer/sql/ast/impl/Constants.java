@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 public class Constants {
 
     public static <N extends Number & Comparable<N>> NumericExpression<N> number(N value) {
@@ -15,7 +17,7 @@ public class Constants {
         private N value;
 
         public Num(N value) {
-            this.value = value;
+            this.value = Objects.requireNonNull(value, "`value` cannot be null");
         }
 
         @SuppressWarnings("unchecked")
@@ -36,6 +38,19 @@ public class Constants {
         @Override
         public int precedence() {
             return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Num<?> num = (Num<?>) o;
+            return value.equals(num.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
         }
     }
 }

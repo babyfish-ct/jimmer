@@ -48,7 +48,8 @@ internal class LikePredicate(
     }
 
     override fun renderTo(builder: SqlBuilder) {
-        if (insensitive) {
+        val ignoreCaseLikeSupported = builder.astContext.sqlClient.dialect.isIgnoreCaseLikeSupported
+        if (insensitive && !ignoreCaseLikeSupported) {
             builder.sql("lower(")
             (expression as Ast).renderTo(builder)
             builder.sql(")")
@@ -56,7 +57,13 @@ internal class LikePredicate(
             (expression as Ast).renderTo(builder)
         }
         builder
-            .sql(if (negative) " not like " else " like ")
+            .sql(
+                if (insensitive && ignoreCaseLikeSupported) {
+                    if (negative) " not ilike " else " ilike "
+                } else {
+                    if (negative) " not like " else " like "
+                }
+            )
             .variable(pattern)
     }
 }

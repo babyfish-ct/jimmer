@@ -93,7 +93,7 @@ export class AuthorService {
 export type AuthorServiceOptions = {
     'deleteAuthor': {readonly id: number},
     'findAuthors': {
-        readonly sortCode: string, 
+        readonly sortCode?: string, 
         readonly firstName?: string, 
         readonly lastName?: string, 
         readonly gender?: Gender

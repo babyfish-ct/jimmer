@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompileException;
 import org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -150,6 +151,32 @@ public class CompilerTest {
         Assertions.assertEquals(
                 "Cannot compile fetcher(line: 5, position: 1): extraneous input ',' expecting <EOF>",
                 ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testUntypedCode() {
+        Fetcher<Book> fetcher = FetcherCompiler.compile(
+                "{id, name, edition, price, store {id, name}, authors {id, firstName, lastName}}",
+                Book.class
+        );
+        Assertions.assertEquals(
+                "org.babyfish.jimmer.sql.model.Book {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    edition\n" +
+                        "    price\n" +
+                        "    store {\n" +
+                        "        id\n" +
+                        "        name\n" +
+                        "    }\n" +
+                        "    authors {\n" +
+                        "        id\n" +
+                        "        firstName\n" +
+                        "        lastName\n" +
+                        "    }\n" +
+                        "}",
+                fetcher.toString(true)
         );
     }
 }

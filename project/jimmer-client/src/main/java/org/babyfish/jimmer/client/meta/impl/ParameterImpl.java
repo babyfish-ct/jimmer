@@ -135,10 +135,7 @@ class ParameterImpl implements Parameter {
             Type type = ctx
                     .locate(new ParameterLocation(declaringOperation, index, rawParameter.getName()))
                     .parseType(rawParameter.getAnnotatedType());
-            if (isNullable) {
-                type = NullableTypeImpl.of(type);
-            }
-            if (tuple.get_2()) {
+            if (isNullable || tuple.get_2()) {
                 type = NullableTypeImpl.of(type);
             }
             return new ParameterImpl(declaringOperation, rawParameter, parameterName, index, requestParam, null, false, type);

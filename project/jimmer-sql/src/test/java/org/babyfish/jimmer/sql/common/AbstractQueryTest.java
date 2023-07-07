@@ -120,6 +120,9 @@ public class AbstractQueryTest extends AbstractTest {
                     executions.isEmpty(),
                     "Not sql history"
             );
+            if (index >= executions.size()) {
+                Assertions.fail("Too many SQL statements");
+            }
             Assertions.assertEquals(
                     sql.replace("--->", ""),
                     executions.get(index).getSql(),

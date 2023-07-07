@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.filter
 
 import org.babyfish.jimmer.sql.filter.FilterConfig
+import org.babyfish.jimmer.sql.filter.impl.FilterManager
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import kotlin.reflect.KClass
 
@@ -38,4 +39,7 @@ class KFilterDsl internal constructor(
     fun disableByTypes(filterTypes: Collection<KClass<*>>) {
         javaConfig.disableByTypes(filterTypes.map { it.java })
     }
+
+    val filterManager: FilterManager
+        get() = javaConfig.filterManager
 }

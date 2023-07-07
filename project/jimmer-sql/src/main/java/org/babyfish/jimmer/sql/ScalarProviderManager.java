@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.type.ArrayType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ModelException;
-import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
 import org.babyfish.jimmer.impl.util.StaticCache;
@@ -23,8 +23,8 @@ class ScalarProviderManager {
     private final StaticCache<Class<?>, ScalarProvider<?, ?>> typeScalarProviderCache =
             new StaticCache<>(this::createProvider, true);
 
-    private final StaticCache<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderCache =
-            new StaticCache<>(this::createProvider, true);
+    private final PropCache<ScalarProvider<?, ?>> propScalarProviderCache =
+            new PropCache<>(this::createProvider, true);
 
     private final Map<Class<?>, ScalarProvider<?, ?>> customizedTypeScalarProviderMap;
 

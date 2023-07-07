@@ -9,16 +9,14 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
-import org.babyfish.jimmer.sql.meta.impl.PropChains;
+import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
@@ -43,7 +41,11 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private KClass<?> kotlinClass;
 
-    private final ImmutableType superType;
+    private final ImmutableType primarySuperType;
+
+    private final Set<ImmutableType> superTypes;
+
+    private Set<ImmutableType> allTypes;
 
     private final BiFunction<DraftContext, Object, Draft> draftFactory;
 
@@ -53,7 +55,11 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private ImmutableProp[] propArr;
 
+    private Map<String, ImmutableProp> entityProps;
+
     private Map<String, ImmutableProp> selectableProps;
+
+    private Map<String, ImmutableProp> selectableScalarProps;
 
     private Map<String, ImmutableProp> selectableReferenceProps;
 
@@ -69,13 +75,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private final String microServiceName;
 
-    private final Map<MetadataStrategy, String> tableNameMap = new HashMap<>();
+    private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
 
-    private final Map<MetadataStrategy, IdGenerator> idGeneratorMap = new HashMap<>();
+    private final MetaCache<IdGenerator> idGeneratorCache = new MetaCache<>(it -> {
+        IdGenerator g = IdGenerators.of(this, it.getNamingStrategy());
+        return g != null ? g : NIL_ID_GENERATOR;
+    });
 
     ImmutableTypeImpl(
             Class<?> javaClass,
-            ImmutableType superType,
+            Set<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
         Annotation sqlAnnotation = null;
@@ -109,35 +118,14 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         }
 
         this.javaClass = javaClass;
-        this.superType = superType;
+        this.primarySuperType = superTypes.stream().filter(it -> !it.isMappedSuperclass()).findFirst().orElse(null);
+        this.superTypes = Collections.unmodifiableSet(superTypes);
+
         this.draftFactory = draftFactory;
 
         isEntity = immutableAnnotation instanceof Entity;
         isMappedSupperClass = immutableAnnotation instanceof MappedSuperclass;
         isEmbeddable = immutableAnnotation instanceof Embeddable;
-
-        if (superType != null) {
-            if ((isEntity || isMappedSupperClass) && !superType.isMappedSuperclass()) {
-                throw new ModelException(
-                        "Illegal immutable type \"" +
-                                this +
-                                "\", the super type \"" +
-                                superType +
-                                "\" is not decorated by @" +
-                                MappedSuperclass.class.getName()
-                );
-            }
-            if ((superType.isEntity() || superType.isMappedSuperclass()) && !isEntity && !isMappedSupperClass) {
-                throw new ModelException(
-                        "Illegal immutable type \"" +
-                                this +
-                                "\", it has super type because it is decorated by neither @" +
-                                Entity.class.getName() +
-                                " nor @" +
-                                MappedSuperclass.class.getName()
-                );
-            }
-        }
 
         if (isEntity) {
             microServiceName = javaClass.getAnnotation(Entity.class).microServiceName();
@@ -150,10 +138,10 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     ImmutableTypeImpl(
             KClass<?> kotlinClass,
-            ImmutableType superType,
+            Set<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        this(((ClassBasedDeclarationContainer)kotlinClass).getJClass(), superType, draftFactory);
+        this(((ClassBasedDeclarationContainer)kotlinClass).getJClass(), superTypes, draftFactory);
         this.kotlinClass = kotlinClass;
     }
 
@@ -199,8 +187,31 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @Nullable
     @Override
-    public ImmutableType getSuperType() {
-        return superType;
+    public ImmutableType getPrimarySuperType() {
+        return primarySuperType;
+    }
+
+    @Override
+    public Set<ImmutableType> getSuperTypes() {
+        return superTypes;
+    }
+
+    @Override
+    public Set<ImmutableType> getAllTypes() {
+        Set<ImmutableType> all = allTypes;
+        if (all == null) {
+            all = new LinkedHashSet<>();
+            collectAllSuperTypes(all);
+            allTypes = all = Collections.unmodifiableSet(all);
+        }
+        return all;
+    }
+
+    private void collectAllSuperTypes(Set<ImmutableType> allSuperTypes) {
+        allSuperTypes.add(this);
+        for (ImmutableType superType : superTypes) {
+            ((ImmutableTypeImpl)superType).collectAllSuperTypes(allSuperTypes);
+        }
     }
 
     @NotNull
@@ -247,26 +258,36 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     @NotNull
     @Override
     public Map<String, ImmutableProp> getProps() {
-        Map<String, ImmutableProp> props = this.props;
-        if (props == null) {
-            if (superType == null) {
-                props = declaredProps;
-            } else {
-                props = new LinkedHashMap<>(superType.getProps());
-                for (ImmutableProp declaredProp : declaredProps.values()) {
-                    ImmutableProp conflictProp = props.put(declaredProp.getName(), declaredProp);
-                    if (conflictProp != null && conflictProp != ((ImmutablePropImpl)declaredProp).getOriginal()) {
-                        throw new ModelException(
-                                "The property \"" +
-                                        declaredProp +
-                                        "\" overrides property of super type, this is not allowed"
-                        );
-                    }
+        return props;
+    }
+
+    private Map<String, ImmutableProp> createPropMap(Map<String, PropId> redirectedMap) {
+        Map<String, ImmutableProp> propMap = new LinkedHashMap<>();
+        for (ImmutableType superType : superTypes) {
+            for (ImmutableProp prop : superType.getProps().values()) {
+                if (!propMap.containsKey(prop.getName())) {
+                    propMap.putIfAbsent(
+                            prop.getName(),
+                            new ImmutablePropImpl(
+                                    (ImmutablePropImpl) prop,
+                                    this,
+                                    redirectedMap.get(prop.getName())
+                            )
+                    );
                 }
             }
-            this.props = Collections.unmodifiableMap(props);
         }
-        return props;
+        for (ImmutableProp declaredProp : declaredProps.values()) {
+            ImmutableProp conflictProp = propMap.put(declaredProp.getName(), declaredProp);
+            if (conflictProp != null && conflictProp != ((ImmutablePropImpl)declaredProp).getOriginal()) {
+                throw new ModelException(
+                        "The property \"" +
+                                declaredProp +
+                                "\" overrides property of super type, this is not allowed"
+                );
+            }
+        }
+        return propMap;
     }
 
     @NotNull
@@ -283,27 +304,52 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @NotNull
     @Override
-    public ImmutableProp getProp(int id) {
+    public ImmutableProp getProp(PropId id) {
+        int index = id.asIndex();
+        if (index == -1) {
+            return getProp(id.asName());
+        }
         ImmutableProp[] arr = this.getPropArr();
-        if (id < 1 || id >= arr.length) {
+        if (index < 1 || index >= arr.length) {
             throw new IllegalArgumentException(
                     "There is no property whose id is " + id + " in \"" + this + "\""
             );
         }
-        return arr[id];
+        return arr[index];
     }
 
     @NotNull
     private ImmutableProp[] getPropArr() {
         ImmutableProp[] arr = propArr;
         if (arr == null) {
-            arr = new ImmutableProp[getProps().size() + 1];
-            for (ImmutableProp prop : getProps().values()) {
-                arr[prop.getId()] = prop;
+            if (isMappedSupperClass) {
+                arr = getProps().values().toArray(new ImmutableProp[0]);
+            } else {
+                arr = new ImmutableProp[getProps().size() + 1];
+                for (ImmutableProp prop : getProps().values()) {
+                    arr[prop.getId().asIndex()] = prop;
+                }
             }
             propArr = arr;
         }
         return arr;
+    }
+
+    @NotNull
+    @Override
+    public Map<String, ImmutableProp> getEntityProps() {
+        Map<String, ImmutableProp> map = entityProps;
+        if (map == null) {
+            if (isEntity) {
+                map = primarySuperType != null && primarySuperType.isEntity() ?
+                        declaredProps :
+                        props;
+            } else {
+                map = Collections.emptyMap();
+            }
+            entityProps = map;
+        }
+        return map;
     }
 
     public Map<String, ImmutableProp> getSelectableProps() {
@@ -317,6 +363,21 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 }
             }
             selectableProps = map = Collections.unmodifiableMap(map);
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, ImmutableProp> getSelectableScalarProps() {
+        Map<String, ImmutableProp> map = selectableScalarProps;
+        if (map == null) {
+            map = new LinkedHashMap<>();
+            for (ImmutableProp prop : getSelectableProps().values()) {
+                if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.isLogicalDeleted()) {
+                    map.put(prop.getName(), prop);
+                }
+            }
+            selectableScalarProps = map = Collections.unmodifiableMap(map);
         }
         return map;
     }
@@ -335,8 +396,9 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         return map;
     }
 
-    void setDeclaredProps(Map<String, ImmutableProp> map) {
-        this.declaredProps = Collections.unmodifiableMap(map);
+    void setProps(Map<String, ImmutableProp> declaredPropMap, Map<String, PropId> redefinedMap) {
+        this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
+        this.props = Collections.unmodifiableMap(createPropMap(redefinedMap));
     }
 
     void setIdProp(ImmutableProp idProp) {
@@ -357,7 +419,13 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     }
 
     void setDeclaredLogicalDeletedInfo(LogicalDeletedInfo declaredLogicalDeletedInfo) {
-        LogicalDeletedInfo superInfo = superType != null ? superType.getLogicalDeletedInfo() : null;
+        LogicalDeletedInfo superInfo = null;
+        for (ImmutableType superType : superTypes) {
+            superInfo = superType.getLogicalDeletedInfo();
+            if (superInfo != null) {
+                break;
+            }
+        }
         if (superInfo != null && declaredLogicalDeletedInfo != null) {
             throw new AssertionError(
                     "Internal bug, @LogicalDeleted field is configured in both \"" +
@@ -368,7 +436,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         this.declaredLogicalDeletedInfo = declaredLogicalDeletedInfo;
         if (superInfo != null) {
             logicalDeletedInfo = superInfo.to(
-                    new ImmutablePropImpl(this, (ImmutablePropImpl) superInfo.getProp())
+                    getProp(superInfo.getProp().getName())
             );
         } else {
             logicalDeletedInfo = declaredLogicalDeletedInfo;
@@ -393,7 +461,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @Override
     public String getTableName(MetadataStrategy strategy) {
-        return tableNameMap.computeIfAbsent(strategy, this::getTableName0);
+        return tableNameCache.get(strategy);
     }
 
     private String getTableName0(MetadataStrategy strategy) {
@@ -407,13 +475,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     @Override
     public IdGenerator getIdGenerator(MetadataStrategy strategy) {
-        IdGenerator generator = idGeneratorMap.computeIfAbsent(
-                strategy,
-                it -> {
-                    IdGenerator g = IdGenerators.of(this, it.getNamingStrategy());
-                    return g != null ? g : NIL_ID_GENERATOR;
-                }
-        );
+        IdGenerator generator = idGeneratorCache.get(strategy);
         return generator == NIL_ID_GENERATOR ? null : generator;
     }
 
@@ -456,7 +518,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
         private final Class<?> javaClass;
 
-        private final ImmutableType superType;
+        private final Set<ImmutableType> superTypes;
 
         private final BiFunction<DraftContext, Object, Draft> draftFactory;
 
@@ -468,36 +530,221 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
         private final List<String> keyPropNames = new ArrayList<>();
 
-        private final Set<Integer> propIds;
-
         private final Map<String, PropBuilder> propBuilderMap = new LinkedHashMap<>();
+
+        private final Set<PropId> propIds = new LinkedHashSet<>();
+
+        private final Map<String, PropId> redefinedMap = new HashMap<>();
 
         BuilderImpl(
                 Class<?> javaClass,
-                ImmutableType superType,
+                Collection<ImmutableType> superTypes,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             this.kotlinType = null;
             this.javaClass = javaClass;
-            this.superType = superType;
+            this.superTypes = standardSuperTypes(superTypes);
             this.draftFactory = draftFactory;
-            this.propIds = superType != null ?
-                    superType.getProps().values().stream().map(ImmutableProp::getId).collect(Collectors.toSet()) :
-                    new HashSet<>();
+            for (ImmutableType superType : superTypes) {
+                for (ImmutableProp prop : superType.getProps().values()) {
+                    PropId id = prop.getId();
+                    if (id.asIndex() != -1) {
+                        propIds.add(id);
+                    }
+                }
+            }
         }
 
         BuilderImpl(
                 KClass<?> kotlinType,
-                ImmutableType superType,
+                Collection<ImmutableType> superTypes,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             this.kotlinType = kotlinType;
             this.javaClass = ((ClassBasedDeclarationContainer)kotlinType).getJClass();
-            this.superType = superType;
+            this.superTypes = standardSuperTypes(superTypes);
             this.draftFactory = draftFactory;
-            this.propIds = superType != null ?
-                    superType.getProps().values().stream().map(ImmutableProp::getId).collect(Collectors.toSet()) :
-                    new HashSet<>();
+            for (ImmutableType superType : superTypes) {
+                for (ImmutableProp prop : superType.getProps().values()) {
+                    PropId id = prop.getId();
+                    if (id.asIndex() != -1) {
+                        propIds.add(id);
+                    }
+                }
+            }
+        }
+
+        private Set<ImmutableType> standardSuperTypes(Collection<ImmutableType> superTypes) {
+            if (superTypes.isEmpty()) {
+                return Collections.emptySet();
+            }
+            if (javaClass.isAnnotationPresent(Embeddable.class)) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", embeddable type does not support inheritance"
+                );
+            }
+            Set<ImmutableType> set = new LinkedHashSet<>(superTypes);
+            if (javaClass.isAnnotationPresent(Immutable.class)) {
+                if (set.size() > 1) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", simple immutable type does not support multiple inheritance"
+                    );
+                }
+                if (!set.iterator().next().getJavaClass().isAnnotationPresent(Immutable.class)) {
+                    throw new ModelException(
+                            "Illegal type \"" +
+                                    javaClass.getName() +
+                                    "\", simple immutable type can only inherit simple immutable type"
+                    );
+                }
+            } else {
+                for (ImmutableType superType : set) {
+                    if (superType.isEntity()) {
+                        if (javaClass.isAnnotationPresent(Entity.class)) {
+                            throw new ModelException(
+                                    "Illegal type \"" +
+                                            javaClass.getName() +
+                                            "\", inheriting from entity type is not supported now, " +
+                                            "it will be supported in the future"
+                            );
+                        } else {
+                            throw new ModelException(
+                                    "Illegal type \"" +
+                                            javaClass.getName() +
+                                            "\", mapped super class cannot inherit entity type"
+                            );
+                        }
+                    } else if (!superType.isMappedSuperclass()){
+                        throw new ModelException(
+                                "Illegal type \"" +
+                                        javaClass.getName() +
+                                        "\", the super type \"" +
+                                        superType +
+                                        "\"" +
+                                        (
+                                                javaClass.isAnnotationPresent(Entity.class) ?
+                                                        " is neither entity nor mapped super class" :
+                                                        " is not mapped super class"
+                                        )
+                        );
+                    }
+                }
+            }
+            if (set.size() > 1) {
+                Map<String, ImmutableProp> superPropMap = new HashMap<>();
+                for (ImmutableType superType : superTypes) {
+                    for (ImmutableProp prop : superType.getProps().values()) {
+                        ImmutableProp oldProp = superPropMap.put(prop.getName(), prop);
+                        if (oldProp != null) {
+                            if (oldProp.getCategory() != prop.getCategory()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", this first one is " +
+                                                oldProp.getCategory() +
+                                                " and the second is " +
+                                                prop.getCategory()
+                                );
+                            }
+                            if (!oldProp.getGenericType().equals(prop.getGenericType())) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their types are different"
+                                );
+                            }
+                            if (oldProp.isNullable() != prop.isNullable()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their nullity are different"
+                                );
+                            }
+                            if (oldProp.isInputNotNull() != prop.isInputNotNull()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their input nullity are different"
+                                );
+                            }
+                            if (!((ImmutablePropImpl)oldProp).getMappedByValue().equals(((ImmutablePropImpl)prop).getMappedByValue())) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", their configuration `mappedBy` are different"
+                                );
+                            }
+                            if (oldProp.getPrimaryAnnotationType() != prop.getPrimaryAnnotationType()) {
+                                throw new ModelException(
+                                        "Illegal type \"" +
+                                                javaClass.getName() +
+                                                "\", conflict super properties: \"" +
+                                                oldProp +
+                                                "\" and \"" +
+                                                prop +
+                                                "\", the first one is decorated by \"@" +
+                                                oldProp.getPrimaryAnnotationType().getName() +
+                                                "\" but the second one is decorated by \"@" +
+                                                prop.getPrimaryAnnotationType().getName() +
+                                                "\""
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            return Collections.unmodifiableSet(set);
+        }
+
+        @Override
+        public Builder redefine(String name, int id) {
+            ImmutableProp superProp = null;
+            for (ImmutableType superType : superTypes) {
+                superProp = superType.getProps().get(name);
+                if (superProp != null) {
+                    break;
+                }
+            }
+            if (superProp == null) {
+                throw new IllegalArgumentException(
+                        "Cannot redefine \"" +
+                                name +
+                                "\" because there is no such property in super types"
+                );
+            }
+            if (superProp.getId().asIndex() != -1) {
+                throw new IllegalArgumentException(
+                        "Cannot redefine the property \"" +
+                                name +
+                                "\" because it is already based on integer id"
+                );
+            }
+            redefinedMap.put(name, PropId.byIndex(id));
+            return this;
         }
 
         @Override
@@ -510,14 +757,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
-            if (superType != null && superType.getIdProp() != null) {
-                throw new IllegalStateException(
-                        "Cannot set id property for type \"" +
-                                javaClass.getName() +
-                                "\" because there is an id property in the super type \"" +
-                                superType.getJavaClass().getName() +
-                                "\""
-                );
+            for (ImmutableType superType : superTypes) {
+                if (superType.getIdProp() != null) {
+                    throw new IllegalStateException(
+                            "Cannot set id property for type \"" +
+                                    javaClass.getName() +
+                                    "\" because there is an id property in the super type \"" +
+                                    superType.getJavaClass().getName() +
+                                    "\""
+                    );
+                }
             }
             if (idPropName != null) {
                 throw new IllegalStateException(
@@ -588,14 +837,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
-            if (superType != null && superType.getVersionProp() != null) {
-                throw new IllegalStateException(
-                        "Cannot set version property for type \"" +
-                                javaClass.getName() +
-                                "\" because there is an version property in the super type \"" +
-                                superType.getJavaClass().getName() +
-                                "\""
-                );
+            for (ImmutableType superType : superTypes) {
+                if (superType.getVersionProp() != null) {
+                    throw new IllegalStateException(
+                            "Cannot set version property for type \"" +
+                                    javaClass.getName() +
+                                    "\" because there is an version property in the super type \"" +
+                                    superType.getJavaClass().getName() +
+                                    "\""
+                    );
+                }
             }
             if (versionPropName != null) {
                 throw new IllegalStateException(
@@ -627,14 +878,16 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\" which is not entity or mapped super class"
                 );
             }
-            if (superType != null && superType.getLogicalDeletedInfo() != null) {
-                throw new IllegalStateException(
-                        "Cannot set logical deleted property for type \"" +
-                                javaClass.getName() +
-                                "\" because there is an id property in the super type \"" +
-                                superType.getJavaClass().getName() +
-                                "\""
-                );
+            for (ImmutableType superType : superTypes) {
+                if (superType.getLogicalDeletedInfo() != null) {
+                    throw new IllegalStateException(
+                            "Cannot set logical deleted property for type \"" +
+                                    javaClass.getName() +
+                                    "\" because there is an id property in the super type \"" +
+                                    superType.getJavaClass().getName() +
+                                    "\""
+                    );
+                }
             }
             if (logicalDeletedPropName != null) {
                 throw new IllegalStateException(
@@ -709,14 +962,23 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                     !javaClass.isAnnotationPresent(MappedSuperclass.class)) {
                 throw new IllegalStateException("Cannot set association for type that is not entity or mapped super class");
             }
-            if (!propIds.add(id)) {
-                throw new IllegalArgumentException(
-                        "The property id \"" +
-                                id +
-                                "." +
-                                name +
-                                "\" is already exists in current type or the super type"
-                );
+            PropId propId;
+            if (id == -1) {
+                propId = PropId.byName(name);
+            } else {
+                if (javaClass.isAnnotationPresent(MappedSuperclass.class)) {
+                    throw new IllegalArgumentException("The prop-id of properties in mapped super class must be -1");
+                }
+                propId = PropId.byIndex(id);
+                if (!propIds.add(propId)) {
+                    throw new IllegalArgumentException(
+                            "The property id \"" +
+                                    id +
+                                    "." +
+                                    name +
+                                    "\" is already exists in current type or the super type"
+                    );
+                }
             }
             if (propBuilderMap.containsKey(name)) {
                 throw new IllegalArgumentException(
@@ -727,19 +989,24 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                                 "\", it is already exists"
                 );
             }
-            if (superType != null && superType.getProps().containsKey(name)) {
-                throw new IllegalArgumentException(
-                        "The property \"" +
-                                javaClass.getName() +
-                                "." +
-                                name +
-                                "\" is already exists in super type"
-                );
+            for (ImmutableType superType : superTypes) {
+                ImmutableProp superProp = superType.getProps().get(name);
+                if (superProp != null && superProp.getId().asIndex() != -1) {
+                    throw new IllegalArgumentException(
+                            "The property \"" +
+                                    javaClass.getName() +
+                                    "." +
+                                    name +
+                                    "\" is already exists in super type \"" +
+                                    superType +
+                                    "\""
+                    );
+                }
             }
             propBuilderMap.put(
                     name,
                     new PropBuilder(
-                            id,
+                            propId,
                             name,
                             category,
                             elementType,
@@ -760,33 +1027,37 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
         public ImmutableTypeImpl build() {
 
             ImmutableTypeImpl type = kotlinType != null ?
-                    new ImmutableTypeImpl(kotlinType, superType, draftFactory) :
-                    new ImmutableTypeImpl(javaClass, superType, draftFactory);
+                    new ImmutableTypeImpl(kotlinType, superTypes, draftFactory) :
+                    new ImmutableTypeImpl(javaClass, superTypes, draftFactory);
 
             Map<String, ImmutableProp> map = new LinkedHashMap<>();
-            if (superType != null && !superType.isEntity() && javaClass.isAnnotationPresent(Entity.class)) {
-                for (ImmutableProp prop : superType.getProps().values()) {
-                    map.put(prop.getName(), new ImmutablePropImpl(type, (ImmutablePropImpl) prop));
-                }
-            }
             for (Map.Entry<String, PropBuilder> e : propBuilderMap.entrySet()) {
                 map.put(e.getKey(), e.getValue().build(type));
             }
-            type.setDeclaredProps(map);
+            type.setProps(map, redefinedMap);
 
             if (idPropName != null) {
                 type.setIdProp(type.declaredProps.get(idPropName));
-            } else if (type.superType != null) {
-                ImmutableProp superIdProp = type.superType.getIdProp();
-                if (superIdProp != null) {
-                    type.setIdProp(superIdProp);
+            } else {
+                for (ImmutableType superType : type.superTypes) {
+                    ImmutableProp superIdProp = superType.getIdProp();
+                    if (superIdProp != null) {
+                        type.setIdProp(superIdProp);
+                        break;
+                    }
                 }
             }
 
             if (versionPropName != null) {
                 type.setVersionProp(type.declaredProps.get(versionPropName));
-            } else if (type.superType != null) {
-                type.setVersionProp(type.superType.getVersionProp());
+            } else {
+                for (ImmutableType superType : type.superTypes) {
+                    ImmutableProp superVersionProp = superType.getVersionProp();
+                    if (superVersionProp != null) {
+                        type.setVersionProp(superVersionProp);
+                        break;
+                    }
+                }
             }
 
             if (logicalDeletedPropName != null) {
@@ -795,28 +1066,32 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 type.setDeclaredLogicalDeletedInfo(null);
             }
 
-            Set<ImmutableProp> keyProps = type.superType != null ?
-                    new LinkedHashSet<>(type.superType.getKeyProps()) :
-                    new LinkedHashSet<>();
-            for (String keyPropName : keyPropNames) {
-                keyProps.add(type.declaredProps.get(keyPropName));
+            Map<String, ImmutableProp> keyPropMap = new LinkedHashMap<>();
+            for (ImmutableType superType : superTypes) {
+                for (ImmutableProp keyProp : superType.getKeyProps()) {
+                    keyPropMap.putIfAbsent(keyProp.getName(), keyProp);
+                }
             }
-            type.setKeyProps(keyProps);
+            for (String keyPropName : keyPropNames) {
+                keyPropMap.put(keyPropName, type.declaredProps.get(keyPropName));
+            }
+            type.setKeyProps(new LinkedHashSet<>(keyPropMap.values()));
 
             return type;
         }
     }
 
     private static class PropBuilder {
-        final int id;
+
+        final PropId id;
         final String name;
         final ImmutablePropCategory category;
         final Class<?> elementType;
         final boolean nullable;
         final Class<? extends Annotation> associationType;
 
-        private PropBuilder(
-                int id,
+        PropBuilder(
+                PropId id,
                 String name,
                 ImmutablePropCategory category,
                 Class<?> elementType,

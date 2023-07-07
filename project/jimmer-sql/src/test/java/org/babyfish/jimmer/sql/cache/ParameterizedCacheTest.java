@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.cache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
@@ -37,7 +36,8 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
             it.ignoreBuiltInFilters();
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
-                        new CacheFactory() {
+                        new AbstractCacheFactory() {
+
                             @Override
                             public @Nullable Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
                                 return new CacheImpl<>(type);
@@ -631,7 +631,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
+            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
         }
     }
 
@@ -651,7 +651,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedFieldRef(NamedEntityProps.DELETED) == null;
+            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
+import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
 import java.sql.Types;
@@ -38,7 +39,16 @@ public class PostgresDialect extends DefaultDialect {
     @Override
     public Object baseValueToJson(Object baseValue, JavaType javaType) throws Exception {
         PGobject pgobject = (PGobject) baseValue;
-        return JsonUtils.OBJECT_MAPPER.readValue(pgobject.getValue(), javaType);
+        String json = pgobject.getValue();
+        if (json == null || json.isEmpty()) {
+            return null;
+        }
+        return JsonUtils.OBJECT_MAPPER.readValue(json, javaType);
+    }
+
+    @Override
+    public boolean isIgnoreCaseLikeSupported() {
+        return true;
     }
 
     @Override
@@ -47,5 +57,24 @@ public class PostgresDialect extends DefaultDialect {
             return Types.NULL;
         }
         return Types.OTHER;
+    }
+
+    @Override
+    public Reader<?> unknownReader(Class<?> sqlType) {
+        if (sqlType == PGobject.class) {
+            return (rs, col) -> rs.getObject(col.col(), PGobject.class);
+        }
+        return null;
+    }
+
+    @Override
+    public String transCacheOperatorTableDDL() {
+        return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
+                "\tID bigint generated always as identity,\n" +
+                "\tIMMUTABLE_TYPE text,\n" +
+                "\tIMMUTABLE_PROP text,\n" +
+                "\tCACHE_KEY text not null,\n" +
+                "\tREASON text\n" +
+                ")";
     }
 }

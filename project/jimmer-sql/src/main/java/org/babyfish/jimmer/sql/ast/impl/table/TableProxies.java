@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -17,8 +18,8 @@ public class TableProxies {
     private static final StaticCache<Class<?>, Constructor<?>> WRAPPER_CACHE =
             new StaticCache<>(TableProxies::createWrapperConstructor);
 
-    private static final StaticCache<ImmutableType, Constructor<?>> FLUENT_CACHE =
-            new StaticCache<>(TableProxies::createFluentConstructor);
+    private static final TypeCache<Constructor<?>> FLUENT_CACHE =
+            new TypeCache<>(TableProxies::createFluentConstructor);
 
     private TableProxies() {}
 

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
 import org.babyfish.jimmer.sql.ast.PropExpression;
@@ -16,11 +16,11 @@ import java.util.TreeMap;
 
 public class BuiltinFiltersImpl implements BuiltInFilters {
 
-    private final StaticCache<ImmutableType, Filter<Props>> notDeletedCache =
-            new StaticCache<>(this::createNotDeleted, true);
+    private final TypeCache<Filter<Props>> notDeletedCache =
+            new TypeCache<>(this::createNotDeleted, true);
 
-    private final StaticCache<ImmutableType, Filter<Props>> alreadyDeletedCache =
-            new StaticCache<>(this::createAlreadyDeleted, true);
+    private final TypeCache<Filter<Props>> alreadyDeletedCache =
+            new TypeCache<>(this::createAlreadyDeleted, true);
 
     @Override
     public Filter<Props> getDeclaredNotDeletedFilter(ImmutableType immutableType) {
@@ -116,7 +116,7 @@ public class BuiltinFiltersImpl implements BuiltInFilters {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getChangedFieldRef(info.getProp().getId()) != null;
+            return e.getChangedRef(info.getProp()) != null;
         }
     }
 
@@ -170,7 +170,7 @@ public class BuiltinFiltersImpl implements BuiltInFilters {
 
         @Override
         public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getChangedFieldRef(info.getProp().getId()) != null;
+            return e.getChangedRef(info.getProp()) != null;
         }
     }
 }

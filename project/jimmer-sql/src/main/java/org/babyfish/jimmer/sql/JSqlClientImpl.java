@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.*;
+import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -10,11 +11,14 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.TriggersImpl;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
-import org.babyfish.jimmer.sql.event.binlog.BinLogParser;
+import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
+import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.filter.BuiltInFilters;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -31,10 +35,6 @@ import org.babyfish.jimmer.sql.ast.mutation.MutableUpdate;
 import org.babyfish.jimmer.sql.ast.query.MutableRootQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.cache.CacheConfig;
-import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
-import org.babyfish.jimmer.sql.cache.Caches;
-import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
@@ -149,10 +149,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         entities.forSqlClient(this) :
                         new EntitiesImpl(this);
         this.entityManager = entityManager;
-        this.caches =
-                caches != null ?
-                        caches :
-                        CachesImpl.of(triggers, entityManager, microServiceName, null);
+        this.caches = caches;
         this.triggers = triggers;
         this.transactionTriggers = transactionTriggers;
         this.metadataStrategy = metadataStrategy;
@@ -298,6 +295,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public Entities getEntities() {
         return entities;
+    }
+
+    @Override
+    public CacheOperator getCacheOperator() {
+        return ((CachesImpl)caches).getOperator();
     }
 
     @Override
@@ -558,7 +560,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private EntityManager defaultEntityManager;
 
-        private Caches caches;
+        private CacheConfig cacheConfig = new CacheConfig();
 
         private TriggerType triggerType = TriggerType.BINLOG_ONLY;
 
@@ -575,6 +577,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
         private ObjectMapper binLogObjectMapper;
+
+        private Map<ImmutableProp, BinLogPropReader> binLogPropReaderMap = new HashMap<>();
+
+        private Map<Class<?>, BinLogPropReader> typeBinLogPropReaderMap = new HashMap<>();
 
         private boolean isForeignKeyEnabledByDefault = true;
 
@@ -811,8 +817,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public Builder setOffsetOptimizingThreshold(int threshold) {
-            if (threshold <= 0) {
-                throw new IllegalArgumentException("`threshold` must be greater than 0");
+            if (threshold < 0) {
+                throw new IllegalArgumentException("`threshold` cannot be negative number");
             }
             offsetOptimizingThreshold = threshold;
             return this;
@@ -826,11 +832,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         "The EntityManager of SqlBuilder.Builder can only be set once"
                 );
             }
-            if (caches != null) {
-                throw new IllegalStateException(
-                        "The EntityManager cannot be changed after caches is set"
-                );
-            }
             this.userEntityManager = entityManager;
             return this;
         }
@@ -838,11 +839,31 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         @OldChain
         public JSqlClient.Builder setCaches(Consumer<CacheConfig> block) {
-            if (caches != null) {
-                throw new IllegalStateException("caches cannot be set twice");
-            }
-            createTriggersIfNecessary();
-            caches = CachesImpl.of(triggers, entityManager(), microServiceName, block);
+            block.accept(cacheConfig);
+            return this;
+        }
+
+        @Override
+        public Builder setCacheFactory(CacheFactory cacheFactory) {
+            cacheConfig.setCacheFactory(cacheFactory);
+            return this;
+        }
+
+        @Override
+        public Builder setCacheOperator(CacheOperator cacheOperator) {
+            cacheConfig.setCacheOperator(cacheOperator);
+            return this;
+        }
+
+        @Override
+        public Builder addCacheAbandonedCallback(CacheAbandonedCallback callback) {
+            cacheConfig.addAbandonedCallback(callback);
+            return this;
+        }
+
+        @Override
+        public Builder addCacheAbandonedCallbacks(Collection<? extends CacheAbandonedCallback> callbacks) {
+            cacheConfig.addAbandonedCallbacks(callbacks);
             return this;
         }
 
@@ -858,7 +879,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addFilters(Collection<Filter<?>> filters) {
+        public Builder addFilters(Collection<? extends Filter<?>> filters) {
             for (Filter<?> filter : filters) {
                 if (filter != null) {
                     this.filters.add(filter);
@@ -873,7 +894,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addDisabledFilters(Collection<Filter<?>> filters) {
+        public Builder addDisabledFilters(Collection<? extends Filter<?>> filters) {
             for (Filter<?> filter : filters) {
                 if (filter != null) {
                     this.filters.add(filter);
@@ -900,7 +921,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors) {
+        public Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors) {
             for (DraftInterceptor<?> interceptor : interceptors) {
                 if (interceptor != null) {
                     this.interceptors.add(interceptor);
@@ -912,6 +933,56 @@ class JSqlClientImpl implements JSqlClientImplementor {
         @Override
         public Builder setBinLogObjectMapper(ObjectMapper mapper) {
             this.binLogObjectMapper = mapper;
+            return this;
+        }
+
+        @Override
+        public Builder setBinLogPropReader(ImmutableProp prop, BinLogPropReader reader) {
+            if (prop.isEmbedded(EmbeddedLevel.BOTH)) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for embedded property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (!prop.isScalar(TargetLevel.ENTITY)) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for non-scalar property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            if (!prop.isColumnDefinition()) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for property \"" +
+                                prop +
+                                "\" which is not column definition"
+                );
+            }
+            if (prop instanceof AssociationProp) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for association property \"" +
+                                prop +
+                                "\""
+                );
+            }
+            binLogPropReaderMap.put(prop, reader);
+            return this;
+        }
+
+        @Override
+        public Builder setBinLogPropReader(TypedProp.Scalar<?, ?> prop, BinLogPropReader reader) {
+            return setBinLogPropReader(prop.unwrap(), reader);
+        }
+
+        @Override
+        public Builder setBinLogPropReader(Class<?> propType, BinLogPropReader reader) {
+            if (propType == void.class) {
+                throw new IllegalArgumentException(
+                        "Cannot set bin log reader for void type"
+                );
+            }
+            typeBinLogPropReaderMap.put(propType, reader);
             return this;
         }
 
@@ -932,7 +1003,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addCustomizers(Collection<Customizer> customizers) {
+        public Builder addCustomizers(Collection<? extends Customizer> customizers) {
             for (Customizer customizer : customizers) {
                 if (customizer != null) {
                     this.customizers.add(customizer);
@@ -952,7 +1023,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addInitializers(Collection<Initializer> initializers) {
+        public Builder addInitializers(Collection<? extends Initializer> initializers) {
             for (Initializer initializer : initializers) {
                 if (initializer != null) {
                     this.initializers.add(initializer);
@@ -1005,9 +1076,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         "The `microServiceExchange` must be configured when `microServiceName` is configured"
                 );
             }
-            FilterManager filterManager = createFilterManager();
-            validateAssociations(filterManager);
-            createTriggersIfNecessary();
             ForeignKeyStrategy foreignKeyStrategy;
             if (!dialect.isForeignKeySupported()) {
                 foreignKeyStrategy = ForeignKeyStrategy.FORCED_FAKE;
@@ -1018,8 +1086,22 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
             MetadataStrategy metadataStrategy =
                     new MetadataStrategy(databaseNamingStrategy, foreignKeyStrategy);
+
+            entityManager().validate(metadataStrategy);
+
+            FilterManager filterManager = createFilterManager();
+            validateAssociations(filterManager);
+
+            createTriggers();
+            Caches caches = CachesImpl.of(
+                    cacheConfig,
+                    microServiceName,
+                    entityManager(),
+                    triggers,
+                    filterManager
+            );
             BinLogParser binLogParser = new BinLogParser();
-            BinLog binLog = new BinLog(
+            BinLog binLog = new BinLogImpl(
                     entityManager(),
                     microServiceName,
                     metadataStrategy,
@@ -1057,8 +1139,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     microServiceName,
                     microServiceExchange
             );
+            CachesImpl.initialize(caches, sqlClient);
             filterManager.initialize(sqlClient);
-            binLogParser.initialize(sqlClient, binLogObjectMapper);
+            binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
             transientResolverManager.initialize(sqlClient);
             for (Initializer initializer : initializers) {
                 try {
@@ -1074,18 +1157,18 @@ class JSqlClientImpl implements JSqlClientImplementor {
             return sqlClient;
         }
 
-        private void createTriggersIfNecessary() {
+        private void createTriggers() {
             if (triggers == null) {
                 switch (triggerType) {
                     case TRANSACTION_ONLY:
-                        transactionTriggers = triggers = new TriggersImpl();
+                        transactionTriggers = triggers = new TriggersImpl(true);
                         break;
                     case BOTH:
-                        triggers = new TriggersImpl();
-                        transactionTriggers = new TriggersImpl();
+                        triggers = new TriggersImpl(false);
+                        transactionTriggers = new TriggersImpl(true);
                         break;
                     default:
-                        triggers = new TriggersImpl();
+                        triggers = new TriggersImpl(false);
                         break;
                 }
             }
@@ -1116,23 +1199,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
             for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
                 if (type.isEntity()) {
                     for (ImmutableProp prop : type.getProps().values()) {
-                        if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
-                            if (prop.isRemote()) {
-                                throw new ModelException(
-                                        "Illegal reference association property \"" +
-                                                prop +
-                                                "\", it must be nullable because it is remote association"
-                                );
-                            }
-                            if (filterManager.contains(prop.getTargetType())) {
-                                throw new ModelException(
-                                        "Illegal reference association property \"" +
-                                                prop +
-                                                "\", it must be nullable because the target type \"" +
-                                                prop.getTargetType() +
-                                                "\" may be handled by some global filters"
-                                );
-                            }
+                        if (!prop.isNullable() &&
+                                prop.isReference(TargetLevel.ENTITY) &&
+                                filterManager.contains(prop.getTargetType())
+                        ) {
+                            throw new ModelException(
+                                    "Illegal reference association property \"" +
+                                            prop +
+                                            "\", it must be nullable because the target type \"" +
+                                            prop.getTargetType() +
+                                            "\" may be handled by some global filters"
+                            );
                         }
                     }
                 }

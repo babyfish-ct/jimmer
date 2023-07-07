@@ -9,9 +9,15 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
+import org.babyfish.jimmer.meta.PropId
+import org.babyfish.jimmer.sql.collection.IdViewList
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
+import org.babyfish.jimmer.sql.collection.MutableIdViewList
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.regex.Pattern
 
 internal const val DRAFT = "Draft"
@@ -39,6 +45,8 @@ internal val DRAFT_CLASS_NAME = Draft::class.asClassName()
 internal val DRAFT_SPI_CLASS_NAME = DraftSpi::class.asClassName()
 internal val DRAFT_CONTEXT_CLASS_NAME = DraftContext::class.asClassName()
 internal val NON_SHARED_LIST_CLASS_NAME = NonSharedList::class.asClassName()
+internal val VISIBILITY_CLASS_NAME = Visibility::class.asClassName()
+internal val PROP_ID_CLASS_NAME = PropId::class.asClassName()
 internal val CIRCULAR_REFERENCE_EXCEPTION_CLASS_NAME = CircularReferenceException::class.asClassName()
 internal val IMMUTABLE_CREATOR_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "ImmutableCreator")
 internal val DSL_SCOPE_CLASS_NAME = ClassName("org.babyfish.jimmer.kt", "DslScope")
@@ -50,8 +58,13 @@ internal val ONE_TO_ONE_CLASS_NAME = OneToOne::class.asClassName()
 internal val MANY_TO_ONE_CLASS_NAME = ManyToOne::class.asClassName()
 internal val ONE_TO_MANY_CLASS_NAME = OneToMany::class.asClassName()
 internal val MANY_TO_MANY_CLASS_NAME = ManyToMany::class.asClassName()
+internal val ID_VIEW_CLASS_NAME = IdViewList::class.asClassName()
+internal val MUTABLE_ID_VIEW_CLASS_NAME = MutableIdViewList::class.asClassName()
 internal val MANY_TO_MANY_VIEW_CLASS_NAME = ManyToManyView::class.asClassName()
 internal val MANY_TO_MANY_VIEW_LIST_CLASS_NAME = ManyToManyViewList::class.asClassName()
+internal val LOCAL_DATE_CLASS_NAME = LocalDate::class.asClassName()
+internal val LOCAL_DATE_TIME_CLASS_NAME = LocalDateTime::class.asClassName()
+internal val LOCAL_TIME_CLASS_NAME = LocalTime::class.asClassName()
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"

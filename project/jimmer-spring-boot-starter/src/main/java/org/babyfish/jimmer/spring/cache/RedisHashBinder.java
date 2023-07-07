@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteHashBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 
@@ -33,6 +34,16 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
     }
 
     public RedisHashBinder(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper,
+            ImmutableType type,
+            Duration duration
+    ) {
+        super(objectMapper, type, null, duration, 30);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
+    }
+
+    public RedisHashBinder(
             RedisOperations<String, byte[]> operations,
             ObjectMapper objectMapper,
             ImmutableProp prop,
@@ -40,6 +51,16 @@ public class RedisHashBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
     ) {
         super(objectMapper, null, prop, duration, 30);
         this.operations = operations;
+    }
+
+    public RedisHashBinder(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper,
+            ImmutableProp prop,
+            Duration duration
+    ) {
+        super(objectMapper, null, prop, duration, 30);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
     }
 
     @SuppressWarnings("unchecked")

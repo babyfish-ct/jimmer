@@ -1,48 +1,39 @@
 package org.babyfish.jimmer.sql.example.business.resolver;
 
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.example.repository.BookStoreRepository;
-import org.babyfish.jimmer.sql.example.model.Book;
+import org.babyfish.jimmer.sql.example.repository.BookRepository;
 import org.babyfish.jimmer.sql.example.model.BookProps;
 import org.babyfish.jimmer.sql.example.model.BookStore;
 import org.babyfish.jimmer.sql.example.model.BookStoreProps;
-import org.babyfish.jimmer.sql.filter.Filters;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Component
 public class BookStoreNewestBooksResolver implements TransientResolver<Long, List<Long>> {
 
-    private final BookStoreRepository bookStoreRepository;
+    private final BookRepository bookRepository;
 
-    public BookStoreNewestBooksResolver(BookStoreRepository bookStoreRepository) {
-        this.bookStoreRepository = bookStoreRepository;
+    private final JSqlClient sqlClient;
+
+    public BookStoreNewestBooksResolver(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+        this.sqlClient = bookRepository.sql(); // You can also inject it directly
     }
 
     @Override
     public Map<Long, List<Long>> resolve(Collection<Long> ids) {
-        return bookStoreRepository.findIdAndNewestBookId(ids)
-                .stream()
-                .collect(
-                        Collectors.groupingBy(
-                                Tuple2::get_1,
-                                Collectors.mapping(
-                                        Tuple2::get_2,
-                                        Collectors.toList()
-                                )
-                        )
-                );
+        return bookRepository.findNewestIdsGroupByStoreId(ids);
+    }
+
+    @Override
+    public List<Long> getDefaultValue() {
+        return Collections.emptyList();
     }
 
     // -----------------------------
@@ -58,14 +49,14 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
-        if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            // 1. Check whether the association `BookStore.books` is changed,
-            //    this event can be caused by 2 cases:
-            //    i. The foreign key `Book.store.id` is changed.
-            //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
-
-            Caches caches = bookStoreRepository.sql().getCaches();
-            caches
+        // The association property `BookStore.books` is changed
+        //
+        // It is worth noting that
+        // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
+        // but also modifying the `TENANT` field of the BOOK table can trigger the event.
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
+            sqlClient
+                    .getCaches()
                     .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
                     .delete(e.getSourceId());
         }
@@ -73,17 +64,15 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
-        if (e.getConnection() == null && e.getImmutableType().getJavaClass() == Book.class) {
-            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
+        // The scalar property `Book.edition` is changed.
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.EDITION)) {
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
             if (store != null) { // foreign key does not change.
-                // 2, Check whether `Book.edition` is changed
-                if (e.getChangedFieldRef(BookProps.EDITION) != null) {
-                    Caches caches = bookStoreRepository.sql().getCaches();
-                    caches
-                            .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
-                            .delete(store.id());
-                }
+                sqlClient
+                        .getCaches()
+                        .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
+                        .delete(store.id());
             }
         }
     }
@@ -91,7 +80,6 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
-        Filters filters = bookStoreRepository.sql().getFilters();
-        return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
+        return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }

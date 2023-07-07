@@ -2,3 +2,664 @@
 sidebar_position: 5
 title: 和mapstruct协同 
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Jimmer动态对象和静态POJO完全不同，是一套完整的新技术体系，该体系支撑起了整个Jimmer ORM。
+
+然而，有时我们需要在Jimmer动态和普通静态POJO之间相互转化。比如Jimmer自身就为了API的安全性推荐了Input DTO *(无论REST还是GraphQL)*。
+
+## 依赖和预编译器
+
+:::info
+Jimmer选择以[MapStruct](https://github.com/mapstruct/mapstruct)作为和静态POJO彼此转化的技术。
+:::
+
+对于将静态POJO转化为Jimmer动态对象而言，MapStruct并不知道该如何构建Jimmer对象。因此
+
+-   Jimmer本身的预编译器 *(Java的`jimmer-apt`或Kotlin的`jimmer-ksp`)* 在Draft中生成了一个一些面向MapStruct的代码，让MapStruct可以通过其[Builder](https://mapstruct.org/documentation/stable/reference/html/#mapping-with-builders)模式构建Jimmer对象。
+
+-   Jimmer扩展了MapStruct的Annotation Processor，该扩展让MapStruct利用生成的Draft中为MapStruct预留的能力构建Jimmer对象。
+
+    这个扩展叫做`jimmer-mapstruct-apt`
+
+    -   对于Java而言，`jimmer-mapstruct-apt`被`jimmer-apt`所包含
+
+    -   对于Kotlin而言，需同时在maven或gradle配置文件中使用`jimmer-ksp`和`jimmer-mapstruct-apt`
+
+<Tabs groupId="buildTool">
+<TabItem value="java_maven" label="Java(Maven)">
+
+```xml title="pom.xml"
+...省略其他代码...
+
+<build>
+    <dependencies>
+        <dependency> ➀
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+        <dependency> ➊
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        ...省略其他依赖...
+    </dependencies>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.10.1</version>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path> ➁
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${lombok.version}</version>
+                    </path>
+                    <path> ➋
+                        <groupId>org.babyfish.jimmer</groupId>
+                        <artifactId>jimmer-apt</artifactId>
+                        <version>${jimmer.version}</version>
+                    </path>
+                    <path> ➌
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>${mapstruct.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+...省略其他代码...
+```
+
+</TabItem>
+<TabItem value="java_gradle" label="Java(Gradle)">
+
+```groovy title="build.gradle"
+dependencies {
+    
+    implementation "org.projectlombok:lombok:${lombok.version}" ➀
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}" ➊
+
+    annotationProcessor "org.projectlombok:lombok:${lombok.version}" ➁
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}" ➋
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}" ➌
+
+    ...省略其他依赖...
+}
+```
+
+</TabItem>
+<TabItem value="kotin_maven" label="Kotlin(Maven)">
+
+```xml title="pom.xml"
+...省略其他代码...
+
+<build>
+    <sourceDirectory>src/main/kotlin</sourceDirectory>
+    <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+
+    <dependencies>
+        <dependency> ➊
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        ...省略其他依赖...
+    </dependencies>
+
+    <plugins>
+        <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+                <execution>
+                    <id>compile</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>test-compile</id>
+                    <phase>test-compile</phase>
+                    <goals>
+                        <goal>test-compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <compilerPlugins>
+                    <compilerPlugin>ksp</compilerPlugin>
+                </compilerPlugins>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.mapstruct</groupId> ➌
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>${mapstruct.version}</version>
+                    </path>
+                    <path>
+                        <groupId>org.babyfish.jimmer</groupId> ⓐ
+                        <artifactId>jimmer-mapstruct-apt</artifactId>
+                        <version>${jimmer.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>com.dyescape</groupId>
+                    <artifactId>kotlin-maven-symbol-processing</artifactId>
+                    <version>1.3</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.babyfish.jimmer</groupId> ➋
+                    <artifactId>jimmer-ksp</artifactId>
+                    <version>${jimmer.version}</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
+
+...省略其他代码...
+```
+
+</TabItem>
+<TabItem value="kotin_gralde" label="Kotlin(Gradle.kts)">
+
+```kotlin title="build.gradle.kts"
+plugins {
+    id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+    kotlin("kapt") version "1.6.21"
+
+    ...省略其他插件...
+}
+dependencies {
+    
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}" ➊
+
+    ksp("org.babyfish.jimmer:jimmer-ksp:${jimmerVersion}") ➋
+    kapt("org.mapstruct:mapstruct-processor:${mapstructVersion}") ➌
+	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:${jimmerVersion}") ⓐ
+
+    ...省略其他依赖...
+}
+
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir("build/generated/ksp/main/kotlin")
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+这个例子中，我们假设Java中基于[lombok](https://projectlombok.org/)编写静态POJO。
+
+<table>
+    <thead>
+        <tr>
+            <th>语言</th>
+            <th>位置</th>
+            <th>描述</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="3">Java和Kotlin</td>
+            <td>➊</td>
+            <td>引入mapstruct依赖，让用户代码可以使用mapstruct的注解</td>
+        </tr>
+        <tr>
+            <td>➋</td>
+            <td>使用Jimmer的预编译器为动态类型生成相关的源代码，Java使用`jimmer-apt`，Kotlin使用`jimmer-ksp`</td>
+        </tr>
+        <tr>
+            <td>➌</td>
+            <td>使用mapstruct的annotation processor生成源代码 <i>(后文会介绍)</i> </td>
+        </tr>
+        <tr>
+            <td rowspan="2">仅Java</td>
+            <td>➀</td>
+            <td>引入lombok的依赖，让用户代码可以使用lombok的注解</td>
+        </tr>
+        <tr>
+            <td>➁</td>
+            <td>使用Lombok的预编译器更改静态POJO类的代码，比如添加getter, setter</td>
+        </tr>
+        <tr>
+            <td rowspan="2">仅Kotlin</td>
+            <td>ⓐ</td>
+            <td>使用`jimmer-mapstruct-apt`拓展➌</td>
+        </tr>
+    </tbody>
+</table>
+
+## 定义POJO
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookInput.java"
+@Data
+public class BookInput {
+
+    @Nullable
+    private Long id;
+
+    private String name;
+
+    private int edition;
+
+    private BigDecimal price;
+
+    @Nullable
+    private Long storeId;
+
+    private List<Long> authorIds;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInput.java"
+data class BookInput(
+    val id: Long? = null,
+    val name: String,
+    val edition: Int,
+    val price: BigDecimal,
+    val storeId: Long?,
+    val authorIds: List<Long>
+)
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+Java POJO代码中采用了`@Nullable`注解，仅为提高可读性，无实质性功能
+:::
+
+该POJO有三个属性，需要说明一下
+
+-   `BookInput.id`
+
+    -   这里，`BookInput.id`是允许为null的。这是必要的，比如，插入数据不需要指定id。
+
+    -   实体对象动态属性`Book.id`不允许为null *(Jimmer禁止id可以为null，请参见[映射篇/基础映射/简单映射#@Id](../mapping/base/basic#id))*
+
+    二者彼此矛盾，那么，`BookInput`怎么转化为`Book`呢？
+
+    :::tip
+    Jimmer约定，如果POJO的属性可为null而动态对象上对应的属性不能为null，那么动态对象的对应属性不会被赋值，保持缺失的状态。
+    :::
+
+-   `BookInput.storeId`
+
+    很明显，这是关联id，对实体对象动态属性`Book.store`。
+
+    这种动态对象属性被定义为关联对象，而POJO中却定义为关联id，叫做短关联映射。
+
+    :::info
+    对于短关联这个概念，请参考[这里](../mapping/advanced/view/id-view#基本概念短关联)
+    :::
+
+-   `BookInput.authors`
+
+    很明显，这是关联id集合，对实体对象动态属性`Book.store`。
+
+    这种动态对象属性被定义为关联对象集合，而POJO中却定义为关联id的集合，叫做短关联映射。
+
+    :::info
+    对于短关联这个概念，请参考[这里](../mapping/advanced/view/id-view#基本概念短关联)
+    :::
+
+其他属性和原始实体的定义完全一样，无需说明
+
+## 定义Mappper
+
+使用mapstruct最重要的事是定义Mapper，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookInputMapper.java"
+@Mapper
+public interface BookInputMapper {
+
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    Book toBook(BookInput input);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInputMapper.java"
+@Mapper
+interface BookInputMapper {
+
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    fun toBook(input: BookInput): Book
+}
+```
+
+</TabItem>
+</Tabs>
+
+该Mapper提供一个`toBook`方法，用于把`BookInput`对象转化为`Book`对象。
+
+`BookInput.id`、`BookInput.id`、`BookInput.name`和`BookInput.price`都是非关联属性，mapstruct能很好地处理它们。
+
+:::note
+其中，`BookInput.id`可以为null, 而`Book.id`不能为null的问题，前面已经讨论过了，这里不再赘述。
+:::
+
+关键是`BookInput.storeId`和`BookInput.authorIds`应该如何映射，这分为两种情况了。
+
+-   实体定义了@IdView属性
+
+-   实体未定义@IdView属性
+
+### 如果实体定义了@IdView属性
+
+如果实体类型定义了`@IdView`属性，例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+package com.example.model;
+
+import org.babyfish.jimmer.sql.*;
+import org.jetbrains.annotations.Nullable;
+
+@Entity
+public interface Book {
+
+    ...省略其他属性...
+
+    @ManyToOne
+    @Nullable
+    BookStore store();
+
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_id"
+    )
+    List<Author> authors();
+
+    // highlight-next-line
+    @IdView // 关联对象store的id的视图
+    Long storeId();
+
+    // 关联对象集合authors中所有对象的id的视图
+    // highlight-next-line
+    @IdView("authors") 
+    List<Long> authorIds();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+package com.example.model
+
+import org.babyfish.jimmer.sql.*
+
+@Entity
+interface Book {
+
+    ...省略其他属性...
+
+    @ManyToOne
+    val store: BookStore?
+
+    @ManyToMany
+    @JoinTable(
+        name = "BOOK_AUTHOR_MAPPING",
+        joinColumnName = "BOOK_ID",
+        inverseJoinColumnName = "AUTHOR_id"
+    )
+    val authors: List<Auhtor>
+
+    // highlight-next-line
+    @IdView // 关联对象store的id的视图
+    val storeId: Long?
+
+    // 关联对象集合authors中所有对象的id的视图
+    // highlight-next-line
+    @IdView("authors") 
+    val authorIds: List<Long>
+}
+```
+
+</TabItem>
+</Tabs>
+
+这种情况下，实体对象和POJO完全对应，Mapper无需做任何修改。
+
+### 如果实体未定义@IdView属性
+
+如果实体类型并为定义`@IdView`属性，需要修改Mapper
+
+-   将`BookInput.storeId`转化为只有id的`BookStore`对象，再赋给`Book.store`
+
+-   将`BookInput.authorIds`转化为只有id的`Author`对象的集合，再赋给`Book.authors`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookInputMapper.java"
+@Mapper
+public interface BookInputMapper {
+
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    // highlight-next-line
+    @Mapping(target = "store", source = "storeId")
+    // highlight-next-line
+    @Mapping(target = "authors", source = "authorIds")
+    Book toBook(BookInput input);
+
+    @BeanMapping(ignoreByDefault = true)
+    // highlight-next-line
+    @Mapping(target = "id", source = ".")
+    BookStore toBookStore(Long id);
+
+    @BeanMapping(ignoreByDefault = true)
+    // highlight-next-line
+    @Mapping(target = "id", source = ".")
+    Author toAuthor(Long id);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInputMapper.java"
+@Mapper
+interface BookInputMapper {
+
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    // highlight-next-line
+    @Mapping(target = "store", source = "storeId")
+    // highlight-next-line
+    @Mapping(target = "authors", source = "authorIds")
+    fun toBook(input: BookInput): Book
+
+    @BeanMapping(ignoreByDefault = true)
+    // highlight-next-line
+    @Mapping(target = "id", source = ".")
+    fun toBookStore(id: Long?): BookStore
+
+    @BeanMapping(ignoreByDefault = true)
+    // highlight-next-line
+    @Mapping(target = "id", source = ".")
+    fun toAuthor(id: Long?): Author
+}
+```
+
+</TabItem>
+</Tabs>
+
+由于mapstruct还支持`@Mapping(target = "store.id", source = "storeId")`的写法，也可以用下面的写法来简化代码
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookInputMapper.java"
+@Mapper
+public interface BookInputMapper {
+
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    // highlight-next-line
+    @Mapping(target = "store.id", source = "storeId")
+    @Mapping(target = "authors", source = "authorIds")
+    Book toBook(BookInput input);
+
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id", source = ".")
+    Author toAuthor(Long id);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInputMapper.java"
+@Mapper
+interface BookInputMapper {
+
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    // highlight-next-line
+    @Mapping(target = "store.id", source = "storeId")
+    @Mapping(target = "authors", source = "authorIds")
+    fun toBook(input: BookInput): Book
+
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id", source = ".")
+    fun toAuthor(id: Long?): Author
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 使用
+
+现在，我们就可以把`BookInput`转化为`Book`了
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookInput input = ...省略...;
+BookInputMapper mapper = Mappers.getMapper(BookInputMapper.class);
+Book book = mapper.toBook(input);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val input: BookInput = ...省略...
+val mapper = Mappers.getMapper(BookInputMapper::class.java)
+val book = mapper.toBook(input)
+```
+
+</TabItem>
+</Tabs>
+
+## 让POJO实现Input接口
+
+Jimmer提供了一个简单接口，`org.babyfish.jimmer.Input<E>`
+
+```java
+public interface Input<E> {
+
+    E toEntity();
+}
+```
+
+动态对象永远不会实现这个此结构，该接口应该有用户自定义的静态POJO类来实现。其功能非常简单，就是把当前静态POJO转化为动态对象。
+
+该接口可以提供语法层面的便利，无论是底层的[保存指令](../mutation/save-command)还是上层的spring-data基接口`JRepository/KRepository`，其`sava`方法都直接接受`Input`参数，而无需用户调用Mapper完成转化。
+
+如果想要这个语法层面的便利，你可以选择让POJO实现该接口，修改`BookInput`的代码，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookInput.java"
+@Data
+public class BookInput implements Input<Book> { ❶
+
+    private static final Converter CONVERTER = 
+        Mappers.getMapper(Converter.class);
+
+    ...省略私有字段...
+
+    @Override
+    public Book toEntity() { ❷
+        return CONVERTER.toBook(this);
+    }
+
+    @Mapper
+    interface Converter {
+
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        Book toBook(BookInput input);
+
+        ...省略其他mapstruct配置...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInput.kt"
+data class BookInput(
+    ...略...
+): Input<Book> { ❶
+
+    override fun toEntity(): Book = ❷
+        CONVERTER.toBook(this)
+
+    @Mapper
+    internal interface Converter { 
+
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        fun toBook(input: BookInput): Book
+
+        ...省略其他mapstruct配置...
+    }
+
+    companion object {
+
+        @JvmStatic
+        private val CONVERTER = 
+            Mappers.getMapper(Converter::class.java)
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ `BookInput`类实现了接口`org.babyfish.jimmer.Input`
+
+-   ❷ 实现`Input.toEntity`方法，利用MapStruct把当前静态的`Input DTO`对象转化为动态的`Book`实体对象。这是这个类唯一的功能

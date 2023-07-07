@@ -5,6 +5,8 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 class BetweenPredicate extends AbstractPredicate {
 
     private final boolean negative;
@@ -53,5 +55,18 @@ class BetweenPredicate extends AbstractPredicate {
     @Override
     public Predicate not() {
         return new BetweenPredicate(!negative, expression, min, max);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(negative, expression, min, max);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BetweenPredicate)) return false;
+        BetweenPredicate that = (BetweenPredicate) o;
+        return negative == that.negative && expression.equals(that.expression) && Objects.equals(min, that.min) && Objects.equals(max, that.max);
     }
 }

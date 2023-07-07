@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,9 +45,24 @@ public class MutateCacheTest extends AbstractQueryTest {
                                 }
                             }
                     ).setCacheOperator(
-                            (cache, key, reason) -> {
-                                cacheOpRecords.add(new CacheOpRecord(cache, key));
-                                cache.delete(key);
+                            new CacheOperator() {
+                                @Override
+                                public void delete(LocatedCache<Object, ?> cache, Object key, Object reason) {
+                                    cacheOpRecords.add(new CacheOpRecord(cache, key));
+                                    CacheOperator.suspending(() -> {
+                                        cache.delete(key);
+                                    });
+                                }
+
+                                @Override
+                                public void deleteAll(LocatedCache<Object, ?> cache, Collection<Object> keys, Object reason) {
+                                    for (Object key : keys) {
+                                        cacheOpRecords.add(new CacheOpRecord(cache, key));
+                                    }
+                                    CacheOperator.suspending(() -> {
+                                        cache.deleteAll(keys);
+                                    });
+                                }
                             }
                     )
             );

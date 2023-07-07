@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 public class ExistsPredicate extends AbstractPredicate {
 
     private final TypedSubQuery<?> subQuery;
@@ -56,5 +58,18 @@ public class ExistsPredicate extends AbstractPredicate {
     public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql(negative ? "not exists" : "exists");
         renderChild((Ast) subQuery, builder);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ExistsPredicate)) return false;
+        ExistsPredicate that = (ExistsPredicate) o;
+        return negative == that.negative && subQuery.equals(that.subQuery);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(subQuery, negative);
     }
 }

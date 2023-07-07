@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.model;
 
 import org.babyfish.jimmer.Immutable;
-import org.jetbrains.annotations.Nullable;
 
 import javax.validation.constraints.*;
 import java.util.List;

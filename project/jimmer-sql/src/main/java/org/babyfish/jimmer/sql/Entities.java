@@ -101,30 +101,22 @@ public interface Entities {
     }
 
     default DeleteResult delete(Class<?> entityType, Object id) {
-        return deleteCommand(entityType, id, DeleteMode.AUTO).execute();
+        return deleteCommand(entityType, id).execute();
     }
 
     default DeleteResult delete(Class<?> entityType, Object id, DeleteMode mode) {
-        return deleteCommand(entityType, id, mode).execute();
+        return deleteCommand(entityType, id).setMode(mode).execute();
     }
 
-    default DeleteCommand deleteCommand(Class<?> entityType, Object id) {
-        return deleteCommand(entityType, id, DeleteMode.AUTO);
-    }
-
-    DeleteCommand deleteCommand(Class<?> entityType, Object id, DeleteMode mode);
+    DeleteCommand deleteCommand(Class<?> entityType, Object id);
 
     default DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
-        return batchDeleteCommand(entityType, ids, DeleteMode.AUTO).execute();
+        return batchDeleteCommand(entityType, ids).execute();
     }
 
     default DeleteResult batchDelete(Class<?> entityType, Collection<?> ids, DeleteMode mode) {
-        return batchDeleteCommand(entityType, ids, mode).execute();
+        return batchDeleteCommand(entityType, ids).setMode(mode).execute();
     }
 
-    default DeleteCommand batchDeleteCommand(Class<?> entityType, Collection<?> ids) {
-        return batchDeleteCommand(entityType, ids, DeleteMode.AUTO);
-    }
-
-    DeleteCommand batchDeleteCommand(Class<?> entityType, Collection<?> ids, DeleteMode mode);
+    DeleteCommand batchDeleteCommand(Class<?> entityType, Collection<?> ids);
 }

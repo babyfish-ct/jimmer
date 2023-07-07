@@ -97,9 +97,9 @@ export class BookService {
 export type BookServiceOptions = {
     'deleteBook': {readonly id: number},
     'findBooks': {
-        readonly pageIndex: number, 
-        readonly pageSize: number, 
-        readonly sortCode: string, 
+        readonly pageIndex?: number, 
+        readonly pageSize?: number, 
+        readonly sortCode?: string, 
         readonly name?: string, 
         readonly storeName?: string, 
         readonly authorName?: string

@@ -1,0 +1,17 @@
+{
+                "name": "debezium-connector",
+                "config": {
+                        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+                        "plugin.name": "pgoutput",
+                        "tasks.max": "1",
+                        "database.hostname": "postgres",
+                        "database.port": "5432",
+                        "database.dbname": "jimmer_demo",
+                        "database.user": "root",
+                        "database.password": "123456",
+                        "database.server.id": "watched-db",
+                        "topic.prefix": "debezium",
+                        "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
+                        "schema.history.internal.kafka.topic": "schema-changes.jimmer_demo"
+                }
+        }

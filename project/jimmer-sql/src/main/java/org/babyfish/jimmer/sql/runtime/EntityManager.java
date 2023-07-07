@@ -2,11 +2,18 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.sql.JoinTable;
 import org.babyfish.jimmer.sql.ManyToOne;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
+import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -17,11 +24,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,6 +46,17 @@ public class EntityManager {
         if (!(classes instanceof Set<?>)) {
             classes = new LinkedHashSet<>(classes);
         }
+        Set<String> qualifiedNames = new HashSet<>();
+        for (Class<?> clazz : classes) {
+            if (!qualifiedNames.add(clazz.getName())) {
+                throw new IllegalArgumentException(
+                        "Multiple classes with the same qualified name \"" +
+                                clazz.getName() +
+                                "\" but belonging to different class loaders " +
+                                "cannot be registered into the entity manager"
+                );
+            }
+        }
         Map<ImmutableType, ImmutableTypeInfo> map = new LinkedHashMap<>();
         for (Class<?> clazz : classes) {
             if (clazz != null) {
@@ -53,11 +68,8 @@ public class EntityManager {
                                     "\" is not entity"
                     );
                 }
-                map.put(immutableType, new ImmutableTypeInfo());
-                immutableType = immutableType.getSuperType();
-                while (immutableType != null && (immutableType.isEntity() || immutableType.isMappedSuperclass())) {
-                    map.put(immutableType, new ImmutableTypeInfo());
-                    immutableType = immutableType.getSuperType();
+                for (ImmutableType type : immutableType.getAllTypes()) {
+                    map.put(type, new ImmutableTypeInfo());
                 }
             }
         }
@@ -74,7 +86,7 @@ public class EntityManager {
                 for (ImmutableType otherType : map.keySet()) {
                     if (type != otherType && type.isAssignableFrom(otherType)) {
                         info.allDerivedTypes.add(otherType);
-                        if (type == otherType.getSuperType()) {
+                        if (otherType.getSuperTypes().contains(type)) {
                             info.directDerivedTypes.add(otherType);
                         }
                     }
@@ -281,7 +293,12 @@ public class EntityManager {
         if (!mappedSuperClass.isAssignableFrom(type)) {
             return false;
         }
-        return type.getSuperType().isMappedSuperclass();
+        for (ImmutableType superType : type.getSuperTypes()) {
+            if (superType.isMappedSuperclass()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class ImmutableTypeInfo {
@@ -304,15 +321,71 @@ public class EntityManager {
             String tableName,
             MetadataStrategy strategy
     ) {
-        Map<Key, ImmutableType> typeMap = data.getTypeMap(strategy);
-        return typeMap.get(
-                new Key(
-                        Objects.requireNonNull(microServiceName, "`microServiceName` cannot be null"),
-                        DatabaseIdentifiers.comparableIdentifier(
-                                Objects.requireNonNull(tableName, "`tableName` cannot be null")
-                        )
-                )
+        Objects.requireNonNull(microServiceName, "`microServiceName` cannot be null");
+        tableName = DatabaseIdentifiers.comparableIdentifier(
+                Objects.requireNonNull(tableName, "`tableName` cannot be null")
         );
+        try {
+            while (true) {
+                ImmutableType type = getTypeByServiceAndTableImpl(microServiceName, tableName, strategy);
+                if (type != null) {
+                    return type;
+                }
+                int index = tableName.indexOf('.');
+                if (index == -1) {
+                    break;
+                }
+                tableName = tableName.substring(index + 1);
+                if (tableName.isEmpty()) {
+                    break;
+                }
+            }
+        } catch (ConflictTableException ex) {
+            if (ex.searchedTableName.equals(tableName)) {
+                throw new IllegalArgumentException(
+                        "There are multiple types of tables named \"" +
+                                tableName +
+                                "\" in microservice \"" +
+                                microServiceName +
+                                "\": " +
+                                ex.conflictTypes
+                );
+            } else {
+                throw new IllegalArgumentException(
+                        "Trying to find the type of the table name \"" +
+                                tableName +
+                                "\" in microservice \"" +
+                                microServiceName +
+                                "\" failed, and turned to query table \"" +
+                                ex.searchedTableName +
+                                "\", but found these conflicting types: " +
+                                ex.conflictTypes
+                );
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private ImmutableType getTypeByServiceAndTableImpl(
+            String microServiceName,
+            String tableName,
+            MetadataStrategy strategy
+    ) throws ConflictTableException {
+        Map<Key, Object> typeMap = data.getTypeMap(strategy);
+        Object result = typeMap.get(
+                new Key(microServiceName, tableName)
+        );
+        if (result == null) {
+            return null;
+        }
+        if (result instanceof List<?>) {
+            throw new ConflictTableException(
+                    tableName,
+                    (List<ImmutableType>) result
+            );
+        }
+        return (ImmutableType) result;
     }
 
     @NotNull
@@ -332,6 +405,10 @@ public class EntityManager {
             );
         }
         return type;
+    }
+
+    public void validate(MetadataStrategy strategy) {
+        data.getTypeMap(strategy);
     }
 
     private static void tableSharedBy(Key key, ImmutableType type1, ImmutableType type2) {
@@ -410,19 +487,54 @@ public class EntityManager {
 
         final Map<String, ImmutableType> typeMapForSpringDevTools;
 
-        final ConcurrentMap<MetadataStrategy, Map<Key, ImmutableType>> typesMap =
-                new ConcurrentHashMap<>();
+        final MetaCache<Map<Key, Object>> typeMapCache =
+                new MetaCache<>(this::createTypeMap);
 
         Data(Map<ImmutableType, ImmutableTypeInfo> map, Map<String, ImmutableType> typeMapForSpringDevTools) {
             this.map = map;
             this.typeMapForSpringDevTools = typeMapForSpringDevTools;
         }
 
-        public Map<Key, ImmutableType> getTypeMap(MetadataStrategy strategy) {
-            return typesMap.computeIfAbsent(strategy, this::createTypeMap);
+        public Map<Key, Object> getTypeMap(MetadataStrategy strategy) {
+            return typeMapCache.get(strategy);
         }
 
-        private Map<Key, ImmutableType> createTypeMap(MetadataStrategy strategy) {
+        @SuppressWarnings("unchecked")
+        private Map<Key, Object> createTypeMap(MetadataStrategy strategy) {
+
+            Map<Key, ImmutableType> rawTypeMap = createRawTypeMap(strategy);
+            Map<Key, Object> typeMap = new HashMap<>(rawTypeMap);
+
+            for (Map.Entry<Key, ImmutableType> e : rawTypeMap.entrySet()) {
+                String tableName = e.getKey().tableName;
+                while (true) {
+                    int index = tableName.indexOf('.');
+                    if (index == -1) {
+                        break;
+                    }
+                    tableName = tableName.substring(index + 1);
+                    if (tableName.isEmpty()) {
+                        break;
+                    }
+                    Key newKey = new Key(e.getKey().microServiceName, tableName);
+                    ImmutableType type = e.getValue();
+                    Object oldTypeOrList = typeMap.get(newKey);
+                    if (oldTypeOrList instanceof List<?>) {
+                        ((List<Object>)oldTypeOrList).add(type);
+                    } else if (oldTypeOrList != null) {
+                        List<Object> list = new ArrayList<>();
+                        list.add(oldTypeOrList);
+                        list.add(type);
+                        typeMap.put(newKey, list);
+                    } else {
+                        typeMap.put(newKey, type);
+                    }
+                }
+            }
+            return typeMap;
+        }
+
+        private Map<Key, ImmutableType> createRawTypeMap(MetadataStrategy strategy) {
             Map<Key, ImmutableType> typeMap = new HashMap<>();
             for (ImmutableType type : map.keySet()) {
                 if (!type.isEntity()) {
@@ -449,7 +561,84 @@ public class EntityManager {
                     }
                 }
             }
+            for (ImmutableType type : map.keySet()) {
+                if (!type.isEntity()) {
+                    continue;
+                }
+                ((AbstractImmutableTypeImpl)type).validateColumnUniqueness(strategy);
+                for (ImmutableProp prop : type.getProps().values()) {
+                    if (!prop.isNullable() && prop.isReference(TargetLevel.ENTITY) && !prop.isTransient()) {
+                        Storage storage = prop.getStorage(strategy);
+                        if (prop.isRemote()) {
+                            throw new ModelException(
+                                    "Illegal reference association property \"" +
+                                            prop +
+                                            "\", it must be nullable because it is remote association"
+                            );
+                        } else if (storage instanceof ColumnDefinition) {
+                            boolean isForeignKey = ((ColumnDefinition) storage).isForeignKey();
+                            if (!isForeignKey) {
+                                throw new ModelException(
+                                        "Illegal reference association property \"" +
+                                                prop +
+                                                "\", it must be nullable because it is based on FAKE foreign key"
+                                );
+                            }
+                        } else if (storage instanceof MiddleTable) {
+                            boolean isForeignKey = ((MiddleTable) storage).getTargetColumnDefinition().isForeignKey();
+                            if (!isForeignKey) {
+                                throw new ModelException(
+                                        "Illegal reference association property \"" +
+                                                prop +
+                                                "\", it must be nullable because it is based on middle table " +
+                                                "whose target column is FAKE foreign key"
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            for (ImmutableType type : map.keySet()) {
+                if (type.isEntity() && !type.getSuperTypes().isEmpty()) {
+                    Map<String, ImmutableProp> superPropMap = new HashMap<>();
+                    for (ImmutableType superType : type.getSuperTypes()) {
+                        for (ImmutableProp superProp : superType.getProps().values()) {
+                            ImmutableProp conflictProp = superPropMap.put(superProp.getName(), superProp);
+                            if (conflictProp != null) {
+                                Storage storage1 = conflictProp.getStorage(strategy);
+                                Storage storage2 = superProp.getStorage(strategy);
+                                if (!Objects.equals(storage1, storage2)) {
+                                    throw new ModelException(
+                                            "Illegal entity type \"" +
+                                                    type +
+                                                    "\", conflict super properties \"" +
+                                                    conflictProp +
+                                                    "\" and \"" +
+                                                    superProp +
+                                                    "\", the storage of the first one is " +
+                                                    storage1 +
+                                                    " but the storage of the second one is " +
+                                                    storage2
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return typeMap;
+        }
+    }
+
+    private static class ConflictTableException extends Exception {
+
+        final String searchedTableName;
+
+        final List<ImmutableType> conflictTypes;
+
+        private ConflictTableException(String searchedTableName, List<ImmutableType> conflictTypes) {
+            this.searchedTableName = searchedTableName;
+            this.conflictTypes = conflictTypes;
         }
     }
 }

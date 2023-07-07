@@ -2,6 +2,7 @@ package org.babyfish.jimmer.runtime;
 
 import org.babyfish.jimmer.CircularReferenceException;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.sql.collection.AbstractIdViewList;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -44,7 +45,7 @@ public class DraftContext {
             Class<E> elementType,
             boolean isElementImmutable
     ) {
-        if (list == null || list instanceof Draft) {
+        if (list == null || list instanceof Draft || list instanceof AbstractIdViewList<?, ?>) {
             return (List<D>)list;
         }
         ListDraft<?> draft = listDraftMap.get(list);

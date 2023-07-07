@@ -25,6 +25,12 @@ inline fun <reified T: Any> makeIdOnly(id: Any): T =
 fun <T: Any> makeIdOnly(type: KClass<T>, id: Any): T =
     ImmutableObjects.makeIdOnly(ImmutableType.get(type.java), id) ?: error("Internal bug")
 
+fun <T: Any> toIdOnly(obj: T): T =
+    ImmutableObjects.toIdOnly(obj)
+
+fun <T: Any> toLonely(obj: T): T =
+    ImmutableObjects.toLonely(obj)
+
 fun KProperty1<*, *>.toImmutableProp(): ImmutableProp {
     val immutableType = ImmutableType.get(
         (parameters[0].type.classifier as KClass<*>).java

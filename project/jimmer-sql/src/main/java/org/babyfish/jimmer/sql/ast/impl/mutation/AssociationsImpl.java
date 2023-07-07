@@ -21,24 +21,28 @@ public class AssociationsImpl implements Associations {
 
     private final boolean reversed;
 
+    private final boolean checkExistence;
+
     public AssociationsImpl(
             JSqlClientImplementor sqlClient,
             Connection con, 
             AssociationType associationType
     ) {
-        this(sqlClient, con, associationType, false);
+        this(sqlClient, con, associationType, false, false);
     }
 
     private AssociationsImpl(
             JSqlClientImplementor sqlClient,
             Connection con,
             AssociationType associationType,
-            boolean reversed
+            boolean reversed,
+            boolean checkExistence
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
+        this.checkExistence = checkExistence;
     }
 
     @Override
@@ -46,12 +50,20 @@ public class AssociationsImpl implements Associations {
         if (this.con == con) {
             return this;
         }
-        return new AssociationsImpl(sqlClient, con, associationType, reversed);
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence);
     }
 
     @Override
     public Associations reverse() {
-        return new AssociationsImpl(sqlClient, con, associationType, !reversed);
+        return new AssociationsImpl(sqlClient, con, associationType, !reversed, checkExistence);
+    }
+
+    @Override
+    public Associations checkExistence(boolean checkExistence) {
+        if (this.checkExistence == checkExistence) {
+            return this;
+        }
+        return new AssociationsImpl(sqlClient, con, associationType, reversed, checkExistence);
     }
 
     @Override
@@ -67,14 +79,14 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public AssociationSaveCommand batchSaveCommand(Collection<?> sourceIds, Collection<?> targetIds) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(cartesianProduct(sourceIds, targetIds))
         );
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<Object, Object>> idTuples) {
+    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<?, ?>> idTuples) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(idTuples)
         );
@@ -91,44 +103,46 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Object> sourceIds, Collection<Object> targetIds) {
+    public Executable<Integer> batchDeleteCommand(Collection<?> sourceIds, Collection<?> targetIds) {
         return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
     
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<Object, Object>> idTuples) {
+    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<?, ?>> idTuples) {
         return deleteExecutable(idTuples);
     }
 
-    private AssociationExecutable saveExecutable(Collection<Tuple2<Object, Object>> idTuples) {
+    private AssociationExecutable saveExecutable(Collection<Tuple2<?, ?>> idTuples) {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
                 con,
                 associationType,
                 reversed,
-                AssociationExecutable.Mode.INSERT,
+                false,
+                checkExistence,
                 idTuples
         );
     }
 
-    private Executable<Integer> deleteExecutable(Collection<Tuple2<Object, Object>> idTuples) {
+    private Executable<Integer> deleteExecutable(Collection<Tuple2<?, ?>> idTuples) {
         validate(idTuples);
         return new AssociationExecutable(
                 sqlClient,
                 con,
                 associationType,
                 reversed,
-                AssociationExecutable.Mode.DELETE,
+                true,
+                checkExistence,
                 idTuples
         );
     }
 
-    private Collection<Tuple2<Object, Object>> cartesianProduct(
-            Collection<Object> sourceIds,
-            Collection<Object> targetIds
+    private Collection<Tuple2<?, ?>> cartesianProduct(
+            Collection<?> sourceIds,
+            Collection<?> targetIds
     ) {
-        Set<Tuple2<Object, Object>> idTuples = new LinkedHashSet<>(
+        Set<Tuple2<?, ?>> idTuples = new LinkedHashSet<>(
                 (sourceIds.size() * targetIds.size() * 4 + 2) / 3
         );
         for (Object sourceId : sourceIds) {
@@ -139,7 +153,7 @@ public class AssociationsImpl implements Associations {
         return idTuples;
     }
 
-    private Collection<Tuple2<Object, Object>> validate(Collection<Tuple2<Object, Object>> idTuples) {
+    private Collection<Tuple2<?, ?>> validate(Collection<Tuple2<?, ?>> idTuples) {
         Class<?> sourceIdType = associationType.getSourceType().getIdProp().getElementClass();
         Class<?> targetIdType = associationType.getTargetType().getIdProp().getElementClass();
         if (reversed) {
@@ -147,7 +161,7 @@ public class AssociationsImpl implements Associations {
             sourceIdType = targetIdType;
             targetIdType = tmp;
         }
-        for (Tuple2<Object, Object> idTuple : idTuples) {
+        for (Tuple2<?, ?> idTuple : idTuples) {
             if (Converters.tryConvert(idTuple.get_1(), sourceIdType) == null) {
                 throw new IllegalArgumentException(
                         "sourceId \"" +

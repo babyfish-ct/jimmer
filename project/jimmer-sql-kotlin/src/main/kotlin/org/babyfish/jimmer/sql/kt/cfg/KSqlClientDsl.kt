@@ -7,12 +7,10 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
-import org.babyfish.jimmer.sql.cache.Cache
-import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback
-import org.babyfish.jimmer.sql.cache.CacheConfig
-import org.babyfish.jimmer.sql.cache.CacheFactory
+import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.cfg.impl.JavaCustomizer
 import org.babyfish.jimmer.sql.kt.cfg.impl.JavaInitializer
@@ -23,7 +21,6 @@ import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
 import org.babyfish.jimmer.sql.meta.IdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
-import java.sql.PreparedStatement
 import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -94,6 +91,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setExecutorContextPrefixes(prefixes)
     }
 
+    fun setSqlFormatter(fFormatter: SqlFormatter) {
+        javaBuilder.setSqlFormatter(fFormatter)
+    }
+
     fun setTransientResolverProvider(provider: TransientResolverProvider) {
         javaBuilder.setTransientResolverProvider(provider)
     }
@@ -131,6 +132,22 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setCaches {
             CacheDsl(it).block()
         }
+    }
+
+    fun setCacheFactory(cacheFactory: CacheFactory) {
+        javaBuilder.setCacheFactory(cacheFactory)
+    }
+
+    fun setCacheOperator(cacheOperator: CacheOperator) {
+        javaBuilder.setCacheOperator(cacheOperator)
+    }
+
+    fun addCacheAbandonedCallback(callback: CacheAbandonedCallback) {
+        javaBuilder.addCacheAbandonedCallback(callback)
+    }
+
+    fun addCacheAbandonedCallbacks(callbacks: Collection<CacheAbandonedCallback>) {
+        javaBuilder.addCacheAbandonedCallbacks(callbacks)
     }
 
     fun setTriggerType(triggerType: TriggerType) {
@@ -171,6 +188,14 @@ class KSqlClientDsl internal constructor(
 
     fun setBinLogObjectMapper(mapper: ObjectMapper) {
         javaBuilder.setBinLogObjectMapper(mapper)
+    }
+
+    fun setBinLogPropReader(prop: KProperty1<*, *>, reader: BinLogPropReader) {
+        javaBuilder.setBinLogPropReader(prop.toImmutableProp(), reader)
+    }
+
+    fun setBinLogPropReader(type: KClass<*>, reader: BinLogPropReader) {
+        javaBuilder.setBinLogPropReader(type.java, reader)
     }
 
     /**
@@ -310,8 +335,12 @@ class KSqlClientDsl internal constructor(
             javaCfg.setCalculatedCache(prop.toImmutableProp(), cache)
         }
 
-        fun setAbandonedCallback(callback: CacheAbandonedCallback?) {
-            javaCfg.setAbandonedCallback(callback);
+        fun addAbandonedCallback(callback: CacheAbandonedCallback?) {
+            javaCfg.addAbandonedCallback(callback)
+        }
+
+        fun addAbandonedCallbacks(callbacks: List<CacheAbandonedCallback>) {
+            javaCfg.addAbandonedCallbacks(callbacks)
         }
     }
 

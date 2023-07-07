@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 abstract class AggregationExpression<T> extends AbstractExpression<T> {
 
@@ -41,6 +42,19 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
     @Override
     public int precedence() {
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AggregationExpression<?> that = (AggregationExpression<?>) o;
+        return expression.equals(that.expression);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression);
     }
 
     static class Count extends AggregationExpression<Long> implements NumericExpressionImplementor<Long> {

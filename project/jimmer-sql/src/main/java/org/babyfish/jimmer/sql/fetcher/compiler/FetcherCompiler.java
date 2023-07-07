@@ -6,8 +6,10 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.fetcher.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -18,11 +20,24 @@ public class FetcherCompiler {
     private FetcherCompiler() {}
 
     public static Fetcher<?> compile(String code) {
-        return compile(code, null);
+        return compile(code, null, null);
+    }
+
+    public static Fetcher<?> compile(String code, ClassLoader classLoader) {
+        return compile(code, classLoader, null);
     }
 
     @SuppressWarnings("unchecked")
-    public static Fetcher<?> compile(String code, ClassLoader classLoader) {
+    public static <T> Fetcher<T> compile(String code, Class<T> type) {
+        return (Fetcher<T>) compile(
+                code,
+                null,
+                Objects.requireNonNull(type, "The argument `type` cannot be null")
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Fetcher<?> compile(String code, ClassLoader classLoader, Class<?> type) {
         FetcherLexer lexer = new FetcherLexer(
                 new ANTLRInputStream(code)
         );
@@ -35,44 +50,77 @@ public class FetcherCompiler {
         parser.addErrorListener(new ErrorListenerImpl());
 
         FetcherParser.FetcherContext ctx = parser.fetcher();
-        Fetcher<?> fetcher = new FetcherImpl<>((Class<Object>) type(ctx, classLoader));
+        FetcherImplementor<?> fetcher = new FetcherImpl<>((Class<Object>) type(ctx, classLoader, type));
         fetcher = addFields(fetcher, ctx.body);
         return fetcher;
     }
 
-    private static Class<?> type(FetcherParser.FetcherContext ctx, ClassLoader classLoader) {
+    private static Class<?> type(FetcherParser.FetcherContext ctx, ClassLoader classLoader, Class<?> type) {
+        Class<?> javaType;
+        if (ctx.type == null) {
+            if (type == null) {
+                throw new FetcherCompileException(
+                        "The argument `type` must be specified for fetcher code without javaType name prefix",
+                        ctx.start.getLine(),
+                        ctx.start.getCharPositionInLine()
+                );
+            }
+            if (!type.isInterface() || !type.isAnnotationPresent(Entity.class)) {
+                throw new IllegalArgumentException(
+                        "The argument `type` is \"" +
+                                type.getName() +
+                                "\" which is not entity java type"
+                );
+            }
+            return type;
+        }
         List<Token> parts = ctx.type.parts;
         String typeName = parts
                 .stream().map(Token::getText)
                 .collect(Collectors.joining("."));
-        Class<?> type;
-        try {
-            type = classLoader != null ?
-                    Class.forName(typeName, true, classLoader) :
-                    Class.forName(typeName);
-        } catch (ClassNotFoundException ex) {
-            throw new FetcherCompileException(
-                    "There is no type \"" +
-                            typeName +
-                            "\"",
-                    ex,
-                    parts.get(0).getLine(),
-                    parts.get(0).getCharPositionInLine()
-            );
+
+        if (type != null && typeName.equals(type.getName())) {
+            javaType = type;
+        } else {
+            try {
+                javaType = classLoader != null ?
+                        Class.forName(typeName, true, classLoader) :
+                        Class.forName(typeName);
+            } catch (ClassNotFoundException ex) {
+                throw new FetcherCompileException(
+                        "There is no javaType \"" +
+                                typeName +
+                                "\"",
+                        ex,
+                        parts.get(0).getLine(),
+                        parts.get(0).getCharPositionInLine()
+                );
+            }
+            if (type != null && !type.isAssignableFrom(javaType)) {
+                throw new FetcherCompileException(
+                        "The fetcher whose javaType is \"" +
+                                typeName +
+                                "\" cannot be convert to the fetcher whose javaType is \"" +
+                                type.getName() +
+                                "\"",
+                        parts.get(0).getLine(),
+                        parts.get(1).getCharPositionInLine()
+                );
+            }
         }
-        if (!type.isInterface() || !type.isAnnotationPresent(Entity.class)) {
+        if (!javaType.isInterface() || !javaType.isAnnotationPresent(Entity.class)) {
             throw new FetcherCompileException(
                     "The \"" +
                             typeName +
-                            "\" is not entity type",
+                            "\" is not entity java type",
                     parts.get(0).getLine(),
                     parts.get(0).getCharPositionInLine()
             );
         }
-        return type;
+        return javaType;
     }
 
-    private static Fetcher<?> addFields(Fetcher<?> fetcher, FetcherParser.FetchBodyContext body) {
+    private static FetcherImplementor<?> addFields(FetcherImplementor<?> fetcher, FetcherParser.FetchBodyContext body) {
         for (FetcherParser.FieldContext field : body.fields) {
             fetcher = addField(fetcher, field);
         }
@@ -80,7 +128,7 @@ public class FetcherCompiler {
     }
 
     @SuppressWarnings("unchecked")
-    private static Fetcher<?> addField(Fetcher<?> fetcher, FetcherParser.FieldContext field) {
+    private static FetcherImplementor<?> addField(FetcherImplementor<?> fetcher, FetcherParser.FieldContext field) {
         String propName = field.prop.getText();
         ImmutableProp prop = fetcher.getImmutableType().getProps().get(propName);
         if (prop == null) {
@@ -208,7 +256,7 @@ public class FetcherCompiler {
                     field.prop.getCharPositionInLine()
             );
         }
-        Fetcher<?> childFetcher = null;
+        FetcherImplementor<?> childFetcher = null;
         FetcherParser.FetchBodyContext body = field.body;
         if (body != null) {
             if (!prop.isAssociation(TargetLevel.ENTITY) || (prop.isTransient() && !prop.hasTransientResolver())) {

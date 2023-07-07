@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl.util;
 
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.EmbeddedLevel;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import java.util.ArrayList;
@@ -12,8 +13,8 @@ import java.util.List;
 
 public class EmbeddableObjects {
 
-    private static final StaticCache<ImmutableType, List<Class<?>>> FLAT_TYPES_CACHE =
-            new StaticCache<>(EmbeddableObjects::createFlatTypes, false);
+    private static final TypeCache<List<Class<?>>> FLAT_TYPES_CACHE =
+            new TypeCache<>(EmbeddableObjects::createFlatTypes, false);
 
     private EmbeddableObjects() {}
 
@@ -92,7 +93,7 @@ public class EmbeddableObjects {
     }
 
     private static boolean isCompleted(ImmutableSpi spi, ImmutableProp prop) {
-        int propId = prop.getId();
+        PropId propId = prop.getId();
         if (!spi.__isLoaded(propId)) {
             return false;
         }

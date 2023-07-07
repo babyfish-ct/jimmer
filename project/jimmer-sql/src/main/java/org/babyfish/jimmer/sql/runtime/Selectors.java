@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.jetbrains.annotations.Nullable;
@@ -38,15 +39,17 @@ public class Selectors {
                         null,
                         stmt -> {
                             Reader<?> reader = Readers.createReader(sqlClient, selections);
-                            Reader.Col col = new Reader.Col();
-                            List<R> results = new ArrayList<>();
-                            try (ResultSet resultSet = stmt.executeQuery()) {
-                                while (resultSet.next()) {
-                                    results.add((R)reader.read(resultSet, col));
-                                    col.reset();
+                            return Internal.usingSqlDraftContext((draftCtx, isRoot) -> {
+                                Reader.Context ctx = new Reader.Context(draftCtx, isRoot);
+                                List<R> results = new ArrayList<>();
+                                try (ResultSet resultSet = stmt.executeQuery()) {
+                                    while (resultSet.next()) {
+                                        results.add((R)reader.read(resultSet, ctx));
+                                        ctx.resetCol();
+                                    }
                                 }
-                            }
-                            return results;
+                                return results;
+                            });
                         }
                 )
         );
@@ -78,26 +81,28 @@ public class Selectors {
                 null,
                 stmt -> {
                     Reader<?> reader = Readers.createReader(sqlClient, selections);
-                    Reader.Col col = new Reader.Col();
-                    List<R> results = new ArrayList<>();
-                    try (ResultSet resultSet = stmt.executeQuery()) {
-                        while (resultSet.next()) {
-                            results.add((R) reader.read(resultSet, col));
-                            col.reset();
-                            if (results.size() >= batchSize) {
-                                Fetchers.fetch(sqlClient, con, selections, results);
-                                for (R result : results) {
-                                    consumer.accept(result);
+                    return Internal.usingSqlDraftContext((draftContext, isRoot) -> {
+                        Reader.Context ctx = new Reader.Context(draftContext, isRoot);
+                        List<R> results = new ArrayList<>();
+                        try (ResultSet resultSet = stmt.executeQuery()) {
+                            while (resultSet.next()) {
+                                results.add((R) reader.read(resultSet, ctx));
+                                ctx.resetCol();
+                                if (results.size() >= batchSize) {
+                                    Fetchers.fetch(sqlClient, con, selections, results);
+                                    for (R result : results) {
+                                        consumer.accept(result);
+                                    }
+                                    results.clear();
                                 }
-                                results.clear();
                             }
                         }
-                    }
-                    Fetchers.fetch(sqlClient, con, selections, results);
-                    for (R result : results) {
-                        consumer.accept(result);
-                    }
-                    return null;
+                        Fetchers.fetch(sqlClient, con, selections, results);
+                        for (R result : results) {
+                            consumer.accept(result);
+                        }
+                        return null;
+                    });
                 },
                 cursorId
         );

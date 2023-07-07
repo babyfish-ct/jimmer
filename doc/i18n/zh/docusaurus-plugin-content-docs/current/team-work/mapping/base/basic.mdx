@@ -1,4 +1,436 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: 简单映射
 ---
+
+import DynamicShape from '../../_shared/dynamic-shape.mdx';
+import ImmutableSolution from '../../_shared/immutable-solution.mdx';
+import { ViewMore } from '@site/src/components/ViewMore';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## @Entity
+
+`Entity`注解用于修饰不可变接口，表示一个ORM实体。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+// highlight-next-line
+@Entity
+public interface Book {
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+// highlight-next-line
+@Entity
+interface Book {
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+为什么实体类型是接口而非类？
+
+Jimmer实体具备<ViewMore buttonText="动态性"><DynamicShape/></ViewMore>和<ViewMore buttonText="不可变性"><ImmutableSolution/></ViewMore>，
+并非简单的POJO，内部有精巧的运作机制，无法靠开发人员手工编写或lombok辅助完成。
+
+所以，Jimmer让开发人员编写接口，由预编译器 *(对Java而言即AnnotationPrcoessor，对Kotlin而言即KSP)* 在编译时实现这些接口。
+:::
+
+## @Table
+
+`@Table`注解为实体指定表名。如果没有使用`@Table`注解，例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+public interface BookStore {
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+interface BookStore {
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+Jimmer会根据[命名策略](./naming-strategy)推导`BookStore`接口对应的表名。
+
+如果默认的[命名策略](./naming-strategy)未被用户覆盖，接口`BookStore`的表名为`BOOK_STORE`。所以，之前的代码和这里的代码等价：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+// highlight-next-line
+@Table("BOOK_STORE")
+public interface BookStore {
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+// highlight-next-line
+@Table("BOOK_STORE")
+interface BookStore {
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## @Column
+
+`@Column`注解为普通非关联属性指定数据库列。如果没有使用`@Column`注解，例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+@Entity
+public interface BookStore {
+
+    String firstName();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+@Entity
+interface Author {
+
+    val firstName: String
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+Jimmer会根据[命名策略](./naming-strategy)推导`firstName`属性对应的列名。
+
+如果默认的[命名策略](./naming-strategy)未被用户覆盖，属性`firstName`的列名为`FIRST_NAME`。所以，之前的代码和这里的代码等价：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Author.java"
+@Entity
+public interface BookStore {
+
+    // highlight-next-line
+    @Column(name = "FIRST_NAME")
+    String firstName();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Author.kt"
+@Entity
+interface Author {
+
+    // highlight-next-line
+    @Column(name = "FIRST_NAME")
+    val firstName: String
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+`@Column`仅用于明确指定非关联属性列名，对于多对一或一对一关联属性的外键列名，必须通过`@JoinColumn指定`。请参见[关联映射](./association)以了解更多。
+:::
+
+## @Id
+
+声明某个属性是id属性，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    // highlight-next-line
+    @Id
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    // highlight-next-line
+    @Id
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+Id字段必须非空 *（对Java而言，这个例子中使用`long`，而非`Long`）*
+
+和JPA中鼓励把id声明成可null类型不同，Jimmer不通过这种方法来表达插入数据时不指定id，Jimmer对象本身的动态性可以轻松表达此问题。
+
+请参见[可空性](./nullity)。
+:::
+
+默认情况下，id列的列名就是由Java属性名推导。默认列名全部使用大写字母，原名称每处从小写字母切换为大写字母的地方，都会自动添加下划线。这里对应的数据库列名就是ID。
+
+## @GeneratedValue
+
+在上面的例子中，被`@Id`修饰的主键属性本身是业务字段，插入数据时必须指定。
+
+然而，更多时候，我们期望主键属性本身没有业务意义，这样插入数据时就可以不指定，而是自动生成。自动生成id的策略有
+
+-   数据库自动编号
+-   数据库序列
+-   UUID
+-   雪花ID
+
+`@GeneratedValue`和`@Id`配合使用，为Id指定自动增长策略。
+
+### 数据库自动编号
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```java title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 数据库序列
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，并没有通过`@GeneratorValue`的`sequenceName`指定数据库中的序列名称，Jimmer会根据[命名策略](./naming-strategy)推导序列名。
+
+如果默认的[命名策略](./naming-strategy)未被用户覆盖，这里的序列名为`BOOK_ID_SEQ`。所以，之前的代码和这里的代码等价。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        // highlight-next-line
+        sequenceName = "BOOK_ID_SEQ"
+    )
+    long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(
+        strategy = GenerationType.SEQUENCE,
+        // highlight-next-line
+        sequenceName = "BOOK_ID_SEQ"
+    )
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+### UUID
+
+将`@GeneratedValue`的generatorType属性指定为`org.babyfish.jimmer.sql.meta.UUIDIdGenerator`，即可用于随机生成UUID
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(generatorType = UUIDIdGenerator.class)
+    UUID id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(generatorType = UUIDIdGenerator::class)
+    val id: UUID
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 用户自定义IdGenerator
+
+当以上Id增长策略都无法满足要求时，可以自定义Id生成策略。
+
+Jimmer提供了一个`UserIdGenerator<T>`接口
+
+```java title="UserIdGenerator.java"
+package org.babyfish.jimmer.sql.meta;
+
+public interface UserIdGenerator<T> extends IdGenerator {
+
+    T generate(Class<?> entityType);
+}
+```
+
+用户可以通过实现此接口，实现任何Id生成算法，包括雪花ID。
+
+```java title="MyGenerator.java"
+package com.mycompany.myproject.common;
+
+public class MyIdGenerator implements UserIdGenerator<Long> {
+
+    @Override
+    public Long generate(Class<?> entityType) {
+        return ...省略自定义id生成逻辑...
+    }
+}
+```
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(generateType = MyIdGenerator.class)
+    Long id();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(generateType = MyIdGenerator::class)
+    val id: Long
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+用户实现的Id生成类`MyIdGenerator`本身是没有范型参数的，但需要为超接口`UserIdGenerator`指定范型参数。
+
+被修饰的Id属性的类型必须和该范型参数一致，否则会导致异常。
+:::

@@ -6,7 +6,8 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
-import org.babyfish.jimmer.meta.impl.ViewUtils;
+import org.babyfish.jimmer.apt.generator.Strings;
+import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
 
@@ -19,6 +20,8 @@ import java.util.*;
 
 public class ImmutableProp {
 
+    private final Context context;
+
     private final ImmutableType declaringType;
 
     private final ExecutableElement executableElement;
@@ -26,6 +29,8 @@ public class ImmutableProp {
     private final String name;
 
     private final int id;
+
+    private final String slotName;
 
     private final String getterName;
 
@@ -39,7 +44,7 @@ public class ImmutableProp {
 
     private final String loadedStateName;
 
-    private final String visibleName;
+    private final String deeperPropIdName;
 
     private final TypeMirror returnType;
 
@@ -75,15 +80,19 @@ public class ImmutableProp {
 
     private ImmutableType targetType;
 
-    private Set<ImmutableProp> dependencies;
+    private boolean targetTypeResolved;
 
-    private ImmutableProp idViewBaseProp;
+    private Set<ImmutableProp> _dependencies;
 
-    private ImmutableProp manyToManyViewBaseProp;
+    private boolean dependenciesResolved;
 
-    private ImmutableProp manyToManyViewBaseDeeperProp;
+    private ImmutableProp _idViewBaseProp;
 
-    private boolean isVisibilityControllable;
+    private boolean idViewBasePropResolved;
+
+    private ImmutableProp _manyToManyViewBaseProp;
+
+    private boolean manyToManyViewBasePropResolved;
 
     private Boolean remote;
 
@@ -93,6 +102,7 @@ public class ImmutableProp {
             ExecutableElement executableElement,
             int id
     ) {
+        this.context = context;
         this.id = id;
         this.declaringType = declaringType;
         this.executableElement = executableElement;
@@ -112,7 +122,7 @@ public class ImmutableProp {
                 Character.isUpperCase(getterName.charAt(2))) {
             name =
                     getterName.substring(2, 3).toLowerCase() +
-                    getterName.substring(3);
+                            getterName.substring(3);
             setterName = "set" + getterName.substring(2);
             applierName = "apply" + getterName.substring(2);
             adderByName = "addInto" + getterName.substring(2);
@@ -131,15 +141,20 @@ public class ImmutableProp {
             name = getterName;
             String suffix =
                     getterName.substring(0, 1).toUpperCase() +
-                    getterName.substring(1);
+                            getterName.substring(1);
             setterName = "set" + suffix;
             applierName = "apply" + suffix;
             adderByName = "addInto" + suffix;
             beanStyle = false;
         }
 
+        slotName = "SLOT_" + Strings.upper(name);
         loadedStateName = "__" + name + "Loaded";
-        visibleName = "__" + name + "Visible";
+        if (executableElement.getAnnotation(ManyToManyView.class) != null) {
+            deeperPropIdName = "DEEPER_PROP_ID_" + Strings.upper(name);
+        } else {
+            deeperPropIdName = null;
+        }
 
         if (context.isCollection(returnType) && !isExplicitScalar()) {
             if (!context.isListStrictly(returnType)) {
@@ -262,8 +277,8 @@ public class ImmutableProp {
                 context.getImmutableAnnotationType(elementType),
                 isList,
                 typeName.isPrimitive() || typeName.isBoxedPrimitive() ?
-                    typeName.isBoxedPrimitive() :
-                    null,
+                        typeName.isBoxedPrimitive() :
+                        null,
                 reason -> new MetaException(executableElement, reason)
         );
         for (AnnotationMirror annotationMirror : executableElement.getAnnotationMirrors()) {
@@ -325,6 +340,10 @@ public class ImmutableProp {
         return id;
     }
 
+    public String getSlotName() {
+        return slotName;
+    }
+
     public String getName() {
         return name;
     }
@@ -349,15 +368,15 @@ public class ImmutableProp {
         return getLoadedStateName(false);
     }
 
-    public String getVisibleName() {
-        return visibleName;
-    }
-
     public String getLoadedStateName(boolean force) {
         if (!force && !isLoadedStateRequired()) {
             throw new IllegalStateException("The property \"" + this + "\" does not has loaded state");
         }
         return loadedStateName;
+    }
+
+    public String getDeeperPropIdName() {
+        return deeperPropIdName;
     }
 
     public TypeMirror getReturnType() {
@@ -422,15 +441,15 @@ public class ImmutableProp {
     }
 
     public boolean isValueRequired() {
-        return idViewBaseProp == null && manyToManyViewBaseProp == null && !isJavaFormula;
+        return getIdViewBaseProp() == null && getManyToManyViewBaseProp() == null && !isJavaFormula;
     }
 
     public boolean isLoadedStateRequired() {
-        return idViewBaseProp == null && !isJavaFormula && (isNullable || typeName.isPrimitive());
+        return getIdViewBaseProp() == null && !isJavaFormula && (isNullable || typeName.isPrimitive());
     }
 
     public boolean isDsl(boolean isTableEx) {
-        if (idViewBaseProp != null || isJavaFormula || isTransient) {
+        if (isJavaFormula || isTransient || (getIdViewBaseProp() != null && isList)) {
             return false;
         }
         if (isRemote() && isReverse) {
@@ -447,7 +466,7 @@ public class ImmutableProp {
         }
         return true;
     }
-    
+
     public Class<?> getBoxType() {
         switch (returnType.getKind()) {
             case BOOLEAN:
@@ -471,46 +490,30 @@ public class ImmutableProp {
         }
     }
 
-    public ImmutableType getTargetType() {
-        return targetType;
-    }
-
-    public Set<ImmutableProp> getDependencies() {
-        return dependencies;
-    }
-
     public ImmutableProp getBaseProp() {
-        return idViewBaseProp != null ? idViewBaseProp : manyToManyViewBaseProp;
-    }
-
-    public ImmutableProp getIdViewBaseProp() {
-        return idViewBaseProp;
-    }
-
-    public ImmutableProp getManyToManyViewBaseProp() {
-        return manyToManyViewBaseProp;
-    }
-
-    public ImmutableProp getManyToManyViewBaseDeeperProp() {
-        return manyToManyViewBaseDeeperProp;
-    }
-
-    public boolean isVisibilityControllable() {
-        return isVisibilityControllable;
+        ImmutableProp idViewBaseProp = getIdViewBaseProp();
+        return idViewBaseProp != null ? idViewBaseProp : getManyToManyViewBaseProp();
     }
 
     public boolean isRemote() {
         Boolean remote = this.remote;
         if (remote == null) {
-            remote = targetType != null && !declaringType.getMicroServiceName().equals(targetType.getMicroServiceName());
-            if (remote && getAnnotation(JoinSql.class) != null) {
-                throw new MetaException(
-                        executableElement,
-                        "the remote association(micro-service names of declaring type and target type are different) " +
-                                "cannot be decorated by \"@" +
-                                JoinSql.class +
-                                "\""
-                );
+            if (isAssociation) {
+                Element targetElement = context.getTypes().asElement(getElementType());
+                Entity targetAnno = targetElement != null ? targetElement.getAnnotation(Entity.class) : null;
+                remote = targetAnno != null &&
+                        !targetAnno.microServiceName().equals(declaringType.getMicroServiceName());
+                if (remote && getAnnotation(JoinSql.class) != null) {
+                    throw new MetaException(
+                            executableElement,
+                            "the remote association(micro-service names of declaring type and target type are different) " +
+                                    "cannot be decorated by \"@" +
+                                    JoinSql.class +
+                                    "\""
+                    );
+                }
+            } else {
+                remote = false;
             }
             this.remote = remote;
         }
@@ -543,85 +546,77 @@ public class ImmutableProp {
         return false;
     }
 
-    boolean resolve(Context context, int step) {
-        switch (step) {
-            case 0:
-                resolveTargetType(context);
-                return true;
-            case 1:
-                resolveFormulaDependencies();
-                return true;
-            case 2:
-                resolveIdViewBaseProp();
-                return true;
-            case 3:
-                resolveManyToManyViewProp();
-            default:
-                return false;
-        }
-    }
-
-    private void resolveTargetType(Context context) {
-        if (isAssociation) {
-            targetType = context.getImmutableType(elementType);
-            if (
-                    (targetType.isEntity() || targetType.isMappedSuperClass()) &&
-                    isRemote() &&
-                    (declaringType.getMicroServiceName().isEmpty() || targetType.getMicroServiceName().isEmpty())
-            ) {
-                throw new MetaException(
-                        executableElement,
-                        "when the micro service name(`" +
-                                declaringType.getMicroServiceName() +
-                                "`) of source type(" +
-                                declaringType.getQualifiedName() +
-                                ") and " +
-                                "the micro service name(`" +
-                                targetType.getMicroServiceName() +
-                                "`) of target type(" +
-                                targetType.getQualifiedName() +
-                                ") are not equal, " +
-                                "neither of them must be empty"
-                );
-            }
-        }
-    }
-
-    private void resolveFormulaDependencies() {
-        Formula formula = getAnnotation(Formula.class);
-        if (formula == null || formula.dependencies().length == 0) {
-            this.dependencies = Collections.emptySet();
-        } else {
-            Map<String, ImmutableProp> propMap = declaringType.getProps();
-            Set<ImmutableProp> props = new LinkedHashSet<>();
-            for (String dependency : formula.dependencies()) {
-                ImmutableProp prop = propMap.get(dependency);
-                if (prop == null) {
+    public ImmutableType getTargetType() {
+        if (!targetTypeResolved) {
+            if (isAssociation) {
+                targetType = context.getImmutableType(elementType);
+                if (
+                        (targetType.isEntity() || targetType.isMappedSuperClass()) &&
+                                isRemote() &&
+                                (declaringType.getMicroServiceName().isEmpty() || targetType.getMicroServiceName().isEmpty())
+                ) {
                     throw new MetaException(
                             executableElement,
-                            "it is decorated by \"@" +
-                                    Formula.class.getName() +
-                                    "\" but the dependency property \"" +
-                                    dependency +
-                                    "\" does not eixst"
+                            "when the micro service name(`" +
+                                    declaringType.getMicroServiceName() +
+                                    "`) of source type(" +
+                                    declaringType.getQualifiedName() +
+                                    ") and " +
+                                    "the micro service name(`" +
+                                    targetType.getMicroServiceName() +
+                                    "`) of target type(" +
+                                    targetType.getQualifiedName() +
+                                    ") are not equal, " +
+                                    "neither of them must be empty"
                     );
                 }
-                props.add(prop);
-                prop.isVisibilityControllable = true;
             }
-            this.isVisibilityControllable = true;
-            this.dependencies = Collections.unmodifiableSet(props);
+            targetTypeResolved = true;
         }
+        return targetType;
     }
 
-    private void resolveIdViewBaseProp() {
+    public Set<ImmutableProp> getDependencies() {
+        if (!dependenciesResolved) {
+            Formula formula = getAnnotation(Formula.class);
+            if (formula == null || formula.dependencies().length == 0) {
+                this._dependencies = Collections.emptySet();
+            } else {
+                Map<String, ImmutableProp> propMap = declaringType.getProps();
+                Set<ImmutableProp> props = new LinkedHashSet<>();
+                for (String dependency : formula.dependencies()) {
+                    ImmutableProp prop = propMap.get(dependency);
+                    if (prop == null) {
+                        throw new MetaException(
+                                executableElement,
+                                "it is decorated by \"@" +
+                                        Formula.class.getName() +
+                                        "\" but the dependency property \"" +
+                                        dependency +
+                                        "\" does not exists"
+                        );
+                    }
+                    props.add(prop);
+                }
+                this._dependencies = Collections.unmodifiableSet(props);
+            }
+            dependenciesResolved = true;
+        }
+        return this._dependencies;
+    }
+
+    public ImmutableProp getIdViewBaseProp() {
+        if (idViewBasePropResolved) {
+            return _idViewBaseProp;
+        }
         IdView idView = getAnnotation(IdView.class);
         if (idView == null) {
-            return;
+            idViewBasePropResolved = true;
+            return null;
         }
         String base = idView.value();
         if (base.isEmpty()) {
-            base = ViewUtils.defaultBasePropName(isList, name);
+            base = Utils.defaultViewBasePropName(isList, name);
             if (base == null) {
                 throw new MetaException(
                         executableElement,
@@ -692,7 +687,7 @@ public class ImmutableProp {
                             " nullable"
             );
         }
-        if (!elementTypeName.box().equals(baseProp.targetType.getIdProp().getElementTypeName().box())) {
+        if (!elementTypeName.box().equals(baseProp.getTargetType().getIdProp().getElementTypeName().box())) {
             throw new MetaException(
                     executableElement,
                     "it is decorated by \"@" +
@@ -700,19 +695,22 @@ public class ImmutableProp {
                             "\", the base property \"" +
                             baseProp +
                             "\" returns entity type whose id is \"" +
-                            baseProp.targetType.getIdProp().getElementTypeName() +
+                            baseProp.getTargetType().getIdProp().getElementTypeName() +
                             "\", but the current property does not return that type"
             );
         }
-        baseProp.isVisibilityControllable = true;
-        isVisibilityControllable = true;
-        idViewBaseProp = baseProp;
+        idViewBasePropResolved = true;
+        return _idViewBaseProp = baseProp;
     }
 
-    private void resolveManyToManyViewProp() {
+    public ImmutableProp getManyToManyViewBaseProp() {
+        if (manyToManyViewBasePropResolved) {
+            return _manyToManyViewBaseProp;
+        }
         ManyToManyView manyToManyView = getAnnotation(ManyToManyView.class);
         if (manyToManyView == null) {
-            return;
+            manyToManyViewBasePropResolved = true;
+            return null;
         }
         String propName = manyToManyView.prop();
         ImmutableProp prop = declaringType.getProps().get(propName);
@@ -736,78 +734,8 @@ public class ImmutableProp {
                             "\", but that property is not an one-to-many association"
             );
         }
-        ImmutableType middleType = prop.getTargetType();
-        String deeperPropName = manyToManyView.deeperProp();
-        ImmutableProp deeperProp = null;
-        if (deeperPropName.isEmpty()) {
-            for (ImmutableProp middleProp : middleType.getProps().values()) {
-                if (middleProp.getTargetType() == this.targetType && middleProp.getAnnotation(ManyToOne.class) != null) {
-                    if (deeperProp != null) {
-                        throw new MetaException(
-                                executableElement,
-                                "it is decorated by \"@" +
-                                        ManyToManyView.class.getName() +
-                                        "\" whose `deeperProp` is not specified, " +
-                                        "however, two many-to-one properties pointing to target type are found: \"" +
-                                        deeperProp +
-                                        "\" and \"" +
-                                        prop +
-                                        "\", please specify its `deeperProp` explicitly"
-                        );
-                    }
-                    deeperProp = prop;
-                }
-            }
-            if (deeperProp == null) {
-                throw new MetaException(
-                        executableElement,
-                        "it is decorated by \"@" +
-                                ManyToManyView.class.getName() +
-                                "\" whose `deeperProp` is not specified, " +
-                                "however, there is no many-to-one property pointing to " +
-                                "target type in the middle entity type \"" +
-                                middleType +
-                                "\""
-                );
-            }
-        } else {
-            deeperProp = middleType.getProps().get(deeperPropName);
-            if (deeperProp == null) {
-                throw new MetaException(
-                        executableElement,
-                        "it is decorated by \"@" +
-                                ManyToManyView.class.getName() +
-                                "\" whose `deeperProp` is `" +
-                                deeperPropName +
-                                "`, " +
-                                "however, there is no many-to-one property \"" +
-                                deeperPropName +
-                                "\" in the middle entity type \"" +
-                                middleType +
-                                "\""
-                );
-            }
-            if (deeperProp.targetType != targetType || deeperProp.getAnnotation(ManyToOne.class) == null) {
-                throw new MetaException(
-                        executableElement,
-                        "it is decorated by \"@" +
-                                ManyToManyView.class.getName() +
-                                "\" whose `deeperProp` is `" +
-                                deeperPropName +
-                                "`, " +
-                                "however, there is no many-to-one property \"" +
-                                deeperPropName +
-                                "\" in the middle entity type \"" +
-                                middleType +
-                                "\""
-                );
-            }
-        }
-        manyToManyViewBaseProp = prop;
-        manyToManyViewBaseDeeperProp = deeperProp;
-        isVisibilityControllable = true;
-        prop.isVisibilityControllable = true;
-        deeperProp.isVisibilityControllable = true;
+        manyToManyViewBasePropResolved = true;
+        return _manyToManyViewBaseProp = prop;
     }
 
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {

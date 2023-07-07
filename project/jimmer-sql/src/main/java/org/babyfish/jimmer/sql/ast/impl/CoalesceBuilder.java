@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CoalesceBuilder<T> {
 
@@ -156,6 +157,19 @@ public class CoalesceBuilder<T> {
                 }
                 builder.leave();
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Expr<?> expr = (Expr<?>) o;
+            return expressions.equals(expr.expressions);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(expressions);
         }
     }
 

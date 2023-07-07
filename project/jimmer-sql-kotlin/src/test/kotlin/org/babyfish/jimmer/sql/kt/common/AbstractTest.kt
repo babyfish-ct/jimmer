@@ -37,6 +37,9 @@ abstract class AbstractTest {
                     return DefaultExecutor.INSTANCE.execute(args)
                 }
             })
+            // Don't set dialect here
+            // Java uses H2Dialect to test `a ilke b`
+            // Kotlin uses DefaultDialect ot test `lower(a) like b`
             block()
         }
 

@@ -6,7 +6,7 @@ title: 定义实体
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-和以`JPA/Hibenrate`为代表的ORM不同，Jimmer中的实体定义采用interface，而非class。原因在[下一节](#为什么实体是interface)讨论。
+和以`JPA/Hibernate`为代表的ORM不同，Jimmer中的实体定义采用interface，而非class。原因在[下一节](#为什么实体是interface)讨论。
 
 在定义实体之前，需要声明两个概念：
 
@@ -182,8 +182,8 @@ import TabItem from '@theme/TabItem';
     其中`Gender`是一个枚举，只有两个选项：`MALE`和`FEMALE`。
 
     ORM处理枚举有两种方式：
-    -   按Java枚举的名称映射为字符串：可观察性优先的选择，也是默认的选项。
-    -   安Java美剧的orinal映射为数字：性能优先的选择。
+    -   按Java枚举的名称映射为字符串：可观察性优先的选择，也是默认的选择。
+    -   按Java枚举的ordinal映射为数字：性能优先的选择。
 
     虽然本教程示例按照默认方式把枚举映射成字符串，但数据库中check约束限定的取值是`M`和`F`，并非`MALE`和`FEMALE`，所以，这个没有需要简单配置一下。
 
@@ -302,7 +302,7 @@ import TabItem from '@theme/TabItem';
     如果Java/Kotlin属性名和数据库列名无法自动匹配，请用`@org.babyfish.jimmer.sql.Column`修饰属性。
 
     :::note
-    注意：改注解即可用于修饰非关联字段，而非下文要讨论的外建字段
+    注意：改注解即可用于修饰非关联字段，而非下文要讨论的外键字段
     :::
 
 -   Jimmer实体是动态对象，没有id的对象，就是id未被设置的对象，而非id被设置为null的对象。Jimmer不需要让id可以为null。
@@ -310,7 +310,7 @@ import TabItem from '@theme/TabItem';
     所以，代码中id属性的类型为不能为null的`long`，而非可以为null的`Long`，否则框架会报错提示。
     
     :::note
-    有JPA/Hibenrate背景知识的读者需注意这个细节。
+    有JPA/Hibernate背景知识的读者需注意这个细节。
     :::
 
 ## 多对一关联`Book.store`

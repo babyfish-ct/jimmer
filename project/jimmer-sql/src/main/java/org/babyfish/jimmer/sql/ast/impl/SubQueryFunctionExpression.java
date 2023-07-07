@@ -4,6 +4,8 @@ import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 public abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R> {
 
     private TypedSubQuery<R> subQuery;
@@ -34,6 +36,19 @@ public abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R
     public void renderTo(@NotNull SqlBuilder builder) {
         builder.sql(functionName());
         renderChild((Ast) subQuery, builder);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SubQueryFunctionExpression<?> that = (SubQueryFunctionExpression<?>) o;
+        return subQuery.equals(that.subQuery);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(subQuery);
     }
 
     public static class All<R> extends SubQueryFunctionExpression<R> {

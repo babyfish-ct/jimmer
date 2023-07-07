@@ -177,14 +177,17 @@ public class EntitiesImpl implements Entities {
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids, Connection con) {
         ImmutableProp idProp = ImmutableType.get(entityType).getIdProp();
-        return this.findByIds(entityType, null, ids, con).stream().collect(
-                Collectors.toMap(
-                        it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
-                        Function.identity(),
-                        (a, b) -> { throw new IllegalStateException("Objects with same id"); },
-                        LinkedHashMap::new
-                )
-        );
+        return this.findByIds(entityType, null, ids, con)
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(
+                        Collectors.toMap(
+                                it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
+                                Function.identity(),
+                                (a, b) -> { throw new IllegalStateException("Objects with same id"); },
+                                LinkedHashMap::new
+                        )
+                );
     }
 
     private <E> E findById(Fetcher<E> fetcher, Object id, Connection con) {
@@ -204,14 +207,17 @@ public class EntitiesImpl implements Entities {
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
         ImmutableProp idProp = ImmutableType.get(fetcher.getJavaClass()).getIdProp();
-        return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con).stream().collect(
-                Collectors.toMap(
-                        it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
-                        Function.identity(),
-                        (a, b) -> { throw new IllegalStateException("Objects with same id"); },
-                        LinkedHashMap::new
-                )
-        );
+        return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con)
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(
+                        Collectors.toMap(
+                                it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
+                                Function.identity(),
+                                (a, b) -> { throw new IllegalStateException("Objects with same id"); },
+                                LinkedHashMap::new
+                        )
+                );
     }
 
     @SuppressWarnings("unchecked")
@@ -440,8 +446,7 @@ public class EntitiesImpl implements Entities {
     @Override
     public DeleteCommand deleteCommand(
             Class<?> entityType,
-            Object id,
-            DeleteMode mode
+            Object id
     ) {
         if (id instanceof Collection<?>) {
             throw new IllegalArgumentException("`id` cannot be collection, do you want to call 'batchDeleteCommand'?");
@@ -449,14 +454,13 @@ public class EntitiesImpl implements Entities {
         if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
             throw new IllegalArgumentException("`id` must be simple type");
         }
-        return batchDeleteCommand(entityType, Collections.singleton(id), mode);
+        return batchDeleteCommand(entityType, Collections.singleton(id));
     }
 
     @Override
     public DeleteCommand batchDeleteCommand(
             Class<?> entityType,
-            Collection<?> ids,
-            DeleteMode mode
+            Collection<?> ids
     ) {
         for (Object id : ids) {
             if ((id instanceof ImmutableSpi && ((ImmutableSpi)id).__type().isEntity()) || id instanceof Input<?>) {
@@ -464,6 +468,6 @@ public class EntitiesImpl implements Entities {
             }
         }
         ImmutableType immutableType = ImmutableType.get(entityType);
-        return new DeleteCommandImpl(sqlClient, con, immutableType, ids, mode);
+        return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
     }
 }

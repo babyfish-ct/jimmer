@@ -7,9 +7,9 @@ import java.util.*;
 
 public abstract class MultipleColumns implements ColumnDefinition {
 
-    private final String[] arr;
+    protected final String[] arr;
 
-    private final boolean embedded;
+    protected final boolean embedded;
 
     public MultipleColumns(String[] arr, boolean embedded) {
         if (arr.length > 1 && !embedded) {
@@ -46,6 +46,21 @@ public abstract class MultipleColumns implements ColumnDefinition {
             }
         }
         return -1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MultipleColumns that = (MultipleColumns) o;
+        return embedded == that.embedded && Arrays.equals(arr, that.arr);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(embedded);
+        result = 31 * result + Arrays.hashCode(arr);
+        return result;
     }
 
     @Override

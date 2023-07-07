@@ -81,6 +81,10 @@ public abstract class ScalarProvider<T, S> {
         return null;
     }
 
+    public Reader<S> reader() {
+        return null;
+    }
+
     public static <E extends Enum<E>> ScalarProvider<E, String> enumProviderByString(
             Class<E> enumType
     ) {

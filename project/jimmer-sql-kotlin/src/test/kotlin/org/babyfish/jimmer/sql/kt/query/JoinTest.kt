@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.query
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.sql
+import org.babyfish.jimmer.sql.kt.ast.expression.valueIn
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
 import org.babyfish.jimmer.sql.kt.model.classic.author.Author
@@ -13,9 +14,25 @@ import org.babyfish.jimmer.sql.kt.model.classic.author.id
 import org.babyfish.jimmer.sql.kt.model.classic.author.lastName
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.id
+import org.babyfish.jimmer.sql.kt.model.classic.book.storeId
 import kotlin.test.Test
 
 class JoinTest : AbstractQueryTest() {
+
+    @Test
+    fun testImplicitJoinByIdView() {
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(table.storeId valueIn listOf(2L, 3L))
+                select(table)
+            }
+        ) {
+            sql(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                    "from BOOK tb_1_ where tb_1_.STORE_ID in (?, ?)"
+            )
+        }
+    }
 
     @Test
     fun testUnusedWeakJoin() {

@@ -1,5 +1,0 @@
-BookInput {
-    #allDeclaredScalars
-    id(store)
-    id(authors) as authorIds
-}

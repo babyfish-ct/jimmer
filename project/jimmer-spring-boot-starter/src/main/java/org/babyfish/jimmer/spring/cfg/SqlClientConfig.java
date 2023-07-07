@@ -7,7 +7,9 @@ import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
+import org.babyfish.jimmer.sql.cache.CacheOperator;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -32,6 +34,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
@@ -39,6 +42,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Configuration
+@Import(TransactionCacheOperatorFlusherConfig.class)
 public class SqlClientConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
@@ -59,7 +63,9 @@ public class SqlClientConfig {
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
+            @Autowired(required = false) CacheOperator cacheOperator,
             @Autowired(required = false) MicroServiceExchange exchange,
+            List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
@@ -101,7 +107,9 @@ public class SqlClientConfig {
                 executor,
                 sqlFormatter,
                 cacheFactory,
+                cacheOperator,
                 exchange,
+                callbacks,
                 providers,
                 interceptors,
                 javaFilters,
@@ -129,7 +137,9 @@ public class SqlClientConfig {
             @Autowired(required = false) Executor executor,
             @Autowired(required = false) SqlFormatter sqlFormatter,
             @Autowired(required = false) CacheFactory cacheFactory,
+            @Autowired(required = false) CacheOperator cacheOperator,
             @Autowired(required = false) MicroServiceExchange exchange,
+            List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
@@ -171,7 +181,9 @@ public class SqlClientConfig {
                     executor,
                     sqlFormatter,
                     cacheFactory,
+                    cacheOperator,
                     exchange,
+                    callbacks,
                     providers,
                     interceptors,
                     kotlinFilters
@@ -206,7 +218,9 @@ public class SqlClientConfig {
             Executor executor,
             SqlFormatter sqlFormatter,
             CacheFactory cacheFactory,
+            CacheOperator cacheOperator,
             MicroServiceExchange exchange,
+            List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
@@ -250,11 +264,9 @@ public class SqlClientConfig {
         }
         builder.setDatabaseValidationMode(properties.getDatabaseValidation().getMode());
         builder.setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog());
-        if (cacheFactory != null) {
-            builder.setCaches(cfg -> {
-                cfg.setCacheFactory(cacheFactory);
-            });
-        }
+        builder.setCacheFactory(cacheFactory);
+        builder.setCacheOperator(cacheOperator);
+        builder.addCacheAbandonedCallbacks(callbacks);
 
         for (ScalarProvider<?, ?> provider : providers) {
             builder.addScalarProvider(provider);
@@ -269,6 +281,12 @@ public class SqlClientConfig {
         if (!properties.getMicroServiceName().isEmpty()) {
             builder.setMicroServiceExchange(exchange);
         }
+    }
+
+    @ConditionalOnMissingBean(CacheAbandonedCallback.class)
+    @Bean
+    public CacheAbandonedCallback cacheAbandonedCallback() {
+        return CacheAbandonedCallback.log();
     }
 
     @Conditional(MicroServiceCondition.class)

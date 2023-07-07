@@ -64,7 +64,7 @@ class MiddleTableOperator {
         return tryGetImpl(sqlClient, con, prop, false, trigger);
     }
 
-    public static MiddleTableOperator tryGetByBackProp(
+    static MiddleTableOperator tryGetByBackProp(
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableProp backProp,
@@ -164,7 +164,7 @@ class MiddleTableOperator {
         reader.reset();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        List<Tuple2<Object, Object>> tuples = Selectors.select(
+        List<Tuple2<?, ?>> tuples = Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
@@ -196,7 +196,7 @@ class MiddleTableOperator {
         builder.leave().leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        List<Tuple2<Object, Object>> tuples = Selectors.select(
+        List<Tuple2<?, ?>> tuples = Selectors.select(
                 sqlClient,
                 con,
                 sqlResult.get_1(),
@@ -364,9 +364,13 @@ class MiddleTableOperator {
         return remove(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
     }
 
-    public int removeBySourceIds(Collection<Object> sourceIds) {
-        if (trigger != null) {
+    public int removeBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
+        boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
+        if (trigger != null || deletionBySourcePrevented) {
             IdPairReader reader = getIdPairReader(sourceIds);
+            if (deletionBySourcePrevented && reader.isReadable()) {
+                throw new DeletionPreventedException(middleTable, reader);
+            }
             return remove(reader);
         }
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -483,13 +487,13 @@ class MiddleTableOperator {
 
     public static class TupleReader implements MiddleTableOperator.IdPairReader {
 
-        private final Collection<Tuple2<Object, Object>> idTuples;
+        private final Collection<Tuple2<?, ?>> idTuples;
 
-        private Iterator<Tuple2<Object, Object>> idTupleItr;
+        private Iterator<Tuple2<?, ?>> idTupleItr;
 
-        private Tuple2<Object, Object> currentIdPair;
+        private Tuple2<?, ?> currentIdPair;
 
-        public TupleReader(Collection<Tuple2<Object, Object>> idTuples) {
+        public TupleReader(Collection<Tuple2<?, ?>> idTuples) {
             this.idTuples = idTuples;
             idTupleItr = idTuples.iterator();
         }
@@ -521,6 +525,27 @@ class MiddleTableOperator {
         @Override
         public Object targetId() {
             return currentIdPair.get_2();
+        }
+    }
+
+    static class DeletionPreventedException extends Exception {
+
+        final MiddleTable middleTable;
+
+        final List<Tuple2<Object, Object>> idParis;
+
+        DeletionPreventedException(MiddleTable middleTable, IdPairReader reader) {
+            this.middleTable = middleTable;
+            List<Tuple2<Object, Object>> idParis = new ArrayList<>();
+            while (reader.read()) {
+                idParis.add(
+                        new Tuple2<>(
+                                reader.sourceId(),
+                                reader.targetId()
+                        )
+                );
+            }
+            this.idParis = Collections.unmodifiableList(idParis);
         }
     }
 }

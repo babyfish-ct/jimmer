@@ -10,3 +10,11 @@ fun <T, X> set(draft: T, prop: KProperty1<T, X>, value: X) {
 fun <T> unload(draft: T, prop: KProperty1<T, *>) {
     DraftObjects.unload(draft, prop.toImmutableProp())
 }
+
+fun <T> show(draft: T, prop: KProperty1<T, *>) {
+    DraftObjects.show(draft, prop.toImmutableProp())
+}
+
+fun <T> hide(draft: T, prop: KProperty1<T, *>) {
+    DraftObjects.hide(draft, prop.toImmutableProp())
+}

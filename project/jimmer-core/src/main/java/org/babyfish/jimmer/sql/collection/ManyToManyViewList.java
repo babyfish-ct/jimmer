@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.collection;
 
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.jetbrains.annotations.NotNull;
 
@@ -7,11 +8,11 @@ import java.util.*;
 
 public class ManyToManyViewList<M, E> implements List<E> {
 
-    private final int deeperPropId;
+    private final PropId deeperPropId;
 
     private final List<M> middleList;
 
-    public ManyToManyViewList(int deeperPropId, List<M> middleList) {
+    public ManyToManyViewList(PropId deeperPropId, List<M> middleList) {
         this.deeperPropId = deeperPropId;
         this.middleList = middleList;
     }

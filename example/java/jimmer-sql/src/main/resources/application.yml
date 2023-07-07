@@ -3,6 +3,7 @@ spring:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:jimmer-sql;database_to_upper=true
 
+
 # You can download the typescript files generated for the client via
 #  http://localhost:8080/ts.zip.
 #

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
+import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable

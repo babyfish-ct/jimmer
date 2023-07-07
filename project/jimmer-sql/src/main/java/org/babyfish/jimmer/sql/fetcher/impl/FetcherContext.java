@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher.impl;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
@@ -52,20 +52,18 @@ class FetcherContext {
 
     @SuppressWarnings("unchecked")
     public void add(Fetcher<?> fetcher, DraftSpi draft) {
-        for (Field field : fetcher.getFieldMap().values()) {
-            ImmutableProp prop = field.getProp();
-            if (!prop.getDependencies().isEmpty()) {
-                draft.__show(field.getProp().getId(), true);
-                continue;
-            }
-            if (field.isImplicit()) {
-                draft.__show(field.getProp().getId(), false);
-            }
-            if (!field.isSimpleField() ||
-                    sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
+        FetcherImplementor<?> fetcherImplementor = (FetcherImplementor<?>) fetcher;
+        for (PropId shownPropId : fetcherImplementor.__shownPropIds()) {
+            draft.__show(shownPropId, true);
+        }
+        for (PropId hiddenPropId : fetcherImplementor.__hiddenPropIds()) {
+            draft.__show(hiddenPropId, false);
+        }
+        for (Field field : fetcherImplementor.__unresolvedFieldMap().values()) {
+            if (!field.isSimpleField() || sqlClient.getFilters().getFilter(field.getProp().getTargetType()) != null) {
                 RecursionStrategy<?> recursionStrategy = field.getRecursionStrategy();
                 if (recursionStrategy != null &&
-                        !((RecursionStrategy<Object>)recursionStrategy).isRecursive(
+                        !((RecursionStrategy<Object>) recursionStrategy).isRecursive(
                                 new RecursionStrategy.Args<>(draft, 0)
                         )
                 ) {

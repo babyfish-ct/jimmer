@@ -2,7 +2,9 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
+import org.babyfish.jimmer.apt.meta.MetaException;
 import org.babyfish.jimmer.error.CodeBasedException;
+import org.babyfish.jimmer.error.ErrorFamily;
 import org.babyfish.jimmer.error.ErrorField;
 import org.babyfish.jimmer.error.ErrorFields;
 import org.jetbrains.annotations.NotNull;
@@ -320,12 +322,12 @@ public class ErrorGenerator {
                 if (itr.hasNext()) {
                     AnnotationValue annotationValue = itr.next();
                     for (AnnotationMirror childMirror : (List<AnnotationMirror>)annotationValue.getValue()) {
-                        fields.add(Field.of(childMirror));
+                        fields.add(Field.of(childMirror, element));
                     }
                 }
                 break;
             } else if (qualifiedName.equals(ERROR_FIELD_NAME)) {
-                fields = Collections.singletonList(Field.of(annotationMirror));
+                fields = Collections.singletonList(Field.of(annotationMirror, element));
                 break;
             }
         }
@@ -349,7 +351,7 @@ public class ErrorGenerator {
             this.isList = isList;
         }
 
-        public static Field of(AnnotationMirror annotationMirror) {
+        public static Field of(AnnotationMirror annotationMirror, Element constantElement) {
             String name = null;
             TypeName typeName = null;
             boolean isNullable = false;
@@ -359,7 +361,20 @@ public class ErrorGenerator {
                 String key = e.getKey().getSimpleName().toString();
                 Object value = e.getValue().getValue();
                 if (key.equals("name")) {
-                    name = (String)value;
+                    String str = (String)value;
+                    if (str.equals("family") || str.equals("code")) {
+                        throw new MetaException(
+                                constantElement,
+                                "The enum constant \"" +
+                                        constantElement.getEnclosingElement().getSimpleName().toString() +
+                                        '.' +
+                                        constantElement.getSimpleName().toString() +
+                                        "\" is illegal, it cannot be decorated by \"@" +
+                                        ErrorFamily.class.getName() +
+                                        "\" with the name \"family\" or \"code\""
+                        );
+                    }
+                    name = str;
                 } else if (key.equals("type")) {
                     typeName = typeName(value.toString());
                 } else if (key.equals("nullable")) {
@@ -368,7 +383,21 @@ public class ErrorGenerator {
                     isList = (boolean) value;
                 }
             }
+            assert typeName != null;
             if (isList) {
+                if (typeName.isPrimitive()) {
+                    throw new MetaException(
+                            constantElement,
+                            "The enum constant \"" +
+                                    constantElement.getEnclosingElement().getSimpleName().toString() +
+                                    '.' +
+                                    constantElement.getSimpleName().toString() +
+                                    "\" is decorated by @" +
+                                    ErrorField.class.getName() +
+                                    ", this annotation is illegal because its `type` is primitive but " +
+                                    "its `list` is true"
+                    );
+                }
                 typeName = ParameterizedTypeName.get(
                         Constants.LIST_CLASS_NAME,
                         typeName

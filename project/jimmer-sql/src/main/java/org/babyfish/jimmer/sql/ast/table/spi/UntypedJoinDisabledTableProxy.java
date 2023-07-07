@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
@@ -163,5 +164,17 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public <P extends TableProxy<E>> P __disableJoin(String reason) {
         return (P) new UntypedJoinDisabledTableProxy<>(table, reason);
+    }
+
+    @Override
+    public int hashCode() {
+        return table.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Table<?>)) return false;
+        return table.equals(o);
     }
 }

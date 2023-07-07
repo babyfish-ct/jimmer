@@ -4,6 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -52,7 +53,7 @@ class DataLoader extends AbstractDataLoader {
     }
 
     private static Fetcher<?> targetFetcher(ImmutableType targetType) {
-        Fetcher<?> fetcher = new FetcherImpl<>(targetType.getJavaClass()).allTableFields();
+        FetcherImplementor<?> fetcher = new FetcherImpl<>(targetType.getJavaClass()).allTableFields();
         for (ImmutableProp prop : targetType.getProps().values()) {
             // Note, GraphQL only support formula property based on java/kotlin expression
             if (prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {

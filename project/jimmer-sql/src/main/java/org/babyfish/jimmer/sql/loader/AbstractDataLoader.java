@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.loader;
 
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.OrderedItem;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -611,8 +608,9 @@ public abstract class AbstractDataLoader {
                     Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.eq(sourceId));
-                    applyPropFilter(q, association.target(), sourceIds);
-                    applyGlobalFilter(q, association.target());
+                    if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
+                        applyDefaultOrder(q, association.target());
+                    }
                     return q.select(targetIdExpr);
                 }).limit(limit, offset).execute(con);
                 return Utils.toTuples(sourceId, targetIds);
@@ -621,8 +619,9 @@ public abstract class AbstractDataLoader {
                 Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                 Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                 q.where(sourceIdExpr.in(sourceIds));
-                applyPropFilter(q, association.target(), sourceIds);
-                applyGlobalFilter(q, association.target());
+                if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
+                    applyDefaultOrder(q, association.target());
+                }
                 return q.select(sourceIdExpr, targetIdExpr);
             }).execute(con);
         }
@@ -910,7 +909,7 @@ public abstract class AbstractDataLoader {
         }
 
         Map<Object, ImmutableSpi> targetMap = new HashMap<>((targets.size() * 4 + 2) / 3);
-        int targetIdPropId = prop.getTargetType().getIdProp().getId();
+        PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
         for (ImmutableSpi target : targets) {
             targetMap.put(target.__get(targetIdPropId), target);
         }

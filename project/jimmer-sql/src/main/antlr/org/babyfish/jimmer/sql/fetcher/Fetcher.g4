@@ -6,7 +6,7 @@ package org.babyfish.jimmer.sql.fetcher;
 
 fetcher
     :
-    type = entityType body = fetchBody EOF
+    (type = entityType)? body = fetchBody EOF
     ;
 
 fetchBody

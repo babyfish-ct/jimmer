@@ -2,3 +2,105 @@
 sidebar_position: 3
 title: 一对多
 ---
+
+和JPA不同，Jimmer不支持单向一对多关联，一对多关联只能作为多对一关联镜像。也就是说，一对多关联必然意味着双向关联。
+
+在下面的代码中
+
+-   左侧：在[多对一](./many-to-one)一文中我们讨论过的`Book.store`
+
+-   右侧：本文要讨论的一对多关联`BookStore.books`，它是`Book.store`的镜像
+
+<div style={{display: 'flex', alignItems: 'start'}}>
+<div>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @ManyToOne
+    @JoinColumn(name = "STORE_ID")
+    BookStore books();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @ManyToOne
+    @JoinColumn(name = "STORE_ID")
+    val books: BookStore
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+</div>
+<div>
+
+![mirror](@site/static/img/mirror.svg)
+
+</div>
+<div>
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStore.java"
+@Entity
+public interface BookStore {
+
+    // `mappedBy`表示`BookStore.customer`
+    // 是`Book.books`的镜像
+    // highlight-next-line
+    @OneToMany(mappedBy = "books")
+    @Nullable
+    Book customer();
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStore.kt"
+@Entity
+interface BookStore {
+
+    // `mappedBy`表示`BookStore.customer`
+    // 是`Book.books`的镜像
+    // highlight-next-line
+    @OneToMany(mappedBy = "books")
+    val customer: Book?
+
+    ...省略其他代码...
+}
+```
+
+</TabItem>
+</Tabs>
+
+</div>
+</div>
+
+:::caution
+注意
+
+-   `@OneToMany`关联仅仅是`@ManyToOne`关联的镜像，不得使用`@JoinColumn`和`@JoinTable`
+
+-   `@OneToMany`关联属性必须非null，如果查询父对象并要求抓取其一对多关联属性，那么对于没有对应子对象的父对象而言，该属性的值是一个长度为0的集合，而非null
+
+:::

@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
+import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -132,7 +134,7 @@ class ChildTableOperator {
         ImmutableType childType = parentProp.getDeclaringType();
         List<ImmutableSpi> childRows = cache.loadByIds(childType, childIds, con);
         Object currentIdOnly = makeIdOnly(parentProp.getTargetType(), parentId);
-        int parentPropId = parentProp.getId();
+        PropId parentPropId = parentProp.getId();
         List<Object> newChildIds = null;
         for (ImmutableSpi childRow : childRows) {
             Object childId = idOf(childRow);
@@ -232,11 +234,11 @@ class ChildTableOperator {
     @SuppressWarnings("unchecked")
     private int unsetParentAndPrepareEvents(Collection<Object> parentIds, Collection<Object> retainedChildIds) {
         assert trigger != null;
-        int parentPropId = parentProp.getId();
+        PropId parentPropId = parentProp.getId();
         ImmutableType childType = parentProp.getDeclaringType();
         String parentIdPropName = parentProp.getTargetType().getIdProp().getName();
         String childIdPropName = childType.getIdProp().getName();
-        int childIdPropId = childType.getIdProp().getId();
+        PropId childIdPropId = childType.getIdProp().getId();
         List<ImmutableSpi> childRows = Internal.requiresNewDraftContext(ctx -> {
             List<ImmutableSpi> list = (List<ImmutableSpi>) Queries
                     .createQuery(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, true, (q, child) -> {
@@ -333,7 +335,7 @@ class ChildTableOperator {
                             List<Object> list = new ArrayList<>();
                             try (ResultSet rs = stmt.executeQuery()) {
                                 while (rs.next()) {
-                                    Object id = pkReader.read(rs, new Reader.Col());
+                                    Object id = pkReader.read(rs, new Reader.Context(null, true));
                                     if (id == null) {
                                         throw new ExecutionException(
                                                 "Cannot convert " + id + " to the type of " + idProp

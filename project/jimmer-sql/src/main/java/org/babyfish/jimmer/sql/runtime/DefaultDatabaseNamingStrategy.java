@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
@@ -60,25 +61,7 @@ public class DefaultDatabaseNamingStrategy implements DatabaseNamingStrategy {
                 (lowercase ? "_id" : "_ID");
     }
 
-    private String snake(String text) {
-        StringBuilder builder = new StringBuilder();
-        int size = text.length();
-        boolean isPrevLowerCase = false;
-        for (int i = 0; i < size; i++) {
-            char c = text.charAt(i);
-            boolean isLowerCase = Character.isLowerCase(c);
-            if (isPrevLowerCase && !isLowerCase) {
-                builder.append('_');
-            }
-            isPrevLowerCase = isLowerCase;
-            if (isLowerCase == lowercase) {
-                builder.append(c);
-            } else if (lowercase) {
-                builder.append(Character.toLowerCase(c));
-            } else {
-                builder.append(Character.toUpperCase(c));
-            }
-        }
-        return builder.toString();
+    protected String snake(String text) {
+        return StringUtil.snake(text, lowercase ? StringUtil.SnakeCase.LOWER : StringUtil.SnakeCase.UPPER);
     }
 }

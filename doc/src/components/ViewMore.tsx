@@ -2,15 +2,18 @@ import { AppBar, Button, Dialog, DialogContent, Toolbar, Typography } from "@mui
 import React, { FC, memo, PropsWithChildren, useCallback, useState } from "react";
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
-
+import IconButton from '@mui/material/IconButton';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
+import CloseIcon from '@mui/icons-material/Close';
 
 export const ViewMore: FC<
     PropsWithChildren<{
         readonly buttonText: string,
         readonly fullScreen?: boolean,
-        readonly title: string
+        readonly title?: string
     }>
-> = memo(({buttonText, fullScreen = false, title, children}) => {
+> = memo(({buttonText, fullScreen = false, title = buttonText, children}) => {
     
     const [open, setOpen] = useState(false);
     const [maximize, setMaximize] = useState(fullScreen);
@@ -27,21 +30,28 @@ export const ViewMore: FC<
     return (
         <>
             <Button onClick={onButtonClick} variant="contained">{buttonText}</Button>
-            <Dialog open={open} onClose={onClose} fullScreen={maximize} TransitionComponent={Transition}>
+            <Dialog 
+            open={open} 
+            onClose={onClose} 
+            fullScreen={maximize} 
+            TransitionComponent={Transition}
+            maxWidth="md">
                 <AppBar sx={{ position: 'relative' }}>
                     <Toolbar>
                         <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
                             {title}
                         </Typography>
-                        <Button autoFocus color="inherit" onClick={onResize}>
-                            {maximize ? "Recover" : "Maximize"}                            
-                        </Button>
-                        <Button autoFocus color="inherit" onClick={onClose}>
-                            Close
-                        </Button>
+                        <IconButton onClick={onResize} style={{color:'white'}}>
+                            {maximize ? <CloseFullscreenIcon/> : <OpenInFullIcon/> }
+                        </IconButton>
+                        <IconButton aria-label="close" onClick={onClose} style={{color:'white'}}>
+                            <CloseIcon/>
+                        </IconButton>
                     </Toolbar>
-                </AppBar>  
-                <DialogContent>{children}</DialogContent>
+                </AppBar>
+                <DialogContent>
+                    {children}
+                </DialogContent>
             </Dialog>
         </>
     );

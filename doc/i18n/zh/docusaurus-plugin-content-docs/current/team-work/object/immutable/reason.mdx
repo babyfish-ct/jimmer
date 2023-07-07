@@ -1,0 +1,96 @@
+---
+sidebar_position: 1
+title: 原因
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+import ImmutableOtherBenefit from '../../_shared/immutable-other-benefit.md';
+
+和其他ORM不同，Jimmer采用不可变对象作为实体对象 
+
+## 初衷
+
+### 禁止循环引用
+
+ORM常常伴随一个非常头疼的问题：循环引用。
+
+-   包含循环引用的数据结构无法被简单地JSON序列化，这对HTTP API的设计是致命缺陷。
+
+-   其实，这个问题并非无法解决，比如，可以利用JSON序列化库 *(如[Jackson](https://github.com/FasterXML/jackson))* 的高级功能序列化包含循环引用的数据结构。但这毫无意义，因为序列化后的结果包含了特殊的扩展内容，并不能为客户端的所有编程语言所理解。
+
+作为一个ORM，Jimmer当然允许用户在实体类型之间定双向关联，这是ORM一个强大的能力。
+
+然而，在实例化对象时，一旦开发人员决定了聚合根的类型，那么被创建的数据结构就只能是以聚合根对象作为起点的单向树。
+
+即，实体类型之间可以定义双向关联，保留两个方向的可能性。待实例化对象时，再按照业务特性选择使用其中一个关联方向。
+
+:::tip
+Jimmer中任何实体相关数据结构绝不包含循环引用，因此，无需做任何转化，就可以直接参与JSON序列化进而被HTTP协议传输，并保证HTTP传递的数据的简单性以保证任何编程语言都可以理解。
+
+这为应用开发带来了极大的简化。
+:::
+
+### 演示
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode aggregateRoot = TreeNodeDraft.$
+    .produce(aggregateRootDraft ->
+        aggregateRootDraft
+            .setName("Aggregate root")
+            .addIntoChildNodes(childDraft ->
+                childDraft
+                    .setName("Child")
+                    // 抛出CircularReferenceException
+                    // highlight-next-line
+                    .setParent(aggregateRootDraft)
+            )
+    );
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val aggregateRoot = new(TreeNode::class).by {
+
+    val that = this
+
+    name = "Aggregate root"
+    childNodes().addBy {
+        name = "Child"
+        // 抛出CircularReferenceException
+        // highlight-next-line
+        parent = that
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+上面代码使用了一个名为`TreeNode`的类型，该接口是Jimmer根据用户定义的类型`TreeNode`自动生成的接口类型。
+
+读者可先行忽略这个自动生成的接口，后续文档[Draft](../draft)会对其做出介绍
+:::
+
+:::tip
+这段代码会导致异常：org.babyfish.jimmer.CircularReferenceException。
+
+虽然开发人员可以在实体类型之间定义双向关联，但无法在实体对象之间创建双向关联。此行为被明确禁止。
+
+可见，Jimmer阻止用户创建具备循环引用的数据结构。
+
+Jimmer对象是不变对象，用户既无法在创建对象时构建循环引用，也无法通过后期修改来形成循环引用，这个品质将会被永远保留。
+:::
+
+## 其他好处
+
+除了保证实体对象之间绝对没有循环引用外
+
+<ImmutableOtherBenefit/>

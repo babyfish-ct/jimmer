@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.cache.spi.AbstractRemoteValueBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.SessionCallback;
 
@@ -31,6 +32,16 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
     }
 
     public RedisValueBinder(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper,
+            ImmutableType type,
+            Duration duration
+    ) {
+        super(objectMapper,type, null, duration, 30);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
+    }
+
+    public RedisValueBinder(
             RedisOperations<String, byte[]> operations,
             ObjectMapper objectMapper,
             ImmutableProp prop,
@@ -38,6 +49,16 @@ public class RedisValueBinder<K, V> extends AbstractRemoteValueBinder<K, V> {
     ) {
         super(objectMapper,null, prop, duration, 30);
         this.operations = operations;
+    }
+
+    public RedisValueBinder(
+            RedisConnectionFactory connectionFactory,
+            ObjectMapper objectMapper,
+            ImmutableProp prop,
+            Duration duration
+    ) {
+        super(objectMapper,null, prop, duration, 30);
+        this.operations = RedisCaches.cacheRedisTemplate(connectionFactory);
     }
 
     @Override

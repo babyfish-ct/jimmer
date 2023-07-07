@@ -33,8 +33,8 @@ public class NativeDatabases {
     public static final DataSource POSTGRES_DATA_SOURCE =
             new SimpleDriverDataSource(
                     new org.postgresql.Driver(),
-                    "jdbc:postgresql://localhost:5432/db",
-                    "sa",
+                    "jdbc:postgresql://localhost:5432/jimmer_test",
+                    "root",
                     "123456"
             );
 
@@ -44,7 +44,7 @@ public class NativeDatabases {
         try {
             MYSQL_DATA_SOURCE = new SimpleDriverDataSource(
                     new com.mysql.cj.jdbc.Driver(),
-                    "jdbc:mysql://localhost:3306/kimmer",
+                    "jdbc:mysql://localhost:3306/jimmer_test",
                     "root",
                     "123456"
             );

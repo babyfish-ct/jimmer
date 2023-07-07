@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.model.*;

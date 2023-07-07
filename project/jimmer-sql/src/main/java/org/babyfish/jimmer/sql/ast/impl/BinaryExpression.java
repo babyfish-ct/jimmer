@@ -4,13 +4,15 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 abstract class BinaryExpression<N extends Number & Comparable<N>> extends AbstractExpression<N> implements NumericExpressionImplementor<N> {
 
-    private Class<N> type;
+    private final Class<N> type;
     
-    private Expression<N> left;
+    private final Expression<N> left;
 
-    private Expression<N> right;
+    private final Expression<N> right;
 
     protected BinaryExpression(Class<N> type, Expression<N> left, Expression<N> right) {
         this.type = type;
@@ -39,7 +41,20 @@ abstract class BinaryExpression<N extends Number & Comparable<N>> extends Abstra
         builder.sql(" ");
         renderChild((Ast) right, builder);
     }
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BinaryExpression<?> that = (BinaryExpression<?>) o;
+        return type.equals(that.type) && left.equals(that.left) && right.equals(that.right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, left, right);
+    }
+
     static class Plus<N extends Number & Comparable<N>> extends BinaryExpression<N> {
         
         public Plus(Class<N> type, Expression<N> left, Expression<N> right) {

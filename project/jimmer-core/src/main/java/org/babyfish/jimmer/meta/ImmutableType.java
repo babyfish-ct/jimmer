@@ -2,6 +2,7 @@ package org.babyfish.jimmer.meta;
 
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.JimmerVersion;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
@@ -24,19 +25,43 @@ public interface ImmutableType {
     }
 
     static Builder newBuilder(
+            String jimmerVersion,
             Class<?> javaClass,
-            ImmutableType superType,
+            Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return Metadata.newTypeBuilder(javaClass, superType, draftFactory);
+        if (!JimmerVersion.CURRENT.toString().equals(jimmerVersion)) {
+            throw new IllegalStateException(
+                    "The version of the annotation processor for handling type \"" +
+                            javaClass.getName() +
+                            "\" is \"" +
+                            jimmerVersion +
+                            "\", but the current version of jimmer is \"" +
+                            JimmerVersion.CURRENT +
+                            "\""
+            );
+        }
+        return Metadata.newTypeBuilder(javaClass, superTypes, draftFactory);
     }
 
     static Builder newBuilder(
+            String jimmerVersion,
             KClass<?> kotlinClass,
-            ImmutableType superType,
+            Collection<ImmutableType> superTypes,
             BiFunction<DraftContext, Object, Draft> draftFactory
     ) {
-        return Metadata.newTypeBuilder(kotlinClass, superType, draftFactory);
+        if (!JimmerVersion.CURRENT.toString().equals(jimmerVersion)) {
+            throw new IllegalStateException(
+                    "The version of the KSP for handling type \"" +
+                            kotlinClass.getQualifiedName() +
+                            "\" is \"" +
+                            jimmerVersion +
+                            "\", but the current version of jimmer is \"" +
+                            JimmerVersion.CURRENT +
+                            "\""
+            );
+        }
+        return Metadata.newTypeBuilder(kotlinClass, superTypes, draftFactory);
     }
 
     @NotNull
@@ -56,7 +81,11 @@ public interface ImmutableType {
     boolean isAssignableFrom(ImmutableType type);
 
     @Nullable
-    ImmutableType getSuperType();
+    ImmutableType getPrimarySuperType();
+
+    Set<ImmutableType> getSuperTypes();
+
+    Set<ImmutableType> getAllTypes();
 
     @NotNull
     BiFunction<DraftContext, Object, Draft> getDraftFactory();
@@ -108,12 +137,17 @@ public interface ImmutableType {
     Map<String, ImmutableProp> getProps();
 
     @NotNull
+    Map<String, ImmutableProp> getEntityProps();
+
+    @NotNull
     ImmutableProp getProp(String name);
 
     @NotNull
-    ImmutableProp getProp(int id);
+    ImmutableProp getProp(PropId id);
 
     Map<String, ImmutableProp> getSelectableProps();
+
+    Map<String, ImmutableProp> getSelectableScalarProps();
 
     Map<String, ImmutableProp> getSelectableReferenceProps();
 
@@ -126,6 +160,8 @@ public interface ImmutableType {
     List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy);
 
     interface Builder {
+
+        Builder redefine(String name, int id);
 
         Builder id(int id, String name, Class<?> elementType);
 

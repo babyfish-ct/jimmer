@@ -1,8 +1,9 @@
 package org.babyfish.jimmer.runtime;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class NonSharedList<E> implements List<E> {
+public class NonSharedList<E> implements List<E>, Serializable {
 
     private static final String MUTATION_ERROR_MESSAGE =
             "The list used by immutable object cannot be mutated";

@@ -87,4 +87,8 @@ public @interface JoinTable {
      * is not real database constraint or has only more than 1 columns
      */
     JoinColumn[] inverseColumns() default {};
+
+    boolean preventDeletionBySource() default false;
+
+    boolean preventDeletionByTarget() default false;
 }

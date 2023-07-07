@@ -6,13 +6,15 @@ import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 class InSubQueryPredicate extends AbstractPredicate {
 
-    private Expression<?> expression;
+    private final Expression<?> expression;
 
-    private TypedSubQuery<?> subQuery;
+    private final TypedSubQuery<?> subQuery;
 
-    private boolean negative;
+    private final boolean negative;
 
     public InSubQueryPredicate(
             Expression<?> expression,
@@ -49,5 +51,18 @@ class InSubQueryPredicate extends AbstractPredicate {
         renderChild((Ast) expression, builder);
         builder.sql(negative ? " not in " : " in ");
         renderChild((Ast) subQuery, builder);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof InSubQueryPredicate)) return false;
+        InSubQueryPredicate that = (InSubQueryPredicate) o;
+        return negative == that.negative && expression.equals(that.expression) && subQuery.equals(that.subQuery);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression, subQuery, negative);
     }
 }

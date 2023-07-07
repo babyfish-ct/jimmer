@@ -3,6 +3,7 @@ package org.babyfish.jimmer.spring.java;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.AbstractTest;
+import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.cfg.MetadataCondition;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
@@ -10,6 +11,7 @@ import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
+import org.babyfish.jimmer.spring.java.bll.ErrorService;
 import org.babyfish.jimmer.spring.java.bll.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.datasource.DataSources;
@@ -22,7 +24,6 @@ import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtens
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,8 +60,6 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,13 +73,13 @@ import java.util.List;
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
         "spring.application.name=java-client",
         "jimmer.clients.first.ts.path=/my-ts1.zip",
-        "jimmer.clients.seond.ts.path=/my-ts2.zip",
+        "jimmer.clients.second.ts.path=/my-ts2.zip"
 })
 @SpringBootConfiguration
 @AutoConfigurationPackage
 @EnableJimmerRepositories
 @EnableConfigurationProperties(JimmerProperties.class)
-@Import(SqlClientConfig.class)
+@Import({SqlClientConfig.class, ErrorTranslatorConfig.class})
 public class SpringJavaTest extends AbstractTest {
 
     private final static List<String> TRANSACTION_EVENTS = new ArrayList<>();
@@ -165,6 +164,11 @@ public class SpringJavaTest extends AbstractTest {
         }
 
         @Bean
+        public ErrorService errorService() {
+            return new ErrorService();
+        }
+
+        @Bean
         public MockMvc mockMvc(WebApplicationContext ctx) {
             return webAppContextSetup(ctx).build();
         }
@@ -199,6 +203,9 @@ public class SpringJavaTest extends AbstractTest {
 
     @Autowired
     private BookStoreRepository bookStoreRepository;
+
+    @Autowired
+    private ErrorService errorService;
 
     @Autowired
     private TransactionTemplate transactionTemplate;
@@ -430,12 +437,12 @@ public class SpringJavaTest extends AbstractTest {
                 "select count(tb_1_.ID) " +
                         "from BOOK tb_1_ " +
                         "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
-                        "where lower(tb_1_.NAME) like ? " +
+                        "where tb_1_.NAME ilike ? " +
                         "and tb_2_.NAME = ?",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE " +
                         "from BOOK tb_1_ " +
                         "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
-                        "where lower(tb_1_.NAME) like ? " +
+                        "where tb_1_.NAME ilike ? " +
                         "and tb_2_.NAME = ? " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
                         "limit ?",
@@ -615,6 +622,22 @@ public class SpringJavaTest extends AbstractTest {
                         "]",
                 bookStores
         );
+    }
+
+    @Test
+    public void testError() throws Exception {
+        mvc.perform(get("/error/test"))
+                .andExpect(status().is5xxServerError())
+                .andExpect(
+                        content().string(
+                                "{" +
+                                        "\"family\":\"GEOGRAPHY_ERROR_CODE\"," +
+                                        "\"code\":\"ILLEGAL_POSITION\"," +
+                                        "\"longitude\":104.06," +
+                                        "\"latitude\":30.67" +
+                                        "}"
+                        )
+                );
     }
 
     @Test

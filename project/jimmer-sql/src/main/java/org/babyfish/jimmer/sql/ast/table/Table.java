@@ -9,12 +9,24 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
 public interface Table<E> extends Selection<E>, Props {
 
+    /**
+     * Shortcut for `this.id().eq(other.id())`
+     */
     Predicate eq(Table<E> other);
 
+    /**
+     * QBE
+     */
     Predicate eq(Example<E> example);
 
+    /**
+     * QBE
+     */
     Predicate eq(E example);
 
+    /**
+     * QBE
+     */
     Predicate eq(Input<E> input);
 
     Predicate isNull();

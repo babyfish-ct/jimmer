@@ -11,25 +11,25 @@ import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.cache.CacheConfig;
-import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
-import org.babyfish.jimmer.sql.cache.Caches;
+import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
+import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
+import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -118,14 +118,22 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findById(fetcher, id);
     }
 
+    default <E> List<E> findByIds(Class<E> entityType, Collection<?> ids) {
+        return getEntities().findByIds(entityType, ids);
+    }
+
+    default <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
+        return getEntities().findByIds(fetcher, ids);
+    }
+
     @Nullable
-    default <K, V> Map<K, V> findByIds(Class<V> entityType, Collection<K> ids) {
+    default <K, V> Map<K, V> findMapByIds(Class<V> entityType, Collection<K> ids) {
         return getEntities().findMapByIds(entityType, ids);
     }
 
     @Nullable
-    default <K, V> Map<K, V> findByIds(Fetcher<V> entityType, Collection<K> ids) {
-        return getEntities().findMapByIds(entityType, ids);
+    default <K, V> Map<K, V> findMapByIds(Fetcher<V> fetcher, Collection<K> ids) {
+        return getEntities().findMapByIds(fetcher, ids);
     }
 
     default <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {
@@ -289,13 +297,25 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setCaches(Consumer<CacheConfig> block);
 
         @OldChain
+        Builder setCacheFactory(CacheFactory cacheFactory);
+
+        @OldChain
+        Builder setCacheOperator(CacheOperator cacheOperator);
+
+        @OldChain
+        Builder addCacheAbandonedCallback(CacheAbandonedCallback callback);
+
+        @OldChain
+        Builder addCacheAbandonedCallbacks(Collection<? extends CacheAbandonedCallback> callbacks);
+
+        @OldChain
         Builder setTriggerType(TriggerType triggerType);
 
         @OldChain
         Builder addFilters(Filter<?>... filters);
 
         @OldChain
-        Builder addFilters(Collection<Filter<?>> filters);
+        Builder addFilters(Collection<? extends Filter<?>> filters);
 
         @OldChain
         Builder addDisabledFilters(Filter<?>... filters);
@@ -304,7 +324,7 @@ public interface JSqlClient extends SubQueryProvider {
         Builder ignoreBuiltInFilters();
 
         @OldChain
-        Builder addDisabledFilters(Collection<Filter<?>> filters);
+        Builder addDisabledFilters(Collection<? extends Filter<?>> filters);
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
@@ -313,10 +333,19 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addDraftInterceptors(DraftInterceptor<?>... interceptors);
 
         @OldChain
-        Builder addDraftInterceptors(Collection<DraftInterceptor<?>> interceptors);
+        Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors);
 
         @OldChain
         Builder setBinLogObjectMapper(ObjectMapper mapper);
+
+        @OldChain
+        Builder setBinLogPropReader(ImmutableProp prop, BinLogPropReader reader);
+
+        @OldChain
+        Builder setBinLogPropReader(TypedProp.Scalar<?, ?> prop, BinLogPropReader reader);
+
+        @OldChain
+        Builder setBinLogPropReader(Class<?> propType, BinLogPropReader reader);
 
         @OldChain
         Builder setForeignKeyEnabledByDefault(boolean enabled);
@@ -325,13 +354,13 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addCustomizers(Customizer ... customizers);
 
         @OldChain
-        Builder addCustomizers(Collection<Customizer> customizers);
+        Builder addCustomizers(Collection<? extends Customizer> customizers);
 
         @OldChain
         Builder addInitializers(Initializer ... initializers);
 
         @OldChain
-        Builder addInitializers(Collection<Initializer> initializers);
+        Builder addInitializers(Collection<? extends Initializer> initializers);
 
         @OldChain
         Builder setDatabaseValidationMode(DatabaseValidationMode mode);

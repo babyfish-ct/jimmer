@@ -34,10 +34,12 @@ public class DraftGenerator {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Draft")
                 .addSuperinterface(type.getClassName());
-        if (type.getSuperType() != null) {
-            typeBuilder.addSuperinterface(type.getSuperType().getDraftClassName());
-        } else {
+        if (type.getSuperTypes().isEmpty()) {
             typeBuilder.addSuperinterface(Draft.class);
+        } else {
+            for (ImmutableType superType : type.getSuperTypes()) {
+                typeBuilder.addSuperinterface(superType.getDraftClassName());
+            }
         }
         addMembers(type);
         try {
@@ -75,7 +77,9 @@ public class DraftGenerator {
             addUtilMethod(prop, true);
         }
         new ProducerGenerator(type).generate(typeBuilder);
-        new MapStructGenerator(type).generate(typeBuilder);
+        if (!type.isMappedSuperClass()) {
+            new MapStructGenerator(type).generate(typeBuilder);
+        }
     }
 
     private void add$() {

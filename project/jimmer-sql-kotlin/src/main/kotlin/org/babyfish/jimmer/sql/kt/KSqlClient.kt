@@ -5,6 +5,7 @@ import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
+import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -18,7 +19,6 @@ import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
-import java.sql.Connection
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
@@ -105,10 +105,16 @@ interface KSqlClient {
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
-    fun <K, V: Any> findByIds(entityType: KClass<V>, ids: Collection<K>): Map<K, V> =
+    fun <E: Any> findByIds(entityType: KClass<E>, ids: Collection<*>): List<E> =
+        entities.findByIds(entityType, ids)
+
+    fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Collection<*>): List<E> =
+        entities.findByIds(fetcher, ids)
+
+    fun <K, V: Any> findMapByIds(entityType: KClass<V>, ids: Collection<K>): Map<K, V> =
         entities.findMapByIds(entityType, ids)
 
-    fun <K, V: Any> findByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
+    fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
 
     fun <E: Any> save(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =

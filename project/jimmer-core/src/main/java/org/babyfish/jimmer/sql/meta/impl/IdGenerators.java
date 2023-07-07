@@ -25,18 +25,14 @@ public class IdGenerators {
             return null;
         }
 
-        Class<? extends IdGenerator> generatorType = generatedValue.generatorType();
+        Class<? extends UserIdGenerator<?>> generatorType = generatedValue.generatorType();
 
         GenerationType strategy = generatedValue.strategy();
         GenerationType strategyFromGeneratorType = GenerationType.AUTO;
         GenerationType strategyFromSequenceName = GenerationType.AUTO;
 
-        if (UserIdGenerator.class.isAssignableFrom(generatorType)) {
+        if (generatorType != UserIdGenerator.None.class) {
             strategyFromGeneratorType = GenerationType.USER;
-        } else if (IdentityIdGenerator.class.isAssignableFrom(generatorType)) {
-            strategyFromGeneratorType = GenerationType.IDENTITY;
-        } else if (SequenceIdGenerator.class.isAssignableFrom(generatorType)) {
-            strategyFromGeneratorType = GenerationType.SEQUENCE;
         }
 
         if (!generatedValue.sequenceName().isEmpty()) {
@@ -153,7 +149,7 @@ public class IdGenerators {
         if (strategy == GenerationType.USER) {
             String error = null;
             Throwable errorCause = null;
-            if (generatorType == IdGenerator.None.class) {
+            if (generatorType == UserIdGenerator.None.class) {
                 error = "'generatorType' must be specified when 'strategy' is 'GenerationType.USER'";
             }
             try {

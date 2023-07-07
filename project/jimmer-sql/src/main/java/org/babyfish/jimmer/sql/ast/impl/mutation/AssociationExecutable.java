@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.Selectors;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -28,31 +29,51 @@ class AssociationExecutable implements Executable<Integer> {
 
     private final boolean reversed;
 
-    private final Mode mode;
+    private final boolean forDelete;
 
-    private final Set<Tuple2<Object, Object>> idTuples;
+    private final boolean defaultCheckExistence;
+
+    private final Boolean nullOrCheckedExistence;
+
+    private final Set<Tuple2<?, ?>> idTuples;
 
     public AssociationExecutable(
             JSqlClientImplementor sqlClient,
             Connection con,
             AssociationType associationType,
             boolean reversed,
-            Mode mode,
-            Collection<Tuple2<Object, Object>> idTuples
+            boolean forDelete,
+            boolean defaultCheckExistence,
+            Collection<Tuple2<?, ?>> idTuples
+    ) {
+        this(sqlClient, con, associationType, reversed, forDelete, defaultCheckExistence, null, idTuples);
+    }
+
+    private AssociationExecutable(
+            JSqlClientImplementor sqlClient,
+            Connection con,
+            AssociationType associationType,
+            boolean reversed,
+            boolean forDelete,
+            boolean defaultCheckExistence,
+            Boolean nullOrCheckedExistence,
+            Collection<Tuple2<?, ?>> idTuples
     ) {
         this.sqlClient = sqlClient;
         this.con = con;
         this.associationType = associationType;
         this.reversed = reversed;
-        this.mode = mode;
+        this.forDelete = forDelete;
+        this.defaultCheckExistence = defaultCheckExistence;
+        this.nullOrCheckedExistence = nullOrCheckedExistence;
         this.idTuples = idTuples instanceof Set<?> ?
-                (Set<Tuple2<Object, Object>>)idTuples :
+                (Set<Tuple2<?, ?>>)idTuples :
                 new LinkedHashSet<>(idTuples);
     }
 
     @NewChain
-    public AssociationExecutable setMode(Mode mode) {
-        if (this.mode == mode) {
+    public AssociationExecutable setCheckExistence(@Nullable Boolean checkExistence) {
+        if (nullOrCheckedExistence == checkExistence) {
             return this;
         }
         return new AssociationExecutable(
@@ -60,7 +81,9 @@ class AssociationExecutable implements Executable<Integer> {
                 con,
                 associationType,
                 reversed,
-                mode,
+                forDelete,
+                defaultCheckExistence,
+                checkExistence,
                 idTuples
         );
     }
@@ -96,7 +119,7 @@ class AssociationExecutable implements Executable<Integer> {
 
         MutationTrigger trigger = createTrigger();
         MiddleTableOperator operator = getMiddleTypeOperator(con, trigger);
-        if (mode == Mode.DELETE) {
+        if (forDelete) {
             int affectedRowCount = operator
                     .remove(
                             new MiddleTableOperator.TupleReader(idTuples),
@@ -108,8 +131,8 @@ class AssociationExecutable implements Executable<Integer> {
             return affectedRowCount;
         }
 
-        Set<Tuple2<Object, Object>> addingPairs = idTuples;
-        if (mode == Mode.CHECK_AND_INSERT) {
+        Set<Tuple2<?, ?>> addingPairs = idTuples;
+        if (nullOrCheckedExistence != null ? nullOrCheckedExistence : defaultCheckExistence) {
             addingPairs = new LinkedHashSet<>(addingPairs);
             Set<Tuple2<Object, Object>> existingPairs = new HashSet<>(find(con));
             addingPairs.removeAll(existingPairs);
@@ -124,12 +147,6 @@ class AssociationExecutable implements Executable<Integer> {
             trigger.submit(sqlClient, con);
         }
         return affectedRowCount;
-    }
-
-    public enum Mode {
-        CHECK_AND_INSERT,
-        INSERT,
-        DELETE
     }
 
     private List<Tuple2<Object, Object>> find(Connection con) {
@@ -158,7 +175,7 @@ class AssociationExecutable implements Executable<Integer> {
                 .leave()
                 .sql(" in ");
         builder.enter(SqlBuilder.ScopeType.LIST);
-        for (Tuple2<Object, Object> idTuple : idTuples) {
+        for (Tuple2<?, ?> idTuple : idTuples) {
             builder
                     .separator()
                     .enter(SqlBuilder.ScopeType.TUPLE)

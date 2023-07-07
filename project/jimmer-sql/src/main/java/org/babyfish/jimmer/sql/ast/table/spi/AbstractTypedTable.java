@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.table.spi;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
@@ -19,6 +20,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 public abstract class AbstractTypedTable<E> implements TableProxy<E> {
@@ -148,6 +150,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             return raw.get(prop);
         }
         ImmutableProp immutableProp = immutableType.getProp(prop);
+        ImmutableProp idViewBaseProp = immutableProp.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
+            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+        }
         return (XE)PropExpressionImpl.of(this, immutableProp);
     }
 
@@ -459,6 +466,19 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DelayJoin<?> delayJoin = (DelayJoin<?>) o;
+            return parent.equals(delayJoin.parent) && prop.equals(delayJoin.prop) && Objects.equals(weakJoinHandle, delayJoin.weakJoinHandle) && joinType == delayJoin.joinType;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(parent, prop, weakJoinHandle, joinType);
+        }
+
+        @Override
         public String toString() {
             return prop.toString();
         }
@@ -501,6 +521,19 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         @Override
         public TableImplementor<E> resolve(RootTableResolver ctx) {
             return parent.__resolve(ctx).inverseJoinImplementor(prop, joinType);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DelayInverseJoin<?> that = (DelayInverseJoin<?>) o;
+            return parent.equals(that.parent) && prop.equals(that.prop) && joinType == that.joinType;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(parent, prop, joinType);
         }
 
         @Override

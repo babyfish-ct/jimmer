@@ -5,14 +5,15 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Objects;
 
 class ConcatExpression
         extends AbstractExpression<String>
         implements StringExpressionImplementor {
 
-    private Expression<String> first;
+    private final Expression<String> first;
 
-    private List<Expression<String>> others;
+    private final List<Expression<String>> others;
 
     ConcatExpression(Expression<String> first, List<Expression<String>> others) {
         this.first = first;
@@ -41,5 +42,18 @@ class ConcatExpression
     @Override
     public int precedence() {
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ConcatExpression that = (ConcatExpression) o;
+        return first.equals(that.first) && others.equals(that.others);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(first, others);
     }
 }

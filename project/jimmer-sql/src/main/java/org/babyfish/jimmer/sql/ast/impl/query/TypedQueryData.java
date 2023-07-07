@@ -17,19 +17,21 @@ class TypedQueryData {
 
     private static final Package TUPLE_PACKAGE = Tuple2.class.getPackage();
 
-    private final List<Selection<?>> selections;
+    final List<Selection<?>> selections;
 
-    private final List<Selection<?>> oldSelections;
+    final List<Selection<?>> oldSelections;
 
-    private final boolean distinct;
+    final boolean distinct;
 
-    private final int limit;
+    final int limit;
 
-    private final int offset;
+    final int offset;
 
-    private final boolean withoutSortingAndPaging;
+    final boolean withoutSortingAndPaging;
 
-    private final boolean forUpdate;
+    final boolean reverseSorting;
+
+    final boolean forUpdate;
 
     private PropExpressionImplementor<?> idOnlyExpression;
 
@@ -42,6 +44,7 @@ class TypedQueryData {
         limit = Integer.MAX_VALUE;
         offset = 0;
         withoutSortingAndPaging = false;
+        reverseSorting = false;
         forUpdate = false;
     }
 
@@ -52,6 +55,7 @@ class TypedQueryData {
             int limit,
             int offset,
             boolean withoutSortingAndPaging,
+            boolean reverseSorting,
             boolean forUpdate
     ) {
         this.selections = selections;
@@ -60,35 +64,8 @@ class TypedQueryData {
         this.limit = limit;
         this.offset = offset;
         this.withoutSortingAndPaging = withoutSortingAndPaging;
+        this.reverseSorting = reverseSorting;
         this.forUpdate = forUpdate;
-    }
-
-    public List<Selection<?>> getSelections() {
-        return selections;
-    }
-
-    public List<Selection<?>> getOldSelections() {
-        return oldSelections;
-    }
-
-    public boolean isDistinct() {
-        return distinct;
-    }
-
-    public int getLimit() {
-        return limit;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public boolean isWithoutSortingAndPaging() {
-        return withoutSortingAndPaging;
-    }
-
-    public boolean isForUpdate() {
-        return forUpdate;
     }
 
     public TypedQueryData reselect(List<Selection<?>> selections) {
@@ -99,6 +76,7 @@ class TypedQueryData {
                 limit,
                 offset,
                 withoutSortingAndPaging,
+                reverseSorting,
                 forUpdate
         );
     }
@@ -111,6 +89,7 @@ class TypedQueryData {
                 limit,
                 offset,
                 withoutSortingAndPaging,
+                reverseSorting,
                 forUpdate
         );
     }
@@ -123,6 +102,7 @@ class TypedQueryData {
                 limit,
                 offset,
                 withoutSortingAndPaging,
+                reverseSorting,
                 forUpdate
         );
     }
@@ -134,6 +114,20 @@ class TypedQueryData {
                 distinct,
                 limit,
                 offset,
+                true,
+                reverseSorting,
+                forUpdate
+        );
+    }
+
+    public TypedQueryData reverseSorting() {
+        return new TypedQueryData(
+                selections,
+                oldSelections,
+                distinct,
+                limit,
+                offset,
+                withoutSortingAndPaging,
                 true,
                 forUpdate
         );
@@ -147,6 +141,7 @@ class TypedQueryData {
                 limit,
                 offset,
                 withoutSortingAndPaging,
+                reverseSorting,
                 true
         );
     }

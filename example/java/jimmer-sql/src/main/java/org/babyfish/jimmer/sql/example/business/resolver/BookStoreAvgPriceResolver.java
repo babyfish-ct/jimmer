@@ -1,17 +1,14 @@
 package org.babyfish.jimmer.sql.example.business.resolver;
 
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
-import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
-import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.example.repository.BookStoreRepository;
-import org.babyfish.jimmer.sql.example.model.Book;
+import org.babyfish.jimmer.sql.example.repository.BookRepository;
 import org.babyfish.jimmer.sql.example.model.BookProps;
 import org.babyfish.jimmer.sql.example.model.BookStore;
 import org.babyfish.jimmer.sql.example.model.BookStoreProps;
-import org.babyfish.jimmer.sql.filter.Filters;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -19,24 +16,27 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.stream.Collectors;
 
 @Component
 public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
 
-    private final BookStoreRepository bookStoreRepository;
+    private final BookRepository bookRepository;
 
-    public BookStoreAvgPriceResolver(BookStoreRepository bookStoreRepository) {
-        this.bookStoreRepository = bookStoreRepository;
+    private final JSqlClient sqlClient;
+
+    public BookStoreAvgPriceResolver(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+        this.sqlClient = bookRepository.sql(); // You can also inject it directly
     }
 
     @Override
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
-        return bookStoreRepository.findIdAndAvgBookPrice(ids)
-                .stream()
-                .collect(
-                        Collectors.toMap(Tuple2::get_1, Tuple2::get_2)
-                );
+        return bookRepository.findAvgPriceGroupByStoreId(ids);
+    }
+
+    @Override
+    public BigDecimal getDefaultValue() {
+        return BigDecimal.ZERO;
     }
 
     // -----------------------------
@@ -52,14 +52,14 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @EventListener
     public void onAssociationChanged(AssociationEvent e) {
-        if (e.getConnection() == null && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            // 1. Check whether the association `BookStore.books` is changed,
-            //    this event can be caused by 2 cases:
-            //    i. The foreign key `Book.store.id` is changed.
-            //    ii. The `TenantFilter` is enabled and the `Book.tenant` is changed.
-
-            Caches caches = bookStoreRepository.sql().getCaches();
-            caches
+        // The association property `BookStore.books` is changed
+        //
+        // It is worth noting that
+        // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
+        // but also modifying the `TENANT` field of the BOOK table can trigger the event.
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
+            sqlClient
+                    .getCaches()
                     .getPropertyCache(BookStoreProps.AVG_PRICE)
                     .delete(e.getSourceId());
         }
@@ -67,25 +67,21 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     @EventListener
     public void onEntityChanged(EntityEvent<?> e) {
-        if (e.getConnection() == null && e.getImmutableType().getJavaClass() == Book.class) {
-            Ref<BookStore> storeRef = e.getUnchangedFieldRef(BookProps.STORE);
+        // The scalar property `Book.price` is changed
+        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.PRICE)) {
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
             BookStore store = storeRef != null ? storeRef.getValue() : null;
-            if (store != null) { // foreign key does not change.
-                // 2, Check whether `Book.price` is changed
-                if (e.getChangedFieldRef(BookProps.PRICE) != null) {
-                    Caches caches = bookStoreRepository.sql().getCaches();
-                    caches
-                            .getPropertyCache(BookStoreProps.AVG_PRICE)
-                            .delete(store.id());
-                }
+            if (store != null) {
+                sqlClient
+                        .getCaches()
+                        .getPropertyCache(BookStoreProps.AVG_PRICE)
+                        .delete(store.id());
             }
         }
     }
 
-    // Contribute part of the secondary hash key to multiview-cache
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
-        Filters filters = bookStoreRepository.sql().getFilters();
-        return filters.getTargetParameterMapRef(BookStoreProps.BOOKS);
+        return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }

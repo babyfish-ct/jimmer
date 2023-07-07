@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
@@ -143,7 +140,27 @@ public class Deleter {
                     trigger
             );
             if (middleTableOperator != null) {
-                int affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                int affectedRowCount;
+                try {
+                    affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                } catch (MiddleTableOperator.DeletionPreventedException ex) {
+                    throw new ExecutionException(
+                            "Cannot delete rows from middle table \"" +
+                                    ex.middleTable.getTableName() +
+                                    "\" when the object of \"" +
+                                    immutableType +
+                                    "\" is being deleted, because the " +
+                                    (
+                                            backProp.getMappedBy() != null ?
+                                                    "`@JoinTable.preventDeletionBySource` of \"" +
+                                                            backProp.getMappedBy() +
+                                                            "\" is true" :
+                                                    "`@JoinTable.preventDeletionByTarget` of \"" +
+                                                            backProp +
+                                                            "\" is true"
+                                    )
+                    );
+                }
                 addOutput(AffectedTable.of(backProp), affectedRowCount);
             } else {
                 if (backProp.isReference(TargetLevel.PERSISTENT) &&
@@ -208,7 +225,7 @@ public class Deleter {
                                     List<Object> values = new ArrayList<>();
                                     try (ResultSet rs = stmt.executeQuery()) {
                                         while (rs.next()) {
-                                            values.add(reader.read(rs, new Reader.Col()));
+                                            values.add(reader.read(rs, new Reader.Context(null, true)));
                                         }
                                     }
                                     return values;
@@ -353,7 +370,7 @@ public class Deleter {
     private Collection<Object> prepareLogicEvents(
             ImmutableType type,
             Collection<Object> ids,
-            int propId,
+            PropId propId,
             Object deletedValue
     ) {
         if (ids.isEmpty()) {
@@ -363,7 +380,7 @@ public class Deleter {
         if (trigger == null) {
             return ids;
         }
-        int idPropId = type.getIdProp().getId();
+        PropId idPropId = type.getIdProp().getId();
         List<ImmutableSpi> rows = cache.loadByIds(type, ids, con);
         Iterator<ImmutableSpi> itr = rows.iterator();
         List<Object> changedIds = new ArrayList<>();
@@ -396,7 +413,7 @@ public class Deleter {
         if (rows.size() == ids.size()) {
             return ids;
         }
-        int idPropId = type.getIdProp().getId();
+        PropId idPropId = type.getIdProp().getId();
         List<Object> rowIds = new ArrayList<>(ids.size());
         for (ImmutableSpi row : rows) {
             rowIds.add(row.__get(idPropId));

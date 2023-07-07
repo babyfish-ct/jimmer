@@ -27,4 +27,8 @@ public interface CacheAbandonedCallback {
          */
         FIELD_FILTER_USED
     }
+
+    static CacheAbandonedCallback log() {
+        return CacheAbandonedCallbackForLog.INSTANCE;
+    }
 }

@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 class LikePredicate extends AbstractPredicate {
 
     private final StringExpression expression;
@@ -74,15 +76,33 @@ class LikePredicate extends AbstractPredicate {
         if (pattern.equals("%")) {
             builder.sql("1 = 1");
         } else {
-            if (insensitive) {
+            boolean ignoreCaseLikeSupported = builder.getAstContext().getSqlClient().getDialect().isIgnoreCaseLikeSupported();
+            if (insensitive && !ignoreCaseLikeSupported) {
                 builder.sql("lower(");
                 renderChild((Ast) expression, builder);
                 builder.sql(")");
             } else {
                 renderChild((Ast) expression, builder);
             }
-            builder.sql(negative ? " not like " : " like ");
+            if (insensitive && ignoreCaseLikeSupported) {
+                builder.sql(negative ? " not ilike " : " ilike ");
+            } else {
+                builder.sql(negative ? " not like " : " like ");
+            }
             builder.variable(pattern);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LikePredicate)) return false;
+        LikePredicate that = (LikePredicate) o;
+        return insensitive == that.insensitive && negative == that.negative && expression.equals(that.expression) && pattern.equals(that.pattern);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expression, pattern, insensitive, negative);
     }
 }

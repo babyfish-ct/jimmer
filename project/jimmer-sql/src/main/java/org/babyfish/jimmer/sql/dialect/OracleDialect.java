@@ -60,7 +60,13 @@ public class OracleDialect implements Dialect {
     }
 
     @Override
-    public String toString() {
-        return getClass().getName();
+    public String transCacheOperatorTableDDL() {
+        return "create table JIMMER_TRANS_CACHE_OPERATOR(\n" +
+                "\tID number generated always as identity,\n" +
+                "\tIMMUTABLE_TYPE varchar2(128),\n" +
+                "\tIMMUTABLE_PROP varchar2(128),\n" +
+                "\tCACHE_KEY varchar2(64) not null,\n" +
+                "\tREASON varchar2(32)\n" +
+                ")";
     }
 }

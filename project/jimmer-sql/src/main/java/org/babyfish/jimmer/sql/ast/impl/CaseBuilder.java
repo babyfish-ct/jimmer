@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CaseBuilder<T> {
 
@@ -190,6 +191,19 @@ public class CaseBuilder<T> {
                 renderChild((Ast) otherwise, builder);
                 builder.sql(" end");
             });
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AnyExpr<?> anyExpr = (AnyExpr<?>) o;
+            return type.equals(anyExpr.type) && whens.equals(anyExpr.whens) && otherwise.equals(anyExpr.otherwise);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, whens, otherwise);
         }
     }
     

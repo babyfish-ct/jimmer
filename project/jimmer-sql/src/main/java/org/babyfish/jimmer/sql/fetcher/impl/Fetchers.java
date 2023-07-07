@@ -33,7 +33,7 @@ public class Fetchers {
             if (selection instanceof FetcherSelection<?>) {
                 FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
                 Fetcher<?> fetcher = fetcherSelection.getFetcher();
-                if (!fetcher.isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
+                if (!((FetcherImplementor<?>)fetcher).__isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
                     columnMap.put(i, new ArrayList<>());
                 }
             }
@@ -55,7 +55,7 @@ public class Fetchers {
             List<Object> fetchedList = e.getValue();
             FetcherSelection<?> selection = (FetcherSelection<?>) selections.get(columnIndex);
             Fetcher<?> fetcher = selection.getFetcher();
-            if (!fetcher.isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
+            if (!((FetcherImplementor<?>)fetcher).__isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
                 fetchedList = Internal.produceList(
                         selection.getFetcher().getImmutableType(),
                         fetchedList,

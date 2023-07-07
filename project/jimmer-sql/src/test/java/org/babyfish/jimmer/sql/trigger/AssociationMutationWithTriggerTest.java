@@ -16,7 +16,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
         executeAndExpectRowCount(
                 getSqlClient().getAssociations(BookProps.AUTHORS).saveCommand(
                        learningGraphQLId1, alexId
-                ).checkExistence(),
+                ).checkExistence(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -35,13 +35,13 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInsert() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(BookProps.AUTHORS).batchSaveCommand(
+                getSqlClient().getAssociations(BookProps.AUTHORS).checkExistence().batchSaveCommand(
                         Arrays.asList(
                             new Tuple2<>(learningGraphQLId1, alexId),
                             new Tuple2<>(learningGraphQLId2, borisId),
                             new Tuple2<>(learningGraphQLId3, borisId)
                         )
-                ).checkExistence(),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -167,9 +167,9 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
     @Test
     public void testInverseInsertIgnore() {
         executeAndExpectRowCount(
-                getSqlClient().getAssociations(AuthorProps.BOOKS).saveCommand(
+                getSqlClient().getAssociations(AuthorProps.BOOKS).checkExistence().saveCommand(
                         alexId, learningGraphQLId1
-                ).checkExistence(),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -194,7 +194,7 @@ public class AssociationMutationWithTriggerTest extends AbstractTriggerTest {
                                 new Tuple2<>(borisId, learningGraphQLId2),
                                 new Tuple2<>(borisId, learningGraphQLId3)
                         )
-                ).checkExistence(),
+                ).checkExistence(true),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

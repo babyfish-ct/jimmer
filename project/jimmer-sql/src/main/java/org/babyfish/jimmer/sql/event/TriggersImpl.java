@@ -15,6 +15,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TriggersImpl implements Triggers {
 
+    private final boolean transaction;
+
     private final CopyOnWriteArrayList<EntityListener<ImmutableSpi>> globalEntityListeners =
             new CopyOnWriteArrayList<>();
 
@@ -26,6 +28,10 @@ public class TriggersImpl implements Triggers {
 
     private final ConcurrentMap<ImmutableProp, CopyOnWriteArrayList<AssociationListener>> associationListenerMultiMap =
             new ConcurrentHashMap<>();
+
+    public TriggersImpl(boolean transaction) {
+        this.transaction = transaction;
+    }
 
     @Override
     public void addEntityListener(EntityListener<?> listener) {
@@ -146,7 +152,7 @@ public class TriggersImpl implements Triggers {
         ImmutableType type = event.getImmutableType();
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isColumnDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
-                ChangedRef<Object> changedRef = event.getChangedFieldRef(prop);
+                ChangedRef<Object> changedRef = event.getChangedRef(prop);
                 if (changedRef != null) {
                     ChangedRef<Object> fkRef = changedRef.toIdRef();
                     throwable = fireForeignKeyChange(
@@ -344,12 +350,11 @@ public class TriggersImpl implements Triggers {
         List<EntityListener<ImmutableSpi>> listeners = new ArrayList<>(globalEntityListeners);
         Map<ImmutableType, CopyOnWriteArrayList<EntityListener<ImmutableSpi>>> map =
                 entityTableListenerMultiMap;
-        while (type != null) {
-            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(type);
+        for (ImmutableType t : type.getAllTypes()) {
+            CopyOnWriteArrayList<EntityListener<ImmutableSpi>> list = map.get(t);
             if (list != null) {
                 listeners.addAll(list);
             }
-            type = type.getSuperType();
         }
         return listeners;
     }
@@ -361,5 +366,10 @@ public class TriggersImpl implements Triggers {
             listeners.addAll(list);
         }
         return listeners;
+    }
+
+    @Override
+    public boolean isTransaction() {
+        return transaction;
     }
 }

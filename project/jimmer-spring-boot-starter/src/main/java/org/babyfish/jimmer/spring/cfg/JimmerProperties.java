@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
+import org.springframework.http.HttpStatus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -38,6 +39,9 @@ public class JimmerProperties {
     private final TriggerType triggerType;
 
     @NotNull
+    private final int transactionCacheOperatorFixedDelay;
+
+    @NotNull
     private final EnumType.Strategy defaultEnumStrategy;
 
     private final int defaultBatchSize;
@@ -54,6 +58,9 @@ public class JimmerProperties {
     private final String microServiceName;
 
     @NotNull
+    private final ErrorTranslator errorTranslator;
+
+    @NotNull
     private final Client client;
 
     private final Map<String, Client> clients;
@@ -66,6 +73,7 @@ public class JimmerProperties {
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
+            @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
@@ -73,6 +81,7 @@ public class JimmerProperties {
             @Nullable Boolean isForeignKeyEnabledByDefault,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
+            @Nullable ErrorTranslator errorTranslator,
             @Nullable Client client,
             @Nullable Map<String, Client> clients
     ) {
@@ -142,6 +151,10 @@ public class JimmerProperties {
                     );
         }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
+        this.transactionCacheOperatorFixedDelay =
+                transactionCacheOperatorFixedDelay != null ?
+                        transactionCacheOperatorFixedDelay :
+                        5000;
         this.defaultEnumStrategy =
                 defaultEnumStrategy != null ?
                         defaultEnumStrategy :
@@ -167,6 +180,11 @@ public class JimmerProperties {
                 microServiceName != null ?
                         microServiceName :
                         "";
+        if (errorTranslator == null) {
+            this.errorTranslator = new ErrorTranslator(null, null, null, null);
+        } else {
+            this.errorTranslator = errorTranslator;
+        }
         if (client == null) {
             this.client = new Client(null, null);
         } else {
@@ -290,6 +308,11 @@ public class JimmerProperties {
     }
 
     @NotNull
+    public ErrorTranslator getErrorTranslator() {
+        return errorTranslator;
+    }
+
+    @NotNull
     public Client getClient() {
         return client;
     }
@@ -300,14 +323,18 @@ public class JimmerProperties {
                 "language='" + language + '\'' +
                 ", dialect=" + dialect +
                 ", showSql=" + showSql +
+                ", prettySql=" + prettySql +
                 ", databaseValidation=" + databaseValidation +
                 ", triggerType=" + triggerType +
+                ", transactionCacheOperatorFixedDelay=" + transactionCacheOperatorFixedDelay +
                 ", defaultEnumStrategy=" + defaultEnumStrategy +
                 ", defaultBatchSize=" + defaultBatchSize +
                 ", defaultListBatchSize=" + defaultListBatchSize +
                 ", offsetOptimizingThreshold=" + offsetOptimizingThreshold +
+                ", isForeignKeyEnabledByDefault=" + isForeignKeyEnabledByDefault +
                 ", executorContextPrefixes=" + executorContextPrefixes +
                 ", microServiceName='" + microServiceName + '\'' +
+                ", errorTranslator=" + errorTranslator +
                 ", client=" + client +
                 ", clients=" + clients +
                 '}';
@@ -342,6 +369,58 @@ public class JimmerProperties {
             return "Validation{" +
                     "mode=" + mode +
                     ", catalog='" + catalog + '\'' +
+                    '}';
+        }
+    }
+
+    @ConstructorBinding
+    public static class ErrorTranslator {
+
+        private final boolean disabled;
+
+        @NotNull
+        private final HttpStatus httpStatus;
+
+        private final boolean debugInfoSupported;
+
+        private final int debugInfoMaxStackTraceCount;
+
+        public ErrorTranslator(
+                Boolean disabled,
+                HttpStatus httpStatus,
+                Boolean debugInfoSupported,
+                Integer debugInfoMaxStackTraceCount
+        ) {
+            this.disabled = disabled != null ? disabled : false;
+            this.httpStatus = httpStatus != null ? httpStatus : HttpStatus.INTERNAL_SERVER_ERROR;
+            this.debugInfoSupported = debugInfoSupported != null ? debugInfoSupported : false;
+            this.debugInfoMaxStackTraceCount = debugInfoMaxStackTraceCount != null ?
+                    debugInfoMaxStackTraceCount :
+                    Integer.MAX_VALUE;
+        }
+
+        public boolean isDisabled() {
+            return disabled;
+        }
+
+        @NotNull
+        public HttpStatus getHttpStatus() {
+            return httpStatus;
+        }
+
+        public boolean isDebugInfoSupported() {
+            return debugInfoSupported;
+        }
+
+        public int getDebugInfoMaxStackTraceCount() {
+            return debugInfoMaxStackTraceCount;
+        }
+
+        @Override
+        public String toString() {
+            return "ErrorTranslator{" +
+                    "httpStatus=" + httpStatus +
+                    ", debugInfoSupported=" + debugInfoSupported +
                     '}';
         }
     }

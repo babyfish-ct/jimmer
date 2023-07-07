@@ -187,6 +187,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             );
         }
         ImmutableProp immutableProp = immutableType.getProp(prop);
+        ImmutableProp idViewBaseProp = immutableProp.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
+            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+        }
         return (XE) PropExpressionImpl.of(this, immutableProp);
     }
 
