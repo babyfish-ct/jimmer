@@ -193,7 +193,7 @@ SpringData中`Pageabe`的页码从0开始，而非从1开始，所以，这里�
 
 ## 不配合SpringBoot使用时
 
-### 实现通用代码
+### 定义自己的Page类
 
 在不使用SpringBoot时，我们需要定义一点通用代码。
 
@@ -208,7 +208,6 @@ SpringData中`Pageabe`的页码从0开始，而非从1开始，所以，这里�
 @lombok.Data
 public class Page<E> {
     private final int totalRowCount;
-    private final int totalPageCount;
     private final List<E> entities;
 }
 ```
@@ -219,7 +218,6 @@ public class Page<E> {
 ```kotlin title="Page.kt"
 data class Page<E>(
     val totalRowCount: Int,
-    val totalPageCount: Int
     val entities: List<E>
 )
 ```
@@ -227,84 +225,6 @@ data class Page<E>(
 </TabItem>
 </Tabs>
 
-定义分页的通用辅助方法
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java title="Pages.java"
-import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
-
-public class Pages {
-
-    private Pages() {}
-
-    public static <E> Page<E> fetchPage(
-        int pageIndex,
-        int pageSize,
-        ConfigurableRootQuery<?, E> query ❶
-    ) {
-        if (pageIndex < 0 || pageSize < 1) {
-            throw new IllegalArgumentException("Illegal page arguments");
-        }
-        int rowCount = query.count(); ❷
-        int pageCount = (rowCount + pageSize - 1) / pageSize;
-        if (pageIndex >= pageCount) {
-            return new Page<>(rowCount, pageCount, Collections.emptyList());
-        }
-        List<E> entities = query
-            .limit(pageSize, pageIndex * pageSize) ❸
-            .execute(); ❹
-        return new Page<>(rowCount, pageCount, entities); 
-    }
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="Pages.kt"
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
-
-fun <E> KConfigurableRootQuery<*, E>.fetchPage( ❶
-    pageIndex: Int = 0,
-    pageSize: Int = 10
-): Page<E> {
-    if (pageIndex < 0 || pageSize < 1) {
-        throw IllegalArgumentException("Illegal page arguments")
-    }
-    val rowCount = count() ❷
-    val pageCount = (rowCount + pageSize - 1) / pageSize
-    return Page(
-        rowCount,
-        pageCount,
-        if (pageIndex >= pageCount) {
-            emptyList()
-        } else {
-            limit(pageSize, pageIndex * pageSize) ❸
-                .execute() ❹
-        }
-    )
-}
-```
-
-</TabItem>
-</Tabs>
-
--   ❶ 用户传递一个未执行的查询，作为`data-query`的模板
-
-    Kotlin代码中使用了扩展方法，抛开语法糖的表象，本质和Java代码中的传参相同
-
--   ❷ 调用`count`方法，Jimmer根据`data-query`模板自动创建`count-query`，然后执行并取得总行数
-
--   ❸ 调用`limit`方法，在不改变原有`data-query`模板的前提下，创建真正的`data-query`，带上正确的分也范围
-
--   ❹ 执行上一步创建的查询，完整单页内数据查询
-
-最后，把`count-query`和`data-query`返回的数据结合起来，构建`Page`对象并返回。
-
-现在我们已经实现了和SpringBoot中的分页完全相同的功能。
-和直接使用Jimmer的Spring Boot API相比，虽然我们需要编写少量的可重用代码，但是我们可以自由定义`Page`类。
 
 ### 实现业务代码
 
@@ -313,11 +233,13 @@ fun <E> KConfigurableRootQuery<*, E>.fetchPage( ❶
 
 ```java title="Page.java"
 public Page<Book> findBooks(
-    Pageable pageable,
+    int pageIndex,
+    int pageSize,
     @Nullable String name,
     @Nullable String storeName
 ) {
-    return Pages.fetchPage(
+    // highlight-next-line
+    return PagingQueries.execute(
         sqlClient
             .createQuery(table)
             .whereIf(
@@ -329,7 +251,14 @@ public Page<Book> findBooks(
                 table.store().name().eq(storeName)
             )
             .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
-            .select(table)
+            .select(table),
+        pageIndex,
+        pageSize,
+        (entities, totalCount, queryImplementor) ->
+            new Page<>(
+                    entities,
+                    totalCount
+            )
     );
 }
 ```
@@ -343,6 +272,7 @@ fun findBooks(
     name: String? = null,
     storeName: String? = null
 ): Page<Book> =
+    executePagingQuery(
     sql
         .createQuery(Book::class) {
             name?.takeIf { it.isNotEmpty() }?.let {
@@ -354,7 +284,7 @@ fun findBooks(
             orderBy(pageable.sort)
             select(table)
         }
-        .fetchPage()
+    )
 ```
 
 </TabItem>

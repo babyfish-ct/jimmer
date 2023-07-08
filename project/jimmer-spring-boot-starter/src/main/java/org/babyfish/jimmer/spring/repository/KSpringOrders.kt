@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.repository
 
-import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.OrderMode
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression

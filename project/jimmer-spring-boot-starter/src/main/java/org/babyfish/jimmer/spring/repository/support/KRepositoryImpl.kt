@@ -11,7 +11,6 @@ import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
-import org.babyfish.jimmer.sql.kt.ast.query.executePagingQuery
 import org.springframework.core.GenericTypeResolver
 import org.springframework.data.domain.*
 import kotlin.reflect.KClass
@@ -95,34 +94,25 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         fetcher: Fetcher<E>?,
         block: (SortDsl<E>.() -> Unit)?
     ): Page<E> =
-        pager(pageIndex, pageSize)
-            .execute(
-                sql.createQuery(entityType) {
-                    orderBy(block)
-                    select(table.fetch(fetcher))
-                }
-            )
+        sql.createQuery(entityType) {
+            orderBy(block)
+            select(table.fetch(fetcher))
+        }.fetchPage(pageIndex, pageSize)
 
     override fun findAll(pageIndex: Int, pageSize: Int, fetcher: Fetcher<E>?, sort: Sort): Page<E> =
-        pager(pageIndex, pageSize)
-            .execute(
-                sql.createQuery(entityType) {
-                    orderBy(sort)
-                    select(table.fetch(fetcher))
-                }
-            )
+        sql.createQuery(entityType) {
+            orderBy(sort)
+            select(table.fetch(fetcher))
+        }.fetchPage(pageIndex, pageSize)
 
     override fun findAll(pageable: Pageable): Page<E> =
         findAll(pageable, null)
 
     override fun findAll(pageable: Pageable, fetcher: Fetcher<E>?): Page<E> =
-        pager(pageable)
-            .execute(
-                sql.createQuery(entityType) {
-                    orderBy(pageable.sort)
-                    select(table.fetch(fetcher))
-                }
-            )
+        sql.createQuery(entityType) {
+            orderBy(pageable.sort)
+            select(table.fetch(fetcher))
+        }.fetchPage(pageable.pageNumber, pageable.pageSize)
 
     override fun count(): Long =
         sql.createQuery(entityType) {
@@ -169,25 +159,13 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         sql.createDelete(entityType) {}.execute()
     }
 
+    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
     private class PagerImpl(
         private val pageIndex: Int,
         private val pageSize: Int
     ) : KRepository.Pager {
 
         override fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T> =
-            executePagingQuery(query, pageIndex, pageSize) { entities, totalCount, queryImplementor ->
-                PageImpl(
-                    entities,
-                    PageRequest.of(
-                        pageIndex,
-                        pageSize,
-                        Utils.toSort(
-                            queryImplementor.javaOrders,
-                            queryImplementor.javaSqlClient.metadataStrategy
-                        )
-                    ),
-                    totalCount.toLong()
-                )
-            }
+            query.fetchPage(pageIndex, pageSize)
     }
 }

@@ -15,8 +15,7 @@ import ObjectFetcher from '../../_shared/object-fetcher.mdx';
 
 - [JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)
 
-- [ADO.NET EntityFramework的Include](https://docs.microsoft.com/en-us/dotnet/api/system.data.objects.objectquery-1.include?
-view=netframework-4.8)
+- [ADO.NET EntityFramework的Include](https://docs.microsoft.com/en-us/dotnet/api/system.data.objects.objectquery-1.include?view=netframework-4.8)
 
 - [ActiveRecord的include](https://guides.rubyonrails.org/active_record_querying.html#includes)
 

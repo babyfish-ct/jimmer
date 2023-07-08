@@ -17,6 +17,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class ImmutableProp {
 
@@ -42,6 +43,8 @@ public class ImmutableProp {
 
     private final boolean beanStyle;
 
+    private final String beanGetterName;
+
     private final String loadedStateName;
 
     private final String deeperPropIdName;
@@ -57,6 +60,10 @@ public class ImmutableProp {
     private final TypeName draftElementTypeName;
 
     private final TypeMirror elementType;
+
+    private final TypeName dynamicClassName;
+
+    private final TypeName dynamicElementClassName;
 
     private final boolean isTransient;
 
@@ -126,6 +133,7 @@ public class ImmutableProp {
             setterName = "set" + getterName.substring(2);
             applierName = "apply" + getterName.substring(2);
             adderByName = "addInto" + getterName.substring(2);
+            beanGetterName = getterName;
             beanStyle = true;
         } else if (getterName.startsWith("get") &&
                 getterName.length() > 3 &&
@@ -137,15 +145,17 @@ public class ImmutableProp {
             applierName = "apply" + getterName.substring(3);
             adderByName = "addInto" + getterName.substring(3);
             beanStyle = true;
+            beanGetterName = getterName;
         } else {
             name = getterName;
             String suffix =
-                    getterName.substring(0, 1).toUpperCase() +
+                    Character.toUpperCase(getterName.charAt(0)) +
                             getterName.substring(1);
             setterName = "set" + suffix;
             applierName = "apply" + suffix;
             adderByName = "addInto" + suffix;
             beanStyle = false;
+            beanGetterName = (returnType.getKind() == TypeKind.BOOLEAN ? "is" : "get") + suffix;
         }
 
         slotName = "SLOT_" + Strings.upper(name);
@@ -328,6 +338,24 @@ public class ImmutableProp {
         } else {
             draftTypeName = draftElementTypeName;
         }
+        if (isAssociation) {
+            dynamicElementClassName = ClassName.get(
+                    ((ClassName)elementTypeName).packageName(),
+                    "Dynamic" +((ClassName)elementTypeName).simpleName()
+            );
+        } else {
+            dynamicElementClassName = elementTypeName;
+        }
+        if (isList) {
+            dynamicClassName = ParameterizedTypeName.get(
+                    ClassName.get(List.class),
+                    dynamicElementClassName
+            );
+        } else if (returnType.getKind().isPrimitive()) {
+            dynamicClassName = ClassName.get(getBoxType());
+        } else {
+            dynamicClassName = dynamicElementClassName;
+        }
 
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
     }
@@ -363,6 +391,10 @@ public class ImmutableProp {
     }
 
     public boolean isBeanStyle() { return beanStyle; }
+
+    public String getBeanGetterName() {
+        return beanGetterName;
+    }
 
     public String getLoadedStateName() {
         return getLoadedStateName(false);
@@ -410,6 +442,14 @@ public class ImmutableProp {
 
     public TypeName getDraftElementTypeName() {
         return draftElementTypeName;
+    }
+
+    public TypeName getDynamicClassName() {
+        return dynamicClassName;
+    }
+
+    public TypeName getDynamicElementClassName() {
+        return dynamicElementClassName;
     }
 
     public boolean isTransient() {

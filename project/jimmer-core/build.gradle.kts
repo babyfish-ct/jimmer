@@ -37,6 +37,7 @@ dependencies {
 tasks.withType(JavaCompile::class) {
     options.compilerArgs.add("-parameters")
     options.compilerArgs.add("-Ajimmer.source.excludes=org.babyfish.jimmer.invalid")
+    options.compilerArgs.add("-Ajimmer.generate.dynamic.pojo=true")
 }
 
 tasks.getByName<Test>("test") {

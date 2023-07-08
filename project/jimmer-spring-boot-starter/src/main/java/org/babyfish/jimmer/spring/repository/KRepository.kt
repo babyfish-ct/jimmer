@@ -19,7 +19,6 @@ import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.PagingAndSortingRepository
 import java.util.*
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty1
 
 @NoRepositoryBean
 interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
@@ -30,8 +29,10 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     val entityType: KClass<E>
 
+    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
     fun pager(pageIndex: Int, pageSize: Int): Pager
 
+    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
     fun pager(pageable: Pageable): Pager
 
     fun findNullable(id: ID, fetcher: Fetcher<E>? = null): E?
@@ -162,6 +163,7 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     override fun deleteAll()
 
+    @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
     interface Pager {
 
         fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T>

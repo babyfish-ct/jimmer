@@ -10,6 +10,7 @@ import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
+import org.babyfish.jimmer.ksp.generator.DYNAMIC
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.sql.Embeddable
@@ -54,6 +55,8 @@ class ImmutableType(
     val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT" }
 
     val fetcherDslClassName: ClassName = classDeclaration.className { "$it$FETCHER_DSL" }
+
+    val dynamicClassName: ClassName = classDeclaration.className { "$DYNAMIC$it" }
 
     fun draftClassName(vararg nestedNames: String) =
         classDeclaration.nestedClassName {

@@ -38,6 +38,8 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private boolean jimmerModuleGenerated;
 
+    private boolean generateDynamicPojo;
+
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
@@ -55,6 +57,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                 processingEnv.getTypeUtils(),
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix"))
         );
+        generateDynamicPojo = "true".equals(processingEnv.getOptions().get("jimmer.generate.dynamic.pojo"));
         filer = processingEnv.getFiler();
     }
 
@@ -161,6 +164,12 @@ public class ImmutableProcessor extends AbstractProcessor {
                     immutableType,
                     filer
             ).generate();
+            if (generateDynamicPojo) {
+                new DynamicGenerator(
+                        immutableType,
+                        filer
+                ).generate();
+            }
             new PropsGenerator(
                     context,
                     immutableType,

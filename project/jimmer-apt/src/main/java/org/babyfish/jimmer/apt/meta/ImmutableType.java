@@ -78,6 +78,8 @@ public class ImmutableType {
 
     private final ClassName propExpressionClassName;
 
+    private final ClassName dynamicClassName;
+
     private final Map<ClassName, String> validationMessageMap;
 
     private final boolean acrossMicroServices;
@@ -518,7 +520,7 @@ public class ImmutableType {
         fetcherClassName = toClassName(name -> name + "Fetcher");
         propsClassName = toClassName(name -> name + "Props");
         propExpressionClassName = toClassName(name -> name + PROP_EXPRESSION_SUFFIX);
-
+        dynamicClassName = toClassName(name -> "Dynamic" + name);
         validationMessageMap = ValidationMessages.parseMessageMap(typeElement);
     }
 
@@ -695,6 +697,10 @@ public class ImmutableType {
 
     public ClassName getPropExpressionClassName() {
         return propExpressionClassName;
+    }
+
+    public ClassName getDynamicClassName() {
+        return dynamicClassName;
     }
 
     private ClassName toClassName(

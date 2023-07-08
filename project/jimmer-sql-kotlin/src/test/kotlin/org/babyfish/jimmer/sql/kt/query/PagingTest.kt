@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.asc
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.like
-import org.babyfish.jimmer.sql.kt.ast.query.executePagingQuery
+import org.babyfish.jimmer.sql.kt.ast.query.fetchPage
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.book.*
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
@@ -16,17 +16,12 @@ class PagingTest : AbstractQueryTest() {
     fun testPaging() {
 
         connectAndExpect({
-            executePagingQuery(
-                sqlClient.createQuery(Book::class) {
-                    where(table.name like "GraphQL")
-                    orderBy(table.name.asc(), table.edition.desc())
-                    select(table)
-                },
-                -1,
-                3,
-                it
-            ) {
-                entities, totalCount, _ -> Page(entities, totalCount)
+            sqlClient.createQuery(Book::class) {
+                where(table.name like "GraphQL")
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table)
+            }.fetchPage(-1, 3, it) { entities, totalCount, _ ->
+                Page(entities, totalCount)
             }
         }) {
             row(0) {
@@ -38,16 +33,11 @@ class PagingTest : AbstractQueryTest() {
         }
 
         connectAndExpect({
-            executePagingQuery(
-                sqlClient.createQuery(Book::class) {
-                    where(table.name like "GraphQL")
-                    orderBy(table.name.asc(), table.edition.desc())
-                    select(table)
-                },
-                0,
-                3,
-                it
-            ) { entities, totalCount, _ ->
+            sqlClient.createQuery(Book::class) {
+                where(table.name like "GraphQL")
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table)
+            }.fetchPage(0, 3, it) { entities, totalCount, _ ->
                 Page(entities, totalCount)
             }
         }) {
@@ -96,16 +86,11 @@ class PagingTest : AbstractQueryTest() {
         }
 
         connectAndExpect({
-            executePagingQuery(
-                sqlClient.createQuery(Book::class) {
-                    where(table.name like "GraphQL")
-                    orderBy(table.name.asc(), table.edition.desc())
-                    select(table)
-                },
-                1,
-                3,
-                it
-            ) { entities, totalCount, _ ->
+            sqlClient.createQuery(Book::class) {
+                where(table.name like "GraphQL")
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table)
+            }.fetchPage(1, 3, it) { entities, totalCount, _ ->
                 Page(entities, totalCount)
             }
         }) {
@@ -153,17 +138,12 @@ class PagingTest : AbstractQueryTest() {
         }
 
         connectAndExpect({
-            executePagingQuery(
-                sqlClient.createQuery(Book::class) {
-                    where(table.storeId eq 2L)
-                    orderBy(table.name.asc(), table.edition.desc())
-                    select(table)
-                },
-                1,
-                2,
-                it
-            ) {
-                    entities, totalCount, _ -> Page(entities, totalCount)
+            sqlClient.createQuery(Book::class) {
+                where(table.storeId eq 2L)
+                orderBy(table.name.asc(), table.edition.desc())
+                select(table)
+            }.fetchPage(1, 2, it) { entities, totalCount, _ ->
+                Page(entities, totalCount)
             }
         }) {
             sql(
@@ -198,17 +178,12 @@ class PagingTest : AbstractQueryTest() {
         }
 
         connectAndExpect({
-            executePagingQuery(
-                sqlClient.createQuery(Book::class) {
+            sqlClient.createQuery(Book::class) {
                     where(table.name like "GraphQL")
                     orderBy(table.name.asc(), table.edition.desc())
                     select(table)
-                },
-                -1,
-                3,
-                it
-            ) {
-                    entities, totalCount, _ -> Page(entities, totalCount)
+            }.fetchPage(-1, 3, it) { entities, totalCount, _ ->
+                Page(entities, totalCount)
             }
         }) {
             row(0) {

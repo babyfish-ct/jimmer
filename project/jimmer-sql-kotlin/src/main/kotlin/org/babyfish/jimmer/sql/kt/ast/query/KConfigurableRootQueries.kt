@@ -4,8 +4,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.impl.KConfigurableRootQueryImplement
 import java.sql.Connection
 
 @Suppress("UNCHECKED_CAST")
-fun <E, P> executePagingQuery(
-    query: KConfigurableRootQuery<*, E>,
+fun <E, P> KConfigurableRootQuery<*, E>.fetchPage(
     pageIndex: Int,
     pageSize: Int,
     con: Connection? = null,
@@ -15,9 +14,9 @@ fun <E, P> executePagingQuery(
         queryImplementor: KConfigurableRootQueryImplementor<*, E>
     ) -> P
 ): P {
-    val queryImplementor = query as KConfigurableRootQueryImplementor<*, E>
+    val queryImplementor = this as KConfigurableRootQueryImplementor<*, E>
     if (pageSize == 0) {
-        val entities = query.execute(con)
+        val entities = this.execute(con)
         return pageFactory(
             entities,
             entities.size,
@@ -34,7 +33,7 @@ fun <E, P> executePagingQuery(
 
     val longOffset = pageIndex.toLong() * pageSize
     require(longOffset <= Int.MAX_VALUE - pageSize) { "offset is too big" }
-    val total = query.count(con)
+    val total = this.count(con)
     if (longOffset >= total) {
         return pageFactory(
             emptyList(),
@@ -43,7 +42,7 @@ fun <E, P> executePagingQuery(
         )
     }
 
-    val reversedQuery = query
+    val reversedQuery = this
         .takeIf { longOffset + pageSize / 2 > total / 2 }
         ?.reverseSorting()
 
@@ -62,7 +61,7 @@ fun <E, P> executePagingQuery(
                 .execute(con)
                 .reversed()
         } else {
-            query
+            this
                 .limit(pageSize, longOffset.toInt())
                 .execute(con)
         }

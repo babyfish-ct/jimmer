@@ -3,7 +3,6 @@ package org.babyfish.jimmer.spring.kotlin
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.table.isNull
-import kotlin.reflect.KClass
 
 interface TreeNodeRepository : KRepository<TreeNode, Long> {
 
