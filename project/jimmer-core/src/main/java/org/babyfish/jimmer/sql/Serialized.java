@@ -7,8 +7,8 @@ import java.lang.annotation.*;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
-@Target(ElementType.METHOD)
+@kotlin.annotation.Target(allowedTargets = {AnnotationTarget.PROPERTY, AnnotationTarget.CLASS})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Scalar
 public @interface Serialized {
 }

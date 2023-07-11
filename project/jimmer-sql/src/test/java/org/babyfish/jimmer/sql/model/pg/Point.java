@@ -2,9 +2,11 @@ package org.babyfish.jimmer.sql.model.pg;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.babyfish.jimmer.sql.Serialized;
 
 import java.util.Objects;
 
+@Serialized
 public class Point {
 
     @JsonProperty("_x")

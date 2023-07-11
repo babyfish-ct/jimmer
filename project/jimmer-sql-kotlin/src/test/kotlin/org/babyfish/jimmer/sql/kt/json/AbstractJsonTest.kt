@@ -36,7 +36,6 @@ abstract class AbstractJsonTest {
                 proceed(con!!)
             }
             setDialect(PostgresDialect())
-            addScalarProvider(PointProvider())
             addScalarProvider(TagsProvider())
             addScalarProvider(ScoresProvider())
         }
@@ -59,8 +58,8 @@ abstract class AbstractJsonTest {
 
         private val POSTGRES_DATA_SOURCE: DataSource = SimpleDriverDataSource(
             Driver(),
-            "jdbc:postgresql://localhost:5432/db",
-            "sa",
+            "jdbc:postgresql://localhost:5432/jimmer_test",
+            "root",
             "123456"
         )
     }
