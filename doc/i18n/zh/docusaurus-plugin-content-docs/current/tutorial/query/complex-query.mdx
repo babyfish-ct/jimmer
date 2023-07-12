@@ -836,34 +836,36 @@ interface BookRepository : KRepository<BookStore, Long> {
         // highlight-next-line
         pageable: Pageable ❷
     ): Page<Book> = ❶
-        // highlight-next-line
-        pager(pageable).execute( ❸
-            sql
-                .createQuery(Book::class) {
-                    name?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.name ilike it)
-                    }
-                    storeName?.takeIf { it.isNotEmpty() }?.let {
-                        table.store.name ilike it
-                    }
-                    authorName?.takeIf { it.isNotEmpty() }?.let {
-                        where(
-                            table.id valueIn subQuery(Author::class) { 
-                                where(
-                                    or(
-                                        table.firstName ilike it,
-                                        table.lastName ilike it
-                                    )
-                                )
-                                select(table.books.id)
-                            }
-                        )
-                    }
-                    orderBy(pageable.sort) ❹
-                    select(table)
-                    ❺
+        sql
+            .createQuery(Book::class) {
+                name?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.name ilike it)
                 }
-        )
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    table.store.name ilike it
+                }
+                authorName?.takeIf { it.isNotEmpty() }?.let {
+                    where(
+                        table.id valueIn subQuery(Author::class) { 
+                            where(
+                                or(
+                                    table.firstName ilike it,
+                                    table.lastName ilike it
+                                )
+                            )
+                            select(table.books.id)
+                        }
+                    )
+                }
+                orderBy(pageable.sort) ❹
+                select(table)
+                ❺
+            }
+            // highlight-next-line
+            .fetchPage( ❸
+                pageable.pageNumber,
+                pageable.pageSize
+            )
 }
 ```
 
@@ -881,8 +883,6 @@ interface BookRepository : KRepository<BookStore, Long> {
     -   `pager`方法创建`Pager`对象，此对象有一个`execute`方法，参数是**未**执行的原始查询
 
 4.  从pageable对象中取出sort对象，实施动态排序
-
-5.  和之前所有例子不同，顶层查询的`select`后面未调用`execute`，因为❸负责执行查询并期望一个**未**执行的原始查询。
 
 现在，我们展示动态排序的用法，为了聚焦在分页逻辑上，除分页外的其他查询参数都指定为null。
 

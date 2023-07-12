@@ -71,7 +71,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
 
     BookTable table = BookTable.$;
 
-    default public Page<Book> findBooks(
+    default Page<Book> findBooks(
         Pageable pageable,
         @Nullable String name,
         @Nullable String storeName
@@ -110,36 +110,40 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
         name: String? = null,
         storeName: String? = null
     ): Page<Book> =
-        pager(pageable).excute( ❶
-            sql
-                .createQuery(Book::class) {
-                    name?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.name eq it)
-                    }
-                    storeName?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.store.name eq it)
-                    }
-                    orderBy(pageable.sort) ❷
-                    select(table)
-                } ❸
-        )
+        sql
+            .createQuery(Book::class) {
+                name?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.name eq it)
+                }
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.store.name eq it)
+                }
+                orderBy(pageable.sort) ①
+                select(table)
+            }
+            .fetchPage( ②
+                pageable.pageNumber, 
+                pageable.pageSize
+            )
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ 调用超接口的`pager`方法创建一个辅助对象，并调用该对象的方法`execute`实现分页查询。
+-   ❶或② 
 
-    `execute`的参数是一个未执行的查询，该查询作为`data-query`的模板：
+    -   ❶ Java: 
     
-    -   首先，由于`data-query`模板尚未执行，Jimmer有机会根据它自动创建`count-query`，查询出分页前的数据总行数。
+        调用超接口的`pager`方法创建一个辅助对象，并调用该对象的方法`execute`实现分页查询。
 
-    -   然后，Jimmer在`data-query`模板的基础上，添加分页范围，创建真正的`data-query`，查询当前页类的数据。
+        `execute`的参数是一个未执行的查询，该查询作为`data-query`的模板：
+    
+    -   ② Kotlin:
 
-    -   最后，Jimmer将数据总行数和当前页类的数据组合，创建Spring Data的`Page`对象并返回。
+        Kotlin API为`KConfigurableRootQuery<*, E>`类型扩展了`fetchPage`函数，调用之实现分页查询。
 
--   ❷ 由于Spring Data的`Pageabe`包含了动态排序，所以需要应用动态排序。
+-   ❷或① 由于Spring Data的`Pageabe`包含了动态排序，所以需要应用动态排序。
 
 -   ❸ `select`之后并没有调用查询本身的`execute`，说明这是一个未执行的查询。
 
@@ -186,7 +190,7 @@ SpringData中`Pageabe`的页码从0开始，而非从1开始，所以，这里�
     order by
         tb_1_.NAME asc,
         tb_1_.EDITION desc
-    limit ? /* 5 */, ? /* 5 */
+    limit ? /* 5 */ offset ? /* 5 */
     ```
 
 这个例子可以让我们明白Jimmer分页功能，但是，Jimmer的Spring API隐藏了一些细节。因此，接下来，我们绕开Spring Boot，从更底层的角度更清晰地阐述。
@@ -208,6 +212,7 @@ SpringData中`Pageabe`的页码从0开始，而非从1开始，所以，这里�
 @lombok.Data
 public class Page<E> {
     private final int totalRowCount;
+    private final int totalPage;
     private final List<E> entities;
 }
 ```
@@ -218,13 +223,13 @@ public class Page<E> {
 ```kotlin title="Page.kt"
 data class Page<E>(
     val totalRowCount: Int,
+    val totalPage: Int,
     val entities: List<E>
 )
 ```
 
 </TabItem>
 </Tabs>
-
 
 ### 实现业务代码
 
@@ -250,14 +255,15 @@ public Page<Book> findBooks(
                 storeName != null && !storeName.isEmpty(),
                 table.store().name().eq(storeName)
             )
-            .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
+            .orderBy(table.name().asc(), table.edition().desc)
             .select(table),
         pageIndex,
         pageSize,
         (entities, totalCount, queryImplementor) ->
             new Page<>(
+                    totalCount,
+                    (totalCount + pageSize - 1) / pageSize,
                     entities,
-                    totalCount
             )
     );
 }
@@ -268,11 +274,11 @@ public Page<Book> findBooks(
 
 ```kotlin
 fun findBooks(
-    pageable: Pageable,
+    pageIndex: Int,
+    pageSize: Int,
     name: String? = null,
     storeName: String? = null
 ): Page<Book> =
-    executePagingQuery(
     sql
         .createQuery(Book::class) {
             name?.takeIf { it.isNotEmpty() }?.let {
@@ -281,10 +287,20 @@ fun findBooks(
             storeName?.takeIf { it.isNotEmpty() }?.let {
                 where(table.store.name eq it)
             }
-            orderBy(pageable.sort)
+            orderBy(table.name.asc(), table.edition.desc())
             select(table)
         }
-    )
+        // highlight-next-line
+        .fetchPage(
+            pageIndex,
+            pageSize
+        ) { entities, totalCount, _ ->
+            Page(
+                totalCount,
+                (totalCount + pageSize - 1) / pageSize,
+                entities,
+            )
+        }
 ```
 
 </TabItem>
@@ -292,7 +308,92 @@ fun findBooks(
 
 最终生成的SQL和前面讨论过的那个给予SpringBoot的例子相同，这里不再赘述。
 
+## 内部机制
+
+在上面的例子中，我们讨论了Java和Kotlin的语言差异，以及是否使用SpringBoot的各种情况。这些情况下的分页查询代码如下：
+
+||使用SpringBoot|不使用SpringBoot|
+|---|---|---|
+|Java|pager(`page-args`).execute(`query`)|PagingQueries.execute(`query`, `page-args`, `page-creator`)|
+|Kotlin|`query`.fetchPage(`page-args`)|`query`.fetchPage(`page-args`) { `page-creator` }|
+
+这些行为的底层逻辑是一样的，仅以Java为例
+
+```java
+BookTable table = BookTable.$;
+
+ConfigurableRootQuery<Book> query = ❶
+    sqlClient
+        .createQuery(table)
+        .whereIf(
+            name != null && !name.isEmpty(),
+            table.name().eq(name)
+        )
+        .whereIf(
+            storeName != null && !storeName.isEmpty(),
+            table.store().name().eq(storeName)
+        )
+        .orderBy(table.name().asc(), table.edition().desc)
+
+int totalCount = query.count(); ❷
+int totalPage = (totalCount + pageSize - 1) / pageSize;
+if (pageIndex >= totalPage) {
+    return new Page<Book>(totalCount, totalPage, Collections.emtptyList());
+}
+List<Book> entities = query
+    .limit(pageSize, pageIndex * pageSize) ❸
+    .execute(); ❹
+return new Page( ❺
+    totalCount,
+    totalPage,
+    entities
+)
+```
+
+:::caution
+为了简化讨论，这段伪码并未考虑[反排序优化](./reverse-sorting)
+:::
+
+-   ❶ 创建查询，但并不执行。我可以称其为样板查询
+
+-   ❷ 在不修改原样板查询的基础上，生成`count-query`，再执行`count-query`得到分页前所有数据的行数
+
+    这里的`count`方法是快捷API，其底层逻辑为
+
+    ```java
+    public interface ConfigurableRootQuery<T extends Table<?>, R> extends ... {
+
+        default int count() {
+            return count(null);
+        }
+
+        default int count(Connection con) {
+            return reselect((q, t) -> q.select(t.count()))
+                .withoutSortingAndPaging()
+                .execute(con)
+                .get(0)
+                .intValue();
+        }
+    }
+    ```
+
+    -   `reselect((q, t) -> q.select(t.count()))`: `count-query`并不查询数据，而是查询COUNT
+
+    -   `withoutSortingAndPaging()`: `count-query`无需排序子句`order by`和分页子句 *(比如H2的`limit ? offset ?`)*
+
+    :::tip
+    Jimmer不但能自动生成`count-query`，还能自动优化`count-query`，请参见[表连接优化](./unncessary-join)
+    :::
+
+-   ❸ `limit(limit, offset)`: 在不修改原样板查询的基础上，生成真正的`data-query`，带上分页限制。
+
+-   ❹ 执行❸生成的`data-query`，得到一页内的数据
+
+-   ❺ 将❷和❹取得的数据组合成page对象并返回
+
 ## 方言
+
+本节讨论不同数据库下带分页范围限制的`data-query`的SQL实现
 
 考虑如下单页内数据查询
 
@@ -465,7 +566,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
 
     BookTable table = BookTable.$;
 
-    default public Page<Book> findBooks(
+    default Page<Book> findBooks(
         Pageable pageable,
         // highlight-next-line
         @Nullable Fetch<Book> fetcher,
@@ -508,20 +609,23 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
         name: String? = null,
         storeName: String? = null
     ): Page<Book> =
-        pager(pageable).excute(
-            sql
-                .createQuery(Book::class) {
-                    name?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.name eq it)
-                    }
-                    storeName?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.store.name eq it)
-                    }
-                    orderBy(pageable.sort)
-                    // highlight-next-line
-                    select(table.fetch(fetcher))
+        sql
+            .createQuery(Book::class) {
+                name?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.name eq it)
                 }
-        )
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.store.name eq it)
+                }
+                orderBy(pageable.sort)
+                // highlight-next-line
+                select(table.fetch(fetcher))
+            }
+            // highlight-next-line
+            .fetchPage(
+                pageable.pageNumber,
+                pageable.pageSize
+            )
 }
 ```
 
