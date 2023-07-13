@@ -806,7 +806,6 @@ public interface BookRepository extends JRepository<Book, Long> {
                 )
                 .orderBy(SpringOrders.toOrders(table, pageable.getSort())) ❹
                 .select(table) 
-                ❺
         );
     }
 }
@@ -836,53 +835,60 @@ interface BookRepository : KRepository<BookStore, Long> {
         // highlight-next-line
         pageable: Pageable ❷
     ): Page<Book> = ❶
-        // highlight-next-line
-        pager(pageable).execute( ❸
-            sql
-                .createQuery(Book::class) {
-                    name?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.name ilike it)
-                    }
-                    storeName?.takeIf { it.isNotEmpty() }?.let {
-                        table.store.name ilike it
-                    }
-                    authorName?.takeIf { it.isNotEmpty() }?.let {
-                        where(
-                            table.id valueIn subQuery(Author::class) { 
-                                where(
-                                    or(
-                                        table.firstName ilike it,
-                                        table.lastName ilike it
-                                    )
-                                )
-                                select(table.books.id)
-                            }
-                        )
-                    }
-                    orderBy(pageable.sort) ❹
-                    select(table)
-                    ❺
+        sql
+            .createQuery(Book::class) {
+                name?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.name ilike it)
                 }
-        )
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    table.store.name ilike it
+                }
+                authorName?.takeIf { it.isNotEmpty() }?.let {
+                    where(
+                        table.id valueIn subQuery(Author::class) { 
+                            where(
+                                or(
+                                    table.firstName ilike it,
+                                    table.lastName ilike it
+                                )
+                            )
+                            select(table.books.id)
+                        }
+                    )
+                }
+                orderBy(pageable.sort) ❹
+                select(table)
+            }
+            // highlight-next-line
+            .fetchPage( ❸
+                pageable.pageNumber,
+                pageable.pageSize
+            )
 }
 ```
 
 </TabItem>
 </Tabs>
 
-1.  返回`org.springframework.data.domain.Page`，而非`java.util.List`
+❶  返回`org.springframework.data.domain.Page`，而非`java.util.List`
 
-2.  参数变为`org.springframework.data.domain.Pageable`
+❷  参数变为`org.springframework.data.domain.Pageable`
 
-3.  创建Pager对象，并执行分页参数，参数是**未**执行的原始查询
+❸  执行分页查询
 
-    -   `pager`是从基接口`JRepository/KRepository`继承的方法
-    -   `pager`方法有多种重载版本，这里调用的版本参数是pagable对象
-    -   `pager`方法创建`Pager`对象，此对象有一个`execute`方法，参数是**未**执行的原始查询
+    -   Java
 
-4.  从pageable对象中取出sort对象，实施动态排序
+        创建Pager对象，并执行分页参数，参数是**未**执行的原始查询
 
-5.  和之前所有例子不同，顶层查询的`select`后面未调用`execute`，因为❸负责执行查询并期望一个**未**执行的原始查询。
+        -   `pager`是从基接口`JRepository/KRepository`继承的方法
+        -   `pager`方法有多种重载版本，这里调用的版本参数是pagable对象
+        -   `pager`方法创建`Pager`对象，此对象有一个`execute`方法，参数是**未**执行的原始查询
+
+    -   Kotlin
+
+        Kotlin API为`KConfigurableRootQuery<*, E>`类型提供了扩展方法`fetchPage`，调用之即实现分页查询
+
+❹  从pageable对象中取出sort对象，实施动态排序
 
 现在，我们展示动态排序的用法，为了聚焦在分页逻辑上，除分页外的其他查询参数都指定为null。
 
@@ -1122,36 +1128,38 @@ interface BookRepository : KRepository<BookStore, Long> {
         // highlight-next-line
         fetcher: Fetcher<Book>? = null
     ): Page<Book> = 
-        // highlight-next-line
-        pager(pageable).execute(
-            sql
-                .createQuery(Book::class) {
-                    name?.takeIf { it.isNotEmpty() }?.let {
-                        where(table.name ilike it)
-                    }
-                    storeName?.takeIf { it.isNotEmpty() }?.let {
-                        table.store.name ilike it
-                    }
-                    authorName?.takeIf { it.isNotEmpty() }?.let {
-                        where(
-                            table.id valueIn subQuery(Author::class) { 
-                                where(
-                                    or(
-                                        table.firstName ilike it,
-                                        table.lastName ilike it
-                                    )
+        sql
+            .createQuery(Book::class) {
+                name?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.name ilike it)
+                }
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    table.store.name ilike it
+                }
+                authorName?.takeIf { it.isNotEmpty() }?.let {
+                    where(
+                        table.id valueIn subQuery(Author::class) { 
+                            where(
+                                or(
+                                    table.firstName ilike it,
+                                    table.lastName ilike it
                                 )
-                                select(table.books.id)
-                            }
-                        )
-                    }
-                    orderBy(pageable.sort)
-                    select(
-                        // highlight-next-line
-                        table.fetch(fetcher)
+                            )
+                            select(table.books.id)
+                        }
                     )
                 }
-        )
+                orderBy(pageable.sort)
+                select(
+                    // highlight-next-line
+                    table.fetch(fetcher)
+                )
+            }
+            // highlight-next-line
+            .fetchPage(
+                pageable.pageNumber,
+                pageable.pageSize
+            )
 }
 ```
 
