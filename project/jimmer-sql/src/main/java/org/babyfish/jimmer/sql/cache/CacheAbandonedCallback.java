@@ -16,14 +16,14 @@ public interface CacheAbandonedCallback {
 
         /**
          * The method `getParameters()` of
-         * cacheable filter or parameterized transient resolver
+         * cacheable filter or `getParameterMap()` of transient resolver
          * returns a map which is not empty,
          * but the cache is not parameterized.
          */
         PARAMETERIZED_CACHE_REQUIRED,
 
         /**
-         * The field level filter of object fetcher or graphql is used
+         * The field level filter of object fetcher is used
          */
         FIELD_FILTER_USED
     }

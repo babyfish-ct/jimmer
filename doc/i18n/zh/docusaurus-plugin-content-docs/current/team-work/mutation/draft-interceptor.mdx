@@ -167,12 +167,12 @@ class BaseEntityDraftInterceptor(
 上文中，我们定义的类`BaseEntityDraftInterceptor`被`@Compoent`修饰，很明显这是一个Spring托管对象。
 
 :::info
-如果使用Jimmer的SpringBoot Starter且保证拦截器被Spring托管，那么Jimmer就会将注册它，无需额外的配置。
+如果使用SpringBoot Starter且保证拦截器被Spring托管，那么Jimmer就会将注册它，无需额外的配置。
 
 否则，必需手动注册
 :::
 
-### 非Spring环境下配置拦截器
+### 底层API配置拦截器
 
 将拦截器挂接到SqlClient对象上，即可生效
 

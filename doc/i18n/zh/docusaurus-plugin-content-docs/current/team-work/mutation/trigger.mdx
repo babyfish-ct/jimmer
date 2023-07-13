@@ -164,10 +164,11 @@ TriggerType有三个取值
 
 ### Spring环境下设置触发器类型
 
-如果使用Jimmer的SpringBoot Starter，设置触发器类型非常简单。
+如果使用SpringBoot Starter，设置触发器类型非常简单。
 
 在`application.properties`或`applicaion.yml`中添加一个配置即可。其名称为`jimmer.trigger-type`，其值为`BINLOG_ONLY` | `TRANSACTION_ONLY` | `BOTH`。
-### 非Spring环境下设置触发器类型
+
+### 使用底层API设置触发器类型
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -587,9 +588,9 @@ Jimmer对这类选择未做任何限制。但为简化问题讨论，本文假�
 
 ### 注册处理逻辑
 
--   Spring风格
+-   使用Spring Boot Starter
 
-    如果使用Jimmer的SpringBoot Starter，触发器事件会被作为Spring事件发送。
+    如果使用SpringBoot Starter，触发器事件会被作为Spring事件发送。
     
     因此，使用注解`@org.springframework.context.event.EventListener`响应Spring事件即可
 
@@ -666,7 +667,7 @@ Jimmer对这类选择未做任何限制。但为简化问题讨论，本文假�
     </TabItem>
     </Tabs>
 
--   非Spring风格
+-   使用底层API
 
     如果不采用Jimmer的SpringBoot starter，需要手动注册事件响应代码。
 

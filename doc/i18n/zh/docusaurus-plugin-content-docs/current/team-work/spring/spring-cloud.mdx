@@ -280,7 +280,7 @@ interface Author {
 
 任何一个微服务，都必须让Jimmer支持微服务。有两种做法：
 
--   使用Jimmer的Spring Boot Starter时
+-   使用Spring Boot Starter
 
     修改spring配置文件`application.yml` *(或`application.properties`)*
 
@@ -303,7 +303,7 @@ interface Author {
 
     这里，"store-service"既作为当前服务在spring-clound注册中心的名称，又作为Jimmer的微服务配置。
 
--   不使用Spring Boot Starter时
+-   使用底层API时
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">

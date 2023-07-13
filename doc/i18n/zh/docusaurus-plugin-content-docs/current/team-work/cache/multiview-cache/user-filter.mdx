@@ -76,7 +76,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
     因此，这些全局过滤器，要么都是缓存不友好的`Filter/KFilter`，要么都是缓存友好的`CacheableFilter/KCacheableFilter`；二者混用没有意义。
 
-    如果不小心导致这种无意义的混用，Jimmer会告诉开发人员为什么缓存没有生效。
+    如果不小心导致这种无意义的混用，Jimmer会告诉[为什么缓存未生效](./abandoned-callback)。
 
 -   当所有全局过滤器都缓存友好时，所有`CacheableFilter/KCacheableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为多视图缓存的`SubKey`
 

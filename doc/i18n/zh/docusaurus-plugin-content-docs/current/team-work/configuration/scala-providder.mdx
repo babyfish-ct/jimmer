@@ -137,7 +137,7 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
 
 有两种方法可以让Jimmer注册`ScalarProvider`：
 
--   使用Jimmer的Spring Boot Starter时
+-   使用Spring Boot Starter
 
     让`ScalarProvider`的各派生类被Spring托管即可。有两种选择。
 
@@ -196,7 +196,7 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
         </TabItem>
         </Tabs>
 
--   不使用Spring Boot Starter时
+-   使用底层API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">

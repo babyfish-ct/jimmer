@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 有两个方法开启SQL日志：
 
--   使用Jimmer的Spring Boot Starter时，又有两种方法可以实现配置：
+-   如果使用Spring Boot Starter时，有两种方法可以实现配置：
 
     -   修改`application.yml` *(或application.properties)*
 
@@ -49,7 +49,7 @@ import TabItem from '@theme/TabItem';
     如果同时采用以上两种方法 *(不推荐)*，则第二种方法优先。
     :::
 
--   不使用Spring Boot Starter时
+-   使用底层API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -123,7 +123,7 @@ purpose: QUERY
 
 因此，需要格式化SQL。有两种实现方法
 
--   使用Jimmer的Spring Boot Starter时
+-   使用Spring Boot Starter时
 
     修改`application.yml` *(或application.properties)*
 
@@ -134,7 +134,7 @@ purpose: QUERY
       pretty-sql: true
     ```
 
--   不使用Spring Boot Starter时
+-   使用底层API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -213,7 +213,7 @@ Jimmer提供了一个配置选项，如果被指定，当jimmer在执行SQL之�
 
 有两种实现方法：
 
--   使用Jimmer的Spring Boot Starter时
+-   使用Spring Boot Starter时
 
     修改`application.yml` *(或application.properties)*
 
@@ -227,7 +227,7 @@ Jimmer提供了一个配置选项，如果被指定，当jimmer在执行SQL之�
         - com.example.business
     ```
 
--   不使用Spring Boot Starter时
+-   使用底层API时
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">

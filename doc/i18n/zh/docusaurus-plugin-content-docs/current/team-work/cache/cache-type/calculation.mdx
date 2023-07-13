@@ -405,11 +405,11 @@ class BookStoreAvgPriceResolver(
 </Tabs>
 
 :::info
-如果使用Jimmer的SpringBoot Starter，触发器事件，即`EntityEvent`和`AssociationEvent`，会被作为Spring事件发送。
+如果使用SpringBoot Starter，触发器事件，即`EntityEvent`和`AssociationEvent`，会被作为Spring事件发送。
 
 所以，用注解`@org.springframework.context.event.EventListener`响应Jimmer触发器的事件即可。
 
-如果不使用Jimmer的SpringBoot Starter，采用Jimmer的触发器API响应事件
+如果使用底层API，采用Jimmer的触发器API响应事件
 
 <ViewMore buttonText="非Spring模式">
 <Tabs groupId="language">
