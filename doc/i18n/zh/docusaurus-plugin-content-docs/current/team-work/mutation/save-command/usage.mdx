@@ -1,0 +1,175 @@
+---
+sidebar_position: 1
+title: 基本用法
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 基本概念
+
+保存指令将一个任意形状的数据结构写入到到数据库中，例如
+
+-   保存简单对象
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book simpleBook = BookDraft.$.product(draft -> {
+        draft.setName("SQL in Action");
+        dratt.setEdition(1);
+        draft.setPrice(new BigDecimal("59.9"));
+    });
+    sqlClient.save(simpleBook);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val simpleBook = new(Book::class).by {
+        name = "SQL in Action"
+        edition = 1
+        price = BigDecimal("59.9")
+    }
+    sqlClient.save(simpleBook)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   保存复杂数据结构
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book complexBook = BookDraft.$.product(draft -> {
+        draft.setName("SQL in Action");
+        dratt.setEdition(1);
+        draft.setPrice(new BigDecimal("59.9"));
+        draft.applyStore(store -> {
+            store.setName("MANNING");
+        })
+        draft.addIntoAuthors(author -> {
+            author.setFirstName("Dmitry");
+            author.setLastName("Jamerov");
+            author.setGender(Gender.MALE); 
+        });
+        draft.addIntoAuthors(author -> {
+            author.setFirstName("Svetlana");
+            author.setLastName("Isakova");
+            author.setGender(Gender.FEMALE);
+        })
+    });
+    sqlClient.save(simpleBook);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val complexBook = new(Book::class).by {
+        name = "SQL in Action"
+        edition = 1
+        price = BigDecimal("59.9")
+        store().apply {
+            name = MANNING;
+        }
+        authors().appBy {
+            firstName("Dmitry");
+            lastName("Jamerov");
+            gender(Gender.MALE);
+        }
+        authors().addBy {
+            firstName = "Svetlana"
+            lastName = "Isakova"
+            gender = Gender.FEMALE
+        }
+    }
+    sqlClient.save(complexBook)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::tip
+Save指令和其他ORM框架的save方法之间存在本质差异。
+
+以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+
+Jimmer采用完全不同方法，被保存的Jimmer对象具备[动态性](../../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+:::
+
+## API
+
+Save指令为不同语言和不同的开发模式提供了多个API，但功能都一样
+
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2"></th>
+            <th rowspan="2">Spring Boot API</th>
+            <th colspan="2">底层API</th>
+        </tr>
+        <tr>
+            <th>追求快捷性的API</th>
+            <th>追求可配置性的API</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Java</td>
+            <td>
+                <ul>
+                    <li>JRepository.save</li>
+                    <li>JRepository.saveCommand</li>
+                    <li>JRepository.saveAll</li>
+                    <li>JRepository.saveAllCommand</li>
+                    <li>JRepository.insert</li>
+                    <li>JRepository.update</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>JSqlClient.save</li>
+                    <li>JSqlClient.insert</li>
+                    <li>JSqlClient.update</li>
+                </ul>
+            </td>
+            <td>
+                <li>JSqlClient.getEntities().save</li>
+                <li>JSqlClient.getEntities().saveCommand</li>
+                <li>JSqlClient.getEntities().batchSave</li>
+                <li>JSqlClient.getEntities().batchSaveCommand</li>
+            </td>
+        </tr>
+        <tr>
+            <td>Kotlin</td>
+            <td>
+                <ul>
+                    <li>KRepository.save</li>
+                    <li>KRepository.saveCommand</li>
+                    <li>KRepository.saveAll</li>
+                    <li>KRepository.saveAllCommand</li>
+                    <li>KRepository.insert</li>
+                    <li>KRepository.update</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>KSqlCient.save</li>
+                    <li>KSqlCient.insert</li>
+                    <li>KSqlCient.update</li>
+                </ul>
+            </td>
+            <td>
+                <li>KSqlCient.entities.save</li>
+                <li>KSqlCient.entities.saveCommand</li>
+                <li>KSqlCient.entities.batchSave</li>
+                <li>KSqlCient.entities.batchSaveCommand</li>
+            </td>
+        </tr>
+    </tbody>
+</table>
