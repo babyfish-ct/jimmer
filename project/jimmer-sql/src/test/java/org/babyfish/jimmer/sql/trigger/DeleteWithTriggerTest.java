@@ -559,20 +559,20 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select AUTHOR_ID, BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID in (?)");
-                        it.variables(alexId);
-                    });
-                    ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))");
-                        it.variables(alexId, learningGraphQLId1, alexId, learningGraphQLId2, alexId, learningGraphQLId3);
-                    });
-                    ctx.statement(it -> {
                         it.sql("select AUTHOR_ID, COUNTRY_CODE from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID in (?)");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from AUTHOR_COUNTRY_MAPPING where (AUTHOR_ID, COUNTRY_CODE) in ((?, ?))");
                         it.variables(alexId, "USA");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("select AUTHOR_ID, BOOK_ID from BOOK_AUTHOR_MAPPING where AUTHOR_ID in (?)");
+                        it.variables(alexId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where (AUTHOR_ID, BOOK_ID) in ((?, ?), (?, ?), (?, ?))");
+                        it.variables(alexId, learningGraphQLId1, alexId, learningGraphQLId2, alexId, learningGraphQLId3);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -593,6 +593,20 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Author.country, " +
+                        "--->sourceId=" + alexId + ", " +
+                        "--->detachedTargetId=USA, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.Country.authors, " +
+                        "--->sourceId=USA, " +
+                        "--->detachedTargetId=" + alexId + ", " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
                 "AssociationEvent{" +
                         "--->prop=org.babyfish.jimmer.sql.model.Book.authors, " +
                         "--->sourceId=" + learningGraphQLId1 + ", " +
@@ -632,20 +646,6 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         "--->prop=org.babyfish.jimmer.sql.model.Author.books, " +
                         "--->sourceId=" + alexId + ", " +
                         "--->detachedTargetId=" + learningGraphQLId3 + ", " +
-                        "--->attachedTargetId=null, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.Author.country, " +
-                        "--->sourceId=" + alexId + ", " +
-                        "--->detachedTargetId=USA, " +
-                        "--->attachedTargetId=null, " +
-                        "--->reason=null" +
-                        "}",
-                "AssociationEvent{" +
-                        "--->prop=org.babyfish.jimmer.sql.model.Country.authors, " +
-                        "--->sourceId=USA, " +
-                        "--->detachedTargetId=" + alexId + ", " +
                         "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}",

@@ -592,6 +592,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private String databaseValidationCatalog;
 
+        private String databaseValidationSchema;
+
         private String microServiceName = "";
 
         private MicroServiceExchange microServiceExchange;
@@ -1048,6 +1050,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setDatabaseValidationSchema(String schema) {
+            this.databaseValidationSchema = schema != null && !schema.isEmpty() ? schema : null;
+            return this;
+        }
+
+        @Override
         public Builder setMicroServiceName(String microServiceName) {
             this.microServiceName = microServiceName != null ? microServiceName : "";
             return this;
@@ -1231,6 +1239,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                 microServiceName,
                                 metadataStrategy,
                                 databaseValidationCatalog,
+                                databaseValidationSchema,
                                 con
                         );
                     } catch (SQLException ex) {

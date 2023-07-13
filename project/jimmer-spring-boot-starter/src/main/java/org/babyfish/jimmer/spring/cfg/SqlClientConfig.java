@@ -262,11 +262,13 @@ public class SqlClientConfig {
         } else if (properties.isPrettySql()) {
             builder.setSqlFormatter(SqlFormatter.PRETTY);
         }
-        builder.setDatabaseValidationMode(properties.getDatabaseValidation().getMode());
-        builder.setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog());
-        builder.setCacheFactory(cacheFactory);
-        builder.setCacheOperator(cacheOperator);
-        builder.addCacheAbandonedCallbacks(callbacks);
+        builder
+                .setDatabaseValidationMode(properties.getDatabaseValidation().getMode())
+                .setDatabaseValidationCatalog(properties.getDatabaseValidation().getCatalog())
+                .setDatabaseValidationSchema(properties.getDatabaseValidation().getSchema())
+                .setCacheFactory(cacheFactory)
+                .setCacheOperator(cacheOperator)
+                .addCacheAbandonedCallbacks(callbacks);
 
         for (ScalarProvider<?, ?> provider : providers) {
             builder.addScalarProvider(provider);

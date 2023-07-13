@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.LogicalDeleted;
 import org.babyfish.jimmer.sql.Table;
 
 @Entity
-@Table(name ="B.TABLE_")
+@Table(name ="JIMMER_TEST_DB.B.TABLE_")
 public interface B {
 
     @Id

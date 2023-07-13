@@ -19,7 +19,8 @@ public class DatabaseValidatorTest extends AbstractTest {
                     JimmerModule.ENTITY_MANAGER,
                     "",
                     new MetadataStrategy(DefaultDatabaseNamingStrategy.UPPER_CASE, ForeignKeyStrategy.REAL),
-                    "",
+                    null,
+                    null,
                     con
             );
             Assertions.assertNull(ex);

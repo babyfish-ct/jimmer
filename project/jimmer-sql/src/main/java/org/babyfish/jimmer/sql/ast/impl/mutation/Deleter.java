@@ -129,14 +129,19 @@ public class Deleter {
             return;
         }
 
-        for (ImmutableProp backProp : data.getSqlClient().getEntityManager().getAllBackProps(immutableType)) {
-            if (backProp.getMappedBy() != null && backProp.isRemote()) {
+        boolean hasInverseLocalAssociation = false;
+        for (ImmutableProp prop : immutableType.getProps().values()) {
+            if (prop.isRemote()) {
                 continue;
             }
-            MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
+            if (prop.getMappedBy() != null) {
+                hasInverseLocalAssociation = true;
+                continue;
+            }
+            MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
                     data.getSqlClient(),
                     con,
-                    backProp,
+                    prop,
                     trigger
             );
             if (middleTableOperator != null) {
@@ -150,36 +155,67 @@ public class Deleter {
                                     "\" when the object of \"" +
                                     immutableType +
                                     "\" is being deleted, because the " +
-                                    (
-                                            backProp.getMappedBy() != null ?
-                                                    "`@JoinTable.preventDeletionBySource` of \"" +
-                                                            backProp.getMappedBy() +
-                                                            "\" is true" :
-                                                    "`@JoinTable.preventDeletionByTarget` of \"" +
-                                                            backProp +
-                                                            "\" is true"
-                                    )
+                                    "`@JoinTable.preventDeletionBySource` of \"" +
+                                    prop.getMappedBy() +
+                                    "\" is true"
                     );
                 }
-                addOutput(AffectedTable.of(backProp), affectedRowCount);
-            } else {
-                if (backProp.isReference(TargetLevel.PERSISTENT) &&
-                        backProp.isColumnDefinition()
-                ) {
-                    DissociateAction dissociateAction = data.getDissociateAction(backProp);
-                    if (dissociateAction == DissociateAction.SET_NULL) {
-                        ChildTableOperator childTableOperator = new ChildTableOperator(
-                                data.getSqlClient(),
-                                con,
-                                backProp,
-                                false,
-                                cache,
-                                trigger
+                addOutput(AffectedTable.of(prop), affectedRowCount);
+            }
+        }
+        if (hasInverseLocalAssociation) {
+            for (ImmutableProp backProp : data.getSqlClient().getEntityManager().getAllBackProps(immutableType)) {
+                if (backProp.getMappedBy() != null || backProp.isRemote()) {
+                    continue;
+                }
+                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
+                        data.getSqlClient(),
+                        con,
+                        backProp,
+                        trigger
+                );
+                if (middleTableOperator != null) {
+                    int affectedRowCount;
+                    try {
+                        affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                    } catch (MiddleTableOperator.DeletionPreventedException ex) {
+                        throw new ExecutionException(
+                                "Cannot delete rows from middle table \"" +
+                                        ex.middleTable.getTableName() +
+                                        "\" when the object of \"" +
+                                        immutableType +
+                                        "\" is being deleted, because the " +
+                                        (
+                                                backProp.getMappedBy() != null ?
+                                                        "`@JoinTable.preventDeletionBySource` of \"" +
+                                                                backProp.getMappedBy() +
+                                                                "\" is true" :
+                                                        "`@JoinTable.preventDeletionByTarget` of \"" +
+                                                                backProp +
+                                                                "\" is true"
+                                        )
                         );
-                        int affectedRowCount = childTableOperator.unsetParents(ids);
-                        addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
-                    } else {
-                        tryDeleteFromChildTable(backProp, ids);
+                    }
+                    addOutput(AffectedTable.of(backProp), affectedRowCount);
+                } else {
+                    if (backProp.isReference(TargetLevel.PERSISTENT) &&
+                            backProp.isColumnDefinition()
+                    ) {
+                        DissociateAction dissociateAction = data.getDissociateAction(backProp);
+                        if (dissociateAction == DissociateAction.SET_NULL) {
+                            ChildTableOperator childTableOperator = new ChildTableOperator(
+                                    data.getSqlClient(),
+                                    con,
+                                    backProp,
+                                    false,
+                                    cache,
+                                    trigger
+                            );
+                            int affectedRowCount = childTableOperator.unsetParents(ids);
+                            addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
+                        } else {
+                            tryDeleteFromChildTable(backProp, ids);
+                        }
                     }
                 }
             }

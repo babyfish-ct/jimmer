@@ -147,6 +147,7 @@ public class JimmerProperties {
                             databaseValidationMode != null ?
                                     databaseValidationMode :
                                     DatabaseValidationMode.NONE,
+                            null,
                             null
                     );
         }
@@ -349,9 +350,17 @@ public class JimmerProperties {
         @Nullable
         private final String catalog;
 
-        public DatabaseValidation(@Nullable DatabaseValidationMode mode, @Nullable String catalog) {
+        @Nullable
+        private final String schema;
+
+        public DatabaseValidation(
+                @Nullable DatabaseValidationMode mode,
+                @Nullable String catalog,
+                @Nullable String schema
+        ) {
             this.mode = mode != null ? mode : DatabaseValidationMode.NONE;
             this.catalog = catalog != null && !catalog.isEmpty() ? catalog : null;
+            this.schema = schema != null && !schema.isEmpty() ? schema : null;
         }
 
         @NotNull
@@ -362,6 +371,11 @@ public class JimmerProperties {
         @Nullable
         public String getCatalog() {
             return catalog;
+        }
+
+        @Nullable
+        public String getSchema() {
+            return schema;
         }
 
         @Override

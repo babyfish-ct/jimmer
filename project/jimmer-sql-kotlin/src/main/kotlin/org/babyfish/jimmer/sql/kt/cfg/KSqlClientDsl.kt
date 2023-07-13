@@ -240,6 +240,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setDatabaseValidationCatalog(catalog)
     }
 
+    fun setDatabaseValidationSchema(schema: String?) {
+        javaBuilder.setDatabaseValidationSchema(schema)
+    }
+
     /**
      * For RDBMS, pagination is slow if `offset` is large, especially for MySQL.
      *

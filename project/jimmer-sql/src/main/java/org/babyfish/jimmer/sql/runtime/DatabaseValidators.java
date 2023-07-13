@@ -27,6 +27,8 @@ public class DatabaseValidators {
 
     private final String catalog;
 
+    private final String schema;
+
     private final Connection con;
 
     private final List<DatabaseValidationException.Item> items;
@@ -41,9 +43,10 @@ public class DatabaseValidators {
             String microServiceName,
             MetadataStrategy strategy,
             String catalog,
+            String schema,
             Connection con
     ) throws SQLException {
-        return new DatabaseValidators(entityManager, microServiceName, strategy, catalog, con).validate();
+        return new DatabaseValidators(entityManager, microServiceName, strategy, catalog, schema, con).validate();
     }
 
     private DatabaseValidators(
@@ -51,12 +54,14 @@ public class DatabaseValidators {
             String microServiceName,
             MetadataStrategy strategy,
             String catalog,
+            String schema,
             Connection con
-    ) throws SQLException {
+    ) {
         this.entityManager = entityManager;
         this.microServiceName = microServiceName;
         this.strategy = strategy;
-        this.catalog = catalog != null ? catalog : con.getCatalog();
+        this.catalog = catalog != null && !catalog.isEmpty() ? catalog : null;
+        this.schema = schema != null && !schema.isEmpty() ? schema : null;
         this.con = con;
         this.items = new ArrayList<>();
     }
@@ -281,12 +286,12 @@ public class DatabaseValidators {
         String tableName = table;
         int index = tableName.lastIndexOf('.');
         if (index != -1) {
-            schemaName = tableName.substring(0, index);
+            catalogName = tableName.substring(0, index);
             tableName = tableName.substring(index + 1);
-            index = schemaName.lastIndexOf('.');
+            index = catalogName.lastIndexOf('.');
             if (index != -1) {
-                catalogName = schemaName.substring(0, index);
-                schemaName = schemaName.substring(index + 1);
+                schemaName = catalogName.substring(index + 1);
+                catalogName = catalogName.substring(0, index);
             }
         }
         return tablesOf(optional(catalogName), optional(schemaName), tableName);
@@ -332,14 +337,12 @@ public class DatabaseValidators {
                 );
             }
         }
-        if (catalog != null && !catalog.isEmpty()) {
-            return tables
-                    .stream()
-                    .filter(it -> it.catalog == null || catalogName == null || it.catalog.equalsIgnoreCase(catalog))
-                    .filter(it -> it.schema == null || catalogName == null || it.schema.equalsIgnoreCase(schemaName))
-                    .collect(Collectors.toSet());
-        }
-        return tables;
+        return tables
+                .stream()
+                .filter(it -> it.catalog == null || catalog == null || it.catalog.equalsIgnoreCase(catalog))
+                .filter(it -> it.schema == null || schema == null || it.schema.equalsIgnoreCase(schema))
+                .filter(it -> it.name.equalsIgnoreCase(tableName))
+                .collect(Collectors.toSet());
     }
 
     private Map<String, Column> columnsOf(Table table) throws SQLException {

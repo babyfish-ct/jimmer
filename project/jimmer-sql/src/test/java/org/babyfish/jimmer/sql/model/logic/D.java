@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name ="D.TABLE_")
+@Table(name ="JIMMER_TEST_DB.D.TABLE_")
 public interface D {
 
     @Id

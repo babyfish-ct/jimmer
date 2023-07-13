@@ -13,6 +13,7 @@ class CacheAbandonedCallbackForLog implements CacheAbandonedCallback {
     @Override
     public void abandoned(ImmutableProp prop, Reason reason) {
         if (LOGGER.isWarnEnabled()) {
+            LOGGER.warn("!!!Jimmer warning!!!");
             LOGGER.warn(
                     "Property-level cache is abandoned.\n" +
                             "\tProperty: " +
