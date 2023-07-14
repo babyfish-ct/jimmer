@@ -25,4 +25,6 @@ interface KSaveCommandDsl {
     fun setAppendOnly(prop: KProperty1<*, *>)
 
     fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction)
+
+    fun setPessimisticLock(pessimisticLock: Boolean = true)
 }

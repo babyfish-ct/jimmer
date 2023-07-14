@@ -48,5 +48,9 @@ internal class KSaveCommandDslImpl(
     override fun setDissociateAction(prop: KProperty1<*, *>, action: DissociateAction) {
         javaCfg.setDissociateAction(prop.toImmutableProp(), action)
     }
+
+    override fun setPessimisticLock(pessimisticLock: Boolean) {
+        javaCfg.setPessimisticLock(pessimisticLock)
+    }
 }
 
