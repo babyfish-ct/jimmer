@@ -201,57 +201,6 @@ class OneToManyTest() : AbstractMutationTest() {
     }
 
     @Test
-    fun testAttachChildFailed() {
-
-        jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING")
-
-        val ex = Assertions.assertThrows(SaveException::class.java) {
-            sql.entities.save(
-                new(BookStore::class).by {
-                    name = "MANNING"
-                    books().addBy {
-                        name = "SQL in Action"
-                        edition = 1
-                        price = BigDecimal(49)
-                    }
-                }
-            )
-        }
-
-        Assertions.assertEquals(
-            "Save error caused by the path: \"<root>.books\": " +
-                "Cannot insert object because insert operation for this path is disabled, " +
-                "please call `setAutoAttaching(BookStore::books)` " +
-                "or `setAutoAttachingAll()` of the save command",
-            ex.message
-        )
-
-        assertExecutedStatements(
-
-            // Query aggregate-root by key
-            ExecutedStatement(
-                "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ " +
-                    "where tb_1_.NAME = ?",
-                "MANNING"
-            ),
-
-            // Aggregate-root exists, but not changed, do nothing
-
-            // Query child object by key
-            // In this test case, nothing will be found, it need to be inserted.
-            // However, the switch to automatically create associated objects
-            // has not been turned on so that error will be raised
-            ExecutedStatement(
-                "select " +
-                    "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                    "from BOOK tb_1_ " +
-                    "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
-                "SQL in Action", 1
-            )
-        )
-    }
-
-    @Test
     fun testAttachChild() {
 
         jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING")

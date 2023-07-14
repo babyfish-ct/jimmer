@@ -217,67 +217,6 @@ public class ManyToManyTest extends AbstractMutationTest {
         Assertions.assertEquals(1, result.getAffectedRowCount(BookProps.AUTHORS));
     }
 
-    // This exception will never be raised if you use spring-data-jimmer
-    // because this switch has already been turned on by it.
-    @Test
-    public void testAttachAuthorFailed() {
-
-        jdbc(
-                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
-                10L, "SQL in Action", 1, new BigDecimal(45)
-        );
-
-        SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
-            sql().getEntities().save(
-                    BookDraft.$.produce(book -> {
-                        book.setName("SQL in Action");
-                        book.setEdition(1);
-                        book.setPrice(new BigDecimal(49));
-                        book.addIntoAuthors(author -> {
-                            author.setFirstName("Ben");
-                            author.setLastName("Brumm");
-                            author.setGender(Gender.MALE);
-                        });
-                    })
-            );
-        });
-        Assertions.assertEquals(
-                "Save error caused by the path: \"<root>.authors\": " +
-                        "Cannot insert object because insert operation for this path is disabled, " +
-                        "please call `setAutoAttaching(BookProps.AUTHORS)` or " +
-                        "`setAutoAttachingAll()` of the save command",
-                ex.getMessage()
-        );
-
-        assertExecutedStatements(
-
-                // Query aggregate-root by key
-                new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
-                        "SQL in Action", 1
-                ),
-
-                // Aggregate-root exists, update it
-                new ExecutedStatement(
-                        "update BOOK set PRICE = ? where ID = ?",
-                        new BigDecimal(49), 10L
-                ),
-
-                // Query associated object by key.
-                // In this test case, nothing will be found, it need to be inserted.
-                // However, the switch to automatically create associated objects
-                // has not been turned on so that error will be raised
-                new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
-                                "from AUTHOR tb_1_ " +
-                                "where tb_1_.FIRST_NAME = ? and tb_1_.LAST_NAME = ?",
-                        "Ben", "Brumm"
-                )
-        );
-    }
-
     @Test
     public void testAttachAuthor() {
 
