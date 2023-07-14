@@ -173,3 +173,162 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
         </tr>
     </tbody>
 </table>
+
+其中
+
+-   名称中包含`Command`的方法比较特殊，和其他方法立即执行保存指令不同，这些方法仅仅创建指令，并不马上执行，用户可以对其配置，最后调用`execute`方法执行。例如
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookStore store = ...略...;
+    sqlClient
+        .getEntities()
+        .saveCommand(store) ❶
+        .setAutoAttachingAll() ❷
+        .execute(); ❸
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val store = ...略...;
+    sqlClient
+        .getEntities()
+        .saveCommand(store) ❶
+        .setAutoAttachingAll() ❷
+        .execute() ❸
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    -   ❶ 创建保存指令，但并不马上执行
+
+    -   ❷ 进行某些配置 *(例子中调用了一个名为`setAutoAttachingAll`的方法，但其实可以通过链式风格调用多个配置方法)*
+
+    -   ❸ 完成配之后，最终调用`execute`执行保存指令。
+
+-   名称中包含`All`或`batch`的方法表示保存多个对象，而非一个对象
+
+-   对于被保存的聚合根而言，具备三种保存模式：UPSERT(默认)、INSERT_ONLY、UPDATE_ONLY。这需要通过配置来实现
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookStore store = ...略...;
+    sqlClient
+        .getEntities()
+        .saveCommand(store)
+        // highlight-next-line
+        .setMode(SaveMode.INSERT_ONLY)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val store = ...略...;
+    sqlClient
+        .getEntities()
+        .saveCommand(store)
+        // highlight-next-line
+        .setMode(SaveMode.INSERT_ONLY)
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    `insert`和`update`方法是对`INSERT_ONLY`和`UPDATE_ONLY`的简写方式，上述代码可以简化为
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookStore store = ...略...;
+    sqlClient.insert(store);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    BookStore store = ...略...;
+    sqlClient.insert(store);
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 重要概念，全量和增量
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(food -> {
+    food
+        .setName("Food")
+        .addIntoChildNodes(drink -> {
+            drink
+                .setName("Drink")
+                .addIntoChildNodes(cococola -> {
+                    cococola.setName("Cococola");
+                })
+                .addIntoChildNodes(fanta -> {
+                    fanta.setName("Fanta");
+                });
+            ;
+        })
+        .addIntoAuthors(bread -> {
+            bread
+                .setName("Bread")
+                .addIntoChildNodes(daguette -> {
+                    daguette.setName("Baguette");
+                })
+                .addIntoChildNodes(ciabatta -> {
+                    ciabatta.setName("Ciabatta");
+                })
+        });
+    ;
+});
+sqlClient.save(treeNode);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    name = "Food"
+    childNodes().addBy {
+        name = "Drinks"
+        childNodes().addBy {
+            name = "Cococola"
+        }
+        childNodes().addBy {
+            name = "Fanta"
+        }
+    }
+    childNodes().addBy {
+        name = "Bread"
+        childNodes().addBy {
+            name = "Baguette"
+        }
+        childNodes().addBy {
+            name = "Ciabatta"
+        }
+    }
+}
+sqlClient.save(treeNode)
+```
+
+</TabItem>
+</Tabs>
+
+这段代码企图保存一棵树
