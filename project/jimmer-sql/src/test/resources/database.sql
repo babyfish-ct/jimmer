@@ -4,6 +4,8 @@ create schema if not exists C;
 create schema if not exists D;
 
 drop alias contains_id if exists;
+drop table task if exists;
+drop table worker if exists;
 drop table category if exists;
 drop table post if exists;
 drop table learning_link if exists;
@@ -675,3 +677,29 @@ insert into category(id, name) values
     (3, 'category-3');
 
 create alias contains_id for "org.babyfish.jimmer.sql.model.joinsql.H2ContainsIdFun.contains";
+
+
+
+create table worker(
+    id bigint not null,
+    name varchar(20) not null
+);
+alter table worker
+    add constraint pk_worker
+        primary key(id);
+
+create table task(
+    id bigint not null,
+    name varchar(20) not null,
+    owner_id bigint
+);
+alter table task
+    add constraint pk_task
+        primary key(id);
+alter table task
+    add constraint fk_task_owner
+        foreign key(owner_id)
+            references worker(id);
+
+insert into worker(id, name) values(1, 'Alex'), (2, 'James');
+insert into task(id, name, owner_id) values(9, 'Release package', null), (10, 'Take photo', 2);
