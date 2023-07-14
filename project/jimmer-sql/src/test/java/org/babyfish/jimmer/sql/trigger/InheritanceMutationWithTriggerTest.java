@@ -66,7 +66,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                                 permission.setName("permission_2");
                             });
                         })
-                ).configure(it -> it.setAutoAttachingAll()),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -234,7 +234,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
                             permission.setName("Permission")
                                     .applyRole(role -> role.setName("role"));
                         })
-                ).configure(it -> it.setAutoAttachingAll()),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

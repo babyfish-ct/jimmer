@@ -71,11 +71,6 @@ public class JTypeScriptTest {
                 "    } | \n" +
                 "    {\n" +
                 "        readonly family: \"SAVE_ERROR_CODE\",\n" +
-                "        readonly code: \"CANNOT_CREATE_TARGET\",\n" +
-                "        readonly \"exportedPath\": ExportedSavePath\n" +
-                "    } | \n" +
-                "    {\n" +
-                "        readonly family: \"SAVE_ERROR_CODE\",\n" +
                 "        readonly code: \"CANNOT_DISSOCIATE_TARGETS\",\n" +
                 "        readonly \"exportedPath\": ExportedSavePath\n" +
                 "    } | \n" +
@@ -205,11 +200,6 @@ public class JTypeScriptTest {
                 "            {\n" +
                 "                readonly family: 'SAVE_ERROR_CODE',\n" +
                 "                readonly code: 'CANNOT_DISSOCIATE_TARGETS',\n" +
-                "                readonly [key:string]: any\n" +
-                "            } | \n" +
-                "            {\n" +
-                "                readonly family: 'SAVE_ERROR_CODE',\n" +
-                "                readonly code: 'CANNOT_CREATE_TARGET',\n" +
                 "                readonly [key:string]: any\n" +
                 "            } | \n" +
                 "            {\n" +

@@ -20,6 +20,10 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setKeyProps(ImmutableProp ... props);
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     default AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props) {
         return setKeyProps(
@@ -30,14 +34,26 @@ public interface AbstractEntitySaveCommand {
         );
     }
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     AbstractEntitySaveCommand setAutoAttachingAll();
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     default AbstractEntitySaveCommand setAutoAttaching(TypedProp.Association<?, ?> prop) {
         return setAutoAttaching(prop.unwrap());
     }
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     AbstractEntitySaveCommand setAutoAttaching(ImmutableProp prop);
 
@@ -84,14 +100,26 @@ public interface AbstractEntitySaveCommand {
             );
         }
 
+        /**
+         * Will be deleted in 1.0
+         */
+        @Deprecated
         @OldChain
         Cfg setAutoAttachingAll();
 
+        /**
+         * Will be deleted in 1.0
+         */
+        @Deprecated
         @OldChain
         default Cfg setAutoAttaching(TypedProp.Association<?, ?> prop) {
             return setAutoAttaching(prop.unwrap());
         }
 
+        /**
+         * Will be deleted in 1.0
+         */
+        @Deprecated
         @OldChain
         Cfg setAutoAttaching(ImmutableProp prop);
 

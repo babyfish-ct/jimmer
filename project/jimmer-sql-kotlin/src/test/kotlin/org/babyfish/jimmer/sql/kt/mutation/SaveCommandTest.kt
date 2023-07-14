@@ -168,9 +168,7 @@ class SaveCommandTest : AbstractMutationTest() {
                     }
                 },
                 con
-            ) {
-                setAutoAttachingAll()
-            }
+            )
         }) {
             statement {
                 sql(

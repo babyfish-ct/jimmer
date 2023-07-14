@@ -1585,7 +1585,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 metadata.setWebsite("website_5");
                             });
                         })
-                ).configure(it -> it.setAutoAttachingAll()),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1713,7 +1713,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 metadata.setWebsite("website_4+");
                             });
                         })
-                ).configure(it -> it.setAutoAttachingAll()),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1851,8 +1851,6 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                                 child.setName("Child-2")
                                         )
                         )
-                ).configure(
-                        AbstractEntitySaveCommand.Cfg::setAutoAttachingAll
                 ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -2013,9 +2011,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                 })
         );
         executeAndExpectResult(
-                getSqlClient().getEntities().batchSaveCommand(books).configure(
-                        it -> it.setAutoAttachingAll()
-                ),
+                getSqlClient().getEntities().batchSaveCommand(books),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

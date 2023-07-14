@@ -35,9 +35,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                     }
                 },
                 con
-            ) {
-                setAutoAttachingAll()
-            }
+            )
         }) {
             statement {
                 sql(
@@ -120,9 +118,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                     }
                 },
                 con
-            ) {
-                setAutoAttachingAll()
-            }
+            )
         }) {
             statement {
                 sql(

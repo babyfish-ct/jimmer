@@ -31,16 +31,28 @@ public interface BatchEntitySaveCommand<E>
         return configure(cfg -> cfg.setKeyProps(props));
     }
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     default BatchEntitySaveCommand<E> setAutoAttachingAll() {
         return configure(Cfg::setAutoAttachingAll);
     }
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     default BatchEntitySaveCommand<E> setAutoAttaching(TypedProp.Association<?, ?> prop) {
         return configure(cfg -> cfg.setAutoAttaching(prop));
     }
 
+    /**
+     * Will be deleted in 1.0
+     */
+    @Deprecated
     @NewChain
     default BatchEntitySaveCommand<E> setAutoAttaching(ImmutableProp prop) {
         return configure(cfg -> cfg.setAutoAttaching(prop));

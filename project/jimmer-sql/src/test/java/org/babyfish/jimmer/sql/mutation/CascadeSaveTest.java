@@ -109,6 +109,14 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
+                                "select tb_1_.ID, tb_1_.NAME " +
+                                        "from BOOK_STORE tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables(oreillyId);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
                                 "update BOOK_STORE " +
                                         "set WEBSITE = ?, VERSION = VERSION + 1 " +
                                         "where ID = ? and VERSION = ?"
@@ -760,7 +768,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 metadata.setWebsite("website_5");
                             });
                         })
-                ).configure(it -> it.setAutoAttachingAll()),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -843,7 +851,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                 metadata.setWebsite("website_4+");
                             });
                         })
-                ).configure(it -> it.setAutoAttachingAll()),
+                ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -934,8 +942,6 @@ public class CascadeSaveTest extends AbstractMutationTest {
                                                 child.setName("Child-2")
                                         )
                         )
-                ).configure(
-                        AbstractEntitySaveCommand.Cfg::setAutoAttachingAll
                 ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -1035,9 +1041,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 })
         );
         executeAndExpectResult(
-                getSqlClient().getEntities().batchSaveCommand(books).configure(
-                        it -> it.setAutoAttachingAll()
-                ),
+                getSqlClient().getEntities().batchSaveCommand(books),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
@@ -1126,7 +1130,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                             draft.setName("Develop");
                             draft.addIntoEmployees(employee -> employee.setName("Tim"));
                         })
-                ).setAppendOnlyAll().setAutoAttachingAll(),
+                ).setAppendOnlyAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID from DEPARTMENT tb_1_ where tb_1_.ID = ?");
@@ -1167,7 +1171,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                             draft.setName("Develop");
                             draft.addIntoEmployees(employee -> employee.setName("Tim"));
                         })
-                ).setAppendOnlyAll().setAutoAttachingAll(),
+                ).setAppendOnlyAll(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("insert into DEPARTMENT(ID, NAME) values(?, ?)");

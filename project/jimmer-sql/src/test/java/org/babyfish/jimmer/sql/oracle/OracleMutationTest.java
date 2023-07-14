@@ -51,7 +51,7 @@ public class OracleMutationTest extends AbstractMutationTest {
                                                         .setGender(Gender.FEMALE);
                                             });
                                 })
-                        ).setAutoAttachingAll(),
+                        ),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ where tb_1_.NAME = ?");

@@ -51,53 +51,21 @@ public interface Entities {
     default <E> SimpleSaveResult<E> save(E entity) {
         return saveCommand(entity).execute();
     }
-
-    default <E> SimpleSaveResult<E> save(E entity, boolean autoAttachingAll) {
-        return saveCommand(entity, autoAttachingAll).execute();
-    }
     
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
-
-    default <E> SimpleEntitySaveCommand<E> saveCommand(E entity, boolean autoAttachAll) {
-        SimpleEntitySaveCommand<E> command = saveCommand(entity);
-        if (!autoAttachAll) {
-            return command;
-        }
-        return command.configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll);
-    }
 
     default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
         return batchSaveCommand(entities).execute();
     }
 
-    default <E> BatchSaveResult<E> batchSave(Collection<E> entities, boolean autoAttachingAll) {
-        return batchSaveCommand(entities, autoAttachingAll).execute();
-    }
-
     <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities);
-
-    default <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities, boolean autoAttachAll) {
-        BatchEntitySaveCommand<E> command = batchSaveCommand(entities);
-        if (!autoAttachAll) {
-            return command;
-        }
-        return command.configure(AbstractEntitySaveCommand.Cfg::setAutoAttachingAll);
-    }
 
     default <E> SimpleSaveResult<E> save(Input<E> input) {
         return save(input.toEntity());
     }
 
-    default <E> SimpleSaveResult<E> save(Input<E> input, boolean autoAttachingAll) {
-        return save(input.toEntity(), autoAttachingAll);
-    }
-
     default <E> SimpleEntitySaveCommand<E> saveCommand(Input<E> input) {
         return saveCommand(input.toEntity());
-    }
-
-    default <E> SimpleEntitySaveCommand<E> saveCommand(Input<E> input, boolean autoAttachAll) {
-        return saveCommand(input.toEntity(), autoAttachAll);
     }
 
     default DeleteResult delete(Class<?> entityType, Object id) {

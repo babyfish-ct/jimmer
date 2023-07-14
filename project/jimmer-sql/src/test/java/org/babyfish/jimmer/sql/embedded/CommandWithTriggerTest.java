@@ -29,8 +29,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                                             .applyId(id -> id.setA(1).setB(1).setC(3))
                                                             .setName("order-item-1-3")
                                             );
-                                }),
-                                true
+                                })
                         )
                         .configure(cfg ->
                                 cfg.setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL)
@@ -207,8 +206,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                                             .applyId(id -> id.setA(1).setB(1).setC(3))
                                                             .setName("order-item-1-3")
                                             );
-                                }),
-                                true
+                                })
                         )
                         .configure(cfg ->
                                 cfg.setDissociateAction(OrderItemProps.ORDER, DissociateAction.DELETE)
@@ -441,8 +439,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                                                 .setId(OrderIdDraft.$.produce(id -> id.setX("001").setY("002")))
                                                                 .setName("order-2")
                                                 )
-                                ),
-                                true
+                                )
                         ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -544,8 +541,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                                                 .setId(ProductIdDraft.$.produce(id -> id.setAlpha("00A").setBeta("00C")))
                                                                 .setName("Bus")
                                                 )
-                                ),
-                                true
+                                )
                         ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -732,8 +728,7 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                                 .addIntoOrderItems(item ->
                                                         item.applyId(id -> id.setA(1).setB(2).setC(1))
                                                 )
-                                ),
-                                true
+                                )
                         ),
                 ctx -> {
                     ctx.statement(it -> {

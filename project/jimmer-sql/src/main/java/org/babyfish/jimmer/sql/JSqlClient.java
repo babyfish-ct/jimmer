@@ -139,7 +139,6 @@ public interface JSqlClient extends SubQueryProvider {
     default <E> SimpleSaveResult<E> save(E entity, SaveMode mode) {
         return getEntities().saveCommand(entity)
                 .setMode(mode)
-                .setAutoAttachingAll()
                 .execute();
     }
 
