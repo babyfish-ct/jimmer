@@ -5,6 +5,34 @@ title: 基本用法
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ComplexForm } from '@site/src/components/ComplexForm';
+import Grid from '@mui/material/Grid';
+
+## 简介
+
+所谓保存指令，指保存任意形状的数据结构，如图：
+
+![save-command](@site/static/img/save.png)
+
+-   右上角
+    
+    用户要保存的数据结构，记为`A`
+
+-   左上角
+
+    按照`A`的形状，从数据库现有数据中得到已有数据结构，记为`B`。
+
+-   下方
+
+    Jimmer比较旧数据结构`B`和新数据结构`A`，找不同之处，执行适当的<span style={{color: 'green'}}>插入</span>、<span style={{color: 'orange'}}>修改</span>甚至<span style={{color: 'red'}}>删除</span>操作，最终让数据库中的数据结构和`A`整体完全一致，用户不用关心所有的中间细节。
+
+    :::info
+    `B`和`A`的形状一样，因此数据库中已有数据查询成本，以及新旧数据之间的比较成本，完全视`A`*(用户要保存的数据结构)*的形状而定。
+    :::
+
+    :::tip
+    如果你了解Web领域的[React](https://react.dev/)或[Vue](https://vuejs.org/)，不难看出这个功能很像`Virtual DOM diff`。
+    :::
 
 ## 基本概念
 
@@ -186,7 +214,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     sqlClient
         .getEntities()
         .saveCommand(store) ❶
-        .setAutoAttachingAll() ❷
+        .setPessimisticLock() ❷
         .execute(); ❸
     ```
 
@@ -198,7 +226,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     sqlClient
         .getEntities()
         .saveCommand(store) ❶
-        .setAutoAttachingAll() ❷
+        .setPessimisticLock() ❷
         .execute() ❸
     ```
 
@@ -207,7 +235,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
 
     -   ❶ 创建保存指令，但并不马上执行
 
-    -   ❷ 进行某些配置 *(例子中调用了一个名为`setAutoAttachingAll`的方法，但其实可以通过链式风格调用多个配置方法)*
+    -   ❷ 进行某些配置 *(例子中调用了一个名为`setPessimisticLock`的方法，但其实可以通过链式风格调用多个配置方法)*
 
     -   ❸ 完成配之后，最终调用`execute`执行保存指令。
 
@@ -265,7 +293,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     </TabItem>
     </Tabs>
 
-## 重要概念，全量和增量
+## 重要概念: 全量和增量
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -332,3 +360,118 @@ sqlClient.save(treeNode)
 </Tabs>
 
 这段代码企图保存一棵树
+
+```
++-Food
+|
++---+-Drinks
+|   |
+|   +-----Cococola
+|   |
+|   \-----Fanta
+|
+\---+-Bread
+    |
+    +-----Baguette
+    |
+    \-----Ciabatta
+```
+
+其中，`Food`为聚合根，而其他所有关联对象都是子节点。
+
+-   聚合根节点
+
+    对应增量操作，最终生成一条INSERT语句或UPDATE语句
+
+-   子节点（或称关联对象）
+
+    默认情况下，对应全量覆盖操作。
+
+    以`Food`为例，它有两个子节点`Drinks`和`Bread`。然而，这并非仅仅表示对`Drinks`和`Bread`两个子节点简单地进行insert或update，
+    还要在`Food`节点在数据库中已经存在的情况下，考虑其是否已有的非`Drinks`和`Breads`的其他子节点，并将这些子节点和父节点脱勾（比如，删除这些子节点）
+
+    例如，数据库已有数据
+    ```
+    +-Food
+    |
+    +-----Bread
+    |
+    \-----Meat
+    ```
+    现在，要保存的数据为
+    ```
+    +-Food
+    |
+    +-----Drinks
+    |
+    \-----Bread
+    ```
+    最终，对子节点而言，会导致的操作为
+    -   插入`Drinks`
+    -   修改`Bread`
+    -   删除`Meat`*(子节点脱勾方式有多种，这里假设采用删除操作)*
+
+    :::note
+    至于非默认情况，请参见[关联模式](./association-mode)
+    :::
+
+由此可见，默认情况下，除了聚合根外，其他的子节点的对应的操作都是全量覆盖，而非增量修改。
+
+## Q & A
+
+如上所讨论，默认情况下，除了聚合根外，被保存数据结构中的关联对应全量覆盖操作，而非增量修改操作。
+
+<Grid container spacing={3}>
+<Grid item xs={1}>
+
+**Q:**
+
+</Grid>
+<Grid item xs={11}>
+为什么默认要如此全量操作？
+</Grid>
+<Grid item xs={1}>
+
+**A:**
+
+</Grid>
+<Grid item xs={11}>
+
+底层数据库直接支持INSERT、UPDATE、DELETE语句，即便使用只提供最简单的CRUD能力的SQL方案，也可以轻松实现按照增量修改数据库，这从来就不是业务系统开发的难点。
+
+真正复杂的问题，是把某个复杂数据结构作为整体进行覆盖保存。如果Jimmer不提供类似的能力，开发人员就需要编写复杂的代码去发现需要修改的局部，这往往导致复杂数据的修改业务很复杂。
+
+</Grid>
+<Grid item xs={1}>
+
+**Q:**
+
+</Grid>
+<Grid item xs={11}>
+使用场景是什么？
+</Grid>
+<Grid item xs={1}>
+
+**A:**
+
+</Grid>
+<Grid item xs={11}>
+
+任何需要把复杂数据结构作为整体进行覆盖保存的场景。其中一种典型的场景是复杂表单，例如
+
+<ComplexForm/>
+
+<div>&nbsp;</div>
+
+在这个例子中，表单内嵌了子对象表格。用户可以对表单，包括内嵌的子表格，进行任意复杂操作，最终客户端将作为整个表单作为一个整体提交到服务端。
+
+通过保存指令，服务端只需通过一行代码即可保存这个数据结构即可，无需考虑客户端提交的数据结构和数据库相比又何不同。
+
+:::tip
+无论表单多复杂，关联关系嵌套了多深，都可以将其作为一个整体，使用一行代码保存。
+:::
+
+</Grid>
+</Grid>
+
+
