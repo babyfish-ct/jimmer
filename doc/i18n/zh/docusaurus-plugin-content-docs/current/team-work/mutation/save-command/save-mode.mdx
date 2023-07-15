@@ -1,0 +1,127 @@
+---
+sidebar_position: 2
+title: 保存模式
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 基本概念
+
+保存指令支持3种保存模式，控制聚合根本身的保存方式
+
+-   UPSERT: 这是默认的模式。先通过查询判断被保存的聚合根对象是否存在：
+
+    -   如果不存在：执行INSERT语句
+
+    -   如果存在：执行UPDATE语句
+
+-   INSERT_ONLY: 无条件执行INSERT语句
+
+-   UPDATE_ONLY: 无条件执行UPDATE语句
+
+:::info
+保存模式仅影响聚合根对象，不影响其他关联对象。也可以理解为关联对象的保存模式只能是UPSERT。
+:::
+
+让我们来看一个例子
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.produce(draft -> {
+    draft.setId(20L);
+    draft.setName("SQL in Action");
+    draft.setEdition(1);
+    draft.setPrice(new BigDecimal("39.9"));
+    draft.setStore(
+        ImmutableObjects.makeIdOnly(BookStore.class, 2L)
+    );
+});
+// highlight-next-line
+sqlClient.save(book);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    id = 20
+    name = "SQL in Action"
+    edition = 1
+    price = BigDecimal("59.9")
+    store = makeIdOnly(BookStore::class, 2L)
+}
+// highlight-next-line
+sqlClient.save(book)
+```
+
+</TabItem>
+</Tabs>
+
+在这个例子中，`save(book)`是一个简写方式，和`save(book, SaveMode.UPSERT)`等价，因为`UPSERT`是默认的保存方式。
+
+执行代码会生成两句SQL
+
+1.  查询该对象在数据库中是否存在
+
+    ```sql
+    select
+        tb_1_.ID
+    from BOOK tb_1_
+    where
+        tb_1_.ID = ? /* 20 */
+    ```
+
+2.  第二条SQL语句会因第一条SQL的执行结果的不同而不同
+
+    -   如果第一条SQL无法查询到数据，插入
+
+        ```sql
+        insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID)
+        values(
+            ? /* 20 */, ? /* SQL in Action */, 
+            ? /* 1 */, ? /* 39.9 */, ? /* 2 */
+        )
+        ```
+
+    -   如果第一条SQL查询到了已有数据，更新
+
+        ```sql
+        update BOOK
+        set
+            NAME = ? /* SQL in Action */,
+            EDITION = ? /* 1 */,
+            PRICE = ? /* 39.9 */,
+            STORE_ID = ? /* 2 */
+        where
+            ID = ? /* 20 */
+        ```
+
+这就是默认保存模式`UPSERT`的用法，另外两种模式的用法很简单：
+
+-   INSERT_ONLY:
+
+    ```java
+    sqlClient.save(book, SaveMode.INSERT_ONLY)
+    ```
+    或
+    ```java
+    sqlClient.insert(book)
+    ```
+
+    如果执行，则只会生成一条SQL语句，就是上面的`INSERT`语句，而非上面的`SELECT`语句。
+
+-   UPDATE_ONLY:
+
+    ```java
+    sqlClient.save(book, SaveMode.UPDATE_ONLY)
+    ```
+    或
+    ```java
+    sqlClient.update(book)
+    ```
+
+    如果执行，则只会生成一条SQL语句，就是上面的`UPDATE`语句，而非上面的`SELECT`语句。

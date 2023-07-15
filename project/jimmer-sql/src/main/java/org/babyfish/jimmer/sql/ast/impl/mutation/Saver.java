@@ -790,7 +790,7 @@ class Saver {
     @SuppressWarnings("unchecked")
     private ImmutableSpi find(DraftSpi example) {
         ImmutableProp prop = path.getProp();
-        boolean requiresKey = prop != null && !data.isAppendOnly(prop);
+        boolean requiresKey = !data.isAppendOnly(prop);
         ImmutableSpi cached;
         try {
             cached = cache.find(example, requiresKey);
