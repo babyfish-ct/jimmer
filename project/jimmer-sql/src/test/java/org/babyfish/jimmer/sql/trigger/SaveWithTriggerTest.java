@@ -1,9 +1,13 @@
 package org.babyfish.jimmer.sql.trigger;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.oneway.Task;
+import org.babyfish.jimmer.sql.model.oneway.TaskDraft;
+import org.babyfish.jimmer.sql.model.oneway.Worker;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
@@ -1425,7 +1429,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
     }
 
     @Test
-    public void test() {
+    public void testByIllegalVersion() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -1465,5 +1469,87 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents();
+    }
+
+    @Test
+    public void testSetOnewayReference() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        TaskDraft.$.produce(draft -> {
+                            draft.setId(9L);
+                            draft.setOwner(ImmutableObjects.makeIdOnly(Worker.class, 1L));
+                        })
+                ), ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.OWNER_ID " +
+                                        "from TASK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update TASK set OWNER_ID = ? where ID = ?");
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"id\":9,\"owner\":{\"id\":1}}");
+                        it.modified("{\"id\":9,\"owner\":{\"id\":1}}");
+                    });
+                }
+        );
+        assertEvents(
+                "Event{" +
+                        "oldEntity={\"id\":9,\"name\":\"Release package\",\"owner\":null}, " +
+                        "newEntity={\"id\":9,\"owner\":{\"id\":1}}, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.oneway.Task.owner, " +
+                        "sourceId=9, " +
+                        "detachedTargetId=null, " +
+                        "attachedTargetId=1, " +
+                        "reason=null" +
+                        "}"
+        );
+    }
+
+    @Test
+    public void testUnsetOnewayReference() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().saveCommand(
+                        TaskDraft.$.produce(draft -> {
+                            draft.setId(10L);
+                            draft.setOwner(null);
+                        })
+                ), ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.OWNER_ID " +
+                                        "from TASK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update TASK set OWNER_ID = ? where ID = ?");
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"id\":10,\"owner\":null}");
+                        it.modified("{\"id\":10,\"owner\":null}");
+                    });
+                }
+        );
+        assertEvents(
+                "Event{" +
+                        "oldEntity={\"id\":10,\"name\":\"Take photo\",\"owner\":{\"id\":2}}, " +
+                        "newEntity={\"id\":10,\"owner\":null}, " +
+                        "reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "prop=org.babyfish.jimmer.sql.model.oneway.Task.owner, " +
+                        "sourceId=10, " +
+                        "detachedTargetId=2, " +
+                        "attachedTargetId=null, " +
+                        "reason=null" +
+                        "}"
+        );
     }
 }

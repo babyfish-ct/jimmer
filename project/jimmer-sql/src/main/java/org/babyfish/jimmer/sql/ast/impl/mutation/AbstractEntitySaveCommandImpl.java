@@ -55,10 +55,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Map<ImmutableType, Set<ImmutableProp>> keyPropMultiMap;
 
-        private boolean autoAttachingAll;
-
-        private Set<ImmutableProp> autoAttachingSet;
-
         private boolean autoCheckingAll;
 
         private Set<ImmutableProp> autoCheckingSet;
@@ -80,7 +76,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.mode = SaveMode.UPSERT;
             this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
-            this.autoAttachingSet = new HashSet<>();
             this.autoCheckingSet = new HashSet<>();
             this.appendOnlySet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
@@ -93,8 +88,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.mode = SaveMode.UPSERT;
             this.deleteMode = base.deleteMode;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
-            this.autoAttachingAll = base.autoAttachingAll;
-            this.autoAttachingSet = new HashSet<>(base.autoAttachingSet);
             this.autoCheckingAll = base.autoCheckingAll;
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
             this.appendOnlyAll = base.appendOnlyAll;
@@ -124,10 +117,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                 return keyProps;
             }
             return type.getKeyProps();
-        }
-
-        public boolean isAutoAttachingProp(ImmutableProp prop) {
-            return autoAttachingAll || autoAttachingSet.contains(prop);
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
@@ -196,16 +185,21 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             return this;
         }
 
+        /**
+         * Will be deleted in 1.0
+         */
+        @Deprecated
         @Override
         public Cfg setAutoAttachingAll() {
-            autoAttachingAll = true;
             return this;
         }
 
+        /**
+         * Will be deleted in 1.0
+         */
+        @Deprecated
         @Override
         public Cfg setAutoAttaching(ImmutableProp prop) {
-            validate();
-            autoAttachingSet.add(prop);
             return this;
         }
 
@@ -269,7 +263,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public Data freeze() {
             if (!frozen) {
                 keyPropMultiMap = Collections.unmodifiableMap(keyPropMultiMap);
-                autoAttachingSet = Collections.unmodifiableSet(autoAttachingSet);
                 autoCheckingSet = Collections.unmodifiableSet(autoCheckingSet);
                 appendOnlySet = Collections.unmodifiableSet(appendOnlySet);
                 dissociateActionMap = Collections.unmodifiableMap(dissociateActionMap);
@@ -283,8 +276,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             if (this == o) return true;
             if (!(o instanceof Data)) return false;
             Data data = (Data) o;
-            return autoAttachingAll == data.autoAttachingAll &&
-                    autoCheckingAll == data.autoCheckingAll &&
+            return autoCheckingAll == data.autoCheckingAll &&
                     appendOnlyAll == data.appendOnlyAll &&
                     pessimisticLock == data.pessimisticLock &&
                     sqlClient.equals(data.sqlClient) &&
@@ -292,7 +284,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     mode == data.mode &&
                     deleteMode == data.deleteMode &&
                     keyPropMultiMap.equals(data.keyPropMultiMap) &&
-                    autoAttachingSet.equals(data.autoAttachingSet) &&
                     autoCheckingSet.equals(data.autoCheckingSet) &&
                     appendOnlySet.equals(data.appendOnlySet) &&
                     dissociateActionMap.equals(data.dissociateActionMap);
@@ -306,8 +297,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     mode,
                     deleteMode,
                     keyPropMultiMap,
-                    autoAttachingAll,
-                    autoAttachingSet,
                     autoCheckingAll,
                     autoCheckingSet,
                     appendOnlyAll,
@@ -325,8 +314,6 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     ", mode=" + mode +
                     ", deleteMode=" + deleteMode +
                     ", keyPropMultiMap=" + keyPropMultiMap +
-                    ", autoAttachingAll=" + autoAttachingAll +
-                    ", autoAttachingSet=" + autoAttachingSet +
                     ", autoCheckingAll=" + autoCheckingAll +
                     ", autoCheckingSet=" + autoCheckingSet +
                     ", dissociateActionMap=" + dissociateActionMap +

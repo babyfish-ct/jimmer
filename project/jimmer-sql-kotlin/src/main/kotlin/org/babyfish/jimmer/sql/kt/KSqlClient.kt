@@ -120,7 +120,6 @@ interface KSqlClient {
     fun <E: Any> save(entity: E, mode: SaveMode = SaveMode.UPSERT): KSimpleSaveResult<E> =
         entities.save(entity) {
             setMode(mode)
-            setAutoAttachingAll()
         }
 
     fun <E: Any> save(entity: E, block: KSaveCommandDsl.() -> Unit): KSimpleSaveResult<E> =

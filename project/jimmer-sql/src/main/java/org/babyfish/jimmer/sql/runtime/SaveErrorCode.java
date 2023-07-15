@@ -16,9 +16,6 @@ public enum SaveErrorCode {
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
     CANNOT_DISSOCIATE_TARGETS,
 
-    @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
-    CANNOT_CREATE_TARGET,
-
 
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
     NO_ID_GENERATOR,

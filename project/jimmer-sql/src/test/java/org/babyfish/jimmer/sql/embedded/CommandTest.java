@@ -28,8 +28,7 @@ public class CommandTest extends AbstractMutationTest {
                                                             .applyId(id -> id.setA(1).setB(1).setC(3))
                                                             .setName("order-item-1-3")
                                             );
-                                }),
-                                true
+                                })
                         )
                         .configure(cfg ->
                                 cfg.setDissociateAction(OrderItemProps.ORDER, DissociateAction.SET_NULL)
@@ -122,8 +121,7 @@ public class CommandTest extends AbstractMutationTest {
                                                             .applyId(id -> id.setA(1).setB(1).setC(3))
                                                             .setName("order-item-1-3")
                                             );
-                                }),
-                                true
+                                })
                         )
                         .configure(cfg ->
                                 cfg.setDissociateAction(OrderItemProps.ORDER, DissociateAction.DELETE)
@@ -220,8 +218,7 @@ public class CommandTest extends AbstractMutationTest {
                                                                 .setId(OrderIdDraft.$.produce(id -> id.setX("001").setY("002")))
                                                                 .setName("order-2")
                                                 )
-                                ),
-                                true
+                                )
                         ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -278,8 +275,7 @@ public class CommandTest extends AbstractMutationTest {
                                                                 .setId(ProductIdDraft.$.produce(id -> id.setAlpha("00A").setBeta("00C")))
                                                                 .setName("Bus")
                                                 )
-                                ),
-                                true
+                                )
                         ),
                 ctx -> {
                     ctx.statement(it -> {
@@ -385,8 +381,7 @@ public class CommandTest extends AbstractMutationTest {
                                                 .addIntoOrderItems(item ->
                                                         item.applyId(id -> id.setA(1).setB(2).setC(1))
                                                 )
-                                ),
-                                true
+                                )
                         ),
                 ctx -> {
                     ctx.statement(it -> {

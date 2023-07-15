@@ -232,51 +232,6 @@ public class ManyToOneTest extends AbstractMutationTest {
         Assertions.assertEquals(1, result.getAffectedRowCount(Book.class));
     }
 
-    // This exception will never be raised if you use spring-data-jimmer
-    // because this switch has already been turned on by it.
-    @Test
-    public void testAttachParentFailed() {
-
-        jdbc(
-                "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
-                200L, "SQL in Action", 1, new BigDecimal(45));
-
-        SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
-            sql().getEntities().save(
-                    BookDraft.$.produce(book -> {
-                        book.setName("SQL in Action");
-                        book.setEdition(1);
-                        book.setPrice(new BigDecimal(49));
-                        book.applyStore(store -> {
-                            store.setName("TURING");
-                            store.setWebsite("https://www.turing.com");
-                        });
-                    })
-            );
-        });
-        Assertions.assertEquals(
-                "Save error caused by the path: \"<root>.store\": " +
-                        "Cannot insert object because insert operation for this path is disabled, " +
-                        "please call `setAutoAttaching(BookProps.STORE)` " +
-                        "or `setAutoAttachingAll()` of the save command",
-                ex.getMessage()
-        );
-
-        assertExecutedStatements(
-
-                // Select the parent object by key.
-                //
-                // If no data selected, report error because the switch to
-                // automatically create associated objects has not been turned on
-                new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME " +
-                                "from BOOK_STORE tb_1_ " +
-                                "where tb_1_.NAME = ?",
-                        "TURING"
-                )
-        );
-    }
-
     @Test
     public void testAttachParent() {
 

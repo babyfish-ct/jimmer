@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -360,6 +361,9 @@ public class TriggersImpl implements Triggers {
     }
 
     private List<AssociationListener> associationListeners(ImmutableProp prop) {
+        if (prop == null) {
+            return Collections.emptyList();
+        }
         List<AssociationListener> listeners = new ArrayList<>(globalAssociationListeners);
         CopyOnWriteArrayList<AssociationListener> list = associationListenerMultiMap.get(prop);
         if (list != null) {

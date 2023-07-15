@@ -191,58 +191,6 @@ public class OneToManyTest extends AbstractMutationTest {
         Assertions.assertEquals(1, result.getTotalAffectedRowCount());
     }
 
-    // This exception will never be raised if you use spring-data-jimmer
-    // because this switch has already been turned on by it.
-    @Test
-    public void testAttachChildFailed() {
-
-        jdbc("insert into book_store(id, name) values(?, ?)", 1L, "MANNING");
-
-        SaveException ex = Assertions.assertThrows(SaveException.class, () -> {
-                    sql().getEntities().save(
-                            BookStoreDraft.$.produce(store -> {
-                                store.setName("MANNING");
-                                store.addIntoBooks(book -> {
-                                    book.setName("SQL in Action");
-                                    book.setEdition(1);
-                                    book.setPrice(new BigDecimal(49));
-                                });
-                            })
-                    );
-        });
-        Assertions.assertEquals(
-                "Save error caused by the path: \"<root>.books\": " +
-                        "Cannot insert object because insert operation for this path is disabled, " +
-                        "please call `setAutoAttaching(BookStoreProps.BOOKS)` or " +
-                        "`setAutoAttachingAll()` of the save command",
-                ex.getMessage()
-        );
-
-        assertExecutedStatements(
-
-                // Query aggregate-root by key
-                new ExecutedStatement(
-                        "select tb_1_.ID, tb_1_.NAME from BOOK_STORE tb_1_ " +
-                                "where tb_1_.NAME = ?",
-                        "MANNING"
-                ),
-
-                // Aggregate-root exists, but not changed, do nothing
-
-                // Query child object by key
-                // In this test case, nothing will be found, it need to be inserted.
-                // However, the switch to automatically create associated objects
-                // has not been turned on so that error will be raised
-                new ExecutedStatement(
-                        "select " +
-                                "tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
-                                "from BOOK tb_1_ " +
-                                "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
-                        "SQL in Action", 1
-                )
-        );
-    }
-
     @Test
     public void testAttachChild() {
 

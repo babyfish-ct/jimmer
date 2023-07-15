@@ -357,11 +357,7 @@ class Saver {
         if (isNonIdPropLoaded(associatedDraftSpi, true)) {
             AbstractEntitySaveCommandImpl.Data associatedData =
                     new AbstractEntitySaveCommandImpl.Data(data);
-            associatedData.setMode(
-                    data.isAutoAttachingProp(prop) ?
-                            SaveMode.UPSERT :
-                            SaveMode.UPDATE_ONLY
-            );
+            associatedData.setMode(SaveMode.UPSERT);
             Saver associatedSaver = new Saver(this, associatedData, prop);
             associatedSaver.saveImpl(associatedDraftSpi);
         }
@@ -409,25 +405,6 @@ class Saver {
                 addOutput(AffectedTable.of(draftSpi.__type()), 0);
                 return ObjectType.UNKNOWN;
             }
-            String guide;
-            if (path.getType().isKotlinClass()) {
-                guide = "call `setAutoAttaching(" +
-                        path.getProp().getDeclaringType().getJavaClass().getSimpleName() +
-                        "::" +
-                        path.getProp().getName() +
-                        ")` or `setAutoAttachingAll()` of the save command";
-            } else {
-                guide = "call `setAutoAttaching(" +
-                        path.getProp().getDeclaringType().getJavaClass().getSimpleName() +
-                        "Props." +
-                        DatabaseIdentifiers.comparableIdentifier(path.getProp().getName()) +
-                        ")` or `setAutoAttachingAll()` of the save command";
-            }
-            throw new SaveException(
-                    SaveErrorCode.CANNOT_CREATE_TARGET,
-                    path,
-                    "Cannot insert object because insert operation for this path is disabled, please " + guide
-            );
         }
 
         if (trigger != null) {

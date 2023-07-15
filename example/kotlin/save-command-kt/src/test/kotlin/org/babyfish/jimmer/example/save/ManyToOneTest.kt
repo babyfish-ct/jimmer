@@ -233,49 +233,6 @@ class ManyToOneTest : AbstractMutationTest() {
     }
 
     @Test
-    fun testAttachParentFailed() {
-        jdbc(
-            "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
-            200L, "SQL in Action", 1, BigDecimal(45)
-        )
-        val ex = Assertions.assertThrows(SaveException::class.java) {
-            sql.entities.save(
-                new(Book::class).by {
-                    name = "SQL in Action"
-                    edition = 1
-                    price = BigDecimal(49)
-                    store().apply {
-                        name = "TURING"
-                        website = "http://www.turing.com"
-                    }
-                }
-            )
-        }
-
-        Assertions.assertEquals(
-            "Save error caused by the path: \"<root>.store\": " +
-                "Cannot insert object because insert operation for this path is disabled, " +
-                "please call `setAutoAttaching(Book::store)` " +
-                "or `setAutoAttachingAll()` of the save command",
-            ex.message
-        )
-
-        assertExecutedStatements(
-
-            // Select the parent object by key.
-            //
-            // If no data selected, report error because the switch to
-            // automatically create associated objects has not been turned on
-            ExecutedStatement(
-                "select tb_1_.ID, tb_1_.NAME " +
-                    "from BOOK_STORE tb_1_ " +
-                    "where tb_1_.NAME = ?",
-                "TURING"
-            )
-        )
-    }
-
-    @Test
     fun testAttachParent() {
 
         jdbc(
