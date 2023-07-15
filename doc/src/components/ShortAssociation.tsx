@@ -1,5 +1,6 @@
-import { FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Stack, TextField } from "@mui/material";
-import React, { ChangeEvent, FC, memo, useCallback, useState } from "react";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import { FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Stack, TextField, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Button } from "@mui/material";
+import React, { ChangeEvent, FC, memo, useCallback, useMemo, useState } from "react";
 
 export const ShortAssociation: FC<{
     defaultValue: BookInput
@@ -43,6 +44,22 @@ export const ShortAssociation: FC<{
             authorIds = v;
         }
         setInput(old => ({...old, authorIds}));
+    }, []);
+
+    const { i18n } = useDocusaurusContext();
+
+    const isZh = useMemo(() => {
+        return i18n.currentLocale == 'zh' || i18n.currentLocale == 'zh_cn' || i18n.currentLocale == 'zh_CN';
+    }, [i18n.currentLocale]);
+
+    const [dialogVisible, setDialogVisible] = useState(false);
+    
+    const onSubmitClick = useCallback(() => {
+        setDialogVisible(true);
+    }, []);
+    
+    const onDialogClose = useCallback(() => {
+        setDialogVisible(false);
     }, []);
 
     return (
@@ -98,8 +115,23 @@ export const ShortAssociation: FC<{
                         <MenuItem value={5}>Samer Buna</MenuItem>
                     </Select>
                 </FormControl>
-                
+                <FormControl>
+                    <Button onClick={onSubmitClick} variant="contained">提交</Button>
+                </FormControl>
             </Stack>
+            <Dialog
+            open={dialogVisible}
+            onClose={onDialogClose}>
+                <DialogTitle>{isZh ? "信息" : "Info"}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        {isZh ? "仅作示范，无任何效果" : "For demonstration only, without any effect"}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onDialogClose}>关闭</Button>
+                </DialogActions>
+            </Dialog>
         </Paper>
     );
 });

@@ -5,6 +5,8 @@ title: 保存模式
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Key from '../../_shared/key.mdx';
+import { ViewMore } from '@site/src/components/ViewMore';
 
 ## 基本概念
 
@@ -51,7 +53,7 @@ val book = new(Book::class).by {
     id = 20
     name = "SQL in Action"
     edition = 1
-    price = BigDecimal("59.9")
+    price = BigDecimal("39.9")
     store = makeIdOnly(BookStore::class, 2L)
 }
 // highlight-next-line
@@ -128,4 +130,314 @@ sqlClient.save(book)
 
 ## 不指定对象的id
 
-在上面的例子中，我们为被保存的数据制定了
+在上面的例子中，我们为被保存的对象指定了id。
+
+然而，很多时候，我们的实体的id具备自动增长策略，如果为了插入对象，则无需指定id。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    // highlight-next-line
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+
+    String name();
+
+    int edition();
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+public interface Book {
+
+    @Id
+    // highlight-next-line
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    val name: String
+
+    val edition: Int
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+</Tabs>
+
+这里，`Book.id`被`@GeneratedValue`修饰，采用了自动编号。因此，插入Book时无需指定id。
+
+为了插入id属性缺失的对象，有两种方法
+
+-   不指定@Key属性
+
+-   指定@Key属性
+
+`@Key`是Jimmer中一个非常重要的概念，**后文**会做详细介绍，这里暂不讨论。
+
+### 不指定@Key属性 *(不推荐)*
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = BookDraft.$.produce(draft -> {
+    draft.setName("SQL in Action");
+    draft.setEdition(1);
+    draft.setPrice(new BigDecimal("39.9"));
+    draft.setStore(
+        ImmutableObjects.makeIdOnly(BookStore.class, 2L)
+    );
+});
+sqlClient.save(book);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = new(Book::class).by {
+    name = "SQL in Action"
+    edition = 1
+    price = BigDecimal("39.9")
+    store = makeIdOnly(BookStore::class, 2L)
+}
+sqlClient.save(book)
+```
+
+</TabItem>
+</Tabs>
+
+很明显，被保存的对象的id属性并未被指定，`Book`类型并未声明@Key属性。所以，这是一个既无id也无key的对象。
+
+:::warning
+这里，既无id也无key的对象是聚合根。
+
+然而，对于关联对象而言，默认情况下，既无id也无key的关联对象会导致异常。这将在后续文档中讨论。
+:::
+
+当被保存的聚合根既无id也无key时
+
+-   UPSERT: 不经查询和判断，直接插入对象，如同INSERT_ONLY一般
+
+-   INSERT_ONLY: 插入对象
+
+-   UPDATE_ONLY: 不执行任何SQL，同时告诉开发人员影响行数为0
+
+上面的例子的保存模式是默认的`UPSERT`，因此，生成如下SQL
+
+```sql
+insert into BOOK(NAME, EDITION, PRICE, STORE_ID)
+values
+    (? /* SQL in Action */, ? /* 1 */, ? /* 39.9 */, ? /* 2 */)
+```
+
+这里，并未指定ID列的值，采用数据库的自动编号。
+
+开发人员也可以获取数据被插入后被自动分配的id，如下：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book book = ...略...;
+long newestBookId = sqlClient.save(book)
+    // highlight-next-line
+    .getNewEntity()
+    .getId();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val book = ...略...
+val newestBookId = sqlClient.save(book)
+    // highlight-next-line
+    .newEntity
+    .id;
+```
+
+</TabItem>
+</Tabs>
+
+`save`函数返回一个对象，包含 *（但不限于）* 两个属性：`oldEntity`和`newEntity`。其中，`oldEntity`就是期望被保存的原始数据结构；
+而`newEntity`表示一个新的数据结构，其形状和`oldEntity`的形状完全一致，它们的区别在于：
+
+-   如果`oldEntity`中某些对象的id属性没有被指定，那么`newEntity`中对应的对象的id属性会被指定
+
+-   如果`oldEntity`中某些对象具备乐观锁属性且对应了UPDATE语句，那么`newEntity`中对应的对象的乐观锁字段会持有新的版本号
+
+因此，我们可以通过`newEntity.id`获取聚合根对象被插入数据库后被分配的id。
+
+### 指定@Key属性 *(推荐)*
+
+如果某个实体的id被指定了某种自动生成策略 *(比如自动编号、序列、UUID、雪花ID)*，那么就会带来一个问题，实体的id属性除了充当唯一性标识外，没有任何实际的义务意义。
+
+为了应对这种情况，Jimmer引入了一个叫做`@Key`的概念，为实体引入一个具备实际业务意义的“第二主键”。限于篇幅，请点击<ViewMore buttonText="这里" title="Key的定义"><Key/></ViewMore>查看Key的精确定义。
+
+:::tip
+对保存指令而言，`@Key`是一个极其重要的概念。
+
+只要实体的id除了充当唯一性标识外没有任何实际的义务意义，就应该为实体配置key属性。
+:::
+
+1.  修改实体，添加`@Key`的定义
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        long id();
+
+        // highlight-next-line
+        @Key
+        String name();
+
+        // highlight-next-line
+        @Key
+        int edition();
+
+        ...省略其他属性...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    public interface Book {
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long
+
+        // highlight-next-line
+        @Key
+        val name: String
+
+        // highlight-next-line
+        @Key
+        val edition: Int
+
+        ...省略其他属性...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这个例子中，`name`和`edition`两个属性联合组成key，这表示，这两个属性联合起来形成一个唯一性约束，作为具备业务意义的主键。
+    
+    即，虽然书名可以重复，但仅限在不同的发行版本中重名，书名和发行版本联合起来，一定唯一。
+
+2.  使用保存指令保存无id对象
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = BookDraft.$.produce(draft -> {
+        draft.setName("SQL in Action");
+        draft.setEdition(1);
+        draft.setPrice(new BigDecimal("39.9"));
+        draft.setStore(
+            ImmutableObjects.makeIdOnly(BookStore.class, 2L)
+        );
+    });
+    sqlClient.save(book);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = new(Book::class).by {
+        name = "SQL in Action"
+        edition = 1
+        price = BigDecimal("39.9")
+        store = makeIdOnly(BookStore::class, 2L)
+    }
+    sqlClient.save(book)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    这次，将会生成两条SQL
+
+    1.  查询该对象在数据库中是否存在
+
+        ```sql
+        select
+            tb_1_.ID,
+            tb_1_.NAME,
+            tb_1_.EDITION
+        from BOOK tb_1_
+        where
+                /* highlight-next-line */
+                tb_1_.NAME = ? /* SQL in Action */
+            and
+                /* highlight-next-line */
+                tb_1_.EDITION = ? /* 1 */
+        ```
+
+        这里，使用key *(`name`和`edition`)* 来判断即将被保存的无id对象。
+
+    2.  第二条SQL语句会因第一条SQL的执行结果的不同而不同
+
+        -   如果第一条SQL无法查询到数据，插入
+
+            ```sql
+            insert into BOOK(NAME, EDITION, PRICE, STORE_ID)
+            values(
+                ? /* SQL in Action */, ? /* 1 */, ? /* 39.9 */, ? /* 2 */
+            )
+            ```
+
+        -   如果第一条SQL查询到了已有数据，更新
+
+            ```sql
+            update BOOK
+            set
+                NAME = ? /* SQL in Action */,
+                EDITION = ? /* 1 */,
+                PRICE = ? /* 39.9 */,
+                STORE_ID = ? /* 2 */
+            where
+                ID = ? /* 20 */
+            ```
+
+        :::caution
+        如果实体类型声明了Key属性，那么对于被保存的对象而言
+
+        -   要么指定id属性
+
+        -   要么指定所有key属性 *(对这个例子而言，就是`name`和`edition`属性)*
+
+            如果某个key属性是一个基于外键 *(无论真伪)* 的关联对象，那么这个关联对象
+
+            -   要么为null
+
+            -   要么具备id属性
+
+        否则，保存指令回抛出异常，指明对象的某些`key`属性未加载。
+        :::
