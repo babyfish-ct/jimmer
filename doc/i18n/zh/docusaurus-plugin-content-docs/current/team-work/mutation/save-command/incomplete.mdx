@@ -3,3 +3,80 @@ sidebar_position: 3
 title: 不完整对象
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+保存指令的参数是动态对象，如果动态只有部分属性被指定了，那么该对象就是一个不完整对象。
+
+为了说明不完整对象的价值，让我们来看一个实际的例子，将id为8的`Book`的`store`修改为null。
+
+为了实现这个目的，我们有两种方式
+
+-   通过[修改语句](../update-statement)执行一条UPDATE语句
+
+-   得到一个`Book`对象，修改其null属性，并保存它
+
+大部分开发都比较喜欢第二种方法，因此，本文讨论第二种方式。
+
+## JPA示范
+
+在说明不可变对象用法之前，让我们先来看看如何使用JPA实现这个功能
+
+```java title="JPA示范"
+EntityManager entityManager = ...从当前事务上下文中获取JPA会话对象，略...
+Book book = entityManager.find(Book.class, 8L);
+book.setStore(null); // JPA中实体是可变的
+// 这里调用merge仅为了清晰，可以不调，因为事务提交时JPA必然修改数据库
+entityManager.merge(book);
+```
+
+除了要将`store`修改为null外，我们并不知道其他属性的现有值。
+
+在JPA中，苦于基于简单的POJO的实体是形状固定静态类型，我们不得不查询对象的所有属性，修改`store`属性 *(其他属性保持不变)*，再次保存这个对象。
+
+哪怕对象有上百个属性，我们也不得不这样做，这形成了非常明显的浪费。
+
+## Jimmer示范
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient.update(
+    BookDraft.$.produce(draft -> {
+        draft.setId(8L);
+        draft.setStore(null);
+    })
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.update(
+    new(Book::class).by {
+        id = 8L
+        store = null
+    }
+);
+```
+
+</TabItem>
+</Tabs>
+
+-   明确使用`update` *(或`save(book, SaveMode.UPDATE_ONLY)`)* 明确表示这是一个更新操作，避免`UPSERT`模型带来的试探性查询
+
+-   凭空捏造一个Book对象，只对其`id`属性和`store`属性赋值，其他所有属性都处于未知状态。
+
+    这个不完整对象告诉Jimmer，除`store`属性外，不修改其他任何属性。
+
+Jimmer将直接生成如下SQL
+
+```sql
+update BOOK
+set
+    STORE_ID = ? /* <null: long> */
+where
+    ID = ? /* 8 */
+```

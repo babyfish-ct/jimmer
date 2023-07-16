@@ -1,6 +1,6 @@
 ---
-sidebar_position: 3
-title: 关联
+sidebar_position: 4
+title: 保存关联
 ---
 
 import Tabs from '@theme/Tabs';
@@ -282,7 +282,7 @@ sqlClient.save(order)
 之前提到
 
 :::info
-如果实体类型声明了Key属性，那么
+如果实体类型声明了Key属性 *(id除了充当唯一标识符外无任何业务意义时)*，那么
 
 -   对于被保存的关联对象而言，要么指定id属性，要么指定所有key属性。否则会异常。
 
