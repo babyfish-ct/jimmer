@@ -31,16 +31,19 @@ public interface SimpleEntitySaveCommand<E>
         return configure(cfg -> cfg.setKeyProps(props));
     }
 
+    @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttachingAll() {
         return configure(Cfg::setAutoAttachingAll);
     }
 
+    @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttaching(TypedProp.Association<?, ?> prop) {
         return configure(cfg -> cfg.setAutoAttaching(prop));
     }
 
+    @Deprecated
     @NewChain
     default SimpleEntitySaveCommand<E> setAutoAttaching(ImmutableProp prop) {
         return configure(cfg -> cfg.setAutoAttaching(prop));
@@ -57,8 +60,18 @@ public interface SimpleEntitySaveCommand<E>
     }
 
     @NewChain
+    default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop, boolean checking) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop, checking));
+    }
+
+    @NewChain
     default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop) {
         return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
+    }
+
+    @NewChain
+    default SimpleEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop, checking));
     }
 
     @NewChain

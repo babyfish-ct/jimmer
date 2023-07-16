@@ -27,7 +27,7 @@ public @interface JoinColumn {
     /**
      * A column name of foreign key
      */
-    String name();
+    String name() default "";
 
     /**
      * A column name of the primary key of the parent table referenced by the foreign key

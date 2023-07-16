@@ -25,7 +25,7 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { useImmer } from "use-immer";
 import { Draft } from "immer";
 
-export const ComplexForm: FC = memo(() => {
+export const LongAssociation: FC = memo(() => {
     
     const { i18n } = useDocusaurusContext();
 
@@ -88,6 +88,24 @@ export const ComplexForm: FC = memo(() => {
             })
         }
     }, [setOrder, userMap]);
+
+    const onPrivinceChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        setOrder(order => {
+            order.province = e.target.value;
+        });
+    }, [setOrder]);
+
+    const onCityChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        setOrder(order => {
+            order.city = e.target.value;
+        });
+    }, [setOrder]);
+
+    const onAddressChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        setOrder(order => {
+            order.address = e.target.value;
+        });
+    }, [setOrder]);
 
     const onProductChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, rowId: number) => {
         setOrder(order => {
@@ -166,22 +184,25 @@ export const ComplexForm: FC = memo(() => {
                         </TextField>
                     </Grid>
                     <Grid item xs={4}>
-                    <TextField
-                    fullWidth
-                    label="省份"
-                    value={userMap.get(order.userId)?.province}/>
+                        <TextField
+                        fullWidth
+                        label="省份"
+                        value={order.province}
+                        onChange={onPrivinceChange}/>
                     </Grid>
                     <Grid item xs={4}>
-                    <TextField
-                    fullWidth
-                    label="城市"
-                    value={userMap.get(order.userId)?.city}/> 
+                        <TextField
+                        fullWidth
+                        label="城市"
+                        value={order.city}
+                        onChange={onCityChange}/> 
                     </Grid>
                     <Grid item xs={12}>
                         <TextField
                         fullWidth
                         label="地址"
-                        value={userMap.get(order.userId)?.address}/>
+                        value={order.address}
+                        onChange={onAddressChange}/>
                     </Grid>
                     <Grid item xs={12}>
                         <Divider textAlign="left">订单明细</Divider>

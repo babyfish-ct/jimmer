@@ -120,6 +120,16 @@ public abstract class AssociationProp implements ImmutableProp {
     }
 
     @Override
+    public boolean isTargetForeignKeyReal(MetadataStrategy strategy) {
+        return true;
+    }
+
+    @Override
+    public <S extends Storage> S getStorage(MetadataStrategy strategy) {
+        return null;
+    }
+
+    @Override
     public SqlTemplate getSqlTemplate() {
         return null;
     }

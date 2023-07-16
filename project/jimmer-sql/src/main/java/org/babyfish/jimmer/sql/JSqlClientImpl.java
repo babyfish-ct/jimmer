@@ -89,6 +89,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final FilterManager filterManager;
 
+    private final TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel;
+
     private final DraftInterceptorManager draftInterceptorManager;
 
     private final String microServiceName;
@@ -120,6 +122,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             BinLog binLog,
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
+            TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel,
             DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange
@@ -156,6 +159,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.binLog = binLog;
         this.filterManager = filterManager;
         this.transientResolverManager = transientResolverManager;
+        this.targetForeignKeyCheckingLevel = targetForeignKeyCheckingLevel;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
@@ -402,6 +406,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 transientResolverManager,
+                targetForeignKeyCheckingLevel,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -439,6 +444,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 cfg.getFilterManager(),
                 transientResolverManager,
+                targetForeignKeyCheckingLevel,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -471,6 +477,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 transientResolverManager,
+                targetForeignKeyCheckingLevel,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -490,6 +497,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public Filters getFilters() {
         return filterManager;
+    }
+
+    @Override
+    public TargetForeignKeyCheckingLevel getTargetForeignKeyCheckingLevel() {
+        return targetForeignKeyCheckingLevel;
     }
 
     @Override
@@ -574,13 +586,16 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private boolean ignoreBuiltInFilters = false;
 
+        private TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel =
+                TargetForeignKeyCheckingLevel.NONE;
+
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
         private ObjectMapper binLogObjectMapper;
 
-        private Map<ImmutableProp, BinLogPropReader> binLogPropReaderMap = new HashMap<>();
+        private final Map<ImmutableProp, BinLogPropReader> binLogPropReaderMap = new HashMap<>();
 
-        private Map<Class<?>, BinLogPropReader> typeBinLogPropReaderMap = new HashMap<>();
+        private final Map<Class<?>, BinLogPropReader> typeBinLogPropReaderMap = new HashMap<>();
 
         private boolean isForeignKeyEnabledByDefault = true;
 
@@ -913,6 +928,15 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setTargetForeignKeyCheckingLevel(TargetForeignKeyCheckingLevel checkingType) {
+            this.targetForeignKeyCheckingLevel =
+                    targetForeignKeyCheckingLevel != null ?
+                            targetForeignKeyCheckingLevel :
+                            TargetForeignKeyCheckingLevel.NONE;
+            return this;
+        }
+
+        @Override
         public Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
             return addDraftInterceptors(Collections.singletonList(interceptor));
         }
@@ -1143,6 +1167,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     binLog,
                     filterManager,
                     transientResolverManager,
+                    targetForeignKeyCheckingLevel,
                     new DraftInterceptorManager(interceptors),
                     microServiceName,
                     microServiceExchange
