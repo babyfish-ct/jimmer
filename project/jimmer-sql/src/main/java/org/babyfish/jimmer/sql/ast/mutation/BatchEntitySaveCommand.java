@@ -69,8 +69,18 @@ public interface BatchEntitySaveCommand<E>
     }
 
     @NewChain
+    default BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop, boolean checking) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop, checking));
+    }
+
+    @NewChain
     default BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop) {
         return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop));
+    }
+
+    @NewChain
+    default BatchEntitySaveCommand<E> setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
+        return configure(cfg -> cfg.setAutoIdOnlyTargetChecking(prop, checking));
     }
 
     @NewChain

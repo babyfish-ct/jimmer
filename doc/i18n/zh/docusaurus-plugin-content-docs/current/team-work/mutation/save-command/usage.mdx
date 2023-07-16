@@ -392,22 +392,47 @@ sqlClient.save(treeNode)
     以`Food`为例，它有两个子节点`Drinks`和`Bread`。然而，这并非仅仅表示对`Drinks`和`Bread`两个子节点简单地进行insert或update，
     还要在`Food`节点在数据库中已经存在的情况下，考虑其是否已有的非`Drinks`和`Breads`的其他子节点，并将这些子节点和父节点脱勾（比如，删除这些子节点）
 
-    例如，数据库已有数据
+    例如
+
+    <table>
+    <thead>
+    <tr>
+    <th>数据库已有数据结构</th>
+    <th>用户期望保存的数据结构</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>
+
     ```
     +-Food
     |
-    +-----Bread(忽略子节点)
     |
-    \-----Meat(忽略子节点)
+    |
+    +-----Meat(忽略子节点)
+    |
+    \-----Bread(忽略子节点)
     ```
-    现在，要保存的数据为
+
+    </td>
+    <td>
+
     ```
     +-Food
     |
     +-----Drinks(忽略子节点)
     |
+    |
+    |
     \-----Bread(忽略子节点)
     ```
+
+    </td>
+    </tr>
+    </tbody>
+    </table>
+
     最终，对子节点而言，会导致的操作为
     -   插入`Drinks`
     -   修改`Bread`

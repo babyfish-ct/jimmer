@@ -57,6 +57,8 @@ public interface JSqlClientImplementor extends JSqlClient {
 
     Class<? extends TransientResolverProvider> getResolverProviderClass();
 
+    TargetForeignKeyCheckingLevel getTargetForeignKeyCheckingLevel();
+
     DraftInterceptor<?> getDraftInterceptor(ImmutableType type);
 
     Reader<?> getReader(Class<?> type);

@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.DatabaseValidationMode;
+import org.babyfish.jimmer.sql.runtime.TargetForeignKeyCheckingLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -37,6 +38,9 @@ public class JimmerProperties {
 
     @NotNull
     private final TriggerType triggerType;
+
+    @NotNull
+    private final TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel;
 
     @NotNull
     private final int transactionCacheOperatorFixedDelay;
@@ -73,6 +77,7 @@ public class JimmerProperties {
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
+            @Nullable TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel,
             @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
@@ -152,6 +157,10 @@ public class JimmerProperties {
                     );
         }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
+        this.targetForeignKeyCheckingLevel =
+                targetForeignKeyCheckingLevel != null ?
+                        targetForeignKeyCheckingLevel :
+                        TargetForeignKeyCheckingLevel.NONE;
         this.transactionCacheOperatorFixedDelay =
                 transactionCacheOperatorFixedDelay != null ?
                         transactionCacheOperatorFixedDelay :
@@ -220,6 +229,11 @@ public class JimmerProperties {
     @NotNull
     public TriggerType getTriggerType() {
         return triggerType;
+    }
+
+    @NotNull
+    public TargetForeignKeyCheckingLevel getTargetForeignKeyCheckingLevel() {
+        return targetForeignKeyCheckingLevel;
     }
 
     @NotNull

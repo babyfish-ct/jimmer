@@ -326,6 +326,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addDisabledFilters(Collection<? extends Filter<?>> filters);
 
         @OldChain
+        Builder setTargetForeignKeyCheckingLevel(TargetForeignKeyCheckingLevel checkingType);
+
+        @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
 
         @OldChain

@@ -100,7 +100,11 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     private Boolean isRemote;
 
-    private final MetaCache<Storage> storageCache = new MetaCache<>(it -> Storages.of(this, it));
+    private final MetaCache<Storage> storageCache =
+            new MetaCache<>(it -> Storages.of(this, it));
+
+    private final MetaCache<Boolean> isTargetForeignKeyRealCache =
+            new MetaCache<>(this::isTargetForeignKeyReal0);
 
     ImmutablePropImpl(
             ImmutableTypeImpl declaringType,
@@ -480,6 +484,28 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         return isFormula;
     }
 
+    @Override
+    public boolean isTargetForeignKeyReal(MetadataStrategy strategy) {
+        return isTargetForeignKeyRealCache.get(strategy);
+    }
+
+    private boolean isTargetForeignKeyReal0(MetadataStrategy strategy) {
+        if (!isAssociation(TargetLevel.PERSISTENT)) {
+            return false;
+        }
+        Storage storage = getStorage(strategy);
+        if (storage == null && getPrimaryAnnotationType() == ManyToMany.class) {
+            storage = getMappedBy().<MiddleTable>getStorage(strategy).getInverse();
+        }
+        if (storage instanceof MiddleTable) {
+            return ((MiddleTable)storage).getTargetColumnDefinition().isForeignKey();
+        }
+        if (storage instanceof ColumnDefinition) {
+            return ((ColumnDefinition)storage).isForeignKey();
+        }
+        return false;
+    }
+
     @Nullable
     @Override
     public SqlTemplate getSqlTemplate() {
@@ -488,7 +514,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
 
     @Override
     public boolean isView() {
-        return idViewBaseProp != null || idViewBaseProp != null;
+        return idViewBaseProp != null || manyToManyViewBaseProp != null;
     }
 
     @Override

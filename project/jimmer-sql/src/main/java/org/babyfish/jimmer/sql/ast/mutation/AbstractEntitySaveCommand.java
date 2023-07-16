@@ -20,10 +20,6 @@ public interface AbstractEntitySaveCommand {
     @NewChain
     AbstractEntitySaveCommand setKeyProps(ImmutableProp ... props);
 
-    /**
-     * Will be deleted in 1.0
-     */
-    @Deprecated
     @NewChain
     default AbstractEntitySaveCommand setKeyProps(TypedProp<?, ?> ... props) {
         return setKeyProps(
@@ -128,11 +124,21 @@ public interface AbstractEntitySaveCommand {
 
         @OldChain
         default Cfg setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop) {
-            return setAutoIdOnlyTargetChecking(prop.unwrap());
+            return setAutoIdOnlyTargetChecking(prop.unwrap(), true);
         }
 
         @OldChain
-        Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop);
+        default Cfg setAutoIdOnlyTargetChecking(TypedProp.Association<?, ?> prop, boolean checking) {
+            return setAutoIdOnlyTargetChecking(prop.unwrap(), checking);
+        }
+
+        @OldChain
+        default Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop) {
+            return setAutoIdOnlyTargetChecking(prop, true);
+        }
+
+        @OldChain
+        Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking);
 
         @OldChain
         default Cfg setAppendOnly(TypedProp.Association<?, ?> prop) {

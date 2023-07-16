@@ -18,13 +18,7 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 
 通常，UI设计会采用单选框 *(关联引用)* 或多选框 *(关联集合)*，例如
 
-<ShortAssociation defaultValue={{
-    name: "Learning GraphQL",
-    edition: 1,
-    price: 45,
-    storeId: 1,
-    authorIds: [1, 2]
-}}/>
+<ShortAssociation/>
 
 <div>&nbsp;</div>
 
@@ -434,3 +428,11 @@ sqlClient.save(order)
     :::
 
     所以，上例中，保存指令会认为所有子节点的`parent`属性都已经被设置了。即，所有子对象都同时具备`name`和`parent`属性，保存指令可顺利运行。
+
+## 脱勾操作
+
+对于关联对象而言，插入或更新操作和之前介绍过的保存聚合根对象操作并无较大差异。用户只需要记住关联对象不受[保存模式](./save-mode)控制 *(也可认为关联对象的保存模式只有`UPSERT`)* 即可。
+
+然而，关联对象具有一个非常特殊的操作：脱勾。
+
+脱勾操作时一个非常重要的概念，限于篇幅，我们会在[下一篇文档](./dissociation)中对其详细介绍。

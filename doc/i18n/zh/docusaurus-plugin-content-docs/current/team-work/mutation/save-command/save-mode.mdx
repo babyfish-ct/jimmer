@@ -294,60 +294,99 @@ val newestBookId = sqlClient.save(book)
 只要实体的id除了充当唯一性标识外没有任何实际的义务意义，就应该为实体配置key属性。
 :::
 
-1.  修改实体，添加`@Key`的定义
+1.  为实体类型`Book`定义`@Key`属性
 
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
+    为实体定义Key属性有两种方法
 
-    ```java title="Book.java"
-    @Entity
-    public interface Book {
+    -   在实体上用注解静态配置，静态配置是全局的。
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        long id();
+    -   在代码中代码动态配置，但动态配置只影响当前保存指令。动态配置可以覆盖静态配置。
 
-        // highlight-next-line
-        @Key
-        String name();
+    下面我们给出两种方法的示范
 
-        // highlight-next-line
-        @Key
-        int edition();
+    -   静态配置 *(默认配置，供绝大部分业务使用)*
 
-        ...省略其他属性...
-    }
-    ```
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
 
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
+        ```java title="Book.java"
+        @Entity
+        public interface Book {
 
-    ```kotlin title="Book.kt"
-    @Entity
-    public interface Book {
+            @Id
+            @GeneratedValue(strategy = GenerationType.IDENTITY)
+            long id();
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long
+            // highlight-next-line
+            @Key
+            String name();
 
-        // highlight-next-line
-        @Key
-        val name: String
+            // highlight-next-line
+            @Key
+            int edition();
 
-        // highlight-next-line
-        @Key
-        val edition: Int
+            ...省略其他属性...
+        }
+        ```
 
-        ...省略其他属性...
-    }
-    ```
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
 
-    </TabItem>
-    </Tabs>
+        ```kotlin title="Book.kt"
+        @Entity
+        public interface Book {
 
-    这个例子中，`name`和`edition`两个属性联合组成key，这表示，这两个属性联合起来形成一个唯一性约束，作为具备业务意义的主键。
-    
-    即，虽然书名可以重复，但仅限在不同的发行版本中重名，书名和发行版本联合起来，一定唯一。
+            @Id
+            @GeneratedValue(strategy = GenerationType.IDENTITY)
+            val id: Long
+
+            // highlight-next-line
+            @Key
+            val name: String
+
+            // highlight-next-line
+            @Key
+            val edition: Int
+
+            ...省略其他属性...
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+
+        这个例子中，`name`和`edition`两个属性联合组成key，这表示，这两个属性联合起来形成一个唯一性约束，作为具备业务意义的主键。
+        
+        即，虽然书名可以重复，但仅限在不同的发行版本中重名，书名和发行版本联合起来，一定唯一。
+
+    -   运行时覆盖 *(仅针对单条保存指令，极少数有特殊需求的业务使用)*
+
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        sqlClient
+            .getEntities()
+            .saveCommand(book)
+            // highlight-next-line
+            .setKeyProps(BookProps.NAME, BookProps.EDITION)
+            .execute();
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        sqlClient
+            .entities
+            .saveCommand(book)
+            // highlight-next-line
+            .setDissociateAction(Book::name, Book::edition)
+            .execute()
+        ```
+
+        </TabItem>
+        </Tabs>
 
 2.  使用保存指令保存无id对象
 

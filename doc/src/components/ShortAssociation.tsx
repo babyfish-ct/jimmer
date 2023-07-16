@@ -2,11 +2,17 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Stack, TextField, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Button } from "@mui/material";
 import React, { ChangeEvent, FC, memo, useCallback, useMemo, useState } from "react";
 
-export const ShortAssociation: FC<{
-    defaultValue: BookInput
-}> = memo(({defaultValue}) => {
+export const ShortAssociation: FC = memo(() => {
 
-    const [input, setInput] = useState<BookInput>(defaultValue);
+    const [input, setInput] = useState<BookInput>(() => (
+        {
+            name: "Learning GraphQL",
+            edition: 1,
+            price: 45,
+            storeId: 1,
+            authorIds: [1, 2]
+        }
+    ));
 
     const onNameChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
         setInput(old => ({...old, name: e.target.value}));

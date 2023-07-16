@@ -3,12 +3,14 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.runtime.TargetForeignKeyCheckingLevel;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -59,6 +61,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private Set<ImmutableProp> autoCheckingSet;
 
+        private Set<ImmutableProp> autoUncheckingSet;
+
         private boolean appendOnlyAll;
 
         private Set<ImmutableProp> appendOnlySet;
@@ -77,6 +81,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.deleteMode = DeleteMode.AUTO;
             this.keyPropMultiMap = new LinkedHashMap<>();
             this.autoCheckingSet = new HashSet<>();
+            this.autoUncheckingSet = new HashSet<>();
             this.appendOnlySet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
             this.pessimisticLock = false;
@@ -90,6 +95,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoCheckingAll = base.autoCheckingAll;
             this.autoCheckingSet = new HashSet<>(base.autoCheckingSet);
+            this.autoUncheckingSet = new HashSet<>(base.autoUncheckingSet);
             this.appendOnlyAll = base.appendOnlyAll;
             this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
@@ -120,7 +126,16 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
-            return autoCheckingAll || autoCheckingSet.contains(prop);
+            switch (sqlClient.getTargetForeignKeyCheckingLevel()) {
+                case ALL:
+                    return true;
+                case FAKE:
+                    if (!prop.isTargetForeignKeyReal(sqlClient.getMetadataStrategy())) {
+                        return true;
+                    }
+                    break;
+            }
+            return autoCheckingAll || (autoCheckingSet.contains(prop) && !autoUncheckingSet.contains(prop));
         }
 
         public boolean isAppendOnly(ImmutableProp prop) {
@@ -210,8 +225,14 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         @Override
-        public Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop) {
-            autoCheckingSet.add(prop);
+        public Cfg setAutoIdOnlyTargetChecking(ImmutableProp prop, boolean checking) {
+            if (checking) {
+                autoCheckingSet.add(prop);
+                autoUncheckingSet.remove(prop);
+            } else {
+                autoCheckingSet.remove(prop);
+                autoUncheckingSet.add(prop);
+            }
             return this;
         }
 

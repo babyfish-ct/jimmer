@@ -68,6 +68,8 @@ public interface ImmutableProp {
 
     boolean isFormula();
 
+    boolean isTargetForeignKeyReal(MetadataStrategy strategy);
+
     @Nullable
     SqlTemplate getSqlTemplate();
 

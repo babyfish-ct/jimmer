@@ -1,0 +1,51 @@
+---
+sidebar_position: 6
+title: 关联id检查
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { ShortAssociation } from '@site/src/components/ShortAssociation';
+import { LongAssociation } from '@site/src/components/LongAssociation';
+import { ViewMore } from '@site/src/components/ViewMore';
+
+## 基本概念
+
+通过之前的介绍，我们知道保存指令可以保存任意形状的数据结构，任何对象都可以进一步持有关联对象。
+
+如果某个关联对象的id被指成了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
+
+### 目标外键
+
+要解释这个问题，我们先为关联属性定义定一个概念：目标外键。
+
+-   如果关联给予中间表，则中间表中指向目标实体表的外键就是目标外键。
+
+    比如：`Book.authors`的目标外建是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段，`Author.books`的目标外建是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
+
+-   如果关联给予外建，关联本身的外键就是目标外键。
+
+    比如：`Book.store`的目标外键是`BOOK`表的`STORE_ID`字段。
+
+-   如果以上两个情况都不是，则认为你关联没有目标外键。
+
+    比如：`BookStore.books`没有目标外键。
+
+先说结论
+
+-   对于<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。
+
+-   对于<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>而言，Jimmer不可能创建不存在的关联独享，只能验证报错。
+
+    -   如果[目标外建](#目标外建)不存在或是假的 *(参见[真假外建](../../mapping/base/foreignkey))*，则通过而外的查询去验证关联id是否存在。
+
+    -   如果[目标外建](#目标外建)不存在且是真的 *(参见[真假外建](../../mapping/base/foreignkey))*，具体策略用户可配置。
+
+        -   默认情况下：Jimmer不做任何检查，如果关联id非法，关系数据库会因引用完整性非法而报错。
+
+            这时，少执行一条查询语句，代价是必须接受来自底层数据的异常信息，Jimmer也不无法对异常信息归类。
+
+        -   用户配置仍然检查，就如同[目标外建](#目标外建)是假的一般。
+
+            这时，会得到理想的异常信息和异常归类，代价是多执行了一条查询SQL。
+
