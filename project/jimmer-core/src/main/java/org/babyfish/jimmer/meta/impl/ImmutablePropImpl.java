@@ -999,7 +999,18 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     "\" cannot reference it by \"mappedBy\""
                     );
                 }
-                if (resolved.getAssociationAnnotation().annotationType() == OneToOne.class &&
+                Annotation resolvedAssociationAnnotation = resolved.getAssociationAnnotation();
+                if (resolvedAssociationAnnotation == null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", " +
+                                    "because its \"mappedBy\" property \"" +
+                                    resolved +
+                                    "\" is not association property"
+                    );
+                }
+                if (resolvedAssociationAnnotation.annotationType() == OneToOne.class &&
                         associationAnnotation.annotationType() != OneToOne.class
                 ) {
                     throw new ModelException(
@@ -1011,7 +1022,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
                                     "\" is one-to-one property"
                     );
                 }
-                if (resolved.getAssociationAnnotation().annotationType() == ManyToOne.class &&
+                if (resolvedAssociationAnnotation.annotationType() == ManyToOne.class &&
                         associationAnnotation.annotationType() != OneToMany.class
                 ) {
                     throw new ModelException(
