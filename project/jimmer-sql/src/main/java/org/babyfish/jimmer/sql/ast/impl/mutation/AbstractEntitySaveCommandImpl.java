@@ -135,7 +135,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     }
                     break;
             }
-            return autoCheckingAll || (autoCheckingSet.contains(prop) && !autoUncheckingSet.contains(prop));
+            return (autoCheckingAll || autoCheckingSet.contains(prop) && !autoUncheckingSet.contains(prop));
         }
 
         public boolean isAppendOnly(ImmutableProp prop) {
