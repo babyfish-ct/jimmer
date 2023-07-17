@@ -928,11 +928,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setTargetForeignKeyCheckingLevel(TargetForeignKeyCheckingLevel checkingType) {
-            this.targetForeignKeyCheckingLevel =
-                    targetForeignKeyCheckingLevel != null ?
-                            targetForeignKeyCheckingLevel :
-                            TargetForeignKeyCheckingLevel.NONE;
+        public Builder setTargetForeignKeyCheckingLevel(TargetForeignKeyCheckingLevel checkingLevel) {
+            targetForeignKeyCheckingLevel = checkingLevel != null ?
+                    checkingLevel :
+                    TargetForeignKeyCheckingLevel.NONE;
             return this;
         }
 
