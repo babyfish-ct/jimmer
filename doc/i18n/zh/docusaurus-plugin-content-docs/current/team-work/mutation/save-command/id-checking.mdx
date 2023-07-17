@@ -15,7 +15,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 如果某个关联对象的id被指成了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
 
-对于<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
+对于<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -58,8 +58,6 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
-这个例子中`Author`类型的key为`firstName`和`lastName`。在实际项目中，这样的key不太合理，但作为一个例子无关紧要，别太较真。
-
 生成的SQL如下
 
 ```sql
@@ -71,15 +69,13 @@ select
     tb_1_.LAST_NAME
 from AUTHOR tb_1_
 where
-        tb_1_.FIRST_NAME = ? /* Svetlana */
-    and
-        tb_1_.LAST_NAME = ? /* Isakova */
+    tb_1_.ID = ? /* 200 */
 
 // 关联对象不存在，创建之
 // highlight-next-line
-insert into AUTHOR(FIRST_NAME, LAST_NAME, GENDER)
+insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER)
 values
-    (? /* Svetlana */, ? /* Isakova */, ? /* F */)
+    (? /* 200 */, ? /* Svetlana */, ? /* Isakova */, ? /* F */)
 
 // 查询当前`Book`和`Author`之间的的关系
 select
@@ -91,11 +87,15 @@ where
 // 连接当前`Book`和刚被新建的`Author`
 insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)
 values
-    (? /* 3 */, ? /* 100 */)
+    (? /* 3 */, ? /* 200 */)
 ```
 
 :::info
-因此，<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>没有非法关联id的问题，
+可见，在保存<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为200)*，Jimmer也会按照此id创建新的关联对象，长关联根本不存在`关联id检查问题`。
+
+但是，对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
+
+因此，`关联id检查`是一个仅对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>有意义的话题。本文接下来的例子，所有的讨论都是针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的。
 :::
 
 ### 目标外键
