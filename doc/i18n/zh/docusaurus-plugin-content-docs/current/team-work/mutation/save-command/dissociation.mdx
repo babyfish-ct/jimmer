@@ -224,7 +224,7 @@ sqlClient.update(
 
 -   NONE *(默认)*: 不支持脱勾操作，通过抛出异常阻止操作
 
--   SET_NULL: 把被脱勾的子对象的外建设置为null。前提是子对象的多对一关联属性是nullable的；否则尝试此配置将会导致异常
+-   SET_NULL: 把被脱勾的子对象的外键设置为null。前提是子对象的多对一关联属性是nullable的；否则尝试此配置将会导致异常
 
 -   DELETE: 将被脱勾的子对象删除
 
@@ -298,12 +298,10 @@ sqlClient.update(
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    sqlClient
-        .entities
-        .saveCommand(book)
+    sqlClient.save(book) {
         // highlight-next-line
         .setDissociateAction(Book::store, DissociateAction.SET_NULL)
-        .execute()
+    }
     ```
 
     </TabItem>
@@ -441,7 +439,7 @@ sqlClient.update(
             )
         ```
 
-    2.  将隶属`BookStore-2`且id不是9或10的所有书籍 *(本例为`Book-11`和``Book-11``)* 的外建清空。
+    2.  将隶属`BookStore-2`且id不是9或10的所有书籍 *(本例为`Book-11`和``Book-11``)* 的外键清空。
 
         ```sql
         update BOOK

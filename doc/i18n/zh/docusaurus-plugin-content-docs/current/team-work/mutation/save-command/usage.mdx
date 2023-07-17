@@ -178,9 +178,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
             <td>
                 <ul>
                     <li>KRepository.save</li>
-                    <li>KRepository.saveCommand</li>
                     <li>KRepository.saveAll</li>
-                    <li>KRepository.saveAllCommand</li>
                     <li>KRepository.insert</li>
                     <li>KRepository.update</li>
                 </ul>
@@ -194,9 +192,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
             </td>
             <td>
                 <li>KSqlCient.entities.save</li>
-                <li>KSqlCient.entities.saveCommand</li>
                 <li>KSqlCient.entities.batchSave</li>
-                <li>KSqlCient.entities.batchSaveCommand</li>
             </td>
         </tr>
     </tbody>
@@ -204,10 +200,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
 
 其中
 
--   名称中包含`Command`的方法比较特殊，和其他方法立即执行保存指令不同，这些方法仅仅创建指令，并不马上执行，用户可以对其配置，最后调用`execute`方法执行。例如
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
+-   Java方法中名称中包含`Command`的方法比较特殊，和其他方法立即执行保存指令不同，这些方法仅仅创建指令，并不马上执行，用户可以对其配置，最后调用`execute`方法执行。例如
 
     ```java
     BookStore store = ...略...;
@@ -218,26 +211,20 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
         .execute(); ❸
     ```
 
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin
-    val store = ...略...;
-    sqlClient
-        .getEntities()
-        .saveCommand(store) ❶
-        .setPessimisticLock() ❷
-        .execute() ❸
-    ```
-
-    </TabItem>
-    </Tabs>
-
     -   ❶ 创建保存指令，但并不马上执行
 
     -   ❷ 进行某些配置 *(例子中调用了一个名为`setPessimisticLock`的方法，但其实可以通过链式风格调用多个配置方法)*
 
     -   ❸ 完成配之后，最终调用`execute`执行保存指令。
+
+    Kotlin不需要`saveCommand`方法，它采用了另外一种写法
+
+    ```kotlin
+    val store = ...略...;
+    sqlClient.save(store) {
+        setPessimisticLock() 
+    }
+    ```
 
 -   名称中包含`All`或`batch`的方法表示保存多个对象，而非一个对象
 
@@ -248,12 +235,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
 
     ```java
     BookStore store = ...略...;
-    sqlClient
-        .getEntities()
-        .saveCommand(store)
-        // highlight-next-line
-        .setMode(SaveMode.INSERT_ONLY)
-        .execute();
+    sqlClient.save(store, SaveMode.INSERT_ONLY);
     ```
 
     </TabItem>
@@ -261,12 +243,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
 
     ```kotlin
     val store = ...略...;
-    sqlClient
-        .getEntities()
-        .saveCommand(store)
-        // highlight-next-line
-        .setMode(SaveMode.INSERT_ONLY)
-        .execute()
+    sqlClient.save(store, SaveMode.INSERT_ONLY)
     ```
 
     </TabItem>

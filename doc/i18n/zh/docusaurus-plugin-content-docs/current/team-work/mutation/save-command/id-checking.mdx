@@ -1,6 +1,6 @@
 ---
 sidebar_position: 6
-title: 关联id检查
+title: 短关联id检查
 ---
 
 import Tabs from '@theme/Tabs';
@@ -10,6 +10,10 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
 
 ## 基本概念
+
+### 只针对短关联
+
+关联id检查是一个只针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的功能，对<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>无意义。
 
 通过之前的介绍，我们知道保存指令可以保存任意形状的数据结构，任何对象都可以进一步持有关联对象。
 
@@ -100,34 +104,322 @@ values
 
 ### 目标外键
 
-要解释这个问题，我们先为关联属性定义定一个概念：目标外键。
+要讨论短关联的id检查问题，我们先为关联属性定义定一个概念：目标外键。
 
 -   如果关联给予中间表，则中间表中指向目标实体表的外键就是目标外键。
 
-    比如：`Book.authors`的目标外建是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段，`Author.books`的目标外建是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
+    比如：`Book.authors`的目标外键是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段，`Author.books`的目标外键是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
 
--   如果关联给予外建，关联本身的外键就是目标外键。
+-   如果关联给予外键，关联本身的外键就是目标外键。
 
     比如：`Book.store`的目标外键是`BOOK`表的`STORE_ID`字段。
 
 -   如果以上两个情况都不是，则认为你关联没有目标外键。
 
-    比如：`BookStore.books`没有目标外键。
+    没有目标外键的关联属性，就是被指定了`mappedBy`的一对一或一对多属性。即，被`@OneToOne(mappedBy = "...")`或`@OneToMany(mappedBy="...")`修饰的属性，比如：`BookStore.books`。
 
-先说结论
+## 检查机制
 
--   
--   对于<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>而言，Jimmer不可能创建不存在的关联独享，只能验证报错。
+用户可以配置是否检查短关联对象的id，下面我们讨论各种属性在检查和不检查情况下的行为
 
-    -   如果[目标外建](#目标外建)不存在或是假的 *(参见[真假外建](../../mapping/base/foreignkey))*，则通过而外的查询去验证关联id是否存在。
+-   没有目标外键的属性
 
-    -   如果[目标外建](#目标外建)不存在且是真的 *(参见[真假外建](../../mapping/base/foreignkey))*，具体策略用户可配置。
+    以`BookStore.books`为例，保存短关联的代码为
 
-        -   默认情况下：Jimmer不做任何检查，如果关联id非法，关系数据库会因引用完整性非法而报错。
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-            这时，少执行一条查询语句，代价是必须接受来自底层数据的异常信息，Jimmer也不无法对异常信息归类。
+    ```java
+    sqlClient.update(
+            BookStoreDraft.$.produce(draft -> {
+                draft.setId(2L);
+                draft.addIntoBooks(book -> book.setId(8L));
+                draft.addIntoBooks(book -> book.setId(9L));
+                draft.addIntoBooks(book -> book.setId(1000L));
+                draft.addIntoBooks(book -> book.setId(1001L));
+            })
+    );
+    ```
 
-        -   用户配置仍然检查，就如同[目标外建](#目标外建)是假的一般。
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-            这时，会得到理想的异常信息和异常归类，代价是多执行了一条查询SQL。
+    ```kotlin
+    sqlClient.update(
+        new(BookStore::class).by {
+            id = 2L
+            books().addBy { id = 8L }
+            books().addBy { id = 9L }
+            books().addBy { id = 1000L }
+            books().addBy { id = 1001L }
+        }
+    );
+    ```
 
+    </TabItem>
+    </Tabs>
+
+    -   不检查
+
+        没有目标外键的属性，id非法的所有子对象将会被自动忽略。比如
+
+        ```
+        update book set store_id = 2 where id in(1, 2, 1000, 10001)
+        ```
+
+        假如1000，10001是数据库中不存在的id，那么这条update语句只会影响两条存在的数据，不存在的两条数据会被自动忽略。
+
+    -   要检查
+
+        Jimmer会执行如下查询检查所有短关联的id
+
+        ```sql
+        select
+            tb_1_.ID
+        from BOOK tb_1_
+        where
+            tb_1_.ID in (
+                ? /* 1 */, ? /* 2 */, ? /* 1000 */, ? /* 1001 */
+            )
+        ```
+
+        假如，数据库中不存在id为1000和1001的书籍，会得到如下异常
+
+        ```
+        Save error caused by the path: "<root>.books": Illegal ids: [1000, 1001]
+        ```
+
+-   有目标外键的属性
+
+    以`Book.store`为例，保存短关联的代码为
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    sqlClient.update(
+            BookDraft.$.produce(draft -> {
+                draft.setId(10L);
+                draft.applyStore(store -> store.setId(-321L));
+            })
+    );
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient.update(
+        new(Book::class).by {
+            id = 10L
+            store().apply { id = 321L }
+        }
+    );
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    假如数据库中并没有id为321的BookStore
+
+    -   不检查
+
+        -   如果外键是假的，在数据库中并没有真正的外键约束，那么Jimmer就会纵容`BOOK.STORE_ID`被修改为非法的值。
+
+        -   如果外键是真的，在数据库中有真正的外键约束，那么最终底层数据库报错。
+
+    -   要检查
+
+        无论外键真假，Jimmer都会执行如下查询检查短关联的id
+
+        ```sql
+        select
+            tb_1_.ID
+        from BOOK_STORE tb_1_
+        where
+            tb_1_.ID in (
+                ? /* 321 */
+            )
+        ```
+
+        一旦查询不到任何数据，得到如下异常
+
+        ```
+        Save error caused by the path: "<root>.store": Illegal ids: [321]
+        ```
+
+    :::tip
+    可见，对于目标外键为真的属性而言，无论是否是否启用Jimmer的短关联id检查，都会得到异常。
+
+    -   不验证，由数据库报错。好处是少执行一条SQL查询，坏处是异常信息和异常类型难控制
+
+    -   验证，由Jimmer报错。好处是异常信息和异常类型明确，坏处是多执行一条SQL查询，坏处
+    :::
+
+:::tip
+因此，只要项目不是对性能优化到极致的那种，建议此检查机制对所有属性全开。
+:::
+
+## 配置
+
+用户可以配置关联属性是否检察关联id。分为全局配置和指令级配置。
+
+### 全局配置
+
+全局配置提供了三个等级
+
+-   `NONE`
+-   `FAKE`
+-   `ALL`
+
+功能如下
+
+|   |NONE|FAKE|ALL|
+|---|----|----|---|
+|没有目标外建的关联|不检查|检查|检查|
+|目标外建为假的关联|不检查|检查|检查|
+|目标外建为真的关联|不检查|不检查|检查|
+
+全局配置有两种实现方法
+
+-   通过SpringBoot Starter配置
+
+    修改`application.yml` *(或`application.properties`)*，添加如下配置
+
+    ```
+    jimmer:
+        id-only-target-checking-level: ALL
+    ```
+
+-   通过底层API配置
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel.ALL)
+        ...省略其他配置...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel.ALL)
+        ...省略其他配置...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+### 指令级配置
+
+指令级别配置可以覆盖全局配置，但仅仅影响当前保存指令。
+
+指令级配置有三个功能点，如下
+
+-   明确指定属性需要检查
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = ...略...
+    sqlClient
+        .getEntities()
+        .saveCommand(book)
+        // highlight-next-line
+        .setAutoIdOnlyTargetChecking(BookProps.STORE)
+        // highlight-next-line
+        .setAutoIdOnlyTargetChecking(BookProps.AUTHORS)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = ...略...;
+    sqlClient.save(book) {
+        // highlight-next-line
+        setAutoIdOnlyTargetChecking(Book::store)
+        // highlight-next-line
+        setAutoIdOnlyTargetChecking(Book::authors)
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::info
+    如果全局配置已经打开了检查机制，就不需要如此调整保存指令了。
+    :::
+
+-   指定所有属性需要检查
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = ...略...
+    sqlClient
+        .getEntities()
+        .saveCommand(book)
+        // highlight-next-line
+        .setAutoIdOnlyTargetCheckingAll()
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = ...略...;
+    sqlClient.save(book) {
+        // highlight-next-line
+        setAutoIdOnlyTargetCheckingAll()
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::info
+    如果全局配置已经打开了检查机制，就不需要如此调整保存指令了。
+    :::
+
+-   负配置，明确指定属性不需要检查
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book book = ...略...
+    sqlClient
+        .getEntities()
+        .saveCommand(book)
+        .setAutoIdOnlyTargetCheckingAll()
+        // highlight-next-line
+        .setAutoIdOnlyTargetChecking(BookProps.STORE, false)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val book = ...略...;
+    sqlClient.save(book) {
+        setAutoIdOnlyTargetCheckingAll()
+        // highlight-next-line
+        setAutoIdOnlyTargetChecking(Book::authors, false)
+    }
+    ```
+
+    </TabItem>
+    </Tabs>

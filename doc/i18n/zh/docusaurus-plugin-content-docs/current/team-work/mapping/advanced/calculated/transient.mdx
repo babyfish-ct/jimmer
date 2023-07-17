@@ -245,9 +245,9 @@ class BookStoreAvgPriceResolver(
 </TabItem>
 </Tabs>
 
--   ❶ 过滤`BOOK`表的外建`STORE_ID`，限定查询范围，仅对当前需要计算的书店计算其下书籍的平均价格，而非数据库中所有书店
+-   ❶ 过滤`BOOK`表的外键`STORE_ID`，限定查询范围，仅对当前需要计算的书店计算其下书籍的平均价格，而非数据库中所有书店
 
--   ❷ 按照`BOOK`表的外建`STORE_ID`分组
+-   ❷ 按照`BOOK`表的外键`STORE_ID`分组
 
 -   ❸ 把每组内部的书籍的价格求平均
 

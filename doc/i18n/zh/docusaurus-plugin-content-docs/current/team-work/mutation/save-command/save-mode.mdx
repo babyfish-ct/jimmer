@@ -377,12 +377,10 @@ val newestBookId = sqlClient.save(book)
         <TabItem value="kotlin" label="Kotlin">
 
         ```kotlin
-        sqlClient
-            .entities
-            .saveCommand(book)
+        sqlClient.save(book) {
             // highlight-next-line
             .setDissociateAction(Book::name, Book::edition)
-            .execute()
+        }
         ```
 
         </TabItem>
