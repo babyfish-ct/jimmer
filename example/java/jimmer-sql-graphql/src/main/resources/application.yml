@@ -8,6 +8,7 @@ spring:
 
 jimmer:
   dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
+  id-only-target-checking-level: ALL
   database-validation-mode: ERROR
   show-sql: true
   pretty-sql: true

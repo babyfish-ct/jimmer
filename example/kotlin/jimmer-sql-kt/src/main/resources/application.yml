@@ -26,6 +26,7 @@ jimmer:
   language: kotlin
   dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
   offset-optimizing-threshold: 10
+  id-only-target-checking-level: ALL
   database-validation-mode: ERROR
   show-sql: true
   pretty-sql: true
