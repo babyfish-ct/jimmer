@@ -89,7 +89,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final FilterManager filterManager;
 
-    private final TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel;
+    private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
     private final DraftInterceptorManager draftInterceptorManager;
 
@@ -122,7 +122,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             BinLog binLog,
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
-            TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel,
+            IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange
@@ -159,7 +159,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.binLog = binLog;
         this.filterManager = filterManager;
         this.transientResolverManager = transientResolverManager;
-        this.targetForeignKeyCheckingLevel = targetForeignKeyCheckingLevel;
+        this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
@@ -406,7 +406,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 transientResolverManager,
-                targetForeignKeyCheckingLevel,
+                idOnlyTargetCheckingLevel,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -444,7 +444,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 cfg.getFilterManager(),
                 transientResolverManager,
-                targetForeignKeyCheckingLevel,
+                idOnlyTargetCheckingLevel,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -477,7 +477,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 transientResolverManager,
-                targetForeignKeyCheckingLevel,
+                idOnlyTargetCheckingLevel,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -500,8 +500,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public TargetForeignKeyCheckingLevel getTargetForeignKeyCheckingLevel() {
-        return targetForeignKeyCheckingLevel;
+    public IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel() {
+        return idOnlyTargetCheckingLevel;
     }
 
     @Override
@@ -586,8 +586,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private boolean ignoreBuiltInFilters = false;
 
-        private TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel =
-                TargetForeignKeyCheckingLevel.NONE;
+        private IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel =
+                IdOnlyTargetCheckingLevel.NONE;
 
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
@@ -928,10 +928,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setTargetForeignKeyCheckingLevel(TargetForeignKeyCheckingLevel checkingLevel) {
-            targetForeignKeyCheckingLevel = checkingLevel != null ?
+        public Builder setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel checkingLevel) {
+            idOnlyTargetCheckingLevel = checkingLevel != null ?
                     checkingLevel :
-                    TargetForeignKeyCheckingLevel.NONE;
+                    IdOnlyTargetCheckingLevel.NONE;
             return this;
         }
 
@@ -1166,7 +1166,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     binLog,
                     filterManager,
                     transientResolverManager,
-                    targetForeignKeyCheckingLevel,
+                    idOnlyTargetCheckingLevel,
                     new DraftInterceptorManager(interceptors),
                     microServiceName,
                     microServiceExchange

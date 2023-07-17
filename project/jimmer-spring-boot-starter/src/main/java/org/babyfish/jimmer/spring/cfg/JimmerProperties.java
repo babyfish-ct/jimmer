@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.runtime.DatabaseValidationMode;
-import org.babyfish.jimmer.sql.runtime.TargetForeignKeyCheckingLevel;
+import org.babyfish.jimmer.sql.runtime.IdOnlyTargetCheckingLevel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -40,7 +40,7 @@ public class JimmerProperties {
     private final TriggerType triggerType;
 
     @NotNull
-    private final TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel;
+    private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
     @NotNull
     private final int transactionCacheOperatorFixedDelay;
@@ -77,7 +77,7 @@ public class JimmerProperties {
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
-            @Nullable TargetForeignKeyCheckingLevel targetForeignKeyCheckingLevel,
+            @Nullable IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
             @Nullable Integer defaultBatchSize,
@@ -157,10 +157,10 @@ public class JimmerProperties {
                     );
         }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
-        this.targetForeignKeyCheckingLevel =
-                targetForeignKeyCheckingLevel != null ?
-                        targetForeignKeyCheckingLevel :
-                        TargetForeignKeyCheckingLevel.NONE;
+        this.idOnlyTargetCheckingLevel =
+                idOnlyTargetCheckingLevel != null ?
+                        idOnlyTargetCheckingLevel :
+                        IdOnlyTargetCheckingLevel.NONE;
         this.transactionCacheOperatorFixedDelay =
                 transactionCacheOperatorFixedDelay != null ?
                         transactionCacheOperatorFixedDelay :
@@ -232,8 +232,8 @@ public class JimmerProperties {
     }
 
     @NotNull
-    public TargetForeignKeyCheckingLevel getTargetForeignKeyCheckingLevel() {
-        return targetForeignKeyCheckingLevel;
+    public IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel() {
+        return idOnlyTargetCheckingLevel;
     }
 
     @NotNull

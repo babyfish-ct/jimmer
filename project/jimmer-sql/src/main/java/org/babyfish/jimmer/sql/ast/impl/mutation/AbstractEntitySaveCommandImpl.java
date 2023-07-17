@@ -3,14 +3,12 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.spi.ImmutablePropImplementor;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.runtime.TargetForeignKeyCheckingLevel;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
@@ -126,7 +124,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         }
 
         public boolean isAutoCheckingProp(ImmutableProp prop) {
-            switch (sqlClient.getTargetForeignKeyCheckingLevel()) {
+            if (autoUncheckingSet.contains(prop)) {
+                return false;
+            }
+            switch (sqlClient.getIdOnlyTargetCheckingLevel()) {
                 case ALL:
                     return true;
                 case FAKE:
@@ -135,7 +136,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                     }
                     break;
             }
-            return (autoCheckingAll || autoCheckingSet.contains(prop)) && !autoUncheckingSet.contains(prop);
+            return autoCheckingAll || autoCheckingSet.contains(prop);
         }
 
         public boolean isAppendOnly(ImmutableProp prop) {

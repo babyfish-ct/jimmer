@@ -246,7 +246,7 @@ public class SqlClientConfig {
 
         builder.setDialect(dialect != null ? dialect : properties.getDialect());
         builder.setTriggerType(properties.getTriggerType());
-        builder.setTargetForeignKeyCheckingLevel(properties.getTargetForeignKeyCheckingLevel());
+        builder.setIdOnlyTargetCheckingLevel(properties.getIdOnlyTargetCheckingLevel());
         builder.setDefaultEnumStrategy(properties.getDefaultEnumStrategy());
         builder.setDefaultBatchSize(properties.getDefaultBatchSize());
         builder.setDefaultListBatchSize(properties.getDefaultListBatchSize());

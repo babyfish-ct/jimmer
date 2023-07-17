@@ -174,8 +174,8 @@ class KSqlClientDsl internal constructor(
         javaBuilder.ignoreBuiltInFilters()
     }
 
-    fun set(checkingLevel: TargetForeignKeyCheckingLevel) {
-        javaBuilder.setTargetForeignKeyCheckingLevel(checkingLevel)
+    fun setIdOnlyTargetCheckingLevel(checkingLevel: IdOnlyTargetCheckingLevel) {
+        javaBuilder.setIdOnlyTargetCheckingLevel(checkingLevel)
     }
 
     fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {

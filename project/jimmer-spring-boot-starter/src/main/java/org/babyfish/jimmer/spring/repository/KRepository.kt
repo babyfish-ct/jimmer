@@ -109,7 +109,6 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     fun <S: E> save(entity: S, mode: SaveMode): KSimpleSaveResult<S> =
         save(entity) {
-            setAutoIdOnlyTargetCheckingAll()
             setMode(mode)
         }
 
@@ -123,7 +122,6 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     fun <S : E> saveAll(entities: Iterable<S>, mode: SaveMode): KBatchSaveResult<S> =
         saveAll(entities) {
-            setAutoIdOnlyTargetCheckingAll()
             setMode(mode)
         }
 
