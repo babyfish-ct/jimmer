@@ -15,6 +15,89 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 如果某个关联对象的id被指成了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
 
+对于<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+sqlClient.update(
+    BookDraft.$.produce(draft -> {
+        draft.setId(3L);
+        draft.addIntoAuthors(author -> author.setId(1L));
+        draft.addIntoAuthors(author -> author.setId(2L));
+        // highlight-next-line
+        draft.addIntoAuthors(author -> {
+            author.setFirstName("Svetlana");
+            author.setLastName("Isakova");
+            author.setGender(Gender.FEMALE);
+        });
+    })
+);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.update(
+    new(Book::class).by {
+        id = 3L
+        authors().addBy { id = 1L }
+        authors().addBy { id = 2L }
+        // highlight-next-line
+        authors().addBy {
+            setFirstName("Svetlana");
+            setLastName("Isakova");
+            setGender(Gender.FEMALE);
+        }
+    }
+)
+```
+
+</TabItem>
+</Tabs>
+
+这个例子中`Author`类型的key为`firstName`和`lastName`。在实际项目中，这样的key不太合理，但作为一个例子无关紧要，别太较真。
+
+生成的SQL如下
+
+```sql
+
+// 判断关对象是否存在
+select
+    tb_1_.ID,
+    tb_1_.FIRST_NAME,
+    tb_1_.LAST_NAME
+from AUTHOR tb_1_
+where
+        tb_1_.FIRST_NAME = ? /* Svetlana */
+    and
+        tb_1_.LAST_NAME = ? /* Isakova */
+
+// 关联对象不存在，创建之
+// highlight-next-line
+insert into AUTHOR(FIRST_NAME, LAST_NAME, GENDER)
+values
+    (? /* Svetlana */, ? /* Isakova */, ? /* F */)
+
+// 查询当前`Book`和`Author`之间的的关系
+select
+    AUTHOR_ID
+from BOOK_AUTHOR_MAPPING
+where
+    BOOK_ID = ? /* 3 */
+
+// 连接当前`Book`和刚被新建的`Author`
+insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)
+values
+    (? /* 3 */, ? /* 100 */)
+```
+
+:::info
+因此，<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>没有非法关联id的问题，
+:::
+
 ### 目标外键
 
 要解释这个问题，我们先为关联属性定义定一个概念：目标外键。
@@ -33,8 +116,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 先说结论
 
--   对于<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。
-
+-   
 -   对于<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>而言，Jimmer不可能创建不存在的关联独享，只能验证报错。
 
     -   如果[目标外建](#目标外建)不存在或是假的 *(参见[真假外建](../../mapping/base/foreignkey))*，则通过而外的查询去验证关联id是否存在。
