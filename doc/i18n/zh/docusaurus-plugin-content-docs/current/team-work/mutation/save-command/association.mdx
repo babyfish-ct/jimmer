@@ -16,20 +16,20 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 
 所谓短关联，表示仅修改当前对象和其他对象之间的关联本身，对关联对象的修改没兴趣。
 
-通常，UI设计会采用单选框 *(关联引用)* 或多选框 *(关联集合)*，例如
+通常，UI设计会采用单选框 *(关联引用)* 或多选框 *(关联集合)*。
 
 <ShortAssociation/>
 
 <div>&nbsp;</div>
 
-这里
+其中
 
 -   单选框对应多对一关联`Book.store`
 
 -   多选框对应多对多关联`Book.authors`
 
 :::note
-实际项目中，等待选数据可能很多，并不适合设计为下拉UI。这时，可以使用具备删选条件和分页功能的对象框来代替下拉框，这是一种常见的变通方式。
+实际项目中，待选数据可能很多，并不适合设计为下拉UI。这时，可以使用具备筛选条件和分页功能的对象框来代替下拉框，这是一种常见的变通方式。
 :::
 
 由于用户只想修改当前对象和其他对象的关联，不想进一步修改关联对象，所以UI不可能出现多层关联嵌套。这就是称其为 **短关联** 的原因。
@@ -37,16 +37,12 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 :::info
 为save指令传递任意形状的数据结构作为参数时，指定短关联有两种方法
 
--   让关联对象只有id属性
+-   要么让关联对象只有id属性
 
--   让关联对象只有key属性
+-   要么让关联对象只有key属性
 :::
 
 两种方法示范如下
-
-:::note
-这里对被保存数据结构进行硬编码仅为示范，实际项目中被保存的数据结构由全端界面提交。
-:::
 
 -   让关联对象只有id属性
 
@@ -108,7 +104,14 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
     </Tabs>
 
     :::note
-    当然，如果用户按照[映射篇/进阶映射/视图属性/IdView](../../mapping/advanced/view/id-view)一文的方法定义了`authorIds`属性，上述代码可以被简化。
+    这里对被保存数据结构进行硬编码仅为示范，实际项目中被保存的数据结构由前端界面提交。
+
+    当然，如果用户按照[映射篇/进阶映射/视图属性/IdView](../../mapping/advanced/view/id-view)一文的方法定义了`authorIds`属性，上述代码可以被简化，例如：
+    
+    ```
+    draft.setAuthorIds(Arrays.asList(4L, 5L));
+    ```
+    为了让例子更具普适性，这里并不假设用户为实体类型定义了[IdView](../../mapping/advanced/view/id-view)属性。后续所有文档都如此，不再提醒。
     :::
 
 -   让关联对象只有key属性
@@ -120,7 +123,7 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 
     -   `Author`类型的key属性是`firstName`和`lastName` 
 
-        > 实际项目中，这个唯一性约束并不合理，这里为简化例子，姑且这样假设，对此细节请别太较真
+        > 实际项目中，这个唯一性约束并不合理，这里为简化例子，姑且这样假设，请读者对此细节别太较真
     :::
 
     <Tabs groupId="language">
@@ -186,7 +189,7 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 
 ### 长关联
 
-所谓短关联，表示仅修改当前对象和其他对象之间的关联本身，对关联对象的修改没兴趣。
+所谓长关联，表示除了要修改当前对象和其他对象之间的关联本身外，还要进一步修改关联对象。
 
 通常，UI设计会采用内嵌表格，例如
 
@@ -213,10 +216,6 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 :::
 
 例子如下
-
-:::note
-这里对被保存数据结构进行硬编码仅为示范，实际项目中被保存的数据结构由全端界面提交。
-:::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -271,16 +270,20 @@ sqlClient.save(order)
 </TabItem>
 </Tabs>
 
+:::note
+这里对被保存数据结构进行硬编码仅为示范，实际项目中被保存的数据结构由前端界面提交。
+:::
+
 ## 一对多关联的特殊性
 
 之前提到
 
 :::info
-如果实体类型声明了Key属性 *(id除了充当唯一标识符外无任何业务意义时)*，那么
+如果实体类型声明了Key属性 *(也意味着id除了充当唯一标识符外无任何业务意义)*，那么
+
+-   对于被保存的聚合根对象而言，建议为其指定id属性或key属性。否则会被理解成强行插入。
 
 -   对于被保存的关联对象而言，要么指定id属性，要么指定所有key属性。否则会异常。
-
--   对于被保存的聚合根对象而言，也建议这么做。否则会被理解成强行插入。
 :::
 
 
@@ -288,146 +291,146 @@ sqlClient.save(order)
 
 让我来看一个例子
 
--   实体定义
+### 实体定义
 
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
-    ```java title="TreeNode.java"
-    @Entity
-    public interface TreeNode {
+```java title="TreeNode.java"
+@Entity
+public interface TreeNode {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        long id();
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
 
+    // highlight-next-line
+    @Key
+    String name();
+
+    // highlight-next-line
+    @Key
+    @Nullable
+    @ManyToOne
+    TreeNode parent();
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="TreeNode.kt"
+@Entity
+public interface TreeNode {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    // highlight-next-line
+    @Key
+    val name: String
+
+    // highlight-next-line
+    @Key
+    @ManyToOne
+    val parent: TreeNode?
+
+    ...省略其他属性...
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 使用保存指令
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(food -> {
+    food
         // highlight-next-line
-        @Key
-        String name();
+        .setParent(null)
+        .setName("Food")
+        .addIntoChildNodes(drink -> {
+            drink
+                .setName("Drink")
+                .addIntoChildNodes(cococola -> {
+                    cococola.setName("Cococola");
+                })
+                .addIntoChildNodes(fanta -> {
+                    fanta.setName("Fanta");
+                });
+            ;
+        })
+        .addIntoAuthors(bread -> {
+            bread
+                .setName("Bread")
+                .addIntoChildNodes(daguette -> {
+                    daguette.setName("Baguette");
+                })
+                .addIntoChildNodes(ciabatta -> {
+                    ciabatta.setName("Ciabatta");
+                })
+        });
+    ;
+});
+sqlClient.save(treeNode);
+```
 
-        // highlight-next-line
-        @Key
-        @Nullable
-        @ManyToOne
-        TreeNode parent();
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
 
-        ...省略其他属性...
-    }
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin title="TreeNode.kt"
-    @Entity
-    public interface TreeNode {
-
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long
-
-        // highlight-next-line
-        @Key
-        val name: String
-
-        // highlight-next-line
-        @Key
-        @ManyToOne
-        val parent: TreeNode?
-
-        ...省略其他属性...
-    }
-    ```
-
-    </TabItem>
-    </Tabs>
-
--   使用保存指令
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-
-    ```java
-    TreeNode treeNode = TreeNodeDraft.$.produce(food -> {
-        food
-            // highlight-next-line
-            .setParent(null)
-            .setName("Food")
-            .addIntoChildNodes(drink -> {
-                drink
-                    .setName("Drink")
-                    .addIntoChildNodes(cococola -> {
-                        cococola.setName("Cococola");
-                    })
-                    .addIntoChildNodes(fanta -> {
-                        fanta.setName("Fanta");
-                    });
-                ;
-            })
-            .addIntoAuthors(bread -> {
-                bread
-                    .setName("Bread")
-                    .addIntoChildNodes(daguette -> {
-                        daguette.setName("Baguette");
-                    })
-                    .addIntoChildNodes(ciabatta -> {
-                        ciabatta.setName("Ciabatta");
-                    })
-            });
-        ;
-    });
-    sqlClient.save(treeNode);
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin
-    val treeNode = new(TreeNode::class).by {
-        // highlight-next-line
-        parent = null
-        name = "Food"
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    // highlight-next-line
+    parent = null
+    name = "Food"
+    childNodes().addBy {
+        name = "Drinks"
         childNodes().addBy {
-            name = "Drinks"
-            childNodes().addBy {
-                name = "Cococola"
-            }
-            childNodes().addBy {
-                name = "Fanta"
-            }
+            name = "Cococola"
         }
         childNodes().addBy {
-            name = "Bread"
-            childNodes().addBy {
-                name = "Baguette"
-            }
-            childNodes().addBy {
-                name = "Ciabatta"
-            }
+            name = "Fanta"
         }
     }
-    sqlClient.save(treeNode)
-    ```
+    childNodes().addBy {
+        name = "Bread"
+        childNodes().addBy {
+            name = "Baguette"
+        }
+        childNodes().addBy {
+            name = "Ciabatta"
+        }
+    }
+}
+sqlClient.save(treeNode)
+```
 
-    </TabItem>
-    </Tabs>
+</TabItem>
+</Tabs>
 
-    `TreeNode`类型的key属性为`name`和`parent`，这表示
+`TreeNode`类型的key属性为`name`和`parent`
 
-    -   对根节点而言，建议指定`name`和`parent`属性，否则会被理解为强行插入。
+-   对根节点而言，如果没有指定id属性，建议指定`name`和`parent`属性，否则会被理解为强行插入。
 
-    -   对子节点而言，必须指定`name`和`parent`属性，否则异常。
+-   对子节点而言，如果没有指定id属性，则必须指定`name`和`parent`属性，否则异常。
 
-    然而，在这这个例子中，除了根节点对象外，其他所有对象的`parent`属性都未被指定。这段代码看起来似乎无法正常执行。
+然而，在这这个例子中，除了根节点对象外，其他所有对象的`parent`属性都未被指定。这段代码看起来似乎无法正常执行。
 
-    事实上，这段代码可以正确运行，因为save指令为一对多关联做了一个特殊的规定：
+事实上，这段代码可以正确运行，因为save指令为一对多关联做了一个特殊的规定：
 
-    :::tip
-    如果被保存的数据结构中，父对象通过一对多关联 *(本例中为`TreeNode.childNodes`)* 持有了某些子对象，
-    那么这些子对象的逆向多对一关联 *(本例中为`TreeNode.parent`)* 将会被保存指令视为已被设置。
-    :::
+:::tip
+如果被保存的数据结构中，父对象通过一对多关联 *(本例中为`TreeNode.childNodes`)* 持有了某些子对象，
+那么这些子对象的逆向多对一关联 *(本例中为`TreeNode.parent`)* 将会被保存指令视为已被设置。
+:::
 
-    所以，上例中，保存指令会认为所有子节点的`parent`属性都已经被设置了。即，所有子对象都同时具备`name`和`parent`属性，保存指令可顺利运行。
+所以，上例中，保存指令会认为所有子节点的`parent`属性都已经被设置了。即，所有子对象都同时具备`name`和`parent`属性，保存指令可顺利运行。
 
 ## 脱勾操作
 

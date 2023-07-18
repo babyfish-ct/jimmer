@@ -17,9 +17,9 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 通过之前的介绍，我们知道保存指令可以保存任意形状的数据结构，任何对象都可以进一步持有关联对象。
 
-如果某个关联对象的id被指成了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
+如果某个关联对象的id被指定了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
 
-对于<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
+首先，对于<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -32,6 +32,7 @@ sqlClient.update(
         draft.addIntoAuthors(author -> author.setId(2L));
         // highlight-next-line
         draft.addIntoAuthors(author -> {
+            author.setId(1000L); // 非法关联id，1000
             author.setFirstName("Svetlana");
             author.setLastName("Isakova");
             author.setGender(Gender.FEMALE);
@@ -51,9 +52,10 @@ sqlClient.update(
         authors().addBy { id = 2L }
         // highlight-next-line
         authors().addBy {
-            setFirstName("Svetlana");
-            setLastName("Isakova");
-            setGender(Gender.FEMALE);
+            id = 1000L // 非法关联id，1000
+            firstName = "Svetlana"
+            lastName = "Isakova"
+            gender = Gender.FEMALE
         }
     }
 )
@@ -61,6 +63,10 @@ sqlClient.update(
 
 </TabItem>
 </Tabs>
+
+:::note
+这个例子混合了长关联和短关联，但是，高亮标注的那行代码是长关联。
+:::
 
 生成的SQL如下
 
@@ -73,13 +79,13 @@ select
     tb_1_.LAST_NAME
 from AUTHOR tb_1_
 where
-    tb_1_.ID = ? /* 200 */
+    tb_1_.ID = ? /* 1000 */
 
 // 关联对象不存在，创建之
 // highlight-next-line
 insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER)
 values
-    (? /* 200 */, ? /* Svetlana */, ? /* Isakova */, ? /* F */)
+    (? /* 1000 */, ? /* Svetlana */, ? /* Isakova */, ? /* F */)
 
 // 查询当前`Book`和`Author`之间的的关系
 select
@@ -91,13 +97,15 @@ where
 // 连接当前`Book`和刚被新建的`Author`
 insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)
 values
-    (? /* 3 */, ? /* 200 */)
+    (? /* 3 */, ? /* 1000 */)
 ```
 
 :::info
-可见，在保存<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为200)*，Jimmer也会按照此id创建新的关联对象，长关联根本不存在`关联id检查问题`。
+可见，在保存<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为1000)*，Jimmer也会按照此id创建新的关联对象。
 
-但是，对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
+因此，长关联根本不存在`关联id检查问题`。
+
+然而，对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
 
 因此，`关联id检查`是一个仅对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>有意义的话题。本文接下来的例子，所有的讨论都是针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的。
 :::
@@ -106,21 +114,21 @@ values
 
 要讨论短关联的id检查问题，我们先为关联属性定义定一个概念：目标外键。
 
--   如果关联给予中间表，则中间表中指向目标实体表的外键就是目标外键。
+-   如果关联基于中间表，则中间表中指向目标实体表的外键就是目标外键。
 
     比如：`Book.authors`的目标外键是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段，`Author.books`的目标外键是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
 
--   如果关联给予外键，关联本身的外键就是目标外键。
+-   如果关联基于外键，无论外键真假 *(请参见[真假外键](../../mapping/base/foreignkey))*，关联本身的外键就是目标外键。
 
     比如：`Book.store`的目标外键是`BOOK`表的`STORE_ID`字段。
 
--   如果以上两个情况都不是，则认为你关联没有目标外键。
+-   如果以上两个情况都不是，则认为关联没有目标外键。
 
     没有目标外键的关联属性，就是被指定了`mappedBy`的一对一或一对多属性。即，被`@OneToOne(mappedBy = "...")`或`@OneToMany(mappedBy="...")`修饰的属性，比如：`BookStore.books`。
 
 ## 检查机制
 
-用户可以配置是否检查短关联对象的id，下面我们讨论各种属性在检查和不检查情况下的行为
+用户可以配置是否检查短关联对象的id，下面我们讨论具备不同目标外键的属性在检查和不检查两种情况下的行为
 
 -   没有目标外键的属性
 
@@ -167,7 +175,7 @@ values
         update book set store_id = 2 where id in(1, 2, 1000, 10001)
         ```
 
-        假如1000，10001是数据库中不存在的id，那么这条update语句只会影响两条存在的数据，不存在的两条数据会被自动忽略。
+        假如1000，10001是数据库中不存在的id，那么这条update语句只会影响两条存在的数据，不存在的两条数据会被自然地忽略。
 
     -   要检查
 
@@ -200,7 +208,7 @@ values
     sqlClient.update(
             BookDraft.$.produce(draft -> {
                 draft.setId(10L);
-                draft.applyStore(store -> store.setId(-321L));
+                draft.applyStore(store -> store.setId(321L));
             })
     );
     ```
@@ -248,16 +256,16 @@ values
         Save error caused by the path: "<root>.store": Illegal ids: [321]
         ```
 
-    :::tip
+    :::info
     可见，对于目标外键为真的属性而言，无论是否是否启用Jimmer的短关联id检查，都会得到异常。
 
     -   不验证，由数据库报错。好处是少执行一条SQL查询，坏处是异常信息和异常类型难控制
 
-    -   验证，由Jimmer报错。好处是异常信息和异常类型明确，坏处是多执行一条SQL查询，坏处
+    -   验证，由Jimmer报错。好处是异常信息和异常类型明确，坏处是多执行一条SQL查询
     :::
 
 :::tip
-因此，只要项目不是对性能优化到极致的那种，建议此检查机制对所有属性全开。
+只要项目不是对修改业务性能要求到吹毛求疵的那种，就建议此检查机制对所有属性全开，以得到理想的异常信息 *(稍后我们会介绍如何配置)*。
 :::
 
 ## 配置

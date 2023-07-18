@@ -114,7 +114,7 @@ sqlClient.save(book)
     sqlClient.insert(book)
     ```
 
-    如果执行，则只会生成一条SQL语句，就是上面的`INSERT`语句，而非上面的`SELECT`语句。
+    如果执行，则只会生成一条SQL语句，就是上面的`INSERT`语句，不会生成`SELECT`语句。
 
 -   UPDATE_ONLY:
 
@@ -126,7 +126,7 @@ sqlClient.save(book)
     sqlClient.update(book)
     ```
 
-    如果执行，则只会生成一条SQL语句，就是上面的`UPDATE`语句，而非上面的`SELECT`语句。
+    如果执行，则只会生成一条SQL语句，就是上面的`UPDATE`语句，不会生成`SELECT`语句。
 
 ## 不指定对象的id
 
@@ -185,7 +185,7 @@ public interface Book {
 
 -   指定@Key属性
 
-`@Key`是Jimmer中一个非常重要的概念，**后文**会做详细介绍，这里暂不讨论。
+`@Key`是保存指令中一个非常重要的概念，后文会做详细介绍，这里暂不讨论。
 
 ### 不指定@Key属性 *(不推荐)*
 
@@ -220,7 +220,7 @@ sqlClient.save(book)
 </TabItem>
 </Tabs>
 
-很明显，被保存的对象的id属性并未被指定，`Book`类型并未声明@Key属性。所以，这是一个既无id也无key的对象。
+很明显，被保存的对象的id属性并未被指定，`Book`类型也并未声明@Key属性。所以，这是一个既无id也无key的对象。
 
 :::warning
 这里，既无id也无key的对象是聚合根。
@@ -228,7 +228,7 @@ sqlClient.save(book)
 然而，对于关联对象而言，默认情况下，既无id也无key的关联对象会导致异常。这将在后续文档中讨论。
 :::
 
-当被保存的聚合根既无id也无key时
+如果试图既无id也无key的聚合根对象，不同的保存模式对应不同的行为：
 
 -   UPSERT: 不经查询和判断，直接插入对象，如同INSERT_ONLY一般
 
@@ -267,7 +267,7 @@ val book = ...略...
 val newestBookId = sqlClient.save(book)
     // highlight-next-line
     .newEntity
-    .id;
+    .id
 ```
 
 </TabItem>
@@ -355,9 +355,15 @@ val newestBookId = sqlClient.save(book)
         </TabItem>
         </Tabs>
 
-        这个例子中，`name`和`edition`两个属性联合组成key，这表示，这两个属性联合起来形成一个唯一性约束，作为具备业务意义的主键。
+        这个例子中，`name`和`edition`两个属性联合组成key，这表示，这两个属性联合起来形成一个唯一性约束，作为具备业务意义的第二主键。
         
-        即，虽然书名可以重复，但仅限在不同的发行版本中重名，书名和发行版本联合起来，一定唯一。
+        即，虽然书名可以重复，但仅限在不同的发行版本中重名，书名和发行版本联合起来一定唯一。这意味着你需要为表添加如下唯一约束:
+
+        ```sql
+        alter table BOOK
+            add constraint UQ_BOOK
+                unique(NAME, EDITION);
+        ```
 
     -   运行时覆盖 *(仅针对单条保存指令，极少数有特殊需求的业务使用)*
 
@@ -385,6 +391,10 @@ val newestBookId = sqlClient.save(book)
 
         </TabItem>
         </Tabs>
+
+        :::info
+        若无特殊情况，绝大部分情况下，应该使用注解静态配置实体类型Key属性。
+        :::
 
 2.  使用保存指令保存无id对象
 
@@ -464,7 +474,7 @@ val newestBookId = sqlClient.save(book)
             ```
 
         :::caution
-        如果实体类型声明了Key属性，那么对于被保存的对象而言
+        一旦为实体类型声明了Key属性，对于被保存的对象 *(无论是否是聚合根)* 而言
 
         -   要么指定id属性
 
@@ -474,7 +484,7 @@ val newestBookId = sqlClient.save(book)
 
             -   要么为null
 
-            -   要么具备id属性
+            -   要么至少具备id属性
 
-        否则，保存指令回抛出异常，指明对象的某些`key`属性未加载。
+        否则，保存指令回抛出异常，指明对象的某些`key`属性未被设置。
         :::
