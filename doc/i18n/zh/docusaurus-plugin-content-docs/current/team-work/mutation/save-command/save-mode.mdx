@@ -8,8 +8,6 @@ import TabItem from '@theme/TabItem';
 import Key from '../../_shared/key.mdx';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-## 基本概念
-
 保存指令支持3种保存模式，控制聚合根本身的保存方式
 
 -   UPSERT: 这是默认的模式。先通过查询判断被保存的聚合根对象是否存在：
@@ -25,6 +23,8 @@ import { ViewMore } from '@site/src/components/ViewMore';
 :::info
 保存模式仅影响聚合根对象，不影响其他关联对象。也可以理解为关联对象的保存模式只能是UPSERT。
 :::
+
+## 指定对象的id
 
 让我们来看一个例子
 
@@ -266,21 +266,21 @@ long newestBookId = sqlClient.save(book)
 val book = ...略...
 val newestBookId = sqlClient.save(book)
     // highlight-next-line
-    .newEntity
+    .modifiedEntity
     .id
 ```
 
 </TabItem>
 </Tabs>
 
-`save`函数返回一个对象，包含 *（但不限于）* 两个属性：`oldEntity`和`newEntity`。其中，`oldEntity`就是期望被保存的原始数据结构；
-而`newEntity`表示一个新的数据结构，其形状和`oldEntity`的形状完全一致，它们的区别在于：
+`save`函数返回一个对象，包含 *（但不限于）* 两个属性：`originalEntity`和`modifiedEntity`。其中，`originalEntity`就是期望被保存的原始数据结构；
+而`modifiedEntity`表示一个新的数据结构，其形状和`originalEntity`的形状完全一致，它们的区别在于：
 
--   如果`oldEntity`中某些对象的id属性没有被指定，那么`newEntity`中对应的对象的id属性会被指定
+-   如果`originalEntity`中某些对象的id属性没有被指定，那么`modifiedEntity`中对应的对象的id属性会被指定
 
--   如果`oldEntity`中某些对象具备乐观锁属性且对应了UPDATE语句，那么`newEntity`中对应的对象的乐观锁字段会持有新的版本号
+-   如果`originalEntity`中某些对象具备乐观锁属性且对应了UPDATE语句，那么`modifiedEntity`中对应的对象的乐观锁字段会持有新的版本号
 
-因此，我们可以通过`newEntity.id`获取聚合根对象被插入数据库后被分配的id。
+因此，我们可以通过`modifiedEntity.id`获取聚合根对象被插入数据库后被分配的id。
 
 ### 指定@Key属性 *(推荐)*
 
@@ -488,3 +488,42 @@ val newestBookId = sqlClient.save(book)
 
         否则，保存指令回抛出异常，指明对象的某些`key`属性未被设置。
         :::
+
+## 总结
+
+`INSERT_ONLY`和`UPDATE_ONLY`模式非常简单，无需总结，这里重点讨论`UPSERT`模式。
+
+如果实体类型配置了Key属性，那么`UPSERT`模式的行为如下
+
+<table>
+<thead>
+<tr>
+<th>前提</th>
+<th>判断对象是否存在</th>
+<th>判断结果</th>
+<th>最终行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td rowspan="2">id属性被指定</td>
+<td rowspan="2">按照id属性查询数据是否存在</td>
+<td>数据存在</td>
+<td>按照id更新被指定的属性，包括key属性</td>
+</tr>
+<tr>
+<td>数据不存在</td>
+<td>插入数据，因为id是已知的，无需id生成策略介入</td>
+</tr>
+<tr>
+<td rowspan="2">id属性未被指定</td>
+<td rowspan="2">按照所有key属性查询数据是否存在</td>
+<td>数据存在</td>
+<td>按照查询到的id更新被指定的属性，不包括key属性</td>
+</tr>
+<tr>
+<td>数据不存在</td>
+<td>插入数据，因为id是未知的，需要id生成策略介入</td>
+</tr>
+</tbody>
+</table>

@@ -61,14 +61,6 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 -   对于`Meat`而言，在旧数据结构中存在，但在新数据中不存在，对应的操作叫做脱勾操作。
 
-:::info
-在本文中，为了尽可能简化生成的SQL，让我们聚焦于关联本身和脱勾操作
-
--   所有被保存对象一律只指定id属性
-
--   聚合根对象的保存模式一律明确指定为UPDATE_ONLY *(本采用调用update方法的写法)*
-:::
-
 脱勾针对两种数据
 
 -   中间表数据
@@ -76,6 +68,14 @@ import { ViewMore } from '@site/src/components/ViewMore';
 -   子表数据
 
 接下来，我们讨论这两种脱勾操作。
+
+:::info
+在本文中，为了尽可能简化生成的SQL，让我们聚焦于关联本身和脱勾操作
+
+-   所有被保存对象一律只指定id属性
+
+-   聚合根对象的保存模式一律明确指定为UPDATE_ONLY *(本采用调用update方法的写法)*
+:::
 
 ## 脱勾中间表数据
 
