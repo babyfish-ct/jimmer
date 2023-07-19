@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.7.121"
+    jimmerVersion = "0.7.122"
 }
 
 group 'org.babyfish.jimmer.example.sql'
@@ -45,6 +45,4 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-test {
-    useJUnitPlatform()
-}
+// -------- Part-I: For SpringBoot 2.X --------
