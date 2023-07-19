@@ -14,6 +14,8 @@ internal abstract class KMutationResultImpl(
     override val totalAffectedRowCount: Int
         get() = javaResult.totalAffectedRowCount
 
+    override val affectedRowCountMap: Map<AffectedTable, Int>
+        get() = javaResult.affectedRowCountMap
     override fun affectedRowCount(entityType: KClass<*>): Int =
         javaResult.getAffectedRowCount(AffectedTable.of(entityType.java))
 

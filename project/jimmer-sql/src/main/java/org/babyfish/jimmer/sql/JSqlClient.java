@@ -247,6 +247,15 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
+        Builder addSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper);
+
+        @OldChain
+        Builder addSerializedPropObjectMapper(TypedProp<?, ?> prop, ObjectMapper mapper);
+
+        @OldChain
+        Builder addSerializedPropObjectMapper(ImmutableProp prop, ObjectMapper mapper);
+
+        @OldChain
         Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
 
         @OldChain
@@ -327,6 +336,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel checkingLevel);
+
+        @OldChain
+        Builder setSaveCommandPessimisticLock();
 
         @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);

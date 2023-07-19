@@ -22,10 +22,10 @@ dependencies {
 
     testImplementation("com.h2database:h2:2.1.212")
     dokkaHtmlPlugin("org.jetbrains.dokka:dokka-base:1.6.0")
-    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.3")
+    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
     testImplementation("org.postgresql:postgresql:42.3.6")
     testImplementation("org.springframework:spring-jdbc:5.3.20")
-    testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
+    testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
 }
 
 kotlin {

@@ -119,6 +119,18 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addScalarProvider(prop, scalarProvider)
     }
 
+    fun addSerializedTypeObjectMapper(type: KClass<*>, mapper: ObjectMapper) {
+        javaBuilder.addSerializedTypeObjectMapper(type.java, mapper)
+    }
+
+    fun addSerializedPropObjectMapper(prop: KProperty1<*, *>, mapper: ObjectMapper) {
+        javaBuilder.addSerializedPropObjectMapper(prop.toImmutableProp(), mapper)
+    }
+
+    fun addSerializedPropObjectMapper(prop: ImmutableProp, mapper: ObjectMapper) {
+        javaBuilder.addSerializedPropObjectMapper(prop, mapper)
+    }
+
     /**
      * Under normal circumstances, users do not need to set the entity manager.
      *
@@ -176,6 +188,10 @@ class KSqlClientDsl internal constructor(
 
     fun setIdOnlyTargetCheckingLevel(checkingLevel: IdOnlyTargetCheckingLevel) {
         javaBuilder.setIdOnlyTargetCheckingLevel(checkingLevel)
+    }
+
+    fun setSaveCommandPessimisticLock() {
+        javaBuilder.setSaveCommandPessimisticLock()
     }
 
     fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.postgresql.util.PGobject;
 
@@ -29,21 +30,21 @@ public class PostgresDialect extends DefaultDialect {
     }
 
     @Override
-    public Object jsonToBaseValue(Object json) throws Exception {
+    public Object jsonToBaseValue(Object json, ObjectMapper objectMapper) throws Exception {
         PGobject pgobject = new PGobject();
         pgobject.setType("jsonb");
-        pgobject.setValue(JsonUtils.OBJECT_MAPPER.writeValueAsString(json));
+        pgobject.setValue(objectMapper.writeValueAsString(json));
         return pgobject;
     }
 
     @Override
-    public Object baseValueToJson(Object baseValue, JavaType javaType) throws Exception {
+    public Object baseValueToJson(Object baseValue, JavaType javaType, ObjectMapper objectMapper) throws Exception {
         PGobject pgobject = (PGobject) baseValue;
         String json = pgobject.getValue();
         if (json == null || json.isEmpty()) {
             return null;
         }
-        return JsonUtils.OBJECT_MAPPER.readValue(json, javaType);
+        return objectMapper.readValue(json, javaType);
     }
 
     @Override

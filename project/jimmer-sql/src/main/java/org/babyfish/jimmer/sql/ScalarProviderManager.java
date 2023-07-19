@@ -1,12 +1,17 @@
 package org.babyfish.jimmer.sql;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.ArrayType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import org.babyfish.jimmer.impl.util.PropCache;
+import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
@@ -20,6 +25,8 @@ class ScalarProviderManager {
 
     private static final Set<Class<?>> GENERIC_TYPES;
 
+    private static final ObjectMapper DEFAULT_OBJECT_MAPPER;
+
     private final StaticCache<Class<?>, ScalarProvider<?, ?>> typeScalarProviderCache =
             new StaticCache<>(this::createProvider, true);
 
@@ -30,6 +37,10 @@ class ScalarProviderManager {
 
     private final Map<ImmutableProp, ScalarProvider<?, ?>> customizedPropScalarProviderMap;
 
+    private final Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap;
+
+    private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap;
+
     private final EnumType.Strategy defaultEnumStrategy;
 
     private final Dialect dialect;
@@ -37,11 +48,15 @@ class ScalarProviderManager {
     ScalarProviderManager(
             Map<Class<?>, ScalarProvider<?, ?>> customizedTypeScalarProviderMap,
             Map<ImmutableProp, ScalarProvider<?, ?>> customizedPropScalarProviderMap,
+            Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap,
+            Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap,
             EnumType.Strategy defaultEnumStrategy,
             Dialect dialect
     ) {
-        this.customizedTypeScalarProviderMap = customizedTypeScalarProviderMap;
-        this.customizedPropScalarProviderMap = customizedPropScalarProviderMap;
+        this.customizedTypeScalarProviderMap = new HashMap<>(customizedTypeScalarProviderMap);
+        this.customizedPropScalarProviderMap = new HashMap<>(customizedPropScalarProviderMap);
+        this.serializedTypeObjectMapperMap = new HashMap<>(serializedTypeObjectMapperMap);
+        this.serializedPropObjectMapperMap = new HashMap<>(serializedPropObjectMapperMap);
         this.defaultEnumStrategy = defaultEnumStrategy;
         this.dialect = dialect;
     }
@@ -54,9 +69,8 @@ class ScalarProviderManager {
         return typeScalarProviderCache.get(type);
     }
 
-    @SuppressWarnings("unchecked")
     private ScalarProvider<?, ?> createProvider(ImmutableProp prop) {
-        ScalarProvider<?, ?> provider = customizedPropScalarProviderMap.get(prop);
+        ScalarProvider<?, ?> provider = customizedPropScalarProvider(prop);
         if (provider != null) {
             return provider;
         }
@@ -65,7 +79,11 @@ class ScalarProviderManager {
         if (serialized == null) {
             return typeScalarProviderCache.get(prop.getReturnClass());
         }
-        return createJsonProvider(prop.getReturnClass(), jacksonType(prop.getGenericType()));
+        return createJsonProvider(
+                prop.getReturnClass(), 
+                jacksonType(prop.getGenericType()),
+                serializedPropObjectMapper(prop)
+        );
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -109,7 +127,11 @@ class ScalarProviderManager {
         }
 
         if (serialized != null) {
-            return createJsonProvider(type, SimpleType.constructUnsafe(type));
+            return createJsonProvider(
+                    type,
+                    SimpleType.constructUnsafe(type),
+                    serializedTypeObjectMapperMap.get(type)
+            );
         }
 
         return null;
@@ -138,14 +160,13 @@ class ScalarProviderManager {
                             "\" is configured"
                     );
                 }
-                if (!enumItem.name().equals("")) {
+                if (!enumItem.name().isEmpty()) {
                     it.map(enumValue, enumItem.name());
                 }
             }
         });
     }
 
-    @SuppressWarnings("unchecked")
     private <E extends Enum<E>> ScalarProvider<?, ?> newEnumByIntProvider(Class<E> enumType) {
         return ScalarProvider.enumProviderByInt(enumType, it -> {
             for (E enumValue: enumType.getEnumConstants()) {
@@ -159,7 +180,7 @@ class ScalarProviderManager {
                 if (enumItem == null) {
                     break;
                 }
-                if (!enumItem.name().equals("")) {
+                if (!enumItem.name().isEmpty()) {
                     throw new ModelException(
                         "Illegal enum type \"" +
                             enumType.getName() +
@@ -177,7 +198,7 @@ class ScalarProviderManager {
     }
 
     @SuppressWarnings("unchecked")
-    private ScalarProvider<?, ?> createJsonProvider(Class<?>  type, JavaType javaType) {
+    private ScalarProvider<?, ?> createJsonProvider(Class<?> type, JavaType javaType, ObjectMapper objectMapper) {
         return new ScalarProvider<Object, Object>(
                 (Class<Object>) type,
                 (Class<Object>) dialect.getJsonBaseType()
@@ -194,14 +215,66 @@ class ScalarProviderManager {
                                     "\""
                     );
                 }
-                return dialect.baseValueToJson(sqlValue, javaType);
+                return dialect.baseValueToJson(sqlValue, javaType, objectMapper != null ? objectMapper : DEFAULT_OBJECT_MAPPER);
             }
 
             @Override
             public @NotNull Object toSql(@NotNull Object scalarValue) throws Exception {
-                return dialect.jsonToBaseValue(scalarValue);
+                return dialect.jsonToBaseValue(scalarValue, objectMapper != null ? objectMapper : DEFAULT_OBJECT_MAPPER);
             }
         };
+    }
+
+    private ScalarProvider<?, ?> customizedPropScalarProvider(ImmutableProp prop) {
+        ScalarProvider<?, ?> provider = customizedPropScalarProviderMap.get(prop);
+        if (provider != null) {
+            return provider;
+        }
+        for (ImmutableType superType : prop.getDeclaringType().getSuperTypes()) {
+            ImmutableProp superProp = superType.getProps().get(prop.getName());
+            if (superProp == null) {
+                continue;
+            }
+            ScalarProvider<?, ?> superProvider = customizedPropScalarProvider(superProp);
+            if (superProvider == null) {
+                continue;
+            }
+            if (provider != null) {
+                throw new ModelException(
+                        "Cannot get the customized property scalar property of \"" +
+                                prop +
+                                "\", because there are conflict configurations in super properties"
+                );
+            }
+            provider = superProvider;
+        }
+        return provider;
+    }
+
+    private ObjectMapper serializedPropObjectMapper(ImmutableProp prop) {
+        ObjectMapper mapper = serializedPropObjectMapperMap.get(prop);
+        if (mapper != null) {
+            return mapper;
+        }
+        for (ImmutableType superType : prop.getDeclaringType().getSuperTypes()) {
+            ImmutableProp superProp = superType.getProps().get(prop.getName());
+            if (superProp == null) {
+                continue;
+            }
+            ObjectMapper superMapper = serializedPropObjectMapper(superProp);
+            if (superMapper == null) {
+                continue;
+            }
+            if (mapper != null) {
+                throw new ModelException(
+                        "Cannot get the customized property scalar property of \"" +
+                                prop +
+                                "\", because there are conflict configurations in super properties"
+                );
+            }
+            mapper = superMapper;
+        }
+        return mapper;
     }
 
     private static JavaType jacksonType(Type type) {
@@ -261,6 +334,13 @@ class ScalarProviderManager {
         }
     }
 
+    // `KotlinModule` may cause ClassNotFoundException, put it into this separated class
+    private static class KotlinModuleRegister {
+        public static ObjectMapper register(ObjectMapper mapper) {
+            return mapper.registerModule(new KotlinModule.Builder().build());
+        }
+    }
+
     static {
         Set<Class<?>> genericTypes = new HashSet<>();
         genericTypes.add(Iterable.class);
@@ -273,5 +353,20 @@ class ScalarProviderManager {
         genericTypes.add(SortedMap.class);
         genericTypes.add(NavigableMap.class);
         GENERIC_TYPES = genericTypes;
+
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .registerModule(new ImmutableModule());
+        boolean hasKotlinModule;
+        try {
+            Class.forName("com.fasterxml.jackson.module.kotlin.KotlinModule");
+            hasKotlinModule = true;
+        } catch (ClassNotFoundException ex) {
+            hasKotlinModule = false;
+        }
+        if (hasKotlinModule) {
+            mapper = KotlinModuleRegister.register(mapper);
+        }
+        DEFAULT_OBJECT_MAPPER = mapper;
     }
 }

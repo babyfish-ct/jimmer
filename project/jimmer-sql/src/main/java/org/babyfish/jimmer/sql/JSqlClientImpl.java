@@ -91,6 +91,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
+    private final boolean saveCommandPessimisticLock;
+
     private final DraftInterceptorManager draftInterceptorManager;
 
     private final String microServiceName;
@@ -123,6 +125,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             FilterManager filterManager,
             TransientResolverManager transientResolverManager,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
+            boolean saveCommandPessimisticLock,
             DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange
@@ -160,6 +163,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.filterManager = filterManager;
         this.transientResolverManager = transientResolverManager;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
+        this.saveCommandPessimisticLock = saveCommandPessimisticLock;
         this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
@@ -407,6 +411,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 filterManager,
                 transientResolverManager,
                 idOnlyTargetCheckingLevel,
+                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -445,6 +450,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 cfg.getFilterManager(),
                 transientResolverManager,
                 idOnlyTargetCheckingLevel,
+                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -478,6 +484,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 filterManager,
                 transientResolverManager,
                 idOnlyTargetCheckingLevel,
+                saveCommandPessimisticLock,
                 draftInterceptorManager,
                 microServiceName,
                 microServiceExchange
@@ -556,6 +563,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private final Map<ImmutableProp, ScalarProvider<?, ?>> propScalarProviderMap = new HashMap<>();
 
+        private final Map<Class<?>, ObjectMapper> serializedTypeObjectMapperMap = new HashMap<>();
+
+        private final Map<ImmutableProp, ObjectMapper> serializedPropObjectMapperMap = new HashMap<>();
+
         private final Map<Class<?>, IdGenerator> idGeneratorMap = new HashMap<>();
 
         private EnumType.Strategy defaultEnumStrategy = EnumType.Strategy.NAME;
@@ -572,7 +583,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private EntityManager defaultEntityManager;
 
-        private CacheConfig cacheConfig = new CacheConfig();
+        private final CacheConfig cacheConfig = new CacheConfig();
 
         private TriggerType triggerType = TriggerType.BINLOG_ONLY;
 
@@ -588,6 +599,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel =
                 IdOnlyTargetCheckingLevel.NONE;
+
+        private boolean saveCommandPessimisticLock = false;
 
         private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
 
@@ -801,6 +814,40 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder addSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper) {
+            ImmutableType immutableType = ImmutableType.tryGet(type);
+            if (immutableType == null || !immutableType.isEntity()) {
+                throw new IllegalArgumentException(
+                        "Cannot set type serialization for \"" +
+                                type +
+                                "\" because it is not entity type"
+                );
+            }
+            serializedTypeObjectMapperMap.put(type, mapper);
+            return this;
+        }
+
+        @Override
+        public Builder addSerializedPropObjectMapper(TypedProp<?, ?> prop, ObjectMapper mapper) {
+            return addSerializedPropObjectMapper(prop.unwrap(), mapper);
+        }
+
+        @Override
+        public Builder addSerializedPropObjectMapper(ImmutableProp prop, ObjectMapper mapper) {
+            if (prop.getAnnotation(Serialized.class) == null) {
+                throw new IllegalArgumentException(
+                        "Cannot set the serialized property object mapper for \"" +
+                                prop +
+                                "\" because it is not decorated by \"@" +
+                                Serialized.class.getName() +
+                                "\""
+                );
+            }
+            serializedPropObjectMapperMap.put(prop, mapper);
+            return this;
+        }
+
+        @Override
         public Builder setDefaultEnumStrategy(EnumType.Strategy strategy) {
             this.defaultEnumStrategy = strategy != null ? strategy : EnumType.Strategy.NAME;
             return this;
@@ -932,6 +979,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
             idOnlyTargetCheckingLevel = checkingLevel != null ?
                     checkingLevel :
                     IdOnlyTargetCheckingLevel.NONE;
+            return this;
+        }
+
+        @Override
+        public Builder setSaveCommandPessimisticLock() {
+            saveCommandPessimisticLock = true;
             return this;
         }
 
@@ -1153,7 +1206,14 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     executorContextPrefixes,
                     sqlFormatter,
                     idGeneratorMap,
-                    new ScalarProviderManager(typeScalarProviderMap, propScalarProviderMap, defaultEnumStrategy, dialect),
+                    new ScalarProviderManager(
+                            typeScalarProviderMap,
+                            propScalarProviderMap,
+                            serializedTypeObjectMapperMap,
+                            serializedPropObjectMapperMap,
+                            defaultEnumStrategy,
+                            dialect
+                    ),
                     defaultBatchSize,
                     defaultListBatchSize,
                     offsetOptimizingThreshold,
@@ -1167,6 +1227,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     filterManager,
                     transientResolverManager,
                     idOnlyTargetCheckingLevel,
+                    saveCommandPessimisticLock,
                     new DraftInterceptorManager(interceptors),
                     microServiceName,
                     microServiceExchange

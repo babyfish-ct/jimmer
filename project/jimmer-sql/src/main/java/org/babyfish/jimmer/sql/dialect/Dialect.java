@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.dialect;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.Reader;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Types;
 
 public interface Dialect {
@@ -43,12 +42,12 @@ public interface Dialect {
         return String.class;
     }
 
-    default Object jsonToBaseValue(Object json) throws Exception {
-        return JsonUtils.OBJECT_MAPPER.writeValueAsString(json);
+    default Object jsonToBaseValue(Object json, ObjectMapper objectMapper) throws Exception {
+        return objectMapper.writeValueAsString(json);
     }
 
-    default Object baseValueToJson(Object baseValue, JavaType javaType) throws Exception {
-        return JsonUtils.OBJECT_MAPPER.readValue((String) baseValue, javaType);
+    default Object baseValueToJson(Object baseValue, JavaType javaType, ObjectMapper objectMapper) throws Exception {
+        return objectMapper.readValue((String) baseValue, javaType);
     }
 
     default boolean isForeignKeySupported() {
