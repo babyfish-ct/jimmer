@@ -268,8 +268,7 @@ println(books)
     {
         "id" : 3,
         "name" : "Learning GraphQL",
-        "edition" : 3,
-        "price" : 51.00
+        "edition" : 3
     }
     ...省略其他对象
 ]
@@ -277,7 +276,7 @@ println(books)
 
 在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
 
-例如，我们可以修改一下代码，不抓取书籍版本时，而抓取书籍价格：
+例如，我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

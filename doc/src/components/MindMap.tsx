@@ -11,7 +11,7 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import FitScreenIcon from '@mui/icons-material/FitScreen';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
-import { AppBar, Button, Dialog, DialogContent, Toolbar, Typography } from "@mui/material";
+import { AppBar, Button, Dialog, DialogContent, Grid, Paper, Toolbar, Typography } from "@mui/material";
 
 export const MindMap: FC<{
     readonly initialExpandLevel?: number
@@ -36,7 +36,7 @@ export const MindMap: FC<{
                 <AppBar sx={{ position: 'relative' }}>
                     <Toolbar>
                         <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-                            Jimer Mind Map
+                            Jimmer Mind Map
                         </Typography>
                         <IconButton aria-label="close" onClick={onRestore} style={{color:'white'}}>
                             <CloseFullscreenIcon/>
@@ -61,13 +61,15 @@ const MindMapCore: FC<{
 
     const baseUrl = useBaseUrl('docs/team-work');
 
-    const data = useMemo(() => {
+    const isZh = useMemo<boolean>(() => {
         const locale = i18n.currentLocale;
-        const rawText = locale === 'zh' || locale === 'zh_CN' || locale === 'zh_cn' ? 
-            DATA_ZH : 
-            DATA_EN;
+        return locale === 'zh' || locale === 'zh_CN' || locale === 'zh_cn';
+    }, [i18n.currentLocale]);
+
+    const data = useMemo(() => {
+        const rawText = isZh ? DATA_ZH : DATA_EN;
         return rawText.split('@site').join(baseUrl);  
-    }, [i18n.currentLocale, baseUrl]);
+    }, [isZh, baseUrl]);
 
     const refSvg = useRef<SVGSVGElement>();
 
@@ -93,16 +95,16 @@ const MindMapCore: FC<{
         mm.fit();
     }, [refMm.current, data]);
 
+    const onFitScreenClick = useCallback(() => {
+        refMm.current.fit();
+    }, [refMm.current]);
+
     const onZoomInClick = useCallback(() => {
         refMm.current.rescale(1.25);
     }, [refMm.current]);
 
     const onZoomOutClick = useCallback(() => {
         refMm.current.rescale(0.8);
-    }, [refMm.current]);
-
-    const onFitScreenClick = useCallback(() => {
-        refMm.current.fit();
     }, [refMm.current]);
 
     const onMaximizeClick = useCallback(() => {
@@ -112,28 +114,36 @@ const MindMapCore: FC<{
     }, [onMaximize]);
 
     return (
-        <div style={{position: 'relative', width:'100%', paddingTop: '56.25%'}}>
-            <div>
-                <svg style={{position: 'absolute', left: 0, top: 0, width: '100%', height: '100%'}} ref={refSvg} />
-            </div>
-            <div style={{position: 'absolute', right: 0, top: 0}}>
-                <ButtonGroup variant="contained" aria-label="outlined primary button group" style={{backgroundColor: "white"}}>
-                    <IconButton aria-label="zoonIn" onClick={onZoomInClick}>
-                        <ZoomInIcon/>
-                    </IconButton>
-                    <IconButton aria-label="zoonOut" onClick={onZoomOutClick}>
-                        <ZoomOutIcon/>
-                    </IconButton>
-                    <IconButton aria-label="fit" onClick={onFitScreenClick}>
-                        <FitScreenIcon/>
-                    </IconButton>
-                    {
-                        initialExpandLevel !== undefined &&
-                        <IconButton aria-label="maximize" onClick={onMaximizeClick}>
-                            <OpenInFullIcon/>
+        <div>
+            <Paper style={{width: '100%'}}>
+                <Grid container alignItems="center">
+                    <Grid item flex={1}>
+                        { initialExpandLevel !== undefined && isZh && "你可以点击实心圆展开节点" }
+                        { initialExpandLevel !== undefined && !isZh && "You can click on the solid circle to expand the node" }
+                    </Grid>
+                    <Grid item>
+                        <IconButton aria-label="fit" onClick={onFitScreenClick}>
+                            <FitScreenIcon/>
                         </IconButton>
-                    }
-                </ButtonGroup>
+                        <IconButton aria-label="zoonIn" onClick={onZoomInClick}>
+                            <ZoomInIcon/>
+                        </IconButton>
+                        <IconButton aria-label="zoonOut" onClick={onZoomOutClick}>
+                            <ZoomOutIcon/>
+                        </IconButton>
+                        {
+                            initialExpandLevel !== undefined &&
+                            <IconButton aria-label="maximize" onClick={onMaximizeClick}>
+                                <OpenInFullIcon/>
+                            </IconButton>
+                        }
+                    </Grid>
+                </Grid>
+            </Paper>
+            <div style={{position: 'relative', width:'100%', paddingTop: '56.25%'}}>
+                <div>
+                    <svg style={{position: 'absolute', left: 0, top: 0, width: '100%', height: '100%'}} ref={refSvg} />
+                </div>
             </div>
         </div>
     );
