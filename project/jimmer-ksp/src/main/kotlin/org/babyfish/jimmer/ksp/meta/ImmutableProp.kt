@@ -112,7 +112,7 @@ class ImmutableProp(
             .newBuilder(
                 true,
                 declaringType.toString(),
-                declaringType.sqlAnnotationType?.java,
+                declaringType.sqlAnnotationType?.java ?: Immutable::class.java,
                 this.toString(),
                 targetDeclaration.fullName,
                 targetDeclaration.annotation(Entity::class)?.let { Entity::class.java }

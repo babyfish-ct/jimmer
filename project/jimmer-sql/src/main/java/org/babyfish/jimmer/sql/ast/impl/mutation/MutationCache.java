@@ -33,6 +33,10 @@ class MutationCache {
         this.pessimisticLockRequired = pessimisticLockRequired;
     }
 
+    public boolean hasId(ImmutableType type, Object id) {
+        return idObjMap.get(new TypedId(type, id)) != null;
+    }
+
     public ImmutableSpi find(ImmutableSpi example, boolean requiresKey) {
         ImmutableType type = example.__type();
         ImmutableProp idProp = type.getIdProp();

@@ -304,7 +304,12 @@ class Saver {
         if (targetIds.isEmpty()) {
             return;
         }
-        Set<Object> illegalTargetIds = new LinkedHashSet<>(targetIds);
+        Set<Object> illegalTargetIds = new LinkedHashSet<>(targetIds.size());
+        for (Object targetId : targetIds) {
+            if (!cache.hasId(prop.getTargetType(), targetId)) {
+                illegalTargetIds.add(targetId);
+            }
+        }
         if (prop.isRemote()) {
             PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
             List<ImmutableSpi> targets;
@@ -314,7 +319,7 @@ class Saver {
                         .getMicroServiceExchange()
                         .findByIds(
                                 prop.getTargetType().getMicroServiceName(),
-                                targetIds,
+                                illegalTargetIds,
                                 new FetcherImpl<>((Class<ImmutableSpi>) (prop.getTargetType().getJavaClass()))
                         );
             } catch (Exception ex) {
@@ -338,7 +343,7 @@ class Saver {
                             true,
                             (q, t) -> {
                                 PropExpression<Object> idExpr = t.get(prop.getTargetType().getIdProp().getName());
-                                q.where(idExpr.in(targetIds));
+                                q.where(idExpr.in(illegalTargetIds));
                                 return q.select(idExpr);
                             }
                     ).execute(con);

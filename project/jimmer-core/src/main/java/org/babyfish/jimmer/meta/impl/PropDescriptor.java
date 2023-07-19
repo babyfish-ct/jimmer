@@ -134,6 +134,7 @@ public class PropDescriptor {
 
         private final Class<? extends Annotation> typeAnnotationType;
 
+        private final String propText;
         private final String elementText;
 
         private final Class<? extends Annotation> elementAnnotationType;
@@ -168,6 +169,7 @@ public class PropDescriptor {
             this.isKotlinType = isKotlinType;
             this.typeText = typeText;
             this.typeAnnotationType = typeAnnotationType;
+            this.propText = propText;
             this.elementText = elementText;
             this.elementAnnotationType = elementAnnotationType;
             this.isList = isList;
@@ -271,6 +273,7 @@ public class PropDescriptor {
         public PropDescriptor build() {
 
             if (annotationTypes == null) {
+                validateReturnType(Type.BASIC);
                 return new PropDescriptor(Type.BASIC, Collections.emptySet(), determineNullable(Type.BASIC));
             }
 
@@ -412,15 +415,28 @@ public class PropDescriptor {
                                 Entity.class.getName()
                 );
             }
+            if (typeAnnotationType == Immutable.class) {
+                return;
+            }
+            if (elementAnnotationType == Entity.class && type != Type.TRANSIENT && !type.isAssociation && !isList) {
+                throw exceptionCreator.apply(
+                        "it must be decorated by \"" +
+                                ManyToOne.class.getName() +
+                                "\" or \"@" +
+                                OneToOne.class.getName() +
+                                "\""
+                );
+            }
             if (type != Type.TRANSIENT &&
-                    !type.isAssociation() &&
+                    !type.isAssociation &&
                     elementAnnotationType != null &&
                     elementAnnotationType != Embeddable.class) {
                 throw exceptionCreator.apply(
                         "it is not association property, its target type \"" +
                                 elementText +
-                                "\" is immutable type, immutable type is not enough, please use @" +
-                                Entity.class.getName()
+                                "\" is immutable type, immutable type is not enough, please use \"@" +
+                                Embeddable.class.getName() +
+                                "\""
                 );
             }
         }
