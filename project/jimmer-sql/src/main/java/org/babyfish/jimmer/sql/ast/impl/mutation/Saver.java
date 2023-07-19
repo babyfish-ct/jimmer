@@ -310,6 +310,9 @@ class Saver {
                 illegalTargetIds.add(targetId);
             }
         }
+        if (illegalTargetIds.isEmpty()) {
+            return;
+        }
         if (prop.isRemote()) {
             PropId targetIdPropId = prop.getTargetType().getIdProp().getId();
             List<ImmutableSpi> targets;

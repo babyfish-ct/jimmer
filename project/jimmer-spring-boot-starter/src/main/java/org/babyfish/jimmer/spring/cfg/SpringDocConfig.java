@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Lazy;
 import static org.springdoc.core.Constants.SPRINGDOC_ENABLED;
 
 @Configuration
-@ConditionalOnClass(OpenAPIService.class)
+@ConditionalOnClass(SpringDocConfigProperties.class)
 @ConditionalOnProperty(name = SPRINGDOC_ENABLED, matchIfMissing = true)
 public class SpringDocConfig {
 
