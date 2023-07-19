@@ -6,8 +6,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-
 @Component
 public class TenantProvider {
 
@@ -31,7 +29,7 @@ public class TenantProvider {
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
         if (requestAttributes instanceof ServletRequestAttributes) {
             String tenant = ((ServletRequestAttributes) requestAttributes).getRequest().getHeader("tenant");
-            return tenant.isEmpty() ? null : tenant;
+            return tenant == null || tenant.isEmpty() ? null : tenant;
         }
         return null;
     }

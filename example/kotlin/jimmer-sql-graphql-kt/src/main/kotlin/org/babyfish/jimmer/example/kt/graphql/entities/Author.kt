@@ -12,6 +12,9 @@ interface Author : BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
+    // It is inappropriate to use `firstName` and `lastName`
+    // as keys in actual project, but this is just a small demo.
+
     @Key
     val firstName: @NotBlank String
 
