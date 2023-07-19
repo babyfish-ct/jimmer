@@ -29,7 +29,7 @@ class DebeziumListener(sqlClient: KSqlClient) {
         @Payload(required = false) json: String?,
         acknowledgment: Acknowledgment
     ) {
-        if (json !== null) {
+        if (json !== null) { // Debezium sends an empty message after deleting a message
             val node: JsonNode = MAPPER.readTree(json)
             val tableName: String = node["source"]["table"].asText()
             binLog.accept(

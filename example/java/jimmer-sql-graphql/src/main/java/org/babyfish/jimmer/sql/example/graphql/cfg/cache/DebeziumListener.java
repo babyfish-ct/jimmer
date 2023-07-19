@@ -36,7 +36,7 @@ public class DebeziumListener {
     public void onDebeziumEvent(
             @Payload(required = false) String json,
             Acknowledgment acknowledgment
-    ) throws JsonProcessingException {
+    ) throws JsonProcessingException { // Debezium sends an empty message after deleting a message
         if (json != null) {
             JsonNode node = MAPPER.readTree(json);
             String tableName = node.get("source").get("table").asText();

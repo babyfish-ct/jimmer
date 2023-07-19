@@ -14,6 +14,9 @@ public interface Author extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
+    // It is inappropriate to use `firstName` and `lastName`
+    // as keys in actual project, but this is just a small demo.
+
     @Key
     @NotBlank
     String firstName();

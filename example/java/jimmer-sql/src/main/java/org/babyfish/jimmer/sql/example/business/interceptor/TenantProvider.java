@@ -1,20 +1,36 @@
 package org.babyfish.jimmer.sql.example.business.interceptor;
 
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 public class TenantProvider {
 
-    private final HttpServletRequest request;
+    /*
+     * You can use constructor inject in your project, like this
+     *
+     * ```
+     * private final HttpServletRequest request;
+     *
+     * public TenantProvider(HttpServletRequest request) {
+     *     this.request = request;
+     * }
+     * ```
+     *
+     * Here, in order to adapt to SpringBoot2's `javax.servlet...` and SpringBoo3's `jakarta.servlet...`
+     * at the same time, construct injection is not used, but the relatively cumbersome `RequestContextHolder`
+     */
 
-    public TenantProvider(HttpServletRequest request) {
-        this.request = request;
-    }
-
+    @Nullable
     public String get() {
-        String tenant = request.getHeader("tenant");
-        return "".equals(tenant) ? null : tenant;
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes instanceof ServletRequestAttributes) {
+            String tenant = ((ServletRequestAttributes) requestAttributes).getRequest().getHeader("tenant");
+            return tenant == null || tenant.isEmpty() ? null : tenant;
+        }
+        return null;
     }
 }
