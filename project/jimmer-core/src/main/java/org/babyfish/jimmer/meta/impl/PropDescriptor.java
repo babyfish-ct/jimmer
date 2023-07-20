@@ -418,17 +418,30 @@ public class PropDescriptor {
             if (typeAnnotationType == Immutable.class) {
                 return;
             }
-            if (elementAnnotationType == Entity.class && type != Type.TRANSIENT && !type.isAssociation && !isList) {
-                throw exceptionCreator.apply(
-                        "it must be decorated by \"" +
-                                ManyToOne.class.getName() +
-                                "\" or \"@" +
-                                OneToOne.class.getName() +
-                                "\""
-                );
+            if (elementAnnotationType == Entity.class && type != Type.TRANSIENT && !type.isAssociation) {
+                if (isList) {
+                    throw exceptionCreator.apply(
+                            "it must be decorated by \"@" +
+                                    OneToMany.class.getName() +
+                                    "\" \"@" +
+                                    ManyToMany.class.getName() +
+                                    "\" or \"@" +
+                                    ManyToManyView.class.getName() +
+                                    "\""
+                    );
+                } else {
+                    throw exceptionCreator.apply(
+                            "it must be decorated by \"@" +
+                                    ManyToOne.class.getName() +
+                                    "\" or \"@" +
+                                    OneToOne.class.getName() +
+                                    "\""
+                    );
+                }
             }
             if (type != Type.TRANSIENT &&
                     !type.isAssociation &&
+                    !isList &&
                     elementAnnotationType != null &&
                     elementAnnotationType != Embeddable.class) {
                 throw exceptionCreator.apply(
