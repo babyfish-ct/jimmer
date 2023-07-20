@@ -8,6 +8,7 @@ import org.springframework.data.repository.config.RepositoryConfigurationExtensi
 import java.lang.annotation.Annotation;
 
 public class JimmerRepositoriesRegistrarForAnnotation extends RepositoryBeanDefinitionRegistrarSupport {
+
     @Override
     protected Class<? extends Annotation> getAnnotation() {
         return EnableJimmerRepositories.class;

@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.spring.repository.config;
 
+import org.babyfish.jimmer.spring.repository.JRepository;
+import org.babyfish.jimmer.spring.repository.KRepository;
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.Entity;
 import org.jetbrains.annotations.NotNull;
@@ -9,6 +11,7 @@ import org.springframework.data.repository.config.RepositoryConfigurationSource;
 import org.springframework.util.StringUtils;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
@@ -45,5 +48,10 @@ public class JimmerRepositoryConfigExtension extends RepositoryConfigurationExte
     @Override
     protected Collection<Class<? extends Annotation>> getIdentifyingAnnotations() {
         return Collections.singleton(Entity.class);
+    }
+
+    @Override
+    protected Collection<Class<?>> getIdentifyingTypes() {
+        return Arrays.asList(JRepository.class, KRepository.class);
     }
 }
