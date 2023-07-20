@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
 import org.babyfish.jimmer.sql.ast.impl.TupleImplementor;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
@@ -72,8 +71,8 @@ public abstract class ScalarProvider<T, S> {
      * <p>Actually, there are two ways to add property-specific scalar providers</p>
      * <ul>
      *     <li>Override {@link #getHandledProps()}</li>
-     *     <li>Use {@link org.babyfish.jimmer.sql.JSqlClient.Builder#addScalarProvider(ImmutableProp, ScalarProvider)} or 
-     *     {@link org.babyfish.jimmer.sql.JSqlClient.Builder#addScalarProvider(TypedProp, ScalarProvider)}</li>
+     *     <li>Use {@link org.babyfish.jimmer.sql.JSqlClient.Builder#setScalarProvider(ImmutableProp, ScalarProvider)} or
+     *     {@link org.babyfish.jimmer.sql.JSqlClient.Builder#setScalarProvider(TypedProp, ScalarProvider)}</li>
      * </ul>
      * @return Null or handled property.
      */

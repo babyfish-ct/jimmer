@@ -241,19 +241,22 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addScalarProvider(ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
-        Builder addScalarProvider(TypedProp<?, ?> prop, ScalarProvider<?, ?> scalarProvider);
+        Builder setScalarProvider(TypedProp<?, ?> prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
-        Builder addScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
+        Builder setScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider);
 
         @OldChain
-        Builder addSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper);
+        Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper);
 
         @OldChain
-        Builder addSerializedPropObjectMapper(TypedProp<?, ?> prop, ObjectMapper mapper);
+        Builder setSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper);
 
         @OldChain
-        Builder addSerializedPropObjectMapper(ImmutableProp prop, ObjectMapper mapper);
+        Builder setSerializedPropObjectMapper(TypedProp<?, ?> prop, ObjectMapper mapper);
+
+        @OldChain
+        Builder setSerializedPropObjectMapper(ImmutableProp prop, ObjectMapper mapper);
 
         @OldChain
         Builder setDefaultEnumStrategy(EnumType.Strategy strategy);
@@ -350,7 +353,7 @@ public interface JSqlClient extends SubQueryProvider {
         Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors);
 
         @OldChain
-        Builder setBinLogObjectMapper(ObjectMapper mapper);
+        Builder setDefaultBinLogObjectMapper(ObjectMapper mapper);
 
         @OldChain
         Builder setBinLogPropReader(ImmutableProp prop, BinLogPropReader reader);

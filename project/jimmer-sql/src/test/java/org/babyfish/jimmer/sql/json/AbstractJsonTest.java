@@ -55,8 +55,8 @@ public abstract class AbstractJsonTest {
                         }
                 )
                 .setDialect(new PostgresDialect())
-                .addScalarProvider(JsonWrapperProps.TAGS, new TagsScalarProvider())
-                .addScalarProvider(JsonWrapperProps.SCORES, new ScoresScalarProvider())
+                .setScalarProvider(JsonWrapperProps.TAGS, new TagsScalarProvider())
+                .setScalarProvider(JsonWrapperProps.SCORES, new ScoresScalarProvider())
                 .build();
 
         records.clear();

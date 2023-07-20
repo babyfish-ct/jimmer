@@ -735,7 +735,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addScalarProvider(TypedProp<?, ?> prop, ScalarProvider<?, ?> scalarProvider) {
+        public Builder setScalarProvider(TypedProp<?, ?> prop, ScalarProvider<?, ?> scalarProvider) {
             if (prop == null) {
                 throw new IllegalArgumentException("prop cannot be null");
             }
@@ -744,7 +744,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider) {
+        public Builder setScalarProvider(ImmutableProp prop, ScalarProvider<?, ?> scalarProvider) {
             if (prop == null) {
                 throw new IllegalArgumentException("prop cannot be null");
             }
@@ -814,26 +814,23 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper) {
-            ImmutableType immutableType = ImmutableType.tryGet(type);
-            if (immutableType == null || !immutableType.isEntity()) {
-                throw new IllegalArgumentException(
-                        "Cannot set type serialization for \"" +
-                                type +
-                                "\" because it is not entity type"
-                );
-            }
-            serializedTypeObjectMapperMap.put(type, mapper);
+        public Builder setDefaultSerializedTypeObjectMapper(ObjectMapper mapper) {
+            return setSerializedTypeObjectMapper(Object.class, mapper);
+        }
+
+        @Override
+        public Builder setSerializedTypeObjectMapper(Class<?> type, ObjectMapper mapper) {
+            serializedTypeObjectMapperMap.put(type != null ? type : Object.class, mapper);
             return this;
         }
 
         @Override
-        public Builder addSerializedPropObjectMapper(TypedProp<?, ?> prop, ObjectMapper mapper) {
-            return addSerializedPropObjectMapper(prop.unwrap(), mapper);
+        public Builder setSerializedPropObjectMapper(TypedProp<?, ?> prop, ObjectMapper mapper) {
+            return setSerializedPropObjectMapper(prop.unwrap(), mapper);
         }
 
         @Override
-        public Builder addSerializedPropObjectMapper(ImmutableProp prop, ObjectMapper mapper) {
+        public Builder setSerializedPropObjectMapper(ImmutableProp prop, ObjectMapper mapper) {
             if (prop.getAnnotation(Serialized.class) == null) {
                 throw new IllegalArgumentException(
                         "Cannot set the serialized property object mapper for \"" +
@@ -1009,7 +1006,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setBinLogObjectMapper(ObjectMapper mapper) {
+        public Builder setDefaultBinLogObjectMapper(ObjectMapper mapper) {
             this.binLogObjectMapper = mapper;
             return this;
         }

@@ -1,5 +1,5 @@
 allprojects {
     group = "org.babyfish.jimmer"
-    version = "0.7.122"
+    version = "0.7.123"
 }
 

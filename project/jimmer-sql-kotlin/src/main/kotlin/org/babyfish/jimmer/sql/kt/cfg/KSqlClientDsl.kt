@@ -111,24 +111,28 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addScalarProvider(scalarProvider)
     }
 
-    fun addScalarProvider(prop: KProperty1<*, *>, scalarProvider: ScalarProvider<*, *>) {
-        javaBuilder.addScalarProvider(prop.toImmutableProp(), scalarProvider)
+    fun setScalarProvider(prop: KProperty1<*, *>, scalarProvider: ScalarProvider<*, *>) {
+        javaBuilder.setScalarProvider(prop.toImmutableProp(), scalarProvider)
     }
 
-    fun addScalarProvider(prop: ImmutableProp, scalarProvider: ScalarProvider<*, *>) {
-        javaBuilder.addScalarProvider(prop, scalarProvider)
+    fun setScalarProvider(prop: ImmutableProp, scalarProvider: ScalarProvider<*, *>) {
+        javaBuilder.setScalarProvider(prop, scalarProvider)
     }
 
-    fun addSerializedTypeObjectMapper(type: KClass<*>, mapper: ObjectMapper) {
-        javaBuilder.addSerializedTypeObjectMapper(type.java, mapper)
+    fun setDefaultSerializedTypeObjectMapper(mapper: ObjectMapper) {
+        javaBuilder.setDefaultSerializedTypeObjectMapper(mapper)
     }
 
-    fun addSerializedPropObjectMapper(prop: KProperty1<*, *>, mapper: ObjectMapper) {
-        javaBuilder.addSerializedPropObjectMapper(prop.toImmutableProp(), mapper)
+    fun setSerializedTypeObjectMapper(type: KClass<*>, mapper: ObjectMapper) {
+        javaBuilder.setSerializedTypeObjectMapper(type.java, mapper)
     }
 
-    fun addSerializedPropObjectMapper(prop: ImmutableProp, mapper: ObjectMapper) {
-        javaBuilder.addSerializedPropObjectMapper(prop, mapper)
+    fun setSerializedPropObjectMapper(prop: KProperty1<*, *>, mapper: ObjectMapper) {
+        javaBuilder.setSerializedPropObjectMapper(prop.toImmutableProp(), mapper)
+    }
+
+    fun setSerializedPropObjectMapper(prop: ImmutableProp, mapper: ObjectMapper) {
+        javaBuilder.setSerializedPropObjectMapper(prop, mapper)
     }
 
     /**
@@ -206,8 +210,8 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDraftInterceptors(interceptor)
     }
 
-    fun setBinLogObjectMapper(mapper: ObjectMapper) {
-        javaBuilder.setBinLogObjectMapper(mapper)
+    fun setDefaultBinLogObjectMapper(mapper: ObjectMapper) {
+        javaBuilder.setDefaultBinLogObjectMapper(mapper)
     }
 
     fun setBinLogPropReader(prop: KProperty1<*, *>, reader: BinLogPropReader) {

@@ -130,7 +130,7 @@ class ScalarProviderManager {
             return createJsonProvider(
                     type,
                     SimpleType.constructUnsafe(type),
-                    serializedTypeObjectMapperMap.get(type)
+                    serializedTypeObjectMapper(type)
             );
         }
 
@@ -251,6 +251,32 @@ class ScalarProviderManager {
         return provider;
     }
 
+    private ObjectMapper serializedTypeObjectMapper(Class<?> type) {
+        ObjectMapper mapper = serializedTypeObjectMapperMap.get(type);
+        if (mapper != null) {
+            return mapper;
+        }
+        Class<?> superType = type.getSuperclass();
+        if (superType != null) {
+            mapper = serializedTypeObjectMapper(superType);
+        }
+        for (Class<?> superItfType : type.getInterfaces()) {
+            ObjectMapper superMapper = serializedTypeObjectMapper(superItfType);
+            if (superMapper == null) {
+                continue;
+            }
+            if (mapper != null && mapper != superMapper) {
+                throw new ModelException(
+                        "Cannot get the serialized object mapper of \"" +
+                                type.getName() +
+                                "\", because there are conflict configurations in super types"
+                );
+            }
+            mapper = superMapper;
+        }
+        return mapper;
+    }
+
     private ObjectMapper serializedPropObjectMapper(ImmutableProp prop) {
         ObjectMapper mapper = serializedPropObjectMapperMap.get(prop);
         if (mapper != null) {
@@ -265,9 +291,9 @@ class ScalarProviderManager {
             if (superMapper == null) {
                 continue;
             }
-            if (mapper != null) {
+            if (mapper != null && mapper != superMapper) {
                 throw new ModelException(
-                        "Cannot get the customized property scalar property of \"" +
+                        "Cannot get the serialized object mapper of \"" +
                                 prop +
                                 "\", because there are conflict configurations in super properties"
                 );

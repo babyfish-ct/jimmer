@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.sql.type;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.type.*;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -18,7 +16,7 @@ public class TypeTest extends AbstractQueryTest {
     public void addScalarProviderForSuperProp() {
         ScalarProvider<?, ?> provider = new AnnotationsProvider();
         JSqlClientImplementor sqlClient = (JSqlClientImplementor) getSqlClient(cfg -> {
-            cfg.addScalarProvider(AnnotatedProps.ANNOTATIONS, provider);
+            cfg.setScalarProvider(AnnotatedProps.ANNOTATIONS, provider);
         });
         Assertions.assertSame(
                 provider,
@@ -39,7 +37,7 @@ public class TypeTest extends AbstractQueryTest {
         ScalarProvider<?, ?> provider = new AnnotationsProvider();
         IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
             getSqlClient(cfg -> {
-                cfg.addScalarProvider(InterfaceNodeProps.ANNOTATIONS, provider);
+                cfg.setScalarProvider(InterfaceNodeProps.ANNOTATIONS, provider);
             });
         });
         Assertions.assertEquals(
