@@ -27,10 +27,9 @@ public class CodeBasedExceptionAdvice {
 
     @ExceptionHandler
     public ResponseEntity<Map<String, Object>> handle(CodeBasedException ex) {
-        return new ResponseEntity<>(
-                resultMap(ex),
-                errorTranslator.getHttpStatus()
-        );
+        return ResponseEntity
+                .status(errorTranslator.getHttpStatus().value())
+                .body(resultMap(ex));
     }
 
     protected void notice() {
