@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.json;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
@@ -57,6 +58,7 @@ public abstract class AbstractJsonTest {
                 .setDialect(new PostgresDialect())
                 .setScalarProvider(JsonWrapperProps.TAGS, new TagsScalarProvider())
                 .setScalarProvider(JsonWrapperProps.SCORES, new ScoresScalarProvider())
+                .setDefaultSerializedTypeObjectMapper(new ObjectMapper())
                 .build();
 
         records.clear();

@@ -256,7 +256,7 @@ class ScalarProviderManager {
         if (mapper != null) {
             return mapper;
         }
-        Class<?> superType = type.getSuperclass();
+        Class<?> superType = type.isInterface() ? Object.class : type.getSuperclass();
         if (superType != null) {
             mapper = serializedTypeObjectMapper(superType);
         }
@@ -300,7 +300,7 @@ class ScalarProviderManager {
             }
             mapper = superMapper;
         }
-        return mapper;
+        return serializedTypeObjectMapper(prop.getReturnClass());
     }
 
     private static JavaType jacksonType(Type type) {
