@@ -247,12 +247,12 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
 public JSqlClient sqlClient() {
     return JSqlClient
         .newBuilder()
-        .addScalarProvider(
+        .setScalarProvider(
             // highlight-next-line
             FlightProps.SOURCE_LOCATION
             new LocationScalarProvider()
         )
-        .addScalarProvider(
+        .setScalarProvider(
             // highlight-next-line
             FlightProps.TARGET_LOCATION
             new LocationScalarProvider()
@@ -269,12 +269,12 @@ public JSqlClient sqlClient() {
 @Bean
 fun sqlClient() : KSqlClient = 
     newKSqlClient {
-        addScalarProvider(
+        setScalarProvider(
             // highlight-next-line
             Flight::sourceLocation
             LocationScalarProvider()
         )
-        addScalarProvider(
+        setScalarProvider(
             // highlight-next-line
             Flight::targetLocation
             LocationScalarProvider()

@@ -136,3 +136,97 @@ interface Book {
 
 </TabItem>
 </Tabs>
+
+## ObjectMapper配置
+
+### 使用底层API
+
+开发人员可以为被`@Seralized`修饰的属性配置JSON序列化/反序列化的ObjectMapper。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+ObjectMapper mapper1 = ...略...;
+ObjectMapper mapper2 = ...略...;
+ObjectMapper mapper3 = ...略...;
+JSqlClient sqlClient = JSqlClient
+    .newBuilder()
+    .setDefaultSerializedTypeObjectMapper(mapper1) ❶
+    .setSerializedTypeObjectMapper(MetaConfig.class, mapper2) ❷
+    .setSerializedTypePropMapper(TopicProps.TAGS, mapper3) ❸
+    ...省略其他配置...
+    .build();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val mapper1: ObjectMapper = ...略...
+val mapper2: ObjectMapper = ...略...
+val mapper3: ObjectMapper = ...略...
+val sqlClient = newKSqlClient {
+    setDefaultSerializedTypeObjectMapper(mapper1) ❶
+    setSerializedTypeObjectMapper(MetaConfig::class, mapper2) ❷
+    setSerializedTypePropMapper(Topic::tags, mapper3) ❸
+    ...省略其他配置...
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ 将默认的ObjectMapper设置为`mapper1`
+
+    和`setSerializedTypeObjectMapper(Object.class, mapper1)`等价
+
+-   ❷ 任何属性，只要其返回类型为MetaConfig或其派生类型，都采用`mapper2`
+
+-   ❸ 明确设置`Topic.tags`的ObjectMapper`mapper3`
+
+    如果被设置的属性未被`@Serialized`修饰，将会抛出异常
+
+配置优先级：❸ > ❷ > ❶
+
+### 使用Spring Boot Starter
+
+如果使用Spring Boot Starter，SqlClient是自动创建的，但是用户可以通过`Customizer/KCoustomizer`来改变SqlClient被创建前的配置
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+// highlight-next-line
+@Component
+public class SerializationCustomizer implements Customizer {
+
+    @Override
+    public void customize(JSqlClient.Builder builder) {
+        builder
+            .setDefaultSerializedTypeObjectMapper(...略...)
+            .setSerializedTypeObjectMapper(MetaConfig.class, ...略...)
+            .setSerializedTypePropMapper(TopicProps.TAGS, ...略...);
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// highlight-next-line
+@Component
+class SerializationCustomizer : KCustomizer {
+    
+    override fun customize(dsl: KSqlClientDsl) {
+        dsl
+            .setDefaultSerializedTypeObjectMapper(...略...)
+            .setSerializedTypeObjectMapper(MetaConfig::class, ...略...)
+            .setSerializedTypePropMapper(Topic::tags, ...略...);
+    }
+}
+```
+
+</TabItem>
+</Tabs>
