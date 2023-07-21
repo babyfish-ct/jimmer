@@ -27,10 +27,8 @@ public class JimmerProperties {
     @NotNull
     private final Dialect dialect;
 
-    @NotNull
     private final boolean showSql;
 
-    @NotNull
     private final boolean prettySql;
 
     @NotNull
@@ -42,7 +40,6 @@ public class JimmerProperties {
     @NotNull
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
-    @NotNull
     private final int transactionCacheOperatorFixedDelay;
 
     @NotNull
