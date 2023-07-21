@@ -32,7 +32,11 @@ public @interface JoinColumn {
     /**
      * A column name of the primary key of the parent table referenced by the foreign key
      *
-     * <p>If the foreign key has only one column, it is unnecessary to specify it</p>
+     * <p>
+     *     Currently, Jimmer's foreign keys do not support referencing non-primary key columns
+     *     of the target table. Therefore, this configuration should not be used unless the
+     *     foreign key consists of multiple columns.
+     * </p>
      */
     String referencedColumnName() default "";
 
