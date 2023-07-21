@@ -39,11 +39,16 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
 
     @NewChain
     default ConfigurableRootQuery<T, R> limit(int limit) {
-        return limit(limit, 0);
+        return limit(limit, null);
     }
 
     @NewChain
-    ConfigurableRootQuery<T, R> limit(int limit, int offset);
+    default ConfigurableRootQuery<T, R> offset(int offset) {
+        return limit(null, offset);
+    }
+
+    @NewChain
+    ConfigurableRootQuery<T, R> limit(@Nullable Integer limit, @Nullable Integer offset);
 
     @NewChain
     ConfigurableRootQuery<T, R> withoutSortingAndPaging();

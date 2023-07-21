@@ -344,6 +344,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setSaveCommandPessimisticLock();
 
         @OldChain
+        Builder setSaveCommandPessimisticLock(boolean lock);
+
+        @OldChain
         Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
 
         @OldChain

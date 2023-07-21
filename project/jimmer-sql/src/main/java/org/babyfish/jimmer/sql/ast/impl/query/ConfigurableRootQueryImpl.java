@@ -25,7 +25,7 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         extends AbstractConfigurableTypedQueryImpl
         implements ConfigurableRootQuery<T, R>, ConfigurableRootQueryImplementor<T, R> {
 
-    public ConfigurableRootQueryImpl(
+    ConfigurableRootQueryImpl(
             TypedQueryData data,
             MutableRootQueryImpl<T> baseQuery
     ) {
@@ -39,7 +39,6 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
         return (MutableRootQueryImpl<T>) super.getBaseQuery();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <X> ConfigurableRootQuery<T, X> reselect(
             BiFunction<MutableRootQuery<T>, T, ConfigurableRootQuery<T, X>> block
@@ -86,8 +85,14 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
-    public ConfigurableRootQuery<T, R> limit(int limit, int offset) {
+    public ConfigurableRootQuery<T, R> limit(@Nullable Integer limit, @Nullable Integer offset) {
         TypedQueryData data = getData();
+        if (limit == null) {
+            limit = data.limit;
+        }
+        if (offset == null) {
+            offset = data.offset;
+        }
         if (data.limit == limit && data.offset == offset) {
             return this;
         }
@@ -95,10 +100,10 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             throw new IllegalArgumentException("'limit' can not be less than 0");
         }
         if (offset < 0) {
-            throw new IllegalArgumentException("'offset' can not be less than 0");
+            throw new IllegalArgumentException("'offsetValue' can not be less than 0");
         }
         if (limit > Integer.MAX_VALUE - offset) {
-            throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offset");
+            throw new IllegalArgumentException("'limit' > Int.MAX_VALUE - offsetValue");
         }
         return new ConfigurableRootQueryImpl<>(
                 data.limit(limit, offset),
