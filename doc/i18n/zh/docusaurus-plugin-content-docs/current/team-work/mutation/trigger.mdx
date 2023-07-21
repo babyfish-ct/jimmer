@@ -534,16 +534,18 @@ Jimmer对这类选择未做任何限制。但为简化问题讨论，本文假�
 
         @KafkaListener(topicPattern = "debezium\\..*")
         public void onDebeziumEvent(
-                String json,
+                @Payload(required = false) String json,
                 Acknowledgment acknowledgment
         ) throws JsonProcessingException {
-            JsonNode node = MAPPER.readTree(json);
-            String tableName = node.get("source").get("table").asText();
-            binLog.accept(
-                    tableName,
-                    node.get("before"),
-                    node.get("after")
-            );
+            if (json != null) { // Debezium在发送数据删除消息后会紧接着发送空消息
+                JsonNode node = MAPPER.readTree(json);
+                String tableName = node.get("source").get("table").asText();
+                binLog.accept(
+                        tableName,
+                        node.get("before"),
+                        node.get("after")
+                );
+            }
             acknowledgment.acknowledge();
         }
     }
@@ -560,16 +562,18 @@ Jimmer对这类选择未做任何限制。但为简化问题讨论，本文假�
 
         @KafkaListener(topicPattern = """debezium\..*""")
         fun onDebeziumEvent(
-            json: String,
+            @Payload(required = false) json: String?,
             acknowledgment: Acknowledgment
         ) {
-            val node: JsonNode = MAPPER.readTree(json)
-            val tableName: String = node["source"]["table"].asText()
-            binLog.accept(
-                tableName,
-                node["before"],
-                node["after"]
-            )
+            if (json !== null) { // Debezium在发送数据删除消息后会紧接着发送空消息
+                val node: JsonNode = MAPPER.readTree(json)
+                val tableName: String = node["source"]["table"].asText()
+                binLog.accept(
+                    tableName,
+                    node["before"],
+                    node["after"]
+                )
+            }
             acknowledgment.acknowledge()
         }
 

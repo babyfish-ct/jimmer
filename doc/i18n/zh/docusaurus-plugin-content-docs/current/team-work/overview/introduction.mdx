@@ -5,10 +5,59 @@ title: 项目介绍
 
 import { ViewMore } from '@site/src/components/ViewMore';
 import { MindMap } from '@site/src/components/MindMap';
+import { LongAssociation} from '@site/src/components/LongAssociation';
+import DtoExplosion from '@site/static/img/dto-explosion.png'; 
+import AssociationCache from '@site/static/img/association-cache.png';
+import CalculatedCache from '@site/static/img/calculated-cache.png';
+import MultiViewCache from '@site/static/img/multi-view-cache.png';
 
 ## Jimmer的是什么
 
-Jimmer是一个针对Java和Kotlin的革命性ORM，以及一套基于它的完整的集成方案。其目的在于
+Jimmer是一个针对Java和Kotlin的革命性ORM，以及一套基于它的完整的集成方案 *(包含一套强大的缓存管理机制)*。
+
+### 1. Jimmer的定位
+
+目前，有很多基于Java的关系型数据库上层技术方案，包括ORM风格和非ORM风格的。这类方案非常多，Jimmer不想再添重复。
+
+事实上，对数据库完成CRUD访问只是实际项目中最基础最简单的一部分工作，还有其他一些工作一直控制着开发人员，它们更繁琐更复杂。比如
+
+1.  DTO爆炸问题
+
+    不同业务功能点对数据查询格式期望不同，往往导致项目需要定义大量的DTO类型，形成<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>，而且开发人员还需要开发业务代码填充数据如此多的DTO类型，工作量非常巨大。
+
+2.  复杂表单问题
+
+    很多时候，客户端需要保存的数据结构并非扁平对象，而是<ViewMore buttonText="有一定复杂性的数据结构" variant="text"><LongAssociation/></ViewMore>，如果要开发人员自己对比客户端数据结构和现有数据的差异并执行适当的增、删、改行为，那会非常繁琐。
+    
+    而且，应该和查询功能类似，不同业务功能能对同一个聚合根类型保存的数据结构的格式应该多样化，不应在ORM层面通过配置固化。
+
+3.  缓存
+
+    -   是否使用缓存应该对开发人员绝对透明，缓存的引入不应该增加业务代码的复杂度、降低代码质量和可维护性，应该和纯SQL项目一样简单。
+
+    -   缓存不应该仅有最简单的对象缓存，还应有用<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
+
+    -   以权限系统为代码表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><img src={MultiViewCache}/></ViewMore>
+
+    -   缓存的一致性维护应该被底层方案解决，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
+
+4.  客户端自动对接
+
+    -   服务端服务应该自动为客户端 *(比如Web前端)* 生成客户端代码 *(比如TypeScript)*。
+
+    -   服务端是生产者，开发人员希望看到简化后的API和编程模型，因为这意味着自己需要实现的工作少；客户端是消费者，开发人员希望看到完整的API和编程模型，因为这意味着自己用起来舒服。传统方案让服务端和客户端的API和编程模型完全一致不可取。
+
+5.  微服务数据拼接
+
+    在微型服务体系中，数据库是碎片化的。先从不同的微服务中查询数据的不同部分，然后拼接起来作为一个整体返回，这个操作既繁琐又高频，应该由底层方案隐藏和自动化。
+
+:::tip
+Jimmer收集业务项目开发中大部分既常见又繁琐的难题，给予一整套综合性解决方案。ORM只是Jimmer的切入点，而非全部。
+
+Jimmer作为一个系统性大方案，绝非初学者眼中的又一个单纯的简单数据CRUD方案。但是经过慎重而富有创意和颠覆性的设计，Jimmer具备极高的`收益/成本`比。
+:::
+
+## 特色
 
 ### 1. 将关系型数据库抽象成图数据库
 

@@ -505,60 +505,110 @@ sqlClient.save(
 
 ### 启用悲观锁
 
-调用保存指令的配置方法`setPessimisticLock`，即可启用悲观锁，如下
+有两种启用悲观锁的方法
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+-   全局配置
 
-```java
-sqlClient
-        .getEntities()
-        .saveCommand(
-                BookStoreDraft.$.produce(draft -> {
-                    draft.setName("TURING");
-                    draft.addIntoBooks(book -> {
-                        book.setName("Introduction to Algorithms");
-                        book.setEdition(3);
-                        book.setPrice(new BigDecimal("44.99"));
-                    });
-                    draft.addIntoBooks(book -> {
-                        book.setName("The Pragmatic Programmer");
-                        book.setEdition(2);
-                        book.setPrice(new BigDecimal("39.99"));
-                    });
-                })
-        )
+    有两种方法可以通过全局配置启用悲观锁
+
+    -   Spring Boot Starter的配置
+
+        修改`application.yml` *(或`application.properties`)*
+        
+        ```
+        jimmer:
+            save-command-pessimistic-lock: true
+        ```
+
+    -   底层API的配置
+
+        <Tabs groupId="language">
+        <TabItem value="java" label="Java">
+
+        ```java
+        JSqlClient sqlClient = JSqlClient
+            .newBuilder()
+            // highlight-next-line
+            .setSaveCommandPessimisticLock()
+            ...省略其他配置...
+            .build();
+        ```
+
+        </TabItem>
+        <TabItem value="kotlin" label="Kotlin">
+
+        ```kotlin
+        val sqlClient = newKSqlClient {
+            // highlight-next-line
+            setSaveCommandPessimisticLock()
+        }
+        ```
+
+        </TabItem>
+        </Tabs>
+
+-   指令级配置
+
+    和影响所有保存指令的全局配置不同，指令级配置仅仅影响当前保存指令
+
+    :::info
+    如果已经通过全局配置打开了悲观锁控制，就不再需要指令级配置了
+    :::
+
+    调用保存指令的配置方法`setPessimisticLock`，即可启用悲观锁，如下
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    sqlClient
+            .getEntities()
+            .saveCommand(
+                    BookStoreDraft.$.produce(draft -> {
+                        draft.setName("TURING");
+                        draft.addIntoBooks(book -> {
+                            book.setName("Introduction to Algorithms");
+                            book.setEdition(3);
+                            book.setPrice(new BigDecimal("44.99"));
+                        });
+                        draft.addIntoBooks(book -> {
+                            book.setName("The Pragmatic Programmer");
+                            book.setEdition(2);
+                            book.setPrice(new BigDecimal("39.99"));
+                        });
+                    })
+            )
+            // highlight-next-line
+            .setPessimisticLock()
+            .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient.save(
+        new(BookStore::class).by {
+            name = "TURING"
+            books().addBy {
+                name = "Introduction to Algorithms"
+                edition = 3;
+                price = BigDecimal("44.99")
+            }
+            books().addBy {
+                name = "The Pragmatic Programmer"
+                edition = 2
+                price = BigDecimal("39.99")
+            }
+        }
+    ) {
         // highlight-next-line
-        .setPessimisticLock()
-        .execute();
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-sqlClient.save(
-    new(BookStore::class).by {
-        name = "TURING"
-        books().addBy {
-            name = "Introduction to Algorithms"
-            edition = 3;
-            price = BigDecimal("44.99")
-        }
-        books().addBy {
-            name = "The Pragmatic Programmer"
-            edition = 2
-            price = BigDecimal("39.99")
-        }
+        setPessimisticLock()
     }
-) {
-    // highlight-next-line
-    setPessimisticLock()
-}
-```
+    ```
 
-</TabItem>
-</Tabs>
+    </TabItem>
+    </Tabs>
 
 一旦启用了悲观锁，生成的查询语句会有显著变化，如下
 
