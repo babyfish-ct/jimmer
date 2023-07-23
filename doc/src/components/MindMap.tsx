@@ -1,10 +1,9 @@
-import React, { CSSProperties, FC, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { CSSProperties, FC, ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { Markmap } from "markmap-view";
 import { Transformer } from 'markmap-lib';
 import 'markmap-toolbar/dist/style.css';
-import ButtonGroup from '@mui/material/ButtonGroup';
 import IconButton from '@mui/material/IconButton';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
@@ -44,7 +43,7 @@ export const MindMap: FC<{
                     </Toolbar>
                 </AppBar>
                 <DialogContent>
-                <MindMapCore/>
+                    <MindMapCore/>
                 </DialogContent>
             </Dialog>
             <MindMapCore initialExpandLevel={initialExpandLevel} onMaximize={onMaximize}/>
@@ -154,13 +153,13 @@ const TRANSFORMER = new Transformer();
 const DATA_ZH = `
 -   Jimmer
 
-    -   [询任意数据结构](@site/query/object-fetcher)
+    -   查询任意形状的数据结构
 
         -   GraphQL HTTP服务的能力被拓展成无处不在本地代码行为
 
         -   精确控制每个属性是否需要查询
 
-        -   [可对自关联属性进行递归查询](@site/query/object-fetcher/recursive)
+        -   可对自关联属性进行递归查询
 
         -   统一不同数据关联，对开发者透明
 
@@ -172,21 +171,21 @@ const DATA_ZH = `
             
             -   优先读取缓存
 
-    -   [保存任意数据结构](@site/mutation/save-command)
+    -   保存任意数据结构
 
         -   快速开发任意复杂的表单保存业务
 
         -   对同一个聚合根类型而言，多种不同表单格式的保存业务可并存
 
-    -   [缓存及其一致性](@site/cache)
+    -   缓存及其一致性
 
         -   丰富底层缓存类型，合力为用户抽象任意数据结构缓存
 
-            -   [对象缓存](@site/cache/cache-type/object)
+            -   对象缓存
 
-            -   [关联缓存](@site/cache/cache-type/association)
+            -   关联缓存
 
-            -   [计算缓存](@site/cache/cache-type/calculation)
+            -   计算缓存
 
         -   自由控制各数据是否启用缓存，精确到属性
 
@@ -194,17 +193,17 @@ const DATA_ZH = `
 
         -   多级缓存支持，采用多少级，每一级采用什么缓存技术由用户决定
 
-        -   [多视图缓存，不同用户看到不同的缓存](@site/cache/multiview-cache)
+        -   多视图缓存，不同用户看到不同的缓存
 
         -   强大的一致性。其中，对象缓存和关联缓存的一致性是全自动的，无需任何开发
 
-    -   [计算属性](../mapping/advanced/calculated/transient)
-
+    -   计算属性
+    
         -   计算逻辑和ORM解耦，可以利用业务信息(如身份权限)计算，允许使用非SQL技术
 
         -   不仅可以是标量属性，还可以是关联属性
 
-    -   [远程关联](@site/spring/spring-cloud)
+    -   远程关联
 
         -   跨越微服务的数据关联
 
@@ -214,15 +213,15 @@ const DATA_ZH = `
 
     -   强类型SQL DSL
 
-        -   [可混入NativeSQL片段，不再惧怕通用DSL无法使用特定数据库特的非通用功能](@site/query/native-sql)
+        -   可混入NativeSQL片段，不再惧怕通用DSL无法使用特定数据库特的非通用功能
 
-        -   [Jimmer独创的隐式动态table join，填补行业空白](@site/query/dynamic-join/)
+        -   Jimmer独创的隐式动态table join，填补行业空白
 
         -   编译时发现问题，不再惧怕重构
 
         -   良好的IDE智能提示，流畅开发
 
-    -   [前后端免对接](@site/spring/client)
+    -   前后端免对接
 
         -   消除后端开发的DTO爆炸，从以传统开发方式(尤其是MyBatis)的重复劳动中解脱出来
 
@@ -230,21 +229,21 @@ const DATA_ZH = `
 
         -   把后端异常映射为前端可理解错误信息
 
-    -   [全局过滤器](@site/query/global-filter)
+    -   全局过滤器
 
         -   为实体类添加过滤条件，自动应用于绝大部分查询
 
         -   内置软删除过滤器支持
 
-        -   [多视角缓存，过滤器导致不同的用户看到不同数据，相应地，不同的用户可看到不同的缓存](@site/cache/multiview-cache)
+        -   多视角缓存，过滤器导致不同的用户看到不同数据，相应地，不同的用户可看到不同的缓存
 
-    -   [智能分页](@site/query/paging)
+    -   智能分页
 
         -   用户编写data询，自动生成count查询，并自动优化去掉非必要table join
 
         -   当页码过大时，自动变换查询方式
 
-    -   [极致性能](@site/overview/benchmark)
+    -   极致性能
 
         -   ORM本身的映射性能极高，发挥虚拟线程的威力
 
@@ -254,13 +253,13 @@ const DATA_ZH = `
 const DATA_EN = `
 -   Jimmer
 
-    -   [Query any data structure](@site/query/object-fetcher)
+    -   Query any data structure
 
         -   Extend the capabilities of GraphQL HTTP service to behave like local code
 
         -   Precisely control whether each property needs to be queried
 
-        -   [Recursive query for self-associated properties](@site/query/object-fetcher/recursive)
+        -   Recursive query for self-associated properties
 
         -   Unified handling of different data associations, transparent to developers
 
@@ -272,21 +271,21 @@ const DATA_EN = `
 
             -   Prioritize reading from cache
 
-    -   [Save any data structure](@site/mutation/save-command)
+    -   Save any data structure
 
         -   Rapidly develop complex form-saving business logic
 
         -   Multiple different form formats for saving business logic can coexist for the same aggregate root type
 
-    -   [Caching and its consistency](@site/cache)
+    -   Caching and its consistency
 
         -   Rich variety of underlying cache types, collectively abstracting caching for any data structure
 
-            -   [Object cache](@site/cache/cache-type/object)
+            -   Object cache
 
-            -   [Association cache](@site/cache/cache-type/association)
+            -   Association cache
 
-            -   [Calculation cache](@site/cache/cache-type/calculation)
+            -   Calculation cache
 
         -   Precisely control whether each property needs to be cached
 
@@ -298,13 +297,13 @@ const DATA_EN = `
 
         -   Powerful consistency. Consistency for object cache and association cache is fully automatic, requiring no development effort
 
-    -   [Calculated properties](../mapping/advanced/calculated/transient)
+    -   Calculated properties
 
         -   Decoupling of computation logic and ORM, allowing calculations based on business information (such as identity and permissions) and the use of non-SQL technologies
 
         -   Can be scalar properties as well as association properties
 
-    -   [Remote associations](@site/spring/spring-cloud)
+    -   Remote associations
 
         -   Data associations across microservices
 
@@ -316,13 +315,13 @@ const DATA_EN = `
 
         -   [NativeSQL fragments can be mixed, no longer fear generic DSLs lacking non-generic functionality specific to certain databases](@site/query/native-sql)
 
-        -   [Jimmer's innovative implicit dynamic table join, filling an industry gap](@site/query/dynamic-join/)
+        -   Jimmer's innovative implicit dynamic table join, filling an industry gap
 
         -   Discover issues at compile time, no longer fear refactoring
 
         -   Excellent IDE smart suggestions for smooth development
 
-    -   [No need for frontend-backend integration](@site/spring/client)
+    -   No need for frontend-backend integration
 
         -   Eliminate DTO explosion for backend development, freeing from repetitive work using traditional development approaches (especially MyBatis)
 
@@ -330,7 +329,7 @@ const DATA_EN = `
 
         -   Map backend exceptions to frontend-understandable error messages
 
-    -   [Global filters](@site/query/global-filter)
+    -   Global filters
 
         -   Add filtering conditions to entity classes, automatically applied to the majority of queries
 
@@ -338,13 +337,13 @@ const DATA_EN = `
 
         -   [Multi-view caching, where filters result in different data being seen by different users, accordingly, different users can see different caches](@site/cache/multiview-cache)
 
-    -   [Intelligent pagination](@site/query/paging)
+    -   Intelligent pagination
 
         -   User writes data query, automatically generates count query, and optimizes unnecessary table joins
 
         -   Automatically switch query methods when the page number is too large
 
-    -   [Ultimate performance](@site/overview/benchmark)
+    -   Ultimate performance
 
         -   ORM mapping performance is extremely high, leveraging the power of virtual threads
 

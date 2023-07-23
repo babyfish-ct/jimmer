@@ -30,7 +30,7 @@ export const ViewMore: FC<
 
     return (
         <>
-            <Button onClick={onButtonClick} variant={variant}>{buttonText}</Button>
+            <Button onClick={onButtonClick} variant={variant} size={variant == 'outlined' ? "small" : "medium"}>{buttonText}</Button>
             <Dialog 
             open={open} 
             onClose={onClose} 

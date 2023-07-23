@@ -204,7 +204,6 @@ private static final Fetcher<Book> COMPLEX_FETCHER = ❻
     BookFetcher.$
         .allScalarFields()
         .tenant(false)
-        .avgPrice()
         .store(
             BookStoreFetcher.$
                 .allScalarFields()
@@ -259,12 +258,11 @@ companion object {
             allScalarFields()
             tenant(false)
 
-            avgPrice()
-
             store {
                 allScalarFields()
                 avgPrice()
             }
+            
             authors {
                 allScalarFields()
             }
