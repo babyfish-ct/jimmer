@@ -32,6 +32,11 @@ export const CommunicationDialog: FC<{
         </ViewDialog>;
 });
 
+export const CommunicationPanel: FC = memo(() => {
+    const zh = useZh();
+    return zh ? ZH : EN;
+});
+
 const JAVA = 
 `
 @RestController

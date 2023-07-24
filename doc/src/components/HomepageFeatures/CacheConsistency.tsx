@@ -35,6 +35,11 @@ export const CacheConsistencyDialog: FC<{
         </ViewDialog>;
 });
 
+export const CacheConsistencyPanel: FC = memo(() => {
+    const zh = useZh();
+    return zh ? ZH : EN;
+});
+
 const Consistency = require("@site/static/img/consistency.jpg").default;
 
 const ZH: ReactNode = 

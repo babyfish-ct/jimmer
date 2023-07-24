@@ -5,7 +5,6 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { ViewMore } from '../ViewMore';
 import { DynamicJoinProblem } from './DynamicJoinProblem';
 import { Communication } from './Communication';
-import { Benchmark } from '../Benchmark';
 import { ObjectFetcher } from './ObjectFetcher';
 import { SaveCommand } from './SaveCommand';
 import { CacheConsistency } from './CacheConsistency';
@@ -93,7 +92,7 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <li>
           <p>对于REST服务而言，为客户端 <i>(比如Web前端)</i> 生成客户端代码 <i>(比如TypeScript)</i>。</p>
           <p>
-            服务端和客户端的编程模型不同。
+            注意，和其他自动生成客户端代码的技术方案不同，服务端和客户端的编程模型不同。
             <ul>
               <li>服务端作为生产者，其编程模型经过了简化<i>(消除了DTO爆炸)</i>，大幅降低实现成本</li>
               <li>客户端作为消费者，采用完整的编程模型<i>(重现了DTO爆炸)</i>，使用起来具有良好的开发体验</li>
@@ -121,16 +120,19 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
       <ul>
         <li>内置Spring Boot Starter支持，简化项目搭建</li>
         <li>支持Spring Data开发风格</li>
-        <li>轻松结合Spring Cloud微服务技术体系和Jimmer远程实体关联</li>
+        <li>
+          以Spring Cloud为代表的微服务技术体系可以和Jimmer实体之间的远程关联相结合。在微型服务体系中，数据库是碎片化的。先从不同的微服务中查询数据的不同部分，然后拼接起来作为一个整体返回，这个操作既繁琐又高频，应该由底层方案隐藏和自动化
+        </li>
       </ul>
     ),
   },
   {
     title: '极致的性能',
     description: (
-      <>
-        充分优化，尽可能压缩除IO等待外的代码执行消耗。充分发挥Java21虚拟线程的潜力，支撑更高的吞吐<Performance/>
-      </>
+      <ul>
+        <li>充分优化<code>ResultSet</code>映射性能，尽可能压缩除IO等待外的代码执行消耗。充分发挥Java21虚拟线程的潜力，支撑更高的吞吐<Performance/></li>
+        <li>对分页查询进行特别的SQL优化</li>
+      </ul>
     ),
   }
 ];
@@ -182,7 +184,7 @@ const FEATURE_LIST_EN: FeatureItem[] = [
         <li>
           <p>For REST services, generate client code <i>(such as TypeScript)</i> for the client <i>(such as a web front end)</i>. </p>
            <p>
-             The programming model for the server and the client is different.
+             Note that unlike other technical solutions that automatically generate client code, the programming model for the server and the client is different.
              <ul>
                <li>As the producer, the programming model of the server has been simplified <i>(eliminated DTO explosion)</i>, greatly reducing the implementation cost</li>
                <li>As a consumer, the client adopts a complete programming model <i>(reproduces the DTO explosion)</i>, and has a good development experience</li>
@@ -213,18 +215,28 @@ const FEATURE_LIST_EN: FeatureItem[] = [
       <ul>
         <li>Built-in Spring Boot Starter support, simplifying project setup</li>
         <li>Supports Spring Data development style</li>
-        <li>Easily integrates with the Spring Cloud microservices technology stack and remote entity associations of Jimmer</li>
+        <li>
+        The microservice technology system represented by Spring Cloud can be combined with the remote association between Jimmer entities. 
+        In the microservice system, the database is fragmented. 
+        First query different parts of the data from different microservices, and then stitch them together and return them as a whole, 
+        this operation is cumbersome and high-frequency so should be hidden and automated by the underlying solution
+        </li>
       </ul>
     ),
   },
   {
     title: 'Ultimate performance',
     description: (
-      <>
-        Fully optimized to minimize code execution overhead excluding IO waiting. 
-        Fully harnesses the potential of Java 21 virtual threads to support higher throughput
-        <Performance/>
-      </>
+      <ul>
+        <li>
+          Fully optimize the <code>ResultSet</code> mapping performance to compress the code execution consumption except IO waiting as much as possible. 
+          Fully harnesses the potential of Java 21 virtual threads to support higher throughput
+          <Performance/>
+        </li>
+        <li>
+          Special SQL optimization for paging queries
+        </li>
+      </ul>
     ),
   }
 ];

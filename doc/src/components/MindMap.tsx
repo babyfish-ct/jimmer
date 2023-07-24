@@ -178,7 +178,7 @@ const MindMapCore: FC<{
             {
                 !maximize &&
                 <Tabs value={cardType} onChange={onCardTypeChange}>
-                    <Tab value={0} label={isZh ? "图形" : "Grpahics"}/>
+                    <Tab value={0} label={isZh ? "脑图" : "Mindmap"}/>
                     <Tab value={1} label={isZh ? "文本" : "Text"}/>
                 </Tabs>
             }
