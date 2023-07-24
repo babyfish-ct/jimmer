@@ -75,8 +75,8 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <li>使用哪些缓存技术，由开发人员决定</li>
         <li>
           不仅支持简单的<ViewMore buttonText="对象缓存" variant="text"><img src={ObjectCache}/></ViewMore>，还支持属性级缓存，
-          包括<ViewMore buttonText="关联属性缓存" variant='text'><img src={AssociationCache}/></ViewMore>
-          和<ViewMore buttonText="计算属性缓存" variant='text'><img src={CalculatedCache}/></ViewMore>。
+          包括<ViewMore buttonText="关联缓存" variant='text'><img src={AssociationCache}/></ViewMore>
+          和<ViewMore buttonText="计算缓存" variant='text'><img src={CalculatedCache}/></ViewMore>。
           最终提供任意形状的数据结构的缓存能力，而非简单对象的缓存能力
         </li>
         <li>
@@ -142,7 +142,7 @@ const FEATURE_LIST_EN: FeatureItem[] = [
       <>
         Using data structures of any shape as the basic operation unit, 
         even handling infinite depth data structures with self-associated properties, 
-        allows developers to escape the DTO explosion hell
+        allows developers to escape the <ViewMore buttonText="DTO Explosion" variant="text"><img src={DtoExplosion}/></ViewMore> hell
         <ul>
           <li>Querying data structures of any shape: can be understood as GraphQLization of ORM<ObjectFetcher/></li>
           <li>Saving data structures of any shape: quickly implement complex form saving business<SaveCommand/></li>

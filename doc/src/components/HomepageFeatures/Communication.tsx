@@ -5,10 +5,31 @@ import CodeBlock from "@theme/CodeBlock";
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 import { useZh } from "@site/src/util/use-zh";
+import { ViewDialog } from "../ViewDialog";
 
 export const Communication: FC = memo(() => {
     const zh = useZh();
-    return zh ? ZH : EN;
+    return zh ? 
+        <ViewMore buttonText="简要了解" title="服务端和客户端使用不同编程模型的前后端对接" variant="outlined">
+            {ZH}
+        </ViewMore> : 
+        <ViewMore buttonText="A Brief Introduction" title="The docking of the server and the client using different programming models" variant="outlined">
+            {EN}
+        </ViewMore>;
+});
+
+export const CommunicationDialog: FC<{
+    readonly open: boolean,
+    readonly onClose: () => void
+}> = memo(props => {
+    const zh = useZh();
+    return zh ? 
+        <ViewDialog title="服务端和客户端使用不同编程模型的前后端对接" {...props}>
+            {ZH}
+        </ViewDialog> : 
+        <ViewDialog title="The docking of the server and the client using different programming models" {...props}>
+            {EN}
+        </ViewDialog>;
 });
 
 const JAVA = 
@@ -159,7 +180,7 @@ export class BookService {
 `;
 
 const ZH = 
-    <ViewMore buttonText="简要了解" title="服务端和客户端使用不同编程模型的前后端对接" variant="outlined">
+    <>
         <h1>服务端</h1>
         <Tabs groupId="language">
             <TabItem value="java" label="Java">
@@ -212,61 +233,61 @@ const ZH =
         <Admonition type="tip">
             对于客户端而言，每一个业务场景的API都精确定义了返回数据的DTO类型，任何调用都能得到良好的编译时检查和流畅的IDE智能提示。
         </Admonition>
-    </ViewMore>;
+    </>;
 
 const EN = 
-    <ViewMore buttonText="A Brief Introduction" title="The docking of the server and the client using different programming models" variant="outlined">
-    <h1>Server</h1>
-    <Tabs groupId="language">
-        <TabItem value="java" label="Java">
-            <CodeBlock language="java">{JAVA}</CodeBlock>
-        </TabItem>
-        <TabItem value="kotlin" label="Kotlin">
-            <CodeBlock language="kotlin">{KOTLIN}</CodeBlock>
-        </TabItem>
-    </Tabs>
-    <ul>
-        <li>❶ As external promise, the shape of each <code>Book</code> object in the list object returned by GET <code>/books</code> is the shape expressed by the static constant <code>SIMPLE_FETCHER</code></li>
-        <li>
-            ❷ Internal implementation, GET <code>/books</code> internally uses the static constant SIMPLE_FETCHER to query data
-            <Admonition type="caution">
-                ❶ as an external promise and ❷ as an internal realization must be consistent
-            </Admonition>
-        </li>
-        <li>❸ As external promise, if GET <code>/book/{"{id}"}/detail</code> returns non-null, its shape is the shape expressed by the static constant <code>COMPLEX_FETCHER</code></li>
-        <li>
-            ❹ Internal implementation, GET <code>/book/{"{id}"}/detail</code> internally uses the static constant COMPLEX_FETCHER to query data
-            <Admonition type="caution">
-                ❸ as an external promise and ❹ as an internal realization must be consistent
-            </Admonition>
-        </li>
-        <li>
-            <p>❺ and ❻, declare the shape of the object in the form of static constants. </p>
-
-            <p>Through the decoration of <code>@FetchBy</code>, Jimmer understands the specific shape of the data returned by dynamic object, and it can generate code for the client, including TypeScript</p>
-        </li>
-    </ul>
-    <Admonition type="tip">
+    <>
+        <h1>Server</h1>
+        <Tabs groupId="language">
+            <TabItem value="java" label="Java">
+                <CodeBlock language="java">{JAVA}</CodeBlock>
+            </TabItem>
+            <TabItem value="kotlin" label="Kotlin">
+                <CodeBlock language="kotlin">{KOTLIN}</CodeBlock>
+            </TabItem>
+        </Tabs>
         <ul>
+            <li>❶ As external promise, the shape of each <code>Book</code> object in the list object returned by GET <code>/books</code> is the shape expressed by the static constant <code>SIMPLE_FETCHER</code></li>
             <li>
-                For the data structure with <code>Book</code> as the aggregate root, the shapes of the data structure are different in different business scenarios,
-                But no matter how diverse the shapes of the data structure are, just define the diverse object shapes <i>(❺ and ❻ in the example)</i>.
-                For the Java or Kotlin code on the server side, only one type <code>Book</code> to develop the application.
+                ❷ Internal implementation, GET <code>/books</code> internally uses the static constant SIMPLE_FETCHER to query data
+                <Admonition type="caution">
+                    ❶ as an external promise and ❷ as an internal realization must be consistent
+                </Admonition>
+            </li>
+            <li>❸ As external promise, if GET <code>/book/{"{id}"}/detail</code> returns non-null, its shape is the shape expressed by the static constant <code>COMPLEX_FETCHER</code></li>
+            <li>
+                ❹ Internal implementation, GET <code>/book/{"{id}"}/detail</code> internally uses the static constant COMPLEX_FETCHER to query data
+                <Admonition type="caution">
+                    ❸ as an external promise and ❹ as an internal realization must be consistent
+                </Admonition>
             </li>
             <li>
-                For the internal implementation of the service, because Jimmer itself supports querying data structures of any shapes, developers only need to use the shape definition as an additional parameter to implement the simplest aggregate root query.
-                This is fundamentally different from `MyBatis`, which needs to map result <i>(or manually query and combine different parts of data)</i> for all data shapes required by all scenarios.
-            </li>
-            <li>
-                For exposing the HTTP API to the outside, it is sufficient to directly return the Jimmer dynamic entity without any <code>DTO/VO</code> conversion.
-                If you need the client code generated by Jimmer, use <code>@FetchBy</code> to decoreate the return type <i> (or its generic parameters)</i>.
+                <p>❺ and ❻, declare the shape of the object in the form of static constants. </p>
+
+                <p>Through the decoration of <code>@FetchBy</code>, Jimmer understands the specific shape of the data returned by dynamic object, and it can generate code for the client, including TypeScript</p>
             </li>
         </ul>
-    </Admonition>
-    <h1>client</h1>
-    <CodeBlock language="ts">{TS_ZH}</CodeBlock>
-    <Admonition type="tip">
-        For the client, the API of each business scenario precisely defines the DTO type of the returned data, and any invocation can get good compile-time checks and smooth IDE intelligent prompts.
-    </Admonition>
-    </ViewMore>;
+        <Admonition type="tip">
+            <ul>
+                <li>
+                    For the data structure with <code>Book</code> as the aggregate root, the shapes of the data structure are different in different business scenarios,
+                    But no matter how diverse the shapes of the data structure are, just define the diverse object shapes <i>(❺ and ❻ in the example)</i>.
+                    For the Java or Kotlin code on the server side, only one type <code>Book</code> to develop the application.
+                </li>
+                <li>
+                    For the internal implementation of the service, because Jimmer itself supports querying data structures of any shapes, developers only need to use the shape definition as an additional parameter to implement the simplest aggregate root query.
+                    This is fundamentally different from `MyBatis`, which needs to map result <i>(or manually query and combine different parts of data)</i> for all data shapes required by all scenarios.
+                </li>
+                <li>
+                    For exposing the HTTP API to the outside, it is sufficient to directly return the Jimmer dynamic entity without any <code>DTO/VO</code> conversion.
+                    If you need the client code generated by Jimmer, use <code>@FetchBy</code> to decoreate the return type <i> (or its generic parameters)</i>.
+                </li>
+            </ul>
+        </Admonition>
+        <h1>client</h1>
+        <CodeBlock language="ts">{TS_ZH}</CodeBlock>
+        <Admonition type="tip">
+            For the client, the API of each business scenario precisely defines the DTO type of the returned data, and any invocation can get good compile-time checks and smooth IDE intelligent prompts.
+        </Admonition>
+    </>;
 
