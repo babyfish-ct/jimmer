@@ -27,7 +27,7 @@ Jimmer有很多配置，其中 **一部分** 可以在Spring Boot的`application
 |jimmer.transaction-cache-operator-fixed-delay|int|5000|触发器类型为`TRANSACTION_ONLY`(不依赖外部CDC)时，Jimmer通过本地消息表保证缓存最终一致性，失败或过多的缓存清理任务的重试时间间隔|
 |jimmer.micro-service-name|string||当前应用所属微服务的服务名，只有使用远程关联的应用才需要配置|
 |jimmer.error-translator.disabled|boolean|false|是否禁用前后端自动对接功能中的异常对接|
-|jimmer.error-translator.disabled|HttpStatus|INTERNAL_SERVER_ERROR|服务端异常在客户端的统一HTTP状态|
+|jimmer.error-translator.http-status|HttpStatus|INTERNAL_SERVER_ERROR|服务端异常在客户端的统一HTTP状态|
 |jimmer.error-translator.debug-info-supported|boolean|false|是否在客户端错误中附带异常message等信息以帮助调试，禁止在生产环境上使用|
 |jimmer.error-translator.debug-info-max-stack-trace-count|int|0|客户端错误中附带异常信息中stacktrace的最大条数，禁止在生产环境上使用|
 |jimmer.client.ts.path|string||被自动生成的TypeScript代码的下载路径，比如"/ts.zip"|
