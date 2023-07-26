@@ -1,0 +1,41 @@
+---
+sidebar_position: 5
+title: 附录
+---
+
+Jimmer有很多配置，其中 **一部分** 可以在Spring Boot的`application.yml`或`application.properties`中配置。如下：
+
+|属性名|类型|默认值|描述|
+|-----|---|----|-----|
+|jimmer.language|java &#124; kotlin|java|Kotlin项目必须配置|
+|jimmer.dialect|string|Jimmer的默认方言|Jimmer方言类名|
+|jimmer.show-sql|boolean|false|是否打印SQL日志|
+|jimmer.pretty-sql|boolean|false|是否格式化SQL，对执行和日志都有影响|
+|jimmer.executor-context-prefixes|List&lt;String&gt;|[]|通常为多个包名或类的全名，Jimmer判断当前stacktrace是否应附加在SQL日志中|
+|jimmer.database-validation.mode|NONE &#124; WARNING &#124; ERROR|NONE|数据库验证方式|
+|jimmer.database-validation-mode|同上|同上|同上|
+|jimmer.database-validation.catalog|string||被验证的表所在数据库的catalog，同名表冲突时配置|
+|jimmer.database-validation.schema|string||被验证的表所在数据库的schema，同名表冲突时配置|
+|jimmer.trigger-type|BINLOG_ONLY &#124; TRANSACTION_ONLY &#124; BOTH|BINLOG_ONLY|触发器类型|
+|jimmer.id-only-target-checking-level|NONE &#124; FAKE &#124; ALL|NONE|保存指令是否检查短关联的id|
+|jimmer.save-command-pessimistic-lock|boolean|false|保存指令中的查询SQL是否使用悲观锁|
+|jimmer.default-enum-strategy|NAME &#124; ORDINAL|NAME|未明确声明映射模式的枚举的默认映射方式|
+|jimmer.default-batch-size|int|128|非集合属性的默认fetch size|
+|jimmer.default-list-batch-size|int|16|集合属性的默认fetch size|
+|jimmer.offset-optimizing-threshold|int|Integer.MAX_VALUE|分页查询启用深分页优化的offset阈值|
+|jimmer.is-foreign-key-enabled-by-default|booelan|true|没有明确指定真伪的外键是否被视为真实外键|
+|jimmer.transaction-cache-operator-fixed-delay|int|5000|触发器类型为`TRANSACTION_ONLY`(不依赖外部CDC)时，Jimmer通过本地消息表保证缓存最终一致性，失败或过多的缓存清理任务的重试时间间隔|
+|jimmer.micro-service-name|string||当前应用所属微服务的服务名，只有使用远程关联的应用才需要配置|
+|jimmer.error-translator.disabled|boolean|false|是否禁用前后端自动对接功能中的异常对接|
+|jimmer.error-translator.disabled|HttpStatus|INTERNAL_SERVER_ERROR|服务端异常在客户端的统一HTTP状态|
+|jimmer.error-translator.debug-info-supported|boolean|false|是否在客户端错误中附带异常message等信息以帮助调试，禁止在生产环境上使用|
+|jimmer.error-translator.debug-info-max-stack-trace-count|int|0|客户端错误中附带异常信息中stacktrace的最大条数，禁止在生产环境上使用|
+|jimmer.client.ts.path|string||被自动生成的TypeScript代码的下载路径，比如"/ts.zip"|
+|jimmer.client.ts.api-name|string|Api|被自动生成的TypeScript代码的API名称|
+|jimmer.client.java-feigh.indent|int|4|被自动生成的TypeScript代码的缩进量|
+|jimmer.client.ts.anonymous|boolean|false|被自动生成的TypeScript代码是否采用匿名类型风格避免为DTO类型命名|
+|jimmer.client.java-feign.path|string||被自动生成的Spring Cloud Feign Java代码的下载路径，比如"/java-feign.zip"|
+|jimmer.client.java-feign.api-name|string|Api|被自动生成的Spring Cloud Feign Java代码的API名称|
+|jimmer.client.java-feign.indent|int|4|被自动生成的Spring Cloud Feign Java代码的缩进量|
+|jimmer.client.java-feign.base-package|string||被自动生成的Spring Cloud Feign Java代码的最顶层包|
+

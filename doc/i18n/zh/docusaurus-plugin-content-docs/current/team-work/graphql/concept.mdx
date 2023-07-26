@@ -6,6 +6,8 @@ title: 基本概念
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+## 概念
+
 在[Spring篇](../spring)，我们讨论了如何利用Jimmer实现REST服务，并为之自动生成客户端所需的代码，比如TypeScript。
 
 不仅如此，Jimmer还支持另外一种开发模式，构建[GraphQL](https://graphql.org/)服务。这是本系列文章要讨论的内容。
@@ -69,3 +71,9 @@ dependencies {
 因此，开发人员需要为项目创建文件`src/main/resources/graphql/schema.graphqls`，并在其中定义GraphQL Schema。
 
 这个文件是[Spring GraphQL](https://spring.io/projects/spring-graphql)的要求，其内容GraphQL schema是一种标准的语言，它们都和Jimmer无关，本文不做解释，可参考[附带例子的GraphQL Schema](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql-graphql/src/main/resources/graphql/schema.graphqls)。
+
+## 注意事项
+
+:::caution
+目前版本存在限制，在提供GraphQL服务是，请勿使用[基于SQL的简单计算属性](../mapping/advanced/calculated/formula#基于sql的计算)
+:::
