@@ -1,4 +1,4 @@
 ---
 sidebar_position: 1
-title: Base Mapping
+title: 基础映射
 ---

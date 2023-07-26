@@ -1,4 +1,4 @@
 ---
 sidebar_position: 6
-title: Step By Step
+title: 快速上手
 ---

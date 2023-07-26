@@ -1,5 +1,5 @@
 ---
 sidebar_position: 3
-title: Query
+title: 查询篇
 ---
 

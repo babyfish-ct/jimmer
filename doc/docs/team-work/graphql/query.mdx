@@ -2,3 +2,371 @@
 sidebar_position: 2
 title: Query
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 功能描述
+
+假如没有Jimmer的支持，实现GraphQL查询需要做两类工作
+
+-   查询聚合根对象
+
+    这是开发任何数据服务都需要做的工作，无论是GraphQL服务，REST服务，甚至其他自定义协议的服务。
+
+    开发人员只需查询并返回孤单的聚合根对象即可，无需考虑这些对象的关联属性。所以，这是相对简单的开发任务。
+    
+    对[Spring GraphQL](https://spring.io/projects/spring-graphql)而言，为控制器类的的查询方法添加注解`@QueryMapping`即可。
+
+-   查询关联属性和计算属性
+
+    这是实现GraphQL查询的主要工作量，需要考虑当前对象的所有关联，以及实施批量加载。存在一定的工作量。
+
+    其实，也可以换一种说法，正是应为服务端承担了这些责任，客户端使用起来才会感觉到自由、便捷和强大。
+
+    对[Spring GraphQL](https://spring.io/projects/spring-graphql)而言，提供了一些用于查询关联属性的方案，比如
+
+    -   [@SchemaMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers.schema-mapping)
+    -   [Batch Loading](https://docs.spring.io/spring-graphql/docs/current/reference/html/#execution.batching)
+    -   [@BatchMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers.batch-mapping)
+
+用Jimer实现GraphQL查询时，开发人员只需关注于聚合根对象的查询，只需要保证这些聚合根对象具备简单标量字段即可。这是因为
+
+:::tip
+实体对象的所有关联属性和计算属性都会被Jimmer自动映射为GraphQL字段，无需任何开发
+:::
+
+:::caution
+截止到目前为止，GraphQL协议并不支持自关联属性的递归查询。
+
+因此，无法通过GraphQL暴露类似于[对象抓取器的递归查询](../query/object-fetcher/recursive)的功能，这是目前使用GraphQL必须接受的功能牺牲。
+:::
+
+## 例子代码
+
+Jimmer自动把实体对象关联属性和计算属性映射为GraphQL字段，所以开发人员只需实现聚合根的查询即可，代码非常简单，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreService.java"
+package com.example.business;
+
+import org.springframework.graphql.data.method.annotation.Argument;
+// highlight-next-line
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.stereotype.Controller;
+
+...省略其他导入...
+
+@Controller
+public class BookStoreService {
+
+    private final BookStoreRepsitory bookStoreRepsitory;
+
+    public BookStoreService(BookStoreRepsitory bookStoreRepsitory) {
+        this.bookStoreRepsitory = bookStoreRepsitory;
+    }
+
+    // highlight-next-line
+    @QueryMapping
+    public List<BookStore> bookStores(
+            @Argument @Nullable String name
+    ) {
+        return bookStoreRepository.findByNameLikeOrderByName(name);
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreService.kt"
+package com.example.business
+
+import org.springframework.graphql.data.method.annotation.Argument
+// highlight-next-line
+import org.springframework.graphql.data.method.annotation.QueryMapping
+import org.springframework.stereotype.Controller
+
+...省略其他导入...
+
+@Controller
+class BookStoreService(
+    private val bookStoreRepository: BookStoreRepsitory
+) {
+
+    // highlight-next-line
+    @QueryMapping
+    fun bookStores(
+        @Argument name: String?
+    ): List<BookStore> {
+        return bookStoreRepository.findByNameLikeOrderByName(name)
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+其中，`BookRepsitory`定义如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreRepository.java"
+public interface BookStoreRepository extends JRepository<BookStore, Long> {
+
+    List<BookStore> findByNameLikeOrderByName(@Nullable String name);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreRepository.kt"
+interface BookStoreRepository : KRepository<BookStore, Long> {
+
+    fun findByNameLikeOrderByName(name: String?): List<BookStore>
+}
+```
+
+</TabItem>
+</Tabs>
+
+和之前的REST服务不同，这个例子并**未**使用[对象抓取器](../query/object-fetcher)，返回最简单的孤单对象即可。孤单对象既不包含关联属性也不包含计算属性。
+
+这里，`BookStoreRepository.findByNameLikeOrderByName`是抽象方法。如果用使用这种声明式查询的话，请使用最简单的`select(table)`，而非`select(table.fetch(...))`。
+
+:::tip
+用Jimmer实现GraphQL时，[对象抓取器](../query/object-fetcher)被GraphQL机制替代。
+
+因此，**请勿**使用对象抓取器，直接返回简单对象即可。
+:::
+
+## 运行效果
+
+附带的例子中, GraphQL相关的项目在这里
+
+|Language|Example|
+|---|---|
+|Java|[example/java/jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql)|
+|Kotlin|[example/kotlin/jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt)|
+
+选择任何一个项目，打开，启动。最后，使用浏览器访问http://localhost:8080/graphiql
+:::note
+小心，是/graph**i**ql, 不是/graphql
+:::
+
+执行请求
+
+```
+query {
+  bookStores {
+    id
+    name
+    avgPrice ❶
+    books { ❷
+      id
+      name
+      edition
+      price
+      authors { ❸
+        id
+        firstName
+        fullName
+        gender
+      }
+    }
+  }
+}
+```
+
+-   ❶ 查询计算属性`BookStore.avgPrice`
+
+-   ❷ 查询关联属性`BookStore.books`
+
+-   ❸ 查询关联属性`Book.authors`
+
+返回结果为
+
+```json
+{
+    "data":{
+        "bookStores":[
+            {
+                "id":2,
+                "name":"MANNING",
+                // highlight-next-line
+                "avgPrice":80.333333,
+                // highlight-next-line
+                "books":[
+                    {
+                        "id":10,
+                        "name":"GraphQL in Action",
+                        "edition":1,
+                        "price":80,
+                        // highlight-next-line
+                        "authors":[
+                            {
+                                "id":5,
+                                "firstName":"Samer",
+                                "fullName":"Samer Buna",
+                                "gender":"MALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":11,
+                        ...略...
+                    },
+                    {
+                        "id":12,
+                        ...略...
+                    }
+                ]
+            },
+            {
+                "id":1,
+                "name":"O'REILLY",
+                // highlight-next-line
+                "avgPrice":58.5,
+                // highlight-next-line
+                "books":[
+                    {
+                        "id":4,
+                        "name":"Effective TypeScript",
+                        "edition":1,
+                        "price":73,
+                        // highlight-next-line
+                        "authors":[
+                            {
+                                "id":3,
+                                "firstName":"Dan",
+                                "fullName":"Dan Vanderkam",
+                                "gender":"MALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":5,
+                        ...略...
+                    },
+                    {
+                        "id":6,
+                        ...略...
+                    },
+                    {
+                        "id":1,
+                        "name":"Learning GraphQL",
+                        "edition":1,
+                        "price":50,
+                        "authors":[
+                            {
+                                "id":2,
+                                "firstName":"Alex",
+                                "fullName":"Alex Banks",
+                                "gender":"MALE"
+                            },
+                            {
+                                "id":1,
+                                "firstName":"Eve",
+                                "fullName":"Eve Procello",
+                                "gender":"FEMALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":2,
+                        "name":"Learning GraphQL",
+                        "edition":2,
+                        "price":55,
+                        "authors":[
+                            {
+                                "id":2,
+                                "firstName":"Alex",
+                                "fullName":"Alex Banks",
+                                "gender":"MALE"
+                            },
+                            {
+                                "id":1,
+                                "firstName":"Eve",
+                                "fullName":"Eve Procello",
+                                "gender":"FEMALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":3,
+                        "name":"Learning GraphQL",
+                        "edition":3,
+                        "price":51,
+                        "authors":[
+                            {
+                                "id":2,
+                                "firstName":"Alex",
+                                "fullName":"Alex Banks",
+                                "gender":"MALE"
+                            },
+                            {
+                                "id":1,
+                                "firstName":"Eve",
+                                "fullName":"Eve Procello",
+                                "gender":"FEMALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":7,
+                        "name":"Programming TypeScript",
+                        "edition":1,
+                        "price":47.5,
+                        "authors":[
+                            {
+                                "id":4,
+                                "firstName":"Boris",
+                                "fullName":"Boris Cherny",
+                                "gender":"MALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":8,
+                        "name":"Programming TypeScript",
+                        "edition":2,
+                        "price":45,
+                        "authors":[
+                            {
+                                "id":4,
+                                "firstName":"Boris",
+                                "fullName":"Boris Cherny",
+                                "gender":"MALE"
+                            }
+                        ]
+                    },
+                    {
+                        "id":9,
+                        "name":"Programming TypeScript",
+                        "edition":3,
+                        "price":48,
+                        "authors":[
+                            {
+                                "id":4,
+                                "firstName":"Boris",
+                                "fullName":"Boris Cherny",
+                                "gender":"MALE"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
+```
+
+不难发现，GraphQL的执行效果和[对象抓取器](../query/object-fetcher)的执行效果非常类似。这也是前面说过的"对象抓取器被GraphQL取代，请勿使用对象抓取器"的原因。
+
+:::tip
+其实，非GraphQL模式下非常有用的[对象抓取器](../query/object-fetcher)本身就是ORM框架GraphQL化的结果。
+:::

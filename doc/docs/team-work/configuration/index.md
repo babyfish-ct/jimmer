@@ -1,4 +1,4 @@
 ---
 sidebar_position: 7
-title: Configuration
+title: 配置篇
 ---

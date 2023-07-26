@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
 import {
-	G2,
 	Chart,
 	Tooltip,
 	Interval,

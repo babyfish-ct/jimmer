@@ -47,7 +47,7 @@ const ZH =
     </>;
 
 const EN = 
-    <ViewMore buttonText='A Brief Introduction' title='Performance Report' variant='outlined'>
+    <>
         <Benchmark type='OPS'/>
         <b>Operations per second</b>
         <ul>
@@ -61,5 +61,4 @@ const EN =
         <p>
             You can also click <code>Show native JDBC coordinates</code> above the icon to compare with the original JDBC. After doing this, you will see incredible results and inevitably question its authenticity. In the documentation related to performance indicators, we will explain it.
         </p>
-     </ViewMore>;
-
+    </>;

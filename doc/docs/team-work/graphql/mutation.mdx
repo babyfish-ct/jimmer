@@ -2,3 +2,243 @@
 sidebar_position: 3
 title: Mutation
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+[GraphQL](https://graphql.org/)绝大部分特新都是针对Query而非Mutation的，要实现Mutation操作，使用[Spring GraphQL](https://spring.io/projects/spring-graphql)提供的`@MutationMapping`注解即可，这很简单，本无需阐述。
+
+然而，Jimmer通过[保存指令](../mutation/save-command)对修改操作进行了强大的支持，可以大幅简化GraphQL mutation操作的实现。
+
+:::info
+本文重点讨论如何使用[保存指令](../mutation/save-command)实现GraphQL Mutation，即如何保存任何复杂的表单。
+
+至于其他更简单的实现方法，请参考官方示例
+[example/java/jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql)或
+[example/kotlin/jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt)
+:::
+
+## 基本概念
+[保存指令](../mutation/save-command)可以保存任意形状的数据结构，但直接暴露此功能会导致用户随心所欲地修改任何它像修改数据，从而导致安全性问题。
+
+为此，建议使用Input DTO作为保存API的参数。和可以表达任意形状数据结构的动态实体独享不同，Input DTO是静态Java对象，能严格限定用户要保存的数据结构的形状，保证了对外的安全性。
+
+:::note
+这和Jimmer企图消除的DTO不同，Jimmer企图消除的DTO是Output DTO，存在类型爆炸问题。这里所讨论的是Input DTO，不存在类型爆炸问题。二者并不矛盾。
+:::
+
+在服务内部，通过[mapstruct](https://github.com/mapstruct/mapstruct)把静态的Input DTO转化为动态实体对象，再保存。
+
+-   由于Jimmer对象是可表达任意形状数据结构的动态对象，无论静态Input DTO是什么格式，都可以转化为Jimmer的动态对象。
+
+-   一旦转化成Jimmer的动态对象，就可以使用[保存指令](../mutation/save-command)一句话保存。
+
+## 和GraphQL类比
+
+对外输出暴露动态实体对象，对内输入却只接受静态的Input DTO对象，这个理念，其实和GraphQL协议完全一致。
+
+以附带例子中的GraphQL声明文件为例[schema.graphqls](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql-graphql/src/main/resources/graphql/schema.graphqls)
+
+```
+type Book implements CommonEntity { ❶
+    id: Long!
+    name: String!
+    edition: Int!
+    price: BigDecimal!
+    store: BookStore
+    authors: [Author!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+    tenant: String!
+}
+
+input BookInput { ❷
+    id: Long
+    name: String!
+    edition: Int
+    price: BigDecimal!
+    storeId: Long
+    authorIds: [Long!]!
+}
+
+...省略其他代码...
+```
+
+-   ❶ `type`关键字声明的类型是表达任意形状数据结构的动态类型，用作GraphQL的输出类型
+
+-   ❷ `input`关键字声明的类型是表达固定形状数据结构的静态类型，用作GraphQL的输入类型
+
+可见，Jimmer的理念其实和GraphQL协议完全一致
+
+## 实际代码
+
+### 定义Input DTO类型
+
+使用普通的Java/Kotlin类定义Input DTO。为了简单起见，Java版本我们采用lombok
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookInput.java"
+@Data
+public class BookInput implements Input<Book> { ❶
+
+    private static final Converter CONVERTER = 
+        Mappers.getMapper(Converter.class);
+
+    @Nullable
+    private Long id;
+
+    private String name;
+
+    private int edition;
+
+    private BigDecimal price;
+
+    @Nullable
+    private Long storeId;
+
+    private List<Long> authorIds;
+
+    @Override
+    public Book toEntity() { ❷
+        return CONVERTER.toBook(this);
+    }
+
+    @Mapper
+    interface Converter {
+
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        Book toBook(BookInput input);
+
+        ...省略其他mapstruct配置...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookInput.kt"
+data class BookInput(
+    val id: Long? = null,
+    val name: String,
+    val edition: Int,
+    val price: BigDecimal,
+    val storeId: Long?,
+    val authorIds: List<Long>
+): Input<Book> { ❶
+
+    override fun toEntity(): Book = ❷
+        CONVERTER.toBook(this)
+
+    @Mapper
+    internal interface Converter { 
+
+        @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        fun toBook(input: BookInput): Book
+
+        ...省略其他mapstruct配置...
+    }
+
+    companion object {
+
+        @JvmStatic
+        private val CONVERTER = 
+            Mappers.getMapper(Converter::class.java)
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ `BookInput`类实现了接口`org.babyfish.jimmer.Input`，这只是一个建议，并不是必须的，但这样做会更方便
+
+-   ❷ 实现`Input.toEntity`方法，把当前静态的`Input DTO`对象转化为动态的`Book`实体对象。这是这个类唯一的功能
+
+:::note
+这里，我们省略了必要的mapstruct配置代码
+
+-   关于mapstruct本身，请参考[mapstruct用户手册](https://mapstruct.org/documentation/stable/reference/html/)
+
+-   关于Jimmer和mapstruct配合的技巧，请参考[和mapstruct协同](../object/mapstruct)
+:::
+
+### 实现GraphQL mutation
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookStoreService.java"
+package com.example.business;
+
+import org.springframework.graphql.data.method.annotation.Argument;
+// highlight-next-line
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.stereotype.Controller;
+
+...省略其他导入...
+
+@Controller
+public class BookStoreService {
+
+    private final BookStoreRepsitory bookStoreRepsitory;
+
+    public BookStoreService(BookStoreRepsitory bookStoreRepsitory) {
+        this.bookStoreRepsitory = bookStoreRepsitory;
+    }
+
+    @MutationMapping ❶
+    @Transactional
+    public Book saveBook(
+        @Argument BookInput input ❷
+    ) {
+        return bookRepository.save(input); ❸
+        // 或`bookRepository.save(input.toEntity())`
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookStoreService.kt"
+package com.example.business
+
+import org.springframework.graphql.data.method.annotation.Argument
+// highlight-next-line
+import org.springframework.graphql.data.method.annotation.MutationMapping
+import org.springframework.stereotype.Controller
+
+...省略其他导入...
+
+@Controller
+class BookStoreService(
+    private val bookStoreRepository: BookStoreRepsitory
+) {
+
+    @MutationMapping ❶
+    @Transactional
+    fun saveBook(
+        @Argument input: BookInput ❷
+    ): Book =
+        bookRepository.save(input) ❸
+        // 或`bookRepository.save(input.toEntity())`
+}
+```
+
+</TabItem>
+</Tabs>
+
+-   ❶ 使用注解`@org.springframework.graphql.data.method.annotation.MutationMapping`
+
+-   ❷ 使用静态Input DTO类型`BookInput`，让用户只能传递规定形状的数据结构，保证安全性
+
+-   ❸ [保存指令](../mutation/save-command)，一句话保存任意形状的数据结构
+
+    这里`bookRepository.save(input)`，其实是`bookRepository.save(input.toEntity())`的简写。这是建议Input DTO类型实现`org.babyfish.jimmer.Input<E>`接口的原因。
+
+    :::tip
+    无论`BookInput`类型所定义数据结构简单还是相对复杂，都可以一句话保存。这是[保存指令](../mutation/save-command)这个功能的核心价值。
+    :::

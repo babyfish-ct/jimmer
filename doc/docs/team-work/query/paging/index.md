@@ -1,4 +1,4 @@
 ---
 sidebar_position: 7
-title: Paging Query
+title: 分页查询
 ---

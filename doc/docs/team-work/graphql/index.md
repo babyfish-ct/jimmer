@@ -1,4 +1,4 @@
 ---
 sidebar_position: 8
-title: GraphQL
+title: GraphQL篇
 ---

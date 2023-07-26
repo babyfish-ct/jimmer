@@ -1,4 +1,480 @@
 ---
 sidebar_position: 1
-title: Usage
+title: 基本用法
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { LongAssociation } from '@site/src/components/LongAssociation';
+import Grid from '@mui/material/Grid';
+
+## 简介
+
+所谓保存指令，指保存任意形状的数据结构，如图：
+
+![save-command](@site/static/img/save.png)
+
+-   右上角
+    
+    用户要保存的数据结构，记为`A`
+
+-   左上角
+
+    按照`A`的形状，从数据库现有数据中得到已有数据结构，记为`B`。
+
+-   下方
+
+    Jimmer比较旧数据结构`B`和新数据结构`A`，找不同之处，执行适当的<span style={{color: 'orange'}}>修改</span>、<span style={{color: 'green'}}>插入</span>甚至<span style={{color: 'red'}}>删除</span>操作，最终让数据库中的数据结构和`A`整体完全一致，用户不用关心中间细节。
+
+    :::info
+    `B`和`A`的形状一样，因此数据库中已有数据查询成本，以及新旧数据之间的比较成本，完全视`A`*(用户要保存的数据结构)*的形状而定。
+    :::
+
+    :::tip
+    如果你了解Web领域的[React](https://react.dev/)或[Vue](https://vuejs.org/)，不难看出这个功能很像`Virtual DOM diff`。
+    :::
+
+## 基本概念
+
+保存指令将一个任意形状的数据结构写入到到数据库中，例如
+
+-   保存简单对象
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book simpleBook = BookDraft.$.product(draft -> {
+        draft.setName("SQL in Action");
+        dratt.setEdition(1);
+        draft.setPrice(new BigDecimal("59.9"));
+    });
+    sqlClient.save(simpleBook);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val simpleBook = new(Book::class).by {
+        name = "SQL in Action"
+        edition = 1
+        price = BigDecimal("59.9")
+    }
+    sqlClient.save(simpleBook)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   保存复杂数据结构
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    Book complexBook = BookDraft.$.product(draft -> {
+        draft.setName("SQL in Action");
+        dratt.setEdition(1);
+        draft.setPrice(new BigDecimal("59.9"));
+        draft.applyStore(store -> {
+            store.setName("MANNING");
+        })
+        draft.addIntoAuthors(author -> {
+            author.setFirstName("Dmitry");
+            author.setLastName("Jamerov");
+            author.setGender(Gender.MALE); 
+        });
+        draft.addIntoAuthors(author -> {
+            author.setFirstName("Svetlana");
+            author.setLastName("Isakova");
+            author.setGender(Gender.FEMALE);
+        })
+    });
+    sqlClient.save(simpleBook);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val complexBook = new(Book::class).by {
+        name = "SQL in Action"
+        edition = 1
+        price = BigDecimal("59.9")
+        store().apply {
+            name = MANNING;
+        }
+        authors().appBy {
+            firstName("Dmitry");
+            lastName("Jamerov");
+            gender(Gender.MALE);
+        }
+        authors().addBy {
+            firstName = "Svetlana"
+            lastName = "Isakova"
+            gender = Gender.FEMALE
+        }
+    }
+    sqlClient.save(complexBook)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+:::tip
+Save指令和其他ORM框架的save方法之间存在本质差异。
+
+以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
+关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)和[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+
+Jimmer采用完全不同方法，被保存的Jimmer对象具备[动态性](../../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+:::
+
+## API
+
+Save指令为不同语言和不同的开发模式提供了多个API，但功能都一样
+
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2"></th>
+            <th rowspan="2">Spring Boot API</th>
+            <th colspan="2">底层API</th>
+        </tr>
+        <tr>
+            <th>追求快捷性的API</th>
+            <th>追求可配置性的API</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Java</td>
+            <td>
+                <ul>
+                    <li>JRepository.save</li>
+                    <li>JRepository.saveCommand</li>
+                    <li>JRepository.saveAll</li>
+                    <li>JRepository.saveAllCommand</li>
+                    <li>JRepository.insert</li>
+                    <li>JRepository.update</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>JSqlClient.save</li>
+                    <li>JSqlClient.insert</li>
+                    <li>JSqlClient.update</li>
+                </ul>
+            </td>
+            <td>
+                <li>JSqlClient.getEntities().save</li>
+                <li>JSqlClient.getEntities().saveCommand</li>
+                <li>JSqlClient.getEntities().batchSave</li>
+                <li>JSqlClient.getEntities().batchSaveCommand</li>
+            </td>
+        </tr>
+        <tr>
+            <td>Kotlin</td>
+            <td>
+                <ul>
+                    <li>KRepository.save</li>
+                    <li>KRepository.saveAll</li>
+                    <li>KRepository.insert</li>
+                    <li>KRepository.update</li>
+                </ul>
+            </td>
+            <td>
+                <ul>
+                    <li>KSqlCient.save</li>
+                    <li>KSqlCient.insert</li>
+                    <li>KSqlCient.update</li>
+                </ul>
+            </td>
+            <td>
+                <li>KSqlCient.entities.save</li>
+                <li>KSqlCient.entities.batchSave</li>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+其中
+
+-   Java方法中名称中包含`Command`的方法比较特殊，和其他方法立即执行保存指令不同，这些方法仅仅创建指令，并不马上执行，用户可以对其配置，最后调用`execute`方法执行。例如
+
+    ```java
+    BookStore store = ...略...;
+    sqlClient
+        .getEntities()
+        .saveCommand(store) ❶
+        .setPessimisticLock() ❷
+        .execute(); ❸
+    ```
+
+    -   ❶ 创建保存指令，但并不马上执行
+
+    -   ❷ 进行某些配置
+
+    -   ❸ 完成配之后，最终调用`execute`执行保存指令
+
+    Kotlin不需要`saveCommand`方法，它采用了另外一种写法
+
+    ```kotlin
+    val store = ...略...;
+    sqlClient.save(store) {
+        setPessimisticLock() 
+    }
+    ```
+
+-   名称中包含`All`或`batch`的方法表示保存多个对象，而非一个对象
+
+-   对于被保存的聚合根而言，具备三种保存模式：UPSERT(默认)、INSERT_ONLY、UPDATE_ONLY *(更详细的描述请参见[保存模式](./save-mode))*。这需要通过配置来实现
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookStore store = ...略...;
+    sqlClient.save(store, SaveMode.INSERT_ONLY);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val store = ...略...;
+    sqlClient.save(store, SaveMode.INSERT_ONLY)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    `insert`和`update`方法是对`INSERT_ONLY`和`UPDATE_ONLY`的简写方式，上述代码可以简化为
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookStore store = ...略...;
+    sqlClient.insert(store);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    BookStore store = ...略...;
+    sqlClient.insert(store);
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 重要概念: 全量和增量
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = TreeNodeDraft.$.produce(food -> {
+    food
+        .setParent(null)
+        .setName("Food")
+        .addIntoChildNodes(drink -> {
+            drink
+                .setName("Drink")
+                .addIntoChildNodes(cococola -> {
+                    cococola.setName("Cococola");
+                })
+                .addIntoChildNodes(fanta -> {
+                    fanta.setName("Fanta");
+                });
+            ;
+        })
+        .addIntoAuthors(bread -> {
+            bread
+                .setName("Bread")
+                .addIntoChildNodes(daguette -> {
+                    daguette.setName("Baguette");
+                })
+                .addIntoChildNodes(ciabatta -> {
+                    ciabatta.setName("Ciabatta");
+                })
+        });
+    ;
+});
+sqlClient.save(treeNode);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    parent = null
+    name = "Food"
+    childNodes().addBy {
+        name = "Drinks"
+        childNodes().addBy {
+            name = "Cococola"
+        }
+        childNodes().addBy {
+            name = "Fanta"
+        }
+    }
+    childNodes().addBy {
+        name = "Bread"
+        childNodes().addBy {
+            name = "Baguette"
+        }
+        childNodes().addBy {
+            name = "Ciabatta"
+        }
+    }
+}
+sqlClient.save(treeNode)
+```
+
+</TabItem>
+</Tabs>
+
+这段代码企图保存一棵树
+
+```
++-Food
+|
++---+-Drinks
+|   |
+|   +-----Cococola
+|   |
+|   \-----Fanta
+|
+\---+-Bread
+    |
+    +-----Baguette
+    |
+    \-----Ciabatta
+```
+
+其中，`Food`为聚合根，而其他所有关联对象都是子节点。
+
+-   聚合根节点
+
+    对应增量操作，最终生成一条INSERT语句或UPDATE语句
+
+-   子节点（或称关联对象）
+
+    默认情况下，对应全量覆盖操作。
+
+    以`Food`为例，它有两个子节点`Drinks`和`Bread`。然而，这并非仅仅表示对`Drinks`和`Bread`这两个子节点简单地进行insert或update。
+    在`Food`节点在数据库中已经存在的情况下，还要考虑其是否有非`Drinks`和`Breads`的其他子节点，并将这些子节点和父节点脱勾（比如，删除这些子节点）
+
+    例如
+
+    <table>
+    <thead>
+    <tr>
+    <th>数据库已有数据结构</th>
+    <th>用户期望保存的数据结构</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>
+
+    ```
+    +-Food
+    |
+    |
+    |
+    +-----Meat(忽略子节点)
+    |
+    \-----Bread(忽略子节点)
+    ```
+
+    </td>
+    <td>
+
+    ```
+    +-Food
+    |
+    +-----Drinks(忽略子节点)
+    |
+    |
+    |
+    \-----Bread(忽略子节点)
+    ```
+
+    </td>
+    </tr>
+    </tbody>
+    </table>
+
+    最终，对子节点而言，会导致的操作为
+    -   旧数据结构没有`Drinks`，新数据结构有`Drinks`，所以插入`Drinks`
+    -   新旧数据结构都有`Bread`，所以修改`Bread`
+    -   旧数据结构有`Meat`，新数据结构没有`Meat`，所以删除`Meat`
+
+        > 子节点脱勾方式有多种，这里假设采用删除操作
+
+由此可见，默认情况下，除了聚合根外，其他的子节点的对应的操作都是全量覆盖，而非增量修改。
+
+## Q & A
+
+如上所讨论，默认情况下，除了聚合根外，被保存数据结构中的关联对应全量覆盖操作，而非增量修改操作。
+
+<Grid container spacing={3}>
+<Grid item xs={1}>
+
+**Q:**
+
+</Grid>
+<Grid item xs={11}>
+为什么除聚合根外的所有关联对象全部默认全量操作？
+</Grid>
+<Grid item xs={1}>
+
+**A:**
+
+</Grid>
+<Grid item xs={11}>
+
+底层数据库的INSERT、UPDATE和DELETE语句本身就是增量操作，即便使用只提供最简单的CRUD能力的SQL方案，也可以轻松实现按照增量修改数据库，这从来就不是业务系统开发的难点。
+
+真正复杂的问题，是把某个复杂数据结构作为整体进行覆盖保存。如果Jimmer不提供类似的能力，开发人员就需要编写复杂的代码去对比新旧数据发现需发生变化的部分，这会导致复杂数据的修改业务很复杂。
+
+另外还有一个好处，就是保证幂等性。
+
+</Grid>
+<Grid item xs={1}>
+
+**Q:**
+
+</Grid>
+<Grid item xs={11}>
+使用场景是什么？
+</Grid>
+<Grid item xs={1}>
+
+**A:**
+
+</Grid>
+<Grid item xs={11}>
+
+任何需要把复杂数据结构作为整体进行覆盖保存的场景。其中一种典型的场景是复杂表单，例如
+
+<LongAssociation/>
+
+<div>&nbsp;</div>
+
+在这个例子中，表单内嵌了子对象表格。用户可以对表单，包括内嵌的子表格，进行任意复杂操作，最终客户端将作为整个表单作为一个整体提交到服务端。
+
+通过保存指令，服务端只需通过一行代码即可保存这个数据结构即可，无需考虑客户端提交的数据结构和数据库相比有何不同。
+
+:::tip
+无论表单多复杂，关联关系嵌套了多深，都可以将其作为一个整体，使用一行代码保存。
+:::
+
+</Grid>
+</Grid>

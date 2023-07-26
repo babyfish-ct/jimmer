@@ -1,12 +1,10 @@
 ---
 sidebar_position: 10
-title: Final Documentation(Writing...)
+title: 最终文档(编写中...)
 ---
 
-Jimmer is not only a revolutionary ORM but also an integrated solution based on ORM. Its complete and detailed documentation covers beyond the design scope that can be handled by my personal energy.
+Jimmer不仅仅是一个革命性的ORM，还是一个基于ORM的集成方案。其完整而详细的文档覆盖超过了我个人精力的所能承受的范围。
 
-Fortunately, the first batch of users will work with me to complete the documentation writing for the final document.
+幸运的是，首批用户将和我一起完成文档编写最终文档，敬请期待！
 
-After we have completed the high-quality Chinese documentation, it will be translated into final English documentation.
-
-Please stay tuned!
+最终文档完成后，会取代所有已有的旧文档。届时，只会剩下本目录。

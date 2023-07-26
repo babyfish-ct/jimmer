@@ -1,4 +1,223 @@
 ---
-sidebar_position: 2
-title: Reverse sorting optimizaion
+sidebar_position: 3
+title: 反排序优化
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 概念
+
+随着页码的不断睁大，分页查询的效率会越来越低。为了解决这个问题，Jimmer支持了反排序优化。
+
+反排序优化必须在一下前提同时满足时才生效：
+
+1.  此功能并不针对只关心页内数据而不关心分页前总行数的的查询，即`limit(limit, offset)`。必须是同时关心页内数据和总行数的查询。
+
+    -   对Java而言：指`JRepository.Pager.execute` *(和Spring Boot配合)* 或`PagingQueries.execute` *(不和Spring Boot配合)*
+
+    -   对Kotlin而言：指`KConfigurableRootQuery<*, E>.fetchPage`
+
+2.  样板查询必须具备明确的orderBy子句。
+
+3.  被查询的那一页的数据在分页前所有数据中偏后。即
+
+    `offset` + `pageSize` / 2 > `totalCount` / 2
+
+当以上条件都满足时，Jimmer会颠倒样板查询的排序。因为，页码相对较大的正排序查询和页码相对小的反排序查询等价。
+
+## 例子
+
+让我们来看一个例子。
+
+SpringBoot的`Page<E>`类型的定义过于复杂，不利于本文通过打印结果进行演示，所以我们并不采用SpringBoot并采用自定义Page类：
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Page.java"
+@lombok.Data
+public class Page<E> {
+    private final int totalRowCount;
+    private final int totalPage;
+    private final List<E> entities;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Page.kt"
+data class Page<E>(
+    val totalRowCount: Int,
+    val totalPage: Int,
+    val entities: List<E>
+)
+```
+
+</TabItem>
+</Tabs>
+
+分页查询代码为
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public Page<Book> findBooks(
+    int pageIndex,
+    int pageSize
+) {
+    BookTable table = BookTable.$;
+    
+    return PagingQueries.excute(
+        sqlClient
+            .createQuery(table)
+            .orderBy(table.name().asc(), table.edition().desc())
+            .select(table),
+        pageIndex,
+        pageSize,
+        (entities, totalCount, queryImplementor) -> {
+            return new Page<>(
+                totalCount, 
+                (totalCount + pageSize - 1) / pageSize,
+                entities
+            )
+        }
+    );
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun findBooks(
+    pageIndex: Int,
+    pageSize: Int
+): Page<Book> =
+    sqlClient
+        .createQuery(Book::class) {
+            orderBy(table.name.asc(), table.edition.desc())
+            select(table)
+        }
+        .fetchPage(
+            pageIndex, pageSize
+        ) { entities, totalCount, _ ->
+            Page(
+                totalCount, 
+                (totalCount + pageSize - 1) / pageSize,
+                entities
+            )
+        }
+```
+
+</TabItem>
+</Tabs>
+
+我们假设`Book`记录共12条，如果`pageSize`为2，共6页，`pageIndex`的有5个取值：0、1、2、3、4、5。
+
+-   0、1、2: 要查询的数据偏前，采用正排序分页
+
+-   3、4、5: 要查询的数据偏后，采用反排序分页
+
+接下来，我们分别以`pageIndex=2`和`pageIndex=3`为例，展示反排序分页和正排序分页的差异。
+
+### 正排序
+
+执行`findBooks(2, 2)`，生成的正排序SQL为
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+order by
+    /* highlight-next-line */
+    tb_1_.NAME asc,
+    /* highlight-next-line */
+    tb_1_.EDITION desc
+limit ? /* 2 */ 
+offset ? /* 4 */
+```
+
+得到的结果为
+```
+{
+    "totalCount":12,
+    "totalPage":6,
+    "entities":[
+        {
+            "id":11,
+            "name":"GraphQL in Action",
+            "edition":2,
+            "price":81,
+            "store":{
+                "id":2
+            }
+        },
+        {
+            "id":10,
+            "name":"GraphQL in Action",
+            "edition":1,
+            "price":80,
+            "store":{
+                "id":2
+            }
+        }
+    ]
+}
+```
+
+### 反排序
+
+执行`findBooks(3, 2)`，生成的正排序SQL为
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+order by
+    /* highlight-next-line */
+    tb_1_.NAME desc, // 反序：asc变desc
+    /* highlight-next-line */
+    tb_1_.EDITION asc // 反序：desc变asc
+limit ? /* 2 */ 
+offset ? /* 4 */
+```
+
+得到的结果为
+```
+{
+    "totalCount":12,
+    "totalPage":6,
+    "entities":[
+        {
+            "id":3,
+            "name":"Learning GraphQL",
+            "edition":3,
+            "price":51,
+            "store":{
+                "id":1
+            }
+        },
+        {
+            "id":2,
+            "name":"Learning GraphQL",
+            "edition":2,
+            "price":55,
+            "store":{
+                "id":1
+            }
+        }
+    ]
+}
+```
+

@@ -1,4 +1,911 @@
 ---
 sidebar_position: 2
-title: Associated Cache
+title: 关联缓存
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+
+所谓关联缓存，指把当前对象id映射为关联对象id或集合。
+
+![association-cache](@site/static/img/association-cache.png)
+
+其中
+-   `BookStore.books-*`: 一对多关联缓存
+-   `Book.store-*`: 多对一关联缓存
+-   `Book.authors-*`: 多对多关联缓存
+-   `Author.books-*`: 多对多关联缓存
+
+:::caution
+和其他关联缓存不同，有一种场景不需要使用一对一或多对一关联缓存。
+
+如果一对一或多对一关联基于真实外键，在数据库中存在对应的外键约束，那么外键本身就是关联对象id，无需使用关联缓存。
+
+其他情况下，Jimmer都会使用一对一或多对一关联缓存，这些情况包括：
+
+-   引用关联属性是反向映射
+
+    即`@OneToOne`的`mappedBy`被配置
+
+-   引用关联属性基于伪外键
+
+    所谓伪外键，即在开发人员意识中是外键，但是数据库中并没有对应的外键约束
+
+    伪外键字段可能是非法值，非null并不意味着关联对象的存在，所以，需要用关联缓存过滤得到合法的关联对象
+
+-   引用关联属性基于中间表，而非基于外键
+
+-   对于已经存在的Jimmer对象，在其一对一或多对一关属性缺时加载一对一或多一关联对象
+
+    这种特殊的案例，在[用Jimmer实现GraphQL](../../graphql)时会出现，其他情况下基本不会出现
+:::
+
+在附带的官方示例中，多对一关联`Book.store`基于真实外键，所以，其多对一缓存不会被使用。
+
+因此，本文的例子基于一对多关联`BookStore.books`和多对多关联`Book.authors`。
+
+## 启用关联缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    return new CacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...省略代码...
+        }
+
+        // 将当前对象id映射为关联对象id
+        // 适用于一对一和多对一关联属性
+        @Override
+        // highlight-next-line
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(prop, Duration.ofMinutes(10));
+        }
+
+        // 将当前对象id映射为关联对象id集合
+        // 适用于一对多和多对多关联属性
+        @Override
+        // highlight-next-line
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(prop, Duration.ofMinutes(5));
+        }
+
+        private <K, V> Cache<K, V> createPropCache(ImmutableProp prop, Duration duration) {
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build();
+        }
+
+        ...省略其他代码...
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...省略代码...
+
+        // 将当前对象id映射为关联对象id
+        // 适用于一对一和多对一关联属性
+        // highlight-next-line
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            createPropCache(prop, Duration.ofMinutes(10))
+
+        // 将当前对象id映射为关联对象id集合
+        // 适用于一对多和多对多关联属性
+        // highlight-next-line
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(prop, Duration.ofMinutes(5))
+
+        private fun <K, V> createPropCache(prop: ImmutableProp, duration: Duration): Cache<K, V>  =
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build()
+
+        ...省略其他代码...
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 集合关联排序
+
+:::caution
+对于集合类型的关联，如果我们使用[对象抓取器](../../query/object-fetcher)的字段级过滤器来实现关联级排序，将会导致Jimmer无视关联缓存。
+
+如果既要充分利用关联缓存，又要让[对象抓取器](../../query/object-fetcher)查询返回的关联对象集合的排序可控，可以在实体上使用静态配置制定默认排序。
+:::
+
+-   `BookStore.books`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookStore.java"
+    @Entity
+    public interface BookStore {
+
+        @OneToMany(
+            mappedBy = "store",
+            // highlight-next-line
+            orderedProps = {
+                    @OrderedProp("name"),
+                    @OrderedProp(value = "edition", desc = true)
+            }
+        )
+        List<Book> books();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="BookStore.kt"
+    @Entity
+    interface BookStore {
+
+        @OneToMany(
+            mappedBy = "store",
+            // highlight-next-line
+            orderedProps = {
+                    @OrderedProp("name"),
+                    @OrderedProp(value = "edition", desc = true)
+            }
+        )
+        val books : List<Book>
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   `Book.authors`
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        @ManyToMany(
+            // highlight-next-line
+            orderedProps = {
+                @OrderedProp("firstName"),
+                @OrderedProp("lastName")
+            }
+        )
+        List<Author> authors();
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        @ManyToMany(
+            // highlight-next-line
+            orderedProps = {
+                @OrderedProp("firstName"),
+                @OrderedProp("lastName")
+            }
+        )
+        val authors : List<Author>
+
+        ...省略其他代码...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 使用
+
+如本文开头所言，本文的的示范基于一对多关联`BookStore.books`和多对多关联`Book.authors`。
+
+### 一对多：BookStore.books
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookStoreTable table = BookStoreTable.$;
+List<BookStore> stores = sqlClient
+    .createQuery(table)
+    .select(
+        table.fetch(
+            BookStoreFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .books(
+                    BookFetcher.$
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+System.out.println(stores);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val stores = sqlClient
+    .createQuery(BookStore::class) {
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                books {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+println(stores)
+```
+
+</TabItem>
+</Tabs>
+
+-   第一步：查询聚合根
+
+    首先查询聚合根对象，执行如下SQL
+    
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.WEBSITE
+    from BOOK_STORE tb_1_
+    ```
+
+    这里实现了代码中的查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
+    
+    :::caution
+    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务需要，不应由框架抽象并统一其行为。
+    :::
+
+-   第二步：通过关联缓存把当前对象id转化为关联对象id
+
+    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象。
+
+    代码中的对象抓取器包含了一对多关联`BookStore.books`
+
+    这2条BOOK_STORE的主键`ID`为1和2。
+    
+    Jimmer先从Redis查找数据，被查找的键为`BookStore.books-1`和`BookStore.books-2`。
+
+    假设无法在Redis中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys BookStore.books-*
+    (empty array)
+    ```
+
+    所以，执行如下SQL，从数据库加载数据
+    ```sql
+    select
+        tb_1_.STORE_ID,
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
+    from BOOK tb_1_
+    where
+        tb_1_.STORE_ID in (
+            ? /* 1 */, ? /* 2 */
+        )
+    order by
+        tb_1_.NAME asc,
+        tb_1_.EDITION desc
+    ```
+
+    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    ```
+    127.0.0.1:6379> keys BookStore.books-*
+    1) "BookStore.books-2"
+    2) "BookStore.books-1"
+    127.0.0.1:6379> get BookStore.books-1
+    "[6,5,4,3,2,1,9,8,7]"
+    127.0.0.1:6379> get BookStore.books-2
+    "[12,11,10]"
+    127.0.0.1:6379>
+    ```
+
+    这样，两个`BookStore`对象可以通过的一对多关联`BookStore.books`得到各自的关联对象id集合。
+
+    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+
+-   第三步：通过对象缓存把关联对象id转化为关联对象
+
+    这类操作在[对象缓存](./object)中详细讨论过，本文聚焦于关联缓存，不再赘述。
+
+    :::caution
+    在启用缓存的配置中，如果对某个关联属性启用关联缓存但并未对其关联对象的类型启用对象缓存，将会导致异常。
+    :::
+
+最终，Jimmer把两个步骤的结果拼接在一起，作为最终返回给用户的数据
+
+```json
+[
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":6,
+                "name":"Effective TypeScript",
+                "edition":3,
+                "price":88
+            },
+            {
+                "id":5,
+                ...略...
+            },
+            {
+                "id":4,
+                ...略...
+            },
+            {
+                "id":3,
+                ...略...
+            },
+            {
+                "id":2,
+                ...略...
+            },
+            {
+                "id":1,
+                ...略...
+            },
+            {
+                "id":9,
+                ...略...
+            },
+            {
+                "id":8,
+                ...略...
+            },
+            {
+                "id":7,
+                ...略...
+            }
+        ]
+    },
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":12,
+                "name":"GraphQL in Action",
+                "edition":3,
+                "price":80
+            },
+            {
+                "id":11,
+                ...略...
+            },
+            {
+                "id":10,
+                ...略...
+            }
+        ]
+    }
+]
+```
+
+:::info
+如果没有启用缓存，生成的SQL会有差异
+
+<ViewMore buttonText="不启用缓存的差异">
+
+<Divider><Chip label="缓存模式"/></Divider>
+
+在缓存模式下，这个例子具有三个执行步骤：
+
+1.  从数据库查询聚合根
+    
+    无论是否启用缓存，这个步骤都相同，无需讨论
+
+2.  根据`BookStore.books`属性的关联缓存，把聚合根对象的id映射为关联对象的id
+
+    如果缓存中无相关数据，会导致如下SQL被执行
+
+    ```sql
+    select
+        ...略...
+    from BOOK tb_1_
+    where
+        tb_1_.STORE_ID in (
+            ? /* 1 */, ? /* 2 */
+        )
+    order by
+        tb_1_.NAME asc,
+        tb_1_.EDITION desc
+    ```
+
+3.  根据`Book`类型的对象缓存，把关联对象的id映射为关联对象
+
+    如果缓存中无相关数据，会导致如下SQL被执行
+    ```sql
+    select
+        ...略...
+    from BOOK tb_1_
+    where
+        tb_1_.ID in (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?    
+        )
+    ```
+
+<Divider><Chip label="无缓存模式"/></Divider>
+
+如果未启用缓存，此查询只需要两个步骤，第一个步骤完全相同，第二个步骤执行如下SQL查询
+
+```sql
+select
+    ...略...
+from BOOK tb_1_
+where
+    tb_1_.STORE_ID in (
+        ? /* 1 */, ? /* 2 */
+    )
+order by
+    tb_1_.NAME asc,
+    tb_1_.EDITION desc
+```
+
+<Divider><Chip label="差异和总结"/></Divider>
+
+无缓存模式：尽可能生成少的SQL，每条SQL所执行的任务尽可能多，这样的SQL拥有最好的性能。
+
+有缓存模式：并不力求生成的SQL数量的最小化，从SQL层面分析，性能不是最佳的，但是和缓存系统结合后，综合性能最佳。
+
+</ViewMore>
+:::
+
+### 多对多：Book.authors
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+List<Book> books = sqlClient
+    .createQuery(table)
+    .where(table.edition().eq(1))
+    .select(
+        table.fetch(
+            BookFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .authors(
+                    AuthorFetcher.$
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+System.out.println(books);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition eq 1)
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                authors {
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+println(books)
+```
+
+</TabItem>
+</Tabs>
+
+-   第一步：查询聚合根
+
+    首先查询聚合根对象，执行如下SQL
+    
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
+    from BOOK tb_1_
+    where
+        tb_1_.EDITION = ? /* 1 */
+    ```
+
+    这里实现了代码中的查询，得到了一些Book对象。这种被用户直接查询而得的对象叫做聚合根对象
+    
+    :::caution
+    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不应由框架抽象并统一其行为。
+    :::
+
+-   第二步：通过关联缓存把当前对象id转化为关联对象id
+
+    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到4个聚合根对象。
+
+    代码中的对象抓取器包含了一对多关联`Book.authors`
+
+    这4条BOOK的主键`ID`为1、4、7和10。
+    
+    Jimmer先从Redis查找数据，被查找的键为`Book.authors-1`、`Book.authors-4`、`Book.authors-7`和`Book.authors-10`。
+
+    假设无法在Redis中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys Book.authors-*
+    (empty array)
+    ```
+
+    所以，执行如下SQL，从数据库加载数据
+    ```sql
+    select
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID
+    from BOOK_AUTHOR_MAPPING tb_1_
+    inner join AUTHOR tb_3_
+        on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (
+            ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
+        )
+    order by
+        tb_3_.FIRST_NAME asc,
+        tb_3_.LAST_NAME asc
+    ```
+    :::note
+    如果不通过`@ManyToMany.orderedProps`为关联属性`Book.authors`指定默认排序，这里就的`join`不会出现
+    :::
+
+    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    ```
+    127.0.0.1:6379> keys Book.authors-*
+    1) "Book.authors-4"
+    2) "Book.authors-1"
+    3) "Book.authors-10"
+    4) "Book.authors-7"
+    127.0.0.1:6379> get Book.authors-1
+    "[2,1]"
+    127.0.0.1:6379> get Book.authors-4
+    "[3]"
+    127.0.0.1:6379> get Book.authors-7
+    "[4]"
+    127.0.0.1:6379> get Book.authors-10
+    "[5]"
+    127.0.0.1:6379>
+    ```
+
+    这样，我们就得到4个`Book`对象各自通过多对多关联`Book.authors`可以得到的关联对象id集合。
+
+    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+
+-   第三步：通过对象缓存把关联对象id转化为关联对象
+
+    这类操作在[对象缓存](./object)中详细讨论过，本文聚焦于关联缓存，不再赘述。
+
+    :::caution
+    在启用缓存的配置中，如果对某个关联属性启用关联缓存但并未对其关联对象的类型启用对象缓存，将会导致异常。
+    :::
+
+最终，Jimmer把3个步骤的结果拼接在一起，作为最终返回给用户的数据
+
+```json
+[
+    {
+        "id":1,
+        "name":"Learning GraphQL",
+        "edition":1,
+        "price":51,
+        // highlight-next-line
+        "authors":[
+            {
+                "id":2,
+                "firstName":"Alex",
+                "lastName":"Banks",
+                "gender":"MALE"
+            },
+            {
+                "id":1,
+                "firstName":"Eve",
+                "lastName":"Procello",
+                "gender":"FEMALE"
+            }
+        ]
+    },
+    {
+        "id":4,
+        "name":"Effective TypeScript",
+        "edition":1,
+        "price":73,
+        // highlight-next-line
+        "authors":[...略...]
+    },
+    {
+        "id":7,
+        "name":"Programming TypeScript",
+        "edition":1,
+        "price":47.5,
+        // highlight-next-line
+        "authors":[...略...]
+    },
+    {
+        "id":10,
+        "name":"GraphQL in Action",
+        "edition":1,
+        "price":80,
+        // highlight-next-line
+        "authors":[...略...]
+    }
+]
+```
+
+:::info
+如果没有启用缓存，生成的SQL会有差异
+
+<ViewMore buttonText="不启用缓存的差异">
+
+<Divider><Chip label="缓存模式"/></Divider>
+
+在缓存模式下，这个例子具有三个执行步骤：
+
+1.  从数据库查询聚合根
+    
+    无论是否启用缓存，这个步骤都相同，无需讨论
+
+2.  根据`BookStore.books`属性的关联缓存，把聚合根对象的id映射为关联对象的id
+
+    如果缓存中无相关数据，会导致如下SQL被执行
+
+    ```sql
+    select
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID
+    from BOOK_AUTHOR_MAPPING tb_1_
+    inner join AUTHOR tb_3_
+        on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (
+            ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
+        )
+    order by
+        tb_3_.FIRST_NAME asc,
+        tb_3_.LAST_NAME asc
+    ```
+
+3.  根据`Book`类型的对象缓存，把关联对象的id映射为关联对象
+
+    如果缓存中无相关数据，会导致如下SQL被执行
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    where
+        tb_1_.ID in (
+            ? /* 2 */, ? /* 1 */, ? /* 4 */, ? /* 3 */, ? /* 5 */
+        )
+    ```
+
+<Divider><Chip label="无缓存模式"/></Divider>
+
+如果未启用缓存，此查询只需要两个步骤，第一个步骤完全相同，第二个步骤执行如下SQL查询
+
+```sql
+select
+    tb_2_.BOOK_ID,
+    tb_1_.ID,
+    tb_1_.FIRST_NAME,
+    tb_1_.LAST_NAME,
+    tb_1_.GENDER
+from AUTHOR tb_1_
+inner join BOOK_AUTHOR_MAPPING tb_2_
+    on tb_1_.ID = tb_2_.AUTHOR_ID
+where
+    tb_2_.BOOK_ID in (
+        ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
+    )
+order by
+    tb_1_.FIRST_NAME asc,
+    tb_1_.LAST_NAME asc
+```
+
+<Divider><Chip label="差异和总结"/></Divider>
+
+无缓存模式：尽可能生成少的SQL，每条SQL所执行的任务尽可能多，这样的SQL拥有最好的性能。
+
+有缓存模式：并不力求生成的SQL数量的最小化，从SQL层面分析，性能不是最佳的，但是和缓存系统结合后，综合性能最佳。
+
+</ViewMore>
+:::
+
+## 一致性
+
+:::caution
+要使用Jimmer缓存的自动一致性，需要先启用[触发器](../../mutation/trigger)
+:::
+
+### 一对多：BookStore.books
+
+修改BOOK表的外键`STORE_ID`，Jimmer自动删除多对一关联`Book.store`和一对多`BookStore.books`的关联缓存
+
+-   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+    ```sql
+    update BOOK 
+    /* Old value: 1, New value: 2 */
+    set STORE_ID = 2 
+    where ID = 7;
+    ```
+
+-   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable table = BookTable.$;
+    sqlClient
+        .createUpdate(table)
+        // Old value: 1L, New value: 2L
+        .set(table.store().id, 2L)
+        .where(table.id().eq(7L))
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient
+        .createUpdate(Book::class) {
+            // Old value: 1L, New value: 2L
+            set(table.store.id, 2L)
+            where(table.id eq 7L)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+无论通过上述何种方式修改数据，你都会在看到如下日志输出
+
+```
+Delete data from redis: [Book-7]
+Delete data from redis: [Book.store-7] ❶
+Delete data from redis: [BookStore.books-1] ❷
+Delete data from redis: [BookStore.books-2] ❸
+```
+
+-   ❶ 对于id为`7`的Book对象而言，其多对一关联`Book.store`对应的关联缓存被删除
+-   ❷ 对于id为`1` *(修改前的旧值)* 的BookStore对象而言，其一对多关联`BookStore.books`对应的关联缓存被删除
+-   ❸ 对于id为`2` *(修改前的新值)* 的BookStore对象而言，其一对多关联`BookStore.books`对应的关联缓存被删除
+
+### 多对多：Book.authors
+
+为中间表`BOOK_AUTHOR_MAPPING`插入数据，Jimmer自动删除多对多关联`Book.authors`和`Author.books`的关联缓存
+
+:::note
+从中间表中删除数据也可以达到相同的效果，这里我们使用插入来展示效果
+:::
+
+-   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+    ```sql
+    insert into 
+    BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)
+    values(10, 3);
+    ```
+
+-   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    sqlClient
+        .getAssociations(BookProps.AUTHORS)
+        .save(10L, 3L);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient
+        .getAssociations(Book::authors)
+        .save(10L, 3L);
+    ```
+
+    </TabItem>
+    </Tabs>
+
+无论通过上述何种方式修改数据，你都会在看到如下日志输出
+```
+Delete data from redis: [Book.authors-10] ❶
+Delete data from redis: [Author.books-3] ❷
+```
+
+-   ❶ 对于id为`10`的Book对象而言，其一对多关联`Book.authors`对应的关联缓存被删除
+-   ❷ 对于id为`3`的Author对象而言，其一对多关联`Author.books`对应的关联缓存被删除

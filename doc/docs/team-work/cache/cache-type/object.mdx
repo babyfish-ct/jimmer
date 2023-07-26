@@ -1,4 +1,448 @@
 ---
 sidebar_position: 1
-title: Object Cache 
+title: 对象缓存 
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
+
+所谓对象缓存，指把id映射为实体对象。这是最简单最基础的缓存
+
+![object-cache](@site/static/img/object-cache.jpeg)
+
+## 启用对象缓存
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    return new CacheFactory() {
+
+        @Override
+        // highlight-next-line
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        type, 
+                        Duration.ofMinutes(30)
+                    )
+                )
+                .build();
+        }
+
+        ...省略其他代码...
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        // highlight-next-line
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        type, 
+                        Duration.ofMinutes(30)
+                    )
+                )
+                .build()
+
+        ...省略其他代码...
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 使用对象缓存
+
+有两种用法可以利用对象缓存
+
+-   按照id *(或其集合)* 查询实体对象 *(或其集合)*
+
+-   利用对象抓取器抓取关联对象的任何非id字段时。
+
+### 基于id的查询
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Map<Long, Book> bookMap = sqlClient.findMapByIds(
+        Book.class,
+        Arrays.asList(1L, 2L, 3L, 4L, 999L)
+);
+System.out.println(bookMap);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val bookMap = sqlClient.findMapByIds(
+    Book::class,
+    listOf(1L, 2L, 3L, 4L, 999L)
+)
+println(bookMap)
+```
+
+</TabItem>
+</Tabs>
+
+Jimmer先从缓存中查找数据，被查找的键为`Book-1`、`Book-2`、`Book-3、`Book-4`和`Book-999`。
+
+假设无法在缓存中找到这些键所对应的数据
+```
+127.0.0.1:6379> keys Book-*
+(empty array)
+```
+
+所以，执行如下SQL，从数据库加载数据
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+where
+    tb_1_.ID in (
+        ? /* 1 */, ? /* 2 */, ? /* 3 */, ? /* 4 */, ? /* 999 */
+    )
+```
+
+Jimmer会把从查询结构放入缓存中，因此，我们可以从缓存中查看这些数据
+```
+127.0.0.1:6379> keys Book-*
+1) "Book-4"
+2) "Book-2"
+3) "Book-3"
+4) "Book-1"
+5) "Book-999"
+127.0.0.1:6379> get Book-1
+"{\"id\":1,\"name\":\"Learning GraphQL\",\"edition\":1,\"price\":50.00,\"store\":{\"id\":1}}"
+127.0.0.1:6379> get Book-2
+"{\"id\":2,\"name\":\"Learning GraphQL\",\"edition\":2,\"price\":55.00,\"store\":{\"id\":1}}"
+127.0.0.1:6379> get Book-3
+"{\"id\":3,\"name\":\"Learning GraphQL\",\"edition\":3,\"price\":51.00,\"store\":{\"id\":1}}"
+127.0.0.1:6379> get Book-4
+"{\"id\":4,\"name\":\"Effective TypeScript\",\"edition\":1,\"price\":73.00,\"store\":{\"id\":1}}"
+127.0.0.1:6379> get Book-999
+"<null>"
+127.0.0.1:6379>
+```
+:::tip
+其中，不存在数据`Book-999`也会以特殊值`<null>`被缓存起来 
+:::
+
+毫无疑问，在缓存中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从缓存中返回数据，无任何SQL被生成。
+
+### 使用对象抓取器
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+List<Book> books = sqlClient
+    .createQuery(table)
+    .where(table.name().like("GraphQL"))
+    .select(
+        table.fetch(
+            BookFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .store(
+                    BookStoreFetcher.$
+                        .name()
+                )
+        )
+    )
+    .execute();
+System.out.println(books);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.name like "GraphQL")
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                store {
+                    name()
+                }
+            }
+        )
+    }
+    .execute()
+println(books)
+```
+
+</TabItem>
+</Tabs>
+
+-   第一条SQL：查询聚合根
+
+    首先查询聚合根对象，执行如下SQL
+    
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
+        tb_1_.STORE_ID
+    from BOOK tb_1_
+    where
+        tb_1_.NAME like ? /* %GraphQL% */
+    ```
+
+    这里实现了代码中的模糊查询，得到了一些Book对象。这种被用户直接查询而得的对象叫做聚合根对象
+    
+    :::caution
+    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
+    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不应该由框架抽象并统一其行为。
+    :::
+
+-   第二条SQL：抓取多对一关联`Book.store`
+
+    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到6个聚合根对象。
+
+    代码中的对象抓取器包含了多对一关联`Book.store`，且期望查询关联对象的非id属性 *(当前表的外键无法表达的信息)*，所以，Jimmer会为所有聚合根对象查询关联对象。
+
+    幸运的是，关联属性`Book.store`基于真实外键，外键本身就表示了父对象的id，而无需通过额外查询或[关联缓存](./association)即可得到关联对象id。
+
+    假设这6条BOOK数据所对应的外键`STORE_ID`去重后有两个值，1和2。
+    
+    Jimmer先从缓存中查找数据，被查找的键为`BookStore-1`和`BookStore-2`。
+
+    假设无法在缓存中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys BookStore-*
+    (empty array)
+    ```
+
+    那么，执行如下SQL，从数据库加载数据
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.WEBSITE
+    from BOOK_STORE tb_1_
+    where
+        tb_1_.ID in (
+            ? /* 1 */, ? /* 2 */
+        )
+    ```
+    :::info
+    如果没有启用缓存，生成的SQL会有差异
+    <ViewMore buttonText="不启用缓存的差异">
+
+    有缓存模式下，这里生成的SQL为
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        /* highlight-next-line */
+        tb_1_.WEBSITE
+    ...省略其他代码...
+    ```
+    然而，Java/Kotlin代码中的对象抓取器，只要求查询关联对象的`name`，没有要求查询关联对象的所有字段
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    ...省略其他代码...
+    .select(
+        table.fetch(
+            BookFetcher.$
+                .allScalarFields()
+                .store(
+                    BookStoreFetcher.$
+                        // highlight-next-line
+                        .name()
+                )
+        )
+    )
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    ...省略其他代码...
+    select(
+        table.fetchBy {
+            allScalarFields()
+            store {
+                // highlight-next-line
+                name()
+            }
+        }
+    )
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    在缓存模式下，即使对象抓取器不需要关联对象的所有非关联属性，也会从数据库中查询关联对象的所有非关联属性。
+
+    **只有这样做，缓存中的对象才可对任何业务场景具有可重用价值。**
+
+    如果不启用缓存，Jimmer会保证生成的SQL能查询的信息刚好满足当前业务场景的需要
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME
+        // 这里，不查询WEBSITE列
+    from BOOK_STORE tb_1_
+    ...省略其他代码...
+    ```
+
+    </ViewMore>
+    :::
+
+    Jimmer会把从查询结构放入缓存中，因此，我们可以从缓存中查看这些数据
+    ```
+    127.0.0.1:6379> keys BookStore-*
+    1) "BookStore-1"
+    2) "BookStore-2"
+    127.0.0.1:6379> get BookStore-1
+    "{\"id\":1,\"name\":\"O'REILLY\",\"website\":null}"
+    127.0.0.1:6379> get BookStore-2
+    "{\"id\":2,\"name\":\"MANNING\",\"website\":null}"
+    127.0.0.1:6379>
+    ```
+
+    毫无疑问，在缓存中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从缓存中返回关联数据，第二条SQL不会被生成。
+
+最终，Jimmer把两个步骤的结果拼接在一起，作为最终返回给用户的数据
+
+```json
+[
+    {
+        "id":1,
+        "name":"Learning GraphQL",
+        "edition":1,
+        "price":50,
+        // highlight-next-line
+        "store":{
+            "id":1,
+            "name":"O'REILLY"
+        }
+    },
+    {
+        ...略...
+    },
+    {
+        ...略...
+    },
+    {
+        "id":10,
+        "name":"GraphQL in Action",
+        "edition":1,
+        "price":80,
+        // highlight-next-line
+        "store":{
+            "id":2,
+            "name":"MANNING"
+        }
+    },
+    {
+        ...略...
+    },
+    {
+        ...略...
+    }
+]
+```
+
+## 一致性
+
+:::caution
+要使用Jimmer缓存的自动一致性，需要先启用[触发器](../../mutation/trigger)
+:::
+
+-   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+    ```sql
+    update BOOK_STORE 
+    set WEBSITE = 'https://www.manning.com' 
+    where ID = 2;
+    ```
+
+-   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookStoreTable table = BookStoreTable.$;
+    sqlClient
+        .createUpdate(table)
+        .set(table.website(), "https://www.manning.com")
+        .where(table.id().eq(2L))
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient
+        .createUpdate(BookStore::class) {
+            set(table.website, "https://www.manning.com")
+            where(table.id eq 2L)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+无论通过上述何种方式修改数据，你都会在看到如下日志输出
+
+```
+Delete data from redis: [BookStore-2]
+```

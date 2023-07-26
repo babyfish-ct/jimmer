@@ -1,4 +1,19 @@
 ---
 sidebar_position: 5
-title: Cache
+title: 缓存篇
 ---
+
+import { ViewMore } from '@site/src/components/ViewMore';
+import AssociationCache from '@site/static/img/association-cache.png';
+import CalculatedCache from '@site/static/img/calculated-cache.png';
+
+Jimmer提供了强大的缓存支持能力。
+
+-   是否使用缓存，对开发人员完全透明
+
+-   使用哪些缓存技术，由开发人员决定
+
+-   不仅支持简单的`id->对象`缓存，还支持属性级缓存，包括<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
+    最终提供任意形状的数据结构的缓存能力，而非简单对象的缓存能力
+
+-   强大的缓存一致性支持，开发人员专注于修改数据库即可，Jimmer自动保证缓存和数据库数据的一致性
