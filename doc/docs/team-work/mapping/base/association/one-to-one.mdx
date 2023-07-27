@@ -117,6 +117,16 @@ alter table CUSTOMER
             references ADDRESS(ID);
 ```
 
+但无论如何，都应该添加唯一性约束
+```sql
+// 这个约束非常重要。
+// 否则这张中间表表达的是多对一关联，而非一对一关联
+alter table BOOK
+    add constraint UQ_BOOK__BOOK_STORE
+        /* highlight-next-line */
+        unique(STORE_ID);
+```
+
 ### 2. 基于中间表
 
 <Tabs groupId="language">
