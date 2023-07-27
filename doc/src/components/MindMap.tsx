@@ -64,7 +64,7 @@ const MindMapCore: FC<{
 
     const isZh = useZh();
 
-    const baseUrl = useBaseUrl('docs/team-work');
+    const baseUrl = useBaseUrl('docs');
 
     const [objectFetcherOpen, setObjectFetcherOpen] = useState(false);
     const [saveCommandOpen, setSaveCommandOpen] = useState(false);
