@@ -22,6 +22,10 @@ internal class KMutableDeleteImpl<E: Any>(
         javaDelete.where(*predicates.map { it?.toJavaPredicate() }.toTypedArray())
     }
 
+    override fun enableDissociation() {
+        javaDelete.enableDissociation()
+    }
+
     override val subQueries: KSubQueries<E> =
         KSubQueriesImpl(javaDelete)
 

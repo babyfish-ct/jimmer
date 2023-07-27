@@ -156,7 +156,9 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             }.affectedRowCount(entityType)
 
     override fun deleteAll() {
-        sql.createDelete(entityType) {}.execute()
+        sql.createDelete(entityType) {
+            enableDissociation()
+        }.execute()
     }
 
     @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")

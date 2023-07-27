@@ -109,6 +109,44 @@ public class EntityManager {
                 }
             }
         }
+        for (Map.Entry<ImmutableType, ImmutableTypeInfo> e : map.entrySet()) {
+            if (!e.getKey().isEntity()) {
+                continue;
+            }
+            List<ImmutableProp> props = new ArrayList<>();
+            List<ImmutableProp> backProps = new ArrayList<>();
+            boolean hasInverseLocalAssociation = false;
+            for (ImmutableProp prop : e.getKey().getProps().values()) {
+                if (prop.isRemote()) {
+                    continue;
+                }
+                if (prop.getMappedBy() != null) {
+                    hasInverseLocalAssociation = true;
+                    continue;
+                }
+                if (prop.isMiddleTableDefinition()) {
+                    props.add(prop);
+                }
+            }
+            if (hasInverseLocalAssociation) {
+                for (ImmutableProp backProp : e.getValue().backProps) {
+                    if (backProp.getMappedBy() != null || backProp.isRemote()) {
+                        continue;
+                    }
+                    if (backProp.isMiddleTableDefinition()) {
+                        backProps.add(backProp);
+                    } else if (backProp.isReference(TargetLevel.PERSISTENT) && backProp.isColumnDefinition()) {
+                        backProps.add(backProp);
+                    }
+                }
+            }
+            if (!props.isEmpty() || !backProps.isEmpty()) {
+                e.getValue().dissociationInfo = new DissociationInfo(
+                        Collections.unmodifiableList(props),
+                        Collections.unmodifiableList(backProps)
+                );
+            }
+        }
         for (ImmutableTypeInfo info : map.values()) {
             info.implementationTypes = Collections.unmodifiableList(info.implementationTypes);
             info.directDerivedTypes = Collections.unmodifiableList(info.directDerivedTypes);
@@ -224,6 +262,11 @@ public class EntityManager {
         return info(type).backProps;
     }
 
+    @Nullable
+    public DissociationInfo getDissociationInfo(ImmutableType type) {
+        return info(type).dissociationInfo;
+    }
+
     private ImmutableTypeInfo info(ImmutableType type) {
         ImmutableTypeInfo info = data.map.get(type);
         if (info == null) {
@@ -314,6 +357,9 @@ public class EntityManager {
 
         // For entity
         List<ImmutableProp> backProps = new ArrayList<>();
+
+        // For entity
+        DissociationInfo dissociationInfo;
     }
 
     public ImmutableType getTypeByServiceAndTable(

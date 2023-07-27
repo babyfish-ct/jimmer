@@ -33,6 +33,8 @@ public class MutableDeleteImpl
 
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
+    private boolean isDissociationEnabled;
+
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
@@ -78,6 +80,12 @@ public class MutableDeleteImpl
     }
 
     @Override
+    public MutableDelete enableDissociation() {
+        isDissociationEnabled = true;
+        return this;
+    }
+
+    @Override
     public Integer execute() {
         return getSqlClient()
                 .getConnectionManager()
@@ -118,7 +126,9 @@ public class MutableDeleteImpl
         }
 
         boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
-        if (table.isEmpty() && binLogOnly) {
+        if (table.isEmpty() && binLogOnly &&
+                (!isDissociationEnabled || sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType()) == null)
+        ) {
             SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {

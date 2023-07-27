@@ -29,4 +29,6 @@ public interface MutableDelete extends Filterable, Executable<Integer> {
         }
         return this;
     }
+
+    MutableDelete enableDissociation();
 }
