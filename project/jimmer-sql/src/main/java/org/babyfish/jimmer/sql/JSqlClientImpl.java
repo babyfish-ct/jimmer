@@ -981,7 +981,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         @Override
         public Builder setSaveCommandPessimisticLock() {
-            saveCommandPessimisticLock = true;
+            return setSaveCommandPessimisticLock(true);
+        }
+
+        @Override
+        public Builder setSaveCommandPessimisticLock(boolean lock) {
+            saveCommandPessimisticLock = lock;
             return this;
         }
 

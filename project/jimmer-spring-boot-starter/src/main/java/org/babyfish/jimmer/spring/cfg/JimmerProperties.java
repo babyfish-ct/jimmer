@@ -53,6 +53,8 @@ public class JimmerProperties {
 
     private final boolean isForeignKeyEnabledByDefault;
 
+    private final boolean saveCommandPessimisticLock;
+
     private final Collection<String> executorContextPrefixes;
 
     @NotNull
@@ -80,7 +82,8 @@ public class JimmerProperties {
             @Nullable Integer defaultBatchSize,
             @Nullable Integer defaultListBatchSize,
             @Nullable Integer offsetOptimizingThreshold,
-            @Nullable Boolean isForeignKeyEnabledByDefault,
+            @Nullable Boolean isForeignKeyEnabledByDefault, // Default value is true, so use `Boolean`
+            boolean saveCommandPessimisticLock,
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
@@ -180,8 +183,9 @@ public class JimmerProperties {
                         Integer.MAX_VALUE;
         this.isForeignKeyEnabledByDefault =
                 isForeignKeyEnabledByDefault != null ?
-                        isForeignKeyEnabledByDefault :
-                        true;
+                    isForeignKeyEnabledByDefault :
+                    true;
+        this.saveCommandPessimisticLock = saveCommandPessimisticLock;
         this.executorContextPrefixes = executorContextPrefixes;
         this.microServiceName =
                 microServiceName != null ?
@@ -289,6 +293,10 @@ public class JimmerProperties {
      */
     public boolean isForeignKeyEnabledByDefault() {
         return isForeignKeyEnabledByDefault;
+    }
+
+    public boolean isSaveCommandPessimisticLock() {
+        return saveCommandPessimisticLock;
     }
 
     /**

@@ -18,10 +18,16 @@ internal open abstract class KConfigurableSubQueryImpl<R>(
     ) : KConfigurableSubQueryImpl<R>(javaSubQuery),
         KConfigurableSubQuery.NonNull<R> {
 
-        override fun limit(limit: Int, offset: Int): KConfigurableSubQuery<R> =
+        override fun limit(limit: Int): NonNull<R> =
+            NonNull(javaSubQuery.limit(limit))
+
+        override fun offset(offset: Int): NonNull<R> =
+            NonNull(javaSubQuery.offset(offset))
+
+        override fun limit(limit: Int?, offset: Int?): NonNull<R> =
             NonNull(javaSubQuery.limit(limit, offset))
 
-        override fun distinct(): KConfigurableSubQuery<R> =
+        override fun distinct(): NonNull<R> =
             NonNull(javaSubQuery.distinct())
 
         override fun union(other: KTypedSubQuery<R>): KTypedSubQuery<R> =
@@ -62,10 +68,16 @@ internal open abstract class KConfigurableSubQueryImpl<R>(
     ) : KConfigurableSubQueryImpl<R>(javaSubQuery),
         KConfigurableSubQuery.Nullable<R> {
 
-        override fun limit(limit: Int, offset: Int): KConfigurableSubQuery<R> =
+        override fun limit(limit: Int): Nullable<R> =
+            Nullable(javaSubQuery.limit(limit))
+
+        override fun offset(offset: Int): Nullable<R> =
+            Nullable(javaSubQuery.offset(offset))
+
+        override fun limit(limit: Int?, offset: Int?): Nullable<R> =
             Nullable(javaSubQuery.limit(limit, offset))
 
-        override fun distinct(): KConfigurableSubQuery<R> =
+        override fun distinct(): Nullable<R> =
             Nullable(javaSubQuery.distinct())
 
         override fun union(other: KTypedSubQuery<R>): KTypedSubQuery.Nullable<R> =

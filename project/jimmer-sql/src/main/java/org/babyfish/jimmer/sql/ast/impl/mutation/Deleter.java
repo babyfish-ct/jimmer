@@ -129,22 +129,15 @@ public class Deleter {
             return;
         }
 
-        boolean hasInverseLocalAssociation = false;
-        for (ImmutableProp prop : immutableType.getProps().values()) {
-            if (prop.isRemote()) {
-                continue;
-            }
-            if (prop.getMappedBy() != null) {
-                hasInverseLocalAssociation = true;
-                continue;
-            }
-            MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
-                    data.getSqlClient(),
-                    con,
-                    prop,
-                    trigger
-            );
-            if (middleTableOperator != null) {
+        DissociationInfo dissociationInfo = data.getSqlClient().getEntityManager().getDissociationInfo(immutableType);
+        if (dissociationInfo != null) {
+            for (ImmutableProp prop : dissociationInfo.getProps()) {
+                MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGet(
+                        data.getSqlClient(),
+                        con,
+                        prop,
+                        trigger
+                );
                 int affectedRowCount;
                 try {
                     affectedRowCount = middleTableOperator.removeBySourceIds(ids);
@@ -162,12 +155,7 @@ public class Deleter {
                 }
                 addOutput(AffectedTable.of(prop), affectedRowCount);
             }
-        }
-        if (hasInverseLocalAssociation) {
-            for (ImmutableProp backProp : data.getSqlClient().getEntityManager().getAllBackProps(immutableType)) {
-                if (backProp.getMappedBy() != null || backProp.isRemote()) {
-                    continue;
-                }
+            for (ImmutableProp backProp : dissociationInfo.getBackProps()) {
                 MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
                         data.getSqlClient(),
                         con,
@@ -198,24 +186,20 @@ public class Deleter {
                     }
                     addOutput(AffectedTable.of(backProp), affectedRowCount);
                 } else {
-                    if (backProp.isReference(TargetLevel.PERSISTENT) &&
-                            backProp.isColumnDefinition()
-                    ) {
-                        DissociateAction dissociateAction = data.getDissociateAction(backProp);
-                        if (dissociateAction == DissociateAction.SET_NULL) {
-                            ChildTableOperator childTableOperator = new ChildTableOperator(
-                                    data.getSqlClient(),
-                                    con,
-                                    backProp,
-                                    false,
-                                    cache,
-                                    trigger
-                            );
-                            int affectedRowCount = childTableOperator.unsetParents(ids);
-                            addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
-                        } else {
-                            tryDeleteFromChildTable(backProp, ids);
-                        }
+                    DissociateAction dissociateAction = data.getDissociateAction(backProp);
+                    if (dissociateAction == DissociateAction.SET_NULL) {
+                        ChildTableOperator childTableOperator = new ChildTableOperator(
+                                data.getSqlClient(),
+                                con,
+                                backProp,
+                                false,
+                                cache,
+                                trigger
+                        );
+                        int affectedRowCount = childTableOperator.unsetParents(ids);
+                        addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
+                    } else {
+                        tryDeleteFromChildTable(backProp, ids);
                     }
                 }
             }

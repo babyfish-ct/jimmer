@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -79,8 +80,14 @@ public class ConfigurableSubQueryImpl<R>
     }
 
     @Override
-    public ConfigurableSubQuery<R> limit(int limit, int offset) {
+    public ConfigurableSubQuery<R> limit(@Nullable Integer limit, @Nullable Integer offset) {
         TypedQueryData data = getData();
+        if (limit == null) {
+            limit = data.limit;
+        }
+        if (offset == null) {
+            offset = data.offset;
+        }
         if (data.limit == limit && data.offset == offset) {
             return this;
         }

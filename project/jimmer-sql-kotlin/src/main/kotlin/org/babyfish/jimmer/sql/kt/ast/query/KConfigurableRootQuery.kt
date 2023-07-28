@@ -20,7 +20,13 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
     fun distinct(): KConfigurableRootQuery<E, R>
 
     @NewChain
-    fun limit(limit: Int, offset: Int = 0): KConfigurableRootQuery<E, R>
+    fun limit(limit: Int): KConfigurableRootQuery<E, R>
+
+    @NewChain
+    fun offset(offset: Int): KConfigurableRootQuery<E, R>
+
+    @NewChain
+    fun limit(limit: Int?, offset: Int?): KConfigurableRootQuery<E, R>
 
     @NewChain
     fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R>

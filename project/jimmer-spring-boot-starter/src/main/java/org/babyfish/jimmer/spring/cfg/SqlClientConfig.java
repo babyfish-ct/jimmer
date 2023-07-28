@@ -252,6 +252,7 @@ public class SqlClientConfig {
         builder.setDefaultListBatchSize(properties.getDefaultListBatchSize());
         builder.setOffsetOptimizingThreshold(properties.getOffsetOptimizingThreshold());
         builder.setForeignKeyEnabledByDefault(properties.isForeignKeyEnabledByDefault());
+        builder.setSaveCommandPessimisticLock(properties.isSaveCommandPessimisticLock());
         builder.setExecutorContextPrefixes(properties.getExecutorContextPrefixes());
         if (properties.isShowSql()) {
             builder.setExecutor(Executor.log(executor));
