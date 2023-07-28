@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: 项目介绍
+title: Project Introduction
 ---
 
 import { ViewMore } from '@site/src/components/ViewMore';
@@ -9,14 +9,22 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ObjectFetcher } from '@site/src/components/HomepageFeatures/ObjectFetcher';
 import { SaveCommand } from '@site/src/components/HomepageFeatures/SaveCommand';
 import { CacheConsistencyPanel } from '@site/src/components/HomepageFeatures/CacheConsistency';
+import { DynamicJoinProblemPanel } from '@site/src/components/HomepageFeatures/DynamicJoinProblem';
 import { Communication } from '@site/src/components/HomepageFeatures/Communication';
 import { Button } from "@mui/material";
-import DynamicJoinProblem from '../_shared/dynamic-join-problem.mdx';
 import DtoExplosion from '@site/static/img/dto-explosion.png'; 
 import ObjectCache from '@site/static/img/object-cache.jpeg';
 import AssociationCache from '@site/static/img/association-cache.png';
 import CalculatedCache from '@site/static/img/calculated-cache.png';
 import MultiViewCache from '@site/static/img/multi-view-cache.png';
+
+:::warning
+The original low-quality documentation is being completely rewritten and will eventually become high-quality documentation.
+
+However, after several months of hard work, only the Chinese part of the rewriting work has been completed, and the re-translation of the English document has not yet been completed.
+
+Now that the translation of English documents has only started, we will speed up the translation process. Before that, you can read [Old english document](../old-en)
+:::
 
 ## Project positioning
 
@@ -40,281 +48,260 @@ If the reader has experience with any ORM* (such as JPA)*, it will be particular
 Whether you have ORM experience or not, after you complete your Jimmer learning journey, you will find that the benefits you have gained are enormous.
 :::
 
-## 痛点
+## Pain points
 
-前面提到，对数据库完成CRUD访问只是实际项目中最基础最简单的一部分工作，还有其他一些痛点一直困扰着开发人员。这里列举一些常见的痛点：
+As mentioned earlier, completing CRUD access to the database is only the most basic and simple part of the actual project, and there are other pain points that have been plaguing developers. Here are some common pain points:
 
-1.  DTO爆炸问题
+1.  DTO explosion problem
 
-    即便对于同一种数据类型 *(聚合根)* 而言，不同业务功能期望查询的数据格式也不同，这往往导致项目需要定义大量的DTO类型，形成<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>。
+    Even for the same data type *(aggregate root)*, different business functions expect different data formats to be queried, which often leads to project needing to define a large number of DTO types<ViewMore buttonText="DTO explosion" variant="text"><img src={DtoExplosion}/></ViewMore>。
 
     :::info
-    DTO类型数量庞大，彼此之间虽然不同但往往具备高度相似性的，冗余度很高。
+    The number of DTO types is large, although they are different from each other, they often have a high degree of similarity, and the redundancy is very high.
     
-    特别是针对手机设备的应用，由于受限于屏幕尺寸而导致UI界面碎片化严重，即便对于同一种数据类型 *(聚合根)*，不同UI界面也会有不同的侧重，进一步恶化了这种情况。
+    Especially for mobile phone applications, the UI interface is severely fragmented due to the limited screen size, and even for the same data type * (aggregate root)*, different UI interfaces will have different emphasis, which further aggravates the situation.
     :::
 
-    冗余度很高的DTO种类繁多，仅仅是定义这些类型，已经可以让系统臃肿难以维护了。在业务代码实现层面，还会导致传统方案 *(无论是ORM流派还是非ORM流派)* 处理起来很不方便，比如：
+    There are many types of DTO with high redundancy, and just defining these types can already make the system bloated and difficult to maintain. At the business code implementation level, it also makes traditional solutions *(whether ORM or non-ORM)* inconvenient to handle, such as:
 
-    -   传统ORM方案
-    
-        这类方案虽然具备很好的便捷但缺乏灵活性。
-        
-        即使考虑JPA2.1的[Entity Graph](https://www.baeldung.com/jpa-entity-graph)，灵活性也终归有限，尤其是业务场景只需要某些实体对象的部分属性时。
-        
-        最后，为了应对千变万化灵活性，尤其是只需要对象的一部分属性这种灵活性，开发人员往往选择只查询对象的一部分属性并手动转化为DTO类型，这种方式会违背ORM追求便捷性的初衷，无法体现ORM的价值。
+    -   Traditional ORM schemes represented by JPA/Hibernate
+
+        This type of solution, while convenient, lacks flexibility.
+
+        Even considering JPA2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), flexibility is limited, especially if business scenarios only require a part of of the properties of certain entity objects.
+
+        Finally, in order to cope with the ever-changing flexibility, especially the flexibility of only a part of the properties of the object, developers often choose to query only a part of the properties of the object and manually convert to DTO types, which will go against the original intention of ORM to pursue convenience and fail to reflect the value of ORM.
 
         :::info
-        为了弥补传统ORM活性的不足，开发人员往往需要想办法做一些变通，这些努力反过来破坏ORM的初衷：便捷性。
+        To compensate for the lack of flexibility in traditional ORMs, developers often need to find ways to make some workarounds, which in turn undermine the original purpose of ORM: convenience.
         :::
 
         :::note
-        这是反对ORM的人士常见的抨击理由之一，认为ORM企图代SQL但并没有达到目的，这种观点有正确和合理的一面。
+        This is one of the common arguments against ORM opponents, and there is a right and legitimate side to the view that ORM tried to replace SQL but did not achieve its goal.
         :::
 
-    -   以MyBatis为代表的非ORM方案
+    -   Non-ORM schemes represented by MyBatis
     
-        这类方法灵活但重复劳动问题严重。
+        Such methods are flexible, but the problem of duplication of effort is serious.
         
-        在这类技方案中，面对形形色色的DTO类型的查询， 开发人员往往需要定义大量的相似却不同的`Result Mapper`，甚至必要时还需要一些手动的数据拼接操作，这代表着非常繁重的工作量。
+        In such technical solutions, developers often need to define a large number of similar but different 'Result Mappers' in the face of various DTO types of queries, and even some manual data stitching operations when necessary, which represents a very heavy workload.
 
         :::info
-        这种解决方案具有绝对的灵活性和控制力，但代价是工作量大。开发能力被体现成了团队的人数规模和沟通成本。
+        This solution has absolute flexibility and control* (it can do very little work for you, many times developers write much code by themselves, of course, it is flexible)*, but at the cost of a lot of work. The team's R&D capabilities are directly reflected in the size of the number of people and communication costs.
         :::
 
     :::tip
-    通过创新，彻底释放ORM的灵活性，形成一个兼具ORM的便捷性和MyBatis的灵活性的新方案，是Jimmer的核心价值之一。
+    Unleashing the flexibility of ORM through innovation to form a new solution that combines the convenience of ORM with the flexibility of MyBatis is one of Jimmer's core values.
     :::
 
-2.  复杂表单问题
+2.  Complex form problem
 
-    很多时候，客户端需要保存的数据结构并非扁平对象，而是<ViewMore buttonText="有一定复杂性的数据结构" variant="text"><LongAssociation/></ViewMore>，如果要开发人员自己对比客户端数据结构和现有数据的差异并执行适当的增、删、改行为，那会非常繁琐。
-    
-    而且，应该和查询功能类似，不同业务功能能对同一个聚合根类型保存的数据结构的格式应该多样化，不应在ORM层面通过配置固化。
+    Many times, the data structure that the client needs to save is not a flat object, but <ViewMore buttonText="data structure with some complexity" variant="text"><LongAssociation/></ViewMore>. It would be tedious for developers to compare the differences between client data structures and existing data and perform appropriate additions, deletions, and modifications.
+        
+    Therefore, the format of the data structure that different business functions can save for the same aggregate root type should be diversified, and should not be solidified through configuration at the ORM level.
 
-3.  缓存
+3.  cache
 
-    -   是否使用缓存应该对开发人员绝对透明，缓存的引入不应该增加业务代码的复杂度、降低代码质量和可维护性，应该和纯SQL项目一样简单。
+    - Whether to use caching should be absolutely transparent to developers, and the introduction of caching should not increase the complexity of business code, reduce code quality and maintainability, and should be as simple as pure SQL projects.
 
-    -   缓存不应该仅有最简单的对象缓存，还应有用<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
+    - The cache should not only have the simplest object cache, but also <ViewMore buttonText="Association cache" variant="text"><img src={AssociationCache}/></ViewMore> and <ViewMore buttonText="Computational cache" variant="text"><img src={CalculatedCache}/></ViewMore>
 
-    -   以权限系统为代码表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><img src={MultiViewCache}/></ViewMore>
+    - The global filtering capability represented by the permission system often allows different users to see different data, so it should also be <ViewMore buttonText="Let different users see different caches" variant="text"><img src={MultiViewCache}/></ViewMore>
 
-    -   缓存的一致性维护这个最头疼的问题应该被底层方案解决，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
+    - The most troublesome problem of cache consistency maintenance <ViewMore buttonText="should be solved by the underlying solution" title="Automatic cache consistency" variant="text"><CacheConsistencyPanel/></ViewMore>, as fully automated as possible, rather than penetrating into the business code and solved by the developer.
 
-4.  客户端自动对接
+4.  The client is automatically docked
 
-    -   服务端服务应该自动为客户端 *(比如Web前端)* 生成客户端代码 *(比如TypeScript)*。
+    The server-side service should automatically generate client-side code (such as TypeScript) for the client (such as a web frontend).
 
-    -   服务端是生产者，开发人员希望看到简化后的API和编程模型，因为这意味着自己需要实现的工作少；客户端是消费者，开发人员希望看到完整的API和编程模型，因为这意味着自己用起来舒服。传统方案让服务端和客户端的API和编程模型完全一致的做法需要被改变。
+    The server side is the producer, and developers want to see a simplified API and programming model because it means less work to implement; Clients are consumers, and developers want to see the full API and programming model because it means they're comfortable using themselves. The traditional approach of making the server-side and client-side APIs and programming models exactly the same needs to be changed.
 
-5.  微服务数据拼接
+5.  Microservice data stitching
 
-    在微型服务体系中，数据库是碎片化的。先从不同的微服务中查询数据的不同部分，然后拼接起来作为一个整体返回，这个操作既繁琐又高频，应该由底层方案隐藏和自动化。
+In a microservices system, databases are fragmented. Querying different parts of data from different microservices and then stitching them back as a whole is cumbersome and high-frequency, and should be hidden and automated by the underlying solution.
 
-## 革命性功能点
+## Revolutionary features
 
-为了解决这个痛点，Jimmer提供了很多颠覆性的功能。
+To solve these pain points, Jimmer offers a lot of disruptive features.
 
-### 1. 查询任意形状的数据结构
+### 1. Query arbitrarily shaped data structures
 
-GraphQL那种必须通过HTTP远程访问才能得到灵活性，变成了无所不在的普适的本地代码行为，可以认为这个功能是ORM的GraphQL化。
+The flexibility of GraphQL which must be accessed remotely via HTTP to gain , has become a ubiquitous universal local code behavior, which can be considered as the GraphQLization of ORM.
 
-这个功能也解决GraphQL的一个缺陷：不支持自关联字段的递归查询。
+This feature also addresses a drawback of GraphQL: it does not support recursive queries for self-associated properties.
 
-<ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small" variant="outlined">前往看看</Button>
+<ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small" variant="outlined"> go and see</Button>
 
-### 2. 保存任意形状的数据结构
+### 2. Save arbitrarily shaped data structures
 
--   被保存数据结构的形状应该由开发人员随心所欲地制定，而非如同传统ORM一样在实体上使用固定配置 *(比如JPA中`@OneToMany`注解的cascade参数)*
+- The shape of the saved data structure should be made by the developer at will, rather than using a fixed configuration on the entity as in a traditional ORM * (e.g. the cascade parameter of the '@OneToMany' annotation in JPA)*
 
--   应该如同Web领域的<a href="https://react.dev/learn">React</a>或<a href="https://vuejs.org/">Vue</a>一样，开发人员给出要覆盖的数据结构即可，由框架自行寻找`DIFF`并执行SQL操作。
+- It should be like <a href="https://react.dev/learn">React</a> or <a href="https://vuejs.org/">Vue</a> in the web domain, the developer can give the data structure to cover, and the framework will find the 'DIFF' and perform the SQL operation.
 
-<SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small" variant="outlined">前往看看</Button>
+<SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small" variant="outlined"> go and take a look</Button>
 
-### 3. 缓存任意形状的数据结构
+### 3. Cache arbitrarily shaped data structures
 
-这是Jimmer一个非常重要的功能，其缓存机制非常强大，且对业务代码完全透明。
-
-:::note
-在长期从事技术管理工作的实践中，我发现大部分开发团队保证纯数据库项目的代码的简洁性和可维护性。然而，一旦引入缓存系统，项目的可维护性急剧降低。
-
-因此，Jimmer引入了这套既强大又对业务代码0侵入的缓存管理机制，在充分享受缓存机制的同时，让业务代码和纯数据库项目一样简单一样好维护。
-:::
-
-这套缓存机制支持如下的重要概念
-
--   <ViewMore buttonText="对象缓存" variant="text"><img src={ObjectCache}/></ViewMore>、<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>
-
--   <ViewMore buttonText="多视图缓存" variant="text"><img src={MultiViewCache}/></ViewMore>，不同用户看到不同的缓存，往往和权限系统结合使用
-
--   <ViewMore buttonText="自动维护缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>
-
-<Button href="../cache" size="small" variant="outlined">前往看看</Button>
-
-### 4. 动态表连接
-
-Jimmer的DSL并非是对SQL的机械翻译，其独创的`动态表连接`，填补了行业空白，无论多么复杂的动态查询都可以轻松书写。
+This is a very important feature of Jimmer, whose caching mechanism is very powerful and completely transparent to business code.
 
 :::note
-`动态表连接`的缺失，是行业空白，也是Jimmer项目得以立项的导火索。
+In my long-term experience in technical management, I have found that most development teams ensure the simplicity and maintainability of code for database-only projects. However, once the caching system was introduced, the maintainability of the project decreased dramatically.
+
+Therefore, Jimmer introduced this set of cache management mechanism that is both powerful and zero-intruding on business code, while fully enjoying the caching mechanism, making business code as simple as simple and easy to maintain as database-only projects.
 :::
 
-<ViewMore buttonText="简要了解" title="缺失动态表连接的问题" variant="outlined"><DynamicJoinProblem/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">前往看看</Button>
+This caching mechanism supports the following important concepts
 
-### 5. 前后端对接
+- <ViewMore buttonText="Object Cache" variant="text"><img src={ObjectCache}/></ViewMore>、<ViewMore buttonText="Association Cache" variant="text"><img src={AssociationCache}/></ViewMore> and <ViewMore buttonText="Computational Cache" variant="text"><img src={CalculatedCache}/></ViewMore>
 
-对于REST服务而言，为客户端 (比如Web前端) 生成客户端代码 (比如TypeScript)。
+- <ViewMore buttonText="MultiView Cache" variant="text"><img src={MultiViewCache}/></ViewMore>, different users see different caches, often in combination with permission systems
 
-注意，和其他自动生成客户端代码的技术方案不同，服务端和客户端的编程模型不同。
+- <ViewMore buttonText="Automatically maintain cache coherency" variant="text"><CacheConsistencyPanel/></ViewMore>
 
--   服务端作为生产者，其编程模型经过了简化(消除了DTO爆炸)，大幅降低实现成本
+<Button href="../cache" size="small" variant="outlined"> go and take a look</Button>
 
--   客户端作为消费者，采用完整的编程模型(重现了DTO爆炸)，使用起来具有良好的开发体验
+### 4. Dynamic table joins
 
-这样，服务端和客户端都得到最适合自己的编程模型
+Jimmer's DSL is not a mechanical translation of SQL, and its original 'dynamic table joining' fills a gap in the industry, no matter how complex the dynamic query can be easily written.
 
-<Communication/>&nbsp;<Button href="../spring/client" size="small" variant="outlined">前往看看</Button>
+:::note
+The lack of 'dynamic table connection' is a gap in the industry and the reason that the Jimmer project was created
+:::
 
-### 6. 智能分页
+<ViewMore buttonText="Brief understanding" title="Problems with missing dynamic table joins" variant="outlined"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">Go check it out</Button>
 
--   简单至极
+### 5. Front-end and back-end docking
 
-    开发人员只需编写查询分页前所有数据的查询，查询数据总行数和查询页类数据的查询会被自动生成。所以，Jimmer的分页查询会让你感到前所未有的简单。
+For REST services, client code (such as TypeScript) is generated for the client (such as a web frontend).
 
--   充分优化
+Note that unlike other technical solutions that automatically generate client-side code, the programming models of the server and the client are different.
 
-    Jimmer会在SQL层面充分优化分页查询
+- As the producer, the programming model of the server side has been simplified *(eliminating the DTO explosion)*, which greatly reduces the implementation cost
 
-<Button href="../query/paging" size="small" variant="outlined">前往看看</Button>
+- The client, as a consumer, adopts a complete programming model *(reproducing the DTO explosion)* and has a good development experience to use
 
-### 7. 远程关联
+In this way, both the server and the client get the programming model that best suits them
 
-在微型服务体系中，数据库是碎片化的。先从不同的微服务中查询数据的不同部分，然后拼接起来作为一个整体返回，这个操作既繁琐又高频，应该由底层方案隐藏和自动化。
+<Communication/>&nbsp;<Button href="../spring/client" size="small" variant="outlined">go and see</Button>
 
-<Button href="../spring/spring-cloud" size="small" variant="outlined">前往看看</Button>
+### 6. Smart pagination
 
-## 所有功能点
+- Extremely simple
+
+Developers only need to write queries that query all data before paging, and queries that query the total number of rows of data and query page data will be automatically generated. So, Jimmer's paginated queries will make you feel easier than ever.
+
+- Fully optimized
+
+Jimmer fully optimizes paginated queries at the SQL level
+
+<Button href="../query/paging" size="small" variant="outlined"> go to see</Button>
+
+### 7. Remote association
+
+In a microservices system, databases are fragmented. Querying different parts of data from different microservices and then stitching them back as a whole is cumbersome and high-frequency, and should be hidden and automated by the underlying solution.
+
+<Button href="../spring/spring-cloud" size="small" variant="outlined"> go and take a look</Button>
+
+## All function points
 
 <MindMap initialExpandLevel={1}/>
 
-## 方案类比
+Scenario analogy
+Jimmer is a comprehensive solution with a lot of great features. Some of these features are original to Jimmer, and some are similar to some other technical systems, which can be understood by analogy to help users with relevant experience understand.
 
-Jimmer是一个全面的解决方案，有很多强大的功能。其中有一部分功能是Jimmer独创的，还有一部分和某些其他技术体系有相似性，可以通过类比来帮助用相关经验的用户理解。
-
-可和其他相似技术体系类比的功能点有：
+The features that can be compared with other similar technical systems are:
 
 <table>
 <thead>
 <tr>
-<th>Jimmer功能点</th>
-<th>类似方案</th>
-<th>必要说明</th>
+<th>Jimmer Feature Point</th>
+<th>Similar Solutions</th>
+<th>Necessary Explanation</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td>Query arbitrary shaped data structures</td>
+<td><a href="https://graphql.org/)">GraphQL</a></td>
 <td>
 
-[查询任意形状的数据结构](../query/object-fetcher)
+-   Unlike GraphQL, which serves as a protocol for HTTP interface exposure, Jimmer extends this capability to APIs of an ORM, which can be called locally everywhere. *(Of course, you can also choose to use Jimmer's ability to quickly expose GraphQL)*
 
-</td>
-<td><a href="https://graphql.org/">GraphQL</a></td>
-<td>
-
--   和GraphQL作为协议仅用于HTTP接口暴露不同，Jimmer将此能力拓展成了ORM的API，即无处不在的本地代码调用。*(当然，你也可以选择利用Jimmer的能力快速暴露GraphQL)*
-
--   Jimmer可以对自关联属性进行递归查询
+-   Jimmer can perform recursive queries on self associated properties
 
 </td>
 </tr>
 <tr>
 <td>
 
-[保存任意形状的数据结构](../mutation/save-command)
+[Save arbitrary shaped data structures](../mutation/save-command)
 
 </td>
 <td><a href="https://react.dev/learn">React</a>或<a href="https://vuejs.org/">Vue</a>的Virtual DOM diff</td>
 <td>
 
-Save指令和其他ORM框架的save方法之间存在本质差异。
+There are essential differences between the Save directive and the save approach of other ORM frameworks.
 
-以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
-关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)和[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+Taking JPA/Hibernate as an example, whether a scalar property of an object need to be saved is controlled by [Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--) and [Column. updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--),
+Whether an association property needs to be saved is controlled by [OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--), [ManyToOne. cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade]( https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--) and [ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--). However, no matter how the developer configures it, the shape of the data structure that JPA/Hibernate can save for you is fixed.
 
-Jimmer采用完全不同方法，被保存的Jimmer对象具备[动态性](../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+Jimmer takes a completely different approach, and the saved Jimmer object has [dynamic](.. /object/dynamic), the properties that are set are saved, while properties that are not set are ignored, so that arbitrarily shaped data structures can be saved.
 
 </td>
 </tr>
 <tr>
-<td>
-
-[复杂计算属性](../mapping/advanced/calculated/transient)
-
-</td>
+<td>Entity object calculated properties</td>
 <td><a href="https://github.com/graphql/dataloader">DataLoader</a></td>
 <td>
 
--   计算属性没有没有[N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)问题
+-   Calculated properties do not have the [N + 1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) problem
 
--   计算规则和ORM解耦，可以使用任何信息（比如身份权限信息）用做计算，也可以使用关系型库以外的技术进行计算
+-   Calculation logic is decoupled from ORM, and business information (such as identity permissions) can be used for calculation, allowing the use of non-SQL technology
 
 </td>
 </tr>
 <tr>
-<td>
-
-[远程关联属性](../spring/spring-cloud)
-
-</td>
+<td>Entity object remote associations</td>
 <td><a href="https://www.apollographql.com/docs/federation/">Apollo Federation</a></td>
 <td>
 
--   跨越微服务的实体关系，关联双方实体隶属于不同的微服务（也表示，隶属于不同数据库）
+-   Aassociation across microservices, where the entities on both ends of the association belong to different microservices (that also means they belong to different databases).
 
--   如果被查询的数据结构的形状包含远程关联，将会自动使用远程数据访问完成跨服务数据访问，对开发人员透明
+-   If the shape of the data structure being queried includes remote associations, cross-service data access will be automatically completed using HTTP request, which is transparent to developers.
 
--   将不同微服务的关系型数据库模型，合并成一个全局的关系模型
+-   Combine the relational models of different microservices into a global relational model.
 
 </td>
 </tr>
 <tr>
+<td>Intra-transaction trigger</td>
+<td><a href="https://seata.io/en-us/docs/dev/mode/at-mode.html">Seata's AT mode</a></td>
 <td>
 
-[事务内触发器](../mutation/trigger#触发器分类)
+-   Similarities: Inject additional query SQL when modifying the database to capture database changes
 
-</td>
-<td><a href="https://seata.io/zh-cn/docs/dev/mode/at-mode.html">Seata的AT模式</a></td>
-<td>
-
--   相似点：在修改数据库时植入额外的查询SQL，以捕获数据库的变更
-
--   不同点：和seata会进行更多操作不同，Jimmer事务内触发器仅仅发送事件通知用户；另外不需要如同[Seata的AT模式](https://seata.io/zh-cn/docs/dev/mode/at-mode.html)一样代理JDBC连接池。
+-   The difference: Unlike seata which will perform more operations, jimmer intra-transaction triggers only send events to notify users; in addition, there is no need to proxy JDBC connection pool like [Seata's AT mode](https://seata.io/en-us/docs/dev/mode/at-mode.html).
 
 :::note
-若条件允许，应优先使用binlog触发器，而非事务内触发器
+If conditions permit, binlog triggers should be used in preference to Intra-transaction triggers
 :::
 
 </td>
 </tr>
 <tr>
-<td>
-
-[不可变对象](../object/immutable)
-
-</td>
+<td>Immutable objects</td>
 <td><a href="https://github.com/immerjs/immer">immer</a></td>
 <td>
 
-和传统ORM不同，Jimmer中所有实体对象都是不可变对象。
+Unlike traditional ORM, all entity objects in Jimmer are immutable objects.
 
-这非常重要，如果用可变对象作为实体对象，其实就是纵容开发人员随意构建`循环引用`，这会是一个后患无穷的问题。
+:::note
+This is very important. If mutable objects are used as entity objects, it actually condones developers to arbitrarily construct `circular references`, which will be a problem with endless consequences. 
+:::
 
-不可变对象保证实体对象之间只有单向关联，无需任何处理，可以直接参与JSON序列化和HTTP交互，并为其他任何编程语言所理解。
+Unfortunately, the Java record and `copy()` function of Kotlin data class is designed for simple immutable objects, and it is difficult to handle complex deep immutable object copying and construction in a concise manner, and deep and complex data structures are exactly what the ORM framework has to face.
 
-不幸的是，java record和kotilin data class的copy函数为简单不可变对象而设计，难以简洁地处理复杂的深层次不可变对象的复制构造问题，而深层次复杂数据结构恰恰是ORM框架要面对的。
-
-所以，Jimmer为java/kotlin移植了[immer](https://github.com/immerjs/immer)，这是一个足够强大的不可变对象方案。本框架命名为Jimmer，即致敬[immer](https://github.com/immerjs/immer)
+Therefore, Jimmer has ported [immer](https://github.com/immerjs/immer) for Java/Kotlin. This is a powerful immutable object solution. This framework is named Jimmer, paying tribute to [immer](https://github.com/immerjs/immer).
 
 </td>
 </tr>

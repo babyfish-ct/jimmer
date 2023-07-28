@@ -1,61 +1,69 @@
 ---
-sidebar_position: 5
-title: 标准例子
+sidebar_position: 2
+title: Standard example
 ---
 
 import {ViewMore} from '@site/src/components/ViewMore';
 import {CacheConsistencyPanel} from '@site/src/components/HomepageFeatures/CacheConsistency';
 
-:::tip
-直接运行框架附带的例子，是熟悉Jimmer最高效的方法。
+:::warning
+The original low-quality documentation is being completely rewritten and will eventually become high-quality documentation.
+
+However, after several months of hard work, only the Chinese part of the rewriting work has been completed, and the re-translation of the English document has not yet been completed.
+
+Now that the translation of English documents has only started, we will speed up the translation process. Before that, you can read [Old english document](../old-en)
 :::
 
-## 事先需知
+:::tip
+Running the example that comes with the framework directly is the most efficient way to familiarize yourself with Jimmer.
+:::
 
-和[JOOQ](https://www.jooq.org/)，[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html)，[QueryDSL](http://querydsl.com/)，[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex)，[Fluent-MyBatis](https://github.com/atool/fluent-mybatis)等强类型SQL DSL实现一样, Jimmer需要根据用户代码生成更多的源代码。
+## Be aware beforehand
 
--   对于Java而言，就是annotation processor
--   对于kotlin而言，就是ksp
+Like strongly typed SQL DSL implementations such as [JOOQ](https://www.jooq.org/),[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html),[QueryDSL](http://querydsl.com/),[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex), [Fluent-MyBatis](https://github.com/atool/fluent-mybatis), Jimmer needs to generate more source code based on user code.
 
-当用户第一次使用IDE（比如Intellij）打开项目配套的例子时，会发现一些本该被自动生成的类不存在。
+- In the case of Java, it's the annotation processor
+- In the case of Kotlin, it is KSP
+
+When user opens the a demo project for the first time using an IDE (such as Intellij), he will find that some classes that should have been automatically generated do not exist.
 
 :::info
-这时不要惧怕，点下运行按钮，所有错误会自动消失。
+Don't be afraid at this time, click the run button and all errors will disappear automatically.
 :::
 
-## 例子介绍
+## Example introduction
 
-Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
+Jimmer provides supporting examples that are very helpful for quickly mastering Jimmer
 
-所有例子的总目录：https://github.com/babyfish-ct/jimmer/tree/main/example
+General directory of all examples: https://github.com/babyfish-ct/jimmer/tree/main/example
 
-该项目提供5个例子，每个例子都有Java和Kotlin两个版本，共计10个例子。
+The project provides 5 examples, each with two versions, Java and Kotlin, for a total of 10 examples.
 
 <table>
     <thead>
         <th>Java</th>
         <th>Kotlin</th>
-        <th>描述</th>
-        <th>运行方法</th>
-        <th>重要性</th>
+        <th>Description</th>
+        <th>How to run</th>
+        <th>importance</th>
     </thead>
     <tbody>
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-core">java/jimmer-core</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-core-kt">java/jimmer-core-kt</a></td>
-            <td>ORM无关示例，展示<a href="https://github.com/immerjs/immer">immer</a>风格的不可变对象</td>
-            <td>运行main方法</td>
+            <td>ORM agnostic example showing <a href="https://github.com/immerjs/immer">immer</a>-style immutable object</td>
+            <td>Execute main method</td>
             <td>★★★★</td>
         </tr>
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql">java/jimmer-sql</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt">java/jimmer-sql-kt</a></td>
-            <td>利用Jimmer快速构建REST服务。这个例子展示了大部分Jimmer的功能，是最重要的最基础的例子</td>
+            <td>Leverage Jimmer to build REST services quickly. This example shows most of Jimmer's features and is the most important and basic example</td>
             <td>
                 <ol>
-                    <li>运行main方法</li>
-                    <li>访问swagger页面: http://localhost:8080/ui</li>
-                    <li>下载客户端TypeScript代码：http://localhost:8080/ts.zip</li>
+                    <li>Execute main method</li>
+                    <li>Access swagger page: http://localhost:8080/ui</li>
+                    <li>Download TypeScript code：http://localhost:8080/ts.zip</li>
                 </ol>
             </td>
             <td>★★★★★</td>
@@ -63,11 +71,11 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql">java/jimmer-sql-graphql</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt">java/jimmer-sql-graphql-kt</a></td>
-            <td>利用Jimmer快速构建GraphQL服务</td>
+            <td>Leverage Jimmer to quickly build GraphQL services</td>
             <td>
                 <ol>
-                    <li>运行main方法</li>
-                    <li>访问Graph<b>i</b>QL界面: http://localhost:8080/graph<b>i</b>ql</li>
+                    <li>Execute main method</li>
+                    <li>Access the UI of Graph<b>i</b>QL界面: http://localhost:8080/graph<b>i</b>ql</li>
                 </ol>
             </td>
             <td>★★</td>
@@ -75,14 +83,14 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-cloud">java/jimmer-cloud</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt">java/jimmer-cloud-kt</a></td>
-            <td>基于Spring Cloud的微服务项目，展示Jimmer的远程关联</td>
+            <td>Spring Cloud-based microservices project that showcases jimmer's remote association</td>
             <td>
                 <ol>
-                    <li>启动注册中心，运行registry-center子项目的main方法</li>
-                    <li>启动所有微服务，即store-service、book-service和author-service中的main方法</li>
-                    <li>等待大约半分钟，确保注册中心正确识别所有微服务，避免下个步骤中的某些swagger调用发生无法识别远程服务的异常。</li>
+                    <li>Start the registry-center, run the main method of the registry-center subproject</li>
+                    <li>Start all microservices, run the main method in store-service, book-service, and author-service</li>
+                    <li>Wait about half a minute to ensure that the registry-center correctly identifies all microservices and avoid exceptions that some swagger calls in the next step do not recognize the remote service. </li>
                     <li>
-                        访问以下任何一个微服务的swagger-ui
+                        Access swagger-ui for any of the following microservices
                         <ul>
                             <li>store-service: http://localhost:7001/ui</li>
                             <li>book-service: http://localhost:7002/ui</li>
@@ -96,34 +104,36 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command">java/save-command</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt">kotlin/save-command-kt</a></td>
-            <td>针对保存指令的专项例子</td>
-            <td>运行所有单元测试</td>
+            <td>Specific example for save command</td>
+            <td>Run all unit test cases</td>
             <td>★★★</td>
         </tr>
     </tbody>
 </table>
 
 :::tip
-其中，初次上手，最重要的例子是`jimer-sql`，按照你的语言喜好，打开这两个例子中任何一个即可
+The most important example to get started with is `jimer-sql`, and you can open either of these two examples according to your language preference
 
 -   Java
+
     [example/java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)
 
 -   Kotlin
+
     [example/join/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 :::
 
-## 非缓存模式
+## Non-cached mode
 
-非缓存模式是所有例子的默认运行方式，无需安装任何外部环境，所有例子都可以直接运行。
+Non-cached mode is the default operation mode for all examples, and all examples can be run directly without installing any external environment.
 
-如果某个例子依赖于数据库，非缓存模式下它会使用H2内存数据，并在启动时刻自动创建数据库。
+If an example depends on a database, it uses H2 memory data in non-cached mode and automatically creates the database at startup time.
 
-可见，非缓存模式非常简单，非常适合快速熟悉例子。
+As you can see, the non-cached mode is very simple and great for quickly familiarizing yourself with the example.
 
-## 缓存模式
+## Cache mode
 
-上文介绍了10个附带例子，其中有4个例子可以演示Jimmer的缓存及其一致性保证。
+The above 10 accompanying examples are presented, of which 4 can demonstrate Jimmer's caching and its consistency guarantees.
 
 -   [java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)和
     [kotlin/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
@@ -131,86 +141,86 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 -   [java/jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql)和
     [kotlin/jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt)
 
-默认情况下，它们不使用缓存，基于内嵌的内存数据库运行且自动初始化数据库，这保证了无需安装任何外部环境，单击运行按钮即可示范。
+By default, they do not use caching, run on an in-memory database and automatically initialize the database, which guarantees that there is no need to install any external environment, click the run button and demonstrate.
 
-你也可以让它们用缓存模式启动，只需要将spring-boot的profile设置为`maxwell`或`debezium`即可。
+You can also have them start in cached mode, just run application with the spring-boot profile `maxwell` or `debezium`.
 
-这两个spring profile利用了[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)的CDC推送让能力实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，因此，需要安装外部环境。
+These two spring profiles utilize the CDC push capabilities of [maxwell] (https://maxwells-daemon.io/) or [debezium] (https://debezium.io/) to achieve <ViewMore buttonText="Cache coherency" variant="text" ><CacheConsistencyPanel/></ViewMore>, therefore, you need to install an external environment.
 
 :::tip
-事实上，借助[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)这样的CDC推送服务并非实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>的唯一途径，即使不借助于任何外部技术帮助，Jimmer也可以实现这个能力。
+In fact, using CDC push services such as [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) is not a the only way that can maintain the <ViewMore buttonText="cache consistency" variant="text">CacheConsistencyPanel</ViewMore>, Jimmer can do this is without the help of any outside technology.
 
--   Jimmer自己捕获数据变化的功能叫`Transaction触发器`
+- Jimmer's own ability to capture changes of database is called `TransactionTrigger`
 
--   通过外部CDC技术把数据库的变化推送给Jimmer的功能叫`BinLog触发器`
+- The ability to push database changes to jimmer through external CDC technology is called `BinLogTrigger`
 
-请参见[触发器分类](../mutation/trigger#触发器分类)。
+See [Trigger type](.. /mutation/trigger#触发器类型).
 
-`BinLog触发器`既具有更好的性能，又具备更好的普适性 *(即使绕过Jimmer修改数据库的API，通过其他方式修改数据库，比如直接利用SQL IDE修改数据，也可以被拦截)*，是推荐方案。
+`BinLogTrigger` has both better performance and better universality *(even if you bypass the API of the Jimmer to modify the database, you can modify the database in other ways, such as directly using the SQL IDE to modify the data, it can also be intercepted)*, which is the recommended solution.
 
-因此，虽然`Transaction触发器`可以在不依赖于任何特殊外部环境的情况下实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，
-但是，官方附带例子仍然使用`BinLog触发器`来同步缓存，毕竟这是更值得推荐的方式。
+So, while the `TransactionTrigger` can be implemented without any special external environment<ViewMore buttonText="cache coherency" variant="text"><CacheConsistencyPanel/></ViewMore>，
+However, the official side example still uses the `BinLogTrigger` to synchronize the cache, which is the more recommended way.
 
-所以，我们需要搭建maxwell或debezium这样的CDC服务把数据库的变化推送给Jimmer。
+So, we need to set up CDC services like maxwell or debezium to push database changes to jimmer.
 :::
 
-启用缓存模式需要搭建外部环境。
+Enabling cached mode requires setting up an external environment.
 
-1.  首先，你需要在本机安装docker
+1. First, you need to install docker locally
 
-2.  安装外部环境
+2. Install the external environment
 
-    附带例子支持两种外部环境，你可以随意选择一种方式体验<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>
+The accompanying example supports two external environments, and you can choose one way to experience the <ViewMore buttonText="cache coherency" variant="text"><CacheConsistencyPanel/></ViewMore>
 
 ### Maxwell + MySQL
 
-虽然[Maxwell](https://maxwells-daemon.io/)只支持MySQL，但它是所有数据库变更推送技术中最简单的。因此，有示范价值。
+Although [maxwell](https://maxwells-daemon.io/) only supports MySQL, it is the simplest of all database change push techniques. Therefore, there is a demonstration value.
 
-打开命令行，进入[example/env-with-cache/maxwell](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/maxwell)所对应的本地目录，执行
+Open the command line, change to the local directory corresponding to [example/env-with-cache/maxwell](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/maxwell), and execute
 ```
 bash ./install.sh
 ```
 
-安装完成后，docker宿主机的端口暂用启用如下
+After the installation is complete, the port occupation of the docker host is enabled as follows
 
-|容器名|端口|描述|
+|Container|Port|Description|
 |-----|---|----|
-|maxwell-demo-zookeeper|4000|支撑Kafka，用户不会直接使用|
-|maxwell-demo-kafka|4100|对外暴露的地址为localhost，即，假设docker宿主是你的本机。如果要使用远程服务器作为docker宿主，需自行修改install.sh中的kafka安装命令，并修改例子中的spring-boot配置文件|
-|maxwell-demo-kafdrop|4101|一个Kafka图形界面工具，用浏览器访问http://localhost:4101即可|
-|maxwell-demo-mysql|4200|此模式下的数据库服务|
-|maxwell-demo-maxwell|NA|负责把MySQL的变化事件推送给Kafka的后台服务|
-|maxwell-demo-redis|4400|此模式下的缓存服务|
+|maxwell-demo-zookeeper|4000|Support Kafka, users will not use it directly|
+|maxwell-demo-kafka|4100|The exposed address is localhost, i.e., assuming that the docker host is your local mechine. If you want to use a remote server as the docker host, you need to modify the kafka installation command in the install.sh and modify the spring-boot configuration file in the example|
+|maxwell-demo-kafdrop|4101|A Kafka graphical interface tool that can be accessed with a browser http://localhost:4101|
+|maxwell-demo-mysql|4200|Database service in this mode|
+|maxwell-demo-maxwell|NA|Responsible for pushing MySQL change events to Kafka's background service|
+|maxwell-demo-redis|4400|Cache service in this mode|
 
 ### Debezium + Postgres
 
-[Debezium](https://debezium.io/)支持很多种数据库，具备很好的普通性，例子使用它来支持Postgres的变更推送。
+[Debezium](https://debezium.io/) supports for many kinds of databases, with good commonality, examples use it to support postgres CDC.
 
 :::info
-Postgres是一个非常优秀的开源数据库。如果你的项目是全新的，没有任何历史包袱，可以考虑尝试使用Postgres。这也是Jimmer的例子使用Debezium支持Postgres的原因。
+Postgres is a very good open source database. If your project is brand new and doesn't have any historical baggage, consider trying Postgres. This is also why Jimmer's example uses debezium to support Postgres.
 :::
 
-打开命令行，进入[example/env-with-cache/debezium](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/debezium)所对应的本地目录，执行
+Open the command line, change to the local directory corresponding to [example/env-with-cache/debezium](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/debezium), and execute
 ```
 bash ./install.sh
 ```
 
-安装完成后，docker宿主机的端口暂用启用如下
+After the installation is complete, the port occupation of the docker host is enabled as follows
 
-|容器名|端口|描述|
+|Container|Port|Description|
 |-----|---|----|
-|debezium-demo-zookeeper|5000|支撑Kafka，用户不会直接使用|
-|debezium-demo-kafka|5100|对外暴露的地址为localhost，即，假设docker宿主是你的本机。如果要使用远程服务器作为docker宿主，需自行修改install.sh中的kafka安装命令，并修改例子中的spring-boot配置文件|
-|debezium-demo-kafdrop|5101|一个Kafka图形界面工具，用浏览器访问http://localhost:5101即可|
-|debezium-demo-postgres|5200|此模式下的数据库服务|
-|debezium-demo-connect|5300|负责把MySQL的变化事件推送给Kafka的kafka-connector，可以通过http://localhost:5300/connectors来检验名为`debezium-connector`的pg-connector是否成功安装|
-|debezium-demo-redis|5400|此模式下的缓存服务|
+|debezium-demo-zookeeper|5000|Support Kafka, users will not use it directly|
+|debezium-demo-kafka|5100|The exposed address is localhost, i.e., assuming that the docker host is your local mechine. If you want to use a remote server as the docker host, you need to modify the kafka installation command in the install.sh and modify the spring-boot configuration file in the example|
+|debezium-demo-kafdrop|5101|A Kafka graphical interface tool that can be accessed with a browser http://localhost:5101|
+|debezium-demo-postgres|5200|Database service in this mode|
+|debezium-demo-connect|5300|The kafka-connector, which is responsible for pushing postgres change events to Kafka, can check whether the pg-connector named `debezium-connector` is successfully installed by http://localhost:5300/connectors|
+|debezium-demo-redis|5400|Cache service in this mode|
     
-## 注意事项
+## Notes
 :::caution
-如果把`Maxwell + MySQL`和`Debezium + Postgres`的外部环境都安装了，有可能因内存不足导致部分容器无法启动。
+If you install the external environment of `Maxwell + MySQL` and `Debezium + Postgres`, some containers may not be started due to insufficient memory.
 
-以我的Mac为例，默认情况下，Mac为docker分配2GB内存，把上述容器都安装并启动，再加上几个其他与此无关的容器，导致内存不足，设置为3GB后问题解决。
+Take my Mac as an example, by default, the Mac allocates 2GB of memory for docker, installs and starts all the above containers, plus several other containers that have nothing to do with it, resulting in insufficient memory, set to 3GB after the problem is solved.
 :::
 
     

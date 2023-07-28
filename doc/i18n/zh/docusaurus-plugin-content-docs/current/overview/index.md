@@ -9,4 +9,4 @@ title: 初识Jimmer
 -   Jimmer的革命性
 -   项目附带的例子
 -   如何从头创建Jimmer项目
--   Jimmer性能优势
+-   Jimmer的性能优势

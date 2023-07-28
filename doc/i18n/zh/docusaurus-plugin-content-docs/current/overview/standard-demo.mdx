@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 2
 title: 标准例子
 ---
 
@@ -79,7 +79,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
             <td>
                 <ol>
                     <li>启动注册中心，运行registry-center子项目的main方法</li>
-                    <li>启动所有微服务，即store-service、book-service和author-service中的main方法</li>
+                    <li>启动所有微服务，运行store-service、book-service和author-service中的main方法</li>
                     <li>等待大约半分钟，确保注册中心正确识别所有微服务，避免下个步骤中的某些swagger调用发生无法识别远程服务的异常。</li>
                     <li>
                         访问以下任何一个微服务的swagger-ui
@@ -104,12 +104,14 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 </table>
 
 :::tip
-其中，初次上手，最重要的例子是`jimer-sql`，按照你的语言喜好，打开这两个例子中任何一个即可
+初次上手，最重要的例子是`jimer-sql`，按照你的语言喜好，打开这两个例子中任何一个即可
 
 -   Java
+
     [example/java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)
 
 -   Kotlin
+
     [example/join/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 :::
 
@@ -133,7 +135,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 
 默认情况下，它们不使用缓存，基于内嵌的内存数据库运行且自动初始化数据库，这保证了无需安装任何外部环境，单击运行按钮即可示范。
 
-你也可以让它们用缓存模式启动，只需要将spring-boot的profile设置为`maxwell`或`debezium`即可。
+你也可以让它们用缓存模式启动，只需以spring-boot profile`maxwell`或`debezium`运行程序即可。
 
 这两个spring profile利用了[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)的CDC推送让能力实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，因此，需要安装外部环境。
 
@@ -171,7 +173,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 bash ./install.sh
 ```
 
-安装完成后，docker宿主机的端口暂用启用如下
+安装完成后，docker宿主机的端口占用启用如下
 
 |容器名|端口|描述|
 |-----|---|----|
@@ -195,7 +197,7 @@ Postgres是一个非常优秀的开源数据库。如果你的项目是全新的
 bash ./install.sh
 ```
 
-安装完成后，docker宿主机的端口暂用启用如下
+安装完成后，docker宿主机的端口占用启用如下
 
 |容器名|端口|描述|
 |-----|---|----|
@@ -203,7 +205,7 @@ bash ./install.sh
 |debezium-demo-kafka|5100|对外暴露的地址为localhost，即，假设docker宿主是你的本机。如果要使用远程服务器作为docker宿主，需自行修改install.sh中的kafka安装命令，并修改例子中的spring-boot配置文件|
 |debezium-demo-kafdrop|5101|一个Kafka图形界面工具，用浏览器访问http://localhost:5101即可|
 |debezium-demo-postgres|5200|此模式下的数据库服务|
-|debezium-demo-connect|5300|负责把MySQL的变化事件推送给Kafka的kafka-connector，可以通过http://localhost:5300/connectors来检验名为`debezium-connector`的pg-connector是否成功安装|
+|debezium-demo-connect|5300|负责把Postgres的变化事件推送给Kafka的kafka-connector，可以通过http://localhost:5300/connectors来检验名为`debezium-connector`的pg-connector是否成功安装|
 |debezium-demo-redis|5400|此模式下的缓存服务|
     
 ## 注意事项

@@ -29,6 +29,11 @@ export const DynamicJoinProblemDialog: FC<{
         </ViewDialog>;
 });
 
+export const DynamicJoinProblemPanel: FC = memo(() => {
+    const zh = useZh();
+    return zh ? INDUSTRY_GRAP_ZH : INDUSTRY_GRAP_EN;
+});
+
 const MYBATIS_1_MAPPER =
 `
 @org.apache.ibatis.annotations.Mapper

@@ -9,9 +9,9 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ObjectFetcher } from '@site/src/components/HomepageFeatures/ObjectFetcher';
 import { SaveCommand } from '@site/src/components/HomepageFeatures/SaveCommand';
 import { CacheConsistencyPanel } from '@site/src/components/HomepageFeatures/CacheConsistency';
+import { DynamicJoinProblemPanel } from '@site/src/components/HomepageFeatures/DynamicJoinProblem';
 import { Communication } from '@site/src/components/HomepageFeatures/Communication';
 import { Button } from "@mui/material";
-import DynamicJoinProblem from '../_shared/dynamic-join-problem.mdx';
 import DtoExplosion from '@site/static/img/dto-explosion.png'; 
 import ObjectCache from '@site/static/img/object-cache.jpeg';
 import AssociationCache from '@site/static/img/association-cache.png';
@@ -65,7 +65,7 @@ ORM只是Jimmer的切入点，而非全部。
         最后，为了应对千变万化灵活性，尤其是只需要对象的一部分属性这种灵活性，开发人员往往选择只查询对象的一部分属性并手动转化为DTO类型，这种方式会违背ORM追求便捷性的初衷，无法体现ORM的价值。
 
         :::info
-        为了弥补传统ORM活性的不足，开发人员往往需要想办法做一些变通，这些努力反过来破坏ORM的初衷：便捷性。
+        为了弥补传统ORM灵活度的不足，开发人员往往需要想办法做一些变通，这些努力反过来破坏ORM的初衷：便捷性。
         :::
 
         :::note
@@ -79,7 +79,7 @@ ORM只是Jimmer的切入点，而非全部。
         在这类技方案中，面对形形色色的DTO类型的查询， 开发人员往往需要定义大量的相似却不同的`Result Mapper`，甚至必要时还需要一些手动的数据拼接操作，这代表着非常繁重的工作量。
 
         :::info
-        这种解决方案具有绝对的灵活性和控制力，但代价是工作量大。开发能力被体现成了团队的人数规模和沟通成本。
+        这种解决方案具有绝对的灵活性和控制力*(它可以为你做的工作很少，很多时候都是开发人员自己编写的代码完成功能，当然灵活了)*，但代价是工作量大。团队的研发能力被直接体现成了人数规模和沟通成本。
         :::
 
     :::tip
@@ -96,11 +96,11 @@ ORM只是Jimmer的切入点，而非全部。
 
     -   是否使用缓存应该对开发人员绝对透明，缓存的引入不应该增加业务代码的复杂度、降低代码质量和可维护性，应该和纯SQL项目一样简单。
 
-    -   缓存不应该仅有最简单的对象缓存，还应有用<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
+    -   缓存不应该仅有最简单的对象缓存，还应有<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
 
-    -   以权限系统为代码表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><img src={MultiViewCache}/></ViewMore>
+    -   以权限系统为代表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><img src={MultiViewCache}/></ViewMore>
 
-    -   缓存的一致性维护这个最头疼的问题应该被底层方案解决，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
+    -   缓存的一致性维护这个最头疼的问题<ViewMore buttonText="应该被底层方案解决" title="自动维护缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
 
 4.  客户端自动对接
 
@@ -114,7 +114,7 @@ ORM只是Jimmer的切入点，而非全部。
 
 ## 革命性功能点
 
-为了解决这个痛点，Jimmer提供了很多颠覆性的功能。
+为了解决这些痛点，Jimmer提供了很多颠覆性的功能。
 
 ### 1. 查询任意形状的数据结构
 
@@ -160,7 +160,7 @@ Jimmer的DSL并非是对SQL的机械翻译，其独创的`动态表连接`，填
 `动态表连接`的缺失，是行业空白，也是Jimmer项目得以立项的导火索。
 :::
 
-<ViewMore buttonText="简要了解" title="缺失动态表连接的问题" variant="outlined"><DynamicJoinProblem/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">前往看看</Button>
+<ViewMore buttonText="简要了解" title="缺失动态表连接的问题" variant="outlined"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">前往看看</Button>
 
 ### 5. 前后端对接
 
