@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: 讨论
+title: Discuss
 ---
 
 微信公众号

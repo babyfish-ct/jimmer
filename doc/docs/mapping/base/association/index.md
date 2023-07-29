@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: 关联映射
+title: Association mapping
 ---
 
 在这里，你会了解到ORM最重要的能力：实体关系关系映射。你会了解到这些注解：

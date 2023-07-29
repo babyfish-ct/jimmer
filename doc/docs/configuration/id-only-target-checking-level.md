@@ -1,6 +1,6 @@
 ---
 sidebar_position: 11
-title: 短关联id检查
+title: Id checking level for short associations
 ---
 
 该配置在[修改篇/保存指令/Enum映射/短关联id检查](../mutation/save-command/id-checking)中被阐述。

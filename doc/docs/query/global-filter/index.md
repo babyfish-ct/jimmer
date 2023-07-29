@@ -1,6 +1,6 @@
 ---
 sidebar_position: 11
-title: 全局过滤器
+title: Global filter
 ---
 
 全局过滤器用于为自动某些实体添加过滤条件，绝大部分针对这些实体类型的查询都会被自动添加相关`where`条件。

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Spring Data风格
+title: Spring Data style
 ---
 
 Jimmer提供了Spring Data Repository风格的API，你可以

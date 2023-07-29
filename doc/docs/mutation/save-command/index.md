@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: 保存指令
+title: Save command
 ---
 
 保存指令是Jimmer一个非常强大的能力，可以大幅简化复杂数据结构保存业务的开发难度。
