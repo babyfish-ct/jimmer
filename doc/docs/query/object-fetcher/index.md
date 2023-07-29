@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: 对象抓取器
+title: Object fetcher
 ---
 
 import Tabs from '@theme/Tabs';

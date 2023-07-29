@@ -1,6 +1,6 @@
 ---
 sidebar_position: 10
-title: 缓存未生效的原因
+title: The reason why the cache is not in effect
 ---
 
 该配置在[缓存篇/多视图缓存/缓存未生效的原因](../cache/multiview-cache/abandoned-callback.mdx)中被阐述。

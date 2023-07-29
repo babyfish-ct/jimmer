@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: 动态JOIN
+title: Dynamic table joins
 ---
 
 我们将介绍如下内容

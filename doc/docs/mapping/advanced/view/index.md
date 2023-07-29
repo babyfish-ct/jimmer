@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: 视图属性
+title: View properties
 ---
 
 视图属性并不维护自己的数据，它只是其所属实体类型另外一个属性 *（称为原始属性）* 的另外一种表现形式。

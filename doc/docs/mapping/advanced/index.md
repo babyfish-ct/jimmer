@@ -1,4 +1,4 @@
 ---
 sidebar_position: 2
-title: 进阶映射
+title: Advanced mapping
 ---
