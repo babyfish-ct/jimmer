@@ -5,6 +5,7 @@ title: 生成代码
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {GeneratedJava, GeneratedKt, Generated} from '@site/src/components/Image';
 
 ## 代码生成
 
@@ -251,7 +252,7 @@ dependencies {
 
 |Java用户应该看到的目录结构|Kotlin用户应该看到的目录结构|
 |---|---|
-|![generated-java](@site/static/img/generated-java.png)|![generated-kt](@site/static/img/generated-kt.png)|
+|<GeneratedJava/>|<GeneratedKt/>|
 
 :::note
 这里的截图来自gradle项目。
@@ -260,7 +261,7 @@ maven项目大同小异，顶级目录应该是target，而非build
 :::
 
 :::caution
-正常情况下，自动生产的代码目录（java/kt包所在的父目录）会被Intellij标记上特殊图标![generated](@site/static/img/generated.png)
+正常情况下，自动生产的代码目录（java/kt包所在的父目录）会被Intellij标记上特殊图标<Generated/>。
 
 然而，Intellij有一定的概率不对此目录进行标记，这样会导致生成的代码无法被用于后续开发。
 

@@ -5,6 +5,7 @@ title: External Cache
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {ObjectCache, AssociationCache} from '@site/src/components/Image';
 
 Work with any external cache. By default, the framework is just a very lightweight and powerful SQL generator without caching. Still, users can attach any external cache
 
@@ -26,7 +27,7 @@ In order to relieve the developer from these two heavy tasks, the framework's ca
 
 This cache maps ids to entity objects, which are simple objects without associations(Except for id-only parent objects based on foreign key).
 
-![object-cache](@site/static/img/object-cache.jpeg)
+<ObjectCache/>
 
 ### 2. Association property cache
 
@@ -34,7 +35,7 @@ This cache is used for associative properties
 - For one-to-one or many-to-one associations, map the current object id to the id of the associated object
 - For one-to-many or many-to-many associations, map the current object id to the id list of the associated objects
 
-![association-cache](@site/static/img/association-cache.png)
+<AssociationCache/>
 
 ### 3. Calculated property cache
 

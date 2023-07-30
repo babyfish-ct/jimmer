@@ -6,6 +6,7 @@ title: Generate front-end exceptions
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
+import {VsModule, VsApi, VsFamily, VsCode, VsField} from '@site/src/components/Image';
 
 这部分功能其实和ORM没有关系。
 
@@ -1026,20 +1027,20 @@ export type ApiErrors = { ❺
 
 -   全局类型`ApiErrors`下面有两个选项: `userController`和`bookController`
 
-    ![module](@site/static/img/vs-code/module.jpeg)
+    <VsModule/>
 
 -   `ApiErrors["userController"]`下面有三个选项: `login`、`logout`和`registerUser`
 
-    ![api](@site/static/img/vs-code/api.jpeg)
+    <VsApi/>
 
 -   `ApiErrors["userController"]["registerUser"]`的`family`字段有两个选项: `USER_INFO_ERROR_CODE`和`PLATFORM_ERROR_CODE`
 
-    ![family](@site/static/img/vs-code/family.jpeg)
+    <VsFamily/>
 
 -   一旦`family`被确定为`UserInfoErrorCode`，`code`字段有三个选项: `ILLEGAL_USER_NAME`、`PASSWORD_TOO_SHORT`和`PASSWORDS_NOT_SAME`
 
-    ![api](@site/static/img/vs-code/code.jpeg)
+    <VsCode/>
 
 -   一旦`code`被确定为`ILLEGAL_USER_NAME`，则可以使用`illegalChars`附加字段   
 
-    ![field](@site/static/img/vs-code/field.jpeg)
+    <VsField/>

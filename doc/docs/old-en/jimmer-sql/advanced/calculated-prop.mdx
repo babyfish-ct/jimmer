@@ -5,6 +5,7 @@ title: Calculated property and its cache
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {CalculatedCache} from '@site/src/components/Image';
 
 ## Calculated property
 
@@ -143,8 +144,8 @@ Calculated properties can only be retrieved through `Object Fetcher` or `GraphQL
 
 In the article [External Cache](./cache), we did not cover the cache of calculated properties. Because computed properties introduce developer-defined computing rules, developers are required to help the framework ensure its data consistency.
 
-Computed property cache demonstration
-![calculated-cache](@site/static/img/calculated-cache.png)
+Calculated property cache demonstration
+<CalculatedCache/>
 
 ### Configure cache
 
