@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
+import useIsBrowser from '@docusaurus/useIsBrowser';
 
 function HomepageHeader() {
   const {siteConfig, i18n} = useDocusaurusContext();
@@ -39,6 +40,33 @@ function HomepageHeader() {
 }
 
 export default function Home(): JSX.Element {
+  const {siteConfig} = useDocusaurusContext();
+  const isBrowser = useIsBrowser();
+  return isBrowser ? <BrowserHome/> : <HomeCore/>;
+}
+
+function BrowserHome(): JSX.Element {
+  const [isLoaded, setLoaded] = useState(true);
+  useEffect(() => {
+    if (document.body.addEventListener) {
+      document.body.addEventListener("load", () => setLoaded(true));
+    } else {
+      (document.body as any).attachEvent("onLoad", () => setLoaded(true));
+    }
+  }, []);
+  return (
+    <>
+      {
+        !isLoaded && <div style={{position: "fixed", zIndex: 999, left: 0, top: 0, width: "100%", height: "100%", background: "black", color: "white", opacity: "0.5", paddingTop: "10rem", textAlign: "center", fontSize: "10rem"}}>
+          Loading...
+        </div>
+      }
+      <HomeCore/>
+    </>
+  );
+}
+
+function HomeCore(): JSX.Element {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
