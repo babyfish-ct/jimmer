@@ -66,56 +66,83 @@ const config = {
 
   themeConfig:
   /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-      ({
-        navbar: {
-          title: 'Jimmer documentation',
-          logo: {
-            alt: 'My Site Logo',
-            src: 'https://raw.githubusercontent.com/babyfish-ct/jimmer/main/logo.png',
-          },
+  ({
+    navbar: {
+      title: 'Jimmer documentation',
+      logo: {
+        alt: 'My Site Logo',
+        src: 'https://raw.githubusercontent.com/babyfish-ct/jimmer/main/logo.png',
+      },
+      items: [
+        {
+          type: 'doc',
+          docId: 'overview/introduction',
+          position: 'left',
+          label: 'View more',
+        },
+        {
+          type: 'localeDropdown',
+          position: 'left',
+        },
+        {
+          type: "search",
+          position: 'right'
+        },
+        {
+          href: 'https://github.com/babyfish-ct/jimmer',
+          label: 'GitHub',
+          position: 'right',
+        },
+      ],
+    },
+    footer: {
+      style: 'dark',
+      links: [
+        {
+          title: 'Docs',
           items: [
             {
-              type: 'doc',
-              docId: 'overview/introduction',
-              position: 'left',
-              label: 'View more',
-            },
-            {
-              type: 'localeDropdown',
-              position: 'left',
-            },
-            {
-              type: "search",
-              position: 'right'
-            },
-            {
-              href: 'https://github.com/babyfish-ct/jimmer',
-              label: 'GitHub',
-              position: 'right',
+              label: 'Tutorial',
+              to: '/docs/overview/introduction',
             },
           ],
         },
-        footer: {
-          style: 'dark',
-          links: [
-            {
-              title: 'Docs',
-              items: [
-                {
-                  label: 'Tutorial',
-                  to: '/docs/overview/introduction',
-                },
-              ],
-            },
-          ],
-          copyright: `Copyright © ${new Date().getFullYear()} jimmer, Inc.`,
-        },
-        prism: {
-          theme: lightCodeTheme,
-          darkTheme: darkCodeTheme,
-          additionalLanguages: ['java', 'kotlin', 'groovy', 'sql', 'cpp', 'kotlin', 'graphql', 'json', 'csharp'],
-        },
-      }),
+      ],
+      copyright: `Copyright © ${new Date().getFullYear()} jimmer, Inc.`,
+    },
+    prism: {
+      theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
+      additionalLanguages: ['java', 'kotlin', 'groovy', 'sql', 'cpp', 'kotlin', 'graphql', 'json', 'csharp'],
+    },
+  }),
+  ssrTemplate: `<!DOCTYPE html>
+<html <%~ it.htmlAttributes %>>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="Docusaurus v<%= it.version %>">
+    <% it.metaAttributes.forEach((metaAttribute) => { %>
+      <%~ metaAttribute %>
+    <% }); %>
+    <%~ it.headTags %>
+    <% it.stylesheets.forEach((stylesheet) => { %>
+      <link rel="stylesheet" href="<%= it.baseUrl %><%= stylesheet %>" />
+    <% }); %>
+    <% it.scripts.forEach((script) => { %>
+      <link rel="preload" href="<%= it.baseUrl %><%= script %>" as="script">
+    <% }); %>
+  </head>
+  <body <%~ it.bodyAttributes %>>
+    <%~ it.preBodyTags %>
+    <div id="_docusaurus">
+      
+    </div>
+    <% it.scripts.forEach((script) => { %>
+      <script src="<%= it.baseUrl %><%= script %>"></script>
+    <% }); %>
+    <%~ it.postBodyTags %>
+  </body>
+</html>`
 };
 
 module.exports = config;
