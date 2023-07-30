@@ -1,27 +1,18 @@
-import React, { FC, memo, useCallback, useMemo, useState } from "react";
+import React, { FC, memo, useCallback, useState } from "react";
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useZh } from "../util/use-zh";
 import Grid from "@mui/material/Grid";
-import BrowserOnly from '@docusaurus/BrowserOnly';
+import useIsBrowser from "@docusaurus/useIsBrowser";
 
 const Image: FC<{
     readonly src: string
 }> = memo(({src}) => {
-    return (
-        <BrowserOnly>
-            {() => <ImageCore src={src}/>}
-        </BrowserOnly>
-    );
-});
-
-const ImageCore: FC<{
-    readonly src: string
-}> = memo(({src}) => {
     const zh = useZh();
     const [loaded, setLoaded] = useState(false);
+    const isBrowser = useIsBrowser();
     const onLoad = useCallback(() => setLoaded(true), []);
-    if (!isWebpSupported() && src.endsWith(".webp")) {
+    if (isBrowser && !isWebpSupported() && src.endsWith(".webp")) {
         return (
             <Alert security="error">
                 {
@@ -35,7 +26,7 @@ const ImageCore: FC<{
     return (
         <>
             {
-                !loaded &&
+                isBrowser && !loaded &&
                 <Grid container direction="column" alignItems="center">
                     <Grid item>
                         <CircularProgress/>
@@ -51,87 +42,87 @@ const ImageCore: FC<{
 });
 
 export const DtoExplosion: FC = memo(() => {
-    return <Image src={Src_DtoExplosion}/>;
+    return <Image src={require("@site/static/img/dto-explosion.webp").default}/>;
 });
 
 export const ObjectCache: FC = memo(() => {
-    return <Image src={Src_ObjectCache}/>;
+    return <Image src={require("@site/static/img/object-cache.webp").default}/>;
 });
 
 export const AssociationCache: FC = memo(() => {
-    return <Image src={Src_AssociationCache}/>;
+    return <Image src={require("@site/static/img/association-cache.webp").default}/>;
 });
 
 export const CalculatedCache: FC = memo(() => {
-    return <Image src={Src_CalculatedCache}/>;
+    return <Image src={require("@site/static/img/calculated-cache.webp").default}/>;
 });
 
 export const MultiViewCache: FC = memo(() => {
-    return <Image src={Src_MultiViewCache}/>;
+    return <Image src={require("@site/static/img/multi-view-cache.webp").default}/>;
 });
 
 export const Consistency: FC = memo(() => {
-    return <Image src={Src_Consistency}/>;
+    return <Image src={require("@site/static/img/consistency.webp").default}/>;
 });
 
 export const Cloud: FC = memo(() => {
-    return <Image src={Src_Cloud}/>;
+    return <Image src={require("@site/static/img/cloud.webp").default}/>;
 });
 
 export const GeneratedJava: FC = memo(() => {
-    return <Image src={Src_GeneratedJava}/>;
+    return <Image src={require("@site/static/img/generated-java.webp").default}/>;
 });
 
 export const GeneratedKt: FC = memo(() => {
-    return <Image src={Src_GeneratedKt}/>;
+    return <Image src={require("@site/static/img/generated-kt.webp").default}/>;
 });
 
 export const Generated: FC = memo(() => {
-    return <Image src={Src_Generated}/>;
+    return <Image src={require("@site/static/img/generated.webp").default}/>;
 });
 
 export const SwaggerAuthorize: FC = memo(() => {
-    return <Image src={Src_SwaggerAuthorize}/>;
+    return <Image src={require("@site/static/img/swagger-authorize.webp").default}/>;
 });
 
 export const GraphiqlHeaders: FC = memo(() => {
-    return <Image src={Src_GraphiqlHeaders}/>;
+    return <Image src={require("@site/static/img/graphiql-headers.webp").default}/>;
 });
 
 export const Save: FC = memo(() => {
-    return <Image src={Src_Save}/>;
+    return <Image src={require("@site/static/img/save.webp").default}/>;
 });
 
 export const Shape: FC = memo(() => {
-    return <Image src={Src_Shape}/>;
+    return <Image src={require("@site/static/img/shape.webp").default}/>;
 });
 
 export const Uml: FC = memo(() => {
-    return <Image src={Src_Uml}/>;
+    return <Image src={require("@site/static/img/uml.svg").default}/>;
 });
 
 export const VsApi: FC = memo(() => {
-    return <Image src={Src_VsApi}/>;
+    return <Image src={require("@site/static/img/vs-code/api.webp").default}/>;
 });
 
 export const VsCode: FC = memo(() => {
-    return <Image src={Src_VsCode}/>;
+    return <Image src={require("@site/static/img/vs-code/code.webp").default}/>;
 });
 
 export const VsFamily: FC = memo(() => {
-    return <Image src={Src_VsFamily}/>;
+    return <Image src={require("@site/static/img/vs-code/family.webp").default}/>;
 });
 
 export const VsField: FC = memo(() => {
-    return <Image src={Src_VsField}/>;
+    return <Image src={require("@site/static/img/vs-code/field.webp").default}/>;
 });
 
 export const VsModule: FC = memo(() => {
-    return <Image src={Src_VsModule}/>;
+    return <Image src={require("@site/static/img/vs-code/module.webp").default}/>;
 });
 
 export const PublicWechat: FC = memo(() => {
-    return <Image src={Src_PublicWechat}/>;
+    return <Image src={require("@site/static/img/public-wechat.webp").default}/>;
 });
 
 let _isWebpSupported: boolean | undefined = undefined;
@@ -148,26 +139,3 @@ function isWebpSupported(): boolean {
     _isWebpSupported = newValue;
     return newValue;
 }
-
-
-const Src_DtoExplosion = require("@site/static/img/dto-explosion.webp").default;
-const Src_ObjectCache = require("@site/static/img/object-cache.webp").default;
-const Src_AssociationCache = require("@site/static/img/association-cache.webp").default;
-const Src_CalculatedCache = require("@site/static/img/calculated-cache.webp").default;
-const Src_MultiViewCache = require("@site/static/img/multi-view-cache.webp").default;
-const Src_Consistency = require("@site/static/img/consistency.webp").default;
-const Src_Cloud = require("@site/static/img/cloud.webp").default;
-const Src_GeneratedJava = require("@site/static/img/generated-java.webp").default;
-const Src_GeneratedKt = require("@site/static/img/generated-kt.webp").default;
-const Src_Generated = require("@site/static/img/generated.webp").default;
-const Src_SwaggerAuthorize = require("@site/static/img/swagger-authorize.webp").default;
-const Src_GraphiqlHeaders = require("@site/static/img/graphiql-headers.webp").default;
-const Src_Save = require("@site/static/img/save.webp").default;
-const Src_Shape = require("@site/static/img/shape.webp").default;
-const Src_Uml = require("@site/static/img/uml.svg").default;
-const Src_VsApi = require("@site/static/img/vs-code/api.webp").default;
-const Src_VsCode = require("@site/static/img/vs-code/code.webp").default;
-const Src_VsFamily = require("@site/static/img/vs-code/family.webp").default;
-const Src_VsField = require("@site/static/img/vs-code/field.webp").default;
-const Src_VsModule = require("@site/static/img/vs-code/module.webp").default;
-const Src_PublicWechat = require("@site/static/img/public-wechat.webp").default;
