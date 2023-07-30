@@ -5,8 +5,7 @@ title: Object fetcher
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
-import ObjectFetcher from '../../_shared/object-fetcher.mdx';
+import { ObjectFetcher } from '@site/src/components/HomepageFeatures/ObjectFetcher';
 
 ## 概念
 对象抓取器，是Jimmer的一个重要功能，抓取指定的字段，然后组装成对象，这一切是自动完成的，节省了很多手写转换逻辑的时间。
