@@ -9,6 +9,7 @@ import { ObjectFetcher } from './ObjectFetcher';
 import { SaveCommand } from './SaveCommand';
 import { CacheConsistency } from './CacheConsistency';
 import { Performance } from './Performance';
+import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from '../Image';
 
 export default function HomepageFeatures(): JSX.Element {
 
@@ -47,18 +48,12 @@ type FeatureItem = {
   description: JSX.Element;
 };
 
-const DtoExplosion = require("@site/static/img/dto-explosion.png").default;
-const ObjectCache = require("@site/static/img/object-cache.jpeg").default;
-const AssociationCache = require("@site/static/img/association-cache.png").default;
-const CalculatedCache = require("@site/static/img/calculated-cache.png").default;
-const MultiViewCache = require("@site/static/img/multi-view-cache.png").default;
-
 const FEATURE_LIST_ZH: FeatureItem[] = [
   {
     title: '将RDBMS抽象为图数据库',
     description: (
       <>
-        以任意形状的数据结构作为基本操作单元，甚至可处理包含自关联属性的无限深度数据结构，让开发人员脱离<ViewMore buttonText="DTO类型爆炸" variant="text"><img src={DtoExplosion}/></ViewMore>地狱
+        以任意形状的数据结构作为基本操作单元，甚至可处理包含自关联属性的无限深度数据结构，让开发人员脱离<ViewMore buttonText="DTO类型爆炸" variant="text"><DtoExplosion/></ViewMore>地狱
         <ul>
           <li>查询任意形状的数据结构：可以理解成ORM的GraphQL化<ObjectFetcher/></li>
           <li>保存任意形状的数据结构：快速实现复杂表单保存业务<SaveCommand/></li>
@@ -73,13 +68,13 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <li>是否使用缓存，对开发人员完全透明</li>
         <li>使用哪些缓存技术，由开发人员决定</li>
         <li>
-          不仅支持简单的<ViewMore buttonText="对象缓存" variant="text"><img src={ObjectCache}/></ViewMore>，还支持属性级缓存，
-          包括<ViewMore buttonText="关联缓存" variant='text'><img src={AssociationCache}/></ViewMore>
-          和<ViewMore buttonText="计算缓存" variant='text'><img src={CalculatedCache}/></ViewMore>。
+          不仅支持简单的<ViewMore buttonText="对象缓存" variant="text"><ObjectCache/></ViewMore>，还支持属性级缓存，
+          包括<ViewMore buttonText="关联缓存" variant='text'><AssociationCache/></ViewMore>
+          和<ViewMore buttonText="计算缓存" variant='text'><CalculatedCache/></ViewMore>。
           最终提供任意形状的数据结构的缓存能力，而非简单对象的缓存能力
         </li>
         <li>
-          以权限系统为代表技术常常导致不同用户看到不同的数据集，因此，Jimmer支持<ViewMore buttonText='多视图缓存' variant='text'><img src={MultiViewCache}/></ViewMore>，让不同的用户看到不同的缓存
+          以权限系统为代表技术常常导致不同用户看到不同的数据集，因此，Jimmer支持<ViewMore buttonText='多视图缓存' variant='text'><MultiViewCache/></ViewMore>，让不同的用户看到不同的缓存
         </li>
         <li>强大的缓存一致性支持，开发人员专注于修改数据库即可，Jimmer自动保证缓存和数据库数据的一致性<CacheConsistency/></li>
       </ul>
@@ -144,7 +139,7 @@ const FEATURE_LIST_EN: FeatureItem[] = [
       <>
         Using data structures of any shape as the basic operation unit, 
         even handling infinite depth data structures with self-associated properties, 
-        allows developers to escape the <ViewMore buttonText="DTO Explosion" variant="text"><img src={DtoExplosion}/></ViewMore> hell
+        allows developers to escape the <ViewMore buttonText="DTO Explosion" variant="text"><DtoExplosion/></ViewMore> hell
         <ul>
           <li>Querying data structures of any shape: can be understood as GraphQLization of ORM<ObjectFetcher/></li>
           <li>Saving data structures of any shape: quickly implement complex form saving business<SaveCommand/></li>
@@ -159,15 +154,15 @@ const FEATURE_LIST_EN: FeatureItem[] = [
         <li>Whether to use caching is completely transparent to developers</li>
         <li>Which caching technologies to use is determined by developers</li>
         <li>
-          Not only supports simple <ViewMore buttonText="Object Cache" variant="text"><img src={ObjectCache}/></ViewMore>, 
+          Not only supports simple <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore>, 
           but also supports property-level cache, including 
-          <ViewMore buttonText="Association Cache" variant="text"><img src={AssociationCache}/></ViewMore> and 
-          <ViewMore buttonText="Calaculated Cache" variant="text"><img src={CalculatedCache}/></ViewMore>. 
+          <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and 
+          <ViewMore buttonText="Calaculated Cache" variant="text"><CalculatedCache/></ViewMore>. 
           Ultimately, it provides caching capabilities for data structures of any shape, not just simple objects
         </li>
         <li>
            The technology represented by the permission system often causes different users to see different data sets. 
-           Therefore, jimmer supports <ViewMore buttonText='Multiview cache' variant='text'><img src={MultiViewCache}/></ViewMore>, 
+           Therefore, jimmer supports <ViewMore buttonText='Multiview cache' variant='text'><MultiViewCache/></ViewMore>, 
            allowing different users to see different cached data
          </li>
         <li>

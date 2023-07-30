@@ -9,7 +9,15 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import FitScreenIcon from '@mui/icons-material/FitScreen';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
-import { AppBar, Button, Dialog, DialogContent, Grid, Paper, Tab, Tabs, Toolbar, Typography } from "@mui/material";
+import AppBar from "@mui/material/AppBar";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import Grid from "@mui/material/Grid";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import { useZh } from "../util/use-zh";
 import { ObjectFetcherDialog } from "./HomepageFeatures/ObjectFetcher";
 import { SaveCommandDialog } from "./HomepageFeatures/SaveCommand";
@@ -19,6 +27,7 @@ import { DynamicJoinProblemDialog } from "./HomepageFeatures/DynamicJoinProblem"
 import { PerformanceDialog } from "./HomepageFeatures/Performance";
 import { CommunicationDialog } from "./HomepageFeatures/Communication";
 import { LongAssociation } from "./LongAssociation";
+import { ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from "@site/src/components/Image";
 
 export const MindMap: FC = memo(() => {
 
@@ -196,16 +205,16 @@ const MindMapCore: FC<{
                 <LongAssociation/>
             </ViewDialog>
             <ViewDialog title={isZh ? "对象缓存" : "Object Cache"} open={objectCacheOpen} onClose={onObjectCacheClose}>
-                <img src={ObjectCache}/>
+                <ObjectCache/>
             </ViewDialog>
             <ViewDialog title={isZh ? "关联缓存" : "Association Cache"} open={associationCacheOpen} onClose={onAssocitionCacheClose}>
-                <img src={AssociationCache}/>
+                <AssociationCache/>
             </ViewDialog>
             <ViewDialog title={isZh ? "计算缓存" : "Association Cache"} open={calculatedCacheOpen} onClose={onCalculatedCacheClose}>
-                <img src={CalculatedCache}/>
+                <CalculatedCache/>
             </ViewDialog>
             <ViewDialog title={isZh ? "多视图缓存" : "Multi-view Cache"} open={multiViewCacheOpen} onClose={onMultiViewCacheClose}>
-                <img src={MultiViewCache}/>
+                <MultiViewCache/>
             </ViewDialog>
             <CacheConsistencyDialog open={cacheConsistencyOpen} onClose={onCacheConsistencyClose}/>
             <CommunicationDialog open={communicationOpen} onClose={onCommunicationClose}/>
@@ -214,11 +223,6 @@ const MindMapCore: FC<{
         </div>
     );
 });
-
-const ObjectCache = require("@site/static/img/object-cache.jpeg").default;
-const AssociationCache = require("@site/static/img/association-cache.png").default;
-const CalculatedCache = require("@site/static/img/calculated-cache.png").default;
-const MultiViewCache = require("@site/static/img/multi-view-cache.png").default;
 
 const DATA_ZH = `
 -   Jimmer
@@ -357,7 +361,7 @@ const DATA_EN = `
 
             -   Association cache [👁](#association-cache) [→](@site/cache/cache-type/association)
 
-            -   Calculation cache [👁](#calculated-cache) [→](@site/cache/cache-type/calculation)
+            -   Calculated cache [👁](#calculated-cache) [→](@site/cache/cache-type/calculation)
 
         -   Precisely control whether each property needs to be cached
 

@@ -11,12 +11,8 @@ import { SaveCommand } from '@site/src/components/HomepageFeatures/SaveCommand';
 import { CacheConsistencyPanel } from '@site/src/components/HomepageFeatures/CacheConsistency';
 import { DynamicJoinProblemPanel } from '@site/src/components/HomepageFeatures/DynamicJoinProblem';
 import { Communication } from '@site/src/components/HomepageFeatures/Communication';
-import { Button } from "@mui/material";
-import DtoExplosion from '@site/static/img/dto-explosion.png'; 
-import ObjectCache from '@site/static/img/object-cache.jpeg';
-import AssociationCache from '@site/static/img/association-cache.png';
-import CalculatedCache from '@site/static/img/calculated-cache.png';
-import MultiViewCache from '@site/static/img/multi-view-cache.png';
+import Button from "@mui/material/Button";
+import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from "@site/src/components/Image";
 
 :::warning
 The original low-quality documentation is being completely rewritten and will eventually become high-quality documentation.
@@ -54,7 +50,7 @@ As mentioned earlier, completing CRUD access to the database is only the most ba
 
 1.  DTO explosion problem
 
-    Even for the same data type *(aggregate root)*, different business functions expect different data formats to be queried, which often leads to project needing to define a large number of DTO types<ViewMore buttonText="DTO explosion" variant="text"><img src={DtoExplosion}/></ViewMore>。
+    Even for the same data type *(aggregate root)*, different business functions expect different data formats to be queried, which often leads to project needing to define a large number of DTO types<ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore>。
 
     :::info
     The number of DTO types is large, although they are different from each other, they often have a high degree of similarity, and the redundancy is very high.
@@ -104,9 +100,9 @@ As mentioned earlier, completing CRUD access to the database is only the most ba
 
     - Whether to use caching should be absolutely transparent to developers, and the introduction of caching should not increase the complexity of business code, reduce code quality and maintainability, and should be as simple as pure SQL projects.
 
-    - The cache should not only have the simplest object cache, but also <ViewMore buttonText="Association cache" variant="text"><img src={AssociationCache}/></ViewMore> and <ViewMore buttonText="Computational cache" variant="text"><img src={CalculatedCache}/></ViewMore>
+    - The cache should not only have the simplest object cache, but also <ViewMore buttonText="Association cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Calculated cache" variant="text"><CalculatedCache/></ViewMore>
 
-    - The global filtering capability represented by the permission system often allows different users to see different data, so it should also be <ViewMore buttonText="Let different users see different caches" variant="text"><img src={MultiViewCache}/></ViewMore>
+    - The global filtering capability represented by the permission system often allows different users to see different data, so it should also be <ViewMore buttonText="Let different users see different caches" variant="text"><MultiViewCache/></ViewMore>
 
     - The most troublesome problem of cache consistency maintenance <ViewMore buttonText="should be solved by the underlying solution" title="Automatic cache consistency" variant="text"><CacheConsistencyPanel/></ViewMore>, as fully automated as possible, rather than penetrating into the business code and solved by the developer.
 
@@ -152,9 +148,9 @@ Therefore, Jimmer introduced this set of cache management mechanism that is both
 
 This caching mechanism supports the following important concepts
 
-- <ViewMore buttonText="Object Cache" variant="text"><img src={ObjectCache}/></ViewMore>、<ViewMore buttonText="Association Cache" variant="text"><img src={AssociationCache}/></ViewMore> and <ViewMore buttonText="Computational Cache" variant="text"><img src={CalculatedCache}/></ViewMore>
+- <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore>、<ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Calculated Cache" variant="text"><CalculatedCache/></ViewMore>
 
-- <ViewMore buttonText="MultiView Cache" variant="text"><img src={MultiViewCache}/></ViewMore>, different users see different caches, often in combination with permission systems
+- <ViewMore buttonText="MultiView Cache" variant="text"><MultiViewCache/></ViewMore>, different users see different caches, often in combination with permission systems
 
 - <ViewMore buttonText="Automatically maintain cache coherency" variant="text"><CacheConsistencyPanel/></ViewMore>
 
@@ -194,13 +190,13 @@ Developers only need to write queries that query all data before paging, and que
 
 Jimmer fully optimizes paginated queries at the SQL level
 
-<Button href="../query/paging" size="small" variant="outlined"> go to see</Button>
+<Button href="../query/paging" size="small" variant="outlined">go to see</Button>
 
 ### 7. Remote association
 
 In a microservices system, databases are fragmented. Querying different parts of data from different microservices and then stitching them back as a whole is cumbersome and high-frequency, and should be hidden and automated by the underlying solution.
 
-<Button href="../spring/spring-cloud" size="small" variant="outlined"> go and take a look</Button>
+<Button href="../spring/spring-cloud" size="small" variant="outlined">go to see</Button>
 
 ## All function points
 

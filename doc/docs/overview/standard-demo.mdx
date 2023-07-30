@@ -5,6 +5,7 @@ title: Standard example
 
 import {ViewMore} from '@site/src/components/ViewMore';
 import {CacheConsistencyPanel} from '@site/src/components/HomepageFeatures/CacheConsistency';
+import {SwaggerAuthorize, GraphiqlHeaders} from '@site/src/components/Image';
 
 :::warning
 The original low-quality documentation is being completely rewritten and will eventually become high-quality documentation.
@@ -65,6 +66,12 @@ The project provides 5 examples, each with two versions, Java and Kotlin, for a 
                     <li>Access swagger page: http://localhost:8080/ui</li>
                     <li>Download TypeScript code：http://localhost:8080/ts.zip</li>
                 </ol>
+                <ViewMore buttonText="Notes" title="Considerations for jimmer-sql/jimmer-sql-kt" variant="outlined">
+                    <p>If you need to use the feature of saving data, you need to set tenant in the HTTP header, otherwise it will cause an exception. </p>
+                    <p>The tenants that are currently available in the database are `a` and `b`. Of course, for save operations, you can add new tenants. </p>
+                    <p>Using the `swagger` UI as an example, you can set it up like this: </p>
+                    <SwaggerAuthorize/>
+                </ViewMore>
             </td>
             <td>★★★★★</td>
         </tr>
@@ -77,6 +84,12 @@ The project provides 5 examples, each with two versions, Java and Kotlin, for a 
                     <li>Execute main method</li>
                     <li>Access the UI of Graph<b>i</b>QL界面: http://localhost:8080/graph<b>i</b>ql</li>
                 </ol>
+                <ViewMore buttonText="Notes" title="Considerations for jimmer-sql-graphql/jimmer-sql-graphql-kt" variant="outlined">
+                    <p>If you need to use the feature of saving data, you need to set tenant in the HTTP header, otherwise it will cause an exception. </p>
+                    <p>The tenants that are currently available in the database are `a` and `b`. Of course, for save operations, you can add new tenants. </p>
+                    <p>Using the `graphiql` UI as an example, you can set it up like this: </p>
+                    <GraphiqlHeaders/>
+                </ViewMore>
             </td>
             <td>★★</td>
         </tr>

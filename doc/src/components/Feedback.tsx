@@ -1,6 +1,9 @@
 import React, { FC, memo, ReactNode, useMemo } from "react";
 import Grid from '@mui/material/Grid';
-import { Card, CardContent, CardActions, Typography } from "@mui/material";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardActions from "@mui/material/CardActions";
+import Typography from "@mui/material/Typography";
 import { ViewMore } from "./ViewMore";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 

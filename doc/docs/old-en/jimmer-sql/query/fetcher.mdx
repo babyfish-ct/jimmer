@@ -5,6 +5,7 @@ title: Object Fetcher
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {Shape} from '@site/src/components/Image';
 
 :::tip
 Object Fetcher is a very powerful feature provided by jimmer-sql, comparable to GraphQL.
@@ -27,7 +28,7 @@ Object fetcher solve this problem nicely, make queries to return objects that ar
 
 As returned results with object fetchers, dynamic objects can describe arbitrarily complex data structures, and you can decide whether each business perspective can protect certain entities, relationships, or even properties.
 
-![shape](@site/static/img/shape.png)
+<Shape/>
 
 **Please use a unified entity model to express the data format required by any business, instead of defining DTOs for the data format required by each business scenario**
 

@@ -9,6 +9,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { useZh } from "@site/src/util/use-zh";
 import { ViewDialog } from "../ViewDialog";
+import { Consistency } from "../Image";
 
 export const CacheConsistency: FC = memo(() => {
     const zh = useZh();
@@ -40,11 +41,9 @@ export const CacheConsistencyPanel: FC = memo(() => {
     return zh ? ZH : EN;
 });
 
-const Consistency = require("@site/static/img/consistency.jpg").default;
-
 const ZH: ReactNode = 
     <>
-        <p><img src={Consistency}/></p>
+        <p><Consistency/></p>
         <p>
             <b>左侧</b>：修改数据库中的数据，将<code>Book-10</code>的外建字段<code>STORE_ID</code>从<code>2</code>修改为<code>1</code>
         </p>
@@ -116,7 +115,7 @@ const ZH: ReactNode =
 
 const EN: ReactNode = 
     <>
-        <p><img src={Consistency}/></p>
+        <p><Consistency/></p>
         <p>
             <b>Left side</b>: modify the data in the database, udpate the foreign key <code>STORE_ID</code> of <code>Book-10</code> from <code>2</code> to <code>1</code>
         </p>

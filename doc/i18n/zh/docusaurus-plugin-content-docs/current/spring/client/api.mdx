@@ -5,12 +5,12 @@ title: 生成前端API
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-import DtoExplosion from '@site/static/img/dto-explosion.png';
+import { DtoExplosion } from "@site/src/components/Image";
 import { ViewMore } from '@site/src/components/ViewMore';
 
 ## 基本概念
 
-如果使用Jimmer构建服务端系统，开发人员有三种解决<ViewMore buttonText="DTO爆炸"><img src={DtoExplosion}/></ViewMore>的方法。
+如果使用Jimmer构建服务端系统，开发人员有三种解决<ViewMore buttonText="DTO爆炸"><DtoExplosion/></ViewMore>的方法。
 
 ||描述|返回对象的形状被限定的地方|Web前端体验|
 |---|---|---------------|----------|
@@ -110,7 +110,7 @@ fun findBookById(
 
 -   客户端需要看到丰富的数据类型，同一个实体类型在不同的HTTP接口中返回的形状不一样。
 
-这个矛盾，本质上就是服务端和客户端对<ViewMore buttonText="DTO爆炸"><img src={DtoExplosion}/></ViewMore>的认知不同。
+这个矛盾，本质上就是服务端和客户端对<ViewMore buttonText="DTO爆炸"><DtoExplosion/></ViewMore>的认知不同。
 
 -   服务端视角，即生产者视角。
 

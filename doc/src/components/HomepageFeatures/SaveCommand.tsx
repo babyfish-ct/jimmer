@@ -3,6 +3,7 @@ import Admonition from '@theme/Admonition';
 import { ViewMore } from "../ViewMore";
 import { useZh } from "@site/src/util/use-zh";
 import { ViewDialog } from "../ViewDialog";
+import { Save } from "../Image";
 
 export const SaveCommand: FC = memo(() => {
     const zh = useZh();
@@ -29,11 +30,9 @@ export const SaveCommandDialog: FC<{
         </ViewDialog>;
 });
 
-const Save = require("@site/static/img/save.png").default;
-
 const ZH: ReactNode = 
     <>
-        <img src={Save}/>
+        <Save/>
         <ul>
             <li>
                 <p>
@@ -95,7 +94,7 @@ const ZH: ReactNode =
 
 const EN =
     <>
-        <img src={Save}/>
+        <Save/>
         <ul>
             <li>
                 <p>

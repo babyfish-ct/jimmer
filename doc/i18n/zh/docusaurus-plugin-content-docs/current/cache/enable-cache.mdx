@@ -7,9 +7,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 import { ViewMore } from '@site/src/components/ViewMore';
-import ObjectCache from '@site/static/img/object-cache.jpeg';
-import AssociationCache from '@site/static/img/association-cache.png';
-import CalculatedCache from '@site/static/img/calculated-cache.png';
+import { ObjectCache, AssociationCache, CalculatedCache } from "@site/src/components/Image";
 
 ## CacheFactory接口
 
@@ -61,7 +59,7 @@ Jimmer调用此接口初始化缓存系统，用户实现此接口回答问题
 
     参数指定一个实体类型，如果想让它支持对象缓存，就创建缓存并返回；否则，返回null。
 
-    所谓<ViewMore buttonText="对象缓存"><img src={ObjectCache}/></ViewMore>，指把id映射为实体对象
+    所谓<ViewMore buttonText="对象缓存"><ObjectCache/></ViewMore>，指把id映射为实体对象
     
     :::note
     该实体对象是孤单的，除了当前表自身的外键所对应的多对一 *(或一对一)* 关联表现为只有id的关联对象外，没有其他关联属性。
@@ -73,13 +71,13 @@ Jimmer调用此接口初始化缓存系统，用户实现此接口回答问题
 
     参数指定一个[关联属性](../mapping/base/association)，如果想让它支持关联缓存，就创建缓存并返回；否则返回null。
 
-    所谓<ViewMore buttonText="关联缓存"><img src={AssociationCache}/></ViewMore>，指把id映射为关联id *(或其集合)*
+    所谓<ViewMore buttonText="关联缓存"><AssociationCache/></ViewMore>，指把id映射为关联id *(或其集合)*
 
 -   createResolverCache：启用计算缓存
 
     参数指定一个[复杂计算属性](../mapping/advanced/calculated/transient)，如果想让它支持计算属性，就创建缓存并返回；否则，返回null。
 
-    所谓<ViewMore buttonText="计算缓存"><img src={CalculatedCache}/></ViewMore>缓存，指把id映射为计算结果
+    所谓<ViewMore buttonText="计算缓存"><CalculatedCache/></ViewMore>缓存，指把id映射为计算结果
 
 ## 多级缓存架构
 

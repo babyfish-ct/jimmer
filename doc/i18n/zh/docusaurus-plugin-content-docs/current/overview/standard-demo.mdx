@@ -5,6 +5,7 @@ title: 标准例子
 
 import {ViewMore} from '@site/src/components/ViewMore';
 import {CacheConsistencyPanel} from '@site/src/components/HomepageFeatures/CacheConsistency';
+import {SwaggerAuthorize, GraphiqlHeaders} from '@site/src/components/Image';
 
 :::tip
 直接运行框架附带的例子，是熟悉Jimmer最高效的方法。
@@ -57,6 +58,12 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
                     <li>访问swagger页面: http://localhost:8080/ui</li>
                     <li>下载客户端TypeScript代码：http://localhost:8080/ts.zip</li>
                 </ol>
+                <ViewMore buttonText="注意事项" title="jimmer-sql/jimmer-sql-kt的注意事项" variant="outlined">
+                    <p>如果需要使用保存数据的功能，需要在HTTP header中设置tenant，否则会导致异常。</p>
+                    <p>目前数据库中已有的tenant为`a`和`b`。当然，对保存操作而言，你可以添加新的tenant。</p>
+                    <p>以Swagger界面为例，你可以这样设置: </p>
+                    <SwaggerAuthorize/>
+                </ViewMore>
             </td>
             <td>★★★★★</td>
         </tr>
@@ -69,6 +76,12 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
                     <li>运行main方法</li>
                     <li>访问Graph<b>i</b>QL界面: http://localhost:8080/graph<b>i</b>ql</li>
                 </ol>
+                <ViewMore buttonText="注意事项" title="jimmer-sql-graphql/jimmer-sql-graphql-kt的注意事项" variant="outlined">
+                    <p>如果需要使用保存数据的功能，需要在HTTP header中设置tenant，否则会导致异常。</p>
+                    <p>目前数据库中已有的tenant为`a`和`b`。当然，对保存操作而言，你可以添加新的tenant。</p>
+                    <p>以GraphiQL界面为例，你可以这样设置: </p>
+                    <GraphiqlHeaders/>
+                </ViewMore>
             </td>
             <td>★★</td>
         </tr>
