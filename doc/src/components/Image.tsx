@@ -10,8 +10,8 @@ const Image: FC<{
 }> = memo(({src}) => {
     const zh = useZh();
     const [loaded, setLoaded] = useState(false);
-    const isBrowser = useIsBrowser();
     const onLoad = useCallback(() => setLoaded(true), []);
+    const isBrowser = useIsBrowser();
     if (isBrowser && !isWebpSupported() && src.endsWith(".webp")) {
         return (
             <Alert security="error">

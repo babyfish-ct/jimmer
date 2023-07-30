@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.css';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
@@ -14,13 +14,14 @@ import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiView
 export default function HomepageFeatures(): JSX.Element {
 
   const {i18n} = useDocusaurusContext();
-
+  
   const features = useMemo<ReadonlyArray<FeatureItem>>(() => {
     const locale = i18n.currentLocale;
     return locale === 'zh' || locale == 'zh_CN' || locale == 'zh_CN' ?
       FEATURE_LIST_ZH :
       FEATURE_LIST_EN;
   }, []);
+
   return (
     <section className={styles.features}>
       <div className="container">
