@@ -42,87 +42,87 @@ const Image: FC<{
 });
 
 export const DtoExplosion: FC = memo(() => {
-    return <Image src={require("@site/static/img/dto-explosion.webp").default}/>;
+    return <Image src={Src_DtoExplosion}/>;
 });
 
 export const ObjectCache: FC = memo(() => {
-    return <Image src={require("@site/static/img/object-cache.webp").default}/>;
+    return <Image src={Src_ObjectCache}/>;
 });
 
 export const AssociationCache: FC = memo(() => {
-    return <Image src={require("@site/static/img/association-cache.webp").default}/>;
+    return <Image src={Src_AssociationCache}/>;
 });
 
 export const CalculatedCache: FC = memo(() => {
-    return <Image src={require("@site/static/img/calculated-cache.webp").default}/>;
+    return <Image src={Src_CalculatedCache}/>;
 });
 
 export const MultiViewCache: FC = memo(() => {
-    return <Image src={require("@site/static/img/multi-view-cache.webp").default}/>;
+    return <Image src={Src_MultiViewCache}/>;
 });
 
 export const Consistency: FC = memo(() => {
-    return <Image src={require("@site/static/img/consistency.webp").default}/>;
+    return <Image src={Src_Consistency}/>;
 });
 
 export const Cloud: FC = memo(() => {
-    return <Image src={require("@site/static/img/cloud.webp").default}/>;
+    return <Image src={Src_Cloud}/>;
 });
 
 export const GeneratedJava: FC = memo(() => {
-    return <Image src={require("@site/static/img/generated-java.webp").default}/>;
+    return <Image src={Src_GeneratedJava}/>;
 });
 
 export const GeneratedKt: FC = memo(() => {
-    return <Image src={require("@site/static/img/generated-kt.webp").default}/>;
+    return <Image src={Src_GeneratedKt}/>;
 });
 
 export const Generated: FC = memo(() => {
-    return <Image src={require("@site/static/img/generated.webp").default}/>;
+    return <Image src={Src_Generated}/>;
 });
 
 export const SwaggerAuthorize: FC = memo(() => {
-    return <Image src={require("@site/static/img/swagger-authorize.webp").default}/>;
+    return <Image src={Src_SwaggerAuthorize}/>;
 });
 
 export const GraphiqlHeaders: FC = memo(() => {
-    return <Image src={require("@site/static/img/graphiql-headers.webp").default}/>;
+    return <Image src={Src_GraphiqlHeaders}/>;
 });
 
 export const Save: FC = memo(() => {
-    return <Image src={require("@site/static/img/save.webp").default}/>;
+    return <Image src={Src_Save}/>;
 });
 
 export const Shape: FC = memo(() => {
-    return <Image src={require("@site/static/img/shape.webp").default}/>;
+    return <Image src={Src_Shape}/>;
 });
 
 export const Uml: FC = memo(() => {
-    return <Image src={require("@site/static/img/uml.svg").default}/>;
+    return <Image src={Src_Uml}/>;
 });
 
 export const VsApi: FC = memo(() => {
-    return <Image src={require("@site/static/img/vs-code/api.webp").default}/>;
+    return <Image src={Src_VsApi}/>;
 });
 
 export const VsCode: FC = memo(() => {
-    return <Image src={require("@site/static/img/vs-code/code.webp").default}/>;
+    return <Image src={Src_VsCode}/>;
 });
 
 export const VsFamily: FC = memo(() => {
-    return <Image src={require("@site/static/img/vs-code/family.webp").default}/>;
+    return <Image src={Src_VsFamily}/>;
 });
 
 export const VsField: FC = memo(() => {
-    return <Image src={require("@site/static/img/vs-code/field.webp").default}/>;
+    return <Image src={Src_VsField}/>;
 });
 
 export const VsModule: FC = memo(() => {
-    return <Image src={require("@site/static/img/vs-code/module.webp").default}/>;
+    return <Image src={Src_VsModule}/>;
 });
 
 export const PublicWechat: FC = memo(() => {
-    return <Image src={require("@site/static/img/public-wechat.webp").default}/>;
+    return <Image src={Src_PublicWechat}/>;
 });
 
 let _isWebpSupported: boolean | undefined = undefined;
@@ -139,3 +139,25 @@ function isWebpSupported(): boolean {
     _isWebpSupported = newValue;
     return newValue;
 }
+
+const Src_DtoExplosion = require("@site/static/img/dto-explosion.webp").default;
+const Src_ObjectCache = require("@site/static/img/object-cache.webp").default;
+const Src_AssociationCache = require("@site/static/img/association-cache.webp").default;
+const Src_CalculatedCache = require("@site/static/img/calculated-cache.webp").default;
+const Src_MultiViewCache = require("@site/static/img/multi-view-cache.webp").default;
+const Src_Consistency = require("@site/static/img/consistency.webp").default;
+const Src_Cloud = require("@site/static/img/cloud.webp").default;
+const Src_GeneratedJava = require("@site/static/img/generated-java.webp").default;
+const Src_GeneratedKt = require("@site/static/img/generated-kt.webp").default;
+const Src_Generated = require("@site/static/img/generated.webp").default;
+const Src_SwaggerAuthorize = require("@site/static/img/swagger-authorize.webp").default;
+const Src_GraphiqlHeaders = require("@site/static/img/graphiql-headers.webp").default;
+const Src_Save = require("@site/static/img/save.webp").default;
+const Src_Shape = require("@site/static/img/shape.webp").default;
+const Src_Uml = require("@site/static/img/uml.svg").default;
+const Src_VsApi = require("@site/static/img/vs-code/api.webp").default;
+const Src_VsCode = require("@site/static/img/vs-code/code.webp").default;
+const Src_VsFamily = require("@site/static/img/vs-code/family.webp").default;
+const Src_VsField = require("@site/static/img/vs-code/field.webp").default;
+const Src_VsModule = require("@site/static/img/vs-code/module.webp").default;
+const Src_PublicWechat = require("@site/static/img/public-wechat.webp").default;
