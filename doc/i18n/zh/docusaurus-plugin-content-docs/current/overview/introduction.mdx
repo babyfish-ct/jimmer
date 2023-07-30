@@ -11,12 +11,8 @@ import { SaveCommand } from '@site/src/components/HomepageFeatures/SaveCommand';
 import { CacheConsistencyPanel } from '@site/src/components/HomepageFeatures/CacheConsistency';
 import { DynamicJoinProblemPanel } from '@site/src/components/HomepageFeatures/DynamicJoinProblem';
 import { Communication } from '@site/src/components/HomepageFeatures/Communication';
-import { Button } from "@mui/material";
-import DtoExplosion from '@site/static/img/dto-explosion.png'; 
-import ObjectCache from '@site/static/img/object-cache.jpeg';
-import AssociationCache from '@site/static/img/association-cache.png';
-import CalculatedCache from '@site/static/img/calculated-cache.png';
-import MultiViewCache from '@site/static/img/multi-view-cache.png';
+import Button from "@mui/material/Button";
+import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from "@site/src/components/Image";
 
 ## 项目定位
 
@@ -46,7 +42,7 @@ ORM只是Jimmer的切入点，而非全部。
 
 1.  DTO爆炸问题
 
-    即便对于同一种数据类型 *(聚合根)* 而言，不同业务功能期望查询的数据格式也不同，这往往导致项目需要定义大量的DTO类型，形成<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>。
+    即便对于同一种数据类型 *(聚合根)* 而言，不同业务功能期望查询的数据格式也不同，这往往导致项目需要定义大量的DTO类型，形成<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>。
 
     :::info
     DTO类型数量庞大，彼此之间虽然不同但往往具备高度相似性的，冗余度很高。
@@ -96,9 +92,9 @@ ORM只是Jimmer的切入点，而非全部。
 
     -   是否使用缓存应该对开发人员绝对透明，缓存的引入不应该增加业务代码的复杂度、降低代码质量和可维护性，应该和纯SQL项目一样简单。
 
-    -   缓存不应该仅有最简单的对象缓存，还应有<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
+    -   缓存不应该仅有最简单的对象缓存，还应有<ViewMore buttonText="关联缓存" variant="text"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><CalculatedCache/></ViewMore>。
 
-    -   以权限系统为代表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><img src={MultiViewCache}/></ViewMore>
+    -   以权限系统为代表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><MultiViewCache/></ViewMore>
 
     -   缓存的一致性维护这个最头疼的问题<ViewMore buttonText="应该被底层方案解决" title="自动维护缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
 
@@ -144,9 +140,9 @@ GraphQL那种必须通过HTTP远程访问才能得到灵活性，变成了无所
 
 这套缓存机制支持如下的重要概念
 
--   <ViewMore buttonText="对象缓存" variant="text"><img src={ObjectCache}/></ViewMore>、<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>
+-   <ViewMore buttonText="对象缓存" variant="text"><ObjectCache/></ViewMore>、<ViewMore buttonText="关联缓存" variant="text"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><CalculatedCache/></ViewMore>
 
--   <ViewMore buttonText="多视图缓存" variant="text"><img src={MultiViewCache}/></ViewMore>，不同用户看到不同的缓存，往往和权限系统结合使用
+-   <ViewMore buttonText="多视图缓存" variant="text"><MultiViewCache/></ViewMore>，不同用户看到不同的缓存，往往和权限系统结合使用
 
 -   <ViewMore buttonText="自动维护缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>
 

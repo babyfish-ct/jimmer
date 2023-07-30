@@ -4,8 +4,9 @@ title: Cache
 ---
 
 import { ViewMore } from '@site/src/components/ViewMore';
-import AssociationCache from '@site/static/img/association-cache.png';
-import CalculatedCache from '@site/static/img/calculated-cache.png';
+import { CacheConsistencyPanel } from '@site/src/components/HomepageFeatures/CacheConsistency';
+import { DtoExplosion, ObjectCache, AssociationCache, MultiViewCache, CalculatedCache } from "@site/src/components/Image";
+
 
 Jimmer提供了强大的缓存支持能力。
 
@@ -13,7 +14,10 @@ Jimmer提供了强大的缓存支持能力。
 
 -   使用哪些缓存技术，由开发人员决定
 
--   不仅支持简单的`id->对象`缓存，还支持属性级缓存，包括<ViewMore buttonText="关联缓存" variant="text"><img src={AssociationCache}/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><img src={CalculatedCache}/></ViewMore>。
+-   不仅支持简单的<ViewMore buttonText="对象缓存" variant="text"><ObjectCache/></ViewMore>，
+    还支持属性级缓存，包括<ViewMore buttonText="关联缓存" variant="text"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><CalculatedCache/></ViewMore>。
     最终提供任意形状的数据结构的缓存能力，而非简单对象的缓存能力
 
--   强大的缓存一致性支持，开发人员专注于修改数据库即可，Jimmer自动保证缓存和数据库数据的一致性
+-   以权限系统为代表的功能会让不同用户看到不同的数据，因此，Jimmer通过<ViewMore buttonText="多视图缓存" variant="text"><MultiViewCache/></ViewMore>来让不同用户看到不同的缓存。
+
+-   强大的缓存一致性支持，开发人员专注于修改数据库即可，Jimmer自动<ViewMore buttonText="保证数据库和缓存的一致性" variant="text"><CacheConsistencyPanel/></ViewMore>

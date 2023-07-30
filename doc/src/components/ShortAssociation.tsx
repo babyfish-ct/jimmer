@@ -1,5 +1,17 @@
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import { FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Stack, TextField, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, Button } from "@mui/material";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContentText from "@mui/material/DialogContentText";
+import Button  from "@mui/material/Button";
 import React, { ChangeEvent, FC, memo, useCallback, useMemo, useState } from "react";
 
 export const ShortAssociation: FC = memo(() => {

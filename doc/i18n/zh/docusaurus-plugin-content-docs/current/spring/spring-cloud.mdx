@@ -5,6 +5,7 @@ title: Spring Cloud和远程关联
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {Cloud} from  '@site/src/components/Image';
 
 远程关联是Jimmer对微服务架构的首次思考。
 
@@ -20,7 +21,7 @@ Jimmer自动实现远程关联数据的自动查询。
 
 在本文中，各实体如此划分
 
-![cloud.jpg](@site/static/img/cloud.jpg)
+<Cloud/>
 
 :::info
 -   `BOOK_AUTHOR_MAPPING`作为多对多关联中间表，既可以划分给`book-service`服务，也可以划分给`author-service`服务。本例将之划分给`book-service`服务，原因会在后问阐述。

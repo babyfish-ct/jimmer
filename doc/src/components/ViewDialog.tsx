@@ -1,5 +1,10 @@
 import React, { FC, PropsWithChildren, memo, useCallback, useState } from "react";
-import { AppBar, Dialog, DialogContent, Slide, Toolbar, Typography } from "@mui/material";
+import AppBar from "@mui/material/AppBar";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import Slide from "@mui/material/Slide";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import { TransitionProps } from "@mui/material/transitions";
 import IconButton from '@mui/material/IconButton';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';

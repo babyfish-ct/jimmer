@@ -9,7 +9,7 @@ import { ObjectFetcher } from './ObjectFetcher';
 import { SaveCommand } from './SaveCommand';
 import { CacheConsistency } from './CacheConsistency';
 import { Performance } from './Performance';
-import { DtoExplosin, ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from '../Image';
+import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from '../Image';
 
 export default function HomepageFeatures(): JSX.Element {
 
@@ -53,7 +53,7 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
     title: '将RDBMS抽象为图数据库',
     description: (
       <>
-        以任意形状的数据结构作为基本操作单元，甚至可处理包含自关联属性的无限深度数据结构，让开发人员脱离<ViewMore buttonText="DTO类型爆炸" variant="text"><DtoExplosin/></ViewMore>地狱
+        以任意形状的数据结构作为基本操作单元，甚至可处理包含自关联属性的无限深度数据结构，让开发人员脱离<ViewMore buttonText="DTO类型爆炸" variant="text"><DtoExplosion/></ViewMore>地狱
         <ul>
           <li>查询任意形状的数据结构：可以理解成ORM的GraphQL化<ObjectFetcher/></li>
           <li>保存任意形状的数据结构：快速实现复杂表单保存业务<SaveCommand/></li>
@@ -139,7 +139,7 @@ const FEATURE_LIST_EN: FeatureItem[] = [
       <>
         Using data structures of any shape as the basic operation unit, 
         even handling infinite depth data structures with self-associated properties, 
-        allows developers to escape the <ViewMore buttonText="DTO Explosion" variant="text"><DtoExplosin/></ViewMore> hell
+        allows developers to escape the <ViewMore buttonText="DTO Explosion" variant="text"><DtoExplosion/></ViewMore> hell
         <ul>
           <li>Querying data structures of any shape: can be understood as GraphQLization of ORM<ObjectFetcher/></li>
           <li>Saving data structures of any shape: quickly implement complex form saving business<SaveCommand/></li>

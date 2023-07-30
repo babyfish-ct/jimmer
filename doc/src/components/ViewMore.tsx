@@ -1,5 +1,5 @@
-import { Button } from "@mui/material";
 import React, { FC, memo, PropsWithChildren, useCallback, useState } from "react";
+import Button  from "@mui/material/Button";
 import { ViewDialog } from "./ViewDialog";
 
 export const ViewMore: FC<

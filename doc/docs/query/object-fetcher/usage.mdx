@@ -6,7 +6,7 @@ title: Basic usage
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
-import DtoExplosion from '@site/static/img/dto-explosion.png';
+import { DtoExplosion } from "@site/src/components/Image";
 
 ## 引入对象抓取器的原因
 
@@ -202,7 +202,7 @@ println(tuples)
 
 :::info
 不幸的是，查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
-最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>
+最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>
 :::
 
 ## 使用对象抓取器
@@ -274,7 +274,7 @@ println(books)
 ]
 ```
 
-在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
+在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
 
 例如，我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
 
@@ -332,7 +332,7 @@ println(books)
 :::tip
 借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO并进行映射，只需要改变对象抓取器的属性即可。
 
-对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><img src={DtoExplosion}/></ViewMore>能极大地提高服务端的生产效率。
+对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
 :::
 
 ### 抓取所有属性

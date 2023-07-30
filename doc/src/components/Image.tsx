@@ -2,15 +2,26 @@ import React, { FC, memo, useCallback, useMemo, useState } from "react";
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useZh } from "../util/use-zh";
-import { Grid } from "@mui/material";
+import Grid from "@mui/material/Grid";
+import BrowserOnly from '@docusaurus/BrowserOnly';
 
 const Image: FC<{
+    readonly src: string
+}> = memo(({src}) => {
+    return (
+        <BrowserOnly>
+            {() => <ImageCore src={src}/>}
+        </BrowserOnly>
+    );
+});
+
+const ImageCore: FC<{
     readonly src: string
 }> = memo(({src}) => {
     const zh = useZh();
     const [loaded, setLoaded] = useState(false);
     const onLoad = useCallback(() => setLoaded(true), []);
-    if (!isWebpSupported && src.endsWith(".webp")) {
+    if (!isWebpSupported() && src.endsWith(".webp")) {
         return (
             <Alert security="error">
                 {
@@ -23,7 +34,8 @@ const Image: FC<{
     }
     return (
         <>
-            {!loaded &&
+            {
+                !loaded &&
                 <Grid container direction="column" alignItems="center">
                     <Grid item>
                         <CircularProgress/>
@@ -38,8 +50,8 @@ const Image: FC<{
     );
 });
 
-export const DtoExplosin: FC = memo(() => {
-    return <Image src={Src_DtoExplosin}/>;
+export const DtoExplosion: FC = memo(() => {
+    return <Image src={Src_DtoExplosion}/>;
 });
 
 export const ObjectCache: FC = memo(() => {
@@ -118,14 +130,27 @@ export const VsModule: FC = memo(() => {
     return <Image src={Src_VsModule}/>;
 });
 
-const isWebpSupported = (function() {
+export const PublicWechat: FC = memo(() => {
+    return <Image src={Src_PublicWechat}/>;
+});
+
+let _isWebpSupported: boolean | undefined = undefined;
+
+function isWebpSupported(): boolean {
+    const value = _isWebpSupported;
+    if (typeof value === "boolean") {
+        return value;
+    }
     var tmpCanvas = document.createElement('canvas');
-    return tmpCanvas.getContext && 
+    const newValue = tmpCanvas.getContext && 
         tmpCanvas.getContext("2d") &&
         tmpCanvas.toDataURL('image/webp').indexOf('data:image/webp') == 0;
-})();
+    _isWebpSupported = newValue;
+    return newValue;
+}
 
-const Src_DtoExplosin = require("@site/static/img/dto-explosion.webp").default;
+
+const Src_DtoExplosion = require("@site/static/img/dto-explosion.webp").default;
 const Src_ObjectCache = require("@site/static/img/object-cache.webp").default;
 const Src_AssociationCache = require("@site/static/img/association-cache.webp").default;
 const Src_CalculatedCache = require("@site/static/img/calculated-cache.webp").default;
@@ -145,3 +170,4 @@ const Src_VsCode = require("@site/static/img/vs-code/code.webp").default;
 const Src_VsFamily = require("@site/static/img/vs-code/family.webp").default;
 const Src_VsField = require("@site/static/img/vs-code/field.webp").default;
 const Src_VsModule = require("@site/static/img/vs-code/module.webp").default;
+const Src_PublicWechat = require("@site/static/img/public-wechat.webp").default;
