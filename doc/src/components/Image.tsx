@@ -1,27 +1,18 @@
-import React, { FC, memo, useCallback, useMemo, useState } from "react";
+import React, { FC, memo, useCallback, useState } from "react";
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { useZh } from "../util/use-zh";
 import Grid from "@mui/material/Grid";
-import BrowserOnly from '@docusaurus/BrowserOnly';
+import useIsBrowser from "@docusaurus/useIsBrowser";
 
 const Image: FC<{
-    readonly src: string
-}> = memo(({src}) => {
-    return (
-        <BrowserOnly>
-            {() => <ImageCore src={src}/>}
-        </BrowserOnly>
-    );
-});
-
-const ImageCore: FC<{
     readonly src: string
 }> = memo(({src}) => {
     const zh = useZh();
     const [loaded, setLoaded] = useState(false);
     const onLoad = useCallback(() => setLoaded(true), []);
-    if (!isWebpSupported() && src.endsWith(".webp")) {
+    const isBrowser = useIsBrowser();
+    if (isBrowser && !isWebpSupported() && src.endsWith(".webp")) {
         return (
             <Alert security="error">
                 {
@@ -35,7 +26,7 @@ const ImageCore: FC<{
     return (
         <>
             {
-                !loaded &&
+                isBrowser && !loaded &&
                 <Grid container direction="column" alignItems="center">
                     <Grid item>
                         <CircularProgress/>
@@ -148,7 +139,6 @@ function isWebpSupported(): boolean {
     _isWebpSupported = newValue;
     return newValue;
 }
-
 
 const Src_DtoExplosion = require("@site/static/img/dto-explosion.webp").default;
 const Src_ObjectCache = require("@site/static/img/object-cache.webp").default;
