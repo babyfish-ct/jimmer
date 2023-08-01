@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
+import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.Static;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -52,6 +54,15 @@ class Constants {
 
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
+
+    public static final ClassName STATIC_CLASS_NAME =
+            ClassName.get(Static.class);
+
+    public static final ClassName INPUT_CLASS_NAME =
+            ClassName.get(Input.class);
+
+    public static final ClassName DATA_CLASS_NAME =
+            ClassName.get("lombok", "Data");
 
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
@@ -248,6 +259,12 @@ class Constants {
                     "org.babyfish.jimmer.sql.ast",
                     "PropExpression",
                     "Embedded"
+            );
+
+    public static final ClassName STATIC_METADATA_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "StaticMetadata"
             );
 
     public static final ClassName JSON_CREATOR_CLASS_NAME =

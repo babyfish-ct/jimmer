@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.apt.meta;
+package org.babyfish.jimmer.apt;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;

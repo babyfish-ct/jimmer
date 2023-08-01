@@ -5,7 +5,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.apt.meta.MetaException;
+import org.babyfish.jimmer.apt.MetaException;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.validation.ValidationException;

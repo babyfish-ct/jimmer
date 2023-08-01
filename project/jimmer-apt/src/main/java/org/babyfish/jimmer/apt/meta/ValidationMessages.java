@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.apt.meta;
 
 import com.squareup.javapoet.ClassName;
-import org.babyfish.jimmer.meta.ModelException;
+import org.babyfish.jimmer.apt.MetaException;
 
 import javax.lang.model.element.*;
 import javax.validation.Constraint;

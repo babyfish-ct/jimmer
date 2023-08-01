@@ -1,0 +1,17 @@
+input BookInput {
+    #allScalars
+    id(store)
+    id(authors) as authorIds
+}
+
+input CompositeBookInput {
+    #allScalars
+    store {
+        #allScalars
+        -id
+    }
+    authors {
+        #allScalars
+        -id
+    }
+}

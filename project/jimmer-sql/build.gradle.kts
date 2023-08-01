@@ -52,6 +52,7 @@ tasks.withType<Javadoc>{
 
 tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
+    options.compilerArgs.add("-Ajimmer.dto.dirs=src/test/dto")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

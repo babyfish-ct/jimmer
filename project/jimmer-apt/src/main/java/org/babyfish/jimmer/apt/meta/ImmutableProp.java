@@ -6,7 +6,9 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.generator.Strings;
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
@@ -17,9 +19,8 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
-import java.util.function.Consumer;
 
-public class ImmutableProp {
+public class ImmutableProp implements BaseProp {
 
     private final Context context;
 
@@ -68,6 +69,8 @@ public class ImmutableProp {
     private final boolean isTransient;
 
     private final boolean hasTransientResolver;
+
+    private final boolean isFormula;
 
     private final boolean isJavaFormula;
 
@@ -246,6 +249,7 @@ public class ImmutableProp {
         hasTransientResolver = hasResolver;
 
         Formula formula = executableElement.getAnnotation(Formula.class);
+        isFormula = formula != null;
         isJavaFormula = formula != null && formula.sql().isEmpty();
 
         isAssociation = context.isImmutable(elementType);
@@ -460,8 +464,16 @@ public class ImmutableProp {
         return hasTransientResolver;
     }
 
+    public boolean isFormula() {
+        return isFormula;
+    }
+
     public boolean isJavaFormula() {
         return isJavaFormula;
+    }
+
+    public boolean isView() {
+        return getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null;
     }
 
     public boolean isList() {

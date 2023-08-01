@@ -12,6 +12,8 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ImmutableObjects {
 
