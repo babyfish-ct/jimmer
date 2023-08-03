@@ -90,7 +90,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         List<DtoType<T, P>> types = new ArrayList<>(typeBuilderMap.size());
         for (DtoTypeBuilder<T, P> builder : typeBuilderMap.values()) {
             DtoType<T, P> type = builder.build();
-            if (!type.isAbstract() ) {
+            if (!builder.isAbstract()) {
                 types.add(type);
             }
         }

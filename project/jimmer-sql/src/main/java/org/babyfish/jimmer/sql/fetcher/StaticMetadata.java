@@ -18,17 +18,17 @@ public final class StaticMetadata<E, S> {
     private static final StaticCache<Class<Static<?>>, StaticMetadata<?, ?>> cache =
             new StaticCache<>(StaticMetadata::create, false);
 
-    private final Fetcher<E> fetcher;
+    private final Fetcher<E> _fetcher;
 
     private final Function<E, S> converter;
 
     public StaticMetadata(Fetcher<E> fetcher, Function<E, S> converter) {
-        this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
+        this._fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
         this.converter = Objects.requireNonNull(converter, "converter cannot be null");
     }
 
     public Fetcher<E> getFetcher() {
-        return fetcher;
+        return _fetcher;
     }
 
     public Function<E, S> getConverter() {
@@ -37,7 +37,7 @@ public final class StaticMetadata<E, S> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fetcher, converter);
+        return Objects.hash(_fetcher, converter);
     }
 
     @Override
@@ -45,13 +45,13 @@ public final class StaticMetadata<E, S> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StaticMetadata<?, ?> that = (StaticMetadata<?, ?>) o;
-        return fetcher.equals(that.fetcher) && converter.equals(that.converter);
+        return _fetcher.equals(that._fetcher) && converter.equals(that.converter);
     }
 
     @Override
     public String toString() {
         return "StaticMetadata{" +
-                "fetcher=" + fetcher +
+                "fetcher=" + _fetcher +
                 ", converter=" + converter +
                 '}';
     }

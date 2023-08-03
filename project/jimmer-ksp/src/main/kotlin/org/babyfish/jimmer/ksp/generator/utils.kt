@@ -10,8 +10,7 @@ import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
-import org.babyfish.jimmer.ksp.meta.MetaException
-import org.babyfish.jimmer.meta.ModelException
+import org.babyfish.jimmer.ksp.MetaException
 import javax.validation.Constraint
 import kotlin.math.abs
 import kotlin.reflect.KClass

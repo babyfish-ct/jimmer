@@ -3,7 +3,6 @@ package org.babyfish.jimmer.ksp
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
-import org.babyfish.jimmer.ksp.meta.MetaException
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 

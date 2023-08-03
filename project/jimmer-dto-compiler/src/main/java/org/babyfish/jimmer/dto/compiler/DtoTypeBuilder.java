@@ -65,6 +65,10 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
     }
 
+    public boolean isAbstract() {
+        return modifiers.contains(DtoTypeModifier.ABSTRACT);
+    }
+
     private void handleAllScalars(DtoParser.MacroContext macro) {
         if (!macro.name.getText().equals("allScalars")) {
             throw ctx.exception(
@@ -359,7 +363,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
         dtoType = new DtoType<>(
                 baseType,
-                modifiers.contains(DtoTypeModifier.ABSTRACT),
                 modifiers.contains(DtoTypeModifier.INPUT),
                 name != null ? name.getText() : null
         );

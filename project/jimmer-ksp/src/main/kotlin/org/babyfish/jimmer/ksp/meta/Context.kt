@@ -6,12 +6,12 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.ksp.MetaException
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
-import kotlin.reflect.KClass
 
 class Context(
     val resolver: Resolver

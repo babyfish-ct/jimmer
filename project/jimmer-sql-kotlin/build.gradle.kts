@@ -49,6 +49,10 @@ java {
     withJavadocJar()
 }
 
+ksp {
+    arg("jimmer.dto.dirs", "src/test/dto")
+}
+
 tasks {
     withType(Jar::class) {
         if (archiveClassifier.get() == "javadoc") {

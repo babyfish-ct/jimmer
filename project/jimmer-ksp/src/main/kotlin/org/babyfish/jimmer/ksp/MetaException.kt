@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.meta
+package org.babyfish.jimmer.ksp
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration

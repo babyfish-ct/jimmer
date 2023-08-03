@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ClassName
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
+import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.DYNAMIC
@@ -22,7 +23,7 @@ import kotlin.reflect.KClass
 class ImmutableType(
     ctx: Context,
     val classDeclaration: KSClassDeclaration
-) {
+): BaseType {
     private val immutableAnnoTypeName: String =
         listOf(
             classDeclaration.annotation(Entity::class),
@@ -40,7 +41,7 @@ class ImmutableType(
             }
         }.first()
 
-    val isEntity: Boolean = immutableAnnoTypeName == Entity::class.qualifiedName
+    override val isEntity: Boolean = immutableAnnoTypeName == Entity::class.qualifiedName
 
     val isMappedSuperclass: Boolean = immutableAnnoTypeName == MappedSuperclass::class.qualifiedName
 
@@ -85,10 +86,10 @@ class ImmutableType(
         annotationType
     }
 
-    val name: String
+    override val name: String
         get() = classDeclaration.simpleName.asString()
 
-    val qualifiedName: String
+    override val qualifiedName: String
         get() = classDeclaration.qualifiedName!!.asString()
 
     val isAcrossMicroServices: Boolean =

@@ -11,8 +11,6 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final T baseType;
 
-    private final boolean isAbstract;
-
     private final boolean isInput;
 
     @Nullable
@@ -22,22 +20,16 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     DtoType(
             T baseType,
-            boolean isAbstract,
             boolean isInput,
             @Nullable String name
     ) {
         this.baseType = baseType;
-        this.isAbstract = isAbstract;
         this.isInput = isInput;
         this.name = name;
     }
 
     public T getBaseType() {
         return baseType;
-    }
-
-    public boolean isAbstract() {
-        return isAbstract;
     }
 
     public boolean isInput() {

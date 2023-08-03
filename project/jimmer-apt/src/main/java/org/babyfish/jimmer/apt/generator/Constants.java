@@ -61,7 +61,7 @@ class Constants {
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
 
-    public static final ClassName DATA_CLASS_NAME =
+    public static final ClassName LOMBOK_DATA_CLASS_NAME =
             ClassName.get("lombok", "Data");
 
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =

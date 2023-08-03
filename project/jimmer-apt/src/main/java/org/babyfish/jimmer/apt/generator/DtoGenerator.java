@@ -32,6 +32,8 @@ public class DtoGenerator {
 
     private final DtoGenerator parent;
 
+    private final DtoGenerator root;
+
     private final String innerClassName;
 
     private TypeSpec.Builder typeBuilder;
@@ -58,6 +60,7 @@ public class DtoGenerator {
         this.dtoType = dtoType;
         this.filer = filer;
         this.parent = parent;
+        this.root = parent != null ? parent.root : this;
         this.innerClassName = innerClassName;
     }
 
@@ -79,7 +82,8 @@ public class DtoGenerator {
                                 dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.STATIC_CLASS_NAME,
                                 dtoType.getBaseType().getClassName()
                         )
-                );
+                )
+                .addAnnotation(Constants.LOMBOK_DATA_CLASS_NAME);
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();
@@ -112,29 +116,27 @@ public class DtoGenerator {
     }
 
     public String getPackageName() {
-        if (dtoType.getBaseType().getPackageName().isEmpty()) {
-            return "dto";
-        }
-        return dtoType.getBaseType().getPackageName() + ".dto";
+        String pkg = dtoType.getBaseType().getPackageName();
+        return pkg.isEmpty() ? "dto" : pkg + ".dto";
     }
 
     public String getSimpleName() {
         return innerClassName != null ? innerClassName : dtoType.getName();
     }
 
-    public ClassName getClassName(String ... nestedNames) {
+    public ClassName getDtoClassName(String ... nestedNames) {
         if (innerClassName != null) {
             List<String> list = new ArrayList<>();
             collectNames(list);
             list.addAll(Arrays.asList(nestedNames));
             return ClassName.get(
-                    getPackageName(),
+                    root.getPackageName(),
                     list.get(0),
                     list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
             );
         }
         return ClassName.get(
-                getPackageName(),
+                root.getPackageName(),
                 dtoType.getName(),
                 nestedNames
         );
@@ -170,7 +172,7 @@ public class DtoGenerator {
                         ParameterizedTypeName.get(
                                 Constants.STATIC_METADATA_CLASS_NAME,
                                 dtoType.getBaseType().getClassName(),
-                                getClassName()
+                                getDtoClassName()
                         ),
                         "METADATA"
                 )
@@ -183,7 +185,7 @@ public class DtoGenerator {
                         "new $T<$T, $T>(\n",
                         Constants.STATIC_METADATA_CLASS_NAME,
                         dtoType.getBaseType().getClassName(),
-                        getClassName()
+                        getDtoClassName()
                 )
                 .indent()
                 .add("$T.$L", dtoType.getBaseType().getFetcherClassName(), "$")
@@ -206,7 +208,7 @@ public class DtoGenerator {
         cb
                 .add(",\n")
                 .unindent()
-                .add("$T::new\n", getClassName())
+                .add("$T::new\n", getDtoClassName())
                 .unindent()
                 .unindent()
                 .add(")");
@@ -244,8 +246,8 @@ public class DtoGenerator {
                                 .addAnnotation(NotNull.class)
                                 .build()
                 )
-                .returns(getClassName())
-                .addCode("return new $T(base);", getClassName());
+                .returns(getDtoClassName())
+                .addCode("return new $T(base);", getDtoClassName());
         typeBuilder.addMethod(builder.build());
     }
 
@@ -260,6 +262,7 @@ public class DtoGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addComment("This constructor is not public so that the `@Argument` of spring-graphql can work, please use `of`")
+                .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterSpec
                                 .builder(dtoType.getBaseType().getClassName(), "base")
@@ -462,15 +465,22 @@ public class DtoGenerator {
             if (prop.isNullable() && (prop.getBaseProp().isAssociation(false) || !prop.getBaseProp().isNullable())) {
                 builder.beginControlFlow("if ($L != null)", prop.getName());
                 addAssignment(prop, builder);
-                if (prop.getBaseProp().isAssociation(true) &&
-                        !prop.getBaseProp().isList() &&
-                        prop.getBaseProp().isNullable()) {
-                    builder.nextControlFlow("else");
-                    builder.addStatement(
-                            "draft.$L(($T)null)",
-                            prop.getBaseProp().getSetterName(),
-                            prop.getBaseProp().getTargetType().getClassName()
-                    );
+                if (prop.getBaseProp().isAssociation(true)) {
+                    if (prop.getBaseProp().isList()) {
+                        builder.nextControlFlow("else");
+                        builder.addStatement(
+                                "draft.$L($T.emptyList())",
+                                prop.getBaseProp().getSetterName(),
+                                Constants.COLLECTIONS_CLASS_NAME
+                        );
+                    } else if (prop.getBaseProp().isNullable()) {
+                        builder.nextControlFlow("else");
+                        builder.addStatement(
+                                "draft.$L(($T)null)",
+                                prop.getBaseProp().getSetterName(),
+                                prop.getBaseProp().getTargetType().getClassName()
+                        );
+                    }
                 }
                 builder.endControlFlow();
             } else {
