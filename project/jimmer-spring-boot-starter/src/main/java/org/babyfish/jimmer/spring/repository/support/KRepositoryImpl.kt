@@ -75,7 +75,14 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findMapByIds(entityType, Utils.toCollection(ids))
         }
 
-    override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)?): List<E> =
+    override fun findAll(fetcher: Fetcher<E>?): List<E> =
+        if (fetcher !== null) {
+            sql.entities.findAll(fetcher)
+        } else {
+            sql.entities.findAll(entityType)
+        }
+
+    override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)): List<E> =
         if (fetcher !== null) {
             sql.entities.findAll(fetcher, block)
         } else {

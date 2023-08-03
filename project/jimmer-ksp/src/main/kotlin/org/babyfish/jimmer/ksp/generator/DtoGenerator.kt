@@ -16,9 +16,7 @@ import org.babyfish.jimmer.ksp.meta.*
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
 import java.io.OutputStreamWriter
-import java.lang.RuntimeException
 import java.util.*
-import java.util.concurrent.ThreadLocalRandom
 
 class DtoGenerator private constructor(
     private val dtoType: DtoType<ImmutableType, ImmutableProp>,
@@ -152,7 +150,7 @@ class DtoGenerator private constructor(
 
         addMetadata()
 
-        addJsonConstructor()
+        addDefaultConstructor()
         addConverterConstructor()
 
         addToEntity()
@@ -238,10 +236,29 @@ class DtoGenerator private constructor(
         )
     }
 
-    private fun addJsonConstructor() {
+    private fun addDefaultConstructor() {
         val builder = FunSpec.constructorBuilder()
         for (prop in dtoType.props) {
-            builder.addParameter(prop.name, propTypeName(prop))
+            builder.addParameter(
+                ParameterSpec
+                    .builder(prop.name, propTypeName(prop))
+                    .apply {
+                        when {
+                            prop.isNullable -> defaultValue("null")
+                            prop.baseProp.isList -> defaultValue("emptyList()")
+                            prop.baseProp.isPrimitive -> defaultValue(
+                                when (prop.baseProp.typeName()) {
+                                    BOOLEAN -> "false"
+                                    CHAR -> "'\\0'"
+                                    else -> "0"
+                                }
+                            )
+                            prop.baseProp.typeName() == STRING ->
+                                defaultValue("\"\"")
+                        }
+                    }
+                    .build()
+            )
         }
         typeBuilder.primaryConstructor(builder.build())
 

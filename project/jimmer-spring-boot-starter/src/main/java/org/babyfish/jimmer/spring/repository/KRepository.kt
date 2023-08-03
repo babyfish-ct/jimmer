@@ -53,9 +53,11 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     fun findMapByIds(ids: Iterable<ID>, fetcher: Fetcher<E>? = null): Map<ID, E>
 
     override fun findAll(): List<E> =
-        findAll(null, null)
+        findAll(null)
 
-    fun findAll(fetcher: Fetcher<E>? = null, block: (SortDsl<E>.() -> Unit)? = null): List<E>
+    fun findAll(fetcher: Fetcher<E>? = null): List<E>
+
+    fun findAll(fetcher: Fetcher<E>? = null, block: (SortDsl<E>.() -> Unit)): List<E>
 
     override fun findAll(sort: Sort): List<E> =
         findAll(null, sort)

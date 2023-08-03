@@ -10,25 +10,44 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Function;
 
 public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
-    private final Table<T> table;
+    private final Table<?> table;
 
     private final Fetcher<?> fetcher;
+
+    @Nullable
+    private final Function<?, T> converter;
 
     public FetcherSelectionImpl(Table<T> table, Fetcher<T> fetcher) {
         this.table = table;
         this.fetcher = fetcher;
+        this.converter = null;
     }
 
-    public Table<T> getTable() {
+    public FetcherSelectionImpl(Table<?> table, Fetcher<?> fetcher, @Nullable Function<?, T> converter) {
+        this.table = table;
+        this.fetcher = fetcher;
+        this.converter = converter;
+    }
+
+    public Table<?> getTable() {
         return table;
     }
 
     @Override
     public Fetcher<?> getFetcher() {
         return fetcher;
+    }
+
+    @Nullable
+    @Override
+    public Function<?, T> getConverter() {
+        return converter;
     }
 
     @Override

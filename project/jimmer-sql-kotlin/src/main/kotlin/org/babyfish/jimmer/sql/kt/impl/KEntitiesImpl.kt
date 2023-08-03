@@ -1,12 +1,15 @@
 package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.Static
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.babyfish.jimmer.sql.fetcher.StaticMetadata
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
 import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KBatchSaveResultImpl
@@ -19,6 +22,7 @@ import org.babyfish.jimmer.sql.kt.ast.query.KExample
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
 
 internal class KEntitiesImpl(
     private val javaEntities: Entities
@@ -42,17 +46,17 @@ internal class KEntitiesImpl(
             }
         }
 
-    override fun <E : Any> findById(entityType: KClass<E>, id: Any): E? =
-        javaEntities.findById(entityType.java, id)
+    override fun <E : Any> findById(type: KClass<E>, id: Any): E? =
+        javaEntities.findById(type.java, id)
 
     override fun <E : Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         javaEntities.findById(fetcher, id)
 
     override fun <E : Any> findByIds(
-        entityType: KClass<E>,
+        type: KClass<E>,
         ids: Collection<*>
     ): List<E> =
-        javaEntities.findByIds(entityType.java, ids)
+        javaEntities.findByIds(type.java, ids)
 
     override fun <E : Any> findByIds(
         fetcher: Fetcher<E>,
@@ -61,10 +65,10 @@ internal class KEntitiesImpl(
         javaEntities.findByIds(fetcher, ids)
 
     override fun <ID, E : Any> findMapByIds(
-        entityType: KClass<E>,
+        type: KClass<E>,
         ids: Collection<ID>
     ): Map<ID, E> =
-        javaEntities.findMapByIds(entityType.java, ids)
+        javaEntities.findMapByIds(type.java, ids)
 
     override fun <ID, E : Any> findMapByIds(
         fetcher: Fetcher<E>,
@@ -72,7 +76,15 @@ internal class KEntitiesImpl(
     ): Map<ID, E> =
         javaEntities.findMapByIds(fetcher, ids)
 
-    override fun <E : Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : Any> findAll(type: KClass<E>): List<E> =
+        if (type.isSubclassOf(Static::class)) {
+            find(StaticMetadata.of(type.java as Class<out Static<Any>>), null) as List<E>
+        } else {
+            find(ImmutableType.get(type.java), null, null, null)
+        }
+
+    override fun <E : Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E> =
         find(ImmutableType.get(type.java), null, null, block)
 
     override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
@@ -113,6 +125,30 @@ internal class KEntitiesImpl(
         return query.select(
             if (fetcher !== null) {
                 table.fetch(fetcher)
+            } else {
+                table
+            }
+        ).execute(entities.con)
+    }
+
+    private fun <E: Any> find(
+        metadata: StaticMetadata<*, E>,
+        block: (SortDsl<E>.() -> Unit)?
+    ): List<E> {
+        val fetcher = metadata.fetcher
+        val converter = metadata.converter
+        val type = fetcher.immutableType
+        val entities = javaEntities as EntitiesImpl
+        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
+        val table = query.getTable<Table<E>>()
+        if (block !== null) {
+            val dsl = SortDsl<E>()
+            dsl.block()
+            dsl.applyTo(query)
+        }
+        return query.select(
+            if (fetcher !== null) {
+                FetcherSelectionImpl(table, fetcher, converter)
             } else {
                 table
             }
@@ -165,13 +201,13 @@ internal class KEntitiesImpl(
             .let { KBatchSaveResultImpl(it) }
 
     override fun delete(
-        entityType: KClass<*>,
+        type: KClass<*>,
         id: Any,
         con: Connection?,
         block: (KDeleteCommandDsl.() -> Unit)?
     ): KDeleteResult =
         javaEntities
-            .deleteCommand(entityType.java, id)
+            .deleteCommand(type.java, id)
             .let {
                 if (block === null) {
                     it
@@ -185,13 +221,13 @@ internal class KEntitiesImpl(
             .let { KDeleteResultImpl(it) }
 
     override fun batchDelete(
-        entityType: KClass<*>,
+        type: KClass<*>,
         ids: Collection<*>,
         con: Connection?,
         block: (KDeleteCommandDsl.() -> Unit)?
     ): KDeleteResult =
         javaEntities
-            .batchDeleteCommand(entityType.java, ids)
+            .batchDeleteCommand(type.java, ids)
             .let {
                 if (block === null) {
                     it

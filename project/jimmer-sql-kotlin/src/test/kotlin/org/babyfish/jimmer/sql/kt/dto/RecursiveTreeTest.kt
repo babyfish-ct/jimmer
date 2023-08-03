@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.dto
 
 import org.babyfish.jimmer.kt.new
+import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.TreeNode
 import org.babyfish.jimmer.sql.kt.model.addBy
 import org.babyfish.jimmer.sql.kt.model.by
@@ -110,13 +111,5 @@ class RecursiveTreeTest {
                 ")",
             RecursiveTree(treeNode)
         )
-    }
-
-    companion object {
-        private fun assertContentEquals(expected: String, actual: Any) {
-            expect(expected.replace("--->", "").replace("\r", "").replace("\n", "")) {
-                actual.toString()
-            }
-        }
     }
 }

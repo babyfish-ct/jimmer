@@ -1,15 +1,15 @@
 package org.babyfish.jimmer.sql.dto;
 
+import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.model.dto.RecursiveTree;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-public class RecursiveTreeTest {
+public class RecursiveTreeTest extends Tests {
 
     @Test
     public void testDtoToEntity() {
@@ -133,15 +133,5 @@ public class RecursiveTreeTest {
             tree.setChildNodes(Arrays.asList(childNodes));
         }
         return tree;
-    }
-
-    private static void assertContentEquals(
-            String expected,
-            Object actual
-    ) {
-        Assertions.assertEquals(
-                expected.replace("--->", "").replace("\r", "").replace("\n", ""),
-                actual.toString()
-        );
     }
 }

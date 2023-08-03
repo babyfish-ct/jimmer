@@ -1,3 +1,19 @@
+abstract Key {
+    name
+    edition
+}
+
+BookView : Key {
+    id
+    store {
+        name
+    }
+    authors {
+        firstName
+        lastName
+    }
+}
+
 input BookInput {
     #allScalars
     id(store)

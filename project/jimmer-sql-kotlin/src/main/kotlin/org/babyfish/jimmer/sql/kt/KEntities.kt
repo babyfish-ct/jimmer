@@ -36,7 +36,9 @@ interface KEntities {
 
     fun <ID, E: Any> findMapByIds(fetcher: Fetcher<E>, ids: Collection<ID>): Map<ID, E>
 
-    fun <E: Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
+    fun <E: Any> findAll(type: KClass<E>): List<E>
+
+    fun <E: Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E>
 
     fun <E: Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
 

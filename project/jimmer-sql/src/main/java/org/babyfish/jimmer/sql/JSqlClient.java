@@ -109,8 +109,8 @@ public interface JSqlClient extends SubQueryProvider {
     JSqlClient disableSlaveConnectionManager();
 
     @Nullable
-    default <E> E findById(Class<E> entityType, Object id) {
-        return getEntities().findById(entityType, id);
+    default <E> E findById(Class<E> type, Object id) {
+        return getEntities().findById(type, id);
     }
 
     @Nullable
@@ -118,8 +118,8 @@ public interface JSqlClient extends SubQueryProvider {
         return getEntities().findById(fetcher, id);
     }
 
-    default <E> List<E> findByIds(Class<E> entityType, Collection<?> ids) {
-        return getEntities().findByIds(entityType, ids);
+    default <E> List<E> findByIds(Class<E> type, Collection<?> ids) {
+        return getEntities().findByIds(type, ids);
     }
 
     default <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids) {
@@ -127,8 +127,8 @@ public interface JSqlClient extends SubQueryProvider {
     }
 
     @Nullable
-    default <K, V> Map<K, V> findMapByIds(Class<V> entityType, Collection<K> ids) {
-        return getEntities().findMapByIds(entityType, ids);
+    default <K, V> Map<K, V> findMapByIds(Class<V> type, Collection<K> ids) {
+        return getEntities().findMapByIds(type, ids);
     }
 
     @Nullable
@@ -170,20 +170,20 @@ public interface JSqlClient extends SubQueryProvider {
         return save(input.toEntity(), SaveMode.UPDATE_ONLY);
     }
 
-    default DeleteResult deleteById(Class<?> entityType, Object id, DeleteMode mode) {
-        return getEntities().delete(entityType, id, mode);
+    default DeleteResult deleteById(Class<?> type, Object id, DeleteMode mode) {
+        return getEntities().delete(type, id, mode);
     }
 
-    default DeleteResult deleteById(Class<?> entityType, Object id) {
-        return getEntities().delete(entityType, id, DeleteMode.AUTO);
+    default DeleteResult deleteById(Class<?> type, Object id) {
+        return getEntities().delete(type, id, DeleteMode.AUTO);
     }
 
-    default DeleteResult deleteByIds(Class<?> entityType, Collection<?> ids, DeleteMode mode) {
-        return getEntities().batchDelete(entityType, ids, mode);
+    default DeleteResult deleteByIds(Class<?> type, Collection<?> ids, DeleteMode mode) {
+        return getEntities().batchDelete(type, ids, mode);
     }
 
-    default DeleteResult deleteByIds(Class<?> entityType, Collection<?> ids) {
-        return getEntities().batchDelete(entityType, ids, DeleteMode.AUTO);
+    default DeleteResult deleteByIds(Class<?> type, Collection<?> ids) {
+        return getEntities().batchDelete(type, ids, DeleteMode.AUTO);
     }
 
     interface Builder {
