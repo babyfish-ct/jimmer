@@ -15,7 +15,7 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalCode() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            new BookDtoCompiler().compile(
+            MyDtoCompiler.book().compile(
                     "BookInput {\n" +
                             "#<allScalars>\n" +
                             "}"
@@ -29,7 +29,7 @@ public class DtoCompilerTest {
 
     @Test
     public void test() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = new BookDtoCompiler().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                         "input BookInput {\n" +
                         "    #allScalars\n" +
                         "    -tenant\n" +
@@ -70,6 +70,79 @@ public class DtoCompilerTest {
                         "--->--->}" +
                         "--->}" +
                         "]").replace("--->", ""),
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testRecursive() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
+                "input TreeNodeInput {" +
+                        "    name" +
+                        "    childNodes {" +
+                        "        name" +
+                        "    }*" +
+                        "}"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->input TreeNodeInput{" +
+                        "--->--->name, " +
+                        "--->--->@optional childNodes: input{" +
+                        "--->--->--->name, " +
+                        "--->--->--->@optional childNodes: ..." +
+                        "--->--->}*" +
+                        "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testExtends() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "abstract input BookKeyInput {\n" +
+                        "    name\n" +
+                        "    edition\n" +
+                        "}\n" +
+                        "abstract input CommonInput {\n" +
+                        "    price\n" +
+                        "    tenant\n" +
+                        "}\n" +
+                        "input BookInput : CommonInput, BookKeyInput {\n" +
+                        "    -price\n" +
+                        "    id(store)\n" +
+                        "    id(authors) as authorIds\n" +
+                        "}\n" +
+                        "input CompositeInput: BookInput {" +
+                        "    id(authors) as authorIdList\n" +
+                        "    chapters {\n" +
+                        "        #allScalars\n" +
+                        "        -id\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->input BookInput{" +
+                        "--->--->tenant, " +
+                        "--->--->name, " +
+                        "--->--->edition, " +
+                        "--->--->id(store) as storeId, " +
+                        "--->--->id(authors) as authorIds" +
+                        "--->}, " +
+                        "--->input CompositeInput{" +
+                        "--->--->tenant, " +
+                        "--->--->name, " +
+                        "--->--->edition, " +
+                        "--->--->id(store) as storeId, " +
+                        "--->--->id(authors) as authorIdList, " +
+                        "--->--->chapters: input{" +
+                        "--->--->--->index, " +
+                        "--->--->--->title" +
+                        "--->--->}" +
+                        "--->}" +
+                        "]",
                 dtoTypes.toString()
         );
     }
@@ -178,8 +251,28 @@ public class DtoCompilerTest {
         }
 
         @Override
+        public boolean isAssociation(boolean entityLevel) {
+            return getTargetType() != null;
+        }
+
+        @Override
         public boolean hasTransientResolver() {
             return false;
+        }
+
+        @Override
+        public boolean isId() {
+            return name.equals("id");
+        }
+
+        @Override
+        public boolean isKey() {
+            return true;
+        }
+
+        @Override
+        public boolean isRecursive() {
+            return name.equals("parent") || name.equals("childNodes");
         }
 
         @Override
@@ -188,7 +281,7 @@ public class DtoCompilerTest {
         }
     }
 
-    private static class BookDtoCompiler extends DtoCompiler<BaseType, BaseProp> {
+    private static class MyDtoCompiler extends DtoCompiler<BaseType, BaseProp> {
 
         private static final Map<String, BaseType> TYPE_MAP = new HashMap<>();
 
@@ -229,13 +322,24 @@ public class DtoCompilerTest {
                 new BasePropImpl("book", () -> TYPE_MAP.get("Author"), false, false)
         );
 
-        protected BookDtoCompiler() {
-            super(BOOK_TYPE);
-        }
+        private static final BaseTypeImpl TREE_NODE_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.TreeNode",
+                new BasePropImpl("id"),
+                new BasePropImpl("name"),
+                new BasePropImpl("childNodes", () -> TYPE_MAP.get("TreeNode"), false, true),
+                new BasePropImpl("parent", () -> TYPE_MAP.get("TreeNode"), true, false)
+        );
 
-        @Override
-        protected boolean isEntity(BaseType baseType) {
-            return true;
+        private MyDtoCompiler(BaseType baseType) {
+            super(baseType);
+        }
+        
+        static MyDtoCompiler book() {
+            return new MyDtoCompiler(BOOK_TYPE);
+        }
+        
+        static MyDtoCompiler treeNode() {
+            return new MyDtoCompiler(TREE_NODE_TYPE);
         }
 
         @Override
@@ -254,16 +358,6 @@ public class DtoCompilerTest {
         }
 
         @Override
-        protected boolean isId(BaseProp baseProp) {
-            return baseProp.getName().equals("id");
-        }
-
-        @Override
-        protected boolean isKey(BaseProp baseProp) {
-            return true;
-        }
-
-        @Override
         protected BaseType getTargetType(BaseProp baseProp) {
             return ((BasePropImpl) baseProp).getTargetType();
         }
@@ -273,6 +367,7 @@ public class DtoCompilerTest {
             TYPE_MAP.put("BookStore", BOOK_STORE_TYPE);
             TYPE_MAP.put("Author", AUTHOR_TYPE);
             TYPE_MAP.put("Chapter", CHAPTER_TYPE);
+            TYPE_MAP.put("TreeNode", TREE_NODE_TYPE);
         }
     }
 }

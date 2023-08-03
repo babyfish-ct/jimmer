@@ -1,0 +1,6 @@
+input RecursiveTree {
+    name
+    childNodes {
+        name
+    }*
+}

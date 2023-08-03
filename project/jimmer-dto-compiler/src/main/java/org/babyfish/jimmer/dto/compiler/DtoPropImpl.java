@@ -4,6 +4,8 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
 
     private final P baseProp;
@@ -11,7 +13,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Nullable
     private final String alias;
 
-    @Nullable
     private final DtoType<T, P> targetType;
 
     private final boolean optional;
@@ -96,6 +97,37 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             builder.append(": ");
             builder.append(targetType);
         }
+        if (recursive) {
+            builder.append('*');
+        }
         return builder.toString();
+    }
+
+    static boolean canMerge(DtoProp<?, ?> p1, DtoProp<?, ?> p2) {
+
+        if (p1.isIdOnly() != p2.isIdOnly()) {
+            return false;
+        }
+        if (p1.isNullable() != p2.isNullable()) {
+            return false;
+        }
+
+        if (p1.getTargetType() != null || p2.getTargetType() != null) {
+            return false;
+        }
+
+        String alias1 = p1.getAlias();
+        String alias2 = p2.getAlias();
+        if (alias1 == null) {
+            alias1 = p1.getName();
+        }
+        if (alias2 == null) {
+            alias2 = p2.getName();
+        }
+        if (!alias1.equals(alias2)) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -16,11 +16,6 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
     }
 
     @Override
-    protected boolean isEntity(ImmutableType baseType) {
-        return baseType.isEntity();
-    }
-
-    @Override
     protected Collection<ImmutableType> getSuperTypes(ImmutableType baseType) {
         return baseType.getSuperTypes();
     }
@@ -33,16 +28,6 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
     @Override
     protected Map<String, ImmutableProp> getProps(ImmutableType baseType) {
         return baseType.getProps();
-    }
-
-    @Override
-    protected boolean isId(ImmutableProp baseProp) {
-        return baseProp.getAnnotation(Id.class) != null;
-    }
-
-    @Override
-    protected boolean isKey(ImmutableProp baseProp) {
-        return baseProp.getAnnotation(Key.class) != null;
     }
 
     @Override

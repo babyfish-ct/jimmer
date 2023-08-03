@@ -84,6 +84,10 @@ public class ImmutableProp implements BaseProp {
 
     private final boolean isReverse;
 
+    private final boolean isId;
+
+    private final boolean isKey;
+
     private final Map<ClassName, String> validationMessageMap;
 
     private Annotation associationAnnotation;
@@ -314,6 +318,8 @@ public class ImmutableProp implements BaseProp {
             associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
         }
         isNullable = descriptor.isNullable();
+        isId = descriptor.getType() == PropDescriptor.Type.ID;
+        isKey = getAnnotations(Key.class) != null;
 
         if (isAssociation) {
             OneToOne oneToOne = getAnnotation(OneToOne.class);
@@ -456,14 +462,17 @@ public class ImmutableProp implements BaseProp {
         return dynamicElementClassName;
     }
 
+    @Override
     public boolean isTransient() {
         return isTransient;
     }
 
+    @Override
     public boolean hasTransientResolver() {
         return hasTransientResolver;
     }
 
+    @Override
     public boolean isFormula() {
         return isFormula;
     }
@@ -472,24 +481,46 @@ public class ImmutableProp implements BaseProp {
         return isJavaFormula;
     }
 
+    @Override
     public boolean isView() {
         return getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null;
     }
 
+    @Override
     public boolean isList() {
         return isList;
     }
 
+    @Override
     public boolean isAssociation(boolean entityLevel) {
         return entityLevel ? isEntityAssociation : isAssociation;
     }
 
+    @Override
+    public boolean isRecursive() {
+        return context.isSubType(
+                elementType,
+                declaringType.getTypeElement().asType()
+        ) && getManyToManyViewBaseProp() == null;
+    }
+
+    @Override
     public boolean isNullable() {
         return isNullable;
     }
 
     public boolean isReverse() {
         return isReverse;
+    }
+
+    @Override
+    public boolean isId() {
+        return isId;
+    }
+
+    @Override
+    public boolean isKey() {
+        return isKey;
     }
 
     public boolean isValueRequired() {

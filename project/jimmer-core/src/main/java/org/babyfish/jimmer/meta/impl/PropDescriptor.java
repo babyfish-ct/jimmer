@@ -135,6 +135,7 @@ public class PropDescriptor {
         private final Class<? extends Annotation> typeAnnotationType;
 
         private final String propText;
+
         private final String elementText;
 
         private final Class<? extends Annotation> elementAnnotationType;

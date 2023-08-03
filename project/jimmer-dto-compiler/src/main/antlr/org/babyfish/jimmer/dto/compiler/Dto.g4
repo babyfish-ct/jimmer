@@ -14,11 +14,9 @@ dto
 
 dtoType
     :
-    (
-        modifier=Identifier name=Identifier
-        |
-        name=Identifier
-    )
+    (modifiers += Identifier)*
+    name=Identifier
+    (':' superNames += Identifier (',' superNames += Identifier)*)?
     body=dtoBody
     ;
 
@@ -46,14 +44,15 @@ explicitProp
 positiveProp
     :
     '+'?
-    (prop = Identifier | func = Identifier '(' prop = Identifier ')')
+    (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
     ('as' alias=Identifier)?
     (dtoBody (recursive='*')?)?
     ;
 
 negativeProp
     :
-    '-' Identifier
+    '-'
+    (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
     ;
 
 qualifiedName
@@ -78,5 +77,5 @@ BlockComment
 
 LineComment
     :
-    ('//' .*? ('\r\n' | '\r' | '\n')) -> skip
+    ('//' .*? ('\r\n' | '\r' | '\n')?) -> skip
     ;

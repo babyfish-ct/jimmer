@@ -11,33 +11,33 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final T baseType;
 
+    private final boolean isAbstract;
+
     private final boolean isInput;
 
     @Nullable
     private final String name;
 
-    private final List<DtoProp<T, P>> props;
+    private List<DtoProp<T, P>> props;
 
     DtoType(
             T baseType,
+            boolean isAbstract,
             boolean isInput,
-            List<DtoProp<T, P>> props
+            @Nullable String name
     ) {
         this.baseType = baseType;
+        this.isAbstract = isAbstract;
         this.isInput = isInput;
-        this.name = null;
-        this.props = props;
-    }
-
-    DtoType(DtoType<T, P> base, @NotNull String name) {
-        this.baseType = base.baseType;
-        this.isInput = base.isInput;
         this.name = name;
-        this.props = base.props;
     }
 
     public T getBaseType() {
         return baseType;
+    }
+
+    public boolean isAbstract() {
+        return isAbstract;
     }
 
     public boolean isInput() {
@@ -51,6 +51,16 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     public List<DtoProp<T, P>> getProps() {
         return props;
+    }
+
+    void setProps(List<DtoProp<T, P>> props) {
+        if (props == null) {
+            throw new IllegalArgumentException("`props` cannot be null");
+        }
+        if (this.props != null) {
+            throw new IllegalArgumentException("`props` has already been set");
+        }
+        this.props = props;
     }
 
     @Override
