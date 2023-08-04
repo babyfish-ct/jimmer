@@ -11,7 +11,7 @@
 
    -  Front-end and back-end are free of docking
 
-   -  Remote associations across micro service
+   -  Remote associations across micro services
 
 -  Ultimate performance
 
