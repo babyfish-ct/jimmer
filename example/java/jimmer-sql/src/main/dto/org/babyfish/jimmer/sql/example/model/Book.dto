@@ -1,0 +1,71 @@
+/**
+ * If the project is split into multiple subprojects (which is not the case in this example),
+ * this file must be in the subproject that defines the entity.
+ *
+ * This file is compiled by the annotation processor, when it is modified:
+ *
+ * 1. If any other Java code is modified, you can directly click the `Run` button of Intellij
+ *
+ * 2. Otherwise, the project must be rebuilt
+ */
+
+
+input BookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(Book): All scalar fields of `Book`.
+     */
+    #allScalars(Book)
+
+    /*
+     * Even if the Book entity does not define the `@IdView` property 'Book.storeId',
+     * it can work.
+     * This is a recommended way to not assume that the `@IdView` property must be present
+     */
+    id(store)
+
+    /*
+     * Even if the Book entity does not define the `@IdView` property 'Book.authors',
+     * it can work.
+     * This is a recommended way to not assume that the `@IdView` property must be present
+     */
+     id(authors) as authorIds
+}
+
+input CompositeBookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
+     */
+    #allScalars(Book)
+
+    store {
+
+        /*
+         * #allScalars: All scalar fields of `BookStore` and `BaseEntity`
+         *
+         * #allScalars(BookStore): All scalar fields of `BookStore`, exclude `BaseEntity`
+         */
+        #allScalars(BookStore)
+
+        /* Remove the id property */
+        -id
+    }
+
+    authors {
+
+        /*
+         * #allScalars: All scalar fields of `Author` and `BaseEntity`
+         *
+         * #allScalars(Author): All scalar fields of `Author`, exclude `BaseEntity`
+         */
+        #allScalars(Author)
+
+        /* Remove the id property */
+        -id
+    }
+}

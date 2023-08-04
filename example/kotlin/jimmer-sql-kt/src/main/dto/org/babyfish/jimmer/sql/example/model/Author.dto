@@ -1,0 +1,9 @@
+input AuthorInput {
+
+    /*
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(Author): All scalar fields of `Author`, exclude `BaseEntity`
+     */
+    #allScalars(Author)
+}

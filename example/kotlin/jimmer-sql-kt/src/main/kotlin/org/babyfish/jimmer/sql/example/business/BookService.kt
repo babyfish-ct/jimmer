@@ -5,8 +5,8 @@ import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.example.repository.BookRepository
 import org.babyfish.jimmer.sql.example.model.*
 import org.babyfish.jimmer.spring.model.SortUtils
-import org.babyfish.jimmer.sql.example.model.input.BookInput
-import org.babyfish.jimmer.sql.example.model.input.CompositeBookInput
+import org.babyfish.jimmer.sql.example.model.dto.BookInput
+import org.babyfish.jimmer.sql.example.model.dto.CompositeBookInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.data.domain.Page

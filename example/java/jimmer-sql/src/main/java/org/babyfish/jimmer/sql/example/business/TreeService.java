@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.example.repository.TreeNodeRepository;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
-import org.babyfish.jimmer.sql.example.model.input.RecursiveTreeInput;
+import org.babyfish.jimmer.sql.example.model.dto.RecursiveTreeInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;

@@ -5,7 +5,7 @@ import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.example.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.example.model.by
-import org.babyfish.jimmer.sql.example.model.input.BookStoreInput
+import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.transaction.annotation.Transactional

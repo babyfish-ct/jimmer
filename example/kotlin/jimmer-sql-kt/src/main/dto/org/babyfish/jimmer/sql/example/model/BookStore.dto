@@ -1,0 +1,9 @@
+input BookStoreInput {
+
+    /*
+     * #allScalars: All scalar fields of `BookStore` and `BaseEntity`
+     *
+     * #allScalars(BookStore): All scalar fields of `BookStore`, exclude `BaseEntity`
+     */
+    #allScalars(BookStore)
+}

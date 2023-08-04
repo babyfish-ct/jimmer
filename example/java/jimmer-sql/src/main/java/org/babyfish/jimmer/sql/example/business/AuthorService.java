@@ -5,7 +5,7 @@ import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.repository.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
-import org.babyfish.jimmer.sql.example.model.input.AuthorInput;
+import org.babyfish.jimmer.sql.example.model.dto.AuthorInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.jetbrains.annotations.Nullable;

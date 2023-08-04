@@ -4,7 +4,7 @@ import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.sql.example.repository.BookStoreRepository;
 import org.babyfish.jimmer.sql.example.model.*;
-import org.babyfish.jimmer.sql.example.model.input.BookStoreInput;
+import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.jetbrains.annotations.Nullable;
