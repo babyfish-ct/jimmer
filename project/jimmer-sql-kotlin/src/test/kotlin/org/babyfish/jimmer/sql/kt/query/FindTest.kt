@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
-import org.babyfish.jimmer.sql.kt.model.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.by

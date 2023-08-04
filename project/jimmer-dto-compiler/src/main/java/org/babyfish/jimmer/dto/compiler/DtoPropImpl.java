@@ -17,7 +17,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final boolean optional;
 
-    private final boolean idOnly;
+    private final String funcName;
 
     private final boolean recursive;
 
@@ -26,14 +26,14 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable String alias,
             @Nullable DtoType<T, P> targetType,
             boolean optional,
-            boolean idOnly,
+            String funcName,
             boolean recursive
     ) {
         this.baseProp = baseProp;
         this.alias = alias;
         this.targetType = targetType;
         this.optional = optional;
-        this.idOnly = idOnly;
+        this.funcName = funcName;
         this.recursive = recursive;
     }
 
@@ -54,7 +54,12 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     @Override
     public boolean isIdOnly() {
-        return idOnly;
+        return "id".equals(funcName);
+    }
+
+    @Override
+    public boolean isFlat() {
+        return "flat".equals(funcName);
     }
 
     @Override
@@ -85,8 +90,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (optional) {
             builder.append("@optional ");
         }
-        if (idOnly) {
-            builder.append("id(").append(baseProp.getName()).append(')');
+        if (funcName != null) {
+            builder.append(funcName).append('(').append(baseProp.getName()).append(')');
         } else {
             builder.append(baseProp.getName());
         }

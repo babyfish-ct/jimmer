@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
@@ -9,8 +10,8 @@ import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
-import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.springframework.core.annotation.AliasFor
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -161,9 +162,34 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
 
     override fun deleteAll()
 
+    fun <V: View<E>> viewer(viewType: KClass<V>): Viewer<E, ID, V>
+
     @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
     interface Pager {
 
         fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T>
+    }
+
+    interface Viewer<E: Any, ID, V: View<E>> {
+
+        fun findNullable(id: ID): V?
+
+        fun findByIds(ids: Iterable<ID>?): List<V>
+
+        fun findMapByIds(ids: Iterable<ID>?): Map<ID, V>
+
+        fun findAll(): List<V>
+
+        fun findAll(block: (SortDsl<E>.() -> Unit)): List<V>
+
+        fun findAll(sort: Sort): List<V>
+
+        fun findAll(pageable: Pageable): Page<V>
+
+        fun findAll(pageIndex: Int, pageSize: Int): Page<V>
+
+        fun findAll(pageIndex: Int, pageSize: Int, block: (SortDsl<E>.() -> Unit)): Page<V>
+
+        fun findAll(pageIndex: Int, pageSize: Int, sort: Sort): Page<V>
     }
 }

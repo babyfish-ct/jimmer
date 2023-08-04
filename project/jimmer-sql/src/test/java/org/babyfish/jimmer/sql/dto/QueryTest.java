@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.model.dto.BookView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 public class QueryTest extends AbstractQueryTest {
 
     @Test
@@ -125,6 +127,43 @@ public class QueryTest extends AbstractQueryTest {
                                         "]",
                                 rows
                         );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testFindByIds() {
+        connectAndExpect(
+                con -> {
+                    return getSqlClient()
+                            .getEntities()
+                            .forConnection(con)
+                            .findByIds(BookView.class, Arrays.asList(Constants.effectiveTypeScriptId1, Constants.effectiveTypeScriptId2));
+                },
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.ID in (?, ?)"
+                    );
+                    ctx.statement(1).sql(
+                            "select tb_1_.ID, tb_1_.NAME " +
+                                    "from BOOK_STORE tb_1_ where tb_1_.ID = ?"
+                    );
+                    ctx.statement(2).sql(
+                            "select " +
+                                    "--->tb_2_.BOOK_ID, " +
+                                    "--->tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME " +
+                                    "from AUTHOR tb_1_ inner join BOOK_AUTHOR_MAPPING tb_2_ " +
+                                    "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                                    "where tb_2_.BOOK_ID in (?, ?)"
+                    );
+                    ctx.rows(rows -> {
+                        Assertions.assertEquals(2, rows.size());
+                        for (Object o : rows) {
+                            Assertions.assertTrue(o instanceof BookView);
+                        }
                     });
                 }
         );

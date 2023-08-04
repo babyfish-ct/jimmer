@@ -165,16 +165,32 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     }
                     funcName = "id";
                     break;
+                case "flat":
+                    if (!baseProp.isAssociation(true) || baseProp.isList()) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                "Cannot call the function \"flat\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is not entity level one-to-one/many-to-one property"
+                        );
+                    }
+                    break;
                 default:
                     throw ctx.exception(
                             prop.func.getLine(),
-                            "The function name must be \"id\""
+                            "The function name must be \"id\" or \"flat\""
                     );
             }
         }
 
         String alias = null;
         if (prop.alias != null) {
+            if ("flat".equals(funcName)) {
+                throw ctx.exception(
+                        prop.alias.getLine(),
+                        "The alias cannot be specified when the function `flat` is used"
+                );
+            }
             alias = prop.alias.getText();
         } else if ("id".equals(funcName)) {
             alias = baseProp.getName() + "Id";
@@ -314,25 +330,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                 "\" cannot be declared in dto because it is transient " +
                                 "but has no transient resolver"
                 );
-            }
-        }
-        if (func != null) {
-            switch (func.getText()) {
-                case "id":
-                    if (!baseProp.isAssociation(true)) {
-                        throw ctx.exception(
-                                func.getLine(),
-                                "Cannot call the function \"id\" because the current prop \"" +
-                                        baseProp +
-                                        "\" is not entity level association property"
-                        );
-                    }
-                    break;
-                default:
-                    throw ctx.exception(
-                            func.getLine(),
-                            "The function name must be \"id\""
-                    );
             }
         }
         return baseProp;

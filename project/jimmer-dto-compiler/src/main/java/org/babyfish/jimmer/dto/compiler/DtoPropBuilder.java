@@ -43,7 +43,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> {
                 alias,
                 targetTypeBuilder != null ? targetTypeBuilder.build() : null,
                 optional,
-                "id".equals(funcName),
+                funcName,
                 recursive
         );
     }

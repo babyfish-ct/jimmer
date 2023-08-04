@@ -143,7 +143,7 @@ class DtoGenerator private constructor(
     private fun addMembers(allFiles: List<KSFile>) {
 
         typeBuilder.addSuperinterface(
-            (if (dtoType.isInput) INPUT_CLASS_NAME else STATIC_CLASS_NAME).parameterizedBy(
+            (if (dtoType.isInput) INPUT_CLASS_NAME else VIEW_CLASS_NAME).parameterizedBy(
                 dtoType.baseType.className
             )
         )
@@ -177,7 +177,7 @@ class DtoGenerator private constructor(
                         PropertySpec
                             .builder(
                                 "METADATA",
-                                STATIC_METADATA_CLASS_NAME.parameterizedBy(
+                                VIEW_METADATA_CLASS_NAME.parameterizedBy(
                                     dtoType.baseType.className,
                                     getDtoClassName()
                                 )
@@ -191,7 +191,7 @@ class DtoGenerator private constructor(
                                         indent()
                                         add(
                                             "%T<%T, %T>(\n",
-                                            STATIC_METADATA_CLASS_NAME,
+                                            VIEW_METADATA_CLASS_NAME,
                                             dtoType.baseType.className, getDtoClassName()
                                         )
                                         indent()

@@ -99,20 +99,20 @@ interface KSqlClient {
 
     val javaClient: JSqlClientImplementor
 
-    fun <E: Any> findById(entityType: KClass<E>, id: Any): E? =
-        entities.findById(entityType, id)
+    fun <E: Any> findById(type: KClass<E>, id: Any): E? =
+        entities.findById(type, id)
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E? =
         entities.findById(fetcher, id)
 
-    fun <E: Any> findByIds(entityType: KClass<E>, ids: Collection<*>): List<E> =
-        entities.findByIds(entityType, ids)
+    fun <E: Any> findByIds(type: KClass<E>, ids: Collection<*>): List<E> =
+        entities.findByIds(type, ids)
 
     fun <E: Any> findByIds(fetcher: Fetcher<E>, ids: Collection<*>): List<E> =
         entities.findByIds(fetcher, ids)
 
-    fun <K, V: Any> findMapByIds(entityType: KClass<V>, ids: Collection<K>): Map<K, V> =
-        entities.findMapByIds(entityType, ids)
+    fun <K, V: Any> findMapByIds(type: KClass<V>, ids: Collection<K>): Map<K, V> =
+        entities.findMapByIds(type, ids)
 
     fun <K, V: Any> findMapByIds(fetcher: Fetcher<V>, ids: Collection<K>): Map<K, V> =
         entities.findMapByIds(fetcher, ids)
@@ -143,21 +143,21 @@ interface KSqlClient {
     fun <E: Any> update(input: Input<E>): KSimpleSaveResult<E> =
         save(input.toEntity(), SaveMode.UPDATE_ONLY)
 
-    fun <E: Any> deleteById(entityType: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
-        entities.delete(entityType, id) {
+    fun <E: Any> deleteById(type: KClass<E>, id: Any, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+        entities.delete(type, id) {
             setMode(mode)
         }
 
-    fun <E: Any> deleteById(entityType: KClass<E>, id: Any, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
-        entities.delete(entityType, id, block = block)
+    fun <E: Any> deleteById(type: KClass<E>, id: Any, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+        entities.delete(type, id, block = block)
 
-    fun <E: Any> deleteByIds(entityType: KClass<E>, ids: Collection<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
-        entities.batchDelete(entityType, ids) {
+    fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
+        entities.batchDelete(type, ids) {
             setMode(mode)
         }
 
-    fun <E: Any> deleteByIds(entityType: KClass<E>, ids: Collection<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
-        entities.batchDelete(entityType, ids, block = block)
+    fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
+        entities.batchDelete(type, ids, block = block)
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {

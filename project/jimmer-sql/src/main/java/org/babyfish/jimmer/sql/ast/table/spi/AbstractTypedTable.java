@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -17,10 +17,9 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -299,12 +298,12 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
-    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
+    public <V extends View<E>> Selection<V> fetch(Class<V> viewType) {
         if (raw != null) {
-            return raw.fetch(staticType);
+            return raw.fetch(viewType);
         }
-        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
-        return new FetcherSelectionImpl<S>(this, metadata.getFetcher(), metadata.getConverter());
+        ViewMetadata<E, V> metadata = ViewMetadata.of(viewType);
+        return new FetcherSelectionImpl<>(this, metadata.getFetcher(), metadata.getConverter());
     }
 
     @Override

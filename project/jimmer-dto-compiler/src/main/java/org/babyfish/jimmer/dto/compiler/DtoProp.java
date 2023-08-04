@@ -14,6 +14,8 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> {
 
     boolean isIdOnly();
 
+    boolean isFlat();
+
     @Nullable
     String getAlias();
 

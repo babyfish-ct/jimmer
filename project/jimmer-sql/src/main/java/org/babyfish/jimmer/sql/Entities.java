@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
@@ -40,6 +40,8 @@ public interface Entities {
 
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
 
+    <E> List<E> findAll(Class<E> type);
+
     <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
@@ -47,6 +49,8 @@ public interface Entities {
     <E> List<E> findByExample(Example<E> example, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> List<E> findByExample(Example<E> example, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E, V extends View<E>> List<V> findExample(Class<V> viewType, Example<E> example, TypedProp.Scalar<?, ?> ... sortedProps);
 
     default <E> SimpleSaveResult<E> save(E entity) {
         return saveCommand(entity).execute();

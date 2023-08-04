@@ -1,8 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.Static;
-import org.babyfish.jimmer.jackson.Converter;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -26,7 +25,7 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
 import org.babyfish.jimmer.sql.runtime.Converters;
@@ -181,7 +180,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids, Connection con) {
-        ImmutableProp idProp = ImmutableType.get(type).getIdProp();
+        ImmutableProp idProp = immutableTypeOf(type).getIdProp();
         return this.findByIds(type, null, ids, con)
                 .stream()
                 .filter(Objects::nonNull)
@@ -211,7 +210,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
-        ImmutableProp idProp = ImmutableType.get(fetcher.getJavaClass()).getIdProp();
+        ImmutableProp idProp = immutableTypeOf(fetcher.getJavaClass()).getIdProp();
         return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con)
                 .stream()
                 .filter(Objects::nonNull)
@@ -236,8 +235,8 @@ public class EntitiesImpl implements Entities {
             return Collections.emptyList();
         }
 
-        if (Static.class.isAssignableFrom(type)) {
-            return (List<E>) findByIds(StaticMetadata.of((Class<? extends Static<Object>>) type), ids, con);
+        if (View.class.isAssignableFrom(type)) {
+            return findByIds(ViewMetadata.of((Class<? extends View<Object>>) type), ids, con);
         }
 
         Set<Object> distinctIds;
@@ -345,7 +344,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <E> List<E> findByIds(
-            StaticMetadata<?, E> metadata,
+            ViewMetadata<?, ?> metadata,
             Collection<?> ids,
             Connection con
     ) {
@@ -357,7 +356,7 @@ public class EntitiesImpl implements Entities {
         }
 
         Fetcher<?> fetcher = metadata.getFetcher();
-        Function<?, E> converter = metadata.getConverter();
+        Function<?, E> converter = (Function<?, E>) metadata.getConverter();
         ImmutableType immutableType = metadata.getFetcher().getImmutableType();
         Class<?> idClass = immutableType.getIdProp().getElementClass();
         for (Object id : distinctIds) {
@@ -456,9 +455,19 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
+    public <E> List<E> findAll(Class<E> type) {
+        if (View.class.isAssignableFrom(type)) {
+            return find(ViewMetadata.of((Class<View<Object>>) type), null);
+        }
+        return find(ImmutableType.get(type), null, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?>... sortedProps) {
-        if (Static.class.isAssignableFrom(type)) {
-            return (List<E>) find(StaticMetadata.of((Class<? extends Static<Object>>) type), sortedProps);
+        if (View.class.isAssignableFrom(type)) {
+            ViewMetadata<?, ?> metadata = ViewMetadata.of((Class<View<Object>>) type);
+            return find(metadata, null, sortedProps);
         }
         return find(ImmutableType.get(type), null, null, sortedProps);
     }
@@ -480,11 +489,16 @@ public class EntitiesImpl implements Entities {
         return find(exampleImpl.type(), fetcher, exampleImpl, sortedProps);
     }
 
+    @Override
+    public <E, V extends View<E>> List<V> findExample(Class<V> viewType, Example<E> example, TypedProp.Scalar<?, ?>... sortedProps) {
+        return find(ViewMetadata.of(viewType), (ExampleImpl<E>) example, sortedProps);
+    }
+
     private <E> List<E> find(
             ImmutableType type,
             Fetcher<E> fetcher,
             ExampleImpl<E> example,
-            TypedProp.Scalar<?, ?>... sortedProps
+            TypedProp.Scalar<?, ?> ... sortedProps
     ) {
         if (fetcher != null && fetcher.getImmutableType() != type) {
             throw new IllegalArgumentException(
@@ -541,16 +555,21 @@ public class EntitiesImpl implements Entities {
         ).execute(con);
     }
 
-    private <E> List<E> find(
-            StaticMetadata<?, E> metadata,
+    @SuppressWarnings("unchecked")
+    private <V> List<V> find(
+            ViewMetadata<?, ?> metadata,
+            ExampleImpl<?> example,
             TypedProp.Scalar<?, ?> ... sortedProps
     ) {
         Fetcher<?> fetcher = metadata.getFetcher();
-        Function<?, E> converter = metadata.getConverter();
+        Function<?, V> converter = (Function<?, V>) metadata.getConverter();
         ImmutableType type = fetcher.getImmutableType();
-        MutableRootQueryImpl<Table<E>> query =
+        MutableRootQueryImpl<Table<?>> query =
                 new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, false);
-        Table<E> table = query.getTable();
+        if (example != null) {
+            example.applyTo(query);
+        }
+        Table<?> table = query.getTable();
         for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
             if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(type)) {
                 throw new IllegalArgumentException(
@@ -627,6 +646,7 @@ public class EntitiesImpl implements Entities {
         return batchDeleteCommand(type, Collections.singleton(id));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public DeleteCommand batchDeleteCommand(
             Class<?> type,
@@ -637,7 +657,16 @@ public class EntitiesImpl implements Entities {
                 throw new IllegalArgumentException("All the elements of `ids` must be simple type");
             }
         }
-        ImmutableType immutableType = ImmutableType.get(type);
+        ImmutableType immutableType = immutableTypeOf(type);
         return new DeleteCommandImpl(sqlClient, con, immutableType, ids);
     }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static ImmutableType immutableTypeOf(Class<?> type) {
+        if (View.class.isAssignableFrom(type)) {
+            return ViewMetadata.of((Class<? extends View>)type).getFetcher().getImmutableType();
+        }
+        return ImmutableType.get(type);
+    }
 }
+

@@ -1,0 +1,7 @@
+//org.babyfish.jimmer.spring.kotlin
+TreeNodeView {
+    name
+    parent {
+        name
+    }
+}

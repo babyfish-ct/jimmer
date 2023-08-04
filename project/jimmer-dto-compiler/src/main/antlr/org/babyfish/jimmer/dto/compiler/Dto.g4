@@ -77,5 +77,5 @@ BlockComment
 
 LineComment
     :
-    ('//' .*? ('\r\n' | '\r' | '\n')?) -> skip
+    ('//' ~[\r\n]* ('\r\n' | '\r' | '\n')?) -> skip
     ;

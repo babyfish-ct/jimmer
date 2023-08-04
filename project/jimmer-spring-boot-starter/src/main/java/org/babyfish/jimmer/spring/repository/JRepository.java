@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.Input;
@@ -216,8 +217,33 @@ public interface JRepository<E, ID> extends PagingAndSortingRepository<E, ID> {
     @Override
     void deleteAll();
 
+    <V extends View<E>> Viewer<E, ID, V> viewer(Class<V> viewType);
+
     interface Pager {
 
         <T> Page<T> execute(ConfigurableRootQuery<?, T> query);
+    }
+
+    interface Viewer<E, ID, V extends View<E>> {
+
+        V findNullable(ID id);
+
+        List<V> findByIds(Iterable<ID> ids);
+
+        Map<ID, V> findMapByIds(Iterable<ID> ids);
+
+        List<V> findAll();
+
+        List<V> findAll(TypedProp.Scalar<?, ?> ... sortedProps);
+
+        List<V> findAll(Sort sort);
+
+        Page<V> findAll(Pageable pageable);
+
+        Page<V> findAll(int pageIndex, int pageSize);
+
+        Page<V> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?> ... sortedProps);
+
+        Page<V> findAll(int pageIndex, int pageSize, Sort sort);
     }
 }

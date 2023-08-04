@@ -59,10 +59,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         if (isInput) {
-            builder.append("input");
+            builder.append("input ");
         }
         if (name != null) {
-            builder.append(' ').append(name);
+            builder.append(name).append(' ');
         }
         builder.append('{');
         boolean addComma = false;

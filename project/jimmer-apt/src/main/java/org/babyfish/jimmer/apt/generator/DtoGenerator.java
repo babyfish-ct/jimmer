@@ -79,7 +79,7 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
                         ParameterizedTypeName.get(
-                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.STATIC_CLASS_NAME,
+                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.VIEW_CLASS_NAME,
                                 dtoType.getBaseType().getClassName()
                         )
                 )
@@ -170,7 +170,7 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
-                                Constants.STATIC_METADATA_CLASS_NAME,
+                                Constants.VIEW_METADATA_CLASS_NAME,
                                 dtoType.getBaseType().getClassName(),
                                 getDtoClassName()
                         ),
@@ -183,7 +183,7 @@ public class DtoGenerator {
                 .add("\n")
                 .add(
                         "new $T<$T, $T>(\n",
-                        Constants.STATIC_METADATA_CLASS_NAME,
+                        Constants.VIEW_METADATA_CLASS_NAME,
                         dtoType.getBaseType().getClassName(),
                         getDtoClassName()
                 )

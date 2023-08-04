@@ -38,6 +38,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
         return false;
     }
 
+    @Override
+    public boolean isFlat() {
+        return false;
+    }
+
     @Nullable
     @Override
     public String getAlias() {

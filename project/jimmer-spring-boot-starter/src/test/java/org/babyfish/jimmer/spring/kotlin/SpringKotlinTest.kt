@@ -9,6 +9,7 @@ import org.babyfish.jimmer.spring.client.MetadataFactoryBean
 import org.babyfish.jimmer.spring.client.TypeScriptController
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
+import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
 import org.babyfish.jimmer.sql.runtime.*
 import org.junit.jupiter.api.Assertions
@@ -196,6 +197,25 @@ open class SpringKotlinTest : AbstractTest() {
                 "where tb_1_.NAME = ? and tb_1_.PARENT_ID = ?"
         )
         Assertions.assertNull(treeNode2)
+    }
+
+    @Test
+    open fun testTreeNodeView() {
+        val treeNodes = treeNodeRepository.viewer(TreeNodeView::class).findAll {
+            asc(TreeNode::name)
+        }
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                "from TREE_NODE tb_1_ " +
+                "order by tb_1_.NAME asc",
+            "select tb_1_.NODE_ID, tb_1_.NAME " +
+                "from TREE_NODE tb_1_ " +
+                "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        Assertions.assertEquals(
+            "TreeNodeView(name=Baguette, parent=TargetOf_parent(name=Bread))",
+                    treeNodes[0].toString()
+        )
     }
 
     @Test

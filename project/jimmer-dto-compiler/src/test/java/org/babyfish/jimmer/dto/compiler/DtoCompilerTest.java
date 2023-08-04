@@ -44,11 +44,11 @@ public class DtoCompilerTest {
                         "    chapters {\n" +
                         "        #allScalars\n" +
                         "    }\n" +
-                        "}"
+                        "}// End"
         );
         assertContentEquals(
                 ("[" +
-                        "--->input BookInput{" +
+                        "--->input BookInput {" +
                         "--->--->@optional id, " +
                         "--->--->name, " +
                         "--->--->edition, " +
@@ -56,14 +56,14 @@ public class DtoCompilerTest {
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIds" +
                         "--->}, " +
-                        "--->input CompositeBookInput{" +
+                        "--->input CompositeBookInput {" +
                         "--->--->@optional id, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->price, " +
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIds, " +
-                        "--->--->chapters: input{" +
+                        "--->--->chapters: input {" +
                         "--->--->--->@optional id, " +
                         "--->--->--->index, " +
                         "--->--->--->title" +
@@ -86,9 +86,9 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->input TreeNodeInput{" +
+                        "--->input TreeNodeInput {" +
                         "--->--->name, " +
-                        "--->--->@optional childNodes: input{" +
+                        "--->--->@optional childNodes: input {" +
                         "--->--->--->name, " +
                         "--->--->--->@optional childNodes: ..." +
                         "--->--->}*" +
@@ -124,22 +124,49 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->input BookInput{" +
+                        "--->input BookInput {" +
                         "--->--->tenant, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIds" +
                         "--->}, " +
-                        "--->input CompositeInput{" +
+                        "--->input CompositeInput {" +
                         "--->--->tenant, " +
                         "--->--->name, " +
                         "--->--->edition, " +
                         "--->--->id(store) as storeId, " +
                         "--->--->id(authors) as authorIdList, " +
-                        "--->--->chapters: input{" +
+                        "--->--->chapters: input {" +
                         "--->--->--->index, " +
                         "--->--->--->title" +
+                        "--->--->}" +
+                        "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testFlat() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "BookFlatView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    flat(store) {\n" +
+                        "        id as parentId" +
+                        "        name as parentName" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->BookFlatView {" +
+                        "--->--->@optional id, " +
+                        "--->--->name, " +
+                        "--->--->flat(store): {" +
+                        "--->--->--->@optional id as parentId, " +
+                        "--->--->--->name as parentName" +
                         "--->--->}" +
                         "--->}" +
                         "]",

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.fetcher;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Field;
@@ -13,71 +13,71 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public final class StaticMetadata<E, S> {
+public final class ViewMetadata<E, V extends View<E>> {
 
-    private static final StaticCache<Class<Static<?>>, StaticMetadata<?, ?>> cache =
-            new StaticCache<>(StaticMetadata::create, false);
+    private static final StaticCache<Class<View<?>>, ViewMetadata<?, ?>> cache =
+            new StaticCache<>(ViewMetadata::create, false);
 
-    private final Fetcher<E> _fetcher;
+    private final Fetcher<E> fetcher;
 
-    private final Function<E, S> converter;
+    private final Function<E, V> converter;
 
-    public StaticMetadata(Fetcher<E> fetcher, Function<E, S> converter) {
-        this._fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
+    public ViewMetadata(Fetcher<E> fetcher, Function<E, V> converter) {
+        this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
         this.converter = Objects.requireNonNull(converter, "converter cannot be null");
     }
 
     public Fetcher<E> getFetcher() {
-        return _fetcher;
+        return fetcher;
     }
 
-    public Function<E, S> getConverter() {
+    public Function<E, V> getConverter() {
         return converter;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_fetcher, converter);
+        return Objects.hash(fetcher, converter);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        StaticMetadata<?, ?> that = (StaticMetadata<?, ?>) o;
-        return _fetcher.equals(that._fetcher) && converter.equals(that.converter);
+        ViewMetadata<?, ?> that = (ViewMetadata<?, ?>) o;
+        return fetcher.equals(that.fetcher) && converter.equals(that.converter);
     }
 
     @Override
     public String toString() {
-        return "StaticMetadata{" +
-                "fetcher=" + _fetcher +
+        return "ViewMetadata{" +
+                "fetcher=" + fetcher +
                 ", converter=" + converter +
                 '}';
     }
 
     @SuppressWarnings("unchecked")
-    public static <E, S extends Static<E>> StaticMetadata<E, S> of(Class<S> staticType) {
-        return (StaticMetadata<E, S>) cache.get((Class<Static<?>>)staticType);
+    public static <E, V extends View<E>> ViewMetadata<E, V> of(Class<V> viewType) {
+        return (ViewMetadata<E, V>) cache.get((Class<View<?>>)viewType);
     }
 
-    public static StaticMetadata<?, ?> create(Class<Static<?>> staticType) {
-        if (!Static.class.isAssignableFrom(staticType)) {
+    public static ViewMetadata<?, ?> create(Class<View<?>> viewType) {
+        if (!View.class.isAssignableFrom(viewType)) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\" does not inherit \"" +
-                            Static.class.getName() +
+                            View.class.getName() +
                             "\""
             );
         }
-        Iterator<Type> itr = TypeUtils.getTypeArguments(staticType, Static.class).values().iterator();
+        Iterator<Type> itr = TypeUtils.getTypeArguments(viewType, View.class).values().iterator();
         if (!itr.hasNext()) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\" does not specify the generic parameter of \"" +
-                            Static.class.getName() +
+                            View.class.getName() +
                             "\""
             );
         }
@@ -85,16 +85,16 @@ public final class StaticMetadata<E, S> {
         if (!(type instanceof Class<?>) || !((Class<?>)type).isInterface()) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\"illegal, the generic parameter of \"" +
-                            Static.class.getName() +
+                            View.class.getName() +
                             "\" must be interface"
             );
         }
         Class<?> entityType = (Class<?>)type;
         Field metadataField;
         try {
-            metadataField = staticType.getDeclaredField("METADATA");
+            metadataField = viewType.getDeclaredField("METADATA");
             if (!Modifier.isStatic(metadataField.getModifiers()) ||
                     !Modifier.isFinal(metadataField.getModifiers())) {
                 metadataField = null;
@@ -105,28 +105,28 @@ public final class StaticMetadata<E, S> {
         if (metadataField == null) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\" is illegal, there is not static final field \"METADATA\""
             );
         }
-        if (metadataField.getType() != StaticMetadata.class) {
+        if (metadataField.getType() != ViewMetadata.class) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\" is illegal, the type of \"" +
                             metadataField +
                             "\" must be \"" +
-                            StaticMetadata.class.getName() +
+                            ViewMetadata.class.getName() +
                             "\""
             );
         }
-        TypeVariable<?>[] typeParameters = StaticMetadata.class.getTypeParameters();
+        TypeVariable<?>[] typeParameters = ViewMetadata.class.getTypeParameters();
         Map<TypeVariable<?>, Type> typeArgumentMap =
-                TypeUtils.getTypeArguments(metadataField.getGenericType(), StaticMetadata.class);
+                TypeUtils.getTypeArguments(metadataField.getGenericType(), ViewMetadata.class);
         if (typeArgumentMap.get(typeParameters[0]) != entityType) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\" is illegal, the first generic argument of the return type of \"" +
                             metadataField +
                             "\" must be \"" +
@@ -134,20 +134,20 @@ public final class StaticMetadata<E, S> {
                             "\""
             );
         }
-        if (typeArgumentMap.get(typeParameters[1]) != staticType) {
+        if (typeArgumentMap.get(typeParameters[1]) != viewType) {
             throw new IllegalArgumentException(
                     "The type \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\" is illegal, the first generic argument of the return type of \"" +
                             metadataField +
                             "\" must be \"" +
-                            staticType.getName() +
+                            viewType.getName() +
                             "\""
             );
         }
         metadataField.setAccessible(true);
         try {
-            return (StaticMetadata<?, ?>)metadataField.get(null);
+            return (ViewMetadata<?, ?>)metadataField.get(null);
         } catch (IllegalAccessException ex) {
             throw new AssertionError("Internal bug", ex);
         }
