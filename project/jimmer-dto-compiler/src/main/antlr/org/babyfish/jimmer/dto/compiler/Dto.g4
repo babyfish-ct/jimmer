@@ -65,6 +65,7 @@ positiveProp
     :
     '+'?
     (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
+    (optional = '?')?
     ('as' alias=Identifier)?
     (dtoBody (recursive='*')?)?
     ;

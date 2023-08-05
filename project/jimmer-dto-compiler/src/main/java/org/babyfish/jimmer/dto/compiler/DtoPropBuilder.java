@@ -120,6 +120,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             alias = baseProp.getName();
         }
 
+        if (prop.optional != null && baseProp.isNullable()) {
+            throw new DtoAstException(
+                    prop.optional.getLine(),
+                    "Illegal optional modifier '?' because the base property is already nullable"
+            );
+        }
+
         if (prop.recursive != null && !baseProp.isRecursive()) {
             throw ctx.exception(
                     prop.recursive.getLine(),
@@ -172,7 +179,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
         this.baseProp = baseProp;
         this.alias = alias;
-        this.isOptional = ctx.isImplicit(baseProp) || prop.recursive != null;
+        this.isOptional = ctx.isImplicit(baseProp) || prop.recursive != null || prop.optional != null;
         this.funcName = funcName;
         this.targetTypeBuilder = targetTypeBuilder;
         this.recursive = prop.recursive != null;

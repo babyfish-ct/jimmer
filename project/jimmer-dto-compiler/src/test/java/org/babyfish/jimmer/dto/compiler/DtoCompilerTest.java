@@ -152,7 +152,7 @@ public class DtoCompilerTest {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "BookFlatView {\n" +
                         "    id\n" +
-                        "    name\n" +
+                        "    name?\n" +
                         "    flat(store) {\n" +
                         "        as(^ -> parent) {\n" +
                         "            #allScalars\n" +
@@ -164,7 +164,7 @@ public class DtoCompilerTest {
                 "[" +
                         "--->BookFlatView {" +
                         "--->--->@optional id, " +
-                        "--->--->name, " +
+                        "--->--->@optional name, " +
                         "--->--->flat(store): {" +
                         "--->--->--->@optional id as parentId, " +
                         "--->--->--->name as parentName, " +
