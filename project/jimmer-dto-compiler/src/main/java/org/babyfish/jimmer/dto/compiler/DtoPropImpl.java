@@ -10,8 +10,12 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final P baseProp;
 
+    private final int baseLine;
+
     @Nullable
     private final String alias;
+
+    private final int aliasLine;
 
     private final DtoType<T, P> targetType;
 
@@ -23,14 +27,18 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     DtoPropImpl(
             P baseProp,
+            int baseLine,
             @Nullable String alias,
+            int aliasLine,
             @Nullable DtoType<T, P> targetType,
             boolean optional,
             String funcName,
             boolean recursive
     ) {
         this.baseProp = baseProp;
+        this.baseLine = baseLine;
         this.alias = alias;
+        this.aliasLine = aliasLine;
         this.targetType = targetType;
         this.optional = optional;
         this.funcName = funcName;
@@ -43,8 +51,18 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     @Override
+    public int getBaseLine() {
+        return baseLine;
+    }
+
+    @Override
     public String getName() {
         return alias != null ? alias : baseProp.getName();
+    }
+
+    @Override
+    public int getAliasLine() {
+        return aliasLine;
     }
 
     @Override
@@ -60,6 +78,12 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public boolean isFlat() {
         return "flat".equals(funcName);
+    }
+
+    @Nullable
+    @Override
+    public String getFuncName() {
+        return funcName;
     }
 
     @Override
@@ -95,7 +119,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         } else {
             builder.append(baseProp.getName());
         }
-        if (alias != null) {
+        if (alias != null && !alias.equals(getKey())) {
             builder.append(" as ").append(alias);
         }
         if (targetType != null) {

@@ -23,12 +23,16 @@ dtoType
 dtoBody
     :
     '{'
-    macro?
-    ((explicitProps+=explicitProp) (',' | ';')?)*
+    ((explicitProps += explicitProp) (',' | ';')?)*
     '}'
     ;
 
-macro
+explicitProp
+    :
+    allScalars | aliasGroup | positiveProp | negativeProp
+    ;
+
+allScalars
     :
     '#' name=Identifier
     (
@@ -36,9 +40,25 @@ macro
     )?
     ;
 
-explicitProp
+aliasGroup
     :
-    positiveProp | negativeProp
+    pattern = aliasPattern '{' (props += aliasGroupProp)* '}'
+    ;
+
+aliasPattern
+    :
+    'as' '('
+    (prefix = '^')?
+    (original = Identifier)?
+    (suffix = '$')?
+    (translator = '->')
+    (replacement = Identifier)?
+    ')'
+    ;
+
+aliasGroupProp
+    :
+    allScalars | positiveProp
     ;
 
 positiveProp
@@ -51,8 +71,7 @@ positiveProp
 
 negativeProp
     :
-    '-'
-    (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
+    '-' prop = Identifier
     ;
 
 qualifiedName

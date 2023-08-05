@@ -148,14 +148,45 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testFlat() {
+    public void testFlat1() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "BookFlatView {\n" +
                         "    id\n" +
                         "    name\n" +
                         "    flat(store) {\n" +
-                        "        id as parentId" +
-                        "        name as parentName" +
+                        "        as(^ -> parent) {\n" +
+                        "            #allScalars\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->BookFlatView {" +
+                        "--->--->@optional id, " +
+                        "--->--->name, " +
+                        "--->--->flat(store): {" +
+                        "--->--->--->@optional id as parentId, " +
+                        "--->--->--->name as parentName, " +
+                        "--->--->--->website as parentWebsite" +
+                        "--->--->}" +
+                        "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testFlat2() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "BookFlatView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    flat(store) {\n" +
+                        "        as(^ -> parent) {\n" +
+                        "            id\n" +
+                        "            name\n" +
+                        "        }\n" +
                         "    }\n" +
                         "}"
         );
