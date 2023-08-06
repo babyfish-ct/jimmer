@@ -1,0 +1,19 @@
+CompanyView {
+    #allScalars
+    flat(street) {
+        #allScalars
+        -id
+        flat(city) {
+            #allScalars
+            -id
+            flat(province) {
+                #allScalars
+                -id
+                flat(country) {
+                    #allScalars
+                    -id
+                }
+            }
+        }
+    }
+}
