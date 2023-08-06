@@ -9,6 +9,11 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     @Override
     P getBaseProp();
 
+    String getBasePath();
+
+    @Nullable
+    DtoProp<T, P> getNextProp();
+
     String getName();
 
     boolean isNullable();

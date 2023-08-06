@@ -15,11 +15,4 @@ interface DtoPropImplementor {
 
     @Nullable
     String getFuncName();
-
-    default String getKey() {
-        String funcName = getFuncName();
-        return funcName != null ?
-                funcName + '(' + getBaseProp().getName() + ')' :
-                getBaseProp().getName();
-    }
 }

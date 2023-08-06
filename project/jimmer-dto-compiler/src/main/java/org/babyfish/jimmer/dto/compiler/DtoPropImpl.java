@@ -5,10 +5,14 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Objects;
 
 class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
 
     private final P baseProp;
+
+    @Nullable
+    private final DtoProp<T, P> nextProp;
 
     private final int baseLine;
 
@@ -25,6 +29,10 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final boolean recursive;
 
+    private final String basePath;
+
+    private final DtoProp<T, P> tail;
+
     DtoPropImpl(
             P baseProp,
             int baseLine,
@@ -36,6 +44,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             boolean recursive
     ) {
         this.baseProp = baseProp;
+        this.nextProp = null;
         this.baseLine = baseLine;
         this.alias = alias;
         this.aliasLine = aliasLine;
@@ -43,11 +52,44 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.optional = optional;
         this.funcName = funcName;
         this.recursive = recursive;
+        this.basePath = baseProp.getName();
+        this.tail = this;
+    }
+
+    DtoPropImpl(DtoProp<T, P> head, DtoProp<T, P> next) {
+        this.baseProp = head.getBaseProp();
+        this.nextProp = next;
+        this.baseLine = next.getBaseLine();
+        this.alias = next.getAlias();
+        this.aliasLine = next.getAliasLine();
+        this.targetType = next.getTargetType();
+        this.optional = head.isNullable() || next.isNullable();
+        this.funcName = next.getFuncName();
+        this.recursive = false;
+        StringBuilder builder = new StringBuilder(baseProp.getName());
+        DtoProp<T, P> tail = this;
+        for (DtoProp<T, P> n = next; n != null; n = n.getNextProp()) {
+            builder.append('.').append(n.getBaseProp().getName());
+            tail = n;
+        }
+        this.basePath = builder.toString();
+        this.tail = tail;
     }
 
     @Override
     public P getBaseProp() {
         return baseProp;
+    }
+
+    @Override
+    public String getBasePath() {
+        return basePath;
+    }
+
+    @Nullable
+    @Override
+    public DtoProp<T, P> getNextProp() {
+        return nextProp;
     }
 
     @Override
@@ -115,11 +157,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             builder.append("@optional ");
         }
         if (funcName != null) {
-            builder.append(funcName).append('(').append(baseProp.getName()).append(')');
+            builder.append(funcName).append('(').append(basePath).append(')');
         } else {
-            builder.append(baseProp.getName());
+            builder.append(basePath);
         }
-        if (alias != null && !alias.equals(getKey())) {
+        if (alias != null && !alias.equals(tail.getBaseProp().getName())) {
             builder.append(" as ").append(alias);
         }
         if (targetType != null) {
@@ -133,30 +175,18 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     static boolean canMerge(DtoProp<?, ?> p1, DtoProp<?, ?> p2) {
-
-        if (p1.isIdOnly() != p2.isIdOnly()) {
-            return false;
-        }
         if (p1.isNullable() != p2.isNullable()) {
             return false;
         }
-
-        if (p1.getTargetType() != null || p2.getTargetType() != null) {
+        if (!p1.getBasePath().equals(p2.getBaseProp())) {
             return false;
         }
-
-        String alias1 = p1.getAlias();
-        String alias2 = p2.getAlias();
-        if (alias1 == null) {
-            alias1 = p1.getName();
-        }
-        if (alias2 == null) {
-            alias2 = p2.getName();
-        }
-        if (!alias1.equals(alias2)) {
+        if (!Objects.equals(p1.getFuncName(), p2.getFuncName())) {
             return false;
         }
-
+        if (p1.getTargetType() != null) {
+            return false;
+        }
         return true;
     }
 }

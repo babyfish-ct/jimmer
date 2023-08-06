@@ -78,12 +78,20 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     funcName = "id";
                     break;
                 case "flat":
-                    if (!baseProp.isAssociation(true) || baseProp.isList()) {
+                    if (!baseProp.isAssociation(false)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 "Cannot call the function \"flat\" because the current prop \"" +
                                         baseProp +
-                                        "\" is not entity level one-to-one/many-to-one property"
+                                        "\" is not association"
+                        );
+                    }
+                    if (baseProp.isList()) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                "Cannot call the function \"flat\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is list"
                         );
                     }
                     break;
@@ -127,20 +135,32 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             );
         }
 
-        if (prop.recursive != null && !baseProp.isRecursive()) {
-            throw ctx.exception(
-                    prop.recursive.getLine(),
-                    "Illegal symbol \"" +
-                            prop.recursive.getText() +
-                            "\", the property \"" +
-                            baseProp.getName() +
-                            "\" is not recursive"
-            );
+        if (prop.recursive != null) {
+            if (!baseProp.isRecursive()) {
+                throw ctx.exception(
+                        prop.recursive.getLine(),
+                        "Illegal symbol \"" +
+                                prop.recursive.getText() +
+                                "\", the property \"" +
+                                baseProp.getName() +
+                                "\" is not recursive"
+                );
+            }
+            if ("flat".equals(funcName)) {
+                throw ctx.exception(
+                        prop.recursive.getLine(),
+                        "Illegal symbol \"" +
+                                prop.recursive.getText() +
+                                "\", the flat property \"" +
+                                baseProp.getName() +
+                                "\" cannot not recursive"
+                );
+            }
         }
 
         DtoTypeBuilder<T, P> targetTypeBuilder = null;
         if (prop.dtoBody() != null) {
-            if (!baseProp.isAssociation(true)) {
+            if (!baseProp.isAssociation(false)) {
                 throw ctx.exception(
                         prop.dtoBody().start.getLine(),
                         "Illegal property \"" +
@@ -168,7 +188,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     prop.recursive != null ? alias : null,
                     ctx
             );
-        } else if (baseProp.isAssociation(true) && funcName == null) {
+        } else if (baseProp.isAssociation(false) && !"id".equals(funcName)) {
             throw ctx.exception(
                     prop.stop.getLine(),
                     "Illegal property \"" +
@@ -209,6 +229,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     @Override
     public @Nullable String getFuncName() {
         return funcName;
+    }
+
+    public DtoTypeBuilder<T, P> getTargetBuilder() {
+        return targetTypeBuilder;
     }
 
     private static <T extends BaseType, P extends BaseProp > P getBaseProp(DtoTypeBuilder<T, P> parent, Token token) {
@@ -285,9 +309,5 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 funcName,
                 recursive
         );
-    }
-
-    private static String key(Token token, Token func) {
-        return func != null ? func.getText() + '(' + token.getText() + ')' : token.getText();
     }
 }

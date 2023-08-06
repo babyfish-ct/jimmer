@@ -13,22 +13,7 @@ import java.util.stream.Collectors;
 public class DtoCompilerTest {
 
     @Test
-    public void testIllegalCode() {
-        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
-                    "BookInput {\n" +
-                            "#<allScalars>\n" +
-                            "}"
-            );
-        });
-        Assertions.assertEquals(
-                "Error at line 2: token recognition error at: '<'",
-                ex.getMessage()
-        );
-    }
-
-    @Test
-    public void test() {
+    public void testSimple() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                         "input BookInput {\n" +
                         "    #allScalars\n" +
@@ -148,6 +133,51 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testOverride() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "abstract A {\n" +
+                        "    store {\n" +
+                        "        id\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "abstract B {\n" +
+                        "    id(store)\n" +
+                        "}\n" +
+                        "BookView : A, B {\n" +
+                        "    store {\n" +
+                        "        name\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[BookView {store: {name}}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testOverride2() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "abstract A {\n" +
+                        "    id as data\n" +
+                        "}\n" +
+                        "abstract B {\n" +
+                        "    id(store) as data\n" +
+                        "}\n" +
+                        "BookView : A, B {\n" +
+                        "    authors as data {\n" +
+                        "        firstName\n" +
+                        "        lastName\n" +
+                        "    }\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[BookView {authors as data: {firstName, lastName}}]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testFlat1() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "BookFlatView {\n" +
@@ -165,11 +195,9 @@ public class DtoCompilerTest {
                         "--->BookFlatView {" +
                         "--->--->@optional id, " +
                         "--->--->@optional name, " +
-                        "--->--->flat(store): {" +
-                        "--->--->--->@optional id as parentId, " +
-                        "--->--->--->name as parentName, " +
-                        "--->--->--->website as parentWebsite" +
-                        "--->--->}" +
+                        "--->--->@optional store.id as parentId, " +
+                        "--->--->@optional store.name as parentName, " +
+                        "--->--->@optional store.website as parentWebsite" +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
@@ -195,13 +223,277 @@ public class DtoCompilerTest {
                         "--->BookFlatView {" +
                         "--->--->@optional id, " +
                         "--->--->name, " +
-                        "--->--->flat(store): {" +
-                        "--->--->--->@optional id as parentId, " +
-                        "--->--->--->name as parentName" +
-                        "--->--->}" +
+                        "--->--->@optional store.id as parentId, " +
+                        "--->--->@optional store.name as parentName" +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testIllegalPropertyName() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    city\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: There is no property \"city\" in \"org.babyfish.jimmer.sql.model.Book\" or its super types",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalInputProperty() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "input BookInput {\n" +
+                            "    authorIds\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: The property \"authorIds\" cannot be declared in input dto because it is view",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalSyntax() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    #<allScalars>\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: token recognition error at: '<'",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDuplicateAlias() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    id\n" +
+                            "    name as id\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 3: Duplicated property alias \"id\"",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDuplicateAlias2() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    id\n" +
+                            "    name\n" +
+                            "    flat(store) {\n" +
+                            "        name\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 5: Duplicated property alias \"name\"",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testReferenceTwice() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    authors {\n" +
+                            "        #allScalars\n" +
+                            "    }\n" +
+                            "    id(authors) as authorIds\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 5: Base property \"entity::authors\" cannot be referenced twice",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testNoBody() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    flat(store)\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: Illegal property \"store\", the child body is required",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testUnnecessaryBody() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    id(store) {\n" +
+                            "        id\n" +
+                            "}\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: Illegal property \"store\", child body cannot be specified by it is id view property",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalIdFunc() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    id(name)\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: Cannot call the function \"id\" because the current " +
+                        "prop \"entity::name\" is not entity level association property",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalFlatFunc() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    flat(authors)\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 2: Cannot call the function \"flat\" " +
+                        "because the current prop \"entity::authors\" is list",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalRecursiveFunc() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    store {\n" +
+                            "        name\n" +
+                            "    }*\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 4: Illegal symbol \"*\", the property \"store\" is not recursive",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalRecursiveFunc2() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "Book {\n" +
+                            "    name\n" +
+                            "    flat(store) {\n" +
+                            "        name\n" +
+                            "    }*\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 5: Illegal symbol \"*\", the property \"store\" is not recursive",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalAlias() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "Book {\n" +
+                            "    name\n" +
+                            "    flat(store) as parent {\n" +
+                            "        name as parentName\n" +
+                            "    }\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 3: The alias cannot be specified when the function `flat` is used",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testMustOverride() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "abstract A { id(store) }\n" +
+                            "abstract B { store {name} }\n" +
+                            "Book : A, B {\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 3: Illegal dto type \"Book\", the base property \"store\" is defined differently " +
+                        "by multiple super type so that it must be overridden",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testMustOverride2() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "abstract A { id as value }\n" +
+                            "abstract B { name as value }\n" +
+                            "BookView : A, B {\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 3: Illegal dto type \"BookView\", " +
+                        "the property alias \"value\" is defined differently " +
+                        "by multiple super type so that it must be overridden",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalNegativeProp() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "#allScalars\n" +
+                            "-tag\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 3: There is no property alias \"tag\" that is need to be removed",
+                ex.getMessage()
         );
     }
 
@@ -257,15 +549,22 @@ public class DtoCompilerTest {
 
         private final boolean isList;
 
+        private final boolean isView;
+
         BasePropImpl(String name) {
             this(name, null, false, false);
         }
 
         BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isNullable, boolean isList) {
+            this(name, targetTypeSupplier, isNullable, isList, false);
+        }
+
+        BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isNullable, boolean isList, boolean isView) {
             this.name = name;
             this.targetTypeSupplier = targetTypeSupplier;
             this.isNullable = isNullable;
             this.isList = isList;
+            this.isView = isView;
         }
 
         @Override
@@ -305,7 +604,7 @@ public class DtoCompilerTest {
 
         @Override
         public boolean isView() {
-            return false;
+            return isView;
         }
 
         @Override
@@ -352,6 +651,7 @@ public class DtoCompilerTest {
                 new BasePropImpl("tenant"),
                 new BasePropImpl("store", () -> TYPE_MAP.get("BookStore"), true, false),
                 new BasePropImpl("authors", () -> TYPE_MAP.get("Author"), false, true),
+                new BasePropImpl("authorIds", null, false, true, true),
                 new BasePropImpl("chapters", () -> TYPE_MAP.get("Chapter"), false, true)
         );
 
