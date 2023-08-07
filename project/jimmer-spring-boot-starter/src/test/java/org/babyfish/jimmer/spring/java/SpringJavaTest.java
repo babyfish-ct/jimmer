@@ -18,6 +18,7 @@ import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.datasource.TxCallback;
 import org.babyfish.jimmer.spring.java.dal.BookStoreRepository;
 import org.babyfish.jimmer.spring.java.model.*;
+import org.babyfish.jimmer.spring.java.model.dto.BookStoreView;
 import org.babyfish.jimmer.spring.java.model.dto.BookView;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories;
@@ -662,6 +663,77 @@ public class SpringJavaTest extends AbstractTest {
                         "--->]" +
                         ")",
                 books.get(0)
+        );
+    }
+
+    @Test
+    public void testBookView2() {
+        BookView bookView = bookRepository.findByNameAndEdition("GraphQL in Action", 1);
+        assertSQLs(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                        "from BOOK tb_1_ " +
+                        "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
+                "select tb_1_.ID, tb_1_.NAME " +
+                        "from BOOK_STORE tb_1_ " +
+                        "where tb_1_.ID = ?",
+                "select " +
+                        "--->tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER " +
+                        "from AUTHOR tb_1_ " +
+                        "inner join BOOK_AUTHOR_MAPPING tb_2_ " +
+                        "--->on tb_1_.ID = tb_2_.AUTHOR_ID " +
+                        "where tb_2_.BOOK_ID = ?"
+        );
+        assertContent(
+                "BookView(" +
+                        "--->id=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
+                        "--->name=GraphQL in Action, " +
+                        "--->edition=1, " +
+                        "--->price=80.00, " +
+                        "--->store=BookView.TargetOf_store(" +
+                        "--->--->name=MANNING" +
+                        "--->), " +
+                        "--->authors=[" +
+                        "--->--->BookView.TargetOf_authors(" +
+                        "--->--->--->firstName=Samer, " +
+                        "--->--->--->lastName=Buna, " +
+                        "--->--->--->gender=MALE" +
+                        "--->--->)" +
+                        "--->]" +
+                        ")",
+                bookView
+        );
+    }
+
+    @Test
+    public void testBookStoreView() {
+        List<BookStoreView> views = bookStoreRepository.findAllOrderByName(BookStoreView.class);
+        Assertions.assertEquals(2, views.size());
+        assertContent(
+                "BookStoreView(" +
+                        "--->id=2fa3955e-3e83-49b9-902e-0465c109c779, " +
+                        "--->name=MANNING, " +
+                        "--->books=[" +
+                        "--->--->BookStoreView.TargetOf_books(" +
+                        "--->--->--->id=a62f7aa3-9490-4612-98b5-98aae0e77120, " +
+                        "--->--->--->name=GraphQL in Action, " +
+                        "--->--->--->edition=1, " +
+                        "--->--->--->price=80.00" +
+                        "--->--->), " +
+                        "--->--->BookStoreView.TargetOf_books(" +
+                        "--->--->--->id=e37a8344-73bb-4b23-ba76-82eac11f03e6, " +
+                        "--->--->--->name=GraphQL in Action, " +
+                        "--->--->--->edition=2, " +
+                        "--->--->--->price=81.00" +
+                        "--->--->), " +
+                        "--->--->BookStoreView.TargetOf_books(" +
+                        "--->--->--->id=780bdf07-05af-48bf-9be9-f8c65236fecc, " +
+                        "--->--->--->name=GraphQL in Action, " +
+                        "--->--->--->edition=3, " +
+                        "--->--->--->price=80.00" +
+                        "--->--->)" +
+                        "--->]" +
+                        ")",
+                views.get(0)
         );
     }
 

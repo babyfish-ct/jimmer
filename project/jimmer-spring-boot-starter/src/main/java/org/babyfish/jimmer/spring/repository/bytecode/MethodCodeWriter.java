@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
+import kotlin.reflect.KClass;
 import org.babyfish.jimmer.impl.asm.MethodVisitor;
 import org.babyfish.jimmer.impl.asm.Opcodes;
 import org.babyfish.jimmer.impl.asm.Type;
@@ -94,6 +95,23 @@ public abstract class MethodCodeWriter implements Constants {
 
         if (queryMethod.getFetcherParamIndex() != -1) {
             mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getFetcherParamIndex()));
+        } else {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+        }
+
+        if (queryMethod.getViewTypeParamIndex() != -1) {
+            mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getViewTypeParamIndex()));
+            if (method.getParameterTypes()[queryMethod.getViewTypeParamIndex()] == KClass.class) {
+                mv.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        "kotlin/jvm/JvmClassMappingKt",
+                        "getJavaClass",
+                        "(Lkotlin/reflect/KClass;)Ljava/lang/Class;",
+                        false
+                );
+            }
+        } else if (queryMethod.getViewType() != null) {
+            mv.visitLdcInsn(Type.getType(queryMethod.getViewType()));
         } else {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }

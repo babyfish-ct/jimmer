@@ -213,8 +213,20 @@ open class SpringKotlinTest : AbstractTest() {
                 "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         Assertions.assertEquals(
-            "TreeNodeView(name=Baguette, parent=TargetOf_parent(name=Bread))",
+            "TreeNodeView(name=Baguette, parentName=Bread)",
                     treeNodes[0].toString()
+        )
+    }
+
+    @Test
+    fun findTreeNodeView2() {
+        val treeNodes = treeNodeRepository.findByNameLike("Cola")
+        Assertions.assertEquals(
+            "[TreeNodeView2(" +
+                "id=4, name=Coca Cola, " +
+                "parentId=3, parentName=Drinks, " +
+                "grandParentId=2, grandParentName=Food)]",
+            treeNodes.toString()
         )
     }
 

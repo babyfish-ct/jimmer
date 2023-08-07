@@ -1,7 +1,22 @@
-//org.babyfish.jimmer.spring.kotlin
 TreeNodeView {
     name
-    parent {
-        name
+    flat(parent) {
+        as(^ -> parent) {
+            name
+        }
+    }
+}
+
+TreeNodeView2 {
+    #allScalars
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars
+        }
+        flat(parent) {
+            as(^ -> grandParent) {
+                #allScalars
+            }
+        }
     }
 }
