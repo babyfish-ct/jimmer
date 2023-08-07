@@ -4,7 +4,6 @@ plugins {
 	id("org.springframework.boot") version "2.7.0"
 	id("io.spring.dependency-management") version "1.0.12.RELEASE"
 	kotlin("jvm") version "1.6.21"
-	kotlin("kapt") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
 	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
@@ -29,10 +28,6 @@ dependencies {
 
 	implementation("org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}")
 	ksp("org.babyfish.jimmer:jimmer-ksp:${jimmerVersion}")
-
-	implementation("org.mapstruct:mapstruct:1.5.3.Final")
-	kapt("org.mapstruct:mapstruct-processor:1.5.3.Final")
-	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:${jimmerVersion}")
 
 	implementation("com.graphql-java:graphql-java-extended-scalars:18.1")
 

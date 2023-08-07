@@ -34,9 +34,6 @@ dependencies {
 	implementation 'org.projectlombok:lombok:1.18.26'
 	annotationProcessor 'org.projectlombok:lombok:1.18.26'
 
-	implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
-
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
 
 	// In order to work with java-8, caffeine 2.x must be used
