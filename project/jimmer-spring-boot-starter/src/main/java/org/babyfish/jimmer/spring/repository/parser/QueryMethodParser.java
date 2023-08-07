@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository.parser;
 
 import kotlin.reflect.KClass;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -34,6 +35,10 @@ class QueryMethodParser {
 
     private final int fetcherParamIndex;
 
+    private Class<?> viewType;
+
+    private final int viewTypeParamIndex;
+
     private int paramIndex = -1;
 
     private int logicParamIndex = -1;
@@ -47,6 +52,11 @@ class QueryMethodParser {
         this.pageableParamIndex = implicitParameterIndex(Pageable.class);
         this.sortParamIndex = implicitParameterIndex(Sort.class);
         this.fetcherParamIndex = implicitParameterIndex(Fetcher.class);
+        int vtpIndex = implicitParameterIndex(Class.class);
+        if (vtpIndex == -1) {
+            vtpIndex = implicitParameterIndex(KClass.class);
+        }
+        this.viewTypeParamIndex = vtpIndex;
         if (pageableParamIndex != -1 && sortParamIndex != -1) {
             throw new IllegalArgumentException(
                     "Cannot have parameters of type \"" +
@@ -145,6 +155,56 @@ class QueryMethodParser {
                                     "\""
                     );
                 }
+            } else {
+                ReturnedElementType returnedElementType = returnedElementType(actualElementType, entityType);
+                if (returnedElementType == null) {
+                    throw new IllegalArgumentException(
+                            "The returned element type must be \"" +
+                                    entityType.getName() +
+                                    "\", a class implements \"" +
+                                    View.class.getName() +
+                                    "<" +
+                                    entityType.getName() +
+                                    ">\" or a method level type variable extends \"" +
+                                    View.class.getName() +
+                                    "<" +
+                                    entityType.getName() +
+                                    ">\""
+                    );
+                }
+                this.viewType = returnedElementType.viewType;
+            }
+            if (query.getSelectedPath() == null && actualElementType instanceof TypeVariable<?>) {
+                if (viewTypeParamIndex == -1) {
+                    throw new IllegalArgumentException(
+                            "A parameter whose type is \"Class<" +
+                                    ((TypeVariable<?>)actualElementType).getName() +
+                                    ">\" or \"KClass<" +
+                                    ((TypeVariable<?>)actualElementType).getName() +
+                                    ">\" is required"
+                    );
+                }
+                Type type = method.getGenericParameterTypes()[viewTypeParamIndex];
+                boolean valid = false;
+                if (type instanceof ParameterizedType) {
+                    Type typeArgument = ((ParameterizedType) type).getActualTypeArguments()[0];
+                    if (typeArgument == actualElementType) {
+                        valid = true;
+                    }
+                }
+                if (!valid) {
+                    throw new IllegalArgumentException(
+                            "The type argument of parameters[" +
+                                    viewTypeParamIndex +
+                                    "] must be the type variable \"" +
+                                    ((TypeVariable<?>)actualElementType).getName() +
+                                    "\""
+                    );
+                }
+            } else if (viewTypeParamIndex != -1) {
+                throw new IllegalArgumentException(
+                        "The parameters[" + viewTypeParamIndex + "] is illegal"
+                );
             }
         } else if (query.getAction() == Query.Action.EXISTS) {
             if (method.getReturnType() != boolean.class) {
@@ -179,6 +239,9 @@ class QueryMethodParser {
                 );
             }
         }
+        if (viewTypeParamIndex != -1 && query.getAction() != Query.Action.FIND) {
+            throw new IllegalArgumentException("The method must be query method when there is a view type parameter");
+        }
         if (pageableParamIndex != -1 && query.getAction() != Query.Action.FIND) {
             throw new IllegalArgumentException("The method must be query method when there is a pageable parameter");
         }
@@ -189,10 +252,40 @@ class QueryMethodParser {
         return new QueryMethod(
                 method,
                 query,
+                viewType,
                 pageableParamIndex,
                 sortParamIndex,
-                fetcherParamIndex
+                fetcherParamIndex,
+                viewTypeParamIndex
         );
+    }
+
+    private ReturnedElementType returnedElementType(Type type, Class<?> entityType) {
+        if (type instanceof Class<?>) {
+            Class<?> clazz = (Class<?>) type;
+            if (clazz == entityType) {
+                return new ReturnedElementType(null);
+            } else if (View.class.isAssignableFrom(clazz)) {
+                Type[] typeArguments = GenericTypeResolver.resolveTypeArguments(clazz, View.class);
+                if (typeArguments != null && typeArguments[0] == entityType) {
+                    return new ReturnedElementType(clazz);
+                }
+            }
+        } else if (type instanceof TypeVariable<?>) {
+            TypeVariable<?> typeVariable = (TypeVariable<?>) type;
+            if (typeVariable.getGenericDeclaration() == method) {
+                Type boundType = typeVariable.getBounds()[0];
+                if (boundType instanceof ParameterizedType) {
+                    ParameterizedType parameterizedBoundType = (ParameterizedType) boundType;
+                    if (parameterizedBoundType.getRawType() == View.class) {
+                        if (parameterizedBoundType.getActualTypeArguments()[0] == entityType) {
+                            return new ReturnedElementType(null);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private Predicate resolve(Predicate predicate) {
@@ -388,6 +481,15 @@ class QueryMethodParser {
                     "index=" + index +
                     ", logicIndex=" + logicIndex +
                     '}';
+        }
+    }
+
+    static class ReturnedElementType {
+
+        final Class<?> viewType;
+
+        ReturnedElementType(Class<?> viewType) {
+            this.viewType = viewType;
         }
     }
 }

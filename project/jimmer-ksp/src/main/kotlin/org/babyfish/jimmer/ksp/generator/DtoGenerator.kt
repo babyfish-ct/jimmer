@@ -67,7 +67,7 @@ class DtoGenerator private constructor(
             .baseType
             .className
             .packageName
-            ?.takeIf { it.isNotEmpty() }
+            .takeIf { it.isNotEmpty() }
             ?.let { "$it.dto" }
             ?: "dto"
 
@@ -143,14 +143,14 @@ class DtoGenerator private constructor(
     private fun addMembers(allFiles: List<KSFile>) {
 
         typeBuilder.addSuperinterface(
-            (if (dtoType.isInput) INPUT_CLASS_NAME else STATIC_CLASS_NAME).parameterizedBy(
+            (if (dtoType.isInput) INPUT_CLASS_NAME else VIEW_CLASS_NAME).parameterizedBy(
                 dtoType.baseType.className
             )
         )
 
         addMetadata()
 
-        addDefaultConstructor()
+        addPrimaryConstructor()
         addConverterConstructor()
 
         addToEntity()
@@ -177,7 +177,7 @@ class DtoGenerator private constructor(
                         PropertySpec
                             .builder(
                                 "METADATA",
-                                STATIC_METADATA_CLASS_NAME.parameterizedBy(
+                                VIEW_METADATA_CLASS_NAME.parameterizedBy(
                                     dtoType.baseType.className,
                                     getDtoClassName()
                                 )
@@ -191,33 +191,19 @@ class DtoGenerator private constructor(
                                         indent()
                                         add(
                                             "%T<%T, %T>(\n",
-                                            STATIC_METADATA_CLASS_NAME,
+                                            VIEW_METADATA_CLASS_NAME,
                                             dtoType.baseType.className, getDtoClassName()
                                         )
                                         indent()
                                         add("%M(%T::class).by", NEW_FETCHER, dtoType.baseType.className)
                                         beginControlFlow("")
                                         for (prop in dtoType.props) {
-                                            if (!prop.baseProp.isId) {
-                                                if (prop.targetType !== null) {
-                                                    if (prop.isNewTarget) {
-                                                        add(
-                                                            "%N(%T.METADATA.fetcher)",
-                                                            prop.baseProp.name,
-                                                            propElementName(prop)
-                                                        )
-                                                        if (prop.isRecursive) {
-                                                            beginControlFlow("")
-                                                            addStatement("recursive()")
-                                                            endControlFlow()
-                                                        } else {
-                                                            add("\n")
-                                                        }
-                                                    }
-                                                } else {
-                                                    addStatement("%N()", prop.baseProp.name)
-                                                }
+                                            if (prop.nextProp === null) {
+                                                addFetcherField(prop)
                                             }
+                                        }
+                                        for (hiddenFlatProp in dtoType.hiddenFlatProps) {
+                                            addHiddenFetcherField(hiddenFlatProp)
                                         }
                                         endControlFlow()
                                         unindent()
@@ -236,7 +222,49 @@ class DtoGenerator private constructor(
         )
     }
 
-    private fun addDefaultConstructor() {
+    private fun CodeBlock.Builder.addFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        if (!prop.baseProp.isId) {
+            if (prop.targetType !== null) {
+                if (prop.isNewTarget) {
+                    add(
+                        "%N(%T.METADATA.fetcher)",
+                        prop.baseProp.name,
+                        propElementName(prop)
+                    )
+                    if (prop.isRecursive) {
+                        beginControlFlow("")
+                        addStatement("recursive()")
+                        endControlFlow()
+                    } else {
+                        add("\n")
+                    }
+                }
+            } else {
+                addStatement("%N()", prop.baseProp.name)
+            }
+        }
+    }
+
+    private fun CodeBlock.Builder.addHiddenFetcherField(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        if ("flat" != prop.getFuncName()) {
+            addFetcherField(prop)
+            return
+        }
+        val targetDtoType = prop.getTargetType()!!
+        add("%N(", prop.getBaseProp().name)
+        indent()
+        add("%N(%T::class).by {\n", NEW_FETCHER, prop.getBaseProp().targetType!!.className)
+        indent()
+        for (childProp in targetDtoType.props) {
+            addHiddenFetcherField(childProp)
+        }
+        unindent()
+        add("}\n")
+        unindent()
+        add(")")
+    }
+
+    private fun addPrimaryConstructor() {
         val builder = FunSpec.constructorBuilder()
         for (prop in dtoType.props) {
             builder.addParameter(
@@ -245,15 +273,15 @@ class DtoGenerator private constructor(
                     .apply {
                         when {
                             prop.isNullable -> defaultValue("null")
-                            prop.baseProp.isList -> defaultValue("emptyList()")
-                            prop.baseProp.isPrimitive -> defaultValue(
+                            prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
+                            prop.toTailProp().baseProp.isPrimitive -> defaultValue(
                                 when (prop.baseProp.typeName()) {
                                     BOOLEAN -> "false"
                                     CHAR -> "'\\0'"
                                     else -> "0"
                                 }
                             )
-                            prop.baseProp.typeName() == STRING ->
+                            prop.toTailProp().baseProp.typeName() == STRING ->
                                 defaultValue("\"\"")
                         }
                     }
@@ -291,6 +319,43 @@ class DtoGenerator private constructor(
                             .apply {
                                 val targetType = prop.targetType
                                 when {
+                                    prop.nextProp !== null -> {
+                                        add("%T.get(\n", FLAT_UTILS_CLASS_NAME)
+                                        indent()
+                                        add("base,\n")
+                                        add("intArrayOf(\n")
+                                        indent()
+                                        var p = prop
+                                        while (p != null) {
+                                            add(
+                                                "%T.%N,\n",
+                                                p.baseProp.declaringType.draftClassName("$"),
+                                                p.baseProp.slotName
+                                            )
+                                            p = p.nextProp
+                                        }
+                                        unindent()
+                                        add("),\n")
+                                        if (prop.targetType == null) {
+                                            add("null\n")
+                                        }
+                                        unindent()
+                                        add(")")
+                                        prop.targetType?.let {
+                                            add(" {\n")
+                                            indent()
+                                            addStatement(
+                                                "%T(it as %T)\n",
+                                                propTypeName(prop),
+                                                prop.toTailProp().baseProp.targetType!!.className
+                                            )
+                                            unindent()
+                                            add("}")
+                                        }
+                                        if (!prop.isNullable) {
+                                            add(" ?: error(%S)", "The property chain \"${prop.basePath}\" is null or unloaded")
+                                        }
+                                    }
                                     targetType !== null ->
                                         if (prop.isNullable) {
                                             beginControlFlow("base.takeIf")
@@ -370,7 +435,7 @@ class DtoGenerator private constructor(
                                         }
                                 }
                                 if (!prop.isNullable && prop.baseProp.isNullable) {
-                                    add(" ?: error(%S)", "\"base.${prop.baseProp.name}\" cannot be null")
+                                    add(" ?: error(%S)", "\"base.${prop.basePath}\" cannot be null or unloaded")
                                 }
                             }
                             .unindent()
@@ -402,7 +467,16 @@ class DtoGenerator private constructor(
                         }
                     )
                     for (prop in dtoType.props) {
-                        if (prop.isNullable && !prop.baseProp.isNullable) {
+                        if (prop.nextProp !== null) {
+                            addCode(
+                                CodeBlock
+                                    .builder()
+                                    .apply {
+                                        addFlatSetting(prop)
+                                    }
+                                    .build()
+                            )
+                        } else if (prop.isNullable && !prop.baseProp.isNullable) {
                             beginControlFlow("if (that.%N !== null)", prop.name)
                             addAssignment(prop)
                             if (prop.baseProp.isList) {
@@ -418,6 +492,35 @@ class DtoGenerator private constructor(
                 .endControlFlow()
                 .build()
         )
+    }
+
+    private fun CodeBlock.Builder.addFlatSetting(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        add("%T.set(\n", FLAT_UTILS_CLASS_NAME)
+        indent()
+        add("this,\n")
+        add("intArrayOf(\n")
+        indent()
+        var p: DtoProp<ImmutableType, ImmutableProp>? = prop
+        while (p != null) {
+            add(
+                "%T.%N,\n",
+                p.baseProp.declaringType.draftClassName("$"),
+                p.baseProp.slotName
+            )
+            p = p.nextProp
+        }
+        unindent()
+        add("),\n")
+        add("that.%N", prop.name)
+        if (prop.targetType !== null) {
+            if (prop.isNullable) {
+                add("?")
+            }
+            add(".toEntity()")
+        }
+        add("\n")
+        unindent()
+        add(")\n")
     }
 
     private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
@@ -462,7 +565,7 @@ class DtoGenerator private constructor(
     }
 
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
-        val elementTypeName: TypeName = propElementName(prop)
+        val elementTypeName: TypeName = propElementName(prop.toTailProp())
         return if (prop.baseProp.isList) {
             LIST.parameterizedBy(elementTypeName)
         } else {

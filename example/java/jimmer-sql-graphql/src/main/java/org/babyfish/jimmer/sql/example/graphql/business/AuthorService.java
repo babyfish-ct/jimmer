@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.example.graphql.business;
 
 import org.babyfish.jimmer.sql.example.graphql.repository.AuthorRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.Author;
-import org.babyfish.jimmer.sql.example.graphql.entities.input.AuthorInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.dto.AuthorInput;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;

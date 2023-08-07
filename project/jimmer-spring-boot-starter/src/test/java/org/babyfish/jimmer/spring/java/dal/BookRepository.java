@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.java.dal;
 
+import org.babyfish.jimmer.spring.java.model.dto.BookView;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.java.model.*;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -19,6 +20,8 @@ public interface BookRepository extends JRepository<Book, Long> {
             @Nullable String name,
             @Nullable Fetcher<Book> fetcher
     );
+
+    BookView findByNameAndEdition(String name, int edition);
 
     int countByName(@Nullable String name);
 

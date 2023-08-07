@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table;
 
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
@@ -40,7 +40,7 @@ public interface Table<E> extends Selection<E>, Props {
 
     Selection<E> fetch(Fetcher<E> fetcher);
 
-    <S extends Static<E>> Selection<S> fetch(Class<S> staticType);
+    <V extends View<E>> Selection<V> fetch(Class<V> viewType);
 
     TableEx<E> asTableEx();
 }

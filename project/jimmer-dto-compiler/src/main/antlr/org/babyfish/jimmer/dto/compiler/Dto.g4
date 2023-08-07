@@ -23,12 +23,16 @@ dtoType
 dtoBody
     :
     '{'
-    macro?
-    ((explicitProps+=explicitProp) (',' | ';')?)*
+    ((explicitProps += explicitProp) (',' | ';')?)*
     '}'
     ;
 
-macro
+explicitProp
+    :
+    allScalars | aliasGroup | positiveProp | negativeProp
+    ;
+
+allScalars
     :
     '#' name=Identifier
     (
@@ -36,23 +40,39 @@ macro
     )?
     ;
 
-explicitProp
+aliasGroup
     :
-    positiveProp | negativeProp
+    pattern = aliasPattern '{' (props += aliasGroupProp)* '}'
+    ;
+
+aliasPattern
+    :
+    'as' '('
+    (prefix = '^')?
+    (original = Identifier)?
+    (suffix = '$')?
+    (translator = '->')
+    (replacement = Identifier)?
+    ')'
+    ;
+
+aliasGroupProp
+    :
+    allScalars | positiveProp
     ;
 
 positiveProp
     :
     '+'?
     (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
+    (optional = '?')?
     ('as' alias=Identifier)?
     (dtoBody (recursive='*')?)?
     ;
 
 negativeProp
     :
-    '-'
-    (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
+    '-' prop = Identifier
     ;
 
 qualifiedName
@@ -77,5 +97,5 @@ BlockComment
 
 LineComment
     :
-    ('//' .*? ('\r\n' | '\r' | '\n')?) -> skip
+    ('//' ~[\r\n]* ('\r\n' | '\r' | '\n')?) -> skip
     ;

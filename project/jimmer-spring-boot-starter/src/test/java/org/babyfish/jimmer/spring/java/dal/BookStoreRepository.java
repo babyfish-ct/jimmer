@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.spring.java.dal;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.spring.java.model.*;
+import org.babyfish.jimmer.spring.java.model.dto.BookStoreView;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -38,4 +40,6 @@ public interface BookStoreRepository extends JRepository<BookStore, UUID> {
                 )
                 .execute();
     }
+
+    <V extends View<BookStore>> List<V> findAllOrderByName(Class<V> viewType);
 }

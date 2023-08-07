@@ -1,6 +1,39 @@
+/**
+ * If the project is split into multiple subprojects (which is not the case in this example),
+ * this file must be in the subproject that defines the entity.
+ *
+ * This file is compiled by the KSP, when it is modified:
+ *
+ * 1. If any other Java code is modified, you can directly click the `Run` button of Intellij
+ *
+ * 2. Otherwise, the project must be rebuilt
+ */
+
+
+FlatTreeNodeView {
+
+    /*
+     * #allScalars: All scalar fields of `TreeNode` and `BaseEntity`
+     *
+     * #allScalars(TreeNode): All scalar fields of `TreeNode`, exclude `BaseEntity`
+     */
+    #allScalars(TreeNode)
+
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars(TreeNode)
+        }
+        flat(parent) {
+            as(^ -> grandParent) {
+                #allScalars(TreeNode)
+            }
+        }
+    }
+}
+
 input RecursiveTreeInput {
     name
     childNodes {
         name
-    }* /* '*' means recursive */
+    }* // '*' means recursive
 }

@@ -4,7 +4,7 @@ import kotlin.jvm.internal.ClassBasedDeclarationContainer;
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
@@ -542,12 +542,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 Collection<ImmutableType> superTypes,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
-            if (Static.class.isAssignableFrom(javaClass)) {
+            if (View.class.isAssignableFrom(javaClass)) {
                 throw new ModelException(
                         "Illegal type \"" +
                                 javaClass.getName() +
                                 "\", immutable type can not inherit \"" +
-                                Static.class.getName() +
+                                View.class.getName() +
                                 "\""
                 );
             }
@@ -571,12 +571,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
             Class<?> javaClass = ((ClassBasedDeclarationContainer)kotlinType).getJClass();
-            if (Static.class.isAssignableFrom(javaClass)) {
+            if (View.class.isAssignableFrom(javaClass)) {
                 throw new ModelException(
                         "Illegal type \"" +
                                 javaClass.getName() +
                                 "\", immutable type can not inherit \"" +
-                                Static.class.getName() +
+                                View.class.getName() +
                                 "\""
                 );
             }

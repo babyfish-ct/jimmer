@@ -24,6 +24,16 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public String getBasePath() {
+        return baseProp.getName();
+    }
+
+    @Override
+    public int getBaseLine() {
+        return 0;
+    }
+
+    @Override
     public String getName() {
         return alias != null ? alias : baseProp.getName();
     }
@@ -38,10 +48,25 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
         return false;
     }
 
+    @Override
+    public boolean isFlat() {
+        return false;
+    }
+
     @Nullable
     @Override
     public String getAlias() {
         return alias;
+    }
+
+    @Override
+    public int getAliasLine() {
+        return 0;
+    }
+
+    @Override
+    public @Nullable String getFuncName() {
+        return null;
     }
 
     @Nullable
@@ -61,10 +86,20 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public @Nullable DtoProp<T, P> getNextProp() {
+        return null;
+    }
+
+    @Override
+    public DtoProp<T, P> toTailProp() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("@optional ").append(baseProp.getName());
-        if (alias != null) {
+        if (alias != null && !alias.equals(getBaseProp().getName())) {
             builder.append(" as ").append(alias);
         }
         builder.append(": ...");

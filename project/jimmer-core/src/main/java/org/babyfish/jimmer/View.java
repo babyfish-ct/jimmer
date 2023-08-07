@@ -1,6 +1,6 @@
 package org.babyfish.jimmer;
 
-public interface Static<E> {
+public interface View<E> {
 
     E toEntity();
 }

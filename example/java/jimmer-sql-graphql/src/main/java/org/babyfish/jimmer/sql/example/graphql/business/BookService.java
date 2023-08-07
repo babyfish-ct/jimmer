@@ -2,8 +2,8 @@ package org.babyfish.jimmer.sql.example.graphql.business;
 
 import org.babyfish.jimmer.sql.example.graphql.repository.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.*;
-import org.babyfish.jimmer.sql.example.graphql.entities.input.BookInput;
-import org.babyfish.jimmer.sql.example.graphql.entities.input.CompositeBookInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.dto.BookInput;
+import org.babyfish.jimmer.sql.example.graphql.entities.dto.CompositeBookInput;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;

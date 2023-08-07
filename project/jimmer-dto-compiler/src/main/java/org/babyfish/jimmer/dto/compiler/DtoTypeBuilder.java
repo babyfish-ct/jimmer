@@ -9,31 +9,41 @@ import java.util.stream.Collectors;
 
 class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
-    private final T baseType;
+    final T baseType;
 
-    private final CompilerContext<T, P> ctx;
+    final CompilerContext<T, P> ctx;
 
-    private final Token name;
+    final Token name;
 
-    private final Token bodyStart;
+    final Token bodyStart;
 
-    private final Set<DtoTypeModifier> modifiers;
+    final Set<DtoTypeModifier> modifiers;
 
-    private final List<Token> superNames;
+    final List<Token> superNames;
 
-    private final P recursiveBaseProp;
+    final P recursiveBaseProp;
 
-    private final String recursiveAlias;
+    final String recursiveAlias;
 
-    private final Map<String, DtoPropBuilder<T, P>> autoScalarPropMap = new LinkedHashMap<>();
+    final Map<String, DtoPropBuilder<T, P>> autoScalarPropMap = new LinkedHashMap<>();
 
-    private final Map<String, DtoPropBuilder<T, P>> positivePropMap = new LinkedHashMap<>();
+    final Map<P, DtoPropBuilder<T, P>> positivePropMap = new LinkedHashMap<>();
 
-    private final Set<String> negativePropKeys = new LinkedHashSet<>();
+    final Map<String, DtoPropBuilder<T, P>> aliasPositivePropMap = new LinkedHashMap<>();
+
+    final List<DtoPropBuilder<T, P>> flatPositiveProps = new ArrayList<>();
+
+    final Map<String, Boolean> negativePropAliasMap = new LinkedHashMap<>();
+
+    final List<Token> negativePropAliasTokens = new ArrayList<>();
 
     private List<DtoTypeBuilder<T, P>> superTypeBuilders;
 
     private DtoType<T, P> dtoType;
+
+    private AliasPattern currentAliasGroup;
+
+    private Map<String, DtoProp<T, P>> declaredProps;
 
     DtoTypeBuilder(
             T baseType,
@@ -53,11 +63,12 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.superNames = superNames;
         this.recursiveBaseProp = recursiveBaseProp;
         this.recursiveAlias = recursiveAlias;
-        if (body.macro() != null) {
-            handleAllScalars(body.macro());
-        }
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
-            if (prop.positiveProp() != null) {
+            if (prop.allScalars() != null) {
+                handleAllScalars(prop.allScalars());
+            } else if (prop.aliasGroup() != null) {
+                handleAliasGroup(prop.aliasGroup());
+            } else if (prop.positiveProp() != null) {
                 handlePositiveProp(prop.positiveProp());
             } else {
                 handleNegativeProp(prop.negativeProp());
@@ -69,21 +80,33 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         return modifiers.contains(DtoTypeModifier.ABSTRACT);
     }
 
-    private void handleAllScalars(DtoParser.MacroContext macro) {
-        if (!macro.name.getText().equals("allScalars")) {
+    private void handleAllScalars(DtoParser.AllScalarsContext allScalars) {
+        if (!allScalars.name.getText().equals("allScalars")) {
             throw ctx.exception(
-                    macro.name.getLine(),
-                    "Illegal macro name \"" +
-                            macro.name.getText() +
+                    allScalars.name.getLine(),
+                    "Illegal allScalars name \"" +
+                            allScalars.name.getText() +
                             "\", it must be \"allScalars\""
             );
         }
-        if (macro.args.isEmpty()) {
+
+        if (!positivePropMap.isEmpty()) {
+            throw ctx.exception(
+                    allScalars.name.getLine(),
+                    "`#allScalars` must be defined at the beginning"
+            );
+        }
+
+        if (allScalars.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
                 if (isAutoScalar(baseProp)) {
                     autoScalarPropMap.put(
                             baseProp.getName(),
-                            new DtoPropBuilder<>(baseProp, ctx.isImplicit(baseProp))
+                            new DtoPropBuilder<>(
+                                    this,
+                                    baseProp,
+                                    allScalars.start.getLine()
+                            )
                     );
                 }
             }
@@ -92,7 +115,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Map<String, Set<T>> nameTypeMap = new HashMap<>();
             collectSuperTypes(baseType, qualifiedNameTypeMap, nameTypeMap);
             Set<T> handledBaseTypes = new LinkedHashSet<>();
-            for (DtoParser.QualifiedNameContext qnCtx : macro.args) {
+            for (DtoParser.QualifiedNameContext qnCtx : allScalars.args) {
                 String qualifiedName = qnCtx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
                 T baseType = qualifiedNameTypeMap.get(qualifiedName);
                 if (baseType == null) {
@@ -117,7 +140,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                 qnCtx.start.getLine(),
                                 "Illegal type name \"" + qualifiedName + "\", " +
                                         "it is not super type of \"" +
-                                        baseType.getName() +
+                                        this.baseType.getQualifiedName() +
                                         "\""
                         );
                     }
@@ -136,8 +159,9 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         autoScalarPropMap.put(
                                 baseProp.getName(),
                                 new DtoPropBuilder<>(
+                                        this,
                                         baseProp,
-                                        ctx.isImplicit(baseProp)
+                                        qnCtx.stop.getLine()
                                 )
                         );
                     }
@@ -146,196 +170,59 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
     }
 
+    public AliasPattern currentAliasGroup() {
+        return currentAliasGroup;
+    }
+
     private void handlePositiveProp(DtoParser.PositivePropContext prop) {
-        String funcName = null;
-        if (prop.func != null) {
-            funcName = prop.func.getText();
-        }
-        P baseProp = getExplicitProp(prop.prop, prop.func);
-        if (prop.func != null) {
-            switch (prop.func.getText()) {
-                case "id":
-                    if (!baseProp.isAssociation(true)) {
-                        throw ctx.exception(
-                                prop.func.getLine(),
-                                "Cannot call the function \"id\" because the current prop \"" +
-                                        baseProp +
-                                        "\" is not entity level association property"
-                        );
-                    }
-                    funcName = "id";
-                    break;
-                default:
-                    throw ctx.exception(
-                            prop.func.getLine(),
-                            "The function name must be \"id\""
-                    );
-            }
-        }
-
-        String alias = null;
-        if (prop.alias != null) {
-            alias = prop.alias.getText();
-        } else if ("id".equals(funcName)) {
-            alias = baseProp.getName() + "Id";
-        }
-
-        if (prop.recursive != null && !baseProp.isRecursive()) {
-            throw ctx.exception(
-                    prop.recursive.getLine(),
-                    "Illegal symbol \"" +
-                            prop.recursive.getText() +
-                            "\", the property \"" +
-                            baseProp.getName() +
-                            "\" is not recursive"
+        DtoPropBuilder<T, P> builder = new DtoPropBuilder<>(this, prop);
+        if (positivePropMap.put(builder.getBaseProp(), builder) != null) {
+            throw new DtoAstException(
+                    builder.getBaseLine(),
+                    "Base property \"" +
+                            builder.getBaseProp() +
+                            "\" cannot be referenced twice"
             );
         }
-
-        DtoTypeBuilder<T, P> targetTypeBuilder = null;
-        if (prop.dtoBody() != null) {
-            if (!baseProp.isAssociation(true)) {
-                throw ctx.exception(
-                        prop.dtoBody().start.getLine(),
-                        "Illegal property \"" +
-                                baseProp.getName() +
-                                "\", child body cannot be specified by it is not association"
+        if (builder.getAlias() != null) {
+            if (aliasPositivePropMap.put(builder.getAlias(), builder) != null) {
+                throw new DtoAstException(
+                        builder.getAliasLine(),
+                        "Duplicated property alias \"" +
+                                builder.getAlias() +
+                                "\""
                 );
             }
-            if ("id".equals(funcName)) {
-                throw ctx.exception(
-                        prop.dtoBody().start.getLine(),
-                        "Illegal property \"" +
-                                baseProp.getName() +
-                                "\", child body cannot be specified by it is id view property"
-                );
-            }
-            targetTypeBuilder = new DtoTypeBuilder<>(
-                    ctx.getTargetType(baseProp),
-                    prop.dtoBody(),
-                    null,
-                    modifiers.contains(DtoTypeModifier.INPUT) ?
-                            Collections.singleton(DtoTypeModifier.INPUT) :
-                            Collections.emptySet(),
-                    Collections.emptyList(),
-                    prop.recursive != null ? baseProp : null,
-                    prop.recursive != null ? alias : null,
-                    ctx
-            );
-        } else if (baseProp.isAssociation(true) && funcName == null) {
-            throw ctx.exception(
-                    prop.stop.getLine(),
-                    "Illegal property \"" +
-                            baseProp.getName() +
-                            "\", the child body is required"
-            );
+        } else {
+            flatPositiveProps.add(builder);
         }
-
-        positivePropMap.put(
-                key(prop.prop, prop.func),
-                new DtoPropBuilder<>(
-                        baseProp,
-                        ctx.isImplicit(baseProp) || prop.recursive != null,
-                        funcName,
-                        alias,
-                        targetTypeBuilder,
-                        prop.recursive != null
-                )
-        );
     }
 
     private void handleNegativeProp(DtoParser.NegativePropContext prop) {
-        getExplicitProp(prop.prop, prop.func);
-        negativePropKeys.add(key(prop.prop, prop.func));
+        if (negativePropAliasMap.put(prop.prop.getText(), false) != null) {
+            throw new DtoAstException(
+                    prop.prop.getLine(),
+                    "Duplicate negative property alias \"" +
+                            prop.prop.getText() +
+                            "\""
+            );
+        }
+        negativePropAliasTokens.add(prop.prop);
     }
 
-    private P getExplicitProp(Token token, Token func) {
-        if (recursiveBaseProp != null && token.getText().equals(recursiveBaseProp.getName())) {
-            throw ctx.exception(
-                    token.getLine(),
-                    "The property \"" +
-                            token.getText() +
-                            "\" cannot be specified because it is implicit recursive association"
-            );
-        }
-
-        String name = token.getText();
-        String key = key(token, func);
-        if (positivePropMap.containsKey(key)) {
-            throw ctx.exception(
-                    token.getLine(),
-                    "The property key \"" + key + "\" has already been included"
-            );
-        }
-        if (negativePropKeys.contains(key)) {
-            throw ctx.exception(
-                    token.getLine(),
-                    "The property key \"" + key + "\" has already been excluded"
-            );
-        }
-        P baseProp = ctx.getProps(baseType).get(name);
-        if (baseProp == null) {
-            throw ctx.exception(
-                    token.getLine(),
-                    "There is no property \"" + name + "\" in \"" +
-                            baseType.getQualifiedName() +
-                            "\" or its super types"
-            );
-        }
-        boolean isInput = modifiers.contains(DtoTypeModifier.INPUT);
-        if (baseProp.isFormula() && isInput) {
-            throw ctx.exception(
-                    token.getLine(),
-                    "The property \"" +
-                            baseProp.getName() +
-                            "\" cannot be declared in input dto because it is formula"
-            );
-        }
-        if (baseProp.isView() && isInput) {
-            throw ctx.exception(
-                    token.getLine(),
-                    "The property \"" +
-                            baseProp.getName() +
-                            "\" cannot be declared in input dto because it is view"
-            );
-        }
-        if (baseProp.isTransient()) {
-            if (isInput) {
-                throw ctx.exception(
-                        token.getLine(),
-                        "The property \"" +
-                                baseProp.getName() +
-                                "\" cannot be declared in input dto because it is transient"
-                );
-            } else if (!baseProp.hasTransientResolver()) {
-                throw ctx.exception(
-                        token.getLine(),
-                        "The property \"" +
-                                baseProp.getName() +
-                                "\" cannot be declared in dto because it is transient " +
-                                "but has no transient resolver"
-                );
+    private void handleAliasGroup(DtoParser.AliasGroupContext group) {
+        currentAliasGroup = new AliasPattern(group.pattern);
+        try {
+            for (DtoParser.AliasGroupPropContext prop : group.props) {
+                if (prop.allScalars() != null) {
+                    handleAllScalars(prop.allScalars());
+                } else {
+                    handlePositiveProp(prop.positiveProp());
+                }
             }
+        } finally {
+            currentAliasGroup = null;
         }
-        if (func != null) {
-            switch (func.getText()) {
-                case "id":
-                    if (!baseProp.isAssociation(true)) {
-                        throw ctx.exception(
-                                func.getLine(),
-                                "Cannot call the function \"id\" because the current prop \"" +
-                                        baseProp +
-                                        "\" is not entity level association property"
-                        );
-                    }
-                    break;
-                default:
-                    throw ctx.exception(
-                            func.getLine(),
-                            "The function name must be \"id\""
-                    );
-            }
-        }
-        return baseProp;
     }
 
     private boolean isAutoScalar(P baseProp) {
@@ -376,6 +263,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             for (DtoTypeBuilder<T, P> superTypeBuilder : superTypeBuilders) {
                 DtoType<T, P> superType = superTypeBuilder.build();
                 if (modifiers.contains(DtoTypeModifier.INPUT) && !superType.isInput()) {
+                    assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
@@ -389,77 +277,63 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
         }
 
-        Map<String, DtoProp<T, P>> superDtoPropMap = new LinkedHashMap<>();
-        for (DtoType<T, P> superType : superTypes) {
-            for (DtoProp<T, P> superDtoProp : superType.getProps()) {
-                if (recursiveBaseProp != null && superDtoProp.getBaseProp().getName().equals(recursiveBaseProp.getName())) {
-                    continue;
-                }
-                String key = key(superDtoProp);
-                if (negativePropKeys.contains(key) || positivePropMap.containsKey(key)) {
-                    continue;
-                }
-                DtoProp<T, P> conflictProp = superDtoPropMap.get(key);
-                if (conflictProp != null) {
-                    if (DtoPropImpl.canMerge(conflictProp, superDtoProp)) {
+        Map<String, DtoProp<T, P>> declaredProps = resolveDeclaredProps();
+
+        Map<String, DtoProp<T, P>> superProps = new LinkedHashMap<>();
+        if (!superTypes.isEmpty()) {
+            Map<String, DtoProp<T, P>> basePathSuperProps = new LinkedHashMap<>();
+            Set<String> declaredBasePaths = new HashSet<>();
+            for (DtoProp<T, P> declaredProp : declaredProps.values()) {
+                declaredBasePaths.add(declaredProp.getBasePath());
+            }
+            for (DtoType<T, P> superType : superTypes) {
+                for (DtoProp<T, P> superDtoProp : superType.getProps()) {
+                    String alias = superDtoProp.getAlias();
+                    if (isExcluded(alias) ||
+                            declaredProps.containsKey(superDtoProp.getAlias()) ||
+                            declaredBasePaths.contains(superDtoProp.getBasePath())) {
                         continue;
                     }
-                    assert name != null;
-                    throw ctx.exception(
-                            name.getLine(),
-                            "Illegal dto type \"" +
-                                    name.getText() +
-                                    "\", the property \"" +
-                                    key +
-                                    "\" is defined differently by multiple super type so that it must be overridden"
-                    );
+                    DtoProp<T, P> baseConflictProp = basePathSuperProps.put(superDtoProp.getBasePath(), superDtoProp);
+                    if (baseConflictProp != null && !DtoPropImpl.canMerge(baseConflictProp, superDtoProp)) {
+                        assert name != null;
+                        throw ctx.exception(
+                                name.getLine(),
+                                "Illegal dto type \"" +
+                                        name.getText() +
+                                        "\", the base property \"" +
+                                        superDtoProp.getBasePath() +
+                                        "\" is defined differently by multiple super type so that it must be overridden"
+                        );
+                    }
+                    DtoProp<T, P> conflictAliasProp = superProps.put(alias, superDtoProp);
+                    if (conflictAliasProp != null && !DtoPropImpl.canMerge(conflictAliasProp, superDtoProp)) {
+                        assert name != null;
+                        throw ctx.exception(
+                                name.getLine(),
+                                "Illegal dto type \"" +
+                                        name.getText() +
+                                        "\", the property alias \"" +
+                                        alias +
+                                        "\" is defined differently by multiple super type so that it must be overridden"
+                        );
+                    }
                 }
-                superDtoPropMap.put(key, superDtoProp);
             }
         }
 
-        Map<String, DtoProp<T, P>> dtoPropMap = new LinkedHashMap<>(superDtoPropMap);
-        for (Map.Entry<String, DtoPropBuilder<T, P>> e : autoScalarPropMap.entrySet()) {
-            String key = e.getKey();
-            if (negativePropKeys.contains(key) || positivePropMap.containsKey(key)) {
-                continue;
-            }
-            DtoProp<T, P> dtoProp = e.getValue().build();
-            dtoPropMap.put(e.getKey(), dtoProp);
-        }
-        for (Map.Entry<String, DtoPropBuilder<T, P>> e : positivePropMap.entrySet()) {
-            if (negativePropKeys.contains(e.getKey())) {
-                continue;
-            }
-            DtoProp<T, P> dtoProp = e.getValue().build();
-            dtoPropMap.put(e.getKey(), dtoProp);
-        }
-        if (recursiveBaseProp != null) {
-            DtoProp<T, P> recursiveDtoProp = new RecursiveDtoProp<>(recursiveBaseProp, recursiveAlias, dtoType);
-            dtoPropMap.put(key(recursiveDtoProp), recursiveDtoProp);
+        List<DtoProp<T, P>> props;
+        if (superProps.isEmpty()) {
+            props = new ArrayList<>(declaredProps.values());
+        } else {
+            props = new ArrayList<>();
+            props.addAll(superProps.values());
+            props.addAll(declaredProps.values());
         }
 
-        Map<String, DtoProp<T, P>> finalNameMap = new HashMap<>();
-        for (DtoProp<T, P> dtoProp : dtoPropMap.values()) {
-            // `DtoProp.name` is alias of base property
-            DtoProp<T, P> conflictDtoProp = finalNameMap.put(dtoProp.getName(), dtoProp);
-            if (conflictDtoProp != null) {
-                throw ctx.exception(
-                        bodyStart.getLine(),
-                        "Illegal dto type " +
-                                (name != null ? "\"" + name.getText() + "\"" : "") +
-                                ", The property \"" +
-                                key(conflictDtoProp) +
-                                "\" and \"" +
-                                key(dtoProp) +
-                                "\" share the same alias \"" +
-                                dtoProp.getName() +
-                                "\""
-                );
-            }
-        }
+        validateUnusedNegativePropTokens();
 
-        dtoType.setProps(Collections.unmodifiableList(new ArrayList<>(dtoPropMap.values())));
+        dtoType.setProps(Collections.unmodifiableList(props));
         return dtoType;
     }
 
@@ -502,11 +376,83 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
     }
 
-    private static String key(Token token, Token func) {
-        return func != null ? func.getText() + '(' + token.getText() + ')' : token.getText();
+    private Map<String, DtoProp<T, P>> resolveDeclaredProps() {
+        if (this.declaredProps != null) {
+            return this.declaredProps;
+        }
+        Map<String, DtoProp<T, P>> declaredPropMap = new LinkedHashMap<>();
+        for (DtoPropBuilder<T, P> builder : autoScalarPropMap.values()) {
+            if (isExcluded(builder.getAlias()) || positivePropMap.containsKey(builder.getBaseProp())) {
+                continue;
+            }
+            DtoProp<T, P> dtoProp = builder.build();
+            declaredPropMap.put(dtoProp.getAlias(), dtoProp);
+        }
+        for (DtoPropBuilder<T, P> builder : aliasPositivePropMap.values()) {
+            if (isExcluded(builder.getAlias()) || declaredPropMap.containsKey(builder.getAlias())) {
+                continue;
+            }
+            DtoProp<T, P> dtoProp = builder.build();
+            if (declaredPropMap.put(dtoProp.getAlias(), dtoProp) != null) {
+                throw new DtoAstException(
+                        dtoProp.getAliasLine(),
+                        "Duplicated property alias \"" +
+                                builder.getAlias() +
+                                "\""
+                );
+            }
+        }
+        for (DtoPropBuilder<T, P> builder : flatPositiveProps) {
+            DtoProp<T, P> head = builder.build();
+            Map<String, DtoProp<T, P>> deeperProps = builder.getTargetBuilder().resolveDeclaredProps();
+            for (DtoProp<T, P> deeperProp : deeperProps.values()) {
+                DtoProp<T, P> dtoProp = new DtoPropImpl<>(head, deeperProp);
+                if (isExcluded(dtoProp.getAlias())) {
+                    continue;
+                }
+                if (declaredPropMap.put(dtoProp.getAlias(), dtoProp) != null) {
+                    throw new DtoAstException(
+                            dtoProp.getAliasLine(),
+                            "Duplicated property alias \"" +
+                                    dtoProp.getAlias() +
+                                    "\""
+                    );
+                }
+            }
+        }
+        if (recursiveBaseProp != null) {
+            DtoProp<T, P> recursiveDtoProp = new RecursiveDtoProp<>(recursiveBaseProp, recursiveAlias, dtoType);
+            DtoProp<T, P> conflictProp = declaredPropMap.put(recursiveDtoProp.getAlias(), recursiveDtoProp);
+            if (conflictProp != null) {
+                throw new DtoAstException(
+                        conflictProp.getAliasLine(),
+                        "Duplicated property alias \"" +
+                                conflictProp.getAlias() +
+                                "\""
+                );
+            }
+        }
+        return this.declaredProps = Collections.unmodifiableMap(declaredPropMap);
     }
 
-    private static String key(DtoProp<?, ?> prop) {
-        return prop.isIdOnly() ? "id(" + prop.getBaseProp().getName() + ')' : prop.getName();
+    private boolean isExcluded(String alias) {
+        if (!negativePropAliasMap.containsKey(alias)) {
+            return false;
+        }
+        negativePropAliasMap.put(alias, true);
+        return true;
+    }
+
+    private void validateUnusedNegativePropTokens() {
+        for (Token token : negativePropAliasTokens) {
+            if (!negativePropAliasMap.get(token.getText())) {
+                throw new DtoAstException(
+                        token.getLine(),
+                        "There is no property alias \"" +
+                                token.getText() +
+                                "\" that is need to be removed"
+                );
+            }
+        }
     }
 }

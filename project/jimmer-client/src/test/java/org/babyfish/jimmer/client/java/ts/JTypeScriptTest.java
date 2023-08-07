@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.client.java.service.ArrayService;
 import org.babyfish.jimmer.client.java.service.AuthorService;
 import org.babyfish.jimmer.client.java.service.BookService;
+import org.babyfish.jimmer.client.java.service.EnumService;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -25,7 +26,7 @@ public class JTypeScriptTest {
         String code = out.toString();
         Assertions.assertEquals("import type { Executor } from './';\n" +
                         "\n" +
-                        "import { ArrayService, AuthorService, BookService } from './services';\n" +
+                        "import { ArrayService, AuthorService, BookService, EnumService } from './services';\n" +
                         "\n" +
                         "export class Api {\n" +
                         "    \n" +
@@ -35,10 +36,13 @@ public class JTypeScriptTest {
                         "    \n" +
                         "    readonly bookService: BookService;\n" +
                         "    \n" +
+                        "    readonly enumService: EnumService;\n" +
+                        "    \n" +
                         "    constructor(executor: Executor) {\n" +
                         "        this.arrayService = new ArrayService(executor);\n" +
                         "        this.authorService = new AuthorService(executor);\n" +
                         "        this.bookService = new BookService(executor);\n" +
+                        "        this.enumService = new EnumService(executor);\n" +
                         "    }\n" +
                         "}",
                 code
@@ -273,6 +277,8 @@ public class JTypeScriptTest {
                 "                readonly [key:string]: any\n" +
                 "            }\n" +
                 "        )\n" +
+                "    },\n" +
+                "    \"enumService\": {\n" +
                 "    }\n" +
                 "};\n", code);
     }
@@ -1200,6 +1206,40 @@ public class JTypeScriptTest {
                 "\n" +
                 "export type ArrayServiceOptions = {\n" +
                 "    'saveIds': {readonly arg0: ReadonlyArray<string>}\n" +
+                "}", code);
+    }
+
+    @Test
+    public void testEnum() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        TsContext ctx = createContext(out);
+        Service service = Constants.JAVA_METADATA.getServices().get(EnumService.class);
+        new ServiceWriter(ctx, service).flush();
+        String code = out.toString();
+        Assertions.assertEquals("import type { Executor } from '../';\n" +
+                "import type { Gender } from '../model/enums';\n" +
+                "\n" +
+                "export class EnumService {\n" +
+                "    \n" +
+                "    constructor(private executor: Executor) {}\n" +
+                "    \n" +
+                "    async enumParam(options: EnumServiceOptions['enumParam']): Promise<void> {\n" +
+                "        let _uri = '/enumParam';\n" +
+                "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                "        let _value: any = undefined;\n" +
+                "        _value = options.gender;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'gender='\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
+                "        }\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as void\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "export type EnumServiceOptions = {\n" +
+                "    'enumParam': {readonly gender: Gender}\n" +
                 "}", code);
     }
 

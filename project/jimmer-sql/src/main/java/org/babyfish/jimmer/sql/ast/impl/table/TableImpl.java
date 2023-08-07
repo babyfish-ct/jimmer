@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -17,7 +17,7 @@ import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata;
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
@@ -443,11 +443,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public <S extends Static<E>> Selection<S> fetch(Class<S> staticType) {
-        if (staticType == null) {
+    public <V extends View<E>> Selection<V> fetch(Class<V> viewType) {
+        if (viewType == null) {
             throw new IllegalArgumentException("The argument `staticType` cannot be null");
         }
-        StaticMetadata<E, S> metadata = StaticMetadata.of(staticType);
+        ViewMetadata<E, V> metadata = ViewMetadata.of(viewType);
         Fetcher<E> fetcher = metadata.getFetcher();
         if (immutableType != fetcher.getImmutableType()) {
             throw new IllegalArgumentException(

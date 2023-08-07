@@ -2,5 +2,5 @@ input RecursiveTree {
     name
     childNodes {
         name
-    }*
+    }* // '*' means recursive
 }

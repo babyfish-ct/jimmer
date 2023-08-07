@@ -6,8 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.Static;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
+import org.babyfish.jimmer.impl.util.FlatUtils;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -55,8 +56,8 @@ class Constants {
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
 
-    public static final ClassName STATIC_CLASS_NAME =
-            ClassName.get(Static.class);
+    public static final ClassName VIEW_CLASS_NAME =
+            ClassName.get(View.class);
 
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
@@ -84,6 +85,9 @@ class Constants {
 
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
+
+    public static final ClassName FLAT_UTILS_CLASS_NAME =
+            ClassName.get(FlatUtils.class);
 
     public static final ClassName ID_VIEW_LIST_CLASS_NAME =
             ClassName.get(IdViewList.class);
@@ -261,10 +265,10 @@ class Constants {
                     "Embedded"
             );
 
-    public static final ClassName STATIC_METADATA_CLASS_NAME =
+    public static final ClassName VIEW_METADATA_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
-                    "StaticMetadata"
+                    "ViewMetadata"
             );
 
     public static final ClassName JSON_CREATOR_CLASS_NAME =

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.example.kt.graphql.bll
 
 import org.babyfish.jimmer.example.kt.graphql.dal.BookStoreRepository
 import org.babyfish.jimmer.example.kt.graphql.entities.BookStore
-import org.babyfish.jimmer.example.kt.graphql.entities.input.BookStoreInput
+import org.babyfish.jimmer.example.kt.graphql.entities.dto.BookStoreInput
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping

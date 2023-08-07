@@ -64,14 +64,6 @@ public class DtoGenerator {
         this.innerClassName = innerClassName;
     }
 
-    public DtoType<ImmutableType, ImmutableProp> getDtoType() {
-        return dtoType;
-    }
-
-    public TypeSpec.Builder getTypeBuilder() {
-        return typeBuilder;
-    }
-
     public void generate() {
         String simpleName = getSimpleName();
         typeBuilder = TypeSpec
@@ -79,7 +71,7 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
                         ParameterizedTypeName.get(
-                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.STATIC_CLASS_NAME,
+                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.VIEW_CLASS_NAME,
                                 dtoType.getBaseType().getClassName()
                         )
                 )
@@ -170,7 +162,7 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(
                         ParameterizedTypeName.get(
-                                Constants.STATIC_METADATA_CLASS_NAME,
+                                Constants.VIEW_METADATA_CLASS_NAME,
                                 dtoType.getBaseType().getClassName(),
                                 getDtoClassName()
                         ),
@@ -183,7 +175,7 @@ public class DtoGenerator {
                 .add("\n")
                 .add(
                         "new $T<$T, $T>(\n",
-                        Constants.STATIC_METADATA_CLASS_NAME,
+                        Constants.VIEW_METADATA_CLASS_NAME,
                         dtoType.getBaseType().getClassName(),
                         getDtoClassName()
                 )
@@ -191,19 +183,12 @@ public class DtoGenerator {
                 .add("$T.$L", dtoType.getBaseType().getFetcherClassName(), "$")
                 .indent();
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
-            if (prop.getBaseProp().getAnnotation(Id.class) == null) {
-                if (prop.getTargetType() != null) {
-                    if (prop.isNewTarget()) {
-                        cb.add("\n.$N($T.METADATA.getFetcher()", prop.getBaseProp().getName(), getPropElementName(prop));
-                        if (prop.isRecursive()) {
-                            cb.add(", $T::recursive", Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME);
-                        }
-                        cb.add(")");
-                    }
-                } else {
-                    cb.add("\n.$N()", prop.getBaseProp().getName());
-                }
+            if (prop.getNextProp() == null) {
+                addFetcherField(prop, cb);
             }
+        }
+        for (DtoProp<ImmutableType, ImmutableProp> hiddenProp : dtoType.getHiddenFlatProps()) {
+            addHiddenFetcherField(hiddenProp, cb);
         }
         cb
                 .add(",\n")
@@ -214,6 +199,37 @@ public class DtoGenerator {
                 .add(")");
         builder.initializer(cb.build());
         typeBuilder.addField(builder.build());
+    }
+
+    private void addFetcherField(DtoProp<ImmutableType, ImmutableProp> prop, CodeBlock.Builder cb) {
+        if (prop.getBaseProp().getAnnotation(Id.class) == null) {
+            if (prop.getTargetType() != null) {
+                if (prop.isNewTarget()) {
+                    cb.add("\n.$N($T.METADATA.getFetcher()", prop.getBaseProp().getName(), getPropElementName(prop));
+                    if (prop.isRecursive()) {
+                        cb.add(", $T::recursive", Constants.RECURSIVE_FIELD_CONFIG_CLASS_NAME);
+                    }
+                    cb.add(")");
+                }
+            } else {
+                cb.add("\n.$N()", prop.getBaseProp().getName());
+            }
+        }
+    }
+
+    private void addHiddenFetcherField(DtoProp<ImmutableType, ImmutableProp> prop, CodeBlock.Builder cb) {
+        if (!"flat".equals(prop.getFuncName())) {
+            addFetcherField(prop, cb);
+            return;
+        }
+        DtoType<ImmutableType, ImmutableProp> targetDtoType = prop.getTargetType();
+        assert targetDtoType != null;
+        cb.add("\n.$N($>", prop.getBaseProp().getName());
+        cb.add("$T.$L$>", prop.getBaseProp().getTargetType().getFetcherClassName(), "$");
+        for (DtoProp<ImmutableType, ImmutableProp> childProp : targetDtoType.getProps()) {
+            addHiddenFetcherField(childProp, cb);
+        }
+        cb.add("$<$<\n)");
     }
 
     private void addField(DtoProp<ImmutableType, ImmutableProp> prop) {
@@ -273,7 +289,37 @@ public class DtoGenerator {
             builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
         }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
-            if (prop.isIdOnly()) {
+            if (prop.getNextProp() != null) {
+                builder.addCode(
+                        "this.$L = $T.get(\n$>spi,\n",
+                        prop.getName(),
+                        Constants.FLAT_UTILS_CLASS_NAME
+                );
+                builder.addCode("new int[] {$>\n");
+                for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
+                    builder.addCode(
+                            "$T.$N",
+                            p.getBaseProp().getDeclaringType().getProducerClassName(),
+                            p.getBaseProp().getSlotName()
+                    );
+                    if (p.getNextProp() != null) {
+                        builder.addCode(",\n");
+                    } else {
+                        builder.addCode("\n");
+                    }
+                }
+                builder.addCode("$<},\n");
+                if (prop.getTargetType() != null) {
+                    builder.addCode(
+                            "it -> new $T(($T)it)\n",
+                            getPropTypeName(prop),
+                            prop.toTailProp().getBaseProp().getTypeName()
+                    );
+                } else {
+                    builder.addCode("null\n");
+                }
+                builder.addCode("$<);\n");
+            } else if (prop.isIdOnly()) {
                 if (prop.getBaseProp().isList()) {
                     if (prop.isNullable()) {
                         builder.addStatement(
@@ -462,7 +508,30 @@ public class DtoGenerator {
                 "$"
         );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
-            if (prop.isNullable() && (prop.getBaseProp().isAssociation(false) || !prop.getBaseProp().isNullable())) {
+            if (prop.getNextProp() != null) {
+                builder.addCode("$T.set(\n$>", Constants.FLAT_UTILS_CLASS_NAME);
+                builder.addCode("draft,\n");
+                builder.addCode("new int[] {\n$>");
+                for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
+                    builder.addCode(
+                            "$T.$N",
+                            p.getBaseProp().getDeclaringType().getProducerClassName(),
+                            p.getBaseProp().getSlotName()
+                    );
+                    if (p.getNextProp() != null) {
+                        builder.addCode(",\n");
+                    } else {
+                        builder.addCode("\n");
+                    }
+                }
+                builder.addCode("$<},\n");
+                if (prop.getTargetType() == null) {
+                    builder.addCode("this.$L\n", prop.getName());
+                } else {
+                    builder.addCode("this.$L != null ? this.$L.toEntity() : null", prop.getName(), prop.getName());
+                }
+                builder.addCode("$<);\n");
+            } else if (prop.isNullable() && (prop.getBaseProp().isAssociation(false) || !prop.getBaseProp().isNullable())) {
                 builder.beginControlFlow("if ($L != null)", prop.getName());
                 addAssignment(prop, builder);
                 if (prop.getBaseProp().isAssociation(true)) {
@@ -557,6 +626,7 @@ public class DtoGenerator {
     }
 
     public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        prop = prop.toTailProp();
         TypeName elementTypeName = getPropElementName(prop);
         return prop.getBaseProp().isList() ?
                 ParameterizedTypeName.get(

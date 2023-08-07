@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
+import org.babyfish.jimmer.impl.util.FlatUtils
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
@@ -34,12 +35,13 @@ internal const val DYNAMIC = "Dynamic"
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
-internal val STATIC_CLASS_NAME = Static::class.asClassName()
+internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()
-internal val STATIC_METADATA_CLASS_NAME = ClassName(
+internal val VIEW_METADATA_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
-    "StaticMetadata"
+    "ViewMetadata"
 )
+internal val FLAT_UTILS_CLASS_NAME = FlatUtils::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()

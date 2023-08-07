@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-	jimmerVersion = "0.7.125"
+	jimmerVersion = "0.7.130"
 }
 
 group = 'org.babyfish.jimmer.sql.example'
@@ -33,9 +33,6 @@ dependencies {
 
 	implementation 'org.projectlombok:lombok:1.18.26'
 	annotationProcessor 'org.projectlombok:lombok:1.18.26'
-
-	implementation 'org.mapstruct:mapstruct:1.5.3.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
 
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
 

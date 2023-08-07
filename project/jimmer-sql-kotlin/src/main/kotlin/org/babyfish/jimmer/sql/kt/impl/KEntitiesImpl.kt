@@ -1,26 +1,24 @@
 package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.Input
-import org.babyfish.jimmer.Static
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
+import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
-import org.babyfish.jimmer.sql.fetcher.StaticMetadata
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata
 import org.babyfish.jimmer.sql.kt.KEntities
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
-import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KBatchSaveResultImpl
-import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KDeleteCommandDslImpl
-import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KDeleteResultImpl
-import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSaveCommandDslImpl
-import org.babyfish.jimmer.sql.kt.ast.mutation.impl.KSimpleSaveResultImpl
-import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
+import org.babyfish.jimmer.sql.kt.ast.mutation.impl.*
 import org.babyfish.jimmer.sql.kt.ast.query.KExample
+import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
 import java.sql.Connection
+import java.util.function.Function
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
@@ -78,14 +76,22 @@ internal class KEntitiesImpl(
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : Any> findAll(type: KClass<E>): List<E> =
-        if (type.isSubclassOf(Static::class)) {
-            find(StaticMetadata.of(type.java as Class<out Static<Any>>), null) as List<E>
+        if (type.isSubclassOf(View::class)) {
+            find(ViewMetadata.of(type.java as Class<out View<Any>>), null, null) as List<E>
         } else {
             find(ImmutableType.get(type.java), null, null, null)
         }
 
-    override fun <E : Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E> =
-        find(ImmutableType.get(type.java), null, null, block)
+    override fun <E : Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E> =
+        if (entityType.isSubclassOf(View::class)) {
+            throw IllegalArgumentException("The argument cannot be view type, please call `findAllViews`")
+        } else {
+            find(ImmutableType.get(entityType.java), null, null, block)
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : Any, V : View<E>> findAllViews(viewType: KClass<V>, block: SortDsl<E>.() -> Unit): List<V> =
+        find(ViewMetadata.of(viewType.java), null, block as SortDsl<*>.() -> Unit)
 
     override fun <E : Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)?): List<E> =
         find(fetcher.immutableType, fetcher, null, block)
@@ -96,6 +102,14 @@ internal class KEntitiesImpl(
         block: (SortDsl<E>.() -> Unit)?
     ): List<E> =
         find(example.type, fetcher, example, block)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <E : Any, V : View<E>> findByExample(
+        viewType: KClass<V>,
+        example: KExample<E>,
+        block: (SortDsl<E>.() -> Unit)?
+    ): List<V> =
+        find(ViewMetadata.of(viewType.java), example, block as SortDsl<*>.() -> Unit)
 
     private fun <E: Any> find(
         type: ImmutableType,
@@ -131,18 +145,20 @@ internal class KEntitiesImpl(
         ).execute(entities.con)
     }
 
-    private fun <E: Any> find(
-        metadata: StaticMetadata<*, E>,
-        block: (SortDsl<E>.() -> Unit)?
-    ): List<E> {
-        val fetcher = metadata.fetcher
-        val converter = metadata.converter
+    @Suppress("UNCHECKED_CAST")
+    private fun <V: View<*>> find(
+        metadata: ViewMetadata<*, V>,
+        example: KExample<*>?,
+        block: (SortDsl<*>.() -> Unit)?
+    ): List<V> {
+        val fetcher = metadata.getFetcher()
+        val converter = metadata.getConverter() as Function<*, V>
         val type = fetcher.immutableType
         val entities = javaEntities as EntitiesImpl
-        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
-        val table = query.getTable<Table<E>>()
+        val query = MutableRootQueryImpl<Table<*>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
+        val table = query.getTable<Table<*>>()
         if (block !== null) {
-            val dsl = SortDsl<E>()
+            val dsl = SortDsl<Any>()
             dsl.block()
             dsl.applyTo(query)
         }
@@ -150,7 +166,7 @@ internal class KEntitiesImpl(
             if (fetcher !== null) {
                 FetcherSelectionImpl(table, fetcher, converter)
             } else {
-                table
+                table as Selection<V>
             }
         ).execute(entities.con)
     }
