@@ -8,22 +8,22 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 
-import java.util.Arrays;
+import java.util.function.Function;
 
 public class FlatUtils {
 
     private FlatUtils() {}
 
-    public static <T> T get(Object immutable, int ... propIds) {
+    public static <T> T get(Object immutable, int[] propIds, Function<Object, Object> mapper) {
         PropId[] arr = new PropId[propIds.length];
         for (int i = propIds.length - 1; i >= 0; --i) {
             arr[i] = PropId.byIndex(propIds[i]);
         }
-        return get(immutable, arr);
+        return get(immutable, arr, mapper);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T get(Object immutable, PropId ... propIds) {
+    public static <T> T get(Object immutable, PropId[] propIds, Function<Object, Object> mapper) {
         ImmutableSpi spi = (ImmutableSpi) immutable;
         for (PropId propId : propIds) {
             if (!spi.__isLoaded(propId)) {
@@ -31,11 +31,11 @@ public class FlatUtils {
             }
             Object value = spi.__get(propId);
             if (!(value instanceof ImmutableSpi)) {
-                return (T) value;
+                return mapper != null ? (T) mapper.apply(value) : (T) value;
             }
             spi = (ImmutableSpi) value;
         }
-        return (T) spi;
+        return mapper != null ? (T) mapper.apply(spi) : (T) spi;
     }
 
     public static void set(Draft draft, int[] propIds, Object value) {

@@ -91,6 +91,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public DtoProp<T, P> toTailProp() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("@optional ").append(baseProp.getName());

@@ -76,6 +76,20 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.tail = tail;
     }
 
+    DtoPropImpl(DtoProp<T, P> original, DtoType<T, P> targetType) {
+        this.baseProp = original.getBaseProp();
+        this.nextProp = null;
+        this.baseLine = original.getBaseLine();
+        this.alias = baseProp.getName();
+        this.aliasLine = original.getAliasLine();
+        this.targetType = targetType;
+        this.optional = false;
+        this.funcName = "flat";
+        this.recursive = false;
+        this.basePath = baseProp.getName();
+        this.tail = this;
+    }
+
     @Override
     public P getBaseProp() {
         return baseProp;
@@ -90,6 +104,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public DtoProp<T, P> getNextProp() {
         return nextProp;
+    }
+
+    @Override
+    public DtoProp<T, P> toTailProp() {
+        return tail;
     }
 
     @Override

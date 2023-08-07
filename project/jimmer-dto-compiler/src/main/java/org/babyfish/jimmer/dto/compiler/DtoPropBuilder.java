@@ -128,11 +128,19 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             alias = baseProp.getName();
         }
 
-        if (prop.optional != null && baseProp.isNullable()) {
-            throw new DtoAstException(
-                    prop.optional.getLine(),
-                    "Illegal optional modifier '?' because the base property is already nullable"
-            );
+        if (prop.optional != null) {
+            if ("flat".equals(funcName)) {
+                throw new DtoAstException(
+                        prop.optional.getLine(),
+                        "Illegal optional modifier '?', it is not allowed for the function `flat`"
+                );
+            }
+            if (baseProp.isNullable()) {
+                throw new DtoAstException(
+                        prop.optional.getLine(),
+                        "Illegal optional modifier '?' because the base property is already nullable"
+                );
+            }
         }
 
         if (prop.recursive != null) {

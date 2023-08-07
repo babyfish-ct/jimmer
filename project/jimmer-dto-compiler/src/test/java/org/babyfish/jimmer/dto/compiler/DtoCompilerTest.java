@@ -202,6 +202,16 @@ public class DtoCompilerTest {
                         "]",
                 dtoTypes.toString()
         );
+        assertContentEquals(
+                "[" +
+                        "--->flat(store): {" +
+                        "--->--->@optional id as parentId, " +
+                        "--->--->name as parentName, " +
+                        "--->--->website as parentWebsite" +
+                        "--->}" +
+                        "]",
+                dtoTypes.get(0).getHiddenFlatProps().toString()
+        );
     }
 
     @Test
@@ -228,6 +238,15 @@ public class DtoCompilerTest {
                         "--->}" +
                         "]",
                 dtoTypes.toString()
+        );
+        assertContentEquals(
+                "[" +
+                        "--->flat(store): {" +
+                        "--->--->@optional id as parentId, " +
+                        "--->--->name as parentName" +
+                        "--->}" +
+                        "]",
+                dtoTypes.get(0).getHiddenFlatProps().toString()
         );
     }
 

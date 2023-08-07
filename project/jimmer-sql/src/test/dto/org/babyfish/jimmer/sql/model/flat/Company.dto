@@ -17,3 +17,23 @@ CompanyView {
         }
     }
 }
+
+MixedCompanyView {
+    #allScalars
+    flat(street) {
+        #allScalars
+        -id
+        flat(city) {
+            #allScalars
+            -id
+            province {
+                #allScalars
+                -id
+                country {
+                    #allScalars
+                    -id
+                }
+            }
+        }
+    }
+}

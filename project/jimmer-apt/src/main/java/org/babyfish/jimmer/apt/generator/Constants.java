@@ -8,6 +8,7 @@ import org.babyfish.jimmer.DraftConsumer;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
+import org.babyfish.jimmer.impl.util.FlatUtils;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -84,6 +85,9 @@ class Constants {
 
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
+
+    public static final ClassName FLAT_UTILS_CLASS_NAME =
+            ClassName.get(FlatUtils.class);
 
     public static final ClassName ID_VIEW_LIST_CLASS_NAME =
             ClassName.get(IdViewList.class);

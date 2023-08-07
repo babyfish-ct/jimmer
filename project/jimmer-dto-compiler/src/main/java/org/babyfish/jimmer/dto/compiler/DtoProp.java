@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoPropImplementor {
 
+    DtoProp<T, P> toTailProp();
+
     @Override
     P getBaseProp();
 
