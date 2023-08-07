@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.generator.ts.*
 import org.babyfish.jimmer.client.kotlin.model.*
 import org.babyfish.jimmer.client.kotlin.service.KArrayService
 import org.babyfish.jimmer.client.kotlin.service.KBookService
+import org.babyfish.jimmer.client.kotlin.service.KEnumService
 import org.babyfish.jimmer.client.meta.Constants
 import org.babyfish.jimmer.client.meta.StaticObjectType
 import org.babyfish.jimmer.meta.ImmutableType
@@ -23,7 +24,7 @@ class KTypeScriptTest {
         Assertions.assertEquals(
             "import type { Executor } from './';\n" +
                     "\n" +
-                    "import { KArrayService, KBookService, KBookStoreService } from './services';\n" +
+                    "import { KArrayService, KBookService, KBookStoreService, KEnumService } from './services';\n" +
                     "\n" +
                     "export class Api {\n" +
                     "    \n" +
@@ -33,10 +34,13 @@ class KTypeScriptTest {
                     "    \n" +
                     "    readonly kbookStoreService: KBookStoreService;\n" +
                     "    \n" +
+                    "    readonly kenumService: KEnumService;\n" +
+                    "    \n" +
                     "    constructor(executor: Executor) {\n" +
                     "        this.karrayService = new KArrayService(executor);\n" +
                     "        this.kbookService = new KBookService(executor);\n" +
                     "        this.kbookStoreService = new KBookStoreService(executor);\n" +
+                    "        this.kenumService = new KEnumService(executor);\n" +
                     "    }\n" +
                     "}",
             code
@@ -51,37 +55,39 @@ class KTypeScriptTest {
         val code = out.toString()
         Assertions.assertEquals(
             "export type AllErrors = \n" +
-                "    {\n" +
-                "        readonly family: \"KBUSINESS_ERROR\",\n" +
-                "        readonly code: \"DATA_IS_FROZEN\"\n" +
-                "    } | \n" +
-                "    {\n" +
-                "        readonly family: \"KBUSINESS_ERROR\",\n" +
-                "        readonly code: \"SERVICE_IS_SUSPENDED\",\n" +
-                "        readonly \"planedResumeTime\"?: string | undefined\n" +
-                "    }\n" +
-                ";\n" +
-                "\n" +
-                "export type ApiErrors = {\n" +
-                "    \"karrayService\": {\n" +
-                "    },\n" +
-                "    \"kbookService\": {\n" +
-                "        \"saveBooks\": AllErrors & (\n" +
-                "            {\n" +
-                "                readonly family: 'KBUSINESS_ERROR',\n" +
-                "                readonly code: 'DATA_IS_FROZEN',\n" +
-                "                readonly [key:string]: any\n" +
-                "            } | \n" +
-                "            {\n" +
-                "                readonly family: 'KBUSINESS_ERROR',\n" +
-                "                readonly code: 'SERVICE_IS_SUSPENDED',\n" +
-                "                readonly [key:string]: any\n" +
-                "            }\n" +
-                "        )\n" +
-                "    },\n" +
-                "    \"kbookStoreService\": {\n" +
-                "    }\n" +
-                "};\n",
+                    "    {\n" +
+                    "        readonly family: \"KBUSINESS_ERROR\",\n" +
+                    "        readonly code: \"DATA_IS_FROZEN\"\n" +
+                    "    } | \n" +
+                    "    {\n" +
+                    "        readonly family: \"KBUSINESS_ERROR\",\n" +
+                    "        readonly code: \"SERVICE_IS_SUSPENDED\",\n" +
+                    "        readonly \"planedResumeTime\"?: string | undefined\n" +
+                    "    }\n" +
+                    ";\n" +
+                    "\n" +
+                    "export type ApiErrors = {\n" +
+                    "    \"karrayService\": {\n" +
+                    "    },\n" +
+                    "    \"kbookService\": {\n" +
+                    "        \"saveBooks\": AllErrors & (\n" +
+                    "            {\n" +
+                    "                readonly family: 'KBUSINESS_ERROR',\n" +
+                    "                readonly code: 'DATA_IS_FROZEN',\n" +
+                    "                readonly [key:string]: any\n" +
+                    "            } | \n" +
+                    "            {\n" +
+                    "                readonly family: 'KBUSINESS_ERROR',\n" +
+                    "                readonly code: 'SERVICE_IS_SUSPENDED',\n" +
+                    "                readonly [key:string]: any\n" +
+                    "            }\n" +
+                    "        )\n" +
+                    "    },\n" +
+                    "    \"kbookStoreService\": {\n" +
+                    "    },\n" +
+                    "    \"kenumService\": {\n" +
+                    "    }\n" +
+                    "};\n",
             code
         )
     }
@@ -503,6 +509,41 @@ class KTypeScriptTest {
                     "export type KArrayServiceOptions = {\n" +
                     "    'saveIds': {readonly arg0: ReadonlyArray<string>}\n" +
                     "}", code
+        )
+    }
+
+    @Test
+    fun testEnum() {
+        val out = ByteArrayOutputStream()
+        val ctx = createContext(out)
+        val service = Constants.KOTLIN_METADATA.services[KEnumService::class.java]
+        ServiceWriter(ctx, service).flush()
+        val code = out.toString()
+        Assertions.assertEquals("import type { Executor } from '../';\n" +
+                "import type { KGender } from '../model/enums';\n" +
+                "\n" +
+                "export class KEnumService {\n" +
+                "    \n" +
+                "    constructor(private executor: Executor) {}\n" +
+                "    \n" +
+                "    async enumParam(options: KEnumServiceOptions['enumParam']): Promise<void> {\n" +
+                "        let _uri = '/enumParam';\n" +
+                "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                "        let _value: any = undefined;\n" +
+                "        _value = options.gender;\n" +
+                "        if (_value !== undefined && _value !== null) {\n" +
+                "            _uri += _separator\n" +
+                "            _uri += 'gender='\n" +
+                "            _uri += encodeURIComponent(_value);\n" +
+                "            _separator = '&';\n" +
+                "        }\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as void\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "export type KEnumServiceOptions = {\n" +
+                "    'enumParam': {readonly gender: KGender}\n" +
+                "}", code
         )
     }
 
