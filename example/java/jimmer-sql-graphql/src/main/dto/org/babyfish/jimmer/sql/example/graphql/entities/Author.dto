@@ -11,5 +11,10 @@
 
 
 input AuthorInput {
+    /*
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(Book): All scalar fields of `Author`, exclude BaseEntity`
+     */
     #allScalars(Author)
 }

@@ -11,7 +11,14 @@
 
 
 FlatTreeNodeView {
+
+    /*
+     * #allScalars: All scalar fields of `TreeNode` and `BaseEntity`
+     *
+     * #allScalars(TreeNode): All scalar fields of `TreeNode`, exclude `BaseEntity`
+     */
     #allScalars(TreeNode)
+
     flat(parent) {
         as(^ -> parent) {
             #allScalars(TreeNode)

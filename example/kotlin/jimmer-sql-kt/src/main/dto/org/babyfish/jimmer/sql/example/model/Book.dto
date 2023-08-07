@@ -12,6 +12,12 @@
 
 // Abstract type will not generate java/kt code
 abstract input AbstractBookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(Book): All scalar fields of `Book`, exclude `TenantAware`, `BaseEntity`
+     */
     #allScalars(Book)
 }
 
