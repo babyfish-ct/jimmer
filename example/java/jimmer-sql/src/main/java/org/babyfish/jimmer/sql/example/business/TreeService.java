@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example.business;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.ThrowsAll;
+import org.babyfish.jimmer.sql.example.model.dto.FlatTreeNodeView;
 import org.babyfish.jimmer.sql.example.repository.TreeNodeRepository;
 import org.babyfish.jimmer.sql.example.model.TreeNode;
 import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
@@ -38,6 +39,16 @@ public class TreeService {
 
     public TreeService(TreeNodeRepository treeNodeRepository, ObjectMapper objectMapper) {
         this.treeNodeRepository = treeNodeRepository;
+    }
+
+    @GetMapping("/flatNodes")
+    public List<FlatTreeNodeView> flatNodes(
+            @RequestParam(required = false) String name
+    ) {
+        return treeNodeRepository.findByNameLikeIgnoreCase(
+                name,
+                FlatTreeNodeView.class
+        );
     }
 
     @GetMapping("/roots/recursive")

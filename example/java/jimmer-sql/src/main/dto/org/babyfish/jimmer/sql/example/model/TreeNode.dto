@@ -1,6 +1,20 @@
+FlatTreeNodeView {
+    #allScalars(TreeNode)
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars(TreeNode)
+        }
+        flat(parent) {
+            as(^ -> grandParent) {
+                #allScalars(TreeNode)
+            }
+        }
+    }
+}
+
 input RecursiveTreeInput {
     name
     childNodes {
         name
-    }* /* '*' means recursive */
+    }* //'*' means recursive
 }

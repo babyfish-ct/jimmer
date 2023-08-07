@@ -52,7 +52,7 @@ input CompositeBookInput {
          */
         #allScalars(BookStore)
 
-        /* Remove the id property */
+        // Remove the id property
         -id
     }
 
@@ -65,7 +65,7 @@ input CompositeBookInput {
          */
         #allScalars(Author)
 
-        /* Remove the id property */
+        // Remove the id property
         -id
     }
 }
