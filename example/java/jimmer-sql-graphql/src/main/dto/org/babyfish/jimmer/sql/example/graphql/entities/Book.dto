@@ -17,14 +17,14 @@ abstract input AbstractBookInput {
 
 input BookInput : AbstractBookInput {
 
-    /*
+    *
      * You can also write `storeId` because the @IdView property `Book.storeId` has already been defined.
      *
      * However, this is better way to not assume that `@IdView` property must be present.
      */
     id(store)
 
-    /*
+    *
      * You can also write `authorIds` because the @IdView property `Book.authorIds` has already been defined.
      *
      * However, this is better way to not assume that `@IdView` property must be present.
