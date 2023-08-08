@@ -12,7 +12,6 @@ import org.babyfish.jimmer.impl.util.FlatUtils;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
-import org.babyfish.jimmer.runtime.Dynamic;
 import org.babyfish.jimmer.runtime.Visibility;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.impl.validation.Validator;
@@ -279,9 +278,6 @@ class Constants {
 
     public static final ClassName OBJECTS_CLASS_NAME =
             ClassName.get(Objects.class);
-
-    public static final ClassName DYNAMIC_CLASS_NAME =
-            ClassName.get(Dynamic.class);
 
     public static final String DRAFT_FIELD_CTX =
             "__ctx";

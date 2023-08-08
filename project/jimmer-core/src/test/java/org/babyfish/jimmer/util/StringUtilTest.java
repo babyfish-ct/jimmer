@@ -7,7 +7,25 @@ import org.junit.jupiter.api.Test;
 public class StringUtilTest {
 
     @Test
-    public void test() {
+    public void testIdentifier() {
+        Assertions.assertEquals(
+                "unique",
+                StringUtil.identifier("Unique")
+        );
+
+        Assertions.assertEquals(
+                "uniqueClientId",
+                StringUtil.identifier("Unique", "client", "id")
+        );
+
+        Assertions.assertEquals(
+                "uniqueClientId",
+                StringUtil.identifier("UniqueC", "lientI", "d")
+        );
+    }
+
+    @Test
+    public void testSnake() {
 
         Assertions.assertEquals(
                 "Super_Cool",
