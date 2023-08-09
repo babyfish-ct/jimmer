@@ -1,0 +1,521 @@
+---
+sidebar_position: 1
+title: DTO语言
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## 1. 概念
+
+DTO语言是Jimmer提供的一个非强强大的功能，是一个和[对象抓取器](../../query/object-fetcher)高度类似的概念，但在编译过程中位于更早的阶段。
+
+DTO语言用于快速定义数据结构的形状，根据这些形状，DTO可以在编译时
+
+-   生成特定数据结构所对应的静态DTO类型
+
+-   生成DTO静态对象和Jimmer动态对象之间的相互转换逻辑
+
+-   生成该形状所定义的[对象抓取器](../../query/object-fetcher)
+
+这种方法的开发效率很高，为Jimmer量身设计，远快于使用[mapstruct](./mapstruct)，是优先推荐的方式。
+
+## 2. 创建文件
+
+DTO语言的代码体现为扩展名为`dto`的文件，一旦编译完成，这些文件就没有价值了。所以，这些文件不能放到`src/main/resources`中打包，而是放到`src/main/dto`目录中。
+
+因此，第一件是，是在`src/main`下建立`dto`子目录。
+
+:::caution
+dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译。因此，有两点注意事项
+
+-   对于多工程结构的项目而言，dto文件需要定义在实体类型所在子项目中。
+
+-   如果正在使用诸如Intellij这样的IDE开发项目
+    
+    -   如果除了dto文件外还有其他Java/Kotlin文件被修改了，直接点击IDE中运行按钮可以导致dto文件的重新编译
+
+    -   但是，如果除了dto文件外没有其他Java/Kotlin文件被修改，简单地点击IDE中运行按钮并不会导致dto文件被重新编译，除非显式地rebuild！
+:::
+
+假设存在一个Jimmer实体类型，其完整的类型名为`com.yourcompany.yourproject.Book`，该类被`@org.babyfish.jimmer.sql.Entity`修饰 *(DTO语言只支持Entity类型)*，那么
+
+1.  在`src/main/dto`目录下建立目录`com/yourcompany/yourproject`，即，建立和包名一致的目录
+
+2.  在上一步建立的目录中新文件`Book.dto`，该文件必须和类同名，且扩展名为`dto`
+
+用户可以编辑`Book.dto`文件，定义任意个以`Book`类型为聚合根的形状。这里，我们先定一个：
+
+```sh title="Book.dto"
+BookView {
+    ...略...
+}
+```
+
+编译后会生成Java/Kotlin类型`BookView`
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookView.java"
+package com.yourcompany.yourproject.dto;
+
+import com.yourcompany.yourproject.Book;
+import org.babyfish.jimmer.View;
+
+@lombok.Data
+public class BookView implements View<Book> {
+    ...略...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookView.kt"
+package com.yourcompany.yourproject.dto
+
+import com.yourcompany.yourproject.Book
+import org.babyfish.jimmer.View
+
+data class BookView(
+    ...略...
+) : View<Book> {
+    ...略...
+} 
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+-   生成的类型所在的包为`com.yourcompany.yourproject.dto`，相对实体所在的包多了一个`dto`子包。
+
+-   对于Java而言，其生产的类型假设用户使用了lombok。
+:::
+
+## 3. input修饰符
+
+形状可以被`input`修饰符修饰，例如
+
+```sh title="Book.dto"
+BookView {
+    ...略...
+}
+
+AnnotherBookView {
+    ...略...
+}
+
+input BookInput {
+    ...略...
+}
+
+input AnnotherBookInput {
+    ...略...
+}
+```
+
+这表示
+
+-   `BookView`和`AnnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View<E>`接口
+
+    :::note
+    建议输出形状为`View`结尾
+    :::
+
+-   `BookInput`和`AnnotherBookInput`用作保存输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input<E>`接口
+
+    :::note
+    建议输入形状为`Input`结尾
+    :::
+
+:::info
+和Output DTO相比，Input DTO存在如下不同
+
+-   如果实体id属性配置了自动增长策略，那么input DTO中的id属性是nullable的。
+
+-   input DTO中只能定义可以保存的属性，如简单属性、普通ORM关联属性和视图属性。
+    不能定义无法保存的属性，如transient属性、公式属性、计算属性和远程关联，否则会导致编译错误。
+:::
+
+无论是输出形状还是输入形状，其生成的Java/Kotlin类型具备如下功能
+
+-   构造方法：将Jimmer动态实体对象转化为静态DTO对象
+
+-   `toEntity()`：将静态DTO对象转化为Jimmer动态实体对象
+
+以`BookView`为例
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book entity = ...略...
+
+// 实体 -> DTO
+BookView dto = new BookView(entity);
+
+// DTO -> 实体
+Book anotherEntity = dto.toEntity();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val entity: Book = ...略...
+
+// 实体 -> DTO
+val dto = BookView(entity)
+
+// DTO -> 实体
+val anotherEntity: Book = dto.toEntity()
+```
+
+</TabItem>
+</Tabs>
+
+## 4. 简单属性
+
+```sh title="Book.dto"
+BookView {
+    id
+    name 
+    editon
+}
+```
+
+这表示，DTO只映射实体中的三个属性：`id`、`name`和`editon`，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookView.java"
+@lombok.Data
+public class BookView implements View<Book> {
+
+    private long id;
+    private String name;
+    private String edition;
+
+    public BookView(Book book) {
+        ...略...
+    }
+
+    @Override
+    public Book toEntity() {
+        ...略...
+    }
+
+    ...省略其他成员...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookView.kt"
+data class BookView(
+    val id: Long = 0,
+    val name: String = "",
+    val edition: Int = 0
+) : View<Book> {
+
+    constructor(book: Book): this(...略...)
+
+    override fun toEntity(): Book {
+        ...略...
+    }
+
+    ...省略其他成员...
+} 
+```
+
+</TabItem>
+</Tabs>
+
+## 5. allScalars
+
+DTO语言支持一个特别的宏属性，`#allScalars`，表示映射实体中的所有标量属性
+
+```sh title="Book.dto"
+BookView {
+    #allScalars
+}
+```
+
+按照官方例子中`Book`类型的定义
+
+-   `Book`本身的标量属性有`id`、`name`、`edition`和`price`
+
+-   `Book`继承了`TenantAware`，`TenantAware`接口定义了属性`tenant`
+
+-   `Book`也继承了`CommonEntity` *(多继承)*，`CommonEntity`接口定义了属性`createdTime`和`modifiedTime`
+
+`#allScalars`表示自动映射实体所有标量属性，包括继承的。
+
+如果这不是你所要的行为，那么可以使用`allScalars(Book)`，表示只映射Book类型本身定义的所有标量属性，不包含继承的属性。
+
+事实上，`#allScalars`支持多个参数，举例如下
+
+|宏表达式|自动映射的属性|
+|---|---|
+|#allScalars|createdTime, modifiedTime, tenant, id, name, edition, price|
+|#allScalars(Book)|id, name, edition, price|
+|#allScalars(TenantAware)|tenant|
+|#allScalars(CommonEntity)|createdTime、modifiedTime|
+|#allScalars(Book, TenantAware)|tenant, id, name, edition, price|
+|#allScalars(Book, CommonEntity)|createdTime、modifiedTime, id, name, edition, price|
+|#allScalars(TenantAware, CommonEntity)|createdTime、modifiedTime, tenant|
+|#allScalars(Book, TenantAware, CommonEntity)|createdTime, modifiedTime, tenant, id, name, edition, price|
+
+:::info
+-   如果使用`#allScalars`宏，则它必须被定义成第一个属性，否则，否则会导致编译报错。
+
+-   如果为`#allScalars`宏指定参数，则每个参数必须为当前实体或其基类型，否则会导致编译报错。
+:::
+
+## 6. 负属性
+
+前文所讲的`#allScalars`宏，和后文辉讲的继承，都会批量化地让DTO映射多个属性。负属性可以去掉某些属性
+
+```sh title="Book.dto"
+BookView {
+    #allScalars
+    // highlight-next-line
+    -tenant
+}
+```
+
+和上面一样，如果按官方例子中`Book`类型的继承关系来理解的话，`#allScalars`会加入属性`createdTime`、`modifiedTime`、`tenant`、`id`、`name`、`edition`和`price`。
+
+而`-teant`从中减去了`tenant`属性，最终加入属性`createdTime`、`modifiedTime`、`id`、`name`、`edition`和`price`。
+
+:::info
+负属性指定的其实不是实体属性名，而是DTO中对应属性的名称，在这里二者相同，并无差异。
+
+稍后的章节[重新命](#8-重新命)会揭示二者区别。
+:::
+
+不难发现，对于这个例子而言，还有一种与之等价的写法
+
+```sh title="Book.dto"
+BookView {
+    // 排除`TenantAware`
+    #allScalars(Book, CommonEntity) 
+}
+```
+
+## 7. 可选属性
+
+:::info
+此功能将实体中不能为null的属性映射为DTO中可以为null的属性。这并非值得推荐使用的功能，除了在老项目中保持和老项目习惯一致，新项目不建议使用该功能。
+
+如果实体的id被配置了自增策略，那么input DTO中的id属性应该为null，这几乎是这种做法唯一合理的场景。这是input DTO已经实现了的基本特性，前文已经对此做了阐述。除此之外，用户应避免使用此功能。
+:::
+
+默认情况下，DTO属性的可空性和原始属性的可空性一样。但是我们可以采用`?`修饰DTO属性，让其可null
+
+```sh title="UpdateBookInput"
+input UpdateBookInput {
+    #allScalars
+    // highlight-next-line
+    price?
+}
+```
+在实体中`Book.price`不能为null，而对应的DTO属性`UpdateBookInput.price`可以为null，看似矛盾，但Jimmer可以处理这样的矛盾。
+
+-   把实体转化为DTO时，如果`Book.price`未加载 *(虽然该属性不能为null，但动态对象可以拥有未加载属性)*，那么转化后的`UpdateBookInput.price`为null。
+
+-   把DTO转化为实体时，如果`UpdateBookInput.price`为null，那么转化后的`Book.price`处于未加载状态，即，动态对象的这个属性根本不会被赋值。
+
+显然，这种操作在一定程度上为静态DTO对象带来了一定的动态灵活性，当此对象作为[保存指令](../../mutation/save-command)的参数对象时，`UpdateBookInput.price`是否为null控制着`Book.price`是否被设置，最终控制数据库该字段是否被update。
+
+:::caution
+然而，这并不是一种值得推荐的做法，静态类型的意义就应该固定和明确的，而非去追求如动态类型一般的灵活多变。
+
+对于本身就可以为null的实体属性而言，具有三种状态: 非null、null和unloaded *(未知)*；而静态DTO属性只有两种状态：非null和null。即，引入静态DTO类型这件事本身就已经导致了信息丢失。
+
+所以，对于本身就可以为null的实体属性而言，无论对应的DTO属性如何设置，经过DTO转化后的动态实体对象，其可空的属性一定为被赋值 *(可能为null)*，但不可能出现unloaded的情况。如果将其传递给[保存指令](../../mutation/save-command)，null一定会导致表中对应字段被update，而无法如同未被赋值的非null属性一样做到根本不更新。
+:::
+
+## 8. 重命名
+
+可以使用`as`关键字为属性设置别名，让实体属性名和DTO属性名不同。
+
+`as`有两种用法，既可以精确地为一个属性设置别名，也可以模糊地为多个属性设置别名
+
+### 8.1. 重命名单个属性
+
+```sh title="Book.dto"
+BookView {
+    name as bookName
+}
+```
+
+### 8.2. 重命名多个属性
+
+假设有一个实体类型叫做`Robot`
+
+```sh title="Robot.dto"
+OrderView {
+    as (^ -> oldSystem) { ❶ 
+        prop1
+        prop2
+    }
+    as ($ -> ForNewSystem) { ❷
+        prop3
+        prop4
+    }
+}
+```
+
+其中
+
+-   ❶ 为`prop1`和`prop2`添加前缀`oldSystem`，其中`^`表示起始位置
+
+-   ❷ 为`prop3`和`prop4`添加后缀`ForNewSystem`，其中`$`表示起始位置
+
+生成的`RobotView`类如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookView.java"
+@lombok.Data
+public class RobotView implements View<Robot> {
+
+    private String oldSystemProp1;
+    private String oldSystemProp2;
+
+    private String prop3ForNewSystem;
+    private String prop4ForNewSystem;
+
+    ...省略其他成员...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookView.kt"
+data class RobotView(
+    
+    val oldSystemProp1 = "",
+    val oldSystemProp2 = "",
+
+    val prop3ForNewSystem = "",
+    val prop4ForNewSystem = ""
+) : View<Robot> {
+
+    ...省略其他成员...
+} 
+```
+
+</TabItem>
+</Tabs>
+
+可以在`as() {...}`块中定义绝大部分属性，当然包括`#allScalars`，例如
+
+```sh title="Robot.dto"
+RobotView {
+    # highlight-next-line
+    as(^ -> robot) {
+        # highlight-next-line
+        #allScalars
+    }
+}
+```
+
+下面罗列`as() {...}`快的所有用法
+
+|代码示范|作用描述|
+|---|---|
+|as(^ -> prefix)|添加前缀|
+|as(^prefix ->)|删除前缀|
+|as(^prefix -> newPrefix)|替换前缀|
+|as($ -> suffix)|添加后缀|
+|as($suffix ->)|删除后缀|
+|as($suffix -> newSuffix)|替换后缀|
+|as(infix -> )|删除任何位置的内容|
+|as(infix -> newInfix)|替换任何位置的内容|
+
+:::caution
+`^`和`$`不能同时出现，因为这表示精确重命名单个属性，这和已有的功能重复
+:::
+
+## 9. 关联属性
+
+对关联属性属性的处理是DTO语言一个非常强大的功能，存在三种用法
+
+-   直接使用
+-   调用id函数后使用
+-   调用flat函数后使用
+
+### 9.1. 普通关联
+
+```sh title="Robot.dto"
+input CompositeBookInput {
+    
+    #allScalars(Book)
+
+    # highlight-next-line
+    store {
+        #allScalars(BookStore)
+        -id
+    }
+
+    # highlight-next-line
+    authors {
+        #allScalars(Author)
+        -id
+    }
+}
+```
+
+生成的代码为
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="CompositeBookInput.java"
+@lombok.Data
+public class CompositeBookInput implements Input<Book> {
+
+    @Nullable
+    private Long id;
+
+    private String name;
+
+    private int edition;
+
+    private BigDecimal price;
+
+    @Nullable
+    private StoreTarget store;
+
+    private List<AuthorTarget> authors;
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="CompositeBookInput.kt"
+data class CompositeBookInput(
+    
+) : Input<Book> {
+
+    ...省略其他成员...
+} 
+```
+
+</TabItem>
+</Tabs>
+
+### 9.2. id函数
+
+### 9.3. flat函数
+
+## 10. 继承
