@@ -1,0 +1,6 @@
+BookStoreView {
+    #allScalars
+    books {
+        #allScalars
+    }
+}

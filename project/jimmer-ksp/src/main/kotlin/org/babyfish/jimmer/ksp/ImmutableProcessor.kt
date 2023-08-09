@@ -9,14 +9,21 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
+import org.babyfish.jimmer.dto.compiler.DtoAstException
+import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.meta.Context
-import org.babyfish.jimmer.ksp.meta.MetaException
+import org.babyfish.jimmer.ksp.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
+import java.lang.RuntimeException
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -26,8 +33,6 @@ class ImmutableProcessor(
 ) : SymbolProcessor {
 
     private val processed = AtomicBoolean()
-
-    private val generateDynamicPojo = environment.options["jimmer.generate.dynamic.pojo"] == "true"
 
     private val includes: Array<String>? =
         environment.options["jimmer.source.includes"]
@@ -43,6 +48,23 @@ class ImmutableProcessor(
                 it.trim().split("\\s*[,;]\\s*").toTypedArray()
             }
 
+    private val dtoDirs: Set<String> =
+        environment.options["jimmer.dto.dirs"]
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { text ->
+                text.split("\\s*[,:;]\\s*")
+                    .map {
+                        when {
+                            it.startsWith("/") -> it.substring(1)
+                            it.endsWith("/") -> it.substring(0, it.length - 1)
+                            else -> it
+                        }
+                    }
+                    .toSet()
+            }
+            ?: setOf("src/main/dto")
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (!processed.compareAndSet(false, true)) {
             return emptyList()
@@ -50,12 +72,16 @@ class ImmutableProcessor(
 
         return try {
             val ctx = Context(resolver)
-            val classDeclarationMultiMap = findModelMap(ctx)
-            generateJimmerTypes(resolver, ctx, classDeclarationMultiMap)
 
+            val classDeclarationMultiMap = findModelMap(ctx)
+            val dtoTypeMap = findDtoTypeMap(ctx, classDeclarationMultiMap)
             val errorDeclarations = findErrorTypes(resolver)
+
+            generateJimmerTypes(resolver, ctx, classDeclarationMultiMap)
+            generateDtoTypes(resolver, dtoTypeMap)
             generateErrorTypes(resolver, errorDeclarations)
-            classDeclarationMultiMap.values.flatten()
+
+            return classDeclarationMultiMap.values.flatten()
         } catch (ex: MetaException) {
             environment.logger.error(ex.message!!, ex.declaration)
             emptyList()
@@ -109,6 +135,73 @@ class ImmutableProcessor(
         return modelMap
     }
 
+    private fun findDtoTypeMap(
+        ctx: Context,
+        classDeclarationMultiMap: Map<KSFile, List<KSClassDeclaration>>
+    ): Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> {
+        if (classDeclarationMultiMap.isEmpty()) {
+            return emptyMap()
+        }
+        var file: File? = File(classDeclarationMultiMap.keys.iterator().next().filePath).parentFile
+        val actualDtoDirs = mutableListOf<String>()
+        while (file != null) {
+            collectActualDtoDir(file, actualDtoDirs)
+            file = file.parentFile
+        }
+
+        val dtoMap = mutableMapOf<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>>()
+        for (classDeclarations in classDeclarationMultiMap.values) {
+            for (classDeclaration in classDeclarations) {
+                val immutableType = ctx.typeOf(classDeclaration)
+                for (actualDtoDir: String in actualDtoDirs) {
+                    val dtoFile = File(
+                        "$actualDtoDir/${
+                            immutableType.qualifiedName.replace('.', '/')
+                        }.dto"
+                    )
+                    if (dtoFile.exists()) {
+                        dtoMap[immutableType] = try {
+                            FileInputStream(dtoFile).use {
+                                KspDtoCompiler(immutableType).compile(it)
+                            }
+                        } catch (ex: DtoAstException) {
+                            throw DtoException(
+                                "Failed to parse \"${dtoFile.absolutePath}\": ${ex.message}",
+                                ex
+                            )
+                        } catch (ex: IOException) {
+                            throw DtoException(
+                                "Failed to parse \"${dtoFile.absolutePath}\": ${ex.message}",
+                                ex
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        for ((type, dtoTypes) in dtoMap) {
+            for (dtoType in dtoTypes) {
+                for ((otherType, otherDtoTypes) in dtoMap) {
+                    for (otherDtoType in otherDtoTypes) {
+                        if (type != otherType && dtoType.name == otherDtoType.name) {
+                            throw DtoException(
+                                "Conflict dto type name, the \"" +
+                                    type.qualifiedName +
+                                    "\" and \"" +
+                                    otherType.qualifiedName +
+                                    "\" are belong to same package, " +
+                                    "but they have define a dto type named \"" +
+                                    dtoType.name +
+                                    "\""
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        return dtoMap
+    }
+
     private fun findErrorTypes(resolver: Resolver): List<KSClassDeclaration> =
         resolver
             .getNewFiles()
@@ -133,10 +226,6 @@ class ImmutableProcessor(
         for ((file, classDeclarations) in classDeclarationMultiMap) {
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(allFiles)
-            if (generateDynamicPojo) {
-                DynamicGenerator(environment.codeGenerator, ctx, file, classDeclarations)
-                    .generate(allFiles)
-            }
             val sqlClassDeclarations = classDeclarations.filter {
                 it.annotation(Entity::class) !== null ||
                     it.annotation(MappedSuperclass::class) !== null ||
@@ -199,6 +288,38 @@ class ImmutableProcessor(
             return false
         }
         return true
+    }
+
+    private fun generateDtoTypes(
+        resolver: Resolver,
+        dtoTypeMap: Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>>
+    ) {
+        val allFiles = resolver.getAllFiles().toList()
+        for (dtoTypes in dtoTypeMap.values) {
+            for (dtoType in dtoTypes) {
+                DtoGenerator(dtoType, environment.codeGenerator).generate(allFiles)
+            }
+        }
+    }
+
+    private fun collectActualDtoDir(baseFile: File, outputFiles: MutableList<String>) {
+        for (dtoDir in dtoDirs) {
+            var subFile: File? = baseFile
+            for (part in dtoDir.split("/").toTypedArray()) {
+                subFile = File(subFile, part)
+                if (!subFile.isDirectory) {
+                    subFile = null
+                    break
+                }
+            }
+            if (subFile != null) {
+                var path = subFile.absolutePath
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length - 1)
+                }
+                outputFiles.add(path)
+            }
+        }
     }
 
     private class PackageCollector {

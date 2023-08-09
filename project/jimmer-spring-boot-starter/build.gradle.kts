@@ -39,6 +39,9 @@ dependencies {
     testAnnotationProcessor(project(":jimmer-apt"))
     kspTest(project(":jimmer-ksp"))
 
+    testImplementation("org.projectlombok:lombok:1.18.28")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.28")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test:2.7.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
     testImplementation("com.h2database:h2:2.1.212")
@@ -66,6 +69,7 @@ tasks.withType<JavaCompile> {
      * when using @ConstructorBinding in Spring Native Image
      */
     options.compilerArgs.add("-parameters")
+    options.compilerArgs.add("-Ajimmer.dto.dirs=src/test/dto")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
@@ -77,4 +81,5 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 ksp {
     arg("jimmer.source.excludes", "org.babyfish.jimmer.spring.java")
+    arg("jimmer.dto.dirs", "src/test/dto")
 }

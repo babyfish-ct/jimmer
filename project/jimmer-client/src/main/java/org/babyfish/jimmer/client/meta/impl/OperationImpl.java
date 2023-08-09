@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
+import org.babyfish.jimmer.client.NotApi;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.EnumBasedError;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -128,6 +129,9 @@ class OperationImpl implements Operation {
             Service declaringService,
             java.lang.reflect.Method rawMethod
     ) {
+        if (rawMethod.isAnnotationPresent(NotApi.class)) {
+            return null;
+        }
         Tuple2<String, HttpMethod> http = ctx.getOperationParser().http(rawMethod);
         if (http == null) {
             return null;

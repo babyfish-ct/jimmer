@@ -9,6 +9,7 @@ import org.babyfish.jimmer.client.ExportFields;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.Type;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.*;
@@ -171,7 +172,7 @@ public class StaticObjectTypeImpl implements StaticObjectType {
                 if (name.isEmpty()) {
                     continue;
                 }
-                name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
+                name = StringUtil.identifier(name);
                 Type type = ctx.parseType(method.getAnnotatedReturnType());
                 if (ctx.getJetBrainsMetadata(javaType).isNullable(method)) {
                     type = NullableTypeImpl.of(type);

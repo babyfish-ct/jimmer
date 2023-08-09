@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.Scalar
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
@@ -24,7 +25,7 @@ class ImmutableProp(
     val declaringType: ImmutableType,
     val id: Int,
     val propDeclaration: KSPropertyDeclaration
-) {
+): BaseProp {
     init {
         if (propDeclaration.isMutable) {
             throw MetaException(
@@ -34,16 +35,19 @@ class ImmutableProp(
         }
     }
 
-    val name: String = propDeclaration.name
+    override val name: String = propDeclaration.name
 
     val slotName: String = "SLOT_${upper(name)}"
 
     private val resolvedType: KSType = propDeclaration.type.resolve()
 
-    val isTransient: Boolean =
+    override val isTransient: Boolean =
         annotation(Transient::class) !== null
 
-    fun hasTransientResolver(): Boolean =
+    override val isView: Boolean
+        get() = idViewBaseProp !== null || manyToManyViewBaseProp !== null
+
+    override fun hasTransientResolver(): Boolean =
         annotation(Transient::class)?.let {
             val resolverClassName = it.getClassArgument(Transient::value)?.toClassName()
             val resolverRef = it[Transient::ref] ?: ""
@@ -59,10 +63,13 @@ class ImmutableProp(
             hasValue || hasRef
         } ?: false
 
-    val isKotlinFormula: Boolean =
-        annotation(Formula::class) != null && !propDeclaration.isAbstract()
+    override val isFormula: Boolean =
+        annotation(Formula::class) !== null
 
-    val isList: Boolean =
+    val isKotlinFormula: Boolean =
+        annotation(Formula::class) !== null && !propDeclaration.isAbstract()
+
+    override val isList: Boolean =
         (resolvedType.declaration as KSClassDeclaration).asStarProjectedType().let { starType ->
             when {
                 annotations { true }.any { isExplicitScalar(it, mutableSetOf()) } ->
@@ -105,7 +112,10 @@ class ImmutableProp(
 
     val primaryAnnotationType: Class<out Annotation>?
 
-    val isNullable: Boolean
+    private val _isNullable: Boolean
+
+    override val isNullable: Boolean
+        get() = _isNullable
 
     init {
         val descriptor = PropDescriptor
@@ -136,7 +146,7 @@ class ImmutableProp(
             }
             .build()
         primaryAnnotationType = descriptor.type.annotationType
-        isNullable = descriptor.isNullable
+        _isNullable = descriptor.isNullable
     }
 
     val isInputNotNull: Boolean =
@@ -181,7 +191,7 @@ class ImmutableProp(
                 }
             } !== null
 
-    fun isAssociation(entityLevel: Boolean): Boolean =
+    override fun isAssociation(entityLevel: Boolean): Boolean =
         isAssociation && (!entityLevel || targetDeclaration.annotation(Entity::class) != null)
 
     val targetClassName: ClassName =
@@ -242,23 +252,11 @@ class ImmutableProp(
             ?.let { ctx.typeOf(it) }
     }
 
-    val dynamicTypeName : TypeName by lazy {
-        targetType?.let {
-            if (isList) {
-                LIST.parameterizedBy(
-                    it.dynamicClassName
-                ).copy(nullable = true)
-            } else {
-                it.dynamicClassName.copy(nullable = true)
-            }
-        } ?: typeName(overrideNullable = true)
-    }
-
     val isReference = isAssociation && !isList
 
     val isScalarList = isList && !isAssociation
 
-    val isId: Boolean =
+    override val isId: Boolean =
         primaryAnnotationType == Id::class.java
 
     val isVersion: Boolean =
@@ -267,7 +265,7 @@ class ImmutableProp(
     val isLogicalDeleted: Boolean =
         primaryAnnotationType == LogicalDeleted::class.java
 
-    val isKey: Boolean =
+    override val isKey: Boolean =
         propDeclaration.annotations {
             it.fullName == KEY_FULL_NAME
         }.isNotEmpty()
@@ -304,6 +302,11 @@ class ImmutableProp(
                 ?: annotation(OneToMany::class)
                 ?: annotation(ManyToMany::class)
         )?.get(OneToOne::mappedBy).isNullOrEmpty()
+
+    override val isRecursive: Boolean =
+        declaringType.classDeclaration.asStarProjectedType().isAssignableFrom(
+            targetDeclaration.asStarProjectedType()
+        ) && manyToManyViewBaseProp === null
 
     val valueFieldName: String?
         get() = if (idViewBaseProp === null && manyToManyViewBaseProp === null && !isKotlinFormula) {

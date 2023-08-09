@@ -14,7 +14,7 @@ import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.getClassArgument
-import org.babyfish.jimmer.ksp.meta.MetaException
+import org.babyfish.jimmer.ksp.MetaException
 import java.io.OutputStreamWriter
 
 class ErrorGenerator(

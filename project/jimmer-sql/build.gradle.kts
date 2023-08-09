@@ -35,6 +35,9 @@ dependencies {
     testImplementation("org.springframework:spring-jdbc:5.3.20")
     testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
 
+    testImplementation("org.projectlombok:lombok:1.18.28")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.28")
+
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
     testImplementation("org.postgresql:postgresql:42.3.6")
@@ -52,6 +55,7 @@ tasks.withType<Javadoc>{
 
 tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
+    options.compilerArgs.add("-Ajimmer.dto.dirs=src/test/dto")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

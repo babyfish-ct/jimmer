@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.spring.repository.support
 
 import org.babyfish.jimmer.ImmutableObjects
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.spring.repository.*
 import org.babyfish.jimmer.sql.ast.mutation.*
 import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
@@ -75,7 +77,14 @@ open class KRepositoryImpl<E: Any, ID: Any> (
             sql.entities.findMapByIds(entityType, Utils.toCollection(ids))
         }
 
-    override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)?): List<E> =
+    override fun findAll(fetcher: Fetcher<E>?): List<E> =
+        if (fetcher !== null) {
+            sql.entities.findAll(fetcher)
+        } else {
+            sql.entities.findAll(entityType)
+        }
+
+    override fun findAll(fetcher: Fetcher<E>?, block: (SortDsl<E>.() -> Unit)): List<E> =
         if (fetcher !== null) {
             sql.entities.findAll(fetcher, block)
         } else {
@@ -161,6 +170,9 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         }.execute()
     }
 
+    override fun <V : View<E>> viewer(viewType: KClass<V>): KRepository.Viewer<E, ID, V> =
+        ViewerImpl(viewType)
+
     @Deprecated("Replaced by KConfigurableQuery<E, R>.fetchPage, will be removed in 1.0")
     private class PagerImpl(
         private val pageIndex: Int,
@@ -169,5 +181,57 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
         override fun <T> execute(query: KConfigurableRootQuery<*, T>): Page<T> =
             query.fetchPage(pageIndex, pageSize)
+    }
+
+    private inner class ViewerImpl<V: View<E>>(
+        private val viewType: KClass<V>
+    ) : KRepository.Viewer<E, ID, V> {
+
+        override fun findNullable(id: ID): V? =
+            sql.entities.findById(viewType, id)
+
+        override fun findByIds(ids: Iterable<ID>?): List<V> =
+            sql.entities.findByIds(viewType, Utils.toCollection(ids))
+
+        override fun findMapByIds(ids: Iterable<ID>?): Map<ID, V> =
+            sql.entities.findMapByIds(viewType, Utils.toCollection(ids))
+
+        override fun findAll(): List<V> =
+            sql.entities.findAll(viewType)
+
+        override fun findAll(sort: Sort): List<V> =
+            sql.createQuery(entityType) {
+                orderBy(sort)
+                select(table.fetch(viewType))
+            }.execute()
+
+        override fun findAll(block: SortDsl<E>.() -> Unit): List<V> =
+            sql.createQuery(entityType) {
+                orderBy(block)
+                select(table.fetch(viewType))
+            }.execute()
+
+        override fun findAll(pageable: Pageable): Page<V> =
+            sql.createQuery(entityType) {
+                orderBy(pageable.sort)
+                select(table.fetch(viewType))
+            }.fetchPage(pageable.pageNumber, pageable.pageSize)
+
+        override fun findAll(pageIndex: Int, pageSize: Int): Page<V> =
+            sql.createQuery(entityType) {
+                select(table.fetch(viewType))
+            }.fetchPage(pageIndex, pageSize)
+
+        override fun findAll(pageIndex: Int, pageSize: Int, sort: Sort): Page<V> =
+            sql.createQuery(entityType) {
+                orderBy(sort)
+                select(table.fetch(viewType))
+            }.fetchPage(pageIndex, pageSize)
+
+        override fun findAll(pageIndex: Int, pageSize: Int, block: SortDsl<E>.() -> Unit): Page<V> =
+            sql.createQuery(entityType) {
+                orderBy(block)
+                select(table.fetch(viewType))
+            }.fetchPage(pageIndex, pageSize)
     }
 }

@@ -5,7 +5,5 @@ package org.babyfish.jimmer;
  *
  * @param <E> The dynamic entity interface type
  */
-public interface Input<E> {
-
-    E toEntity();
+public interface Input<E> extends View<E> {
 }

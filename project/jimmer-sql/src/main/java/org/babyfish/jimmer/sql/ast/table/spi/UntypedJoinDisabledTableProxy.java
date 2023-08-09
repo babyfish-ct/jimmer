@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -16,7 +17,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
-import java.util.Objects;
 import java.util.function.Function;
 
 public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
@@ -128,6 +128,11 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public Selection<E> fetch(Fetcher<E> fetcher) {
         return table.fetch(fetcher);
+    }
+
+    @Override
+    public <V extends View<E>> Selection<V> fetch(Class<V> viewType) {
+        return table.fetch(viewType);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.mutation.*
@@ -24,11 +25,11 @@ interface KEntities {
     @NewChain
     fun forConnection(con: Connection?) :KEntities
 
-    fun <E: Any> findById(entityType: KClass<E>, id: Any): E?
+    fun <E: Any> findById(type: KClass<E>, id: Any): E?
 
-    fun <E: Any> findByIds(entityType: KClass<E>, ids: Collection<*>): List<E>
+    fun <E: Any> findByIds(type: KClass<E>, ids: Collection<*>): List<E>
 
-    fun <ID, E: Any> findMapByIds(entityType: KClass<E>, ids: Collection<ID>): Map<ID, E>
+    fun <ID, E: Any> findMapByIds(type: KClass<E>, ids: Collection<ID>): Map<ID, E>
 
     fun <E: Any> findById(fetcher: Fetcher<E>, id: Any): E?
 
@@ -36,7 +37,11 @@ interface KEntities {
 
     fun <ID, E: Any> findMapByIds(fetcher: Fetcher<E>, ids: Collection<ID>): Map<ID, E>
 
-    fun <E: Any> findAll(type: KClass<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
+    fun <E: Any> findAll(type: KClass<E>): List<E>
+
+    fun <E: Any> findAll(entityType: KClass<E>, block: (SortDsl<E>.() -> Unit)): List<E>
+
+    fun <E: Any, V: View<E>> findAllViews(view: KClass<V>, block: (SortDsl<E>.() -> Unit)): List<V>
 
     fun <E: Any> findAll(fetcher: Fetcher<E>, block: (SortDsl<E>.() -> Unit)? = null): List<E>
 
@@ -45,6 +50,12 @@ interface KEntities {
         fetcher: Fetcher<E>? = null,
         block: (SortDsl<E>.() -> Unit)? = null
     ): List<E>
+
+    fun <E: Any, V: View<E>> findByExample(
+        viewType: KClass<V>,
+        example: KExample<E>,
+        block: (SortDsl<E>.() -> Unit)? = null
+    ): List<V>
 
     fun <E: Any> save(
         entity: E,
@@ -65,14 +76,14 @@ interface KEntities {
     ): KBatchSaveResult<E>
 
     fun delete(
-        entityType: KClass<*>,
+        type: KClass<*>,
         id: Any,
         con: Connection? = null,
         block: (KDeleteCommandDsl.() -> Unit)? = null
     ): KDeleteResult
 
     fun batchDelete(
-        entityType: KClass<*>,
+        type: KClass<*>,
         ids: Collection<*>,
         con: Connection? = null,
         block: (KDeleteCommandDsl.() -> Unit)? = null

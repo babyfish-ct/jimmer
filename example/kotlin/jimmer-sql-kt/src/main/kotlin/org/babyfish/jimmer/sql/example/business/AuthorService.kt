@@ -7,7 +7,7 @@ import org.babyfish.jimmer.sql.example.model.Author
 import org.babyfish.jimmer.sql.example.model.Gender
 import org.babyfish.jimmer.sql.example.model.by
 import org.babyfish.jimmer.spring.model.SortUtils
-import org.babyfish.jimmer.sql.example.model.input.AuthorInput
+import org.babyfish.jimmer.sql.example.model.dto.AuthorInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.transaction.annotation.Transactional

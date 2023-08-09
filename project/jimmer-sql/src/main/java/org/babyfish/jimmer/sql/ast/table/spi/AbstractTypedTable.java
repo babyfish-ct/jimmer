@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -16,9 +17,9 @@ import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -294,6 +295,15 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
             return raw.fetch(fetcher);
         }
         return new FetcherSelectionImpl<E>(this, fetcher);
+    }
+
+    @Override
+    public <V extends View<E>> Selection<V> fetch(Class<V> viewType) {
+        if (raw != null) {
+            return raw.fetch(viewType);
+        }
+        ViewMetadata<E, V> metadata = ViewMetadata.of(viewType);
+        return new FetcherSelectionImpl<>(this, metadata.getFetcher(), metadata.getConverter());
     }
 
     @Override

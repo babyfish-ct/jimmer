@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.function.Function;
 
 public class Fetchers {
 
@@ -33,7 +34,9 @@ public class Fetchers {
             if (selection instanceof FetcherSelection<?>) {
                 FetcherSelection<?> fetcherSelection = (FetcherSelection<?>) selection;
                 Fetcher<?> fetcher = fetcherSelection.getFetcher();
-                if (!((FetcherImplementor<?>)fetcher).__isSimpleFetcher() || hasReferenceFilter(fetcher.getImmutableType(), sqlClient)) {
+                if (!((FetcherImplementor<?>)fetcher).__isSimpleFetcher() ||
+                        hasReferenceFilter(fetcher.getImmutableType(), sqlClient) ||
+                        fetcherSelection.getConverter() != null) {
                     columnMap.put(i, new ArrayList<>());
                 }
             }
@@ -68,6 +71,14 @@ public class Fetchers {
                             );
                         }
                 );
+            }
+            Function<Object, Object> converter = (Function<Object, Object>) selection.getConverter();
+            if (converter != null) {
+                List<Object> list = new ArrayList<>(fetchedList.size());
+                for (Object fetched : fetchedList) {
+                    list.add(converter.apply(fetched));
+                }
+                fetchedList = list;
             }
             e.setValue(fetchedList);
         }

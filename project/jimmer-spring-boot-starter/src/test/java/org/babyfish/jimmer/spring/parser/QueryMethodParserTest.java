@@ -43,9 +43,11 @@ public class QueryMethodParserTest {
                         "--->--->--->Order{path=name, orderMode=ASC}" +
                         "--->--->]" +
                         "--->}, " +
+                        "--->viewType=null, " +
                         "--->pageableParamIndex=1, " +
                         "--->sortParamIndex=-1, " +
-                        "--->fetcherParamIndex=2" +
+                        "--->fetcherParamIndex=2, " +
+                        "--->viewTypeParamIndex=-1" +
                         "}"
         );
 
@@ -78,9 +80,11 @@ public class QueryMethodParserTest {
                         "--->--->--->Order{path=name, orderMode=ASC}, Order{path=edition, orderMode=DESC}" +
                         "--->--->]" +
                         "--->}, " +
+                        "--->viewType=null, " +
                         "--->pageableParamIndex=-1, " +
                         "--->sortParamIndex=-1, " +
-                        "--->fetcherParamIndex=-1" +
+                        "--->fetcherParamIndex=-1, " +
+                        "--->viewTypeParamIndex=-1" +
                         "}"
         );
     }

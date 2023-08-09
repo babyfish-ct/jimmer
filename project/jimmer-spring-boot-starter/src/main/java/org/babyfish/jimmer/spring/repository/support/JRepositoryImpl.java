@@ -2,6 +2,8 @@ package org.babyfish.jimmer.spring.repository.support;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -9,23 +11,29 @@ import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @NoRepositoryBean
@@ -139,97 +147,90 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public List<E> findAll() {
-        return sqlClient.getEntities().findAll(entityType);
+        return createQuery(null, (Function<?, E>)null, null, null).execute();
     }
 
     @Override
     public List<E> findAll(TypedProp.Scalar<?, ?>... sortedProps) {
-        return sqlClient.getEntities().findAll(entityType, sortedProps);
+        return createQuery(null, (Function<?, E>)null, sortedProps, null).execute();
     }
 
     @Override
     public List<E> findAll(Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
-        if (fetcher == null) {
-            return findAll(sortedProps);
-        }
-        return sqlClient.getEntities().findAll(fetcher, sortedProps);
+        return createQuery(fetcher, (Function<?, E>)null, sortedProps, null).execute();
     }
 
     @NotNull
     @Override
     public List<E> findAll(@NotNull Sort sort) {
-        return findAll(null, sort);
+        return createQuery(null, (Function<?, E>)null, null, sort).execute();
     }
 
     @Override
     public List<E> findAll(Fetcher<E> fetcher, Sort sort) {
-        MutableRootQueryImpl<Table<E>> query =
-                new MutableRootQueryImpl<>(
-                        sqlClient,
-                        immutableType,
-                        ExecutionPurpose.QUERY,
-                        false
-                );
-        Table<E> table = query.getTable();
-        query.orderBy(SpringOrders.toOrders(table, sort));
-        return query.select(table.fetch(fetcher)).execute();
+        return createQuery(fetcher, (Function<?, E>)null, null, sort).execute();
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize) {
-        return findAll(pageIndex, pageSize, null, EMPTY_SORTED_PROPS);
+        return pager(pageIndex, pageSize).execute(
+            createQuery(null, null, null, null)
+        );
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher) {
-        return findAll(pageIndex, pageSize, fetcher, EMPTY_SORTED_PROPS);
+        return pager(pageIndex, pageSize).execute(
+                createQuery(fetcher, null, null, null)
+        );
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
-        return findAll(pageIndex, pageSize, null, sortedProps);
+        return pager(pageIndex, pageSize).execute(
+                createQuery(null, null, sortedProps, null)
+        );
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, TypedProp.Scalar<?, ?>... sortedProps) {
-        return pager(pageIndex, pageSize).execute(createQuery(fetcher, sortedProps));
+        return pager(pageIndex, pageSize).execute(
+                createQuery(fetcher, null, sortedProps, null)
+        );
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Sort sort) {
-        return findAll(PageRequest.of(pageIndex, pageSize, sort), null);
+        return pager(pageIndex, pageSize).execute(
+                createQuery(null, null, null, sort)
+        );
     }
 
     @Override
     public Page<E> findAll(int pageIndex, int pageSize, Fetcher<E> fetcher, Sort sort) {
-        return findAll(PageRequest.of(pageIndex, pageSize, sort), fetcher);
+        return pager(pageIndex, pageSize).execute(
+                createQuery(fetcher, null, null, sort)
+        );
     }
 
     @NotNull
     @Override
     public Page<E> findAll(@NotNull Pageable pageable) {
-        return findAll(pageable, null);
+        return pager(pageable).execute(
+                createQuery(null, null, null, pageable.getSort())
+        );
     }
 
     @Override
     public Page<E> findAll(Pageable pageable, Fetcher<E> fetcher) {
-        MutableRootQueryImpl<Table<E>> query =
-                new MutableRootQueryImpl<>(
-                        sqlClient,
-                        immutableType,
-                        ExecutionPurpose.QUERY,
-                        false
-                );
-        Table<E> table = query.getTable();
-        query.orderBy(SpringOrders.toOrders(table, pageable.getSort()));
         return pager(pageable).execute(
-                query.select(table.fetch(fetcher))
+                createQuery(fetcher, null, null, pageable.getSort())
         );
     }
 
     @Override
     public long count() {
-        return createQuery(null, EMPTY_SORTED_PROPS).count();
+        return createQuery(null, null, null, null).count();
     }
 
     @NotNull
@@ -317,37 +318,56 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                 .execute();
     }
 
-    private ConfigurableRootQuery<?, E> createQuery(Fetcher<E> fetcher, TypedProp.Scalar<?, ?>[] sortedProps) {
-        MutableRootQueryImpl<Table<E>> query =
+    @Override
+    public <V extends View<E>> Viewer<E, ID, V> viewer(Class<V> viewType) {
+        return new ViewerImpl<>(viewType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <X> ConfigurableRootQuery<?, X> createQuery(
+            Fetcher<?> fetcher,
+            @Nullable Function<?, X> converter,
+            @Nullable TypedProp.Scalar<?, ?>[] sortedProps,
+            @Nullable Sort sort
+    ) {
+        MutableRootQueryImpl<Table<?>> query =
                 new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, false);
-        Table<E> table = query.getTable();
-        for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
-            if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(immutableType)) {
-                throw new IllegalArgumentException(
-                        "The sorted field \"" +
-                                sortedProp +
-                                "\" does not belong to the type \"" +
-                                immutableType +
-                                "\" or its super types"
-                );
+        Table<?> table = query.getTable();
+        if (sortedProps != null) {
+            for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
+                if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(immutableType)) {
+                    throw new IllegalArgumentException(
+                            "The sorted field \"" +
+                                    sortedProp +
+                                    "\" does not belong to the type \"" +
+                                    immutableType +
+                                    "\" or its super types"
+                    );
+                }
+                PropExpression<?> expr = table.get(sortedProp.unwrap().getName());
+                Order astOrder;
+                if (sortedProp.isDesc()) {
+                    astOrder = expr.desc();
+                } else {
+                    astOrder = expr.asc();
+                }
+                if (sortedProp.isNullsFirst()) {
+                    astOrder = astOrder.nullsFirst();
+                }
+                if (sortedProp.isNullsLast()) {
+                    astOrder = astOrder.nullsLast();
+                }
+                query.orderBy(astOrder);
             }
-            PropExpression<?> expr = table.get(sortedProp.unwrap().getName());
-            Order astOrder;
-            if (sortedProp.isDesc()) {
-                astOrder = expr.desc();
-            } else {
-                astOrder = expr.asc();
-            }
-            if (sortedProp.isNullsFirst()) {
-                astOrder = astOrder.nullsFirst();
-            }
-            if (sortedProp.isNullsLast()) {
-                astOrder = astOrder.nullsLast();
-            }
-            query.orderBy(astOrder);
         }
-        query.freeze();
-        return query.select(fetcher != null ? table.fetch(fetcher) : table);
+        if (sort != null) {
+            query.orderBy(SpringOrders.toOrders(table, sort));
+        }
+        return query.select(
+                fetcher != null ?
+                        new FetcherSelectionImpl<>(table, fetcher, converter) :
+                        (Selection<X>) table
+        );
     }
 
     private static class PagerImpl implements Pager {
@@ -380,6 +400,76 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                                 ),
                                 totalCount
                         )
+            );
+        }
+    }
+
+    private class ViewerImpl<V extends View<E>> implements Viewer<E, ID, V> {
+
+        private final Class<V> viewType;
+
+        private final ViewMetadata<E, V> metadata;
+
+        private ViewerImpl(Class<V> viewType) {
+            this.viewType = viewType;
+            this.metadata = ViewMetadata.of(viewType);
+        }
+
+        @Override
+        public V findNullable(ID id) {
+            return sqlClient.getEntities().findById(viewType, id);
+        }
+
+        @Override
+        public List<V> findByIds(Iterable<ID> ids) {
+            return sqlClient.getEntities().findByIds(viewType, Utils.toCollection(ids));
+        }
+
+        @Override
+        public Map<ID, V> findMapByIds(Iterable<ID> ids) {
+            return sqlClient.getEntities().findMapByIds(viewType, Utils.toCollection(ids));
+        }
+
+        @Override
+        public List<V> findAll() {
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), null, null).execute();
+        }
+
+        @Override
+        public List<V> findAll(TypedProp.Scalar<?, ?>... sortedProps) {
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), sortedProps, null).execute();
+        }
+
+        @Override
+        public List<V> findAll(Sort sort) {
+            return createQuery(metadata.getFetcher(), metadata.getConverter(), null, sort).execute();
+        }
+
+        @Override
+        public Page<V> findAll(Pageable pageable) {
+            return pager(pageable).execute(
+                    createQuery(metadata.getFetcher(), metadata.getConverter(), null, pageable.getSort())
+            );
+        }
+
+        @Override
+        public Page<V> findAll(int pageIndex, int pageSize) {
+            return pager(pageIndex, pageSize).execute(
+                    createQuery(metadata.getFetcher(), metadata.getConverter(), null, null)
+            );
+        }
+
+        @Override
+        public Page<V> findAll(int pageIndex, int pageSize, TypedProp.Scalar<?, ?>... sortedProps) {
+            return pager(pageIndex, pageSize).execute(
+                    createQuery(metadata.getFetcher(), metadata.getConverter(), sortedProps, null)
+            );
+        }
+
+        @Override
+        public Page<V> findAll(int pageIndex, int pageSize, Sort sort) {
+            return pager(pageIndex, pageSize).execute(
+                    createQuery(metadata.getFetcher(), metadata.getConverter(), null, sort)
             );
         }
     }

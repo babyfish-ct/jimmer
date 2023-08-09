@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository.support;
 
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -37,6 +38,7 @@ public class QueryExecutors {
             Pageable pageable,
             Sort sort,
             Fetcher<?> fetcher,
+            Class<?> viewType,
             Object[] args
     ) {
         Query queryData = queryMethod.getQuery();
@@ -62,6 +64,11 @@ public class QueryExecutors {
                         }
                         if (fetcher != null) {
                             return q.select(((Table<Object>)table).fetch((Fetcher<Object>) fetcher));
+                        }
+                        if (viewType != null) {
+                            return (ConfigurableRootQuery<Table<?>, Object>) (ConfigurableRootQuery<?, ?>)q.select(
+                                    ((Table<Object>)table).fetch((Class<View<Object>>)viewType)
+                            );
                         }
                         if (queryData.getSelectedPath() != null) {
                             return q.select((Expression<Object>) astSelection(table, queryData.getSelectedPath(), false));

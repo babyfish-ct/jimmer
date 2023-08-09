@@ -3,6 +3,8 @@ package org.babyfish.jimmer.apt.meta;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.MetaException;
+import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.babyfish.jimmer.sql.*;
 
 import javax.lang.model.element.*;
@@ -12,7 +14,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ImmutableType {
+public class ImmutableType implements BaseType {
 
     public static final String PROP_EXPRESSION_SUFFIX = "PropExpression";
 
@@ -275,7 +277,16 @@ public class ImmutableType {
                             executableElement,
                             propIdSequence++
                     );
-                    declaredPropMap.put(prop.getName(), prop);
+                    ImmutableProp conflictProp = declaredPropMap.put(prop.getName(), prop);
+                    if (conflictProp != null) {
+                        throw new MetaException(
+                                prop.toElement(),
+                                "Conflict java methods: " +
+                                        prop.getGetterName() +
+                                        " and " +
+                                        conflictProp.getGetterName()
+                        );
+                    }
                 }
             }
         }

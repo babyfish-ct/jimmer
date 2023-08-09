@@ -1,0 +1,11 @@
+BookView {
+    #allScalars
+    store {
+        #allScalars
+        -id
+    }
+    authors {
+        #allScalars
+        -id
+    }
+}

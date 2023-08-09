@@ -2,7 +2,7 @@ package org.babyfish.jimmer.apt.generator;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
-import org.babyfish.jimmer.apt.meta.MetaException;
+import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.ErrorFamily;
 import org.babyfish.jimmer.error.ErrorField;

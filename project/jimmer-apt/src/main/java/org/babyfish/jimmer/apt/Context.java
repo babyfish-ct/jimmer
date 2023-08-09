@@ -2,7 +2,6 @@ package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.apt.meta.MetaException;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;

@@ -6,7 +6,8 @@ import org.babyfish.jimmer.sql.example.repository.TreeNodeRepository
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.example.model.TreeNode
 import org.babyfish.jimmer.sql.example.model.by
-import org.babyfish.jimmer.sql.example.model.input.RecursiveTreeInput
+import org.babyfish.jimmer.sql.example.model.dto.FlatTreeNodeView
+import org.babyfish.jimmer.sql.example.model.dto.RecursiveTreeInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.slf4j.LoggerFactory
@@ -29,7 +30,12 @@ class TreeService(
     private val treeNodeRepository: TreeNodeRepository
 ) {
 
-    @Transactional
+    @GetMapping("/flatNodes")
+    fun findFlatNodes(
+        @RequestParam(required = false) name: String?
+    ): List<FlatTreeNodeView> =
+        treeNodeRepository.findByNameLikeIgnoreCase(name, FlatTreeNodeView::class)
+
     @GetMapping("/roots/recursive")
     fun findRootTrees(
         @RequestParam(required = false) rootName: String?

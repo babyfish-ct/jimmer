@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.Input;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.Example;
@@ -28,17 +28,19 @@ public interface Entities {
     @NewChain
     Entities forConnection(Connection con);
 
-    <E> E findById(Class<E> entityType, Object id);
+    <E> E findById(Class<E> type, Object id);
 
-    <E> List<E> findByIds(Class<E> entityType, Collection<?> ids);
+    <E> List<E> findByIds(Class<E> type, Collection<?> ids);
 
-    <ID, E> Map<ID, E> findMapByIds(Class<E> entityType, Collection<ID> ids);
+    <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids);
 
     <E> E findById(Fetcher<E> fetcher, Object id);
 
     <E> List<E> findByIds(Fetcher<E> fetcher, Collection<?> ids);
 
     <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids);
+
+    <E> List<E> findAll(Class<E> type);
 
     <E> List<E> findAll(Class<E> type, TypedProp.Scalar<?, ?> ... sortedProps);
 
@@ -47,6 +49,8 @@ public interface Entities {
     <E> List<E> findByExample(Example<E> example, TypedProp.Scalar<?, ?> ... sortedProps);
 
     <E> List<E> findByExample(Example<E> example, Fetcher<E> fetcher, TypedProp.Scalar<?, ?> ... sortedProps);
+
+    <E, V extends View<E>> List<V> findExample(Class<V> viewType, Example<E> example, TypedProp.Scalar<?, ?> ... sortedProps);
 
     default <E> SimpleSaveResult<E> save(E entity) {
         return saveCommand(entity).execute();
@@ -68,23 +72,23 @@ public interface Entities {
         return saveCommand(input.toEntity());
     }
 
-    default DeleteResult delete(Class<?> entityType, Object id) {
-        return deleteCommand(entityType, id).execute();
+    default DeleteResult delete(Class<?> type, Object id) {
+        return deleteCommand(type, id).execute();
     }
 
-    default DeleteResult delete(Class<?> entityType, Object id, DeleteMode mode) {
-        return deleteCommand(entityType, id).setMode(mode).execute();
+    default DeleteResult delete(Class<?> type, Object id, DeleteMode mode) {
+        return deleteCommand(type, id).setMode(mode).execute();
     }
 
-    DeleteCommand deleteCommand(Class<?> entityType, Object id);
+    DeleteCommand deleteCommand(Class<?> type, Object id);
 
-    default DeleteResult batchDelete(Class<?> entityType, Collection<?> ids) {
-        return batchDeleteCommand(entityType, ids).execute();
+    default DeleteResult batchDelete(Class<?> type, Collection<?> ids) {
+        return batchDeleteCommand(type, ids).execute();
     }
 
-    default DeleteResult batchDelete(Class<?> entityType, Collection<?> ids, DeleteMode mode) {
-        return batchDeleteCommand(entityType, ids).setMode(mode).execute();
+    default DeleteResult batchDelete(Class<?> type, Collection<?> ids, DeleteMode mode) {
+        return batchDeleteCommand(type, ids).setMode(mode).execute();
     }
 
-    DeleteCommand batchDeleteCommand(Class<?> entityType, Collection<?> ids);
+    DeleteCommand batchDeleteCommand(Class<?> type, Collection<?> ids);
 }

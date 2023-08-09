@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.jackson.ImmutableModuleRequiredException;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -135,9 +136,7 @@ public class ImplementorGenerator {
             typeBuilder.addMethod(
                     MethodSpec
                             .methodBuilder(
-                                    (isBoolean ? "is" : "get") +
-                                            Character.toUpperCase(name.charAt(0)) +
-                                            name.substring(1)
+                                    StringUtil.identifier(isBoolean ? "is" : "get", name)
                             )
                             .addAnnotation(JsonIgnore.class)
                             .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)

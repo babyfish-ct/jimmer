@@ -203,10 +203,7 @@ public class FetcherGenerator {
     }
 
     private void addAssociationPropByFieldConfig(ImmutableProp prop) {
-        boolean recursive = context.isSubType(
-                prop.getElementType(),
-                type.getTypeElement().asType()
-        ) && prop.getManyToManyViewBaseProp() == null;
+        boolean recursive = prop.isRecursive();
         ClassName fieldConfigClassName;
         if (recursive && prop.isList()) {
             fieldConfigClassName = Constants.RECURSIVE_LIST_FIELD_CONFIG_CLASS_NAME;

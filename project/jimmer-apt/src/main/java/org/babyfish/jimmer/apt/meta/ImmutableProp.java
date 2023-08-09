@@ -6,7 +6,9 @@ import com.squareup.javapoet.TypeName;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.generator.Strings;
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
@@ -17,9 +19,8 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.lang.annotation.Annotation;
 import java.util.*;
-import java.util.function.Consumer;
 
-public class ImmutableProp {
+public class ImmutableProp implements BaseProp {
 
     private final Context context;
 
@@ -61,13 +62,11 @@ public class ImmutableProp {
 
     private final TypeMirror elementType;
 
-    private final TypeName dynamicClassName;
-
-    private final TypeName dynamicElementClassName;
-
     private final boolean isTransient;
 
     private final boolean hasTransientResolver;
+
+    private final boolean isFormula;
 
     private final boolean isJavaFormula;
 
@@ -80,6 +79,10 @@ public class ImmutableProp {
     private final boolean isNullable;
 
     private final boolean isReverse;
+
+    private final boolean isId;
+
+    private final boolean isKey;
 
     private final Map<ClassName, String> validationMessageMap;
 
@@ -246,6 +249,7 @@ public class ImmutableProp {
         hasTransientResolver = hasResolver;
 
         Formula formula = executableElement.getAnnotation(Formula.class);
+        isFormula = formula != null;
         isJavaFormula = formula != null && formula.sql().isEmpty();
 
         isAssociation = context.isImmutable(elementType);
@@ -310,6 +314,8 @@ public class ImmutableProp {
             associationAnnotation = executableElement.getAnnotation(descriptor.getType().getAnnotationType());
         }
         isNullable = descriptor.isNullable();
+        isId = descriptor.getType() == PropDescriptor.Type.ID;
+        isKey = getAnnotations(Key.class) != null;
 
         if (isAssociation) {
             OneToOne oneToOne = getAnnotation(OneToOne.class);
@@ -337,24 +343,6 @@ public class ImmutableProp {
             );
         } else {
             draftTypeName = draftElementTypeName;
-        }
-        if (isAssociation) {
-            dynamicElementClassName = ClassName.get(
-                    ((ClassName)elementTypeName).packageName(),
-                    "Dynamic" +((ClassName)elementTypeName).simpleName()
-            );
-        } else {
-            dynamicElementClassName = elementTypeName;
-        }
-        if (isList) {
-            dynamicClassName = ParameterizedTypeName.get(
-                    ClassName.get(List.class),
-                    dynamicElementClassName
-            );
-        } else if (returnType.getKind().isPrimitive()) {
-            dynamicClassName = ClassName.get(getBoxType());
-        } else {
-            dynamicClassName = dynamicElementClassName;
         }
 
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
@@ -444,40 +432,65 @@ public class ImmutableProp {
         return draftElementTypeName;
     }
 
-    public TypeName getDynamicClassName() {
-        return dynamicClassName;
-    }
-
-    public TypeName getDynamicElementClassName() {
-        return dynamicElementClassName;
-    }
-
+    @Override
     public boolean isTransient() {
         return isTransient;
     }
 
+    @Override
     public boolean hasTransientResolver() {
         return hasTransientResolver;
+    }
+
+    @Override
+    public boolean isFormula() {
+        return isFormula;
     }
 
     public boolean isJavaFormula() {
         return isJavaFormula;
     }
 
+    @Override
+    public boolean isView() {
+        return getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null;
+    }
+
+    @Override
     public boolean isList() {
         return isList;
     }
 
+    @Override
     public boolean isAssociation(boolean entityLevel) {
         return entityLevel ? isEntityAssociation : isAssociation;
     }
 
+    @Override
+    public boolean isRecursive() {
+        return context.isSubType(
+                elementType,
+                declaringType.getTypeElement().asType()
+        ) && getManyToManyViewBaseProp() == null;
+    }
+
+    @Override
     public boolean isNullable() {
         return isNullable;
     }
 
     public boolean isReverse() {
         return isReverse;
+    }
+
+    @Override
+    public boolean isId() {
+        return isId;
+    }
+
+    @Override
+    public boolean isKey() {
+        return isKey;
     }
 
     public boolean isValueRequired() {

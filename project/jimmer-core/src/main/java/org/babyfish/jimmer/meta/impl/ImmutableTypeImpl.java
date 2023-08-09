@@ -4,6 +4,7 @@ import kotlin.jvm.internal.ClassBasedDeclarationContainer;
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
@@ -541,6 +542,15 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 Collection<ImmutableType> superTypes,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
+            if (View.class.isAssignableFrom(javaClass)) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", immutable type can not inherit \"" +
+                                View.class.getName() +
+                                "\""
+                );
+            }
             this.kotlinType = null;
             this.javaClass = javaClass;
             this.superTypes = standardSuperTypes(superTypes);
@@ -560,8 +570,18 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
                 Collection<ImmutableType> superTypes,
                 BiFunction<DraftContext, Object, Draft> draftFactory
         ) {
+            Class<?> javaClass = ((ClassBasedDeclarationContainer)kotlinType).getJClass();
+            if (View.class.isAssignableFrom(javaClass)) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                javaClass.getName() +
+                                "\", immutable type can not inherit \"" +
+                                View.class.getName() +
+                                "\""
+                );
+            }
             this.kotlinType = kotlinType;
-            this.javaClass = ((ClassBasedDeclarationContainer)kotlinType).getJClass();
+            this.javaClass = javaClass;
             this.superTypes = standardSuperTypes(superTypes);
             this.draftFactory = draftFactory;
             for (ImmutableType superType : superTypes) {

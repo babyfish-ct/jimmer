@@ -3,7 +3,6 @@ package org.babyfish.jimmer.client.generator.ts;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 import org.babyfish.jimmer.client.meta.*;
-import org.babyfish.jimmer.meta.ImmutableType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class ServiceWriter extends TsCodeWriter {
 
@@ -147,7 +145,7 @@ public class ServiceWriter extends TsCodeWriter {
                 Type type = parameter.getType();
                 if (type instanceof NullableType) {
                     builder.nullable();
-                    type = ((NullableType)type).getTargetType();
+                    type = ((NullableType) type).getTargetType();
                 }
                 if (type instanceof ArrayType) {
                     builder.dot().append("join(',')");
@@ -155,13 +153,13 @@ public class ServiceWriter extends TsCodeWriter {
                 } else if (type instanceof SimpleType) {
                     pathBuilderMap.put(parameter.getName(), builder);
                 } else if (type instanceof ObjectType) {
-                    for (Property prop : ((ObjectType)type).getProperties().values()) {
+                    for (Property prop : ((ObjectType) type).getProperties().values()) {
                         PathBuilder newBuilder = new PathBuilder(builder);
                         newBuilder.dot().append(prop.getName());
                         Type newType = prop.getType();
                         if (newType instanceof NullableType) {
                             newBuilder.nullable();
-                            newType = ((NullableType)newType).getTargetType();
+                            newType = ((NullableType) newType).getTargetType();
                         }
                         if (newType instanceof ArrayType) {
                             newBuilder.dot().append("join(',')");
@@ -180,12 +178,12 @@ public class ServiceWriter extends TsCodeWriter {
                 Type type = parameter.getType();
                 if (type instanceof NullableType) {
                     builder.nullable();
-                    type = ((NullableType)type).getTargetType();
+                    type = ((NullableType) type).getTargetType();
                 }
                 if (type instanceof ArrayType) {
                     builder.dot().append("join(',')");
                     pathBuilderMap.put(parameter.getName(), builder);
-                } else if (type instanceof SimpleType) {
+                } else if (type instanceof SimpleType || type instanceof EnumType) {
                     pathBuilderMap.put(parameter.getName(), builder);
                 }
             }

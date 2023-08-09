@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
+import org.babyfish.jimmer.impl.util.FlatUtils
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
@@ -29,11 +30,17 @@ internal const val DRAFT_FIELD_EMAIL_PATTERN = "__email_pattern"
 internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
-internal const val DYNAMIC = "Dynamic"
 
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
+internal val VIEW_CLASS_NAME = View::class.asClassName()
+internal val INPUT_CLASS_NAME = Input::class.asClassName()
+internal val VIEW_METADATA_CLASS_NAME = ClassName(
+    "org.babyfish.jimmer.sql.fetcher",
+    "ViewMetadata"
+)
+internal val FLAT_UTILS_CLASS_NAME = FlatUtils::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()
@@ -66,7 +73,6 @@ internal val MANY_TO_MANY_VIEW_LIST_CLASS_NAME = ManyToManyViewList::class.asCla
 internal val LOCAL_DATE_CLASS_NAME = LocalDate::class.asClassName()
 internal val LOCAL_DATE_TIME_CLASS_NAME = LocalDateTime::class.asClassName()
 internal val LOCAL_TIME_CLASS_NAME = LocalTime::class.asClassName()
-internal val DYNAMIC_CLASS_NAME = Dynamic::class.asClassName()
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"

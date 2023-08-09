@@ -1,0 +1,33 @@
+abstract Key {
+    name
+    edition
+}
+
+BookView : Key {
+    id
+    store {
+        name
+    }
+    authors {
+        firstName
+        lastName
+    }
+}
+
+input BookInput {
+    #allScalars
+    id(store)
+    id(authors) as authorIds
+}
+
+input CompositeBookInput {
+    #allScalars
+    store {
+        #allScalars
+        -id
+    }
+    authors {
+        #allScalars
+        -id
+    }
+}
