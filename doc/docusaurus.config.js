@@ -115,34 +115,7 @@ const config = {
       darkTheme: darkCodeTheme,
       additionalLanguages: ['java', 'kotlin', 'groovy', 'sql', 'cpp', 'kotlin', 'graphql', 'json', 'csharp'],
     },
-  }),
-  ssrTemplate: `<!DOCTYPE html>
-<html <%~ it.htmlAttributes %>>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="generator" content="Docusaurus v<%= it.version %>">
-    <% it.metaAttributes.forEach((metaAttribute) => { %>
-      <%~ metaAttribute %>
-    <% }); %>
-    <%~ it.headTags %>
-    <% it.stylesheets.forEach((stylesheet) => { %>
-      <link rel="stylesheet" href="<%= it.baseUrl %><%= stylesheet %>" />
-    <% }); %>
-    <% it.scripts.forEach((script) => { %>
-      <link rel="preload" href="<%= it.baseUrl %><%= script %>" as="script">
-    <% }); %>
-  </head>
-  <body <%~ it.bodyAttributes %>>
-    <%~ it.preBodyTags %>
-    <div id="_docusaurus">
-      
-    </div>
-    <% it.scripts.forEach((script) => { %>
-      <script src="<%= it.baseUrl %><%= script %>"></script>
-    <% }); %>
-    <%~ it.postBodyTags %>
-  </body>
-</html>`
+  })
 };
 
 module.exports = config;
