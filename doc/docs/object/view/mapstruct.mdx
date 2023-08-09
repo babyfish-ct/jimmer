@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Work with mapstruct 
+title: mapstruct 
 ---
 
 import Tabs from '@theme/Tabs';
@@ -296,7 +296,7 @@ Java POJO代码中采用了`@Nullable`注解，仅为提高可读性，无实质
 
     -   这里，`BookInput.id`是允许为null的。这是必要的，比如，插入数据不需要指定id。
 
-    -   实体对象动态属性`Book.id`不允许为null *(Jimmer禁止id可以为null，请参见[映射篇/基础映射/简单映射#@Id](../mapping/base/basic#id))*
+    -   实体对象动态属性`Book.id`不允许为null *(Jimmer禁止id可以为null，请参见[映射篇/基础映射/简单映射#@Id](../../mapping/base/basic#id))*
 
     二者彼此矛盾，那么，`BookInput`怎么转化为`Book`呢？
 
@@ -311,7 +311,7 @@ Java POJO代码中采用了`@Nullable`注解，仅为提高可读性，无实质
     这种动态对象属性被定义为关联对象，而POJO中却定义为关联id，叫做短关联映射。
 
     :::info
-    对于短关联这个概念，请参考[这里](../mapping/advanced/view/id-view#基本概念短关联)
+    对于短关联这个概念，请参考[这里](../../mapping/advanced/view/id-view#基本概念短关联)
     :::
 
 -   `BookInput.authors`
@@ -321,7 +321,7 @@ Java POJO代码中采用了`@Nullable`注解，仅为提高可读性，无实质
     这种动态对象属性被定义为关联对象集合，而POJO中却定义为关联id的集合，叫做短关联映射。
 
     :::info
-    对于短关联这个概念，请参考[这里](../mapping/advanced/view/id-view#基本概念短关联)
+    对于短关联这个概念，请参考[这里](../../mapping/advanced/view/id-view#基本概念短关联)
     :::
 
 其他属性和原始实体的定义完全一样，无需说明
@@ -596,7 +596,7 @@ public interface Input<E> {
 
 动态对象永远不会实现这个此结构，该接口应该有用户自定义的静态POJO类来实现。其功能非常简单，就是把当前静态POJO转化为动态对象。
 
-该接口可以提供语法层面的便利，无论是底层的[保存指令](../mutation/save-command)还是上层的spring-data基接口`JRepository/KRepository`，其`sava`方法都直接接受`Input`参数，而无需用户调用Mapper完成转化。
+该接口可以提供语法层面的便利，无论是底层的[保存指令](../../mutation/save-command)还是上层的spring-data基接口`JRepository/KRepository`，其`sava`方法都直接接受`Input`参数，而无需用户调用Mapper完成转化。
 
 如果想要这个语法层面的便利，你可以选择让POJO实现该接口，修改`BookInput`的代码，如下
 

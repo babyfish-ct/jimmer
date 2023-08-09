@@ -5,6 +5,9 @@ title: DTO语言
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ShortAssociation } from '@site/src/components/ShortAssociation';
+import FlatProblem from './_flat-problem.md';
+import { ViewMore } from '@site/src/components/ViewMore';
 
 ## 1. 概念
 
@@ -315,7 +318,7 @@ BookView {
 如果实体的id被配置了自增策略，那么input DTO中的id属性应该为null，这几乎是这种做法唯一合理的场景。这是input DTO已经实现了的基本特性，前文已经对此做了阐述。除此之外，用户应避免使用此功能。
 :::
 
-默认情况下，DTO属性的可空性和原始属性的可空性一样。但是我们可以采用`?`修饰DTO属性，让其可null
+默认情况下，DTO属性的可空性和原始属性的可空性一样。但是我们可以采用问号`?`修饰DTO属性，让其可null
 
 ```sh title="UpdateBookInput"
 input UpdateBookInput {
@@ -450,72 +453,432 @@ RobotView {
 对关联属性属性的处理是DTO语言一个非常强大的功能，存在三种用法
 
 -   直接使用
+-   递归关联
 -   调用id函数后使用
 -   调用flat函数后使用
 
 ### 9.1. 普通关联
 
-```sh title="Robot.dto"
-input CompositeBookInput {
+-   基本用法
+
+    ```sh title="Robot.dto"
+    input CompositeBookInput {
+        
+        #allScalars(Book)
+
+        # highlight-next-line
+        store {
+            #allScalars(BookStore)
+            -id
+        }
+
+        # highlight-next-line
+        authors {
+            #allScalars(Author)
+            -id
+        }
+    }
+    ```
+
+    生成的代码为
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="CompositeBookInput.java"
+    @lombok.Data
+    public class CompositeBookInput implements Input<Book> {
+
+        @Nullable
+        private Long id;
+
+        private String name;
+
+        private int edition;
+
+        private BigDecimal price;
+
+        // highlight-next-line
+        private TargetOf_store store;
+
+        // highlight-next-line
+        private List<TargetOf_authors> authors;
+
+        @lombok.Data
+        // highlight-next-line
+        public static class TargetOf_store implements Input<BookStore> {
+        
+            private String name;
+
+            @Nullable
+            private String website;
+
+            ...省略其他成员...
+        }
+
+        @lombok.Data
+        // highlight-next-line
+        public static class TargetOf_authors implements Input<Author> {
+            
+            private String firstName;
+
+            private String lastName;
+
+            private Gender gender;
+
+            ...省略其他成员...
+        }
+
+        ...省略其他成员...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="CompositeBookInput.kt"
+    data class CompositeBookInput(
+        val id: Long? = null,
+        val name: String = "",
+        val edition: Int = 0,
+        val price: BigDecimal,
+
+        // highlight-next-line
+        val store: TargetOf_store? = null,
+        // highlight-next-line
+        val authors: List<TargetOf_authors> = emptyList(),
+    ) : Input<Book> {
+
+        // highlight-next-line
+        data class TargetOf_store(
+            val name: String = "",
+            val website: String? = null,
+        ) : Input<BookStore> {
+            ...省略其他成员...
+        }
+
+        // highlight-next-line
+        data class TargetOf_authors(
+            public val firstName: String = "",
+            public val lastName: String = "",
+            public val gender: Gender,
+        ) : Input<Author> {
+            ...省略其他成员...
+        }
+
+        ...省略其他成员...
+    } 
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   重命名
+
+    如果要对关联属性进行重命名，`as`子句应该在关联定义块之前，例如
+
+    ```sh title="CompositeBookInput.dto"
+    input CompositeBookInput {
+        
+        authors as authorList {
+            ...略...
+        }
+
+        ...略...
+    }
+    ```
+
+### 9.2 递归关联
+
+如果原始对于可递归的属性，比如，附带例子中的`TreeNode.parent`或`TreeNode.childNodes`，可以使用星号`*`将DTO对应的关联属性标记为递归属性。
+
+```sh title="TreeNodeView.dto"
+TreeNodeView {
     
-    #allScalars(Book)
+    #allScalars
 
-    # highlight-next-line
-    store {
-        #allScalars(BookStore)
-        -id
-    }
-
-    # highlight-next-line
-    authors {
-        #allScalars(Author)
-        -id
-    }
+    childNodes {
+        #allScalars
+    #highlight-next-line
+    }*
 }
 ```
 
-生成的代码为
+### 9.3. id函数
+
+对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，我们当然选择为在实体中定义[@IdView](../../mapping/advanced/view/id-view)属性，例如
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="CompositeBookInput.java"
-@lombok.Data
-public class CompositeBookInput implements Input<Book> {
+```java title="Book.java"
+@Entity
+public interface Book {
 
     @Nullable
-    private Long id;
+    @ManyToOne
+    BookStore store();
 
-    private String name;
+    @ManyToMany
+    val authors: List<Author>
 
-    private int edition;
+    // highlight-next-line
+    @IdView
+    Long storeId();
 
-    private BigDecimal price;
-
-    @Nullable
-    private StoreTarget store;
-
-    private List<AuthorTarget> authors;
+    // highlight-next-line
+    @IdView("authors")
+    List<Long> authorIds();
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="CompositeBookInput.kt"
-data class CompositeBookInput(
-    
-) : Input<Book> {
+```kotlin title="Book.kt"
+@Entity
+interface Book {
 
-    ...省略其他成员...
+    @ManyToOne
+    val store: BookStore?
+
+    @ManyToMany
+    val authors: List<Author>
+    
+    // highlight-next-line
+    @IdView
+    val storeId: Long?
+
+    // highlight-next-line
+    @IdView("authors")
+    val authorIds: List<Long>
 } 
 ```
 
 </TabItem>
 </Tabs>
 
-### 9.2. id函数
+在实体已经定义了[@IdView](../../mapping/advanced/view/id-view)属性的情况下，只需要用DTO语言简单地引用即可
 
-### 9.3. flat函数
+```sh title="Book.dto"
+BookView {
+
+    // highlight-next-line
+    storeId
+
+    // highlight-next-line
+    authorIds
+
+    ...略...
+}
+```
+
+:::tip
+然而，我们不能总是寄希望于实体类型总是声明了[@IdView](../../mapping/advanced/view/id-view)属性，更好的方案不应该又此假设。
+
+因此，DTO语言可以对关联属性调用`id`函数来达到同样目的
+:::
+
+```sh title="Book.dto"
+BookView {
+
+    // highlight-next-line
+    id(store)
+
+    // highlight-next-line
+    id(authors) as authorIds
+
+    ...略...
+}
+```
+
+这段代码的功能和前面的例子完全一样，但不再假设实体类型总是声明了[@IdView](../../mapping/advanced/view/id-view)属性，是更好的方案。
+
+### 9.4. flat函数
+
+`flat`函数只能用于引用关联 *(一对一或多对一)*，不能用于集合关联 *(一对多或多对多)*，用于把关联DTO的属性提升到当前DTO类型，得到不含关联的平坦对象。
+
+以官方例子中的`TreeNode`实体为例 *(事实上，这个例子是错误的，我们稍后会讨论这个问题)*
+
+```sh title="TreeNode.dto"
+FlatTreeNodeView {
+    
+    #allScalars(TreeNode)
+
+    # highlight-next-line
+    flat(parent) {
+        #allScalars(TreeNode)
+    }
+}
+```
+
+事实上，这个例子是错误的，因为聚合根和关联对象都有属性`id`和`name`，无条件把关联对象的属性往聚合根上提取，必然导致名字冲突，最终导致DTO语言编译报错。
+
+正确的做法，是和用户多属性模糊重命名的`as(...) {}`块结合使用。让我们来看一个新的例子
+
+```sh title="TreeNode.dto"
+FlatTreeNodeView {
+    
+    #allScalars(TreeNode) // id, name
+
+    # highlight-next-line
+    flat(parent) {
+        # highlight-next-line
+        as(^ -> parent) {
+            // parentId, parentName
+            #allScalars(TreeNode) 
+        }
+    }
+}
+```
+
+这样，我们得到了一个平坦的DTO类型，具有4个属性：`id`、`name`、`parentId`和`parentName`。
+
+甚至还可以嵌套使用`flat`函数，将来多级关联转化为平台对象
+
+```sh title="TreeNode.dto"
+FlatTreeNodeView {
+    
+    #allScalars(TreeNode)
+
+    # highlight-next-line
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars(TreeNode)
+        }
+        # highlight-next-line
+        flat(grandParent) {
+            as(^ -> parent) {
+                #allScalars(TreeNode)
+            }
+            
+        }   
+    }
+}
+```
+
+这样，我们得到了一个平坦的DTO类型，具有6个属性：`id`、`name`、`parentId`、`parentName`、`grandParentId`、`grandParentName`。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+TreeNode treeNode = treeNodeDraft.$.produce(cola -> {
+    cola.setId(4L);
+    cola.setName("Coca cola");
+    cola.applyParent(drinks -> {
+        drinks.setId(3L);
+        drinks.setName("Drinks");
+        drinks.applyParent(food -> {
+            food.setId(2L);
+            food.setName("Food");
+        })
+    })
+});
+
+// 将层次化的Entity转化为扁平的DTO
+FlatTreeNodeView view = new FlatTreeNodeView(treeNode);
+
+System.out.println(view);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val treeNode = new(TreeNode::class).by {
+    id = 4L
+    name = "Coca cola"
+    parent().apply {
+        id = 3L
+        name = "Drinks"
+        parent().apply {
+            id = 2L
+            name = "Food"
+        }   
+    }
+}
+
+// 将层次化的Entity转化为扁平的DTO
+val view = FlatTreeNodeView(treeNode)
+
+println(view)
+```
+
+</TabItem>
+</Tabs>
+
+打印结果为 *(为了方便阅读，这里进行了格式化)*
+
+```
+com.yourcompany.yourproject.FlatTreeNodeView(
+    id = 4,
+    name = Coco cola,
+    parentId = 3,
+    parentName = Drinks,
+    grandParentId = 2,
+    grandParentName = "Food"
+)
+```
+
+`flat`的缺点也很明显，DTO语言虽然给予了强大的支持，但并不推荐盲目采用，
+请参见<ViewMore buttonText="对是否采用flat模式的建议" variant="text"><FlatProblem/></ViewMore>
 
 ## 10. 继承
+
+DTO类型定义之间支持继承，具备如下特色
+
+-   DTO类型定义之间的继承，只是配置层面的继承而已。因此，既和原始实体的继承关系无关，也和生成的DTO的类型无关 *(截止到目前版本为止，不会生成带继承关系的Java/Kotlin类)*。
+
+-   DTO类型之间的继承只针对dto文件内部。
+
+-   DTO类型之间的继承是多继承，即，一个DTO类型定义，可以从多个DTO类型继承。
+
+-   input类型定义只能继承自input类型定义。
+
+例子如下:
+
+```sh title="Robot.dto"
+
+BaseRobotView1 {
+    ...略...
+}
+
+BaseRobotView2 {
+    ...略...
+}
+
+# highlight-next-line
+DefaultRobotView : BaseRobotView1, BaseRobotView2 {
+    ...略...
+}
+```
+
+对于生成的Java/Kotlin类型`DefaultRobotView`类而言，并不会任何Java/Kotlin继承关系，这是因为：
+
+-   生成的是Java/Kotlin类而非接口，无法实现多继承
+
+-   由于负属性特性的存在，相比于基DTO类型定义而言，派生DTO类型定义可能反而少了一些属性
+
+这就是"DTO类型定义之间的继承，只是配置层面的继承而已"的根本原因。
+
+但是，上述代码，却会导致在Java/Kotlin中生成`BaseRobotView1`类和`BaseRobotView2`类。
+
+如果你期望基DTO类型定义只为派生DTO类型定义所用，其本身不生成任何Java/Kotlin类型，可以添加`abstract`修饰符，如下
+
+```sh title="Robot.dto"
+
+# highlight-next-line
+abstract BaseRobotView1 {
+    ...略...
+}
+
+# highlight-next-line
+abstract BaseRobotView2 {
+    ...略...
+}
+
+DefaultRobotView : BaseRobotView1, BaseRobotView2 {
+    ...略...
+}
+```

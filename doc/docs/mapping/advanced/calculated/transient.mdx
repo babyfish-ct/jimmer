@@ -538,7 +538,7 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     }
 
     @Override
-    public BigDecimal getDefaultValue() {
+    public List<Long> getDefaultValue() {
         Collections.emptyList();
     }
 }
@@ -560,7 +560,7 @@ class BookStoreNewestBooksResolver : KTransientResolver<Long, List<Long>> { ❶
         稍后实现
     }
 
-    override fun getDefaultValue(): BigDecimal =
+    override fun getDefaultValue(): List<Long> =
         emptyList()
 }
 ```
@@ -630,7 +630,7 @@ implements TransientResolver<Long, List<Long>> {
     private final JSqlClient sqlClient;
 
     // 构造注入
-    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
+    public BookStoreNewestBooksResolver(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
     
