@@ -4,7 +4,6 @@ import org.babyfish.jimmer.example.save.common.AbstractMutationTest
 import org.babyfish.jimmer.example.save.common.ExecutedStatement
 import org.babyfish.jimmer.example.save.model.*
 import org.babyfish.jimmer.kt.new
-import org.babyfish.jimmer.sql.runtime.ExecutionException
 import org.babyfish.jimmer.sql.runtime.SaveException
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -19,17 +18,17 @@ import java.math.BigDecimal
  * OneToManyTest -> [Current: ManyToManyTest] -> RecursiveTest -> TriggerTest
  */
 class ManyToManyTest : AbstractMutationTest() {
-    
+
     /*
      * Noun explanation
      *
      * Short Association: Association object(s) with only id property.
      * Long Association: Association object(s) with non-id properties.
      */
-    
+
     @Test
     fun testInsertMiddleTableByShortAssociation() {
-        
+
         jdbc(
             "insert into book(id, name, edition, price) values(?, ?, ?, ?)",
             10L, "SQL in Action", 1, BigDecimal(45)
@@ -38,40 +37,40 @@ class ManyToManyTest : AbstractMutationTest() {
             "insert into author(id, first_name, last_name, gender) values(?, ?, ?, ?)",
             100L, "Ben", "Brumm", "M"
         )
-        
+
         val result = sql.entities.save(
             new(Book::class).by {
                 name = "SQL in Action"
                 edition = 1
                 price = BigDecimal(49)
-                authors().addBy { 
+                authors().addBy {
                     id = 100L
                 }
             }
         )
-        
-        assertExecutedStatements( 
-            
+
+        assertExecutedStatements(
+
             // Select aggregate-root by key
             ExecutedStatement(
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                     "from BOOK tb_1_ " +
                     "where tb_1_.NAME = ? and tb_1_.EDITION = ?",
                 "SQL in Action", 1
-            ),  
-            
+            ),
+
             // Aggregate exists, update it
             ExecutedStatement(
                 "update BOOK set PRICE = ? where ID = ?",
                 BigDecimal(49), 10L
-            ),  
-            
+            ),
+
             // Query mapping from middle table
             ExecutedStatement(
                 "select AUTHOR_ID from BOOK_AUTHOR_MAPPING where BOOK_ID = ?",
                 10L
-            ),  
-            
+            ),
+
             // Mapping does not exist, insert it
             ExecutedStatement(
                 "insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) values(?, ?)",

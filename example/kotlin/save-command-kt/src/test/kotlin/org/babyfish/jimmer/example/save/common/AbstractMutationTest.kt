@@ -1,5 +1,8 @@
 package org.babyfish.jimmer.example.save.common
 
+import net.sf.jsqlparser.JSQLParserException
+import net.sf.jsqlparser.parser.CCJSqlParserUtil
+import org.assertj.core.api.Assertions.assertThat
 import org.babyfish.jimmer.example.save.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.dialect.H2Dialect
 import org.babyfish.jimmer.sql.kt.KSqlClient
@@ -7,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.DefaultExecutor
 import org.babyfish.jimmer.sql.runtime.Executor
+import org.babyfish.jimmer.sql.runtime.SqlFormatter
 import org.h2.Driver
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -39,15 +43,19 @@ abstract class AbstractMutationTest {
                 proceed(connection)
             }
             setExecutor(
-                object : Executor {
-                    override fun <R : Any?> execute(args: Executor.Args<R>): R {
-                        executedStatements.add(
-                            ExecutedStatement(args.sql, *args.variables.toTypedArray())
-                        )
-                        return DefaultExecutor.INSTANCE.execute(args)
+                // show sql
+                Executor.log(
+                    object : Executor {
+                        override fun <R : Any?> execute(args: Executor.Args<R>): R {
+                            executedStatements.add(
+                                ExecutedStatement(args.sql, *args.variables.toTypedArray())
+                            )
+                            return DefaultExecutor.INSTANCE.execute(args)
+                        }
                     }
-                }
+                )
             )
+            setSqlFormatter(SqlFormatter.PRETTY)
             customize(this)
         }
     }
@@ -70,29 +78,41 @@ abstract class AbstractMutationTest {
         }
     }
 
+    /**
+     * 比较两个SQL语句语义是否相等，忽略格式差异
+     */
+    private fun compareSQL(sql1: String?, sql2: String?): Boolean {
+        return try {
+            val stmt1 = CCJSqlParserUtil.parse(sql1)
+            val stmt2 = CCJSqlParserUtil.parse(sql2)
+            stmt1.toString() == stmt2.toString()
+        } catch (e: JSQLParserException) {
+            false
+        }
+    }
+
     protected fun assertExecutedStatements(vararg executedStatements: ExecutedStatement) {
         val count = min(this.executedStatements.size, executedStatements.size)
         for (i in 0 until count) {
-            Assertions.assertEquals(
-                executedStatements[i].sql,
-                this.executedStatements[i].sql,
-                "Failed to assert sql of statements[$i]"
-            )
-            Assertions.assertEquals(
-                executedStatements[i].variables,
-                this.executedStatements[i].variables,
-                "Failed to assert variables of statements[$i]"
-            )
+            val expected = executedStatements[i].sql
+            val actual =  this.executedStatements[i].sql
+
+            assertThat(compareSQL(actual, expected))
+                .describedAs("Failed to assert sql of statements[$i]")
+                .isTrue()
+
+            assertThat(this.executedStatements[i].variables)
+                .describedAs("Failed to assert variables of statements[$i]")
+                .isEqualTo(executedStatements[i].variables)
         }
-        Assertions.assertEquals(
-            executedStatements.size,
-            this.executedStatements.size,
-            "Expected " +
-                executedStatements.size +
-                " statements, but " +
-                this.executedStatements.size +
-                " statements"
-        )
+
+        assertThat(this.executedStatements.size)
+            .describedAs("Expected " +
+                    executedStatements.size +
+                    " statements, but " +
+                    this.executedStatements.size +
+                    " statements")
+            .isEqualTo(executedStatements.size)
     }
 
     protected open fun customize(dsl: KSqlClientDsl) {}
@@ -116,10 +136,10 @@ abstract class AbstractMutationTest {
             try {
                 InputStreamReader(stream).use { reader ->
                     val builder: StringBuilder = StringBuilder()
-                    val buf: CharArray = CharArray(1024)
+                    val buf = CharArray(1024)
                     var len: Int
                     while ((reader.read(buf).also { len = it }) != -1) {
-                        builder.append(buf, 0, len)
+                        builder.appendRange(buf, 0, len)
                     }
                     con.createStatement().execute(builder.toString())
                 }
