@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
+import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
@@ -942,26 +943,32 @@ public class SaveTest extends AbstractMutationTest {
         executeAndExpectResult(
                 getSqlClient(cfg -> {
                     cfg.addDraftInterceptor(
-                            new DraftInterceptor<BookStoreDraft>() {
+                            new DraftInterceptor<NamedEntityDraft>() {
                                 @Override
-                                public void beforeSave(@NotNull BookStoreDraft draft, boolean isNew) {
-                                    draft.setName("NewBookStoreName");
+                                public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+                                    draft.setDeleted(false);
                                 }
                             }
                     );
                 }).getEntities().saveCommand(
-                        BookDraft.$.produce(book -> {
-                            book.setId(learningGraphQLId1);
-                            book.applyStore(store -> store.setId(manningId));
+                        AdministratorMetadataDraft.$.produce(metadata -> {
+                            metadata.setId(10L);
+                            metadata.applyAdministrator(administrator -> {
+                                administrator.setId(-1L);
+                            });
                         })
                 ).setMode(SaveMode.UPDATE_ONLY),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA set DELETED = ?, " +
+                                        "ADMINISTRATOR_ID = ? " +
+                                        "where ID = ?"
+                        );
                     });
                     ctx.entity(it -> {
-                        it.original("{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\",\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}}");
-                        it.modified("{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\",\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}}");
+                        it.original("{\"administrator\":{\"id\":-1},\"id\":10}");
+                        it.modified("{\"deleted\":false,\"administrator\":{\"id\":-1},\"id\":10}");
                     });
                 }
         );

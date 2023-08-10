@@ -349,6 +349,7 @@ alter table permission
 
 insert into administrator(id, name, deleted, created_time, modified_time)
     values
+    (-1, 'a_-1', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (1, 'a_1', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (2, 'a_2', true, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
     (3, 'a_3', false, '2022-10-03 00:00:00', '2022-10-03 00:10:00'),
