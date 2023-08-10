@@ -670,11 +670,19 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_2_.ADMINISTRATOR_ID, tb_1_.ID " +
                                     "from ROLE tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
-                                    "where tb_2_.ADMINISTRATOR_ID in (?, ?) " +
+                                    "where tb_2_.ADMINISTRATOR_ID in (?, ?, ?) " +
                                     "and tb_1_.DELETED = ?"
-                    ).variables(2L, 4L, true);
+                    ).variables(-1L, 2L, 4L, true);
                     ctx.rows(
                             "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"a_-1\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"roles\":[]," +
+                                    "--->--->\"id\":-1" +
+                                    "--->}," +
                                     "--->{" +
                                     "--->--->\"name\":\"a_2\"," +
                                     "--->--->\"deleted\":true," +
@@ -727,11 +735,19 @@ public class GlobalFilterTest extends AbstractQueryTest {
                             "select tb_2_.ADMINISTRATOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                     "from ROLE tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
-                                    "where tb_2_.ADMINISTRATOR_ID in (?, ?) " +
+                                    "where tb_2_.ADMINISTRATOR_ID in (?, ?, ?) " +
                                     "and tb_1_.DELETED = ?"
-                    ).variables(2L, 4L, true);
+                    ).variables(-1L, 2L, 4L, true);
                     ctx.rows(
                             "[" +
+                                    "--->{" +
+                                    "--->--->\"name\":\"a_-1\"," +
+                                    "--->--->\"deleted\":true," +
+                                    "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                    "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                    "--->--->\"roles\":[]," +
+                                    "--->--->\"id\":-1" +
+                                    "--->}," +
                                     "--->{" +
                                     "--->--->\"name\":\"a_2\"," +
                                     "--->--->\"deleted\":true," +

@@ -436,8 +436,8 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                                     "select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID " +
                                             "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
                                             "inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
-                                            "where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_3_.DELETED = ?"
-                            ).variables(2L, 4L, true);
+                                            "where tb_1_.ADMINISTRATOR_ID in (?, ?, ?) and tb_3_.DELETED = ?"
+                            ).variables(-1L, 2L, 4L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE tb_1_ " +
@@ -446,6 +446,14 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
                         }
                         ctx.rows(
                                 "[" +
+                                        "--->{" +
+                                        "--->--->\"name\":\"a_-1\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"roles\":[]," +
+                                        "--->--->\"id\":-1" +
+                                        "--->}," +
                                         "--->{" +
                                         "--->--->\"name\":\"a_2\"," +
                                         "--->--->\"deleted\":true," +
