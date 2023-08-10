@@ -106,10 +106,10 @@ import {Save} from '@site/src/components/Image';
         store().apply {
             name = MANNING;
         }
-        authors().appBy {
-            firstName("Dmitry");
-            lastName("Jamerov");
-            gender(Gender.MALE);
+        authors().addBy {
+            firstName = "Dmitry"
+            lastName = "Jamerov"
+            gender = Gender.MALE
         }
         authors().addBy {
             firstName = "Svetlana"
@@ -124,12 +124,12 @@ import {Save} from '@site/src/components/Image';
     </Tabs>
 
 :::tip
-Save指令和其他ORM框架的save方法之间存在本质差异。
+Save指令和其他ORM框架的`save`方法之间存在本质差异。
 
 以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
-关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)和[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)和[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
 
-Jimmer采用完全不同方法，被保存的Jimmer对象具备[动态性](../../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+Jimmer采用完全不同的方法，被保存的Jimmer对象具备[动态性](../../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
 :::
 
 ## API
