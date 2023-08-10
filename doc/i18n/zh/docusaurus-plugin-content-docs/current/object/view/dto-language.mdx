@@ -734,7 +734,7 @@ FlatTreeNodeView {
 
 这样，我们得到了一个平坦的DTO类型，具有4个属性：`id`、`name`、`parentId`和`parentName`。
 
-甚至还可以嵌套使用`flat`函数，将来多级关联转化为平台对象
+甚至还可以嵌套使用`flat`函数，将来多级关联转化为平坦对象
 
 ```sh title="TreeNode.dto"
 FlatTreeNodeView {
@@ -821,8 +821,9 @@ com.yourcompany.yourproject.FlatTreeNodeView(
 )
 ```
 
-`flat`的缺点也很明显，DTO语言虽然给予了强大的支持，但并不推荐盲目采用，
-请参见<ViewMore buttonText="对是否采用flat模式的建议" variant="text"><FlatProblem/></ViewMore>
+`flat`方案也有缺点，对**output ** DTO而言，`flat`方案是有争议的，并不推荐盲目采用。
+
+请参见<ViewMore buttonText="Output DTO是否该用flat模式的争议" variant="text"><FlatProblem/></ViewMore>
 
 ## 10. 继承
 
