@@ -1,12 +1,15 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
@@ -15,6 +18,7 @@ import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -931,5 +935,35 @@ public class SaveTest extends AbstractMutationTest {
             });
             ctx.close();
         });
+    }
+
+    @Test
+    public void testIgnoreAssociatedInterceptor() {
+        executeAndExpectResult(
+                getSqlClient(cfg -> {
+                    cfg.addDraftInterceptor(
+                            new DraftInterceptor<BookStoreDraft>() {
+                                @Override
+                                public void beforeSave(@NotNull BookStoreDraft draft, boolean isNew) {
+                                    draft.setName("NewBookStoreName");
+                                }
+                            }
+                    );
+                }).getEntities().saveCommand(
+                        BookDraft.$.produce(book -> {
+                            book.setId(learningGraphQLId1);
+                            book.applyStore(store -> store.setId(manningId));
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\",\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}}");
+                        it.modified("{\"id\":\"e110c564-23cc-4811-9e81-d587a13db634\",\"store\":{\"id\":\"2fa3955e-3e83-49b9-902e-0465c109c779\"}}");
+                    });
+                }
+        );
     }
 }
