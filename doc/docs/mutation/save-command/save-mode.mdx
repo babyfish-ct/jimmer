@@ -228,13 +228,13 @@ sqlClient.save(book)
 然而，对于关联对象而言，默认情况下，既无id也无key的关联对象会导致异常。这将在后续文档中讨论。
 :::
 
-如果试图既无id也无key的聚合根对象，不同的保存模式对应不同的行为：
+如果试图保存既无id也无key的聚合根对象，不同的保存模式对应不同的行为：
 
--   UPSERT: 不经查询和判断，直接插入对象，如同INSERT_ONLY一般
+-   `UPSERT`: 不经查询和判断，直接插入对象，如同INSERT_ONLY一般
 
--   INSERT_ONLY: 插入对象
+-   `INSERT_ONLY`: 插入对象
 
--   UPDATE_ONLY: 不执行任何SQL，同时告诉开发人员影响行数为0
+-   `UPDATE_ONLY`: 不执行任何SQL，同时告诉开发人员影响行数为0
 
 上面的例子的保存模式是默认的`UPSERT`，因此，生成如下SQL
 
