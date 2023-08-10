@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.lang.model.element.Modifier;
 import java.util.ArrayList;
@@ -133,6 +134,21 @@ public class MapStructGenerator {
         }
         builder.addStatement("return this");
         typeBuilder.addMethod(builder.build());
+
+        if (prop.getTypeName() == TypeName.BOOLEAN && !prop.getName().startsWith("is")) {
+            String name = prop.getName();
+            name = StringUtil.identifier("is", prop.getName());
+            MethodSpec.Builder isBuilder = MethodSpec
+                    .methodBuilder(name)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(
+                            prop.getTypeName().box(),
+                            prop.getName()
+                    )
+                    .returns(type.getMapStructClassName())
+                    .addStatement("return $L($L)", prop.getName(), prop.getName());
+            typeBuilder.addMethod(isBuilder.build());
+        }
     }
 
     private void addBuild() {

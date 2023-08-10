@@ -252,18 +252,6 @@ class ImmutableProp(
             ?.let { ctx.typeOf(it) }
     }
 
-    val dynamicTypeName : TypeName by lazy {
-        targetType?.let {
-            if (isList) {
-                LIST.parameterizedBy(
-                    it.dynamicClassName
-                ).copy(nullable = true)
-            } else {
-                it.dynamicClassName.copy(nullable = true)
-            }
-        } ?: typeName(overrideNullable = true)
-    }
-
     val isReference = isAssociation && !isList
 
     val isScalarList = isList && !isAssociation

@@ -62,10 +62,6 @@ public class ImmutableProp implements BaseProp {
 
     private final TypeMirror elementType;
 
-    private final TypeName dynamicClassName;
-
-    private final TypeName dynamicElementClassName;
-
     private final boolean isTransient;
 
     private final boolean hasTransientResolver;
@@ -348,24 +344,6 @@ public class ImmutableProp implements BaseProp {
         } else {
             draftTypeName = draftElementTypeName;
         }
-        if (isAssociation) {
-            dynamicElementClassName = ClassName.get(
-                    ((ClassName)elementTypeName).packageName(),
-                    "Dynamic" +((ClassName)elementTypeName).simpleName()
-            );
-        } else {
-            dynamicElementClassName = elementTypeName;
-        }
-        if (isList) {
-            dynamicClassName = ParameterizedTypeName.get(
-                    ClassName.get(List.class),
-                    dynamicElementClassName
-            );
-        } else if (returnType.getKind().isPrimitive()) {
-            dynamicClassName = ClassName.get(getBoxType());
-        } else {
-            dynamicClassName = dynamicElementClassName;
-        }
 
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
     }
@@ -452,14 +430,6 @@ public class ImmutableProp implements BaseProp {
 
     public TypeName getDraftElementTypeName() {
         return draftElementTypeName;
-    }
-
-    public TypeName getDynamicClassName() {
-        return dynamicClassName;
-    }
-
-    public TypeName getDynamicElementClassName() {
-        return dynamicElementClassName;
     }
 
     @Override

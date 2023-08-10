@@ -34,8 +34,6 @@ class ImmutableProcessor(
 
     private val processed = AtomicBoolean()
 
-    private val generateDynamicPojo = environment.options["jimmer.generate.dynamic.pojo"] == "true"
-
     private val includes: Array<String>? =
         environment.options["jimmer.source.includes"]
             ?.takeIf { it.isNotEmpty() }
@@ -228,10 +226,6 @@ class ImmutableProcessor(
         for ((file, classDeclarations) in classDeclarationMultiMap) {
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(allFiles)
-            if (generateDynamicPojo) {
-                DynamicGenerator(environment.codeGenerator, ctx, file, classDeclarations)
-                    .generate(allFiles)
-            }
             val sqlClassDeclarations = classDeclarations.filter {
                 it.annotation(Entity::class) !== null ||
                     it.annotation(MappedSuperclass::class) !== null ||

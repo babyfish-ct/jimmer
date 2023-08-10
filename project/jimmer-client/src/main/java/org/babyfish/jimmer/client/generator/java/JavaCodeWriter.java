@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.generator.ts.DtoWriter;
 import org.babyfish.jimmer.client.generator.File;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -200,8 +201,7 @@ public abstract class JavaCodeWriter<C extends JavaContext> extends CodeWriter<C
                 return name;
             }
         }
-        name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-        return isBoolean ? "is" + name : "get" + name;
+        return StringUtil.identifier(isBoolean ? "is" : "get", name);
     }
 
     private static String setterName(Property property) {
@@ -213,8 +213,7 @@ public abstract class JavaCodeWriter<C extends JavaContext> extends CodeWriter<C
                 name = name.substring(2);
             }
         }
-        name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-        return "set" + name;
+        return StringUtil.identifier("set", name);
     }
 
     protected void handleDtoProp(Property prop, Runnable handler) {

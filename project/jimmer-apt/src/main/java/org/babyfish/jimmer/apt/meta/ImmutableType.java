@@ -277,7 +277,16 @@ public class ImmutableType implements BaseType {
                             executableElement,
                             propIdSequence++
                     );
-                    declaredPropMap.put(prop.getName(), prop);
+                    ImmutableProp conflictProp = declaredPropMap.put(prop.getName(), prop);
+                    if (conflictProp != null) {
+                        throw new MetaException(
+                                prop.toElement(),
+                                "Conflict java methods: " +
+                                        prop.getGetterName() +
+                                        " and " +
+                                        conflictProp.getGetterName()
+                        );
+                    }
                 }
             }
         }

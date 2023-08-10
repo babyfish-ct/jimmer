@@ -30,7 +30,6 @@ internal const val DRAFT_FIELD_EMAIL_PATTERN = "__email_pattern"
 internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
-internal const val DYNAMIC = "Dynamic"
 
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
@@ -74,7 +73,6 @@ internal val MANY_TO_MANY_VIEW_LIST_CLASS_NAME = ManyToManyViewList::class.asCla
 internal val LOCAL_DATE_CLASS_NAME = LocalDate::class.asClassName()
 internal val LOCAL_DATE_TIME_CLASS_NAME = LocalDateTime::class.asClassName()
 internal val LOCAL_TIME_CLASS_NAME = LocalTime::class.asClassName()
-internal val DYNAMIC_CLASS_NAME = Dynamic::class.asClassName()
 internal val K_PROPS_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.ast.table",
     "KProps"

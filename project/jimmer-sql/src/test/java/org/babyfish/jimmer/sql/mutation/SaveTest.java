@@ -1,20 +1,25 @@
 package org.babyfish.jimmer.sql.mutation;
 
+import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
+import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -931,5 +936,41 @@ public class SaveTest extends AbstractMutationTest {
             });
             ctx.close();
         });
+    }
+
+    @Test
+    public void testIgnoreAssociatedInterceptor() {
+        executeAndExpectResult(
+                getSqlClient(cfg -> {
+                    cfg.addDraftInterceptor(
+                            new DraftInterceptor<NamedEntityDraft>() {
+                                @Override
+                                public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+                                    draft.setDeleted(false);
+                                }
+                            }
+                    );
+                }).getEntities().saveCommand(
+                        AdministratorMetadataDraft.$.produce(metadata -> {
+                            metadata.setId(10L);
+                            metadata.applyAdministrator(administrator -> {
+                                administrator.setId(-1L);
+                            });
+                        })
+                ).setMode(SaveMode.UPDATE_ONLY),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR_METADATA set DELETED = ?, " +
+                                        "ADMINISTRATOR_ID = ? " +
+                                        "where ID = ?"
+                        );
+                    });
+                    ctx.entity(it -> {
+                        it.original("{\"administrator\":{\"id\":-1},\"id\":10}");
+                        it.modified("{\"deleted\":false,\"administrator\":{\"id\":-1},\"id\":10}");
+                    });
+                }
+        );
     }
 }
