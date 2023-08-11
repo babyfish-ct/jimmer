@@ -3,15 +3,20 @@ sidebar_position: 2
 title: 孤单表单
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 :::caution
 这是一个非常简陋的方案，仅供学习或非常简单的项目使用。
 :::
 
 限制：只能保存单表数据，无法实现复杂数据结构的保存
 
-缺点：不解决API模糊性问题 *(该问题在[上一篇文档](./problem)中讨论过)*
+功能：解决安全性问题 *(该问题在[上一篇文档](./problem)中讨论过)*
 
-功能：且只解决安全性问题 *(该问题在[上一篇文档](./problem)中讨论过)*
+优点：无需定义Input DTO
+
+缺点：不解决API模糊性问题 *(该问题在[上一篇文档](./problem)中讨论过)*
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
