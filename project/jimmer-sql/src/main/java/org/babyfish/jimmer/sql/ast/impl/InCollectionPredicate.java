@@ -51,7 +51,11 @@ class InCollectionPredicate extends AbstractPredicate {
                 this.convertedValues = convertedValues;
             }
             for (Object value : convertedValues) {
-                builder.separator().variable(value);
+                if (value != null) {
+                    builder.separator().variable(value);
+                } else {
+                    builder.separator().nullVariable(((ExpressionImplementor<?>)expression).getType());
+                }
             }
             builder.leave();
         }
