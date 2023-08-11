@@ -590,7 +590,7 @@ RobotView {
 
 ### 9.2 递归关联
 
-如果原始对于可递归的属性，比如，附带例子中的`TreeNode.parent`或`TreeNode.childNodes`，可以使用星号`*`将DTO对应的关联属性标记为递归属性。
+对于实体中可递归的属性，比如，附带例子中的`TreeNode.parent`或`TreeNode.childNodes`，可以使用星号`*`将DTO对应的关联属性标记为递归属性。
 
 ```sh title="TreeNodeView.dto"
 TreeNodeView {
@@ -606,7 +606,7 @@ TreeNodeView {
 
 ### 9.3. id函数
 
-对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，我们当然选择为在实体中定义[@IdView](../../mapping/advanced/view/id-view)属性，例如
+对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，我们当然选择在实体中定义[@IdView](../../mapping/advanced/view/id-view)属性，例如
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -676,7 +676,7 @@ BookView {
 :::tip
 然而，我们不能总是寄希望于实体类型总是声明了[@IdView](../../mapping/advanced/view/id-view)属性，更好的方案不应该有此假设。
 
-因此，DTO语言可以对关联属性调用`id`函数来达到同样目的
+因此，DTO语言支持对关联属性调用`id`函数来达到同样目的
 :::
 
 ```sh title="Book.dto"
@@ -712,7 +712,7 @@ FlatTreeNodeView {
 }
 ```
 
-事实上，这个例子是错误的，因为聚合根和关联对象都有属性`id`和`name`，无条件把关联对象的属性往聚合根上提取，必然导致名字冲突，最终导致DTO语言编译报错。
+如上文所述，这个例子是错误的，因为聚合根和关联对象都有属性`id`和`name`，无条件把关联对象的属性往聚合根上提取，必然导致名字冲突，最终导致DTO语言编译报错。
 
 正确的做法，是和用户多属性模糊重命名的`as(...) {}`块结合使用。让我们来看一个新的例子
 
@@ -855,7 +855,7 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 }
 ```
 
-对于生成的Java/Kotlin类型`DefaultRobotView`类而言，并不会任何Java/Kotlin继承关系，这是因为：
+对于生成的Java/Kotlin类型`DefaultRobotView`类而言，并不会有任何Java/Kotlin继承关系，这是因为：
 
 -   生成的是Java/Kotlin类而非接口，无法实现多继承
 
@@ -888,4 +888,4 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 
 -   [在查询API中充当输出参数 *(可选)*](../../query/object-fetcher/dto)
 
--   [在保存API中充当输出参数 *(必须)*](../../mutation/save-command/input-dto/dto-lang)
+-   [在保存API中充当输入参数 *(必须)*](../../mutation/save-command/input-dto/dto-lang)
