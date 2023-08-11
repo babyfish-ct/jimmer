@@ -19,4 +19,4 @@
 
 You can view erverything from documentaton.
 
-Please view [**documentation**](https://babyfish-ct.github.io/jimmer/)*(Both english & chinese)* to know everything.
+Please view [**English Documentation**](https://babyfish-ct.github.io/jimmer/) or [中文文档](https://babyfish-ct.gitee.io/jimmer-doc/) to know everything.
