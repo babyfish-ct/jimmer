@@ -1,0 +1,165 @@
+---
+sidebar_position: 1
+title: Problem
+---
+
+本文我们讨论三个议题
+
+-   动态实体作为入参的问题
+
+-   解决方案
+
+-   和[GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/)相比较
+
+## 动态实体作为入参的问题
+
+截止到目前为止，我们已经系统性地讲解了保存指令的所有功能。
+
+现在，我们知道了，无论要保存的数据结构的形状是什么，我们都可以使用一行代码调用保存指令将之写入数据库，所有的内部细节都被隐藏起来了，这一个非常便捷的底层功能。
+
+然而，业务系统上层API该如何设计呢？直接用`@RequestBody`接受动态对象吗？
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@PutMapping("/book")
+public void saveBook(
+    // highlight-next-line
+    @RequestBody Book book
+) {
+    bookRepository.save(book);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@PutMapping("/book")
+fun saveBook(
+    // highlight-next-line
+    @RequestBody book: Book
+) {
+    bookRepository.save(book)
+}
+```
+
+</TabItem>
+</Tabs>
+
+这段代码的确可以工作，允许HTTP客户端传入任意形状的的形状，这是看起来似乎是一个非常强大的功能。
+
+然而，该方法存在两个问题：
+
+-   安全性问题
+
+-   API模糊问题
+
+### 安全性问题
+
+客服端被赋予过于强大的能力，可以提交的很深很广的树形数据结构，远远超过当前安全策略允许它的修改的数据范围。这是巨大的安全漏洞。
+
+比如，客户端完全可以提交这样的数据
+
+```json
+{
+    "name": "SQL in Motion",
+    "edtion": 1,
+    "price": 41.99,
+    "store":{
+        "name": "MANNING",
+        "location": {
+            "city": "Vancouver",
+            "contry": "Canada",
+            ...略...
+        }
+    },
+    "authors":[
+        {
+            "firstName": "Ben",
+            "lastName": "Brumm",
+            "job":{
+                "company": {
+                    "name": "IBM"
+                },
+                "title": "Senior HR Manager",
+                ...略...
+            }
+            ...略...
+        }
+    ]
+}
+```
+
+假如你提供这个HTTPAPI的本意是，能够被影响的表仅限于`BOOK`, `BOOK_STORE`, `AUTHOR`和`BOOK_AUTHOR_MAPPING`这四张表。
+
+然而，现在客户端提交的数据的波及范围太大，具备远超你所设想的破坏能力。上面的例子，至少存在4个意外破坏：
+
+-   `<root>.store.location.city`被修改，从`New York`变成`Vancouver`
+
+-   `<root>.store.location.contry`被修改，从`USA`变成`Canada`
+
+-   `<root>.authors[0].job.comany`被修改，从`NAB`变成`IBM`
+
+-   `<root>.authors[0].job.title`被修改，从`Senior Business Analyst`变成`Senior HR Manager`
+
+:::warning
+直接在对外API中使用`@RequestBody`接受动态对象作为Input参数，是一件非常危险的事，会导致严重的安全性问题。
+
+因此，保持指令必须作为底层功能被封印在服务内部，绝对不能通过HTTP API直接暴露其原始能力。
+:::
+
+### API模糊性问题
+
+参数是动态对象会导致API出现模糊行问题。客户端开发人员不知道哪些字段是业务系统自动决定，哪些字段必须由自己指定，从而不知道应该如何调用。
+
+这个问题对insert操作尤为明显。和update操作可以只修改少量属性不同，insert操作通常需要指定很多属性，否则会导致异常，客户端开发人员并不清楚必须指定哪些属性方可不避免报错。
+
+## 解决方案
+
+为解决此问题，Jimmer提供了三种解决方案
+
+-   [孤单表单](./lonely)
+
+    一个简陋的方案，仅供学习或简单项目使用。
+    
+    该方案只针对单表数据保存操作，且只解决安全性问题，而不解决API模糊性问题。
+
+-   [基于DTO语言的自动Input DTO](./dto-lang)
+
+    此方案用很小的代价快速自动生成Input DTO。
+
+    这是一个完备且极其便捷的方案，所以是推荐方案。其巨大的便捷性优势将会在后文介绍。
+
+    :::info
+    框架自带的例子全部采用此方案
+    :::
+
+-   [基于Mapstruct的手动Input DTO](./mapstruct)
+
+    此方案由开发人员手动创建Input DTO并负责将其转化为动态对象。
+
+    这是一个绝对灵活的方案，但开发人员的工作量很大。
+    
+## 和GraphQLInput相比较
+
+上面提三种解决方案。其中，后两种方案虽然差异很大，但是有一个共同点，依赖于Input DTO。
+
+如果把Jimmer的Input DTO和[GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/)相比较
+
+-   相同点
+
+    在GraphQL中，查询返回的GraphQLObject，即任意形状的动态对象；然而，如果修改操作接受对象参数，必须是GraphQLInput，即固定形状的静态对象。
+
+    GraphQLInput和这里提到的InputDTO理念完全一样，这是解决安全性问题的必然设计，殊途同归。
+
+-   不同点
+
+    -   GraphQLInput只是一个协议，仅仅约束对象类型的入参必须是形状固定的静态对象。
+    
+        虽然好处是不对具体的实现技术做任何限定，但坏处是每一种特定形状的GraphQLInput的保存业务都需要开发人员自己去实现。繁琐工作量仍然客观存在的，开发能真真切切感受Input DTO爆炸带来的痛苦。
+
+    -   Jimmer的InputDTO只是为了应对安全性问题将动态实体换了一个表达方式而已。一旦用户完成从Input DTO到动态实体的转化，还是可以享受保存指令一句话保存任意形状的数据结构的巨大便利。
+
+        如果开发人员采用[基于DTO语言的自动Input DTO](./dto-lang)方案，Input DTO类会被自动生成，Input DTO和动态实体对象之间的转化逻辑也会被自动生成。这样，Input DTO爆炸带来的痛苦不再存在。所以，这是推荐方案。

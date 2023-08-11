@@ -246,6 +246,21 @@ Jimmer takes a completely different approach, and the saved Jimmer object has [d
 </td>
 </tr>
 <tr>
+<td>
+
+[DTO语言](../object/view/dto-language)
+
+</td>
+<td><a href="https://mapstruct.org/">MapStruct</a></td>
+<td>
+
+Unlike MapStruct, which focuses on technology neutrality, the DTO language is tailored for Jimmer and focuses on extreme development efficiency.
+
+Even if in some special scenarios, we cannot directly use unified ORM entities and have to use DTO objects, the development cost is only to define the shape of these DTOs, and all the remaining work * (DTO definitions for Java/Kotlin, transformation logic between entities and DTOs, and database interaction logic) * is fully automated, and the pain caused by DTO explosion in traditional technical solutions is not felt at all.
+
+</td>
+</tr>
+<tr>
 <td>Entity object calculated properties</td>
 <td><a href="https://github.com/graphql/dataloader">DataLoader</a></td>
 <td>

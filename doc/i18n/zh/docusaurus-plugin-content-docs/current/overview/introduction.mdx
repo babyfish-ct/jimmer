@@ -245,6 +245,21 @@ Jimmer采用完全不同方法，被保存的Jimmer对象具备[动态性](../ob
 <tr>
 <td>
 
+[DTO语言](../object/view/dto-language)
+
+</td>
+<td><a href="https://mapstruct.org/">MapStruct</a></td>
+<td>
+
+和MapStruct侧重于技术中立不同，DTO语言为Jimmer量身定制，侧重于极高的开发效率。
+
+即使某些特殊场景下，我们无法直接使用统一的ORM实体，不得不使用DTO对象，开发代价也仅仅是定义这些DTO的形状而已，剩下的所有工作 *(DTO相关Java/Kotlin定义、和实体之间的彼此转化逻辑、和数据库的交互逻辑)* 都是全自动的，完全感觉不到传统技术方案中因DTO爆炸带来的痛苦。
+
+</td>
+</tr>
+<tr>
+<td>
+
 [复杂计算属性](../mapping/advanced/calculated/transient)
 
 </td>

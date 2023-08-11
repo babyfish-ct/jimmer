@@ -1,6 +1,6 @@
 ---
-sidebar_position: 9
-title: Input DTO
+sidebar_position: 4
+title: Use MapStruct
 ---
 
 import Tabs from '@theme/Tabs';
@@ -9,110 +9,17 @@ import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-## 安全性问题
+:::caution
+不推荐在Kotlin下使用此方案。
 
-截止到目前为止，我们已经系统性地讲解了保存指令的所有功能。
+-   此方案基于[mapstruct框架](https://mapstruct.org/)，mapstruct框架基于`apt`
 
-现在，我们知道了，无论要保存的数据结构的形状是什么，我们都可以使用一行代码调用保存指令将之写入数据库，所有的内部细节都被隐藏起来了，这一个非常便捷的底层功能。
+-   Kotlin已经废弃了[kapt](https://kotlinlang.org/docs/kapt.html)，而主张使用[ksp](https://kotlinlang.org/docs/ksp-overview.html)
 
-然而，业务系统上层API该如何设计呢？直接用`@RequestBody`接受动态对象吗？
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-@PutMapping("/book")
-public void saveBook(
-    // highlight-next-line
-    @RequestBody Book book
-) {
-    bookRepository.save(book);
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-@PutMapping("/book")
-fun saveBook(
-    // highlight-next-line
-    @RequestBody book: Book
-) {
-    bookRepository.save(book)
-}
-```
-
-</TabItem>
-</Tabs>
-
-这段代码的确可以工作，允许HTTP客户端传入任意形状的的形状，这是看起来似乎是一个非常强大的功能。
-
-然而，该方法存在两个问题：
-
--   较小的问题：对于insert操作而言，用户并不清楚必须指定哪些属性方可不报错。
-
--   较大的问题：客服端被赋予过于强大的能力，可以提交的很深很广的树形数据结构，远远超过当前安全策略允许它的修改的数据范围。这是巨大的安全漏洞。
-
-    比如，客户端完全可以提交这样的数据
-
-    ```json
-    {
-        "name": "SQL in Motion",
-        "edtion": 1,
-        "price": 41.99,
-        "store":{
-            "name": "MANNING",
-            "location": {
-                "city": "Vancouver",
-                "contry": "Canada",
-                ...略...
-            }
-        },
-        "authors":[
-            {
-                "firstName": "Ben",
-                "lastName": "Brumm",
-                "job":{
-                    "company": {
-                        "name": "IBM"
-                    },
-                    "title": "Senior HR Manager",
-                    ...略...
-                }
-                ...略...
-            }
-        ]
-    }
-    ```
-
-    假如你提供这个HTTPAPI的本意是，能够被影响的表仅限于`BOOK`, `BOOK_STORE`, `AUTHOR`和`BOOK_AUTHOR_MAPPING`这四张表。
-
-    然而，现在客户端提交的数据的波及范围太大，具备远超你所设想的破坏能力。上面的例子，至少存在4个意外破坏：
-
-    -   `<root>.store.location.city`被修改，从`New York`变成`Vancouver`
-
-    -   `<root>.store.location.contry`被修改，从`USA`变成`Canada`
-
-    -   `<root>.authors[0].job.comany`被修改，从`NAB`变成`IBM`
-
-    -   `<root>.authors[0].job.title`被修改，从`Senior Business Analyst`变成`Senior HR Manager`
-
-:::warning
-直接在对外API中使用`@RequestBody`接受动态对象作为Input参数，是一件非常危险的事，会导致严重的安全性问题。
-
-因此，保持指令必须作为底层功能被封印在服务内部，绝对不能通过HTTP API直接暴露其原始能力。
+因此，随着Kotlin的演化，未来使用`kapt`可能会遇到越来越多的问题。
 :::
 
-## 解决方案
-
-### 定义Input DTO
-
-既然用动态对象作为Input参数会导致严重的安全问题，那么我们就定义静态的POJO类作为输入参数，让给我们称其为`Input DTO`。
-
-:::info
-Jimmer宣称消灭DTO爆炸问题，指`Output DTO`，并非这里的的`Input DTO`，二者并不矛盾。
-:::
+## 定义Input DTO
 
 让我们来看一个`InputDTO`的例子 *(为了简单，Java版本采用Lombok)*
 
@@ -160,20 +67,20 @@ data class BookInput(
     val price: BigDecimal, 
     val storeId: Long?, ❷
     val authors: List<AuthorItem> ❸
-): Input<Book> {
+) {
 
-    data class AuthorItem {
+    data class AuthorItem(
         val firstName: String,
         val lastName: String,
         val gender: Gender
-    }
+    )
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ 由于保存指令的特性，id不是必须的。具体原理请回归[保存模式/总结](./save-mode#总结)
+-   ❶ 如果id被指定了自动生成策略，则id不是必须的。这也是保存指令的一个特性，具体细节请参考[保存模式/总结](../save-mode#总结)
 
     :::info
     -   对于Jimmer实体而言，`id`不可能为null，靠id属性的缺失 *(即，不赋值)* 来表达对象没有id的情况。
@@ -188,9 +95,9 @@ data class BookInput(
 -   ❸ 明确指定此InputDTO想以<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>的方式编辑实体的多对过关联`Book.authors`，
     关联对象的类型也被内嵌的InputDTO类型`BookInput.AuthorItem`固化。
 
-### mapstruct转化器
+## Mapstruct转化器
 
-Jimmer使用[mapstruct框架](https://mapstruct.org/)来处理动态实体和静态Input DTO之间的转化问题。
+Jimmer拓展了[mapstruct框架](https://mapstruct.org/)，可以用它来处理动态实体和静态Input DTO之间的转化问题。
 
 定义BookInputMapper接口，如下
 
@@ -226,10 +133,10 @@ interface BookInputMapper {
 </Tabs>
 
 :::info
-需要使用mapstruct框架的预编译器在编译时生成此接口的实现类。这部分内容在[对象篇/和mapstruct协同](../../object/view/mapstruct)中有详细的说明，本文不再赘述。
+需要使用mapstruct框架的预编译器在编译时生成此接口的实现类。这部分内容在[对象篇/DTO转换/mapstruct](../../../object/view/mapstruct)中有详细的说明，本文不再赘述。
 :::
 
-### HTTP API
+## HTTP API
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -286,7 +193,7 @@ Jimmer内置了mapstruct的扩展，如果`BookInput.id`为null，则不会赋�
 
 可见，安全性保证问题，最终被转化成了使用mapstruct把Input DTO转化为Jimmer实体的问题。
 
-### 改进
+## 改进
 
 为了更好地和Jimmer配合，开发人员可以让`BookInput`实现`org.babyfish.jimmer.Input<E>`接口。
 
