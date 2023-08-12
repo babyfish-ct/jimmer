@@ -58,6 +58,12 @@ class ErrorGenerator(
                             .superclass(CodeBasedException::class)
                             .addModifiers(KModifier.ABSTRACT)
                             .addSuperclassConstructorParameter("message, cause")
+                            .addAnnotation(
+                                AnnotationSpec
+                                    .builder(GENERATED_BY_CLASS_NAME)
+                                    .addMember("type = %T::class", enumClassName)
+                                    .build()
+                            )
                             .apply {
                                 addMembers()
                             }

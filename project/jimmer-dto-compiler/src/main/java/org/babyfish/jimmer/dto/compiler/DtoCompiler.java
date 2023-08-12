@@ -13,12 +13,19 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     private final T baseType;
 
-    protected DtoCompiler(T baseType) {
+    private final String dtoFilePath;
+
+    protected DtoCompiler(T baseType, String dtoFilePath) {
         this.baseType = baseType;
+        this.dtoFilePath = dtoFilePath;
     }
 
     public T getBaseType() {
         return baseType;
+    }
+
+    public String getDtoFilePath() {
+        return dtoFilePath;
     }
 
     public List<DtoType<T, P>> compile(String code) {
@@ -71,7 +78,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     protected abstract T getTargetType(P baseProp);
 
     DtoAstException exception(int line, String message) {
-        return new DtoAstException(line, message);
+        return new DtoAstException(dtoFilePath, line, message);
     }
 
     private class DtoErrorListener extends BaseErrorListener {

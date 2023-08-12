@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,9 @@ public class ImmutableProcessor extends AbstractProcessor {
         if (dtoDirs != null && !dtoDirs.isEmpty()) {
             Set<String> dirs = new LinkedHashSet<>();
             for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
+                if (path.isEmpty() || path.equals("/")) {
+                    continue;
+                }
                 if (path.startsWith("/")) {
                     path = path.substring(1);
                 }
@@ -151,9 +155,9 @@ public class ImmutableProcessor extends AbstractProcessor {
     private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes(
             Collection<ImmutableType> immutableTypes
     ) {
-        String path;
+        String basePath;
         try {
-            path = filer.getResource(
+            basePath = filer.getResource(
                     StandardLocation.CLASS_OUTPUT,
                     "",
                     "dummy.txt"
@@ -161,33 +165,32 @@ public class ImmutableProcessor extends AbstractProcessor {
         } catch (IOException ex) {
             throw new DtoException("Failed to guess base project dir", ex);
         }
-        if (path.startsWith("file://")) {
-            path = path.substring(7);
-        } else if (path.startsWith("file:/")) {
-            path = path.substring(6);
+        if (basePath.startsWith("file://")) {
+            basePath = basePath.substring(7);
+        } else if (basePath.startsWith("file:/")) {
+            basePath = basePath.substring(6);
         }
-        path = path.substring(0, path.lastIndexOf('/'));
-        File file = new File(path);
-        List<String> actualDtoDirs = new ArrayList<>();
-        while (file != null) {
-            collectActualDtoDir(file, actualDtoDirs);
-            file = file.getParentFile();
+        basePath = basePath.substring(0, basePath.lastIndexOf('/'));
+        File baseFile = new File(basePath);
+        Map<String, String> actualPathMap = new HashMap<>();
+        while (baseFile != null) {
+            collectActualDtoDir(baseFile, actualPathMap);
+            baseFile = baseFile.getParentFile();
         }
 
         Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoMap = new HashMap<>();
         for (ImmutableType immutableType : immutableTypes) {
             if (immutableType.isEntity()) {
-                for (String actualDtoDir : actualDtoDirs) {
-                    File dtoFile = new File(
-                            actualDtoDir +
-                                    '/' +
-                                    immutableType.getQualifiedName().replace('.', '/') +
-                                    ".dto"
-                    );
+                for (Map.Entry<String, String> e : actualPathMap.entrySet()) {
+                    String relativePath = immutableType.getQualifiedName().replace('.', '/') + ".dto";
+                    File dtoFile = new File(e.getKey() + '/' + relativePath);
                     if (dtoFile.exists()) {
                         List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
-                        try (InputStream in = new FileInputStream(dtoFile)) {
-                            dtoTypes = new AptDtoCompiler(immutableType).compile(in);
+                        try (InputStream in = Files.newInputStream(dtoFile.toPath())) {
+                            dtoTypes = new AptDtoCompiler(
+                                    immutableType,
+                                    e.getValue() + '/' + relativePath
+                            ).compile(in);
                         } catch (DtoAstException ex) {
                             throw new DtoException(
                                     "Failed to parse \"" +
@@ -336,7 +339,7 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
     }
 
-    private void collectActualDtoDir(File baseFile, List<String> outputFiles) {
+    private void collectActualDtoDir(File baseFile, Map<String, String> actualPathMap) {
         for (String dtoDir : dtoDirs) {
             File subFile = baseFile;
             for (String part : dtoDir.split("/")) {
@@ -351,7 +354,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                 if (path.endsWith("/")) {
                     path = path.substring(0, path.length() - 1);
                 }
-                outputFiles.add(path);
+                actualPathMap.put(path, dtoDir);
             }
         }
     }

@@ -76,6 +76,18 @@ public class DtoGenerator {
                         )
                 )
                 .addAnnotation(Constants.LOMBOK_DATA_CLASS_NAME);
+        if (dtoType.getPath() != null) {
+            typeBuilder.addAnnotation(
+                    AnnotationSpec
+                            .builder(Constants.GENERATED_BY_CLASS_NAME)
+                            .addMember(
+                                    "file",
+                                    "$S",
+                                    dtoType.getPath()
+                            )
+                            .build()
+            );
+        }
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();

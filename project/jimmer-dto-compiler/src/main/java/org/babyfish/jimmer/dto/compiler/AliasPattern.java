@@ -4,6 +4,8 @@ import org.antlr.v4.runtime.Token;
 
 class AliasPattern {
 
+    private final CompilerContext<?, ?> ctx;
+
     private final boolean isPrefix;
 
     private final boolean isSuffix;
@@ -12,21 +14,22 @@ class AliasPattern {
 
     private final String replacement;
 
-    public AliasPattern(DtoParser.AliasPatternContext pattern) {
+    public AliasPattern(CompilerContext<?, ?> ctx, DtoParser.AliasPatternContext pattern) {
+        this.ctx = ctx;
         if (pattern.prefix != null && pattern.suffix != null) {
-            throw new DtoAstException(
+            throw ctx.exception(
                     pattern.suffix.getLine(),
                     "The `^` and `$` cannot appear at the same time"
             );
         }
         if (pattern.original == null && pattern.replacement == null) {
-            throw new DtoAstException(
+            throw ctx.exception(
                     pattern.translator.getLine(),
                     "There is no identifier to the left or right of the converter '->'"
             );
         }
         if (pattern.prefix == null && pattern.original == null && pattern.suffix == null) {
-            throw new DtoAstException(
+            throw ctx.exception(
                     pattern.translator.getLine(),
                     "There is nothing to the left of the converter '->', which is not allowed"
             );
@@ -59,7 +62,7 @@ class AliasPattern {
             if (line == 0) {
                 return text;
             }
-            throw new DtoAstException(
+            throw ctx.exception(
                     line,
                     "The property \"" +
                             text +
@@ -78,7 +81,7 @@ class AliasPattern {
             if (line == 0) {
                 return text;
             }
-            throw new DtoAstException(
+            throw ctx.exception(
                     line,
                     "The property \"" +
                             text +
@@ -100,7 +103,7 @@ class AliasPattern {
         if (line == 0) {
             return text;
         }
-        throw new DtoAstException(
+        throw ctx.exception(
                 line,
                 "The property \"" +
                         text +

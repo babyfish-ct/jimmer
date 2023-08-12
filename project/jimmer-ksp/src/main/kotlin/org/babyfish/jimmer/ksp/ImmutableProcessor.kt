@@ -56,11 +56,13 @@ class ImmutableProcessor(
                 text.split("\\s*[,:;]\\s*")
                     .map {
                         when {
+                            it == "" || it == "/" -> null
                             it.startsWith("/") -> it.substring(1)
                             it.endsWith("/") -> it.substring(0, it.length - 1)
-                            else -> it
+                            else -> it.takeIf { it.isNotEmpty() }
                         }
                     }
+                    .filterNotNull()
                     .toSet()
             }
             ?: setOf("src/main/dto")
@@ -143,9 +145,9 @@ class ImmutableProcessor(
             return emptyMap()
         }
         var file: File? = File(classDeclarationMultiMap.keys.iterator().next().filePath).parentFile
-        val actualDtoDirs = mutableListOf<String>()
+        val actualPathMap = mutableMapOf<String, String>()
         while (file != null) {
-            collectActualDtoDir(file, actualDtoDirs)
+            collectActualDtoDir(file, actualPathMap)
             file = file.parentFile
         }
 
@@ -153,16 +155,15 @@ class ImmutableProcessor(
         for (classDeclarations in classDeclarationMultiMap.values) {
             for (classDeclaration in classDeclarations) {
                 val immutableType = ctx.typeOf(classDeclaration)
-                for (actualDtoDir: String in actualDtoDirs) {
+                for (e in actualPathMap) {
+                    val relativePath = immutableType.qualifiedName.replace('.', '/') + ".dto"
                     val dtoFile = File(
-                        "$actualDtoDir/${
-                            immutableType.qualifiedName.replace('.', '/')
-                        }.dto"
+                        "${e.key}/$relativePath"
                     )
                     if (dtoFile.exists()) {
                         dtoMap[immutableType] = try {
                             FileInputStream(dtoFile).use {
-                                KspDtoCompiler(immutableType).compile(it)
+                                KspDtoCompiler(immutableType, "${e.value}/$relativePath").compile(it)
                             }
                         } catch (ex: DtoAstException) {
                             throw DtoException(
@@ -302,7 +303,7 @@ class ImmutableProcessor(
         }
     }
 
-    private fun collectActualDtoDir(baseFile: File, outputFiles: MutableList<String>) {
+    private fun collectActualDtoDir(baseFile: File, actualPathMap: MutableMap<String, String>) {
         for (dtoDir in dtoDirs) {
             var subFile: File? = baseFile
             for (part in dtoDir.split("/").toTypedArray()) {
@@ -313,11 +314,14 @@ class ImmutableProcessor(
                 }
             }
             if (subFile != null) {
-                var path = subFile.absolutePath
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length - 1)
+                val path = subFile.absolutePath.let {
+                    if (it.endsWith("/")) {
+                        it.substring(0, it.length - 1)
+                    } else {
+                        it
+                    }
                 }
-                outputFiles.add(path)
+                actualPathMap[path] = dtoDir
             }
         }
     }
@@ -361,7 +365,7 @@ class ImmutableProcessor(
             var s = str
             if (s == null) {
                 val ps = paths
-                s = if (ps == null || ps.isEmpty()) "" else java.lang.String.join(".", ps)
+                s = if (ps.isNullOrEmpty()) "" else java.lang.String.join(".", ps)
                 str = s
             }
             return s!!

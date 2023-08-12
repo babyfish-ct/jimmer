@@ -112,6 +112,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     public T getTargetType(P baseProp) {
         return compiler.getTargetType(baseProp);
     }
+
+    public String getDtoFilePath() {
+        return compiler.getDtoFilePath();
+    }
     
     public DtoAstException exception(int line, String message) {
         return compiler.exception(line, message);

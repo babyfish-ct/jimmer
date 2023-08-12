@@ -3,16 +3,14 @@ package org.babyfish.jimmer.apt;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoCompiler;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.Key;
 
 import java.util.Collection;
 import java.util.Map;
 
 public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
-    protected AptDtoCompiler(ImmutableType baseType) {
-        super(baseType);
+    protected AptDtoCompiler(ImmutableType baseType, String dtoFilePath) {
+        super(baseType, dtoFilePath);
     }
 
     @Override

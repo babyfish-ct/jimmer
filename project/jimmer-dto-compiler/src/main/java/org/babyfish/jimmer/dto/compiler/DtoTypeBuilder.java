@@ -177,7 +177,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     private void handlePositiveProp(DtoParser.PositivePropContext prop) {
         DtoPropBuilder<T, P> builder = new DtoPropBuilder<>(this, prop);
         if (positivePropMap.put(builder.getBaseProp(), builder) != null) {
-            throw new DtoAstException(
+            throw ctx.exception(
                     builder.getBaseLine(),
                     "Base property \"" +
                             builder.getBaseProp() +
@@ -186,7 +186,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
         if (builder.getAlias() != null) {
             if (aliasPositivePropMap.put(builder.getAlias(), builder) != null) {
-                throw new DtoAstException(
+                throw ctx.exception(
                         builder.getAliasLine(),
                         "Duplicated property alias \"" +
                                 builder.getAlias() +
@@ -200,7 +200,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private void handleNegativeProp(DtoParser.NegativePropContext prop) {
         if (negativePropAliasMap.put(prop.prop.getText(), false) != null) {
-            throw new DtoAstException(
+            throw ctx.exception(
                     prop.prop.getLine(),
                     "Duplicate negative property alias \"" +
                             prop.prop.getText() +
@@ -211,7 +211,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private void handleAliasGroup(DtoParser.AliasGroupContext group) {
-        currentAliasGroup = new AliasPattern(group.pattern);
+        currentAliasGroup = new AliasPattern(ctx, group.pattern);
         try {
             for (DtoParser.AliasGroupPropContext prop : group.props) {
                 if (prop.allScalars() != null) {
@@ -251,7 +251,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         dtoType = new DtoType<>(
                 baseType,
                 modifiers.contains(DtoTypeModifier.INPUT),
-                name != null ? name.getText() : null
+                name != null ? name.getText() : null,
+                ctx.getDtoFilePath()
         );
 
         resolveSuperTypes(new LinkedList<>());
@@ -394,7 +395,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
             DtoProp<T, P> dtoProp = builder.build();
             if (declaredPropMap.put(dtoProp.getAlias(), dtoProp) != null) {
-                throw new DtoAstException(
+                throw ctx.exception(
                         dtoProp.getAliasLine(),
                         "Duplicated property alias \"" +
                                 builder.getAlias() +
@@ -411,7 +412,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     continue;
                 }
                 if (declaredPropMap.put(dtoProp.getAlias(), dtoProp) != null) {
-                    throw new DtoAstException(
+                    throw ctx.exception(
                             dtoProp.getAliasLine(),
                             "Duplicated property alias \"" +
                                     dtoProp.getAlias() +
@@ -424,7 +425,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             DtoProp<T, P> recursiveDtoProp = new RecursiveDtoProp<>(recursiveBaseProp, recursiveAlias, dtoType);
             DtoProp<T, P> conflictProp = declaredPropMap.put(recursiveDtoProp.getAlias(), recursiveDtoProp);
             if (conflictProp != null) {
-                throw new DtoAstException(
+                throw ctx.exception(
                         conflictProp.getAliasLine(),
                         "Duplicated property alias \"" +
                                 conflictProp.getAlias() +
@@ -446,7 +447,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     private void validateUnusedNegativePropTokens() {
         for (Token token : negativePropAliasTokens) {
             if (!negativePropAliasMap.get(token.getText())) {
-                throw new DtoAstException(
+                throw ctx.exception(
                         token.getLine(),
                         "There is no property alias \"" +
                                 token.getText() +

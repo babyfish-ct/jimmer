@@ -64,6 +64,12 @@ public class FetcherGenerator {
                                 type.getClassName(),
                                 type.getFetcherClassName()
                         )
+                )
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.GENERATED_BY_CLASS_NAME)
+                                .addMember("type", "$T.class", type.getClassName())
+                                .build()
                 );
 
         TypeSpec.Builder oldBuilder = typeBuilder;

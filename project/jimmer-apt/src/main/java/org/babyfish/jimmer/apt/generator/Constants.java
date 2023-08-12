@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.DraftConsumer;
+import org.babyfish.jimmer.GeneratedBy;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
@@ -54,6 +55,9 @@ class Constants {
 
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
+
+    public static final ClassName GENERATED_BY_CLASS_NAME =
+            ClassName.get(GeneratedBy.class);
 
     public static final ClassName VIEW_CLASS_NAME =
             ClassName.get(View.class);

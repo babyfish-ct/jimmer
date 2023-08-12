@@ -33,7 +33,13 @@ public class DraftGenerator {
     public void generate() {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Draft")
-                .addSuperinterface(type.getClassName());
+                .addSuperinterface(type.getClassName())
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.GENERATED_BY_CLASS_NAME)
+                                .addMember("type", "$T.class", type.getClassName())
+                                .build()
+                );
         if (type.getSuperTypes().isEmpty()) {
             typeBuilder.addSuperinterface(Draft.class);
         } else {

@@ -51,6 +51,12 @@ class PropsGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
+                    addAnnotation(
+                        AnnotationSpec
+                            .builder(GENERATED_BY_CLASS_NAME)
+                            .addMember("type = %L::class", type.simpleName)
+                            .build()
+                    )
                     if (modelClassDeclaration.annotation(Embeddable::class) != null) {
                         for (prop in type.properties.values) {
                             addEmbeddableProp(prop, false)

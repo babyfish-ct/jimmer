@@ -58,7 +58,13 @@ public class PropsGenerator {
     private TypeSpec generateImpl() {
         typeBuilder = TypeSpec
                 .interfaceBuilder(type.getName() + "Props")
-                .addModifiers(Modifier.PUBLIC);
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.GENERATED_BY_CLASS_NAME)
+                                .addMember("type", "$T.class", type.getClassName())
+                                .build()
+                );
         if (type.isEntity() || type.isMappedSuperClass()) {
             typeBuilder.addAnnotation(
                     AnnotationSpec

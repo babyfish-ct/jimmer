@@ -34,6 +34,7 @@ internal const val FETCHER_DSL = "FetcherDsl"
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
+internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()
 internal val VIEW_METADATA_CLASS_NAME = ClassName(

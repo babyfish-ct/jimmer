@@ -260,7 +260,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: There is no property \"city\" in \"org.babyfish.jimmer.sql.model.Book\" or its super types",
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "There is no property \"city\" in \"org.babyfish.jimmer.sql.model.Book\" or its super types",
                 ex.getMessage()
         );
     }
@@ -275,7 +276,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: The property \"authorIds\" cannot be declared in input dto because it is view",
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "The property \"authorIds\" cannot be declared in input dto because it is view",
                 ex.getMessage()
         );
     }
@@ -290,7 +292,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: token recognition error at: '<'",
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "token recognition error at: '<'",
                 ex.getMessage()
         );
     }
@@ -306,7 +309,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3: Duplicated property alias \"id\"",
+                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Duplicated property alias \"id\"",
                 ex.getMessage()
         );
     }
@@ -325,7 +329,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 5: Duplicated property alias \"name\"",
+                "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Duplicated property alias \"name\"",
                 ex.getMessage()
         );
     }
@@ -343,7 +348,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 5: Base property \"entity::authors\" cannot be referenced twice",
+                "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Base property \"entity::authors\" cannot be referenced twice",
                 ex.getMessage()
         );
     }
@@ -358,7 +364,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: Illegal property \"store\", the child body is required",
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal property \"store\", the child body is required",
                 ex.getMessage()
         );
     }
@@ -375,7 +382,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: Illegal property \"store\", child body cannot be specified by it is id view property",
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal property \"store\", child body cannot be specified by it is id view property",
                 ex.getMessage()
         );
     }
@@ -390,7 +398,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: Cannot call the function \"id\" because the current " +
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Cannot call the function \"id\" because the current " +
                         "prop \"entity::name\" is not entity level association property",
                 ex.getMessage()
         );
@@ -406,7 +415,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2: Cannot call the function \"flat\" " +
+                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Cannot call the function \"flat\" " +
                         "because the current prop \"entity::authors\" is list",
                 ex.getMessage()
         );
@@ -424,7 +434,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 4: Illegal symbol \"*\", the property \"store\" is not recursive",
+                "Error at line 4 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal symbol \"*\", the property \"store\" is not recursive",
                 ex.getMessage()
         );
     }
@@ -442,7 +453,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 5: Illegal symbol \"*\", the property \"store\" is not recursive",
+                "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal symbol \"*\", the property \"store\" is not recursive",
                 ex.getMessage()
         );
     }
@@ -460,7 +472,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3: The alias cannot be specified when the function `flat` is used",
+                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                        "The alias cannot be specified when the function `flat` is used",
                 ex.getMessage()
         );
     }
@@ -476,7 +489,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3: Illegal dto type \"Book\", the base property \"store\" is defined differently " +
+                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal dto type \"Book\", the base property \"store\" is defined differently " +
                         "by multiple super type so that it must be overridden",
                 ex.getMessage()
         );
@@ -493,7 +507,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3: Illegal dto type \"BookView\", " +
+                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal dto type \"BookView\", " +
                         "the property alias \"value\" is defined differently " +
                         "by multiple super type so that it must be overridden",
                 ex.getMessage()
@@ -511,7 +526,8 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3: There is no property alias \"tag\" that is need to be removed",
+                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                        "There is no property alias \"tag\" that is need to be removed",
                 ex.getMessage()
         );
     }
@@ -707,16 +723,16 @@ public class DtoCompilerTest {
                 new BasePropImpl("parent", () -> TYPE_MAP.get("TreeNode"), true, false)
         );
 
-        private MyDtoCompiler(BaseType baseType) {
-            super(baseType);
+        private MyDtoCompiler(BaseType baseType, String dtoFilePath) {
+            super(baseType, dtoFilePath);
         }
         
         static MyDtoCompiler book() {
-            return new MyDtoCompiler(BOOK_TYPE);
+            return new MyDtoCompiler(BOOK_TYPE, "src/main/dto/pkg/Book.dto");
         }
         
         static MyDtoCompiler treeNode() {
-            return new MyDtoCompiler(TREE_NODE_TYPE);
+            return new MyDtoCompiler(TREE_NODE_TYPE, "src/main/dto/pkg/TreeNode.dto");
         }
 
         @Override

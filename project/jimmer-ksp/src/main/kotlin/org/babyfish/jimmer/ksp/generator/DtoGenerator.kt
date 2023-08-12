@@ -88,6 +88,16 @@ class DtoGenerator private constructor(
                         val builder = TypeSpec
                             .classBuilder(dtoType.name!!)
                             .addModifiers(KModifier.DATA)
+                            .apply {
+                                dtoType.path?.let { path ->
+                                    addAnnotation(
+                                        AnnotationSpec
+                                            .builder(GENERATED_BY_CLASS_NAME)
+                                            .addMember("file = %S", path)
+                                            .build()
+                                    )
+                                }
+                            }
                         _typeBuilder = builder
                         try {
                             addMembers(allFiles)
@@ -397,7 +407,7 @@ class DtoGenerator private constructor(
                                                 "?.%N?.%L",
                                                 prop.baseProp.name,
                                                 if (prop.baseProp.isList) {
-                                                    "map{ it.${prop.baseProp.targetType!!.idProp!!.name} }"
+                                                    "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
                                                 } else {
                                                     prop.baseProp.targetType!!.idProp!!.name
                                                 }
@@ -408,7 +418,7 @@ class DtoGenerator private constructor(
                                                 prop.baseProp.name,
                                                 if (prop.baseProp.isNullable) "?." else ".",
                                                 if (prop.baseProp.isList) {
-                                                    "map{ it.${prop.baseProp.targetType!!.idProp!!.name} }"
+                                                    "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
                                                 } else {
                                                     prop.baseProp.targetType!!.idProp!!.name
                                                 }
@@ -548,7 +558,7 @@ class DtoGenerator private constructor(
                     prop.baseProp.name,
                     prop.name,
                     if (prop.baseProp.isNullable) "?." else ".",
-                    if (prop.baseProp.isNullable) "let" else "map"
+                    if (prop.baseProp.isList) "map" else "let"
                 )
                 beginControlFlow(
                     "%M(%T::class).by",

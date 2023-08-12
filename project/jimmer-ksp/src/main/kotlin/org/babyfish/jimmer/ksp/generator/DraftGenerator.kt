@@ -69,6 +69,12 @@ class DraftGenerator(
                 .interfaceBuilder("${type.simpleName}${DRAFT}")
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
                 .addSuperinterface(type.className)
+                .addAnnotation(
+                    AnnotationSpec
+                        .builder(GENERATED_BY_CLASS_NAME)
+                        .addMember("type = %T::class", type.className)
+                        .build()
+                )
                 .apply {
                     if (type.superTypes.isEmpty()) {
                         addSuperinterface(DRAFT_CLASS_NAME)

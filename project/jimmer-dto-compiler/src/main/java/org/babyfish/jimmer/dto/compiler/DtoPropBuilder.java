@@ -130,13 +130,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
         if (prop.optional != null) {
             if ("flat".equals(funcName)) {
-                throw new DtoAstException(
+                throw ctx.exception(
                         prop.optional.getLine(),
                         "Illegal optional modifier '?', it is not allowed for the function `flat`"
                 );
             }
             if (baseProp.isNullable()) {
-                throw new DtoAstException(
+                throw ctx.exception(
                         prop.optional.getLine(),
                         "Illegal optional modifier '?' because the base property is already nullable"
                 );

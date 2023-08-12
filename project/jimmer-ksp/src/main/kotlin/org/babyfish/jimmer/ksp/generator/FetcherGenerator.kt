@@ -47,6 +47,12 @@ class FetcherGenerator(
                             .build()
                     )
                     val type = ctx.typeOf(modelClassDeclaration)
+                    addAnnotation(
+                        AnnotationSpec
+                            .builder(GENERATED_BY_CLASS_NAME)
+                            .addMember("type = %L::class", type.simpleName)
+                            .build()
+                    )
                     for (prop in type.properties.values) {
                         if (prop.isAssociation(true) &&
                             prop.targetType!!.isEntity &&

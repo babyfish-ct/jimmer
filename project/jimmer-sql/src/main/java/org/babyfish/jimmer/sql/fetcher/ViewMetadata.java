@@ -22,6 +22,12 @@ public final class ViewMetadata<E, V extends View<E>> {
 
     private final Function<E, V> converter;
 
+    /**
+     * This constructor should not be invoked by developer,
+     * it is designed for code generator.
+     * @param fetcher
+     * @param converter
+     */
     public ViewMetadata(Fetcher<E> fetcher, Function<E, V> converter) {
         this.fetcher = Objects.requireNonNull(fetcher, "fetch cannot be null");
         this.converter = Objects.requireNonNull(converter, "converter cannot be null");

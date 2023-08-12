@@ -5,8 +5,9 @@ import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 
 class KspDtoCompiler(
-    private val immutableType: ImmutableType
-) : DtoCompiler<ImmutableType, ImmutableProp>(immutableType) {
+    immutableType: ImmutableType,
+    dtoFilePath: String
+) : DtoCompiler<ImmutableType, ImmutableProp>(immutableType, dtoFilePath) {
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes

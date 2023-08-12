@@ -15,6 +15,9 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Nullable
     private final String name;
 
+    @Nullable
+    private final String path;
+
     private List<DtoProp<T, P>> props;
 
     private List<DtoProp<T, P>> hiddenFlatProps;
@@ -22,11 +25,13 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     DtoType(
             T baseType,
             boolean isInput,
-            @Nullable String name
+            @Nullable String name,
+            @Nullable String path
     ) {
         this.baseType = baseType;
         this.isInput = isInput;
         this.name = name;
+        this.path = path;
     }
 
     public T getBaseType() {
@@ -40,6 +45,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Nullable
     public String getName() {
         return name;
+    }
+
+    @Nullable
+    public String getPath() {
+        return path;
     }
 
     public List<DtoProp<T, P>> getProps() {
@@ -144,7 +154,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
                 }
                 props = Collections.unmodifiableList(props);
             }
-            DtoType<T, P> dtoType = new DtoType<>(null, isInput, null);
+            DtoType<T, P> dtoType = new DtoType<>(null, isInput, null, null);
             dtoType.setProps(props);
             return dtoType;
         }

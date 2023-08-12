@@ -72,7 +72,13 @@ public class ErrorGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(exceptionName)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .superclass(CodeBasedException.class);
+                .superclass(CodeBasedException.class)
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.GENERATED_BY_CLASS_NAME)
+                                .addMember("type", "$T.class", className)
+                                .build()
+                );
         addMembers();
         try {
             JavaFile

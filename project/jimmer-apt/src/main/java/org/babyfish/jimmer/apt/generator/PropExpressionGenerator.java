@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.apt.generator;
 
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
@@ -59,6 +56,12 @@ public class PropExpressionGenerator {
                                 Constants.ABSTRACT_TYPED_EMBEDDED_PROP_EXPRESSION_CLASS_NAME,
                                 type.getClassName()
                         )
+                )
+                .addAnnotation(
+                        AnnotationSpec
+                                .builder(Constants.GENERATED_BY_CLASS_NAME)
+                                .addMember("type", "$T.class", type.getClassName())
+                                .build()
                 );
         typeBuilder = builder;
         try {
