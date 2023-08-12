@@ -7,9 +7,9 @@ import java.lang.annotation.*;
 /**
  * There is no substantial functionality, just to alert the user
  *
- * The split of `@javax.annotation.Generated` and
+ * <p>The split of `@javax.annotation.Generated` and
  * `@jakatra.annotation.Generated` brings great trouble,
- * simply customize one.
+ * simply customize one.</p>
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

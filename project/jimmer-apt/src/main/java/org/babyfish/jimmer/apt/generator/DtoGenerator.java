@@ -74,8 +74,7 @@ public class DtoGenerator {
                                 dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.VIEW_CLASS_NAME,
                                 dtoType.getBaseType().getClassName()
                         )
-                )
-                .addAnnotation(Constants.LOMBOK_DATA_CLASS_NAME);
+                );
         if (dtoType.getPath() != null) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
@@ -88,6 +87,7 @@ public class DtoGenerator {
                             .build()
             );
         }
+        typeBuilder.addAnnotation(Constants.LOMBOK_DATA_CLASS_NAME);
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();
