@@ -24,6 +24,10 @@ import java.util.stream.Collectors;
 
 class Context {
 
+    private static final Set<String> ITERABLE_CLASS_NAMES;
+
+    private static final Set<String> MAP_CLASS_NAMES;
+
     private final Context base;
 
     private final Metadata.OperationParser operationParser;
@@ -239,14 +243,14 @@ class Context {
             if (simpleType != null) {
                 return simpleType;
             }
-            if (Collection.class.isAssignableFrom(javaClass) ||
-                    Map.class.isAssignableFrom(javaClass)) {
+            if ((Iterable.class.isAssignableFrom(javaClass) && ITERABLE_CLASS_NAMES.contains(javaClass.getName())) ||
+                    (Map.class.isAssignableFrom(javaClass) && MAP_CLASS_NAMES.contains(javaClass.getName()))) {
                 throw new IllegalDocMetaException(
                         "Illegal type \"" +
                                 annotatedType +
                                 "\" declared in " +
                                 location +
-                                ", collection and map must be parameterized type"
+                                ", iterable and map must be parameterized type"
                 );
             }
             if (!ignoreTypeVariableResolving && javaClass.getTypeParameters().length != 0) {
@@ -291,10 +295,10 @@ class Context {
                 );
             }
             Class<?> rawClass = (Class<?>) rawType;
-            if (Collection.class.isAssignableFrom(rawClass)) {
+            if (Iterable.class.isAssignableFrom(rawClass) && ITERABLE_CLASS_NAMES.contains(rawClass.getName())) {
                 return new ArrayTypeImpl(parseType(annotatedParameterizedType.getAnnotatedActualTypeArguments()[0]));
             }
-            if (Map.class.isAssignableFrom(rawClass)) {
+            if (Map.class.isAssignableFrom(rawClass) && MAP_CLASS_NAMES.contains(rawClass.getName())) {
                 return new MapTypeImpl(
                         parseType(annotatedParameterizedType.getAnnotatedActualTypeArguments()[0]),
                         parseType(annotatedParameterizedType.getAnnotatedActualTypeArguments()[1])
@@ -323,7 +327,7 @@ class Context {
         if (simpleType != null) {
             return simpleType;
         }
-        if (Collection.class.isAssignableFrom(javaClass) ||
+        if (Iterable.class.isAssignableFrom(javaClass) ||
                 Map.class.isAssignableFrom(javaClass)) {
             throw new IllegalArgumentException(
                     "The type of error field cannot be collection"
@@ -426,14 +430,14 @@ class Context {
             if (simpleType != null) {
                 return simpleType;
             }
-            if (Collection.class.isAssignableFrom(javaClass) ||
-                    Map.class.isAssignableFrom(javaClass)) {
+            if ((Iterable.class.isAssignableFrom(javaClass) && ITERABLE_CLASS_NAMES.contains(javaClass.getName())) ||
+                    (Map.class.isAssignableFrom(javaClass) && MAP_CLASS_NAMES.contains(javaClass.getName()))) {
                 throw new IllegalDocMetaException(
                         "Illegal type \"" +
                                 type +
                                 "\" declared in " +
                                 location +
-                                ", collection and map must be parameterized type"
+                                ", iterable and map must be parameterized type"
                 );
             }
             if (!ignoreTypeVariableResolving && javaClass.getTypeParameters().length != 0) {
@@ -462,10 +466,10 @@ class Context {
                 }
                 argumentTypes.add(argumentType);
             }
-            if (Collection.class.isAssignableFrom(javaClass)) {
+            if (Iterable.class.isAssignableFrom(javaClass) && ITERABLE_CLASS_NAMES.contains(javaClass.getName())) {
                 return new ArrayTypeImpl(parseKotlinType(argumentTypes.get(0)));
             }
-            if (Map.class.isAssignableFrom(javaClass)) {
+            if (Map.class.isAssignableFrom(javaClass) && MAP_CLASS_NAMES.contains(javaClass.getName())) {
                 return new MapTypeImpl(
                         parseKotlinType(argumentTypes.get(0)),
                         parseKotlinType(argumentTypes.get(1))
@@ -820,5 +824,34 @@ class Context {
             }
             return o;
         }
+    }
+
+    static {
+        Set<String> iterableClassNames = new LinkedHashSet<>();
+        iterableClassNames.add(Iterable.class.getName());
+        iterableClassNames.add(Collection.class.getName());
+        iterableClassNames.add("java.util.SequencedCollection");
+        iterableClassNames.add(List.class.getName());
+        iterableClassNames.add(Set.class.getName());
+        iterableClassNames.add(SortedSet.class.getName());
+        iterableClassNames.add(NavigableSet.class.getName());
+        iterableClassNames.add("java.util.SequencedSet");
+        iterableClassNames.add(ArrayList.class.getName());
+        iterableClassNames.add(LinkedList.class.getName());
+        iterableClassNames.add(HashSet.class.getName());
+        iterableClassNames.add(LinkedHashSet.class.getName());
+        iterableClassNames.add(TreeSet.class.getName());
+
+        Set<String> mapClassNames = new LinkedHashSet<>();
+        mapClassNames.add(Map.class.getName());
+        mapClassNames.add(SortedMap.class.getName());
+        mapClassNames.add(NavigableMap.class.getName());
+        mapClassNames.add("java.util.SequencedMap");
+        mapClassNames.add(HashMap.class.getName());
+        mapClassNames.add(LinkedHashMap.class.getName());
+        mapClassNames.add(TreeMap.class.getName());
+
+        ITERABLE_CLASS_NAMES = iterableClassNames;
+        MAP_CLASS_NAMES = mapClassNames;
     }
 }
