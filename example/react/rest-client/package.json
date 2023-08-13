@@ -51,6 +51,6 @@
     ]
   },
   "devDependencies": {
-    "unzipper": "^0.10.11"
+    "adm-zip": "^0.5.10"
   }
 }

@@ -2,7 +2,7 @@ import type { Gender } from '../enums';
 
 export interface CompositeBookInput {
     
-    readonly authors: ReadonlyArray<CompositeBookInput_AuthorTarget>;
+    readonly authors: ReadonlyArray<CompositeBookInput_TargetOf_authors>;
     
     readonly edition: number;
     
@@ -12,10 +12,10 @@ export interface CompositeBookInput {
     
     readonly price: number;
     
-    readonly store?: CompositeBookInput_StoreTarget;
+    readonly store?: CompositeBookInput_TargetOf_store;
 }
 
-export interface CompositeBookInput_AuthorTarget {
+export interface CompositeBookInput_TargetOf_authors {
     
     readonly firstName: string;
     
@@ -24,7 +24,7 @@ export interface CompositeBookInput_AuthorTarget {
     readonly lastName: string;
 }
 
-export interface CompositeBookInput_StoreTarget {
+export interface CompositeBookInput_TargetOf_store {
     
     readonly name: string;
     

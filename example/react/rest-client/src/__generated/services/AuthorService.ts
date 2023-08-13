@@ -41,6 +41,13 @@ export class AuthorService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
+        _value = options.gender;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'gender='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
         return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     }
     

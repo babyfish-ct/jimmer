@@ -1,7 +1,7 @@
 import type { Dynamic, Executor } from '../';
 import type { TreeNodeDto } from '../model/dto';
 import type { TreeNode } from '../model/entities';
-import type { RecursiveTreeInput } from '../model/static';
+import type { FlatTreeNodeView, RecursiveTreeInput } from '../model/static';
 
 export class TreeService {
     
@@ -29,6 +29,22 @@ export class TreeService {
         return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>
     }
     
+    async flatNodes(options: TreeServiceOptions['flatNodes']): Promise<
+        ReadonlyArray<FlatTreeNodeView>
+    > {
+        let _uri = '/tree/flatNodes';
+        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
+        let _value: any = undefined;
+        _value = options.name;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'name='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<FlatTreeNodeView>
+    }
+    
     async saveTree(options: TreeServiceOptions['saveTree']): Promise<
         Dynamic<TreeNode>
     > {
@@ -40,5 +56,6 @@ export class TreeService {
 export type TreeServiceOptions = {
     'deleteTree': {readonly id: number},
     'findRootTrees': {readonly rootName?: string},
+    'flatNodes': {readonly name?: string},
     'saveTree': {readonly body: RecursiveTreeInput}
 }

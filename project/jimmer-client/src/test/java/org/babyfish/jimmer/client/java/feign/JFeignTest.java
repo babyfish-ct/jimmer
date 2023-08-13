@@ -41,6 +41,7 @@ public class JFeignTest {
                         "import org.springframework.cloud.openfeign.FeignClient;\n" +
                         "import org.springframework.web.bind.annotation.DeleteMapping;\n" +
                         "import org.springframework.web.bind.annotation.GetMapping;\n" +
+                        "import org.springframework.web.bind.annotation.PatchMapping;\n" +
                         "import org.springframework.web.bind.annotation.PathVariable;\n" +
                         "import org.springframework.web.bind.annotation.PutMapping;\n" +
                         "import org.springframework.web.bind.annotation.RequestBody;\n" +
@@ -94,6 +95,9 @@ public class JFeignTest {
                         "    \n" +
                         "    @PutMapping(\"/java/book\")\n" +
                         "    Dynamic_Book saveBooks(@RequestBody BookInput body);\n" +
+                        "    \n" +
+                        "    @PatchMapping(\"/java/book\")\n" +
+                        "    Dynamic_Book updateBooks(@RequestBody BookInput body);\n" +
                         "    \n" +
                         "    @GetMapping(\"/java/version\")\n" +
                         "    int version();\n" +
