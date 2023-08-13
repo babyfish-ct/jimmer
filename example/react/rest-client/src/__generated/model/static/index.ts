@@ -1,10 +1,10 @@
-export type { Sort } from './Sort';
+export type { BookStoreInput } from './BookStoreInput';
+export type { AuthorInput } from './AuthorInput';
+export type { FlatTreeNodeView } from './FlatTreeNodeView';
 export type { Pageable } from './Pageable';
 export type { ExportedSavePath } from './ExportedSavePath';
-export type { AuthorInput } from './AuthorInput';
-export type { BookInput } from './BookInput';
-export type { RecursiveTreeInput } from './RecursiveTreeInput';
 export type { CompositeBookInput } from './CompositeBookInput';
-export type { FlatTreeNodeView } from './FlatTreeNodeView';
+export type { Sort } from './Sort';
+export type { RecursiveTreeInput } from './RecursiveTreeInput';
 export type { Page } from './Page';
-export type { BookStoreInput } from './BookStoreInput';
+export type { BookInput } from './BookInput';
