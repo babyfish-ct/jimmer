@@ -33,6 +33,10 @@ public class Constants {
                     if (deleteMapping != null) {
                         return new Tuple2<>(deleteMapping.value(), Operation.HttpMethod.DELETE);
                     }
+                    PatchMapping patchMapping = method.getAnnotation(PatchMapping.class);
+                    if (patchMapping != null) {
+                        return new Tuple2<>(patchMapping.value(), Operation.HttpMethod.PATCH);
+                    }
                     RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
                     if (requestMapping != null) {
                         return new Tuple2<>(requestMapping.value(), requestMapping.method().length == 0 ? null : requestMapping.method()[0]);

@@ -93,6 +93,10 @@ public class JakartaMetadataFactoryBean implements FactoryBean<Metadata> {
                                     if (deleteMapping != null) {
                                         return new Tuple2<>(text(deleteMapping.value(), deleteMapping.path()), Operation.HttpMethod.DELETE);
                                     }
+                                    PatchMapping patchMapping = annotatedElement.getAnnotation(PatchMapping.class);
+                                    if (patchMapping != null) {
+                                        return new Tuple2<>(text(patchMapping.value(), patchMapping.path()), Operation.HttpMethod.PATCH);
+                                    }
                                 }
                                 RequestMapping requestMapping = annotatedElement.getAnnotation(RequestMapping.class);
                                 if (requestMapping != null) {

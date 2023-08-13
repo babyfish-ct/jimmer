@@ -276,6 +276,93 @@ public class JTypeScriptTest {
                 "                readonly code: 'UNSTRUCTURED_ASSOCIATION',\n" +
                 "                readonly [key:string]: any\n" +
                 "            }\n" +
+                "        ),\n" +
+                "        \"updateBooks\": AllErrors & (\n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'NULL_TARGET',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'ILLEGAL_TARGET_ID',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'CANNOT_DISSOCIATE_TARGETS',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'NO_ID_GENERATOR',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'ILLEGAL_ID_GENERATOR',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'ILLEGAL_GENERATED_ID',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'EMPTY_OBJECT',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'NO_KEY_PROPS',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'NO_NON_ID_PROPS',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'NO_VERSION',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'ILLEGAL_VERSION',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'KEY_NOT_UNIQUE',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'NEITHER_ID_NOR_KEY',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'REVERSED_REMOTE_ASSOCIATION',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'LONG_REMOTE_ASSOCIATION',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'FAILED_REMOTE_VALIDATION',\n" +
+                "                readonly [key:string]: any\n" +
+                "            } | \n" +
+                "            {\n" +
+                "                readonly family: 'SAVE_ERROR_CODE',\n" +
+                "                readonly code: 'UNSTRUCTURED_ASSOCIATION',\n" +
+                "                readonly [key:string]: any\n" +
+                "            }\n" +
                 "        )\n" +
                 "    },\n" +
                 "    \"enumService\": {\n" +
@@ -456,6 +543,13 @@ public class JTypeScriptTest {
                         "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
                         "    }\n" +
                         "    \n" +
+                        "    async updateBooks(options: BookServiceOptions['updateBooks']): Promise<\n" +
+                        "        Dynamic<Book>\n" +
+                        "    > {\n" +
+                        "        let _uri = '/java/book';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'PATCH', body: options.body})) as Dynamic<Book>\n" +
+                        "    }\n" +
+                        "    \n" +
                         "    async version(): Promise<number> {\n" +
                         "        let _uri = '/java/version';\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as number\n" +
@@ -487,6 +581,7 @@ public class JTypeScriptTest {
                         "        readonly pageSize: number\n" +
                         "    },\n" +
                         "    'saveBooks': {readonly body: BookInput},\n" +
+                        "    'updateBooks': {readonly body: BookInput},\n" +
                         "    'version': {}\n" +
                         "}",
                 code
@@ -864,6 +959,13 @@ public class JTypeScriptTest {
                         "    > {\n" +
                         "        let _uri = '/java/book';\n" +
                         "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async updateBooks(options: {readonly body: BookInput}): Promise<\n" +
+                        "        Dynamic<Book>\n" +
+                        "    > {\n" +
+                        "        let _uri = '/java/book';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'PATCH', body: options.body})) as Dynamic<Book>\n" +
                         "    }\n" +
                         "    \n" +
                         "    async version(): Promise<number> {\n" +
