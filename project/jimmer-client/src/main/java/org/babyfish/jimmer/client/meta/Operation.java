@@ -31,6 +31,7 @@ public interface Operation extends Node {
         GET,
         POST,
         PUT,
-        DELETE
+        DELETE,
+        PATCH
     }
 }

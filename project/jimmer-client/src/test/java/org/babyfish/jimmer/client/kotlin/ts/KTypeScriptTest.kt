@@ -81,6 +81,18 @@ class KTypeScriptTest {
                     "                readonly code: 'SERVICE_IS_SUSPENDED',\n" +
                     "                readonly [key:string]: any\n" +
                     "            }\n" +
+                    "        ),\n" +
+                    "        \"updateBook\": AllErrors & (\n" +
+                    "            {\n" +
+                    "                readonly family: 'KBUSINESS_ERROR',\n" +
+                    "                readonly code: 'DATA_IS_FROZEN',\n" +
+                    "                readonly [key:string]: any\n" +
+                    "            } | \n" +
+                    "            {\n" +
+                    "                readonly family: 'KBUSINESS_ERROR',\n" +
+                    "                readonly code: 'SERVICE_IS_SUSPENDED',\n" +
+                    "                readonly [key:string]: any\n" +
+                    "            }\n" +
                     "        )\n" +
                     "    },\n" +
                     "    \"kbookStoreService\": {\n" +
@@ -220,6 +232,13 @@ class KTypeScriptTest {
                     "        let _uri = '/book';\n" +
                     "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<KBook> | undefined\n" +
                     "    }\n" +
+                    "    \n" +
+                    "    async updateBook(options: KBookServiceOptions['updateBook']): Promise<\n" +
+                    "        Dynamic<KBook> | undefined\n" +
+                    "    > {\n" +
+                    "        let _uri = '/book';\n" +
+                    "        return (await this.executor({uri: _uri, method: 'PATCH', body: options.body})) as Dynamic<KBook> | undefined\n" +
+                    "    }\n" +
                     "}\n" +
                     "\n" +
                     "export type KBookServiceOptions = {\n" +
@@ -245,7 +264,8 @@ class KTypeScriptTest {
                     "        readonly pageIndex: number, \n" +
                     "        readonly pageSize: number\n" +
                     "    },\n" +
-                    "    'saveBooks': {readonly body?: KBookInput}\n" +
+                    "    'saveBooks': {readonly body?: KBookInput},\n" +
+                    "    'updateBook': {readonly body?: KBookInput}\n" +
                     "}",
             code
         )

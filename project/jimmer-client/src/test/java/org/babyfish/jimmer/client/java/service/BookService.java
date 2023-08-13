@@ -84,6 +84,10 @@ public interface BookService {
     @ThrowsAll(SaveErrorCode.class)
     Book saveBooks(@RequestBody BookInput input);
 
+    @PatchMapping("/book")
+    @ThrowsAll(SaveErrorCode.class)
+    Book updateBooks(@RequestBody BookInput input);
+
     @DeleteMapping("/book/{id}")
     int deleteBook(@PathVariable("id") long id);
 

@@ -7,9 +7,6 @@ import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.Parameter;
 import org.babyfish.jimmer.client.meta.Service;
 
-import java.io.IOException;
-import java.io.Writer;
-
 public class ServiceWriter extends JavaCodeWriter<JavaContext> {
 
     private static final String GET_MAPPING = "org.springframework.web.bind.annotation.GetMapping";
@@ -19,6 +16,8 @@ public class ServiceWriter extends JavaCodeWriter<JavaContext> {
     private static final String PUT_MAPPING = "org.springframework.web.bind.annotation.PutMapping";
 
     private static final String DELETE_MAPPING = "org.springframework.web.bind.annotation.DeleteMapping";
+
+    public static final String PATCH_MAPPING = "org.springframework.web.bind.annotation.PatchMapping";
 
     private static final String REQUEST_PARAM = "org.springframework.web.bind.annotation.RequestParam";
 
@@ -62,6 +61,9 @@ public class ServiceWriter extends JavaCodeWriter<JavaContext> {
                 break;
             case DELETE:
                 annotation = DELETE_MAPPING;
+                break;
+            case PATCH:
+                annotation = PATCH_MAPPING;
                 break;
             default:
                 annotation = GET_MAPPING;
