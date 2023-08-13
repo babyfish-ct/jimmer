@@ -428,38 +428,63 @@ export type BookServiceOptions = {
 
     在项目根目录下添加文件夹`scripts`，在其下添加文件`generate-api.js`，该文件由nodejs执行，是开发工具的代码，不是客户端本身的代码。
 
+    很显然，不可能在每次服务端发生变化的时候，都要求客户端开发人员都需要手动下载服务端代码，解压，并替换本地代码。
+
+    所以，我们需要编写一个小脚本，自动完成最新TypeScript代码的下载、解压和替换。
+
+    在项目根目录下添加文件夹`scripts`，在其下添加文件`generate-api.js`，该文件由nodejs执行，是开发工具的代码，不是客户端本身的代码。
+
     ```js title="scripts/generate-api.js"
     const http = require('http'); 
     const fs = require('fs');
     const fse = require('fs-extra');
     const uuid = require('uuid');
     const tempDir = require('temp-dir');
-    const unzipper = require('unzipper');
+    const AdmZip = require('adm-zip');
 
     const sourceUrl = "http://localhost:8080/ts.zip";
-    const tmpPath = tempDir + '/' + uuid.v4();
+    const tmpFilePath = tempDir + "/" + uuid.v4() + ".zip";
+    const generatePath = "src/__generated";
 
     console.log("Downloading " + sourceUrl + "...");
-    const request = http.get(sourceUrl, function(response) {
-        const extractor = unzipper.Extract({path: tmpPath});
-        response.pipe(extractor);
-        extractor.on("close", function() {
-            console.log(
-                "Downloaded & unzipped " + sourceUrl + 
-                ", the unzipped path is " + tmpPath
-            );
-            console.log("Delete src/__generated");
-            fs.rmSync("src/__generated", { recursive: true, force: true });
-            console.log("Move " + tmpPath + " to src/__generated");
-            fse.moveSync(tmpPath, "src/__generated", { overwrite: true });
-            console.log("Api code is refreshed sucessfully");
+
+    const tmpFile = fs.createWriteStream(tmpFilePath);
+
+    const request = http.get(sourceUrl, (response) => {
+        response.pipe(tmpFile);
+        tmpFile.on("finish", () => {
+            tmpFile.close();
+            console.log("File save success: ", tmpFilePath);
+
+            // Remove generatePath if it exists
+            if (fs.existsSync(generatePath)) {
+                console.log("Removing existing generatePath...");
+                fse.removeSync(generatePath);
+                console.log("Existing generatePath removed.");
+            }
+
+            // Unzip the file using adm-zip
+            console.log("Unzipping the file...");
+            const zip = new AdmZip(tmpFilePath);
+            zip.extractAllTo(generatePath, true);
+            console.log("File unzipped successfully.");
+
+            // Remove the temporary file
+            console.log("Removing temporary file...");
+            fs.unlink(tmpFilePath, (err) => {
+                if (err) {
+                    console.error("Error while removing temporary file:", err);
+                } else {
+                    console.log("Temporary file removed.");
+                }
+            });
         });
     });
     ```
 
-    其中，`unzipper`需要单独安装
+    其中，`adm-zip`需要单独安装
     ```
-    yarn add unzipper --dev
+    yarn add adm-zip --dev
     ```
 
     修改项目的`package.json`，在其"scripts"字段下添加如下代码
