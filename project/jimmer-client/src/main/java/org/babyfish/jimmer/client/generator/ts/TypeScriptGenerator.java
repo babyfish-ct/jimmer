@@ -175,9 +175,9 @@ public class TypeScriptGenerator implements Generator {
 
         final String dir;
 
-        final List<File> objectFiles = new ArrayList<>();
+        final Set<File> objectFiles = new TreeSet<>();
 
-        final List<File> typeFiles = new ArrayList<>();
+        final Set<File> typeFiles = new TreeSet<>();
 
         public Index(String dir) {
             this.dir = dir;

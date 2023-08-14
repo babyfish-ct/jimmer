@@ -2,7 +2,7 @@ package org.babyfish.jimmer.client.generator;
 
 import java.util.Objects;
 
-public class File {
+public class File implements Comparable<File> {
 
     private final String dir;
 
@@ -38,6 +38,15 @@ public class File {
     @Override
     public int hashCode() {
         return Objects.hash(dir, name);
+    }
+
+    @Override
+    public int compareTo(File o) {
+        int cmp = dir.compareTo(o.dir);
+        if (cmp != 0) {
+            return cmp;
+        }
+        return name.compareTo(o.name);
     }
 
     @Override
