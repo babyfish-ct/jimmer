@@ -87,7 +87,7 @@ public class Converters {
             return tryConvertInstant(((LocalDate) value).atTime(LocalTime.MIN).toInstant(OFFSET), expectedType);
         }
         if (value instanceof LocalTime) {
-            return tryConvertInstant(((LocalTime) value).atDate(LocalDate.EPOCH).toInstant(OFFSET), expectedType);
+            return tryConvertInstant(((LocalTime) value).atDate(LocalDate.of(1970, 1, 1)).toInstant(OFFSET), expectedType);
         }
         if (value instanceof LocalDateTime) {
             return tryConvertInstant(((LocalDateTime) value).toInstant(OFFSET), expectedType);
