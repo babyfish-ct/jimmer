@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.kotlin.ts
 
 import org.babyfish.jimmer.client.generator.ts.*
+import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter
 import org.babyfish.jimmer.client.kotlin.model.*
 import org.babyfish.jimmer.client.kotlin.service.KArrayService
 import org.babyfish.jimmer.client.kotlin.service.KBookService
@@ -101,6 +102,23 @@ class KTypeScriptTest {
                     "    }\n" +
                     "};\n",
             code
+        )
+    }
+
+    @Test
+    fun testExecutor() {
+        val out = ByteArrayOutputStream()
+        val ctx = createContext(out)
+        ExecutorWriter(ctx).flush()
+        val code = out.toString()
+        Assertions.assertEquals(
+            "export type Executor = \n" +
+                    "    (args: {\n" +
+                    "        readonly uri: string,\n" +
+                    "        readonly method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',\n" +
+                    "        readonly body?: any\n" +
+                    "    }) => Promise<any>\n" +
+                    ";\n", code
         )
     }
 
@@ -539,31 +557,32 @@ class KTypeScriptTest {
         val service = Constants.KOTLIN_METADATA.services[KEnumService::class.java]
         ServiceWriter(ctx, service).flush()
         val code = out.toString()
-        Assertions.assertEquals("import type { Executor } from '../';\n" +
-                "import type { KGender } from '../model/enums';\n" +
-                "\n" +
-                "export class KEnumService {\n" +
-                "    \n" +
-                "    constructor(private executor: Executor) {}\n" +
-                "    \n" +
-                "    async enumParam(options: KEnumServiceOptions['enumParam']): Promise<void> {\n" +
-                "        let _uri = '/enumParam';\n" +
-                "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
-                "        let _value: any = undefined;\n" +
-                "        _value = options.gender;\n" +
-                "        if (_value !== undefined && _value !== null) {\n" +
-                "            _uri += _separator\n" +
-                "            _uri += 'gender='\n" +
-                "            _uri += encodeURIComponent(_value);\n" +
-                "            _separator = '&';\n" +
-                "        }\n" +
-                "        return (await this.executor({uri: _uri, method: 'GET'})) as void\n" +
-                "    }\n" +
-                "}\n" +
-                "\n" +
-                "export type KEnumServiceOptions = {\n" +
-                "    'enumParam': {readonly gender: KGender}\n" +
-                "}", code
+        Assertions.assertEquals(
+            "import type { Executor } from '../';\n" +
+                    "import type { KGender } from '../model/enums';\n" +
+                    "\n" +
+                    "export class KEnumService {\n" +
+                    "    \n" +
+                    "    constructor(private executor: Executor) {}\n" +
+                    "    \n" +
+                    "    async enumParam(options: KEnumServiceOptions['enumParam']): Promise<void> {\n" +
+                    "        let _uri = '/enumParam';\n" +
+                    "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
+                    "        let _value: any = undefined;\n" +
+                    "        _value = options.gender;\n" +
+                    "        if (_value !== undefined && _value !== null) {\n" +
+                    "            _uri += _separator\n" +
+                    "            _uri += 'gender='\n" +
+                    "            _uri += encodeURIComponent(_value);\n" +
+                    "            _separator = '&';\n" +
+                    "        }\n" +
+                    "        return (await this.executor({uri: _uri, method: 'GET'})) as void\n" +
+                    "    }\n" +
+                    "}\n" +
+                    "\n" +
+                    "export type KEnumServiceOptions = {\n" +
+                    "    'enumParam': {readonly gender: KGender}\n" +
+                    "}", code
         )
     }
 

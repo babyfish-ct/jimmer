@@ -40,14 +40,13 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
         return new LowerExpression(this);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     default StringExpression concat(String... others) {
         return concat(
                 Arrays.stream(others)
                         .filter(it -> it != null && !it.isEmpty())
                         .map(Literals::string)
-                        .toArray(Expression[]::new)
+                        .toArray(StringExpression[]::new)
         );
     }
 
