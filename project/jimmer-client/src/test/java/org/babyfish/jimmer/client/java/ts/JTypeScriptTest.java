@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.java.ts;
 
 import org.babyfish.jimmer.client.generator.ts.*;
+import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 import org.babyfish.jimmer.client.java.model.*;
 import org.babyfish.jimmer.client.java.service.ArrayService;
 import org.babyfish.jimmer.client.java.service.AuthorService;
@@ -368,6 +369,23 @@ public class JTypeScriptTest {
                 "    \"enumService\": {\n" +
                 "    }\n" +
                 "};\n", code);
+    }
+
+    @Test
+    public void testExecutor() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        TsContext ctx = createContext(out);
+        new ExecutorWriter(ctx).flush();
+        String code = out.toString();
+        Assertions.assertEquals(
+                "export type Executor = \n" +
+                        "    (args: {\n" +
+                        "        readonly uri: string,\n" +
+                        "        readonly method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',\n" +
+                        "        readonly body?: any\n" +
+                        "    }) => Promise<any>\n" +
+                        ";\n", code
+        );
     }
 
     @Test
