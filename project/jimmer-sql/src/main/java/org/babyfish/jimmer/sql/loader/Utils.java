@@ -18,7 +18,7 @@ class Utils {
                 .stream(maps)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        if (nonNullMaps.size() == 0) {
+        if (nonNullMaps.isEmpty()) {
             return Collections.emptyMap();
         }
         if (nonNullMaps.size() == 1) {

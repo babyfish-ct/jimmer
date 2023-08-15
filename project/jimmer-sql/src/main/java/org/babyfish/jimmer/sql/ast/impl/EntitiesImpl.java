@@ -279,10 +279,12 @@ public class EntitiesImpl implements Entities {
             if (fetcher != null && !entities.isEmpty()) {
                 boolean needUnload = false;
                 for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                            needUnload = true;
-                            break;
+                    if (spi != null) {
+                        for (ImmutableProp prop : immutableType.getProps().values()) {
+                            if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                needUnload = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -290,17 +292,19 @@ public class EntitiesImpl implements Entities {
                     ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
                     while (itr.hasNext()) {
                         ImmutableSpi spi = itr.next();
-                        itr.set(
-                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
-                                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                                        if (!prop.isView() &&
-                                                spi.__isLoaded(prop.getId()) &&
-                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                            ((DraftSpi) draft).__unload(prop.getId());
+                        if (spi != null) {
+                            itr.set(
+                                    (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
+                                        for (ImmutableProp prop : immutableType.getProps().values()) {
+                                            if (!prop.isView() &&
+                                                    spi.__isLoaded(prop.getId()) &&
+                                                    !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                                ((DraftSpi) draft).__unload(prop.getId());
+                                            }
                                         }
-                                    }
-                                })
-                        );
+                                    })
+                            );
+                        }
                     }
                 }
                 Fetchers.fetch(
@@ -390,10 +394,12 @@ public class EntitiesImpl implements Entities {
             if (!entities.isEmpty()) {
                 boolean needUnload = false;
                 for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                            needUnload = true;
-                            break;
+                    if (spi != null) {
+                        for (ImmutableProp prop : immutableType.getProps().values()) {
+                            if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                needUnload = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -401,17 +407,19 @@ public class EntitiesImpl implements Entities {
                     ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
                     while (itr.hasNext()) {
                         ImmutableSpi spi = itr.next();
-                        itr.set(
-                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
-                                    for (ImmutableProp prop : immutableType.getProps().values()) {
-                                        if (!prop.isView() &&
-                                                spi.__isLoaded(prop.getId()) &&
-                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                            ((DraftSpi) draft).__unload(prop.getId());
+                        if (spi != null) {
+                            itr.set(
+                                    (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
+                                        for (ImmutableProp prop : immutableType.getProps().values()) {
+                                            if (!prop.isView() &&
+                                                    spi.__isLoaded(prop.getId()) &&
+                                                    !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                                ((DraftSpi) draft).__unload(prop.getId());
+                                            }
                                         }
-                                    }
-                                })
-                        );
+                                    })
+                            );
+                        }
                     }
                 }
                 Fetchers.fetch(

@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
-import org.springframework.http.HttpStatus;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
@@ -412,7 +411,7 @@ public class JimmerProperties {
         private final boolean disabled;
 
         @NotNull
-        private final HttpStatus httpStatus;
+        private final int httpStatus;
 
         private final boolean debugInfoSupported;
 
@@ -420,12 +419,12 @@ public class JimmerProperties {
 
         public ErrorTranslator(
                 Boolean disabled,
-                HttpStatus httpStatus,
+                Integer httpStatus,
                 Boolean debugInfoSupported,
                 Integer debugInfoMaxStackTraceCount
         ) {
             this.disabled = disabled != null ? disabled : false;
-            this.httpStatus = httpStatus != null ? httpStatus : HttpStatus.INTERNAL_SERVER_ERROR;
+            this.httpStatus = httpStatus != null ? httpStatus : 500;
             this.debugInfoSupported = debugInfoSupported != null ? debugInfoSupported : false;
             this.debugInfoMaxStackTraceCount = debugInfoMaxStackTraceCount != null ?
                     debugInfoMaxStackTraceCount :
@@ -437,7 +436,7 @@ public class JimmerProperties {
         }
 
         @NotNull
-        public HttpStatus getHttpStatus() {
+        public int getHttpStatus() {
             return httpStatus;
         }
 
