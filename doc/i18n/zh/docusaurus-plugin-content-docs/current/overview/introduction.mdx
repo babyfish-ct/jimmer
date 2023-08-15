@@ -82,11 +82,15 @@ ORM只是Jimmer的切入点，而非全部。
     通过创新，彻底释放ORM的灵活性，形成一个兼具ORM的便捷性和MyBatis的灵活性的新方案，是Jimmer的核心价值之一。
     :::
 
+    为此，Jimmer给出的解决方案是查询任意形状的数据结构 <ObjectFetcher/>
+
 2.  复杂表单问题
 
     很多时候，客户端需要保存的数据结构并非扁平对象，而是<ViewMore buttonText="有一定复杂性的数据结构" variant="text"><LongAssociation/></ViewMore>，如果要开发人员自己对比客户端数据结构和现有数据的差异并执行适当的增、删、改行为，那会非常繁琐。
     
     而且，应该和查询功能类似，不同业务功能能对同一个聚合根类型保存的数据结构的格式应该多样化，不应在ORM层面通过配置固化。
+
+    为此，Jimmer给出的解决方案是保存任意形状的数据结构 <SaveCommand/>
 
 3.  缓存
 
@@ -184,7 +188,24 @@ Jimmer的DSL并非是对SQL的机械翻译，其独创的`动态表连接`，填
 
 <Button href="../query/paging" size="small" variant="outlined">前往看看</Button>
 
-### 7. 远程关联
+### 7. DTO语言
+
+DTO语言是Jimmer自带的一种简单语言。
+
+即使某些特殊场景下，我们无法直接使用统一的ORM实体，不得不使用DTO对象，开发代价也仅仅是使用DTO语言定义这些DTO的形状而已，
+剩下的所有工作
+
+-   DTO相关Java/Kotlin定义
+
+-   实体和DTO之间的数据转化逻辑
+
+-   查询DTO的逻辑
+
+都是全自动的，完全感觉不到传统技术方案中因DTO爆炸带来的痛苦。
+
+<Button href="../object/view/dto-language" size="small" variant="outlined">前往看看</Button>
+
+### 8. 远程关联
 
 在微型服务体系中，数据库是碎片化的。先从不同的微服务中查询数据的不同部分，然后拼接起来作为一个整体返回，这个操作既繁琐又高频，应该由底层方案隐藏和自动化。
 

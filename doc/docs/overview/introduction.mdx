@@ -90,13 +90,17 @@ As mentioned earlier, completing CRUD access to the database is only the most ba
     Unleashing the flexibility of ORM through innovation to form a new solution that combines the convenience of ORM with the flexibility of MyBatis is one of Jimmer's core values.
     :::
 
+    To do this, Jimmer's solution is to query arbitrarily shaped data structures <ObjectFetcher/>
+
 2.  Complex form problem
 
     Many times, the data structure that the client needs to save is not a flat object, but <ViewMore buttonText="data structure with some complexity" variant="text"><LongAssociation/></ViewMore>. It would be tedious for developers to compare the differences between client data structures and existing data and perform appropriate additions, deletions, and modifications.
         
     Therefore, the format of the data structure that different business functions can save for the same aggregate root type should be diversified, and should not be solidified through configuration at the ORM level.
 
-3.  cache
+    To do this, Jimmer's solution is to save arbitrarily shaped data structures <SaveCommand/>
+
+3.  Cache
 
     - Whether to use caching should be absolutely transparent to developers, and the introduction of caching should not increase the complexity of business code, reduce code quality and maintainability, and should be as simple as pure SQL projects.
 
@@ -114,7 +118,7 @@ As mentioned earlier, completing CRUD access to the database is only the most ba
 
 5.  Microservice data stitching
 
-In a microservices system, databases are fragmented. Querying different parts of data from different microservices and then stitching them back as a whole is cumbersome and high-frequency, and should be hidden and automated by the underlying solution.
+    In a microservices system, databases are fragmented. Querying different parts of data from different microservices and then stitching them back as a whole is cumbersome and high-frequency, and should be hidden and automated by the underlying solution.
 
 ## Revolutionary features
 
@@ -192,7 +196,24 @@ Jimmer fully optimizes paginated queries at the SQL level
 
 <Button href="../query/paging" size="small" variant="outlined">go to see</Button>
 
-### 7. Remote association
+### 7. DTO language
+
+The DTO language is a simple language that comes with Jimmer.
+
+Even if in some special scenarios, we cannot directly use unified ORM entities and have to use DTO objects, the development cost is only to use the DTO language to define the shape of these DTOs.
+All the rest functions such as
+
+-   Java/Kotlin definitions for DTOs
+
+-   Data transformation between entities and DTOs
+
+-   The DTO query logic
+
+are fully automated, and the pain caused by DTO explosions in traditional technical solutions is completely unfelt.
+
+<Button href="../object/view/dto-language" size="small" variant="outlined">前往看看</Button>
+
+### 8. Remote association
 
 In a microservices system, databases are fragmented. Querying different parts of data from different microservices and then stitching them back as a whole is cumbersome and high-frequency, and should be hidden and automated by the underlying solution.
 
@@ -202,7 +223,8 @@ In a microservices system, databases are fragmented. Querying different parts of
 
 <MindMap initialExpandLevel={1}/>
 
-Scenario analogy
+## Solution analogy
+
 Jimmer is a comprehensive solution with a lot of great features. Some of these features are original to Jimmer, and some are similar to some other technical systems, which can be understood by analogy to help users with relevant experience understand.
 
 The features that can be compared with other similar technical systems are:
@@ -217,7 +239,11 @@ The features that can be compared with other similar technical systems are:
 </thead>
 <tbody>
 <tr>
-<td>Query arbitrary shaped data structures</td>
+<td>
+
+[Query arbitrary shaped data structures](../query/object-fetcher)
+
+</td>
 <td><a href="https://graphql.org/)">GraphQL</a></td>
 <td>
 
@@ -248,7 +274,7 @@ Jimmer takes a completely different approach, and the saved Jimmer object has [d
 <tr>
 <td>
 
-[DTO语言](../object/view/dto-language)
+[DTO Language](../object/view/dto-language)
 
 </td>
 <td><a href="https://mapstruct.org/">MapStruct</a></td>
@@ -261,7 +287,11 @@ Even if in some special scenarios, we cannot directly use unified ORM entities a
 </td>
 </tr>
 <tr>
-<td>Entity object calculated properties</td>
+<td>
+
+[Entity object calculated properties](../mapping/advanced/calculated/transient)
+
+</td>
 <td><a href="https://github.com/graphql/dataloader">DataLoader</a></td>
 <td>
 
@@ -272,7 +302,11 @@ Even if in some special scenarios, we cannot directly use unified ORM entities a
 </td>
 </tr>
 <tr>
-<td>Entity object remote associations</td>
+<td>
+
+[Entity object remote associations](../spring/spring-cloud)
+
+</td>
 <td><a href="https://www.apollographql.com/docs/federation/">Apollo Federation</a></td>
 <td>
 
@@ -285,7 +319,11 @@ Even if in some special scenarios, we cannot directly use unified ORM entities a
 </td>
 </tr>
 <tr>
-<td>Intra-transaction trigger</td>
+<td>
+
+[Intra-transaction trigger](../mutation/trigger#触发器分类)
+
+</td>
 <td><a href="https://seata.io/en-us/docs/dev/mode/at-mode.html">Seata's AT mode</a></td>
 <td>
 
@@ -300,7 +338,11 @@ If conditions permit, binlog triggers should be used in preference to Intra-tran
 </td>
 </tr>
 <tr>
-<td>Immutable objects</td>
+<td>
+
+[Immutable objects](../object/immutable)
+
+</td>
 <td><a href="https://github.com/immerjs/immer">immer</a></td>
 <td>
 

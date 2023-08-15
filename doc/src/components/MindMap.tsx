@@ -319,6 +319,14 @@ const DATA_ZH = `
 
         -   当页码过大时，自动变换查询方式 [→](@site/query/paging/deep-optimization)
 
+    -   DTO语言 [→](@site/object/view/dto-language)
+
+        -   自动生成DTO类型的Java/Kotlin定义
+
+        -   自动生成实体和DTO之间的相互转化逻辑
+
+        -   自动生成查询DTO查询逻辑
+
     -   极致性能 [👁](#performance) [→](@site/overview/benchmark)
 
         -   ORM本身的映射性能极高，发挥虚拟线程的威力
@@ -420,6 +428,14 @@ const DATA_EN = `
         -   If the expected observation area of the pagination query is in the second half of all the data before paging, perform reverse sorting optimization [→](@site/query/paging/reverse-sorting)
 
         -   Automatically switch query methods when the page number is too large [→](@site/query/paging/deep-optimization)
+
+    - DTO language [→](@site/object/view/dto-language)
+
+        - Automatically generate Java/Kotlin definitions of DTO types
+        
+        - Automatically generate the transforming logic between entities and DTOs
+        
+        - Automatically generate query DTO query logic
 
     -   Ultimate performance [👁](#performance) [→](@site/overview/benchmark)
 
