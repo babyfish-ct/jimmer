@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.spring.cfg;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import kotlin.Unit;
-import org.babyfish.jimmer.spring.cloud.SpringCloudExchange;
 import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
 import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
@@ -32,17 +30,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Configuration
-@Import(TransactionCacheOperatorFlusherConfig.class)
+@Import({TransactionCacheOperatorFlusherConfig.class, MicroServiceExchangeConfig.class})
 public class SqlClientConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
@@ -291,16 +287,6 @@ public class SqlClientConfig {
     @Bean
     public CacheAbandonedCallback cacheAbandonedCallback() {
         return CacheAbandonedCallback.log();
-    }
-
-    @Conditional(MicroServiceCondition.class)
-    @ConditionalOnMissingBean(MicroServiceExchange.class)
-    @Bean
-    public MicroServiceExchange microServiceExchange(
-            RestTemplate restTemplate,
-            ObjectMapper mapper
-    ) {
-        return new SpringCloudExchange(restTemplate, mapper);
     }
 
     private static void postCreateSqlClient(
