@@ -17,7 +17,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 通过之前的介绍，我们知道保存指令可以保存任意形状的数据结构，任何对象都可以进一步持有关联对象。
 
-如果某个关联对象的id被指定了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
+如果某个关联对象的id被指定了，但其所代表的对象在数据库中不存在时，Jimmer如何应对呢？
 
 首先，对于<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
 
