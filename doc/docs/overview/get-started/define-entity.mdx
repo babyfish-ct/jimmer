@@ -485,7 +485,7 @@ public interface Book {
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
         joinColumnName = "BOOK_ID",
-        inverseJoinColumnName = "AUTHOR_id"
+        inverseJoinColumnName = "AUTHOR_ID"
     )
     List<Author> authors();
 }
@@ -575,7 +575,7 @@ package com.example.model
 ...省略导入语句...
 
 @Entity
-interface Book {
+interface Author {
 
     ...省略其他属性...
 
