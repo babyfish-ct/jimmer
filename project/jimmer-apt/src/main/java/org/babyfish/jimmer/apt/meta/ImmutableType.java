@@ -555,14 +555,17 @@ public class ImmutableType implements BaseType {
         return acrossMicroServices;
     }
 
+    @Override
     public String getPackageName() {
         return packageName;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getQualifiedName() {
         return qualifiedName;
     }

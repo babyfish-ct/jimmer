@@ -4,7 +4,6 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.Objects;
 
 class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {

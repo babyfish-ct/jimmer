@@ -293,7 +293,7 @@ public class DtoCompilerTest {
         });
         Assertions.assertEquals(
                 "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
-                        "token recognition error at: '<'",
+                        "extraneous input '<' expecting Identifier",
                 ex.getMessage()
         );
     }

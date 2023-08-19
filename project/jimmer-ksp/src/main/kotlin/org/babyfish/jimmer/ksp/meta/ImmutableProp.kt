@@ -98,7 +98,12 @@ class ImmutableProp(
 
     private val targetDeclaration: KSClassDeclaration =
         if (isList) {
-            resolvedType.arguments[0].type!!.resolve()
+            val arguments = resolvedType.arguments.takeIf { it.isNotEmpty() }
+                ?: throw MetaException(
+                    propDeclaration,
+                    "can extract the generic argument from property type"
+                )
+            arguments[0].type!!.resolve()
         } else {
             resolvedType
         }.declaration.also {

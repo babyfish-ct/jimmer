@@ -86,6 +86,9 @@ class ImmutableType(
     override val name: String
         get() = classDeclaration.simpleName.asString()
 
+    override val packageName: String
+        get() = classDeclaration.packageName.asString()
+
     override val qualifiedName: String
         get() = classDeclaration.qualifiedName!!.asString()
 
