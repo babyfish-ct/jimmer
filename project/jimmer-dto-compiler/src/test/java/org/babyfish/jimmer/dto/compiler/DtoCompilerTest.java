@@ -2,6 +2,7 @@ package org.babyfish.jimmer.dto.compiler;
 
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -251,6 +252,45 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testUserProp() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "import com.company.pkg.data.User\n" +
+                        "import com.company.pkg.data.Configuration as Cfg\n" +
+                        "import com.company.pkg.data.{\n" +
+                        "    ConfigurationKey as _K\n, " +
+                        "    NestedElement as _E\n" +
+                        "}\n" +
+                        "import java.util.SequencedSet as _OSet\n" +
+                        "import com.company.pkg.TopLevel as _T\n" +
+                        "\n" +
+                        "Customer {\n" +
+                        "    a: Int\n" +
+                        "    b: User?\n" +
+                        "    c: MutableList<Cfg>\n" +
+                        "    d: List<Map<_K, Array<_E?>>>?\n" +
+                        "    e: _OSet<_T.Nested>\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "Customer {" +
+                        "    a: Int, " +
+                        "    b: com.company.pkg.data.User?, " +
+                        "    c: MutableList<com.company.pkg.data.Configuration>, " +
+                        "    d: List<" +
+                        "        Map<" +
+                        "            com.company.pkg.data.ConfigurationKey, " +
+                        "            Array<" +
+                        "                com.company.pkg.data.NestedElement?" +
+                        "            >" +
+                        "        >" +
+                        "    >?, " +
+                        "    e: java.util.SequencedSet<com.company.pkg.TopLevel.Nested>" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book().compile(
@@ -331,6 +371,24 @@ public class DtoCompilerTest {
         Assertions.assertEquals(
                 "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
                         "Duplicated property alias \"name\"",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testDuplicateAlias3() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "BookView {\n" +
+                            "    id\n" +
+                            "    name as myName\n" +
+                            "    myName: String\n" +
+                            "}"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 4 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Duplicated property alias \"myName\"",
                 ex.getMessage()
         );
     }
@@ -534,7 +592,7 @@ public class DtoCompilerTest {
 
     private static void assertContentEquals(String expected, String actual) {
         Assertions.assertEquals(
-                expected.replace("--->", ""),
+                expected.replace("--->", "").replace("    ", ""),
                 actual
         );
     }
@@ -555,6 +613,13 @@ public class DtoCompilerTest {
                             LinkedHashMap::new
                     )
             );
+        }
+
+        @NotNull
+        @Override
+        public String getPackageName() {
+            int index = qualifiedName.lastIndexOf('.');
+            return qualifiedName.substring(0, index);
         }
 
         @Override

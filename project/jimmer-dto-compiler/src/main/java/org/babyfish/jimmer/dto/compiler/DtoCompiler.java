@@ -63,7 +63,11 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     private List<DtoType<T, P>> parse(DtoParser parser) {
         CompilerContext<T, P> ctx = new CompilerContext<>(this);
-        for (DtoParser.DtoTypeContext dtoType : parser.dto().dtoTypes) {
+        DtoParser.DtoContext dto = parser.dto();
+        for (DtoParser.ImportStatementContext importStatement : dto.importStatements) {
+            ctx.importStatement(importStatement);
+        }
+        for (DtoParser.DtoTypeContext dtoType : dto.dtoTypes) {
             ctx.add(dtoType);
         }
         return ctx.getDtoTypes();

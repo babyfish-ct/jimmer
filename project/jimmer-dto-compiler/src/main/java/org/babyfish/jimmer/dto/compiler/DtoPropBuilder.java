@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 
-class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropImplementor {
+class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropImplementor, AbstractPropBuilder {
 
     private final DtoTypeBuilder<T, P> parent;
 
@@ -306,7 +306,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         return baseProp;
     }
 
-    DtoProp<T, P> build() {
+    @Override
+    public DtoProp<T, P> build() {
         return new DtoPropImpl<>(
                 baseProp,
                 baseLine,

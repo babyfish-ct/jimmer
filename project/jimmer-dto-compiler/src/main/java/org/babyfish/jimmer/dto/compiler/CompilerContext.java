@@ -10,12 +10,15 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     private final DtoCompiler<T, P> compiler;
 
+    private final Importing importing;
+
     private final boolean hasKey;
 
     private final Map<String, DtoTypeBuilder<T, P>> typeBuilderMap = new LinkedHashMap<>();
 
     public CompilerContext(DtoCompiler<T, P> compiler) {
         this.compiler = compiler;
+        this.importing = new Importing(this);
         boolean hasKey = false;
         for (P baseProp : compiler.getProps(compiler.getBaseType()).values()) {
             if (baseProp.isKey()) {
@@ -28,6 +31,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     public DtoTypeBuilder<T, P> get(String name) {
         return typeBuilderMap.get(name);
+    }
+
+    public void importStatement(DtoParser.ImportStatementContext statement) {
+        importing.add(statement);
     }
 
     public DtoTypeBuilder<T, P> add(DtoParser.DtoTypeContext type) {
@@ -119,6 +126,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     public T getBaseType() {
         return compiler.getBaseType();
+    }
+
+    public TypeRef resolve(DtoParser.TypeRefContext ctx) {
+        return importing.resolve(ctx);
     }
     
     public DtoAstException exception(int line, String message) {

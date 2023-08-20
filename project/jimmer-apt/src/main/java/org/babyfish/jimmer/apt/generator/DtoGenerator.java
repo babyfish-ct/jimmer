@@ -6,6 +6,9 @@ import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoProp;
 import org.babyfish.jimmer.dto.compiler.DtoType;
+import org.babyfish.jimmer.dto.compiler.TypeRef;
+import org.babyfish.jimmer.dto.compiler.UserProp;
+import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jetbrains.annotations.NotNull;
@@ -75,7 +78,7 @@ public class DtoGenerator {
                                 dtoType.getBaseType().getClassName()
                         )
                 );
-        if (dtoType.getPath() != null) {
+        if (parent == null) {
             typeBuilder.addAnnotation(
                     AnnotationSpec
                             .builder(Constants.GENERATED_BY_CLASS_NAME)
@@ -150,7 +153,10 @@ public class DtoGenerator {
 
         addMetadata();
 
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            addField(prop);
+        }
+        for (UserProp prop : dtoType.getUserProps()) {
             addField(prop);
         }
         addDefaultConstructor();
@@ -158,7 +164,7 @@ public class DtoGenerator {
         addOf();
         addToEntity();
 
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.isNewTarget() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
                 new DtoGenerator(
                         prop.getTargetType(),
@@ -194,7 +200,7 @@ public class DtoGenerator {
                 .indent()
                 .add("$T.$L", dtoType.getBaseType().getFetcherClassName(), "$")
                 .indent();
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.getNextProp() == null) {
                 addFetcherField(prop, cb);
             }
@@ -238,27 +244,42 @@ public class DtoGenerator {
         assert targetDtoType != null;
         cb.add("\n.$N($>", prop.getBaseProp().getName());
         cb.add("$T.$L$>", prop.getBaseProp().getTargetType().getFetcherClassName(), "$");
-        for (DtoProp<ImmutableType, ImmutableProp> childProp : targetDtoType.getProps()) {
+        for (DtoProp<ImmutableType, ImmutableProp> childProp : targetDtoType.getDtoProps()) {
             addHiddenFetcherField(childProp, cb);
         }
         cb.add("$<$<\n)");
     }
 
     private void addField(DtoProp<ImmutableType, ImmutableProp> prop) {
+        TypeName typeName = getPropTypeName(prop);
         FieldSpec.Builder builder = FieldSpec
-                .builder(
-                        getPropTypeName(prop),
-                        prop.getName()
-                )
+                .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
-        if (prop.isNullable()) {
-            builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
-        } else {
-            builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
+        if (!typeName.isPrimitive()) {
+            if (prop.isNullable()) {
+                builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
+            } else {
+                builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
+            }
         }
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
             if (isCopyableAnnotation(annotationMirror, false)) {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
+            }
+        }
+        typeBuilder.addField(builder.build());
+    }
+
+    private void addField(UserProp prop) {
+        TypeName typeName = getTypeName(prop.getTypeRef());
+        FieldSpec.Builder builder = FieldSpec
+                .builder(typeName, prop.getAlias())
+                .addModifiers(Modifier.PRIVATE);
+        if (!typeName.isPrimitive()) {
+            if (prop.getTypeRef().isNullable()) {
+                builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
+            } else {
+                builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
             }
         }
         typeBuilder.addField(builder.build());
@@ -297,10 +318,10 @@ public class DtoGenerator {
                                 .addAnnotation(NotNull.class)
                                 .build()
                 );
-        if (dtoType.getProps().stream().anyMatch(DtoProp::isNullable)) {
+        if (dtoType.getDtoProps().stream().anyMatch(DtoProp::isNullable)) {
             builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
         }
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.getNextProp() != null) {
                 builder.addCode(
                         "this.$L = $T.get(\n$>spi,\n",
@@ -519,7 +540,7 @@ public class DtoGenerator {
                 dtoType.getBaseType().getDraftClassName(),
                 "$"
         );
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getProps()) {
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.getNextProp() != null) {
                 builder.addCode("$T.set(\n$>", Constants.FLAT_UTILS_CLASS_NAME);
                 builder.addCode("draft,\n");
@@ -650,6 +671,81 @@ public class DtoGenerator {
                 elementTypeName;
     }
 
+    public TypeName getTypeName(TypeRef typeRef) {
+        TypeName typeName;
+        switch (typeRef.getTypeName()) {
+            case "Boolean":
+                typeName = typeRef.isNullable() ? TypeName.BOOLEAN.box() : TypeName.BOOLEAN;
+                break;
+            case "Char":
+                typeName = typeRef.isNullable() ? TypeName.CHAR.box() : TypeName.CHAR;
+                break;
+            case "Byte":
+                typeName = typeRef.isNullable() ? TypeName.BYTE.box() : TypeName.BYTE;
+                break;
+            case "Short":
+                typeName = typeRef.isNullable() ? TypeName.SHORT.box() : TypeName.SHORT;
+                break;
+            case "Int":
+                typeName = typeRef.isNullable() ? TypeName.INT.box() : TypeName.INT;
+                break;
+            case "Long":
+                typeName = typeRef.isNullable() ? TypeName.LONG.box() : TypeName.LONG;
+                break;
+            case "Float":
+                typeName = typeRef.isNullable() ? TypeName.FLOAT.box() : TypeName.FLOAT;
+                break;
+            case "Double":
+                typeName = typeRef.isNullable() ? TypeName.DOUBLE.box() : TypeName.DOUBLE;
+                break;
+            case "Array":
+                typeName = ArrayTypeName.of(getTypeName(typeRef.getArguments().get(0).getTypeRef()));
+                break;
+            case "Iterable":
+            case "MutableIterable":
+                typeName = ClassName.get(Iterable.class);
+                break;
+            case "Collection":
+            case "MutableCollection":
+                typeName = ClassName.get(Collection.class);
+                break;
+            case "List":
+            case "MutableList":
+                typeName = ClassName.get(List.class);
+                break;
+            case "Set":
+            case "MutableSet":
+                typeName = ClassName.get(Set.class);
+                break;
+            case "Map":
+            case "MutableMap":
+                typeName = ClassName.get(Map.class);
+                break;
+            default:
+                typeName = ClassName.bestGuess(typeRef.getTypeName());
+                break;
+        }
+        int argCount = typeRef.getArguments().size();
+        if (argCount == 0 || typeName instanceof ArrayTypeName) {
+            return typeName;
+        }
+        TypeName[] argTypeNames = new TypeName[argCount];
+        for (int i = 0; i < argCount; i++) {
+            TypeRef.Argument arg = typeRef.getArguments().get(i);
+            TypeName argTypeName = getTypeName(arg.getTypeRef());
+            if (arg.isIn()) {
+                argTypeName = WildcardTypeName.supertypeOf(argTypeName);
+            } else if (arg.isOut() || isForceOut(typeRef.getTypeName())) {
+                argTypeName = WildcardTypeName.subtypeOf(argTypeName);
+            }
+            argTypeNames[i] = argTypeName;
+        }
+        return ParameterizedTypeName.get(
+                (ClassName) typeName,
+                argTypeNames
+        );
+    }
+
     public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {
         DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
         if (targetType != null) {
@@ -716,8 +812,25 @@ public class DtoGenerator {
         return false;
     }
 
+    private static boolean isForceOut(String typeName) {
+        switch (typeName) {
+            case "Iterable":
+            case "Collection":
+            case "List":
+            case "Set":
+            case "Map":
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private static String defaultValue(DtoProp<?, ImmutableProp> prop) {
         TypeName typeName = prop.getBaseProp().getTypeName();
+        return defaultValue(typeName);
+    }
+
+    private static String defaultValue(TypeName typeName) {
         if (typeName.isPrimitive()) {
             if (typeName.equals(TypeName.BOOLEAN)) {
                 return "false";

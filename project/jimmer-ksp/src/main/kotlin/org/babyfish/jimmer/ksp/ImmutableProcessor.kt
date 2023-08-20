@@ -67,6 +67,9 @@ class ImmutableProcessor(
             }
             ?: setOf("src/main/dto")
 
+    private val dtoMutable: Boolean =
+        environment.options["jimmer.dto.mutable"]?.trim() == "true"
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (!processed.compareAndSet(false, true)) {
             return emptyList()
@@ -298,7 +301,7 @@ class ImmutableProcessor(
         val allFiles = resolver.getAllFiles().toList()
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
-                DtoGenerator(dtoType, environment.codeGenerator).generate(allFiles)
+                DtoGenerator(dtoType, dtoMutable, environment.codeGenerator).generate(allFiles)
             }
         }
     }

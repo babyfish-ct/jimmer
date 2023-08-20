@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.dto.compiler.DtoProp
 import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.dto.compiler.TypeRef
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
@@ -20,6 +21,7 @@ import java.util.*
 
 class DtoGenerator private constructor(
     private val dtoType: DtoType<ImmutableType, ImmutableProp>,
+    private val mutable: Boolean,
     private val codeGenerator: CodeGenerator?,
     private val parent: DtoGenerator?,
     private val innerClassName: String?
@@ -38,8 +40,9 @@ class DtoGenerator private constructor(
     
     constructor(
         dtoType: DtoType<ImmutableType, ImmutableProp>,
+        mutable: Boolean,
         codeGenerator: CodeGenerator?,
-    ): this(dtoType, codeGenerator, null, null)
+    ): this(dtoType, mutable, codeGenerator, null, null)
 
     val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
@@ -113,7 +116,11 @@ class DtoGenerator private constructor(
         } else if (innerClassName !== null && parent !== null) {
             val builder = TypeSpec
                 .classBuilder(innerClassName)
-                .addModifiers(KModifier.DATA)
+                .apply {
+                    if (dtoType.dtoProps.isNotEmpty()) {
+                        addModifiers(KModifier.DATA)
+                    }
+                }
             _typeBuilder = builder
             try {
                 addMembers(allFiles)
@@ -138,7 +145,7 @@ class DtoGenerator private constructor(
         packages: SortedSet<String>
     ) {
         packages += dtoType.baseType.className.packageName
-        for (prop in dtoType.props) {
+        for (prop in dtoType.dtoProps) {
             val targetType = prop.targetType?.takeIf { dtoType !== it }
             if (targetType !== null) {
                 collectImports(targetType, packages)
@@ -163,13 +170,16 @@ class DtoGenerator private constructor(
         addPrimaryConstructor()
         addConverterConstructor()
 
+        addUserProps()
+
         addToEntity()
 
-        for (prop in dtoType.props) {
+        for (prop in dtoType.dtoProps) {
             val targetType = prop.targetType
             if (targetType != null && prop.isNewTarget) {
                 DtoGenerator(
                     targetType,
+                    mutable,
                     null,
                     this,
                     targetSimpleName(prop)
@@ -207,7 +217,7 @@ class DtoGenerator private constructor(
                                         indent()
                                         add("%M(%T::class).by", NEW_FETCHER, dtoType.baseType.className)
                                         beginControlFlow("")
-                                        for (prop in dtoType.props) {
+                                        for (prop in dtoType.dtoProps) {
                                             if (prop.nextProp === null) {
                                                 addFetcherField(prop)
                                             }
@@ -265,7 +275,7 @@ class DtoGenerator private constructor(
         indent()
         add("%N(%T::class).by {\n", NEW_FETCHER, prop.getBaseProp().targetType!!.className)
         indent()
-        for (childProp in targetDtoType.props) {
+        for (childProp in targetDtoType.dtoProps) {
             addHiddenFetcherField(childProp)
         }
         unindent()
@@ -276,7 +286,7 @@ class DtoGenerator private constructor(
 
     private fun addPrimaryConstructor() {
         val builder = FunSpec.constructorBuilder()
-        for (prop in dtoType.props) {
+        for (prop in dtoType.dtoProps) {
             builder.addParameter(
                 ParameterSpec
                     .builder(prop.name, propTypeName(prop))
@@ -300,10 +310,11 @@ class DtoGenerator private constructor(
         }
         typeBuilder.primaryConstructor(builder.build())
 
-        for (prop in dtoType.props) {
+        for (prop in dtoType.dtoProps) {
             typeBuilder.addProperty(
                 PropertySpec
                     .builder(prop.name, propTypeName(prop))
+                    .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
                         for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
@@ -321,7 +332,7 @@ class DtoGenerator private constructor(
                 .constructorBuilder()
                 .addParameter("base", dtoType.baseType.className)
                 .apply {
-                    callThisConstructor(dtoType.props.map { prop ->
+                    callThisConstructor(dtoType.dtoProps.map { prop ->
                         CodeBlock
                             .builder()
                             .indent()
@@ -456,6 +467,65 @@ class DtoGenerator private constructor(
         )
     }
 
+    private fun addUserProps() {
+        for (userProp in dtoType.userProps) {
+            typeBuilder.addProperty(
+                PropertySpec
+                    .builder(
+                        userProp.alias,
+                        typeName(userProp.typeRef)
+                    )
+                    .mutable()
+                    .apply {
+                        val typeRef = userProp.typeRef
+                        if (typeRef.isNullable) {
+                            initializer("null")
+                        } else {
+                            when (typeRef.typeName) {
+                                TypeRef.TN_BOOLEAN -> initializer("false")
+                                TypeRef.TN_CHAR -> initializer("'\\0'")
+
+                                TypeRef.TN_BYTE, TypeRef.TN_SHORT, TypeRef.TN_INT, TypeRef.TN_LONG,
+                                TypeRef.TN_FLOAT, TypeRef.TN_DOUBLE -> initializer("0")
+
+                                TypeRef.TN_STRING -> initializer("\"\"")
+
+                                TypeRef.TN_ARRAY -> if (typeRef.arguments[0].typeRef.isNullable) {
+                                    initializer("emptyArray()")
+                                } else {
+                                    when (typeRef.arguments[0].typeRef.typeName) {
+                                        TypeRef.TN_BOOLEAN -> initializer("booleanArrayOf()")
+                                        TypeRef.TN_CHAR -> initializer("charArrayOf()")
+                                        TypeRef.TN_BYTE -> initializer("byteArrayOf()")
+                                        TypeRef.TN_SHORT -> initializer("shortArrayOf()")
+                                        TypeRef.TN_INT -> initializer("intArrayOf()")
+                                        TypeRef.TN_LONG -> initializer("longArrayOf()")
+                                        TypeRef.TN_FLOAT -> initializer("floatArrayOf()")
+                                        TypeRef.TN_DOUBLE -> initializer("doubleArrayOf()")
+                                        else -> initializer("emptyArray()")
+                                    }
+                                }
+
+                                TypeRef.TN_ITERABLE, TypeRef.TN_COLLECTION, TypeRef.TN_LIST ->
+                                    initializer("emptyList()")
+                                TypeRef.TN_MUTABLE_ITERABLE, TypeRef.TN_MUTABLE_COLLECTION, TypeRef.TN_MUTABLE_LIST ->
+                                    initializer("mutableListOf()")
+
+                                TypeRef.TN_SET -> initializer("emptySet()")
+                                TypeRef.TN_MUTABLE_SET -> initializer("mutableSetOf()")
+
+                                TypeRef.TN_MAP -> initializer("emptyMap()")
+                                TypeRef.TN_MUTABLE_MAP -> initializer("mutableMapOf()")
+
+                                else -> addModifiers(KModifier.LATEINIT)
+                            }
+                        }
+                    }
+                    .build()
+            )
+        }
+    }
+
     private fun addToEntity() {
         typeBuilder.addFunction(
             FunSpec
@@ -476,7 +546,7 @@ class DtoGenerator private constructor(
                             dtoType.name!!
                         }
                     )
-                    for (prop in dtoType.props) {
+                    for (prop in dtoType.dtoProps) {
                         if (prop.nextProp !== null) {
                             addCode(
                                 CodeBlock
@@ -487,11 +557,12 @@ class DtoGenerator private constructor(
                                     .build()
                             )
                         } else if (prop.isNullable && !prop.baseProp.isNullable) {
-                            beginControlFlow("if (that.%N !== null)", prop.name)
+                            addStatement("val that_%N = that.%N", prop.name, prop.name)
+                            beginControlFlow("if (that_%N !== null)", prop.name)
                             addAssignment(prop)
                             if (prop.baseProp.isList) {
                                 nextControlFlow("else")
-                                addStatement("%N = emptyList()", prop.baseProp.name)
+                                addStatement("this.%N = emptyList()", prop.baseProp.name)
                             }
                             endControlFlow()
                         } else {
@@ -535,27 +606,31 @@ class DtoGenerator private constructor(
 
     private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
         val targetType = prop.targetType
+        val that = if (prop.isNullable && !prop.baseProp.isNullable) "that_" else "that."
         when {
             targetType !== null ->
                 if (prop.baseProp.isList) {
                     addStatement(
-                        "this.%N = that.%N%Lmap { it.toEntity() }",
+                        "this.%N = %L%N%Lmap { it.toEntity() }",
                         prop.baseProp.name,
+                        that,
                         prop.name,
                         if (prop.baseProp.isNullable) "?." else "."
                     )
                 } else {
                     addStatement(
-                        "this.%N = that.%N%LtoEntity()",
+                        "this.%N = %L%N%LtoEntity()",
                         prop.baseProp.name,
+                        that,
                         prop.name,
                         if (prop.baseProp.isNullable) "?." else "."
                     )
                 }
             prop.isIdOnly -> {
                 beginControlFlow(
-                    "this.%N = that.%N%L%N",
+                    "this.%N = %L%N%L%N",
                     prop.baseProp.name,
+                    that,
                     prop.name,
                     if (prop.baseProp.isNullable) "?." else ".",
                     if (prop.baseProp.isList) "map" else "let"
@@ -570,7 +645,7 @@ class DtoGenerator private constructor(
                 endControlFlow()
             }
             else ->
-                addStatement("this.%N = that.%N", prop.baseProp.name, prop.name)
+                addStatement("this.%N = %L%N", prop.baseProp.name, that, prop.name)
         }
     }
 
@@ -614,6 +689,68 @@ class DtoGenerator private constructor(
             } else {
                 prop.baseProp.targetTypeName(overrideNullable = false)
             }
+    }
+
+    private fun typeName(typeRef: TypeRef): TypeName {
+        val typeName = when (typeRef.typeName) {
+            TypeRef.TN_BOOLEAN -> BOOLEAN
+            TypeRef.TN_CHAR -> CHAR
+            TypeRef.TN_BYTE -> BYTE
+            TypeRef.TN_SHORT -> SHORT
+            TypeRef.TN_INT -> INT
+            TypeRef.TN_LONG -> LONG
+            TypeRef.TN_FLOAT -> FLOAT
+            TypeRef.TN_DOUBLE -> DOUBLE
+            TypeRef.TN_STRING -> STRING
+            TypeRef.TN_ARRAY ->
+                if (typeRef.arguments[0].typeRef.isNullable) {
+                    ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+                } else {
+                    when (typeRef.arguments[0].typeRef.typeName) {
+                        TypeRef.TN_BOOLEAN -> BOOLEAN_ARRAY
+                        TypeRef.TN_CHAR -> CHAR_ARRAY
+                        TypeRef.TN_BYTE -> BYTE_ARRAY
+                        TypeRef.TN_SHORT -> SHORT_ARRAY
+                        TypeRef.TN_INT -> INT_ARRAY
+                        TypeRef.TN_LONG -> LONG_ARRAY
+                        TypeRef.TN_FLOAT -> FLOAT_ARRAY
+                        TypeRef.TN_DOUBLE -> DOUBLE_ARRAY
+                        else -> ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+                    }
+                }
+            TypeRef.TN_ITERABLE -> ITERABLE
+            TypeRef.TN_MUTABLE_ITERABLE -> MUTABLE_ITERABLE
+            TypeRef.TN_COLLECTION -> COLLECTION
+            TypeRef.TN_MUTABLE_COLLECTION -> MUTABLE_COLLECTION
+            TypeRef.TN_LIST -> LIST
+            TypeRef.TN_MUTABLE_LIST -> MUTABLE_LIST
+            TypeRef.TN_SET -> SET
+            TypeRef.TN_MUTABLE_SET -> MUTABLE_SET
+            TypeRef.TN_MAP -> MAP
+            TypeRef.TN_MUTABLE_MAP -> MUTABLE_MAP
+            else -> ClassName.bestGuess(typeRef.typeName)
+        }
+        val args = typeRef
+            .arguments
+            .takeIf { it.isNotEmpty() && typeRef.typeName != TypeRef.TN_ARRAY }
+            ?.let { args ->
+                Array(args.size) { i ->
+                    typeName(args[i].typeRef).let {
+                        when {
+                            args[i].isIn -> WildcardTypeName.consumerOf(it)
+                            args[i].isOut -> WildcardTypeName.producerOf(it)
+                            else ->it
+                        }
+                    }
+                }
+            }
+        return if (args == null) {
+            typeName
+        } else {
+            (typeName as ClassName).parameterizedBy(*args)
+        }.copy(
+            nullable = typeRef.isNullable
+        )
     }
 
     private fun collectNames(list: MutableList<String>) {

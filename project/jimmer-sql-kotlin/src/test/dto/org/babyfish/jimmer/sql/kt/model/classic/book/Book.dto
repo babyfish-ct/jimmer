@@ -1,3 +1,5 @@
+import java.time.LocalDateTime
+
 abstract Key {
     name
     edition
@@ -18,6 +20,13 @@ input BookInput {
     #allScalars
     id(store)
     id(authors) as authorIds
+    tag1: Int
+    tag2: Int?
+    tag3: Map<String, Set<String>>
+    tag4: MutableMap<String, MutableSet<String>>
+    tag5: Array<Int>
+    tag6: Array<Int?>
+    tag7: LocalDateTime
 }
 
 input CompositeBookInput {

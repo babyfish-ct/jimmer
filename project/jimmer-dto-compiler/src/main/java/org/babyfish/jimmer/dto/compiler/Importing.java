@@ -29,7 +29,7 @@ class Importing {
             for (DtoParser.ImportedTypeContext importedType : ctx.importedTypes) {
                 add0(
                         importedType.alias != null ? importedType.alias : importedType.name,
-                        path + '.' + importedType.name,
+                        path + '.' + importedType.name.getText(),
                         importedType.name.getLine()
                 );
             }
@@ -91,7 +91,7 @@ class Importing {
                                     "The generic argument modifier is neither \"in\" nor \"out\""
                             );
                     }
-                    if (expectedArgumentCount != null && !name.equals("Array")) {
+                    if (expectedArgumentCount != null) {
                         throw this.ctx.exception(
                                 arg.modifier.getLine(),
                                 "The modifier \"" +
@@ -145,7 +145,7 @@ class Importing {
         if (imported != null) {
             return imported;
         }
-        String pkg = this.ctx.getBaseType().getQualifiedName();
+        String pkg = this.ctx.getBaseType().getPackageName();
         if (pkg.isEmpty()) {
             return qualifiedName;
         }
@@ -210,82 +210,82 @@ class Importing {
         AUTO_IMPORTED_TYPES = autoImportedTypes;
 
         Map<String, Integer> standardTypes = new HashMap<>();
-        standardTypes.put("Boolean", 0);
-        standardTypes.put("Char", 0);
-        standardTypes.put("Byte", 0);
-        standardTypes.put("Short", 0);
-        standardTypes.put("Int", 0);
-        standardTypes.put("Long", 0);
-        standardTypes.put("Float", 0);
-        standardTypes.put("Double", 0);
-        standardTypes.put("String", 0);
-        standardTypes.put("Iterable", 1);
-        standardTypes.put("Array", 1);
-        standardTypes.put("Collection", 1);
-        standardTypes.put("List", 1);
-        standardTypes.put("Set", 1);
-        standardTypes.put("Map", 2);
-        standardTypes.put("MutableIterable", 1);
-        standardTypes.put("MutableCollection", 1);
-        standardTypes.put("MutableList", 1);
-        standardTypes.put("MutableSet", 1);
-        standardTypes.put("MutableMap", 2);
+        standardTypes.put(TypeRef.TN_BOOLEAN, 0);
+        standardTypes.put(TypeRef.TN_CHAR, 0);
+        standardTypes.put(TypeRef.TN_BYTE, 0);
+        standardTypes.put(TypeRef.TN_SHORT, 0);
+        standardTypes.put(TypeRef.TN_INT, 0);
+        standardTypes.put(TypeRef.TN_LONG, 0);
+        standardTypes.put(TypeRef.TN_FLOAT, 0);
+        standardTypes.put(TypeRef.TN_DOUBLE, 0);
+        standardTypes.put(TypeRef.TN_STRING, 0);
+        standardTypes.put(TypeRef.TN_ARRAY, 1);
+        standardTypes.put(TypeRef.TN_ITERABLE, 1);
+        standardTypes.put(TypeRef.TN_MUTABLE_ITERABLE, 1);
+        standardTypes.put(TypeRef.TN_COLLECTION, 1);
+        standardTypes.put(TypeRef.TN_MUTABLE_COLLECTION, 1);
+        standardTypes.put(TypeRef.TN_LIST, 1);
+        standardTypes.put(TypeRef.TN_MUTABLE_LIST, 1);
+        standardTypes.put(TypeRef.TN_SET, 1);
+        standardTypes.put(TypeRef.TN_MUTABLE_SET, 1);
+        standardTypes.put(TypeRef.TN_MAP, 2);
+        standardTypes.put(TypeRef.TN_MUTABLE_MAP, 2);
         STANDARD_TYPES = standardTypes;
 
         Map<String, String> illegalTypes = new HashMap<>();
-        illegalTypes.put("boolean", "Boolean");
-        illegalTypes.put(Boolean.class.getName(), "Boolean?");
-        illegalTypes.put("kotlin.Boolean", "Boolean");
-        illegalTypes.put("char", "Char");
-        illegalTypes.put(Character.class.getName(), "Char?");
-        illegalTypes.put(Character.class.getSimpleName(), "Char?");
-        illegalTypes.put("kotlin.Char", "Char");
-        illegalTypes.put("byte", "Byte");
-        illegalTypes.put(Byte.class.getName(), "Byte?");
-        illegalTypes.put("kotlin.Byte", "Byte");
-        illegalTypes.put("short", "Short");
-        illegalTypes.put(Short.class.getName(), "Short?");
-        illegalTypes.put("kotlin.Short", "Short");
-        illegalTypes.put("int", "Integer");
-        illegalTypes.put(Integer.class.getName(), "Int?");
-        illegalTypes.put(Integer.class.getSimpleName(), "Int?");
-        illegalTypes.put("kotlin.Int", "Int");
-        illegalTypes.put("long", "Long");
-        illegalTypes.put(Long.class.getName(), "Long?");
-        illegalTypes.put("kotlin.Long", "Long");
-        illegalTypes.put("float", "Float");
-        illegalTypes.put(Float.class.getName(), "Float?");
-        illegalTypes.put("kotlin.Float", "Float");
-        illegalTypes.put("double", "Double");
-        illegalTypes.put(Double.class.getName(), "Double?");
-        illegalTypes.put("kotlin.Double", "Double");
-        illegalTypes.put("string", "String");
-        illegalTypes.put(String.class.getName(), "String");
-        illegalTypes.put("kotlin.String", "String");
-        illegalTypes.put("kotlin.Array", "Array");
-        illegalTypes.put("kotlin.BooleanArray", "Array<Boolean>");
-        illegalTypes.put("kotlin.CharArray", "Array<Char>");
-        illegalTypes.put("kotlin.ByteArray", "Array<Byte>");
-        illegalTypes.put("kotlin.ShortArray", "Array<Short>");
-        illegalTypes.put("kotlin.IntArray", "Array<Int>");
-        illegalTypes.put("kotlin.LongArray", "Array<LongArray>");
-        illegalTypes.put("kotlin.FloatArray", "Array<Float>");
-        illegalTypes.put("kotlin.DoubleArray", "Array<Double>");
-        illegalTypes.put(Iterable.class.getName(), "Iterable/MutableIterable");
-        illegalTypes.put("kotlin.collections.Iterable", "Iterable");
-        illegalTypes.put("kotlin.collections.MutableIterable", "MutableIterable");
-        illegalTypes.put(Collection.class.getName(), "Collection/MutableCollection");
-        illegalTypes.put("kotlin.collections.Collection", "Collection");
-        illegalTypes.put("kotlin.collections.MutableCollection", "MutableCollection");
-        illegalTypes.put(List.class.getName(), "List/MutableList");
-        illegalTypes.put("kotlin.collections.List", "List");
-        illegalTypes.put("kotlin.collections.MutableList", "MutableList");
-        illegalTypes.put(Set.class.getName(), "Set/MutableSet");
-        illegalTypes.put("kotlin.collections.Set", "Set");
-        illegalTypes.put("kotlin.collections.MutableSet", "MutableSet");
-        illegalTypes.put(Map.class.getName(), "Map/MutableMap");
-        illegalTypes.put("kotlin.collections.Map", "Map");
-        illegalTypes.put("kotlin.collections.MutableMap", "MutableMap");
+        illegalTypes.put("boolean", TypeRef.TN_BOOLEAN);
+        illegalTypes.put(Boolean.class.getName(), TypeRef.TN_BOOLEAN + '?');
+        illegalTypes.put("kotlin.Boolean", TypeRef.TN_BOOLEAN);
+        illegalTypes.put("char", TypeRef.TN_CHAR);
+        illegalTypes.put(Character.class.getName(), TypeRef.TN_CHAR + '?');
+        illegalTypes.put(Character.class.getSimpleName(), TypeRef.TN_CHAR + '?');
+        illegalTypes.put("kotlin.Char", TypeRef.TN_CHAR);
+        illegalTypes.put("byte", TypeRef.TN_BYTE);
+        illegalTypes.put(Byte.class.getName(), TypeRef.TN_BYTE + '?');
+        illegalTypes.put("kotlin.Byte", TypeRef.TN_BYTE);
+        illegalTypes.put("short", TypeRef.TN_SHORT);
+        illegalTypes.put(Short.class.getName(), TypeRef.TN_SHORT + '?');
+        illegalTypes.put("kotlin.Short", TypeRef.TN_SHORT);
+        illegalTypes.put("int", TypeRef.TN_INT);
+        illegalTypes.put(Integer.class.getName(), TypeRef.TN_INT + '?');
+        illegalTypes.put(Integer.class.getSimpleName(), TypeRef.TN_INT + '?');
+        illegalTypes.put("kotlin.Int", TypeRef.TN_INT);
+        illegalTypes.put("long", TypeRef.TN_LONG);
+        illegalTypes.put(Long.class.getName(), TypeRef.TN_LONG + '?');
+        illegalTypes.put("kotlin.Long", TypeRef.TN_LONG);
+        illegalTypes.put("float", TypeRef.TN_FLOAT);
+        illegalTypes.put(Float.class.getName(), TypeRef.TN_FLOAT + '?');
+        illegalTypes.put("kotlin.Float", TypeRef.TN_FLOAT);
+        illegalTypes.put("double", TypeRef.TN_DOUBLE);
+        illegalTypes.put(Double.class.getName(), TypeRef.TN_DOUBLE + '?');
+        illegalTypes.put("kotlin.Double", TypeRef.TN_DOUBLE);
+        illegalTypes.put("string", TypeRef.TN_STRING);
+        illegalTypes.put(String.class.getName(), TypeRef.TN_STRING);
+        illegalTypes.put("kotlin.String", TypeRef.TN_STRING);
+        illegalTypes.put("kotlin.Array", TypeRef.TN_ARRAY);
+        illegalTypes.put("kotlin.BooleanArray", TypeRef.TN_ARRAY + "<Boolean>");
+        illegalTypes.put("kotlin.CharArray", TypeRef.TN_ARRAY + "<Char>");
+        illegalTypes.put("kotlin.ByteArray", TypeRef.TN_ARRAY + "<Byte>");
+        illegalTypes.put("kotlin.ShortArray", TypeRef.TN_ARRAY + "<Short>");
+        illegalTypes.put("kotlin.IntArray", TypeRef.TN_ARRAY + "<Int>");
+        illegalTypes.put("kotlin.LongArray", TypeRef.TN_ARRAY + "<Long>");
+        illegalTypes.put("kotlin.FloatArray", TypeRef.TN_ARRAY + "<Float>");
+        illegalTypes.put("kotlin.DoubleArray", TypeRef.TN_ARRAY + "<Double>");
+        illegalTypes.put(Iterable.class.getName(), TypeRef.TN_ITERABLE + '/' + TypeRef.TN_MUTABLE_ITERABLE);
+        illegalTypes.put("kotlin.collections.Iterable", TypeRef.TN_ITERABLE);
+        illegalTypes.put("kotlin.collections.MutableIterable", TypeRef.TN_MUTABLE_ITERABLE);
+        illegalTypes.put(Collection.class.getName(), TypeRef.TN_COLLECTION + '/' + TypeRef.TN_MUTABLE_COLLECTION);
+        illegalTypes.put("kotlin.collections.Collection", TypeRef.TN_COLLECTION);
+        illegalTypes.put("kotlin.collections.MutableCollection", TypeRef.TN_MUTABLE_COLLECTION);
+        illegalTypes.put(List.class.getName(), TypeRef.TN_LIST + '/' + TypeRef.TN_MUTABLE_LIST);
+        illegalTypes.put("kotlin.collections.List", TypeRef.TN_LIST);
+        illegalTypes.put("kotlin.collections.MutableList", TypeRef.TN_MUTABLE_LIST);
+        illegalTypes.put(Set.class.getName(), TypeRef.TN_SET + '/' + TypeRef.TN_MUTABLE_SET);
+        illegalTypes.put("kotlin.collections.Set", TypeRef.TN_SET);
+        illegalTypes.put("kotlin.collections.MutableSet", TypeRef.TN_MUTABLE_SET);
+        illegalTypes.put(Map.class.getName(), TypeRef.TN_MAP + '/' + TypeRef.TN_MUTABLE_MAP);
+        illegalTypes.put("kotlin.collections.Map", TypeRef.TN_MAP);
+        illegalTypes.put("kotlin.collections.MutableMap", TypeRef.TN_MUTABLE_MAP);
         ILLEGAL_TYPES = illegalTypes;
     }
 }

@@ -18,7 +18,11 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Nullable
     private final String path;
 
-    private List<DtoProp<T, P>> props;
+    private List<AbstractProp> props;
+
+    private List<DtoProp<T, P>> dtoProps;
+
+    private List<UserProp> userProps;
 
     private List<DtoProp<T, P>> hiddenFlatProps;
 
@@ -52,26 +56,56 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return path;
     }
 
-    public List<DtoProp<T, P>> getProps() {
+    public List<AbstractProp> getProps() {
         return props;
     }
 
+    @SuppressWarnings("unchecked")
+    public List<DtoProp<T, P>> getDtoProps() {
+        List<DtoProp<T, P>> list = dtoProps;
+        if (list == null) {
+            list = new ArrayList<>();
+            for (AbstractProp prop : props) {
+                if (prop instanceof DtoProp<?, ?>) {
+                    list.add((DtoProp<T, P>) prop);
+                }
+            }
+            dtoProps = list;
+        }
+        return list;
+    }
+
+    public List<UserProp> getUserProps() {
+        List<UserProp> list = userProps;
+        if (list == null) {
+            list = new ArrayList<>();
+            for (AbstractProp prop : props) {
+                if (prop instanceof UserProp) {
+                    list.add((UserProp) prop);
+                }
+            }
+            userProps = list;
+        }
+        return list;
+    }
+
+    @SuppressWarnings("unchecked")
     public List<DtoProp<T, P>> getHiddenFlatProps() {
         List<DtoProp<T, P>> hfps = this.hiddenFlatProps;
         if (hfps == null) {
             FlatDtoBuilder<T, P> builder = new FlatDtoBuilder<>(isInput, null);
-            for (DtoProp<T, P> prop : props) {
+            for (DtoProp<T, P> prop : getDtoProps()) {
                 if (prop.getNextProp() != null) {
                     builder.add(prop);
                 }
             }
-            hfps = builder.build().getProps();
+            hfps = builder.build().getDtoProps();
             this.hiddenFlatProps = hfps;
         }
         return hfps;
     }
 
-    void setProps(List<DtoProp<T, P>> props) {
+    void setProps(List<AbstractProp> props) {
         if (props == null) {
             throw new IllegalArgumentException("`props` cannot be null");
         }
@@ -92,7 +126,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         }
         builder.append('{');
         boolean addComma = false;
-        for (DtoProp<T, P> prop : props) {
+        for (AbstractProp prop : props) {
             if (addComma) {
                 builder.append(", ");
             } else {
@@ -135,7 +169,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
         @SuppressWarnings("unchecked")
         public DtoType<T, P> build() {
-            List<DtoProp<T, P>> props;
+            List<AbstractProp> props;
             if (childNodes.isEmpty()) {
                 props = Collections.emptyList();
             } else {

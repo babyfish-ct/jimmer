@@ -192,7 +192,17 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         return builder.toString();
     }
 
-    static boolean canMerge(DtoProp<?, ?> p1, DtoProp<?, ?> p2) {
+    static boolean canMerge(AbstractProp p1, AbstractProp p2) {
+        if (p1 instanceof DtoProp<?, ?> && p2 instanceof DtoProp<?, ?>) {
+            return canMergeDtoProp((DtoProp<?, ?>) p1, ((DtoProp<?, ?>) p2));
+        }
+        if (p1 instanceof UserProp && p2 instanceof UserProp) {
+            return canMergeUerProp((UserProp) p1, (UserProp) p2);
+        }
+        return false;
+    }
+
+    private static boolean canMergeDtoProp(DtoProp<?, ?> p1, DtoProp<?, ?> p2) {
         if (p1.isNullable() != p2.isNullable()) {
             return false;
         }
@@ -206,5 +216,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             return false;
         }
         return true;
+    }
+
+    private static boolean canMergeUerProp(UserProp p1, UserProp p2) {
+        return p1.equals(p2);
     }
 }
