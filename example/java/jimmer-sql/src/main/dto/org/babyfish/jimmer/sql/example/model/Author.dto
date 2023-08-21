@@ -10,6 +10,7 @@
  */
 
 import java.time.LocalDateTime
+import com.fasterxml.jackson.annotation.JsonFormat
 
 AuthorSpecification {
 
@@ -22,14 +23,16 @@ AuthorSpecification {
      *
      * #allScalars(Author?): like `#allScalars(Author?)`, but all fields are nullable
      */
-    #allScalars(Author?)
+    #allScalars(Author)
 
     -id
 
     // For `whereIf`
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     minCreatedTime: LocalDateTime?
 
     // For `whereIf`
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     maxCreatedTimeExclusive: LocalDateTime?
 }
 

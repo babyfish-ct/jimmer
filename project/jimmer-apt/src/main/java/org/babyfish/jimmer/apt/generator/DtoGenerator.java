@@ -253,9 +253,9 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PRIVATE);
         if (!typeName.isPrimitive()) {
             if (prop.isNullable()) {
-                builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
+                builder.addAnnotation(Nullable.class);
             } else {
-                builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
+                builder.addAnnotation(NotNull.class);
             }
         }
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {

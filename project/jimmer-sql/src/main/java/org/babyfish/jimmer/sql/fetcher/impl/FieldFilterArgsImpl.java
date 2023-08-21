@@ -80,8 +80,8 @@ public class FieldFilterArgsImpl<T extends Table<?>> implements FieldFilterArgsI
 
     @Override
     @OldChain
-    public Sortable whereIf(boolean condition, Predicate predicates) {
-        return query.whereIf(condition, predicates);
+    public Sortable whereIf(boolean condition, Predicate predicate) {
+        return query.whereIf(condition, predicate);
     }
 
     @Override

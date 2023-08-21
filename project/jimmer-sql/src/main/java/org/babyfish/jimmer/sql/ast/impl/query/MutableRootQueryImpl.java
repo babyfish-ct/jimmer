@@ -221,9 +221,9 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @OldChain
     @Override
-    public MutableRootQueryImpl<T> whereIf(boolean condition, Predicate predicates) {
+    public MutableRootQueryImpl<T> whereIf(boolean condition, Predicate predicate) {
         if (condition) {
-            where(predicates);
+            where(predicate);
         }
         return this;
     }

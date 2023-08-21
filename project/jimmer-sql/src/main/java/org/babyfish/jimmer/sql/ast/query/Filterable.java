@@ -11,9 +11,9 @@ public interface Filterable {
     Filterable where(Predicate...predicates);
 
     @OldChain
-    default Filterable whereIf(boolean condition, Predicate predicates) {
+    default Filterable whereIf(boolean condition, Predicate predicate) {
         if (condition) {
-            where(predicates);
+            where(predicate);
         }
         return this;
     }

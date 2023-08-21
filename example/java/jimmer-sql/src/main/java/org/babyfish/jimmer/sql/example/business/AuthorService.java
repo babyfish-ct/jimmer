@@ -44,7 +44,7 @@ public class AuthorService {
 
     @GetMapping("/list")
     public List<@FetchBy("DEFAULT_FETCHER") Author> findAuthors(
-            @Valid AuthorSpecification specification
+            AuthorSpecification specification
             //@RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode
     ) {
         return authorRepository.find(

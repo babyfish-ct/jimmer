@@ -14,9 +14,9 @@ public interface MutableDelete extends Filterable, Executable<Integer> {
 
     @OldChain
     @Override
-    default MutableDelete whereIf(boolean condition, Predicate predicates) {
+    default MutableDelete whereIf(boolean condition, Predicate predicate) {
         if (condition) {
-            where(predicates);
+            where(predicate);
         }
         return this;
     }

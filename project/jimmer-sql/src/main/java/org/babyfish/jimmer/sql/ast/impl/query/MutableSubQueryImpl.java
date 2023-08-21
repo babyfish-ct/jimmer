@@ -73,9 +73,9 @@ public class MutableSubQueryImpl
 
     @OldChain
     @Override
-    public MutableSubQueryImpl whereIf(boolean condition, Predicate predicates) {
+    public MutableSubQueryImpl whereIf(boolean condition, Predicate predicate) {
         if (condition) {
-            where(predicates);
+            where(predicate);
         }
         return this;
     }

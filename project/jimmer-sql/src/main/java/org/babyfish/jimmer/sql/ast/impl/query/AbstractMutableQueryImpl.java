@@ -53,9 +53,9 @@ public abstract class AbstractMutableQueryImpl
 
     @OldChain
     @Override
-    public AbstractMutableQueryImpl whereIf(boolean condition, Predicate predicates) {
+    public AbstractMutableQueryImpl whereIf(boolean condition, Predicate predicate) {
         if (condition) {
-            where(predicates);
+            where(predicate);
         }
         return this;
     }

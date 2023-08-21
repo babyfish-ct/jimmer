@@ -17,7 +17,9 @@ import org.babyfish.jimmer.dto.compiler.Anno.Value
 import org.babyfish.jimmer.dto.compiler.DtoProp
 import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.dto.compiler.TypeRef
+import org.babyfish.jimmer.dto.compiler.UserProp
 import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.generator.DtoGenerator.Companion.add
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
 import org.jetbrains.annotations.NotNull
@@ -176,7 +178,7 @@ class DtoGenerator private constructor(
         addPrimaryConstructor()
         addConverterConstructor()
 
-        addUserProps()
+        addLateInitProperties()
 
         addToEntity()
 
@@ -314,6 +316,19 @@ class DtoGenerator private constructor(
                     .build()
             )
         }
+        for (userProp in dtoType.userProps) {
+            val defaultValue = defaultValue(userProp.typeRef)
+            if (defaultValue !== null) {
+                builder.addParameter(
+                    ParameterSpec
+                        .builder(userProp.alias, typeName(userProp.typeRef))
+                        .apply {
+                            defaultValue(defaultValue)
+                        }
+                        .build()
+                )
+            }
+        }
         typeBuilder.primaryConstructor(builder.build())
 
         for (prop in dtoType.dtoProps) {
@@ -330,139 +345,184 @@ class DtoGenerator private constructor(
                     .build()
             )
         }
+        for (prop in dtoType.userProps) {
+            if (defaultValue(prop.typeRef) !== null) {
+                typeBuilder.addProperty(
+                    PropertySpec
+                        .builder(prop.alias, typeName(prop.typeRef))
+                        .mutable(mutable)
+                        .initializer(prop.alias)
+                        .apply {
+                            for (anno in prop.annotations) {
+                                addAnnotation(annotationOf(anno))
+                            }
+                        }
+                        .build()
+                )
+            }
+        }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun addConverterConstructor() {
         typeBuilder.addFunction(
             FunSpec
                 .constructorBuilder()
                 .addParameter("base", dtoType.baseType.className)
                 .apply {
-                    callThisConstructor(dtoType.dtoProps.map { prop ->
+                    for (userProp in dtoType.userProps) {
+                        val defaultValue = defaultValue(userProp.typeRef)
+                        if (defaultValue !== null) {
+                            addParameter(
+                                ParameterSpec
+                                    .builder(userProp.alias, typeName(userProp.typeRef))
+                                    .apply {
+                                        defaultValue(defaultValue)
+                                    }
+                                    .build()
+                            )
+                        }
+                    }
+                }
+                .apply {
+                    callThisConstructor(dtoType.props.map { prop ->
                         CodeBlock
                             .builder()
                             .indent()
                             .add("\n")
                             .apply {
-                                val targetType = prop.targetType
-                                when {
-                                    prop.nextProp !== null -> {
-                                        add("%T.get(\n", FLAT_UTILS_CLASS_NAME)
-                                        indent()
-                                        add("base,\n")
-                                        add("intArrayOf(\n")
-                                        indent()
-                                        var p = prop
-                                        while (p != null) {
-                                            add(
-                                                "%T.%N,\n",
-                                                p.baseProp.declaringType.draftClassName("$"),
-                                                p.baseProp.slotName
-                                            )
-                                            p = p.nextProp
-                                        }
-                                        unindent()
-                                        add("),\n")
-                                        if (prop.targetType == null) {
-                                            add("null\n")
-                                        }
-                                        unindent()
-                                        add(")")
-                                        prop.targetType?.let {
-                                            add(" {\n")
+                                if (prop is DtoProp<*, *>) {
+                                    prop as DtoProp<ImmutableType, ImmutableProp>
+                                    val targetType = prop.targetType
+                                    when {
+                                        prop.nextProp !== null -> {
+                                            add("%T.get(\n", FLAT_UTILS_CLASS_NAME)
                                             indent()
-                                            addStatement(
-                                                "%T(it as %T)\n",
-                                                propTypeName(prop),
-                                                prop.toTailProp().baseProp.targetType!!.className
-                                            )
+                                            add("base,\n")
+                                            add("intArrayOf(\n")
+                                            indent()
+                                            var p: DtoProp<ImmutableType, ImmutableProp>? = prop
+                                            while (p !== null) {
+                                                add(
+                                                    "%T.%N,\n",
+                                                    p.baseProp.declaringType.draftClassName("$"),
+                                                    p.baseProp.slotName
+                                                )
+                                                p = p.nextProp
+                                            }
                                             unindent()
-                                            add("}")
+                                            add("),\n")
+                                            if (prop.targetType == null) {
+                                                add("null\n")
+                                            }
+                                            unindent()
+                                            add(")")
+                                            prop.targetType?.let {
+                                                add(" {\n")
+                                                indent()
+                                                addStatement(
+                                                    "%T(it as %T)\n",
+                                                    propTypeName(prop),
+                                                    prop.toTailProp().baseProp.targetType!!.className
+                                                )
+                                                unindent()
+                                                add("}")
+                                            }
+                                            if (!prop.isNullable) {
+                                                add(
+                                                    " ?: error(%S)",
+                                                    "The property chain \"${prop.basePath}\" is null or unloaded"
+                                                )
+                                            }
                                         }
-                                        if (!prop.isNullable) {
-                                            add(" ?: error(%S)", "The property chain \"${prop.basePath}\" is null or unloaded")
-                                        }
+
+                                        targetType !== null ->
+                                            if (prop.isNullable) {
+                                                beginControlFlow("base.takeIf")
+                                                addStatement(
+                                                    "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
+                                                    IMMUTABLE_SPI_CLASS_NAME,
+                                                    PROP_ID_CLASS_NAME,
+                                                    dtoType.baseType.draftClassName("$"),
+                                                    prop.baseProp.slotName
+                                                )
+                                                endControlFlow()
+                                                addStatement(
+                                                    "?.%N?.%N { %T(it) }",
+                                                    prop.baseProp.name,
+                                                    if (prop.baseProp.isList) "map" else "let",
+                                                    propElementName(prop)
+                                                )
+                                            } else {
+                                                add(
+                                                    "base.%N%L%N { %T(it) }",
+                                                    prop.baseProp.name,
+                                                    if (prop.baseProp.isNullable) "?." else ".",
+                                                    if (prop.baseProp.isList) "map" else "let",
+                                                    propElementName(prop)
+                                                )
+                                            }
+
+                                        prop.isIdOnly ->
+                                            if (prop.isNullable) {
+                                                beginControlFlow("base.takeIf")
+                                                addStatement(
+                                                    "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
+                                                    IMMUTABLE_SPI_CLASS_NAME,
+                                                    PROP_ID_CLASS_NAME,
+                                                    dtoType.baseType.draftClassName("$"),
+                                                    prop.baseProp.slotName
+                                                )
+                                                endControlFlow()
+                                                addStatement(
+                                                    "?.%N?.%L",
+                                                    prop.baseProp.name,
+                                                    if (prop.baseProp.isList) {
+                                                        "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
+                                                    } else {
+                                                        prop.baseProp.targetType!!.idProp!!.name
+                                                    }
+                                                )
+                                            } else {
+                                                add(
+                                                    "base.%N%L%L",
+                                                    prop.baseProp.name,
+                                                    if (prop.baseProp.isNullable) "?." else ".",
+                                                    if (prop.baseProp.isList) {
+                                                        "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
+                                                    } else {
+                                                        prop.baseProp.targetType!!.idProp!!.name
+                                                    }
+                                                )
+                                            }
+
+                                        else ->
+                                            if (prop.isNullable) {
+                                                beginControlFlow("base.takeIf")
+                                                addStatement(
+                                                    "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
+                                                    IMMUTABLE_SPI_CLASS_NAME,
+                                                    PROP_ID_CLASS_NAME,
+                                                    dtoType.baseType.draftClassName("$"),
+                                                    prop.baseProp.slotName
+                                                )
+                                                endControlFlow()
+                                                addStatement("?.%N", prop.baseProp.name)
+                                            } else {
+                                                add(
+                                                    "base%L%N",
+                                                    if (prop.baseProp.isNullable) "?." else ".",
+                                                    prop.baseProp.name
+                                                )
+                                            }
                                     }
-                                    targetType !== null ->
-                                        if (prop.isNullable) {
-                                            beginControlFlow("base.takeIf")
-                                            addStatement(
-                                                "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-                                                IMMUTABLE_SPI_CLASS_NAME,
-                                                PROP_ID_CLASS_NAME,
-                                                dtoType.baseType.draftClassName("$"),
-                                                prop.baseProp.slotName
-                                            )
-                                            endControlFlow()
-                                            addStatement(
-                                                "?.%N?.%N { %T(it) }",
-                                                prop.baseProp.name,
-                                                if (prop.baseProp.isList) "map" else "let",
-                                                propElementName(prop)
-                                            )
-                                        } else {
-                                            add(
-                                                "base.%N%L%N { %T(it) }",
-                                                prop.baseProp.name,
-                                                if (prop.baseProp.isNullable) "?." else ".",
-                                                if (prop.baseProp.isList) "map" else "let",
-                                                propElementName(prop)
-                                            )
-                                        }
-                                    prop.isIdOnly ->
-                                        if (prop.isNullable) {
-                                            beginControlFlow("base.takeIf")
-                                            addStatement(
-                                                "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-                                                IMMUTABLE_SPI_CLASS_NAME,
-                                                PROP_ID_CLASS_NAME,
-                                                dtoType.baseType.draftClassName("$"),
-                                                prop.baseProp.slotName
-                                            )
-                                            endControlFlow()
-                                            addStatement(
-                                                "?.%N?.%L",
-                                                prop.baseProp.name,
-                                                if (prop.baseProp.isList) {
-                                                    "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
-                                                } else {
-                                                    prop.baseProp.targetType!!.idProp!!.name
-                                                }
-                                            )
-                                        } else {
-                                            add(
-                                                "base.%N%L%L",
-                                                prop.baseProp.name,
-                                                if (prop.baseProp.isNullable) "?." else ".",
-                                                if (prop.baseProp.isList) {
-                                                    "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
-                                                } else {
-                                                    prop.baseProp.targetType!!.idProp!!.name
-                                                }
-                                            )
-                                        }
-                                    else ->
-                                        if (prop.isNullable) {
-                                            beginControlFlow("base.takeIf")
-                                            addStatement(
-                                                "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-                                                IMMUTABLE_SPI_CLASS_NAME,
-                                                PROP_ID_CLASS_NAME,
-                                                dtoType.baseType.draftClassName("$"),
-                                                prop.baseProp.slotName
-                                            )
-                                            endControlFlow()
-                                            addStatement("?.%N", prop.baseProp.name)
-                                        } else {
-                                            add(
-                                                "base%L%N",
-                                                if (prop.baseProp.isNullable) "?." else ".",
-                                                prop.baseProp.name
-                                            )
-                                        }
-                                }
-                                if (!prop.isNullable && prop.baseProp.isNullable) {
-                                    add(" ?: error(%S)", "\"base.${prop.basePath}\" cannot be null or unloaded")
+                                    if (!prop.isNullable && prop.baseProp.isNullable) {
+                                        add(" ?: error(%S)", "\"base.${prop.basePath}\" cannot be null or unloaded")
+                                    }
+                                } else {
+                                    if (defaultValue((prop as UserProp).typeRef) != null) {
+                                        addStatement("%N", prop.alias)
+                                    }
                                 }
                             }
                             .unindent()
@@ -473,65 +533,21 @@ class DtoGenerator private constructor(
         )
     }
 
-    private fun addUserProps() {
+    private fun addLateInitProperties() {
         for (userProp in dtoType.userProps) {
-            typeBuilder.addProperty(
-                PropertySpec
-                    .builder(
-                        userProp.alias,
-                        typeName(userProp.typeRef)
-                    )
-                    .mutable()
-                    .apply {
-                        for (anno in userProp.annotations) {
-                            addAnnotation(annotationOf(anno))
-                        }
-                        val typeRef = userProp.typeRef
-                        if (typeRef.isNullable) {
-                            initializer("null")
-                        } else {
-                            when (typeRef.typeName) {
-                                TypeRef.TN_BOOLEAN -> initializer("false")
-                                TypeRef.TN_CHAR -> initializer("'\\0'")
-
-                                TypeRef.TN_BYTE, TypeRef.TN_SHORT, TypeRef.TN_INT, TypeRef.TN_LONG,
-                                TypeRef.TN_FLOAT, TypeRef.TN_DOUBLE -> initializer("0")
-
-                                TypeRef.TN_STRING -> initializer("\"\"")
-
-                                TypeRef.TN_ARRAY -> if (typeRef.arguments[0].typeRef.isNullable) {
-                                    initializer("emptyArray()")
-                                } else {
-                                    when (typeRef.arguments[0].typeRef.typeName) {
-                                        TypeRef.TN_BOOLEAN -> initializer("booleanArrayOf()")
-                                        TypeRef.TN_CHAR -> initializer("charArrayOf()")
-                                        TypeRef.TN_BYTE -> initializer("byteArrayOf()")
-                                        TypeRef.TN_SHORT -> initializer("shortArrayOf()")
-                                        TypeRef.TN_INT -> initializer("intArrayOf()")
-                                        TypeRef.TN_LONG -> initializer("longArrayOf()")
-                                        TypeRef.TN_FLOAT -> initializer("floatArrayOf()")
-                                        TypeRef.TN_DOUBLE -> initializer("doubleArrayOf()")
-                                        else -> initializer("emptyArray()")
-                                    }
-                                }
-
-                                TypeRef.TN_ITERABLE, TypeRef.TN_COLLECTION, TypeRef.TN_LIST ->
-                                    initializer("emptyList()")
-                                TypeRef.TN_MUTABLE_ITERABLE, TypeRef.TN_MUTABLE_COLLECTION, TypeRef.TN_MUTABLE_LIST ->
-                                    initializer("mutableListOf()")
-
-                                TypeRef.TN_SET -> initializer("emptySet()")
-                                TypeRef.TN_MUTABLE_SET -> initializer("mutableSetOf()")
-
-                                TypeRef.TN_MAP -> initializer("emptyMap()")
-                                TypeRef.TN_MUTABLE_MAP -> initializer("mutableMapOf()")
-
-                                else -> addModifiers(KModifier.LATEINIT)
+            if (defaultValue(userProp.typeRef) == null) {
+                typeBuilder.addProperty(
+                    PropertySpec
+                        .builder(userProp.alias, typeName(userProp.typeRef), KModifier.LATEINIT)
+                        .mutable()
+                        .apply {
+                            for (anno in userProp.annotations) {
+                                addAnnotation(annotationOf(anno))
                             }
                         }
-                    }
-                    .build()
-            )
+                        .build()
+                )
+            }
         }
     }
 
@@ -867,5 +883,50 @@ class DtoGenerator private constructor(
             }
             unindent()
         }
+
+        private fun defaultValue(typeRef: TypeRef): String? =
+            if (typeRef.isNullable) {
+                "null"
+            } else {
+                when (typeRef.typeName) {
+                    TypeRef.TN_BOOLEAN -> "false"
+                    TypeRef.TN_CHAR -> "'\\0'"
+
+                    TypeRef.TN_BYTE, TypeRef.TN_SHORT, TypeRef.TN_INT, TypeRef.TN_LONG,
+                    TypeRef.TN_FLOAT, TypeRef.TN_DOUBLE -> "0"
+
+                    TypeRef.TN_STRING -> "\"\""
+
+                    TypeRef.TN_ARRAY -> if (typeRef.arguments[0].typeRef.isNullable) {
+                        "emptyArray()"
+                    } else {
+                        when (typeRef.arguments[0].typeRef.typeName) {
+                            TypeRef.TN_BOOLEAN -> "booleanArrayOf()"
+                            TypeRef.TN_CHAR -> "charArrayOf()"
+                            TypeRef.TN_BYTE -> "byteArrayOf()"
+                            TypeRef.TN_SHORT -> "shortArrayOf()"
+                            TypeRef.TN_INT -> "intArrayOf()"
+                            TypeRef.TN_LONG -> "longArrayOf()"
+                            TypeRef.TN_FLOAT -> "floatArrayOf()"
+                            TypeRef.TN_DOUBLE -> "doubleArrayOf()"
+                            else -> "emptyArray()"
+                        }
+                    }
+
+                    TypeRef.TN_ITERABLE, TypeRef.TN_COLLECTION, TypeRef.TN_LIST ->
+                        "emptyList()"
+
+                    TypeRef.TN_MUTABLE_ITERABLE, TypeRef.TN_MUTABLE_COLLECTION, TypeRef.TN_MUTABLE_LIST ->
+                        "mutableListOf()"
+
+                    TypeRef.TN_SET -> "emptySet()"
+                    TypeRef.TN_MUTABLE_SET -> "mutableSetOf()"
+
+                    TypeRef.TN_MAP -> "emptyMap()"
+                    TypeRef.TN_MUTABLE_MAP -> "mutableMapOf()"
+
+                    else -> null
+                }
+            }
     }
 }

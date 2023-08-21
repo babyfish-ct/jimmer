@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.dto.compiler;
 
-interface AbstractProp {
+public interface AbstractProp {
 
     String getAlias();
 

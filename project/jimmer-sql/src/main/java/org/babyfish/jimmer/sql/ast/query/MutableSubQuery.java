@@ -16,9 +16,9 @@ public interface MutableSubQuery extends MutableQuery, SubSelectable {
 
     @OldChain
     @Override
-    default MutableSubQuery whereIf(boolean condition, Predicate predicates) {
+    default MutableSubQuery whereIf(boolean condition, Predicate predicate) {
         if (condition) {
-            where(predicates);
+            where(predicate);
         }
         return this;
     }
