@@ -8,6 +8,12 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.dto.compiler.Anno
+import org.babyfish.jimmer.dto.compiler.Anno.AnnoValue
+import org.babyfish.jimmer.dto.compiler.Anno.ArrayValue
+import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
+import org.babyfish.jimmer.dto.compiler.Anno.LiteralValue
+import org.babyfish.jimmer.dto.compiler.Anno.Value
 import org.babyfish.jimmer.dto.compiler.DtoProp
 import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.dto.compiler.TypeRef
@@ -477,6 +483,9 @@ class DtoGenerator private constructor(
                     )
                     .mutable()
                     .apply {
+                        for (anno in userProp.annotations) {
+                            addAnnotation(annotationOf(anno))
+                        }
                         val typeRef = userProp.typeRef
                         if (typeRef.isNullable) {
                             initializer("null")
@@ -539,7 +548,7 @@ class DtoGenerator private constructor(
                 )
                 .apply {
                     addStatement(
-                        "val that = this@%L",
+                        "val that = this@%N",
                         if (innerClassName !== null && innerClassName.isNotEmpty()) {
                             innerClassName
                         } else {
@@ -557,8 +566,8 @@ class DtoGenerator private constructor(
                                     .build()
                             )
                         } else if (prop.isNullable && !prop.baseProp.isNullable) {
-                            addStatement("val that_%N = that.%N", prop.name, prop.name)
-                            beginControlFlow("if (that_%N !== null)", prop.name)
+                            addStatement("val that_%L = that.%N", prop.name, prop.name)
+                            beginControlFlow("if (that_%L !== null)", prop.name)
                             addAssignment(prop)
                             if (prop.baseProp.isList) {
                                 nextControlFlow("else")
@@ -606,31 +615,28 @@ class DtoGenerator private constructor(
 
     private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
         val targetType = prop.targetType
-        val that = if (prop.isNullable && !prop.baseProp.isNullable) "that_" else "that."
+        val that = if (prop.isNullable && !prop.baseProp.isNullable) "that_%L" else "that.%N"
         when {
             targetType !== null ->
                 if (prop.baseProp.isList) {
                     addStatement(
-                        "this.%N = %L%N%Lmap { it.toEntity() }",
+                        "this.%N = $that%Lmap { it.toEntity() }",
                         prop.baseProp.name,
-                        that,
                         prop.name,
                         if (prop.baseProp.isNullable) "?." else "."
                     )
                 } else {
                     addStatement(
-                        "this.%N = %L%N%LtoEntity()",
+                        "this.%N = $that%LtoEntity()",
                         prop.baseProp.name,
-                        that,
                         prop.name,
                         if (prop.baseProp.isNullable) "?." else "."
                     )
                 }
             prop.isIdOnly -> {
                 beginControlFlow(
-                    "this.%N = %L%N%L%N",
+                    "this.%N = $that%L%N",
                     prop.baseProp.name,
-                    that,
                     prop.name,
                     if (prop.baseProp.isNullable) "?." else ".",
                     if (prop.baseProp.isList) "map" else "let"
@@ -645,7 +651,7 @@ class DtoGenerator private constructor(
                 endControlFlow()
             }
             else ->
-                addStatement("this.%N = %L%N", prop.baseProp.name, that, prop.name)
+                addStatement("this.%N = $that", prop.baseProp.name, prop.name)
         }
     }
 
@@ -790,6 +796,76 @@ class DtoGenerator private constructor(
                 }
             }
             return false
+        }
+
+        private fun annotationOf(anno: Anno): AnnotationSpec =
+            AnnotationSpec
+                .builder(ClassName.bestGuess(anno.qualifiedName))
+                .apply {
+                    if (anno.valueMap.isNotEmpty()) {
+                        addMember(
+                            CodeBlock
+                                .builder()
+                                .apply {
+                                    add("\n")
+                                    add(anno.valueMap)
+                                    add("\n")
+                                }
+                                .build()
+                        )
+                    }
+                }
+                .build()
+
+        private fun CodeBlock.Builder.add(value: Value) {
+            when (value) {
+                is ArrayValue -> {
+                    add("[\n")
+                    indent()
+                    var addSeparator = false
+                    for (element in value.elements) {
+                        if (addSeparator) {
+                            add(", \n")
+                        } else {
+                            addSeparator = true
+                        }
+                        add(element)
+                    }
+                    unindent()
+                    add("\n]")
+                }
+                is AnnoValue -> {
+                    add("%T", ClassName.bestGuess(value.anno.qualifiedName))
+                    if (value.anno.valueMap.isEmpty()) {
+                        add("{}")
+                    } else {
+                        add("(\n")
+                        add(value.anno.valueMap)
+                        add("\n)")
+                    }
+                }
+                is EnumValue -> add(
+                    "%T.%N",
+                    ClassName.bestGuess(value.qualifiedName),
+                    value.constant
+                )
+                else -> add((value as LiteralValue).value)
+            }
+        }
+
+        private fun CodeBlock.Builder.add(valueMap: Map<String, Value>) {
+            indent()
+            var addSeparator = false
+            for ((name, value) in valueMap) {
+                if (addSeparator) {
+                    add(", \n")
+                } else {
+                    addSeparator = true
+                }
+                add("%N = ", name)
+                add(value)
+            }
+            unindent()
         }
     }
 }

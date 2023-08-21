@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.example.business;
 
+import lombok.Data;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
+import org.babyfish.jimmer.sql.example.model.dto.AuthorSpecification;
 import org.babyfish.jimmer.sql.example.repository.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.AuthorInput;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -41,16 +44,12 @@ public class AuthorService {
 
     @GetMapping("/list")
     public List<@FetchBy("DEFAULT_FETCHER") Author> findAuthors(
-            @RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode,
-            @RequestParam(required = false) String firstName,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) Gender gender
+            @Valid AuthorSpecification specification
+            //@RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode
     ) {
-        return authorRepository.findByFirstNameAndLastNameAndGender(
-                SortUtils.toSort(sortCode),
-                firstName,
-                lastName,
-                gender,
+        return authorRepository.find(
+                specification,
+                SortUtils.toSort("firstName"),
                 DEFAULT_FETCHER
         );
     }

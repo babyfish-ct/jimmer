@@ -7,6 +7,7 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.*;
@@ -101,7 +102,7 @@ public class Fetchers {
             JSqlClientImplementor sqlClient,
             Connection con,
             Fetcher<?> fetcher,
-            List<DraftSpi> drafts
+            List<@Nullable DraftSpi> drafts
     ) {
         FetcherContext.using(sqlClient, con, (ctx, isRoot) -> {
             ctx.addAll(fetcher, drafts);

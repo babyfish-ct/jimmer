@@ -58,7 +58,7 @@ class Importing {
     }
 
     public TypeRef resolve(DtoParser.TypeRefContext ctx) {
-        String name = resolveName(ctx);
+        String name = resolve(ctx.qualifiedName());
         Integer expectedArgumentCount = STANDARD_TYPES.get(name);
         if (expectedArgumentCount != null && expectedArgumentCount != ctx.genericArguments.size()) {
             throw this.ctx.exception(
@@ -116,15 +116,19 @@ class Importing {
         );
     }
 
-    private String resolveName(DtoParser.TypeRefContext ctx) {
-        String qualifiedName = ctx.qualifiedName().parts.stream().map(Token::getText).collect(Collectors.joining("."));
+    public String resolve(DtoParser.QualifiedNameContext ctx) {
+        String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
+        return resolve(qualifiedName, ctx.stop.getLine());
+    }
+
+    public String resolve(String qualifiedName, int qualifiedNameLine) {
         if (STANDARD_TYPES.containsKey(qualifiedName)) {
             return qualifiedName;
         }
         String suggested = ILLEGAL_TYPES.get(qualifiedName);
         if (suggested != null) {
             throw this.ctx.exception(
-                    ctx.qualifiedName().stop.getLine(),
+                    qualifiedNameLine,
                     "Illegal type \"" +
                             qualifiedName +
                             "\", please use \"" +

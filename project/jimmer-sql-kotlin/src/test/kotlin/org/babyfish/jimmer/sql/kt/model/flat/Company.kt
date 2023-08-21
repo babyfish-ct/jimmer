@@ -18,4 +18,6 @@ interface Company {
 
     @ManyToOne
     val street: Street
+
+    val value: Int
 }

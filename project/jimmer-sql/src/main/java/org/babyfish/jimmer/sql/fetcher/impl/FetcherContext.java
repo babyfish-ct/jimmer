@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
 import java.util.Collection;
@@ -82,9 +83,11 @@ class FetcherContext {
         }
     }
 
-    public void addAll(Fetcher<?> fetcher, Collection<DraftSpi> drafts) {
+    public void addAll(Fetcher<?> fetcher, Collection<@Nullable DraftSpi> drafts) {
         for (DraftSpi draft : drafts) {
-            add(fetcher, draft);
+            if (draft != null) {
+                add(fetcher, draft);
+            }
         }
     }
 

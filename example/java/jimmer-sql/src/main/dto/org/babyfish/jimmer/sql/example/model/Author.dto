@@ -9,6 +9,29 @@
  * 2. Otherwise, the project must be rebuilt
  */
 
+import java.time.LocalDateTime
+
+AuthorSpecification {
+
+    /*
+     * For `QBE(Query By Example)`
+     *
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(Author): All scalar fields of `Author`, exclude `BaseEntity`
+     *
+     * #allScalars(Author?): like `#allScalars(Author?)`, but all fields are nullable
+     */
+    #allScalars(Author?)
+
+    -id
+
+    // For `whereIf`
+    minCreatedTime: LocalDateTime?
+
+    // For `whereIf`
+    maxCreatedTimeExclusive: LocalDateTime?
+}
 
 input AuthorInput {
 

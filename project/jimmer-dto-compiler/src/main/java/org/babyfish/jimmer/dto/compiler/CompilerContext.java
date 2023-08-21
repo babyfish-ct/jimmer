@@ -131,6 +131,12 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     public TypeRef resolve(DtoParser.TypeRefContext ctx) {
         return importing.resolve(ctx);
     }
+
+    public String resolve(DtoParser.QualifiedNameContext ctx) { return importing.resolve(ctx); }
+
+    public String resolve(String qualifiedName, int qualifiedNameLine) {
+        return importing.resolve(qualifiedName, qualifiedNameLine);
+    }
     
     public DtoAstException exception(int line, String message) {
         return compiler.exception(line, message);

@@ -228,7 +228,18 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     }
 
     private void handleUserProp(DtoParser.UserPropContext prop) {
-        UserProp userProp = new UserProp(prop.prop, ctx.resolve(prop.typeRef()));
+        List<Anno> annotations;
+        if (prop.annotations.isEmpty()) {
+            annotations = Collections.emptyList();
+        } else {
+            annotations = new ArrayList<>(prop.annotations.size());
+            AnnoParser annoParser = new AnnoParser(ctx);
+            for (DtoParser.AnnotationContext anno : prop.annotations) {
+                annotations.add(annoParser.parse(anno));
+            }
+            annotations = Collections.unmodifiableList(annotations);
+        }
+        UserProp userProp = new UserProp(prop.prop, ctx.resolve(prop.typeRef()), annotations);
         if (aliasPositivePropMap.put(userProp.getAlias(), userProp) != null) {
             throw ctx.exception(
                     prop.prop.getLine(),

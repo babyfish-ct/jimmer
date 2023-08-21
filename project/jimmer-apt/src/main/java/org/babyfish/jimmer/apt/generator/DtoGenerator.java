@@ -4,11 +4,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
-import org.babyfish.jimmer.dto.compiler.DtoProp;
-import org.babyfish.jimmer.dto.compiler.DtoType;
-import org.babyfish.jimmer.dto.compiler.TypeRef;
-import org.babyfish.jimmer.dto.compiler.UserProp;
-import org.babyfish.jimmer.meta.impl.PropDescriptor;
+import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jetbrains.annotations.NotNull;
@@ -275,6 +271,9 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getAlias())
                 .addModifiers(Modifier.PRIVATE);
+        for (Anno anno : prop.getAnnotations()) {
+            builder.addAnnotation(annotationOf(anno));
+        }
         if (!typeName.isPrimitive()) {
             if (prop.getTypeRef().isNullable()) {
                 builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
@@ -810,6 +809,45 @@ public class DtoGenerator {
             }
         }
         return false;
+    }
+
+    private static AnnotationSpec annotationOf(Anno anno) {
+        AnnotationSpec.Builder builder = AnnotationSpec
+                .builder(ClassName.bestGuess(anno.getQualifiedName()));
+        for (Map.Entry<String, Anno.Value> e : anno.getValueMap().entrySet()) {
+            String name = e.getKey();
+            Anno.Value value = e.getValue();
+            builder.addMember(name, codeBlockOf(value));
+        }
+        return builder.build();
+    }
+
+    private static CodeBlock codeBlockOf(Anno.Value value) {
+        CodeBlock.Builder builder = CodeBlock.builder();
+        if (value instanceof Anno.ArrayValue) {
+            builder.add("{\n$>");
+            boolean addSeparator = false;
+            for (Anno.Value element : ((Anno.ArrayValue)value).elements) {
+                if (addSeparator) {
+                    builder.add(", \n");
+                } else {
+                    addSeparator = true;
+                }
+                builder.add("$L", codeBlockOf(element));
+            }
+            builder.add("$<\n}");
+        } else if (value instanceof Anno.AnnoValue) {
+            builder.add("$L", annotationOf(((Anno.AnnoValue)value).anno));
+        } else if (value instanceof Anno.EnumValue) {
+            builder.add(
+                    "$T.$L",
+                    ClassName.bestGuess(((Anno.EnumValue)value).qualifiedName),
+                    ((Anno.EnumValue)value).constant
+            );
+        } else if (value instanceof Anno.LiteralValue) {
+            builder.add(((Anno.LiteralValue)value).value);
+        }
+        return builder.build();
     }
 
     private static boolean isForceOut(String typeName) {

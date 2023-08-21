@@ -23,6 +23,8 @@ public class ExampleImpl<E> implements Example<E> {
 
     private final MatchMode matchMode;
 
+    private final LikeMode likeMode;
+
     private final boolean trim;
 
     private final Map<ImmutableProp, PropData> propDataMap;
@@ -33,6 +35,7 @@ public class ExampleImpl<E> implements Example<E> {
         }
         this.spi = (ImmutableSpi) obj;
         this.matchMode = MatchMode.NOT_EMPTY;
+        this.likeMode = LikeMode.EXACT;
         this.trim = false;
         this.propDataMap = new HashMap<>();
     }
@@ -42,6 +45,7 @@ public class ExampleImpl<E> implements Example<E> {
         newPropDataMap.put(data.prop, data);
         this.spi = base.spi;
         this.matchMode = base.matchMode;
+        this.likeMode = base.likeMode;
         this.trim = base.trim;
         this.propDataMap = newPropDataMap;
     }
@@ -49,6 +53,7 @@ public class ExampleImpl<E> implements Example<E> {
     private ExampleImpl(ExampleImpl<E> base, MatchMode matchMode) {
         this.spi = base.spi;
         this.matchMode = matchMode;
+        this.likeMode = base.likeMode;
         this.trim = base.trim;
         this.propDataMap = base.propDataMap;
     }
@@ -56,6 +61,7 @@ public class ExampleImpl<E> implements Example<E> {
     private ExampleImpl(ExampleImpl<E> base, boolean trim) {
         this.spi = base.spi;
         this.matchMode = base.matchMode;
+        this.likeMode = base.likeMode;
         this.trim = trim;
         this.propDataMap = base.propDataMap;
     }

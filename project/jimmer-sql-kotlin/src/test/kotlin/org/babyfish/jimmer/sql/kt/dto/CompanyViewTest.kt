@@ -61,6 +61,7 @@ class CompanyViewTest {
             """CompanyView(
                 |--->id=1, 
                 |--->companyName=myCompany, 
+                |--->value=null, 
                 |--->streetName=myStreet, 
                 |--->cityName=myCity, 
                 |--->provinceName=myProvince, 

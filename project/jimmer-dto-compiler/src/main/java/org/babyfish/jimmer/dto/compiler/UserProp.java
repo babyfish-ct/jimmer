@@ -2,6 +2,7 @@ package org.babyfish.jimmer.dto.compiler;
 
 import org.antlr.v4.runtime.Token;
 
+import java.util.List;
 import java.util.Objects;
 
 public class UserProp implements AbstractProp, AbstractPropBuilder {
@@ -12,10 +13,13 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     private final TypeRef typeRef;
 
-    public UserProp(Token alias, TypeRef typeRef) {
+    private final List<Anno> annotations;
+
+    public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations) {
         this.alias = alias.getText();
         this.line = alias.getLine();
         this.typeRef = typeRef;
+        this.annotations = annotations;
     }
 
     @Override
@@ -30,6 +34,10 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     public TypeRef getTypeRef() {
         return typeRef;
+    }
+
+    public List<Anno> getAnnotations() {
+        return annotations;
     }
 
     public UserProp build() {
@@ -51,6 +59,14 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     @Override
     public String toString() {
-        return alias + ": " + typeRef;
+        if (annotations.isEmpty()) {
+            return alias + ": " + typeRef;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (Anno anno : annotations) {
+            builder.append(anno);
+        }
+        builder.append(' ').append("alias").append(": ").append(typeRef);
+        return builder.toString();
     }
 }

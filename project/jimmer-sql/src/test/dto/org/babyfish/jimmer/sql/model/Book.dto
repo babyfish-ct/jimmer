@@ -1,4 +1,5 @@
 import java.time.LocalDateTime
+import testpkg.annotations.{Job, Task, Priority }
 
 abstract Key {
     name
@@ -20,6 +21,13 @@ input BookInput {
     #allScalars
     id(store)
     id(authors) as authorIds
+
+    @Job([
+        Task("Prepare environment", priority = Priority.HIGH, estimation = 4),
+        Task("Install intellij", estimation = 1),
+        Task("Develop Service", estimation = 800),
+        Task(value = "Develop UI", priority = Priority.LOW, estimation = 100)
+    ])
     tag1: Int
     tag2: Int?
     tag3: Map<String, Set<String>>

@@ -65,6 +65,7 @@ class MixedCompanyTest {
             """MixedCompanyView(
                 |--->id=1, 
                 |--->companyName=myCompany, 
+                |--->value=null, 
                 |--->streetName=myStreet, 
                 |--->cityName=myCity, 
                 |--->province=TargetOf_province(

@@ -291,6 +291,68 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testAnnotation() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "import org.framework.annotations.{A, B, C, D}\n" +
+                        "import org.framework.enums.{A as EnumA, B as EnumB}\n" +
+                        "\n" +
+                        "Customer {\n" +
+                        "    @A(\"name1\", device = \"Com\" + \"piler\", level = 3)\n" +
+                        "    @B(\n" +
+                        "        value = \"name2\", \n" +
+                        "        phases=[\"Com\" + \"pile\", \"Run\" + \"time\"]\n" +
+                        "    )\n" +
+                        "    @B(\n" +
+                        "        value = \"name3\", \n" +
+                        "        phases={\"Dep\" + \"loy\", \n\"Run\" + \"time\"}, \n" +
+                        "        items=[\n" +
+                        "            @C({EnumA.CHOICE_1, EnumA.CHOICE_2}),\n" +
+                        "            C([EnumB.CHOICE_1, EnumB.CHOICE_2]),\n" +
+                        "            @D,\n" +
+                        "            D()\n" +
+                        "        ]\n" +
+                        "    )\n" +
+                        "    tags: MutableList<String>\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "Customer {" +
+                        "--->@org.framework.annotations.A(" +
+                        "--->--->value = \"name1\", " +
+                        "--->--->device = \"Compiler\", " +
+                        "--->--->level = 3" +
+                        "--->)" +
+                        "--->@org.framework.annotations.B(" +
+                        "--->--->value = \"name2\", " +
+                        "--->--->phases = [\"Compile\", \"Runtime\"]" +
+                        "--->)" +
+                        "--->@org.framework.annotations.B(" +
+                        "--->--->value = \"name3\", " +
+                        "--->--->phases = [\"Deploy\", \"Runtime\"], " +
+                        "--->--->items = [" +
+                        "--->--->--->@org.framework.annotations.C(" +
+                        "--->--->--->--->value = [" +
+                        "--->--->--->--->--->org.framework.enums.A.CHOICE_1, " +
+                        "--->--->--->--->--->org.framework.enums.A.CHOICE_2" +
+                        "--->--->--->--->]" +
+                        "--->--->--->), " +
+                        "--->--->--->@org.framework.annotations.C(" +
+                        "--->--->--->--->value = [" +
+                        "--->--->--->--->--->org.framework.enums.B.CHOICE_1, " +
+                        "--->--->--->--->--->org.framework.enums.B.CHOICE_2" +
+                        "--->--->--->--->]" +
+                        "--->--->--->), " +
+                        "--->--->--->@org.framework.annotations.D, " +
+                        "--->--->--->@org.framework.annotations.D" +
+                        "--->--->]" +
+                        "--->) " +
+                        "--->alias: MutableList<String>" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book().compile(

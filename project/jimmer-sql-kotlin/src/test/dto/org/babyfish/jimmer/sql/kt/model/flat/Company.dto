@@ -1,5 +1,6 @@
 CompanyView {
     #allScalars
+    value?
     flat(street) {
         #allScalars
         -id
@@ -20,6 +21,7 @@ CompanyView {
 
 MixedCompanyView {
     #allScalars
+    value?
     flat(street) {
         #allScalars
         -id
