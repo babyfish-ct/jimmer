@@ -53,6 +53,7 @@ allScalars
     (
         '(' args+=qualifiedName (',' args+=qualifiedName)* ')'
     )?
+    (optional = '?')?
     ;
 
 aliasGroup

@@ -30,7 +30,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     DtoPropBuilder(
             DtoTypeBuilder<T, P> parent,
             P baseProp,
-            int line
+            int line,
+            boolean optional
     ) {
         this.parent = parent;
         this.baseProp = baseProp;
@@ -39,7 +40,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 parent.currentAliasGroup().alias(baseProp.getName(), 0) :
                 baseProp.getName();
         this.baseLine = line;
-        this.isOptional = parent.ctx.isImplicit(baseProp);
+        this.isOptional = optional || parent.ctx.isImplicit(baseProp);
         this.funcName = null;
         this.targetTypeBuilder = null;
         this.recursive = false;

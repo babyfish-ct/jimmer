@@ -107,7 +107,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                             new DtoPropBuilder<>(
                                     this,
                                     baseProp,
-                                    allScalars.start.getLine()
+                                    allScalars.start.getLine(),
+                                    allScalars.optional != null
                             )
                     );
                 }
@@ -163,7 +164,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                 new DtoPropBuilder<>(
                                         this,
                                         baseProp,
-                                        qnCtx.stop.getLine()
+                                        qnCtx.stop.getLine(),
+                                        allScalars.optional != null
                                 )
                         );
                     }

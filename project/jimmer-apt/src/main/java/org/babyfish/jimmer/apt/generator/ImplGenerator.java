@@ -390,7 +390,7 @@ public class ImplGenerator {
                     )
                     .addStatement("return false")
                     .endControlFlow();
-            if (shallow || prop.getReturnType() instanceof PrimitiveType) {
+            if (shallow || prop.getReturnType().getKind().isPrimitive()) {
                 if (!shallow && prop.getAnnotation(Id.class) != null) {
                     builder
                             .beginControlFlow("if ($L)", prop.getLoadedStateName(true))

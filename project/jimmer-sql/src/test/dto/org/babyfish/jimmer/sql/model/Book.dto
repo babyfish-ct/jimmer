@@ -17,12 +17,10 @@ BookView : Key {
     }
 }
 
-input BookInput {
-    #allScalars
-    id(store)
-    id(authors) as authorIds
+BookSpecification {
+    #allScalars(Book)?
 
-    @Job([
+    @Job(value = [
         Task("Prepare environment", priority = Priority.HIGH, estimation = 4),
         Task("Install intellij", estimation = 1),
         Task("Develop Service", estimation = 800),
@@ -35,6 +33,12 @@ input BookInput {
     tag5: Array<Int>
     tag6: Array<Int?>
     tag7: LocalDateTime
+}
+
+input BookInput {
+    #allScalars
+    id(store)
+    id(authors) as authorIds
 }
 
 input CompositeBookInput {

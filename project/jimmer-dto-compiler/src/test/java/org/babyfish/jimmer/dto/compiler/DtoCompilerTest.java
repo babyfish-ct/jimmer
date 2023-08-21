@@ -61,6 +61,25 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testOptionalAllScalars() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "input BookSpecification {\n" +
+                        "    #allScalars?" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookSpecification {" +
+                        "--->@optional id, " +
+                        "--->@optional name, " +
+                        "--->@optional edition, " +
+                        "--->@optional price, " +
+                        "--->@optional tenant" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testRecursive() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
                 "input TreeNodeInput {" +
