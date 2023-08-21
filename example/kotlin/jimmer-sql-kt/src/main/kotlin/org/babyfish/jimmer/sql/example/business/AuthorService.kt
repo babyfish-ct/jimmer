@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.example.model.Gender
 import org.babyfish.jimmer.sql.example.model.by
 import org.babyfish.jimmer.spring.model.SortUtils
 import org.babyfish.jimmer.sql.example.model.dto.AuthorInput
+import org.babyfish.jimmer.sql.example.model.dto.AuthorSpecification
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.transaction.annotation.Transactional
@@ -39,16 +40,12 @@ class AuthorService(
 
     @GetMapping("/list")
     fun findAuthors(
-        @RequestParam(defaultValue = "firstName asc, lastName asc") sortCode: String,
-        @RequestParam firstName: String?,
-        @RequestParam lastName: String?,
-        @RequestParam gender: Gender?
+        specification: AuthorSpecification,
+        @RequestParam(defaultValue = "firstName asc, lastName asc") sortCode: String
     ): List<@FetchBy("DEFAULT_FETCHER") Author> =
-        authorRepository.findByFirstNameAndLastNameAndGender(
+        authorRepository.find(
+            specification,
             SortUtils.toSort(sortCode),
-            firstName,
-            lastName,
-            gender,
             DEFAULT_FETCHER
         )
 

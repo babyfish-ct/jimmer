@@ -10,7 +10,7 @@
  */
 
 import java.time.LocalDateTime
-import com.fasterxml.jackson.annotation.JsonFormat
+import org.springframework.format.annotation.DateTimeFormat
 
 AuthorSpecification {
 
@@ -21,18 +21,16 @@ AuthorSpecification {
      *
      * #allScalars(Author): All scalar fields of `Author`, exclude `BaseEntity`
      *
-     * #allScalars(Author?): like `#allScalars(Author?)`, but all fields are nullable
+     * #allScalars(Author)?: like `#allScalars(Author)`, but all fields are nullable
      */
-    #allScalars(Author)
-
-    -id
+    #allScalars(Author)? - id // Remove id
 
     // For `whereIf`
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     minCreatedTime: LocalDateTime?
 
     // For `whereIf`
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     maxCreatedTimeExclusive: LocalDateTime?
 }
 
