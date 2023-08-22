@@ -24,8 +24,10 @@ class FetcherDslGenerator(
                     for (prop in type.properties.values) {
                         if (!prop.isId) {
                             addSimpleProp(prop)
-                            addAssociationProp(prop, false)
-                            addAssociationProp(prop, true)
+                            addAssociationProp(prop, false, false)
+                            addAssociationProp(prop, false, true)
+                            addAssociationProp(prop, true, false)
+                            addAssociationProp(prop, true, true)
                         }
                     }
                 }
@@ -113,7 +115,11 @@ class FetcherDslGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addAssociationProp(prop: ImmutableProp, lambda: Boolean) {
+    private fun TypeSpec.Builder.addAssociationProp(
+        prop: ImmutableProp,
+        enabled: Boolean,
+        lambda: Boolean
+    ) {
         if (!prop.isAssociation(true) || !prop.targetType!!.isEntity) {
             return
         }
@@ -149,6 +155,13 @@ class FetcherDslGenerator(
             FunSpec
                 .builder(prop.name)
                 .apply {
+                    if (enabled) {
+                        addParameter(
+                            ParameterSpec
+                                .builder("enabled", BOOLEAN)
+                                .build()
+                        )
+                    }
                     if (lambda) {
                         if (!prop.isRemote) {
                             addParameter(cfgBlockParameter)
@@ -173,30 +186,59 @@ class FetcherDslGenerator(
                         }
                     }
                 }
-                .addCode(
-                    CodeBlock
-                        .builder()
-                        .apply {
-                            add("_fetcher = _fetcher.add(\n")
-                            indent()
-                            add("%S,\n", prop.name)
-                            if (lambda) {
-                                add(
-                                    "%T(%T::class).by(childBlock)",
-                                    NEW_FETCHER_FUN_CLASS_NAME,
-                                    prop.targetTypeName(overrideNullable = false)
-                                )
-                            } else {
-                                add("childFetcher")
-                            }
-                            if (!prop.isRemote) {
-                                add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
-                            }
-                            unindent()
-                            add("\n)\n")
-                        }
-                        .build()
-                )
+                .apply {
+                    if (enabled) {
+                        addCode(
+                            CodeBlock
+                                .builder()
+                                .apply {
+                                    beginControlFlow("if (!enabled)")
+                                    addStatement("_fetcher = _fetcher.remove(%S)", prop.name)
+                                    nextControlFlow("else")
+                                    add("%N(", prop.name)
+                                    if (lambda) {
+                                        if (!prop.isRemote) {
+                                            add("cfgBlock, ")
+                                        }
+                                        add("childBlock)\n")
+                                    } else {
+                                        add("childFetcher")
+                                        if (!prop.isRemote) {
+                                            add(", cfgBlock")
+                                        }
+                                        add(")\n")
+                                    }
+                                    endControlFlow()
+                                }
+                                .build()
+                        )
+                    } else {
+                        addCode(
+                            CodeBlock
+                                .builder()
+                                .apply {
+                                    add("_fetcher = _fetcher.add(\n")
+                                    indent()
+                                    add("%S,\n", prop.name)
+                                    if (lambda) {
+                                        add(
+                                            "%T(%T::class).by(childBlock)",
+                                            NEW_FETCHER_FUN_CLASS_NAME,
+                                            prop.targetTypeName(overrideNullable = false)
+                                        )
+                                    } else {
+                                        add("childFetcher")
+                                    }
+                                    if (!prop.isRemote) {
+                                        add(",\n%T.%L(cfgBlock)", JAVA_FIELD_CONFIG_UTILS, cfgTranName)
+                                    }
+                                    unindent()
+                                    add("\n)\n")
+                                }
+                                .build()
+                        )
+                    }
+                }
                 .build()
         )
     }

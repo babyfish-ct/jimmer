@@ -1,18 +1,33 @@
 import java.time.LocalDateTime
-import testpkg.annotations.{Job, Task, Priority }
+import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 
 abstract Key {
+
+    @Shallow
     name
+
+    @Shallow
     edition
 }
 
+@Shallow
 BookView : Key {
+
+    @Shallow
     id
-    store {
+
+    store @Deep {
+
+        @Deep
         name
     }
-    authors {
+
+    authors @Deep {
+
+        @Deep
         firstName
+
+        @Deep
         lastName
     }
 }

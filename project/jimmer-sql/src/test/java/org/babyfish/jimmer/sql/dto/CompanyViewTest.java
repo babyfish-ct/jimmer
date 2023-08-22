@@ -64,7 +64,8 @@ public class CompanyViewTest extends Tests {
                         "--->streetName=myStreet, " +
                         "--->cityName=myCity, " +
                         "--->provinceName=myProvince, " +
-                        "--->countryName=myCountry" +
+                        "--->countryName=myCountry, " +
+                        "--->tag=0" +
                         ")",
                 new CompanyView(company)
         );

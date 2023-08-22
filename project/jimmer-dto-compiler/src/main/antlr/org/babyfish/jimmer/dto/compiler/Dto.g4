@@ -29,6 +29,7 @@ importedType
 
 dtoType
     :
+    (annotations += annotation)*
     (modifiers += Identifier)*
     name=Identifier
     (':' superNames += Identifier (',' superNames += Identifier)*)?
@@ -79,11 +80,12 @@ aliasGroupProp
 
 positiveProp
     :
+    (annotations += annotation)*
     '+'?
     (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
     (optional = '?')?
     ('as' alias=Identifier)?
-    (dtoBody (recursive='*')?)?
+    ((annotations += annotation)* dtoBody (recursive='*')?)?
     ;
 
 negativeProp

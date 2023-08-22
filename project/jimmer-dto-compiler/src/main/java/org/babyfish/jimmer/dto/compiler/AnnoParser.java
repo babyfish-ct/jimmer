@@ -72,7 +72,9 @@ class AnnoParser {
         if (typeName.startsWith("org.babyfish.jimmer.")) {
             throw this.ctx.exception(
                     ctx.stop.getLine(),
-                    "Jimmer annotation is forbidden by DTO language"
+                    "Jimmer annotation \"" +
+                            typeName +
+                            "\" is forbidden by DTO language"
             );
         }
         return typeName;

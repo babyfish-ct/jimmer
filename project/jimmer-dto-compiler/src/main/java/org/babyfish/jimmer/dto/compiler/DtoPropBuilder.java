@@ -5,7 +5,9 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropImplementor, AbstractPropBuilder {
 
@@ -18,6 +20,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     private final String alias;
 
     private final int aliasLine;
+
+    private final List<Anno> annotations;
 
     private final boolean isOptional;
 
@@ -40,6 +44,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 parent.currentAliasGroup().alias(baseProp.getName(), 0) :
                 baseProp.getName();
         this.baseLine = line;
+        this.annotations = Collections.emptyList();
         this.isOptional = optional || parent.ctx.isImplicit(baseProp);
         this.funcName = null;
         this.targetTypeBuilder = null;
@@ -53,6 +58,19 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.parent = parent;
         this.baseLine = prop.prop.getLine();
         this.aliasLine = prop.alias != null ? prop.alias.getLine() : prop.prop.getLine();
+
+        List<Anno> annotations;
+        if (prop.annotations.isEmpty()) {
+            annotations = Collections.emptyList();
+        } else {
+            AnnoParser parser = new AnnoParser(parent.ctx);
+            annotations = new ArrayList<>(prop.annotations.size());
+            for (DtoParser.AnnotationContext anno : prop.annotations) {
+                annotations.add(parser.parse(anno));
+            }
+            annotations = Collections.unmodifiableList(annotations);
+        }
+        this.annotations = annotations;
 
         CompilerContext<T, P> ctx = parent.ctx;
         P baseProp = getBaseProp(parent, prop.prop);
@@ -122,6 +140,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         } else if (parent.currentAliasGroup() != null) {
             alias = parent.currentAliasGroup().alias(prop.prop);
         } else if ("id".equals(funcName)) {
+            if (baseProp.getName().equals("s")) {
+                throw ctx.exception(
+                        prop.prop.getLine(),
+                        "The alias must be specified for the property with " +
+                                "`id` function when the base property name ends with 's'"
+                );
+            }
             alias = baseProp.getName() + "Id";
         } else if ("flat".equals(funcName)) {
             alias = null;
@@ -189,6 +214,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     ctx.getTargetType(baseProp),
                     prop.dtoBody(),
                     null,
+                    prop.annotations,
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
                             Collections.singleton(DtoTypeModifier.INPUT) :
                             Collections.emptySet(),
@@ -240,6 +266,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         return funcName;
     }
 
+    @Override
+    public List<Anno> getAnnotations() {
+        return annotations;
+    }
+
     public DtoTypeBuilder<T, P> getTargetBuilder() {
         return targetTypeBuilder;
     }
@@ -278,12 +309,12 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             "\" cannot be declared in input dto because it is formula"
             );
         }
-        if (baseProp.isView() && isInput) {
+        if (baseProp.getManyToManyViewBaseProp() != null && isInput) {
             throw ctx.exception(
                     token.getLine(),
                     "The property \"" +
                             baseProp.getName() +
-                            "\" cannot be declared in input dto because it is view"
+                            "\" cannot be declared in input dto because it is many-to-many-view"
             );
         }
         if (baseProp.isTransient()) {
@@ -314,6 +345,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 baseLine,
                 alias,
                 aliasLine,
+                annotations,
                 targetTypeBuilder != null ? targetTypeBuilder.build() : null,
                 isOptional,
                 funcName,

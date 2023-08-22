@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.query;
 
-import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.lang.NewChain;
 import org.babyfish.jimmer.meta.TypedProp;
@@ -10,10 +9,10 @@ import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 public interface Example<E> {
 
     static <E> Example<E> of(E obj) {
-        if (obj instanceof Input<?>) {
+        if (obj instanceof View<?>) {
             throw new IllegalArgumentException(
-                    "entity cannot be input, " +
-                            "please call another overloaded function whose parameter is input"
+                    "entity cannot be view, " +
+                            "please call another overloaded function whose parameter is view"
             );
         }
         return new ExampleImpl<>(obj);

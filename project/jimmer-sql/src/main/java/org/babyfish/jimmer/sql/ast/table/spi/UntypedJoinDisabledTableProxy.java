@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
-import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -101,8 +100,8 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
-    public Predicate eq(Input<E> input) {
-        return table.eq(input);
+    public Predicate eq(View<E> view) {
+        return table.eq(view);
     }
 
     @Override

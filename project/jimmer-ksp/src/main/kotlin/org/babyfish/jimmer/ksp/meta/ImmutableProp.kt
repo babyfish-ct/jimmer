@@ -44,9 +44,6 @@ class ImmutableProp(
     override val isTransient: Boolean =
         annotation(Transient::class) !== null
 
-    override val isView: Boolean
-        get() = idViewBaseProp !== null || manyToManyViewBaseProp !== null
-
     override fun hasTransientResolver(): Boolean =
         annotation(Transient::class)?.let {
             val resolverClassName = it.getClassArgument(Transient::value)?.toClassName()
@@ -356,7 +353,7 @@ class ImmutableProp(
     val idViewBaseProp: ImmutableProp?
         get() = _idViewBaseProp
 
-    val manyToManyViewBaseProp: ImmutableProp?
+    override val manyToManyViewBaseProp: ImmutableProp?
         get() = _manyToManyViewBaseProp
 
     val manyToManyViewBaseDeeperProp: ImmutableProp?

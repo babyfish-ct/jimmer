@@ -8,6 +8,7 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.dto.compiler.AbstractProp
 import org.babyfish.jimmer.dto.compiler.Anno
 import org.babyfish.jimmer.dto.compiler.Anno.AnnoValue
 import org.babyfish.jimmer.dto.compiler.Anno.ArrayValue
@@ -109,6 +110,9 @@ class DtoGenerator private constructor(
                                     )
                                 }
                             }
+                        for (anno in dtoType.annotations) {
+                            builder.addAnnotation(annotationOf(anno))
+                        }
                         _typeBuilder = builder
                         try {
                             addMembers(allFiles)
@@ -128,6 +132,9 @@ class DtoGenerator private constructor(
                     if (dtoType.dtoProps.isNotEmpty()) {
                         addModifiers(KModifier.DATA)
                     }
+                }
+                for (anno in dtoType.annotations) {
+                    builder.addAnnotation(annotationOf(anno))
                 }
             _typeBuilder = builder
             try {
@@ -279,17 +286,11 @@ class DtoGenerator private constructor(
             return
         }
         val targetDtoType = prop.getTargetType()!!
-        add("%N(", prop.getBaseProp().name)
-        indent()
-        add("%N(%T::class).by {\n", NEW_FETCHER, prop.getBaseProp().targetType!!.className)
-        indent()
+        beginControlFlow("%N", prop.getBaseProp().name)
         for (childProp in targetDtoType.dtoProps) {
             addHiddenFetcherField(childProp)
         }
-        unindent()
-        add("}\n")
-        unindent()
-        add(")")
+        endControlFlow()
     }
 
     private fun addPrimaryConstructor() {
@@ -340,6 +341,9 @@ class DtoGenerator private constructor(
                     .apply {
                         for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
                             addAnnotation(anno.toAnnotationSpec())
+                        }
+                        for (anno in prop.annotations) {
+                            addAnnotation(annotationOf(anno))
                         }
                     }
                     .build()

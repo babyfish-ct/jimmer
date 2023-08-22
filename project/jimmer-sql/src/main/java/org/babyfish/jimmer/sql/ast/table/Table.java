@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.table;
 
-import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -28,7 +27,7 @@ public interface Table<E> extends Selection<E>, Props {
     /**
      * QBE
      */
-    Predicate eq(Input<E> input);
+    Predicate eq(View<E> view);
 
     Predicate isNull();
 

@@ -4,6 +4,9 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.List;
+
 class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
 
     private final P baseProp;
@@ -93,6 +96,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     @Override
     public DtoProp<T, P> toTailProp() {
         return this;
+    }
+
+    @Override
+    public List<Anno> getAnnotations() {
+        return Collections.emptyList();
     }
 
     @Override

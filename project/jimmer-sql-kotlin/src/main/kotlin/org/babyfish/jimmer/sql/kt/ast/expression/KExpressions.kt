@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.kt.ast.expression
 
-import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
-import org.babyfish.jimmer.sql.ast.query.Example
 import org.babyfish.jimmer.sql.ast.query.NullOrderMode
 import org.babyfish.jimmer.sql.ast.query.Order
 import org.babyfish.jimmer.sql.ast.query.OrderMode
@@ -15,10 +14,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.ConstantExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.LiteralExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullExpression
-import org.babyfish.jimmer.sql.kt.ast.query.KExample
-import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
-import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
-import org.babyfish.jimmer.sql.kt.ast.query.example
+import org.babyfish.jimmer.sql.kt.ast.query.*
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import kotlin.reflect.KClass
@@ -123,8 +119,8 @@ infix fun <E: Any> KTable<E>.eq(right: E): KNonNullExpression<Boolean> =
 /**
  * QBE
  */
-infix fun <E: Any> KTable<E>.eq(right: Input<E>): KNonNullExpression<Boolean> =
-    eq(example(right))
+infix fun <E: Any> KTable<E>.eq(right: View<E>): KNonNullExpression<Boolean> =
+    eq(viewExample(right))
 
 /**
  * QBE

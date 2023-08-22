@@ -14,7 +14,6 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
@@ -87,6 +86,9 @@ public class DtoGenerator {
             );
         }
         typeBuilder.addAnnotation(Constants.LOMBOK_DATA_CLASS_NAME);
+        for (Anno anno : dtoType.getAnnotations()) {
+            typeBuilder.addAnnotation(annotationOf(anno));
+        }
         if (innerClassName != null) {
             typeBuilder.addModifiers(Modifier.STATIC);
             addMembers();
@@ -263,6 +265,9 @@ public class DtoGenerator {
                 builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
         }
+        for (Anno anno : prop.getAnnotations()) {
+            builder.addAnnotation(annotationOf(anno));
+        }
         typeBuilder.addField(builder.build());
     }
 
@@ -276,9 +281,9 @@ public class DtoGenerator {
         }
         if (!typeName.isPrimitive()) {
             if (prop.getTypeRef().isNullable()) {
-                builder.addAnnotation(Nullable.class).addAnnotation(Null.class);
+                builder.addAnnotation(Nullable.class);
             } else {
-                builder.addAnnotation(NotNull.class).addAnnotation(javax.validation.constraints.NotNull.class);
+                builder.addAnnotation(NotNull.class);
             }
         }
         typeBuilder.addField(builder.build());
@@ -804,7 +809,7 @@ public class DtoGenerator {
                 return !qualifiedName.equals(NotNull.class.getName()) &&
                         !qualifiedName.equals(javax.validation.constraints.NotNull.class.getName()) &&
                         !qualifiedName.equals(Nullable.class.getName()) &&
-                        !qualifiedName.equals(Null.class.getName()) &&
+                        !qualifiedName.equals(javax.validation.constraints.Null.class.getName()) &&
                         !qualifiedName.startsWith("org.babyfish.jimmer.");
             }
         }

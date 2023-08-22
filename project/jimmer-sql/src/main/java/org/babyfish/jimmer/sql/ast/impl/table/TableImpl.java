@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -149,8 +148,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
-    public Predicate eq(Input<E> input) {
-        return eq(Example.of(input));
+    public Predicate eq(View<E> view) {
+        return eq(Example.of(view));
     }
 
     @Override

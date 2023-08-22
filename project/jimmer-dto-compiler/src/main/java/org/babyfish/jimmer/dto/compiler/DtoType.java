@@ -10,6 +10,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final T baseType;
 
+    private final List<Anno> annotations;
+
     private final boolean isInput;
 
     @Nullable
@@ -28,11 +30,13 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     DtoType(
             T baseType,
+            List<Anno> annotations,
             boolean isInput,
             @Nullable String name,
             @Nullable String path
     ) {
         this.baseType = baseType;
+        this.annotations = annotations;
         this.isInput = isInput;
         this.name = name;
         this.path = path;
@@ -105,6 +109,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return hfps;
     }
 
+    public List<Anno> getAnnotations() {
+        return annotations;
+    }
+
     void setProps(List<AbstractProp> props) {
         if (props == null) {
             throw new IllegalArgumentException("`props` cannot be null");
@@ -118,6 +126,9 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        for (Anno anno : annotations) {
+            builder.append(anno).append(' ');
+        }
         if (isInput) {
             builder.append("input ");
         }
@@ -188,7 +199,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
                 }
                 props = Collections.unmodifiableList(props);
             }
-            DtoType<T, P> dtoType = new DtoType<>(null, isInput, null, null);
+            DtoType<T, P> dtoType = new DtoType<>(null, annotations, isInput, null, null);
             dtoType.setProps(props);
             return dtoType;
         }

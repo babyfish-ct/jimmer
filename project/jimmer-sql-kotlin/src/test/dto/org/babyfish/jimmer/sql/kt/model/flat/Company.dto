@@ -17,6 +17,7 @@ CompanyView {
             }
         }
     }
+    tag: Int
 }
 
 MixedCompanyView {

@@ -83,6 +83,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 compiler.getBaseType(),
                 type.body,
                 type.name,
+                type.annotations,
                 modifiers,
                 type.superNames,
                 null,

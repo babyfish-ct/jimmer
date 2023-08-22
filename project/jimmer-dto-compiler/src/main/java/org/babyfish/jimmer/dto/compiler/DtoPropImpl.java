@@ -4,6 +4,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
@@ -19,6 +20,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     private final String alias;
 
     private final int aliasLine;
+
+    private final List<Anno> annotations;
 
     private final DtoType<T, P> targetType;
 
@@ -37,6 +40,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             int baseLine,
             @Nullable String alias,
             int aliasLine,
+            List<Anno> annotations,
             @Nullable DtoType<T, P> targetType,
             boolean optional,
             String funcName,
@@ -45,6 +49,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.baseProp = baseProp;
         this.nextProp = null;
         this.baseLine = baseLine;
+        this.annotations = annotations;
         this.alias = alias;
         this.aliasLine = aliasLine;
         this.targetType = targetType;
@@ -61,6 +66,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.baseLine = next.getBaseLine();
         this.alias = next.getAlias();
         this.aliasLine = next.getAliasLine();
+        this.annotations = next.getAnnotations();
         this.targetType = next.getTargetType();
         this.optional = head.isNullable() || next.isNullable();
         this.funcName = next.getFuncName();
@@ -79,6 +85,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.baseProp = original.getBaseProp();
         this.nextProp = null;
         this.baseLine = original.getBaseLine();
+        this.annotations = original.getAnnotations();
         this.alias = baseProp.getName();
         this.aliasLine = original.getAliasLine();
         this.targetType = targetType;
@@ -113,6 +120,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public int getBaseLine() {
         return baseLine;
+    }
+
+    @Override
+    public List<Anno> getAnnotations() {
+        return annotations;
     }
 
     @Override
@@ -173,6 +185,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         StringBuilder builder = new StringBuilder();
         if (optional) {
             builder.append("@optional ");
+        }
+        for (Anno anno : annotations) {
+            builder.append(anno).append(' ');
         }
         if (funcName != null) {
             builder.append(funcName).append('(').append(basePath).append(')');

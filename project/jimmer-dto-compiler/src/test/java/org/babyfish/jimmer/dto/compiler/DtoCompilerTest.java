@@ -3,6 +3,7 @@ package org.babyfish.jimmer.dto.compiler;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -313,9 +314,19 @@ public class DtoCompilerTest {
     public void testAnnotation() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "import org.framework.annotations.{A, B, C, D}\n" +
+                        "import org.framework.annotations.{Shallow, Deep}\n" +
                         "import org.framework.enums.{A as EnumA, B as EnumB}\n" +
                         "\n" +
-                        "Customer {\n" +
+                        "@Shallow\n" +
+                        "Book {\n" +
+                        "    @Shallow\n" +
+                        "    name\n" +
+                        "    flat(store) {\n" +
+                        "        as(^ -> parent) {\n" +
+                        "            @Deep" +
+                        "            name\n" +
+                        "        }\n" +
+                        "    }\n" +
                         "    @A(\"name1\", device = \"Com\" + \"piler\", level = 3)\n" +
                         "    @B(\n" +
                         "        value = \"name2\", \n" +
@@ -335,7 +346,13 @@ public class DtoCompilerTest {
                         "}"
         );
         assertContentEquals(
-                "Customer {" +
+                "@org.framework.annotations.Shallow " +
+                        "Book {" +
+                        "--->@org.framework.annotations.Shallow " +
+                        "--->name, " +
+                        "--->@optional " +
+                        "--->@org.framework.annotations.Deep " +
+                        "--->store.name as parentName, " +
                         "--->@org.framework.annotations.A(" +
                         "--->--->value = \"name1\", " +
                         "--->--->device = \"Compiler\", " +
@@ -383,22 +400,6 @@ public class DtoCompilerTest {
         Assertions.assertEquals(
                 "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
                         "There is no property \"city\" in \"org.babyfish.jimmer.sql.model.Book\" or its super types",
-                ex.getMessage()
-        );
-    }
-
-    @Test
-    public void testIllegalInputProperty() {
-        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
-                    "input BookInput {\n" +
-                            "    authorIds\n" +
-                            "}"
-            );
-        });
-        Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
-                        "The property \"authorIds\" cannot be declared in input dto because it is view",
                 ex.getMessage()
         );
     }
@@ -730,22 +731,15 @@ public class DtoCompilerTest {
 
         private final boolean isList;
 
-        private final boolean isView;
-
         BasePropImpl(String name) {
             this(name, null, false, false);
         }
 
         BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isNullable, boolean isList) {
-            this(name, targetTypeSupplier, isNullable, isList, false);
-        }
-
-        BasePropImpl(String name, Supplier<BaseType> targetTypeSupplier, boolean isNullable, boolean isList, boolean isView) {
             this.name = name;
             this.targetTypeSupplier = targetTypeSupplier;
             this.isNullable = isNullable;
             this.isList = isList;
-            this.isView = isView;
         }
 
         @Override
@@ -783,9 +777,10 @@ public class DtoCompilerTest {
             return false;
         }
 
+        @Nullable
         @Override
-        public boolean isView() {
-            return isView;
+        public BaseProp getManyToManyViewBaseProp() {
+            return null;
         }
 
         @Override
@@ -832,7 +827,6 @@ public class DtoCompilerTest {
                 new BasePropImpl("tenant"),
                 new BasePropImpl("store", () -> TYPE_MAP.get("BookStore"), true, false),
                 new BasePropImpl("authors", () -> TYPE_MAP.get("Author"), false, true),
-                new BasePropImpl("authorIds", null, false, true, true),
                 new BasePropImpl("chapters", () -> TYPE_MAP.get("Chapter"), false, true)
         );
 

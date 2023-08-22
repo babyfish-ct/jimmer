@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
@@ -17,10 +18,9 @@ import org.babyfish.jimmer.sql.meta.FormulaTemplate
 import kotlin.reflect.KProperty1
 
 fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> {
-    if (obj is Input<*>) {
+    if (obj is View<*>) {
         throw IllegalArgumentException(
-            "entity cannot be input, " +
-                "please call another overloaded function whose parameter is input"
+            "entity cannot be view, please call `viewExample`"
         )
     }
     if (obj !is ImmutableSpi) {
@@ -35,8 +35,8 @@ fun <E: Any> example(obj: E, block: (KExample.Dsl<E>.() -> Unit)? = null): KExam
     }
 }
 
-fun <E: Any> example(input: Input<E>, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> =
-    example(input.toEntity(), block)
+fun <E: Any> viewExample(view: View<E>, block: (KExample.Dsl<E>.() -> Unit)? = null): KExample<E> =
+    example(view.toEntity(), block)
 
 class KExample<E: Any> internal constructor(
     private val spi: ImmutableSpi,
@@ -62,9 +62,9 @@ class KExample<E: Any> internal constructor(
                     else {
                         table.join<Table<*>>(prop.name, JoinType.INNER)
                     }
-                joinedExpr.get<Expression<Any?>>(prop.targetType.idProp.name)
+                joinedExpr.get(prop.targetType.idProp.name)
             } else {
-                table.get<Expression<Any?>>(prop.name)
+                table.get(prop.name)
             }
 
         @JvmStatic

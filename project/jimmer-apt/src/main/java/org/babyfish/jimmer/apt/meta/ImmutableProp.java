@@ -452,11 +452,6 @@ public class ImmutableProp implements BaseProp {
     }
 
     @Override
-    public boolean isView() {
-        return getIdViewBaseProp() != null || getManyToManyViewBaseProp() != null;
-    }
-
-    @Override
     public boolean isList() {
         return isList;
     }
@@ -466,7 +461,6 @@ public class ImmutableProp implements BaseProp {
         return entityLevel ? isEntityAssociation : isAssociation;
     }
 
-    @Override
     public boolean isRecursive() {
         return context.isSubType(
                 elementType,
@@ -756,6 +750,7 @@ public class ImmutableProp implements BaseProp {
         return _idViewBaseProp = baseProp;
     }
 
+    @Override
     public ImmutableProp getManyToManyViewBaseProp() {
         if (manyToManyViewBasePropResolved) {
             return _manyToManyViewBaseProp;

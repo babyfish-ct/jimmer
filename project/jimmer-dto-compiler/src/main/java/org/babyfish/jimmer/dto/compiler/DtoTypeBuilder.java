@@ -17,6 +17,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Token bodyStart;
 
+    final List<Anno> annotations;
+
     final Set<DtoTypeModifier> modifiers;
 
     final List<Token> superNames;
@@ -49,6 +51,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             T baseType,
             DtoParser.DtoBodyContext body,
             Token name,
+            List<DtoParser.AnnotationContext> annotations,
             Set<DtoTypeModifier> modifiers,
             List<Token> superNames,
             P recursiveBaseProp,
@@ -59,6 +62,17 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         this.ctx = ctx;
         this.name = name;
         this.bodyStart = body.start;
+        if (annotations.isEmpty()) {
+            this.annotations = Collections.emptyList();
+        } else {
+            List<Anno> parsedAnnotations = new ArrayList<>(annotations.size());
+            AnnoParser parser = new AnnoParser(ctx);
+            for (DtoParser.AnnotationContext annotation : annotations) {
+                parsedAnnotations.add(parser.parse(annotation));
+            }
+            parsedAnnotations = Collections.unmodifiableList(parsedAnnotations);
+            this.annotations = parsedAnnotations;
+        }
         this.modifiers = modifiers;
         this.superNames = superNames;
         this.recursiveBaseProp = recursiveBaseProp;
@@ -255,7 +269,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     private boolean isAutoScalar(P baseProp) {
         return !baseProp.isFormula() &&
                 !baseProp.isTransient() &&
-                !baseProp.isView() &&
+                baseProp.getManyToManyViewBaseProp() == null &&
                 !baseProp.isList() &&
                 ctx.getTargetType(baseProp) == null;
     }
@@ -277,6 +291,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
         dtoType = new DtoType<>(
                 baseType,
+                annotations,
                 modifiers.contains(DtoTypeModifier.INPUT),
                 name != null ? name.getText() : null,
                 ctx.getDtoFilePath()
@@ -352,13 +367,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
         }
 
-        List<AbstractProp> props;
-        if (superProps.isEmpty()) {
-            props = new ArrayList<>(declaredProps.values());
-        } else {
-            props = new ArrayList<>();
-            props.addAll(superProps.values());
-            props.addAll(declaredProps.values());
+        List<AbstractProp> props = new ArrayList<>();
+        for (AbstractProp prop : superProps.values()) {
+            if (prop instanceof DtoProp<?, ?>) {
+                props.add(prop);
+            }
+        }
+        for (AbstractProp prop : declaredProps.values()) {
+            if (prop instanceof DtoProp<?, ?>) {
+                props.add(prop);
+            }
+        }
+        for (AbstractProp prop : superProps.values()) {
+            if (prop instanceof UserProp) {
+                props.add(prop);
+            }
+        }
+        for (AbstractProp prop : declaredProps.values()) {
+            if (prop instanceof UserProp) {
+                props.add(prop);
+            }
         }
 
         validateUnusedNegativePropTokens();
