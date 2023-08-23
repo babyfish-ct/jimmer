@@ -852,6 +852,12 @@ public class DtoCompilerTest {
 
         @Nullable
         @Override
+        public BaseProp getIdViewBaseProp() {
+            return null;
+        }
+
+        @Nullable
+        @Override
         public BaseProp getManyToManyViewBaseProp() {
             return null;
         }
