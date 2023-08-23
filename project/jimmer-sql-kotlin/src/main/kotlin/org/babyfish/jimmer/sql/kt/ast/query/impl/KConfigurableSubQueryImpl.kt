@@ -21,10 +21,10 @@ internal open abstract class KConfigurableSubQueryImpl<R>(
         override fun limit(limit: Int): NonNull<R> =
             NonNull(javaSubQuery.limit(limit))
 
-        override fun offset(offset: Int): NonNull<R> =
+        override fun offset(offset: Long): NonNull<R> =
             NonNull(javaSubQuery.offset(offset))
 
-        override fun limit(limit: Int?, offset: Int?): NonNull<R> =
+        override fun limit(limit: Int, offset: Long): NonNull<R> =
             NonNull(javaSubQuery.limit(limit, offset))
 
         override fun distinct(): NonNull<R> =
@@ -71,10 +71,10 @@ internal open abstract class KConfigurableSubQueryImpl<R>(
         override fun limit(limit: Int): Nullable<R> =
             Nullable(javaSubQuery.limit(limit))
 
-        override fun offset(offset: Int): Nullable<R> =
+        override fun offset(offset: Long): Nullable<R> =
             Nullable(javaSubQuery.offset(offset))
 
-        override fun limit(limit: Int?, offset: Int?): Nullable<R> =
+        override fun limit(limit: Int, offset: Long): Nullable<R> =
             Nullable(javaSubQuery.limit(limit, offset))
 
         override fun distinct(): Nullable<R> =

@@ -56,7 +56,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -102,7 +102,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -148,7 +148,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -195,7 +195,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -269,7 +269,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                     "order by tb_1_.NAME asc " +
                                     "limit ?, ?"
                     );
-                    ctx.variables(1, 2);
+                    ctx.variables(1L, 2);
                     ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                 }
         );
@@ -325,7 +325,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                         ") core__ where rownum <= ?" +
                                     ") limited__ where rn__ > ?"
                     );
-                    ctx.variables(3, 1);
+                    ctx.variables(3L, 1L);
                     ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                 }
         );
@@ -352,7 +352,7 @@ public class FluentPagingTest extends AbstractQueryTest {
                                     "order by tb_1_.NAME asc" +
                                     ") core__ where rownum <= ?"
                     );
-                    ctx.variables(2);
+                    ctx.variables(2L);
                     ctx.rows(Arrays.asList("Effective TypeScript", "GraphQL in Action"));
                 }
         );

@@ -85,7 +85,21 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     @Override
-    public ConfigurableRootQuery<T, R> limit(@Nullable Integer limit, @Nullable Integer offset) {
+    public ConfigurableRootQuery<T, R> limit(int limit) {
+        return limitImpl(limit, null);
+    }
+
+    @Override
+    public ConfigurableRootQuery<T, R> offset(long offset) {
+        return limitImpl(null, offset);
+    }
+
+    @Override
+    public ConfigurableRootQuery<T, R> limit(int limit, long offset) {
+        return limitImpl(limit, offset);
+    }
+
+    private ConfigurableRootQuery<T, R> limitImpl(@Nullable Integer limit, @Nullable Long offset) {
         TypedQueryData data = getData();
         if (limit == null) {
             limit = data.limit;

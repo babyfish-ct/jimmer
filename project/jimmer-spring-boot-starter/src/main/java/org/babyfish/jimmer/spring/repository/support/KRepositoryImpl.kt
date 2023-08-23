@@ -54,7 +54,13 @@ open class KRepositoryImpl<E: Any, ID: Any> (
     }
 
     override fun pager(pageable: Pageable): KRepository.Pager =
-        PagerImpl(pageable.pageNumber, pageable.pageSize)
+        if (pageable.isUnpaged) {
+            PagerImpl(0, 0)
+        } else {
+            PagerImpl(
+                pageable.pageNumber, pageable.pageSize
+            )
+        }
 
     override fun findNullable(id: ID, fetcher: Fetcher<E>?): E? =
         if (fetcher !== null) {
@@ -121,7 +127,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         sql.createQuery(entityType) {
             orderBy(pageable.sort)
             select(table.fetch(fetcher))
-        }.fetchPage(pageable.pageNumber, pageable.pageSize)
+        }.fetchPage(pageable)
 
     override fun count(): Long =
         sql.createQuery(entityType) {
@@ -213,9 +219,9 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
         override fun findAll(pageable: Pageable): Page<V> =
             sql.createQuery(entityType) {
-                orderBy(pageable.sort)
+                orderBy(pageable?.sort)
                 select(table.fetch(viewType))
-            }.fetchPage(pageable.pageNumber, pageable.pageSize)
+            }.fetchPage(pageable)
 
         override fun findAll(pageIndex: Int, pageSize: Int): Page<V> =
             sql.createQuery(entityType) {

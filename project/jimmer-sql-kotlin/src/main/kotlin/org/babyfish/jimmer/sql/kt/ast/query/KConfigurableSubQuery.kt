@@ -4,9 +4,9 @@ interface KConfigurableSubQuery<R> : KTypedSubQuery<R> {
 
     fun limit(limit: Int): KConfigurableSubQuery<R>
 
-    fun offset(offset: Int): KConfigurableSubQuery<R>
+    fun offset(offset: Long): KConfigurableSubQuery<R>
 
-    fun limit(limit: Int?, offset: Int?): KConfigurableSubQuery<R>
+    fun limit(limit: Int, offset: Long): KConfigurableSubQuery<R>
 
     fun distinct(): KConfigurableSubQuery<R>
 
@@ -14,9 +14,9 @@ interface KConfigurableSubQuery<R> : KTypedSubQuery<R> {
 
         override fun limit(limit: Int): NonNull<R>
 
-        override fun offset(offset: Int): NonNull<R>
+        override fun offset(offset: Long): NonNull<R>
 
-        override fun limit(limit: Int?, offset: Int?): NonNull<R>
+        override fun limit(limit: Int, offset: Long): NonNull<R>
 
         override fun distinct(): NonNull<R>
     }
@@ -25,9 +25,9 @@ interface KConfigurableSubQuery<R> : KTypedSubQuery<R> {
 
         override fun limit(limit: Int): Nullable<R>
 
-        override fun offset(offset: Int): Nullable<R>
+        override fun offset(offset: Long): Nullable<R>
 
-        override fun limit(limit: Int?, offset: Int?): Nullable<R>
+        override fun limit(limit: Int, offset: Long): Nullable<R>
 
         override fun distinct(): Nullable<R>
     }

@@ -5,11 +5,10 @@ import java.sql.Connection
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
-    fun count(con: Connection? = null): Int =
+    fun count(con: Connection? = null): Long =
         reselect { select(org.babyfish.jimmer.sql.kt.ast.expression.count(table)) }
             .withoutSortingAndPaging()
             .execute(con)[0]
-            .toInt()
 
     @NewChain
     fun <X> reselect(
@@ -23,10 +22,10 @@ interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
     fun limit(limit: Int): KConfigurableRootQuery<E, R>
 
     @NewChain
-    fun offset(offset: Int): KConfigurableRootQuery<E, R>
+    fun offset(offset: Long): KConfigurableRootQuery<E, R>
 
     @NewChain
-    fun limit(limit: Int?, offset: Int?): KConfigurableRootQuery<E, R>
+    fun limit(limit: Int, offset: Long): KConfigurableRootQuery<E, R>
 
     @NewChain
     fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R>

@@ -32,12 +32,12 @@ internal class KConfigurableRootQueryImpl<E: Any, R>(
         KConfigurableRootQueryImpl(javaQuery.distinct())
 
     override fun limit(limit: Int): KConfigurableRootQuery<E, R> =
-        limit(limit, null)
+        KConfigurableRootQueryImpl(javaQuery.limit(limit))
 
-    override fun offset(offset: Int): KConfigurableRootQuery<E, R> =
-        limit(null, offset)
+    override fun offset(offset: Long): KConfigurableRootQuery<E, R> =
+        KConfigurableRootQueryImpl(javaQuery.offset(offset))
 
-    override fun limit(limit: Int?, offset: Int?): KConfigurableRootQuery<E, R> =
+    override fun limit(limit: Int, offset: Long): KConfigurableRootQuery<E, R> =
         KConfigurableRootQueryImpl(javaQuery.limit(limit, offset))
 
     override fun withoutSortingAndPaging(): KConfigurableRootQuery<E, R> =

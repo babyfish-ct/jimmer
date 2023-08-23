@@ -57,7 +57,7 @@ public class PagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -101,7 +101,7 @@ public class PagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -146,7 +146,7 @@ public class PagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -192,7 +192,7 @@ public class PagingTest extends AbstractQueryTest {
                                     "limit ? " +
                                     "offset ?"
                     );
-                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20);
+                    ctx.variables(new BigDecimal(20), new BigDecimal(30), 10, 20L);
                 }
         );
     }
@@ -257,7 +257,7 @@ public class PagingTest extends AbstractQueryTest {
                                     "order by tb_1_.NAME asc " +
                                     "limit ?, ?"
                     );
-                    ctx.variables(1, 2);
+                    ctx.variables(1L, 2);
                     ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                 }
         );
@@ -283,7 +283,7 @@ public class PagingTest extends AbstractQueryTest {
                                         ") core__ where rownum <= ?" +
                                     ") limited__ where rn__ > ?"
                     );
-                    ctx.variables(3, 1);
+                    ctx.variables(3L, 1L);
                     ctx.rows(Arrays.asList("GraphQL in Action", "Learning GraphQL"));
                 }
         );
@@ -306,7 +306,7 @@ public class PagingTest extends AbstractQueryTest {
                                     "order by tb_1_.NAME asc" +
                                     ") core__ where rownum <= ?"
                     );
-                    ctx.variables(2);
+                    ctx.variables(2L);
                     ctx.rows(Arrays.asList("Effective TypeScript", "GraphQL in Action"));
                 }
         );
@@ -569,9 +569,9 @@ public class PagingTest extends AbstractQueryTest {
 
         final List<E> entities;
 
-        final int totalRowCount;
+        final long totalRowCount;
 
-        private Page(List<E> entities, int totalRowCount) {
+        private Page(List<E> entities, long totalRowCount) {
             this.entities = entities;
             this.totalRowCount = totalRowCount;
         }

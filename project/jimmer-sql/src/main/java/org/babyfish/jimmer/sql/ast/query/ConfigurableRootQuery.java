@@ -9,16 +9,15 @@ import java.util.function.BiFunction;
 
 public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQuery<R> {
 
-    default int count() {
+    default long count() {
         return count(null);
     }
 
-    default int count(Connection con) {
+    default long count(Connection con) {
         return reselect((q, t) -> q.select(t.count()))
             .withoutSortingAndPaging()
             .execute(con)
-            .get(0)
-            .intValue();
+            .get(0);
     }
 
     default boolean exists() {
@@ -26,7 +25,7 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
     }
 
     default boolean exists(Connection con) {
-        return limit(1, 0).execute(con).size() != 0;
+        return !limit(1, 0L).execute(con).isEmpty();
     }
 
     @NewChain
@@ -38,17 +37,13 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
     ConfigurableRootQuery<T, R> distinct();
 
     @NewChain
-    default ConfigurableRootQuery<T, R> limit(int limit) {
-        return limit(limit, null);
-    }
+    ConfigurableRootQuery<T, R> limit(int limit);
 
     @NewChain
-    default ConfigurableRootQuery<T, R> offset(int offset) {
-        return limit(null, offset);
-    }
+    ConfigurableRootQuery<T, R> offset(long offset);
 
     @NewChain
-    ConfigurableRootQuery<T, R> limit(@Nullable Integer limit, @Nullable Integer offset);
+    ConfigurableRootQuery<T, R> limit(int limit, long offset);
 
     @NewChain
     ConfigurableRootQuery<T, R> withoutSortingAndPaging();

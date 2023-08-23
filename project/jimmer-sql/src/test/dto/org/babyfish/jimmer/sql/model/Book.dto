@@ -11,7 +11,7 @@ abstract Key {
 }
 
 @Shallow
-output BookView : Key {
+BookView : Key {
 
     @Shallow
     id
@@ -32,7 +32,7 @@ output BookView : Key {
     }
 }
 
-input BookSpecification {
+input-only BookSpecification {
     #allScalars(Book)?
 
     @Job(value = [
@@ -50,13 +50,13 @@ input BookSpecification {
     tag7: LocalDateTime
 }
 
-input BookInput {
+input-only BookInput {
     #allScalars
     id(store)!
     id(authors) as authorIds
 }
 
-input CompositeBookInput {
+input-only CompositeBookInput {
     #allScalars
     store! {
         #allScalars

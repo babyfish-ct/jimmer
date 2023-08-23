@@ -13,7 +13,7 @@ public class PaginationContextImpl implements PaginationContext {
     
     private final int limit;
     
-    private final int offset;
+    private final long offset;
     
     private final String originSql;
     
@@ -34,7 +34,7 @@ public class PaginationContextImpl implements PaginationContext {
     public PaginationContextImpl(
             SqlFormatter formatter,
             int limit,
-            int offset,
+            long offset,
             String originSql,
             List<Object> originVariables,
             List<Integer> originVariablePositions,
@@ -59,7 +59,7 @@ public class PaginationContextImpl implements PaginationContext {
     }
 
     @Override
-    public int getOffset() {
+    public long getOffset() {
         return offset;
     }
 

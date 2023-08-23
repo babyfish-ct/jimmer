@@ -103,9 +103,8 @@ interface KRepository<E: Any, ID: Any> : PagingAndSortingRepository<E, ID> {
     fun save(input: Input<E>): E =
         save(input.toEntity(), SaveMode.UPSERT).modifiedEntity
 
-    @Suppress("UNCHECKED_CAST")
     override fun <S: E> save(entity: S): S =
-        save(entity, SaveMode.UPSERT).modifiedEntity as S
+        save(entity, SaveMode.UPSERT).modifiedEntity
 
     fun save(input: Input<E>, mode: SaveMode): KSimpleSaveResult<E> =
         save(input.toEntity(), mode)

@@ -10,16 +10,16 @@ fun <E, P> KConfigurableRootQuery<*, E>.fetchPage(
     con: Connection? = null,
     pageFactory: (
         entities: List<E>,
-        totalCount: Int,
+        totalCount: Long,
         queryImplementor: KConfigurableRootQueryImplementor<*, E>
     ) -> P
 ): P {
     val queryImplementor = this as KConfigurableRootQueryImplementor<*, E>
-    if (pageSize == 0) {
+    if (pageSize == 0 || pageSize == -1 || pageSize == Int.MAX_VALUE) {
         val entities = this.execute(con)
         return pageFactory(
             entities,
-            entities.size,
+            entities.size.toLong(),
             queryImplementor
         )
     }
@@ -31,10 +31,10 @@ fun <E, P> KConfigurableRootQuery<*, E>.fetchPage(
         )
     }
 
-    val longOffset = pageIndex.toLong() * pageSize
-    require(longOffset <= Int.MAX_VALUE - pageSize) { "offset is too big" }
+    val offset = pageIndex.toLong() * pageSize
+    require(offset <= Long.MAX_VALUE - pageSize) { "offset is too big" }
     val total = this.count(con)
-    if (longOffset >= total) {
+    if (offset >= total) {
         return pageFactory(
             emptyList(),
             0,
@@ -43,26 +43,26 @@ fun <E, P> KConfigurableRootQuery<*, E>.fetchPage(
     }
 
     val reversedQuery = this
-        .takeIf { longOffset + pageSize / 2 > total / 2 }
+        .takeIf { offset + pageSize / 2 > total / 2 }
         ?.reverseSorting()
 
     val entities: List<E> =
         if (reversedQuery != null) {
-            var offset = (total - longOffset - pageSize).toInt()
-            val limit = if (offset < 0) {
-                (pageSize + offset).also {
-                    offset = 0
+            var reversedOffset = total - offset - pageSize
+            val limit = if (reversedOffset < 0) {
+                (pageSize + reversedOffset.toInt()).also {
+                    reversedOffset = 0
                 }
             } else {
                 pageSize
             }
             reversedQuery
-                .limit(limit, offset)
+                .limit(limit, reversedOffset)
                 .execute(con)
                 .reversed()
         } else {
             this
-                .limit(pageSize, longOffset.toInt())
+                .limit(pageSize, offset)
                 .execute(con)
         }
     return pageFactory(

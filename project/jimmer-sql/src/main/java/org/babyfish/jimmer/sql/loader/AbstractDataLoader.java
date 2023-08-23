@@ -72,7 +72,7 @@ public abstract class AbstractDataLoader {
 
     private final int limit;
 
-    private final int offset;
+    private final long offset;
 
     private final TransientResolver<?, ?> resolver;
 

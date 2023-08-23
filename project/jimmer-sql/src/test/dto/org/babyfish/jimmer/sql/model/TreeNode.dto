@@ -1,11 +1,11 @@
-output input RecursiveTree {
+input RecursiveTree {
     name
     childNodes {
         name
     }* // '*' means recursive
 }
 
-output input TreeNodeInput {
+input TreeNodeInput {
     #allScalars
     id(parent)
 }

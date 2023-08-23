@@ -30,7 +30,7 @@ BookView : Key {
     }
 }
 
-input BookSpecification {
+input-only BookSpecification {
 
     #allScalars(Book)?
 
@@ -49,13 +49,13 @@ input BookSpecification {
     tag7: LocalDateTime
 }
 
-input BookInput {
+input-only BookInput {
     #allScalars
     id(store)!
     id(authors) as authorIds
 }
 
-input CompositeBookInput {
+input-only CompositeBookInput {
     #allScalars
     store! {
         #allScalars

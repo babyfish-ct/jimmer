@@ -197,6 +197,6 @@ class PagingTest : AbstractQueryTest() {
 
     data class Page<E>(
         val entities: List<E>,
-        val totalCount: Int
+        val totalCount: Long
     )
 }

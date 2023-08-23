@@ -80,7 +80,21 @@ public class ConfigurableSubQueryImpl<R>
     }
 
     @Override
-    public ConfigurableSubQuery<R> limit(@Nullable Integer limit, @Nullable Integer offset) {
+    public ConfigurableSubQuery<R> limit(int limit) {
+        return limitImpl(limit, null);
+    }
+
+    @Override
+    public ConfigurableSubQuery<R> offset(long offset) {
+        return limitImpl(null, offset);
+    }
+
+    @Override
+    public ConfigurableSubQuery<R> limit(int limit, long offset) {
+        return limitImpl(limit, offset);
+    }
+
+    private ConfigurableSubQuery<R> limitImpl(@Nullable Integer limit, @Nullable Long offset) {
         TypedQueryData data = getData();
         if (limit == null) {
             limit = data.limit;

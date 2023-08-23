@@ -8,7 +8,7 @@ public class OracleDialect implements Dialect {
 
     @Override
     public void paginate(PaginationContext ctx) {
-        int offset = ctx.getOffset();
+        long offset = ctx.getOffset();
         if (offset == 0) {
             limit(ctx);
         } else {
@@ -28,7 +28,7 @@ public class OracleDialect implements Dialect {
     }
 
     private void limit(PaginationContext ctx) {
-        int offset = ctx.getOffset();
+        long offset = ctx.getOffset();
         int limit = ctx.getLimit();
         String rnProjection = offset > 0 ? ", rownum rn__" : "";
         ctx

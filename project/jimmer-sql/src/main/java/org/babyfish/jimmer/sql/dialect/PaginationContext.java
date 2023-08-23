@@ -4,7 +4,7 @@ public interface PaginationContext {
 
     int getLimit();
 
-    int getOffset();
+    long getOffset();
 
     boolean isIdOnly();
 

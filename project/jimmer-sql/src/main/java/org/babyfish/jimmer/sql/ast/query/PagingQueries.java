@@ -29,7 +29,7 @@ public class PagingQueries {
     ) {
         ConfigurableRootQueryImplementor<?, E> queryImplementor =
                 (ConfigurableRootQueryImplementor<?, E>) query;
-        if (pageSize == 0) {
+        if (pageSize == 0 || pageSize == -1 || pageSize == Integer.MAX_VALUE) {
             List<E> entities = query.execute(con);
             return pageFactory.create(
                     entities,
@@ -45,12 +45,12 @@ public class PagingQueries {
             );
         }
 
-        long longOffset = (long)pageIndex * pageSize;
-        if (longOffset > Integer.MAX_VALUE - pageSize) {
+        long offset = (long)pageIndex * pageSize;
+        if (offset > Long.MAX_VALUE - pageSize) {
             throw new IllegalArgumentException("offset is too big");
         }
-        int total = query.count(con);
-        if (longOffset >= total) {
+        long total = query.count(con);
+        if (offset >= total) {
             return pageFactory.create(
                     Collections.emptyList(),
                     0,
@@ -59,27 +59,27 @@ public class PagingQueries {
         }
 
         ConfigurableRootQuery<?, E> reversedQuery = null;
-        if (longOffset + pageSize / 2 > total / 2) {
+        if (offset + pageSize / 2 > total / 2) {
             reversedQuery = query.reverseSorting();
         }
 
         List<E> entities;
         if (reversedQuery != null) {
             int limit;
-            int offset = (int)(total - longOffset - pageSize);
-            if (offset < 0) {
-                limit = pageSize + offset;
-                offset = 0;
+            long reversedOffset = (int)(total - offset - pageSize);
+            if (reversedOffset < 0) {
+                limit = pageSize + (int)reversedOffset;
+                reversedOffset = 0;
             } else {
                 limit = pageSize;
             }
             entities = reversedQuery
-                    .limit(limit, offset)
+                    .limit(limit, reversedOffset)
                     .execute(con);
             Collections.reverse(entities);
         } else {
             entities = query
-                    .limit(pageSize, (int) longOffset)
+                    .limit(pageSize, offset)
                     .execute(con);
         }
         return pageFactory.create(
@@ -93,7 +93,7 @@ public class PagingQueries {
     public interface PageFactory<E, P> {
         P create(
                 List<E> entities,
-                int totalCount,
+                long totalCount,
                 ConfigurableRootQueryImplementor<?, E> queryImplementor
         );
     }

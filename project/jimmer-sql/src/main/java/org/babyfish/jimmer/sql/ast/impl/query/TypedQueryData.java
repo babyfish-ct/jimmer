@@ -25,7 +25,7 @@ class TypedQueryData {
 
     final int limit;
 
-    final int offset;
+    final long offset;
 
     final boolean withoutSortingAndPaging;
 
@@ -53,7 +53,7 @@ class TypedQueryData {
             List<Selection<?>> oldSelections,
             boolean distinct,
             int limit,
-            int offset,
+            long offset,
             boolean withoutSortingAndPaging,
             boolean reverseSorting,
             boolean forUpdate
@@ -94,7 +94,7 @@ class TypedQueryData {
         );
     }
 
-    public TypedQueryData limit(int limit, int offset) {
+    public TypedQueryData limit(int limit, long offset) {
         return new TypedQueryData(
                 selections,
                 oldSelections,

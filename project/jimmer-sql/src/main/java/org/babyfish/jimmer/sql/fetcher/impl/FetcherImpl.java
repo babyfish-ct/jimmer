@@ -43,6 +43,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     private Boolean isSimpleFetcher;
 
+    private transient int hash;
+
     public FetcherImpl(Class<E> javaClass) {
         this(javaClass, null);
     }
@@ -505,6 +507,32 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             return this;
         }
         return createFetcher(prop, loader);
+    }
+
+    @Override
+    public int hashCode() {
+        int h = hash;
+        if (h == 0) {
+            h = immutableType.hashCode() ^ getFieldMap().hashCode();
+            if (h == 0) {
+                h = -1;
+            }
+            this.hash = h;
+        }
+        return h;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Fetcher<?>)) {
+            return false;
+        }
+        Fetcher<?> other = (Fetcher<?>) obj;
+        return this.immutableType == other.getImmutableType() &&
+                this.getFieldMap().equals(other.getFieldMap());
     }
 
     @Override

@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
 
+import java.util.Objects;
+
 class FieldImpl implements Field {
 
     private final ImmutableType entityType;
@@ -117,6 +119,41 @@ class FieldImpl implements Field {
     @Override
     public boolean isImplicit() {
         return implicit;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FieldImpl field = (FieldImpl) o;
+
+        if (batchSize != field.batchSize) return false;
+        if (limit != field.limit) return false;
+        if (offset != field.offset) return false;
+        if (isSimpleField != field.isSimpleField) return false;
+        if (implicit != field.implicit) return false;
+        if (!entityType.equals(field.entityType)) return false;
+        if (!prop.equals(field.prop)) return false;
+        if (!Objects.equals(filter, field.filter)) return false;
+        if (!Objects.equals(recursionStrategy, field.recursionStrategy))
+            return false;
+        return Objects.equals(childFetcher, field.childFetcher);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = entityType.hashCode();
+        result = 31 * result + prop.hashCode();
+        result = 31 * result + (filter != null ? filter.hashCode() : 0);
+        result = 31 * result + batchSize;
+        result = 31 * result + limit;
+        result = 31 * result + offset;
+        result = 31 * result + (recursionStrategy != null ? recursionStrategy.hashCode() : 0);
+        result = 31 * result + (childFetcher != null ? childFetcher.hashCode() : 0);
+        result = 31 * result + (isSimpleField ? 1 : 0);
+        result = 31 * result + (implicit ? 1 : 0);
+        return result;
     }
 
     @Override

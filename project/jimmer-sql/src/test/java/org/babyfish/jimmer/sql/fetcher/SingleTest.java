@@ -83,13 +83,13 @@ public class SingleTest extends AbstractQueryTest {
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc limit ? offset ?"
-                    ).variables(manningId, 3, 1);
+                    ).variables(manningId, 3, 1L);
                     ctx.statement(2).sql(
                             "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID = ? " +
                                     "order by tb_1_.NAME asc, tb_1_.EDITION desc limit ? offset ?"
-                    ).variables(oreillyId, 3, 1);
+                    ).variables(oreillyId, 3, 1L);
                     ctx.rows(System.out::println);
                 }
         );
