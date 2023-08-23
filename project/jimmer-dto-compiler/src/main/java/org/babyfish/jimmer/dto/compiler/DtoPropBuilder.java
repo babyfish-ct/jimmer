@@ -23,7 +23,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final List<Anno> annotations;
 
-    private final boolean isOptional;
+    private final Mandatory mandatory;
 
     private final String funcName;
 
@@ -35,7 +35,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             DtoTypeBuilder<T, P> parent,
             P baseProp,
             int line,
-            boolean optional
+            Mandatory mandatory
     ) {
         this.parent = parent;
         this.baseProp = baseProp;
@@ -45,7 +45,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 baseProp.getName();
         this.baseLine = line;
         this.annotations = Collections.emptyList();
-        this.isOptional = optional || parent.ctx.isImplicit(baseProp);
+        if (mandatory == Mandatory.DEFAULT && parent.ctx.isImplicitId(baseProp, parent.modifiers)) {
+            this.mandatory = Mandatory.OPTIONAL;
+        } else {
+            this.mandatory = mandatory;
+        }
         this.funcName = null;
         this.targetTypeBuilder = null;
         this.recursive = false;
@@ -168,6 +172,26 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 );
             }
         }
+        if (prop.required != null) {
+            if (!parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                throw ctx.exception(
+                        prop.required.getLine(),
+                        "Illegal required modifier '!', it can only be used in inputOnlyType"
+                );
+            }
+            if ("flat".equals(funcName)) {
+                throw ctx.exception(
+                        prop.required.getLine(),
+                        "Illegal required modifier '!', it is not allowed for the function `flat`"
+                );
+            }
+            if (!baseProp.isNullable()) {
+                throw ctx.exception(
+                        prop.required.getLine(),
+                        "Illegal required modifier '!' because the base property is already nonnull"
+                );
+            }
+        }
 
         if (prop.recursive != null) {
             if (!baseProp.isRecursive()) {
@@ -186,6 +210,16 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         "Illegal symbol \"" +
                                 prop.recursive.getText() +
                                 "\", the flat property \"" +
+                                baseProp.getName() +
+                                "\" cannot not recursive"
+                );
+            }
+            if (prop.required != null) {
+                throw ctx.exception(
+                        prop.recursive.getLine(),
+                        "Illegal symbol \"" +
+                                prop.recursive.getText() +
+                                "\", the required property \"" +
                                 baseProp.getName() +
                                 "\" cannot not recursive"
                 );
@@ -217,6 +251,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     prop.annotations,
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
                             Collections.singleton(DtoTypeModifier.INPUT) :
+                            parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY) ?
+                            Collections.singleton(DtoTypeModifier.INPUT_ONLY) :
                             Collections.emptySet(),
                     Collections.emptyList(),
                     prop.recursive != null ? baseProp : null,
@@ -234,7 +270,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
         this.baseProp = baseProp;
         this.alias = alias;
-        this.isOptional = ctx.isImplicit(baseProp) || prop.recursive != null || prop.optional != null;
+        if (prop.required != null) {
+            this.mandatory = Mandatory.REQUIRED;
+        } else if (prop.optional != null || prop.recursive != null || ctx.isImplicitId(baseProp, parent.modifiers)) {
+            this.mandatory = Mandatory.OPTIONAL;
+        } else {
+            this.mandatory = Mandatory.DEFAULT;
+        }
         this.funcName = funcName;
         this.targetTypeBuilder = targetTypeBuilder;
         this.recursive = prop.recursive != null;
@@ -264,6 +306,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     @Override
     public @Nullable String getFuncName() {
         return funcName;
+    }
+
+    @Override
+    public Mandatory getMandatory() {
+        return mandatory;
     }
 
     @Override
@@ -347,7 +394,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 aliasLine,
                 annotations,
                 targetTypeBuilder != null ? targetTypeBuilder.build() : null,
-                isOptional,
+                mandatory,
                 funcName,
                 recursive
         );

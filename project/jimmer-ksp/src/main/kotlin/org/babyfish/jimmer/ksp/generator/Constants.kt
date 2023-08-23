@@ -37,6 +37,7 @@ internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()
+internal val VIEWABLE_INPUT_CLASS_NAME = ViewableInput::class.asClassName()
 internal val VIEW_METADATA_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
     "ViewMetadata"

@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.dto.compiler;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class TypeRef {
 
@@ -45,6 +43,8 @@ public class TypeRef {
     public static final String TN_MAP = "Map";
 
     public static final String TN_MUTABLE_MAP = "MutableMap";
+
+    public static final Set<String> TNS_WITH_DEFAULT_VALUE;
 
     private final String typeName;
 
@@ -157,5 +157,30 @@ public class TypeRef {
             }
             return typeRef.toString();
         }
+    }
+
+    static {
+        Set<String> set = new HashSet<>();
+        set.add(TN_BOOLEAN);
+        set.add(TN_CHAR);
+        set.add(TN_BYTE);
+        set.add(TN_SHORT);
+        set.add(TN_INT);
+        set.add(TN_LONG);
+        set.add(TN_FLOAT);
+        set.add(TN_DOUBLE);
+        set.add(TN_STRING);
+        set.add(TN_ARRAY);
+        set.add(TN_ITERABLE);
+        set.add(TN_MUTABLE_ITERABLE);
+        set.add(TN_COLLECTION);
+        set.add(TN_MUTABLE_COLLECTION);
+        set.add(TN_LIST);
+        set.add(TN_MUTABLE_LIST);
+        set.add(TN_SET);
+        set.add(TN_MUTABLE_SET);
+        set.add(TN_MAP);
+        set.add(TN_MUTABLE_MAP);
+        TNS_WITH_DEFAULT_VALUE = Collections.unmodifiableSet(set);
     }
 }

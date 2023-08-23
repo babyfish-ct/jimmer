@@ -8,19 +8,16 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
-import org.babyfish.jimmer.dto.compiler.AbstractProp
-import org.babyfish.jimmer.dto.compiler.Anno
+import org.babyfish.jimmer.Input
+import org.babyfish.jimmer.View
+import org.babyfish.jimmer.ViewableInput
+import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.AnnoValue
 import org.babyfish.jimmer.dto.compiler.Anno.ArrayValue
 import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
 import org.babyfish.jimmer.dto.compiler.Anno.LiteralValue
 import org.babyfish.jimmer.dto.compiler.Anno.Value
-import org.babyfish.jimmer.dto.compiler.DtoProp
-import org.babyfish.jimmer.dto.compiler.DtoType
-import org.babyfish.jimmer.dto.compiler.TypeRef
-import org.babyfish.jimmer.dto.compiler.UserProp
 import org.babyfish.jimmer.ksp.annotation
-import org.babyfish.jimmer.ksp.generator.DtoGenerator.Companion.add
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
 import org.jetbrains.annotations.NotNull
@@ -175,17 +172,26 @@ class DtoGenerator private constructor(
     private fun addMembers(allFiles: List<KSFile>) {
 
         typeBuilder.addSuperinterface(
-            (if (dtoType.isInput) INPUT_CLASS_NAME else VIEW_CLASS_NAME).parameterizedBy(
+            when {
+                dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY) ->
+                    Input::class
+                dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
+                    ViewableInput::class
+                else ->
+                    View::class
+            }.asClassName().parameterizedBy(
                 dtoType.baseType.className
             )
         )
 
-        addMetadata()
-
+        val isInputOnly = dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)
+        if (!isInputOnly) {
+            addMetadata()
+        }
         addPrimaryConstructor()
-        addConverterConstructor()
-
-        addLateInitProperties()
+        if (!isInputOnly) {
+            addConverterConstructor()
+        }
 
         addToEntity()
 
@@ -318,17 +324,16 @@ class DtoGenerator private constructor(
             )
         }
         for (userProp in dtoType.userProps) {
-            val defaultValue = defaultValue(userProp.typeRef)
-            if (defaultValue !== null) {
-                builder.addParameter(
-                    ParameterSpec
-                        .builder(userProp.alias, typeName(userProp.typeRef))
-                        .apply {
-                            defaultValue(defaultValue)
+            builder.addParameter(
+                ParameterSpec
+                    .builder(userProp.alias, typeName(userProp.typeRef))
+                    .apply {
+                        defaultValue(userProp.typeRef)?.let {
+                            defaultValue(it)
                         }
-                        .build()
-                )
-            }
+                    }
+                    .build()
+            )
         }
         typeBuilder.primaryConstructor(builder.build())
 
@@ -350,20 +355,18 @@ class DtoGenerator private constructor(
             )
         }
         for (prop in dtoType.userProps) {
-            if (defaultValue(prop.typeRef) !== null) {
-                typeBuilder.addProperty(
-                    PropertySpec
-                        .builder(prop.alias, typeName(prop.typeRef))
-                        .mutable(mutable)
-                        .initializer(prop.alias)
-                        .apply {
-                            for (anno in prop.annotations) {
-                                addAnnotation(annotationOf(anno))
-                            }
+            typeBuilder.addProperty(
+                PropertySpec
+                    .builder(prop.alias, typeName(prop.typeRef))
+                    .mutable(mutable)
+                    .initializer(prop.alias)
+                    .apply {
+                        for (anno in prop.annotations) {
+                            addAnnotation(annotationOf(anno))
                         }
-                        .build()
-                )
-            }
+                    }
+                    .build()
+            )
         }
     }
 
@@ -375,17 +378,16 @@ class DtoGenerator private constructor(
                 .addParameter("base", dtoType.baseType.className)
                 .apply {
                     for (userProp in dtoType.userProps) {
-                        val defaultValue = defaultValue(userProp.typeRef)
-                        if (defaultValue !== null) {
-                            addParameter(
-                                ParameterSpec
-                                    .builder(userProp.alias, typeName(userProp.typeRef))
-                                    .apply {
-                                        defaultValue(defaultValue)
+                        addParameter(
+                            ParameterSpec
+                                .builder(userProp.alias, typeName(userProp.typeRef))
+                                .apply {
+                                    defaultValue(userProp.typeRef)?.let {
+                                        defaultValue(it)
                                     }
-                                    .build()
-                            )
-                        }
+                                }
+                                .build()
+                        )
                     }
                 }
                 .apply {
@@ -524,9 +526,7 @@ class DtoGenerator private constructor(
                                         add(" ?: error(%S)", "\"base.${prop.basePath}\" cannot be null or unloaded")
                                     }
                                 } else {
-                                    if (defaultValue((prop as UserProp).typeRef) != null) {
-                                        addStatement("%N", prop.alias)
-                                    }
+                                    addStatement("%N", prop.alias)
                                 }
                             }
                             .unindent()
@@ -535,24 +535,6 @@ class DtoGenerator private constructor(
                 }
                 .build()
         )
-    }
-
-    private fun addLateInitProperties() {
-        for (userProp in dtoType.userProps) {
-            if (defaultValue(userProp.typeRef) == null) {
-                typeBuilder.addProperty(
-                    PropertySpec
-                        .builder(userProp.alias, typeName(userProp.typeRef), KModifier.LATEINIT)
-                        .mutable()
-                        .apply {
-                            for (anno in userProp.annotations) {
-                                addAnnotation(annotationOf(anno))
-                            }
-                        }
-                        .build()
-                )
-            }
-        }
     }
 
     private fun addToEntity() {
@@ -676,7 +658,7 @@ class DtoGenerator private constructor(
     }
 
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
-        val elementTypeName: TypeName = propElementName(prop.toTailProp())
+        val elementTypeName: TypeName = propElementName(prop)
         return if (prop.baseProp.isList) {
             LIST.parameterizedBy(elementTypeName)
         } else {
@@ -691,13 +673,14 @@ class DtoGenerator private constructor(
     }
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
-        val targetType = prop.targetType
+        val tailProp = prop.toTailProp()
+        val targetType = tailProp.targetType
         if (targetType !== null) {
             if (targetType.name === null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
-                if (prop.isNewTarget) {
-                    list.add(targetSimpleName(prop))
+                if (tailProp.isNewTarget) {
+                    list.add(targetSimpleName(tailProp))
                 }
                 return ClassName(
                     packageName(),
@@ -710,10 +693,10 @@ class DtoGenerator private constructor(
                 targetType.name!!
             )
         }
-        return if (prop.isIdOnly) {
-                prop.baseProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
+        return if (tailProp.isIdOnly) {
+                tailProp.baseProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
             } else {
-                prop.baseProp.targetTypeName(overrideNullable = false)
+                tailProp.baseProp.targetTypeName(overrideNullable = false)
             }
     }
 

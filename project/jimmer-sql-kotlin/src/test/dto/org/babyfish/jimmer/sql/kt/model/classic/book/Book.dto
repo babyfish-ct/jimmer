@@ -30,7 +30,8 @@ BookView : Key {
     }
 }
 
-BookSpecification {
+input BookSpecification {
+
     #allScalars(Book)?
 
     @Job(value = [
@@ -50,13 +51,13 @@ BookSpecification {
 
 input BookInput {
     #allScalars
-    id(store)
+    id(store)!
     id(authors) as authorIds
 }
 
 input CompositeBookInput {
     #allScalars
-    store {
+    store! {
         #allScalars
         -id
     }

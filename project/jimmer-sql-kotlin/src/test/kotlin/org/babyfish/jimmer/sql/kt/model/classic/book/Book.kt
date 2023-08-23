@@ -11,6 +11,7 @@ import javax.validation.constraints.PositiveOrZero
 interface Book {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
     @Key

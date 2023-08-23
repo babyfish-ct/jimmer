@@ -1,6 +1,20 @@
-input RecursiveTree {
+output input RecursiveTree {
     name
     childNodes {
         name
     }* // '*' means recursive
+}
+
+output input TreeNodeInput {
+    #allScalars
+    id(parent)
+}
+
+FlatTreeNode {
+    #allScalars
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars
+        }
+    }
 }

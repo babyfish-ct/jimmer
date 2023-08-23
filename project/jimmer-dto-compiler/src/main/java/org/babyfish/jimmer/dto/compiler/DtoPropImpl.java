@@ -4,6 +4,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.management.ThreadInfo;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,7 +26,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final DtoType<T, P> targetType;
 
-    private final boolean optional;
+    private final Mandatory mandatory;
 
     private final String funcName;
 
@@ -42,7 +43,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             int aliasLine,
             List<Anno> annotations,
             @Nullable DtoType<T, P> targetType,
-            boolean optional,
+            Mandatory mandatory,
             String funcName,
             boolean recursive
     ) {
@@ -53,7 +54,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = alias;
         this.aliasLine = aliasLine;
         this.targetType = targetType;
-        this.optional = optional;
+        this.mandatory = mandatory;
         this.funcName = funcName;
         this.recursive = recursive;
         this.basePath = baseProp.getName();
@@ -68,7 +69,13 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.aliasLine = next.getAliasLine();
         this.annotations = next.getAnnotations();
         this.targetType = next.getTargetType();
-        this.optional = head.isNullable() || next.isNullable();
+        if (head.isNullable() || next.isNullable()) {
+            this.mandatory = Mandatory.OPTIONAL;
+        } else if (head.getMandatory() == Mandatory.REQUIRED || next.getMandatory() == Mandatory.REQUIRED) {
+            this.mandatory = Mandatory.REQUIRED;
+        } else {
+            this.mandatory = Mandatory.DEFAULT;
+        }
         this.funcName = next.getFuncName();
         this.recursive = false;
         StringBuilder builder = new StringBuilder(baseProp.getName());
@@ -89,7 +96,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = baseProp.getName();
         this.aliasLine = original.getAliasLine();
         this.targetType = targetType;
-        this.optional = false;
+        this.mandatory = original.getMandatory();
         this.funcName = "flat";
         this.recursive = false;
         this.basePath = baseProp.getName();
@@ -139,7 +146,19 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     @Override
     public boolean isNullable() {
-        return optional || baseProp.isNullable();
+        switch (mandatory) {
+            case OPTIONAL:
+                return true;
+            case REQUIRED:
+                return false;
+            default:
+                return baseProp.isNullable();
+        }
+    }
+
+    @Override
+    public Mandatory getMandatory() {
+        return mandatory;
     }
 
     @Override
@@ -183,8 +202,10 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if (optional) {
+        if (mandatory == Mandatory.OPTIONAL) {
             builder.append("@optional ");
+        } else if (mandatory == Mandatory.REQUIRED) {
+            builder.append("@required ");
         }
         for (Anno anno : annotations) {
             builder.append(anno).append(' ');

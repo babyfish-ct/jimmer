@@ -3,6 +3,7 @@ package org.babyfish.jimmer.ksp
 import org.babyfish.jimmer.dto.compiler.DtoCompiler
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.sql.GeneratedValue
 
 class KspDtoCompiler(
     immutableType: ImmutableType,
@@ -20,4 +21,7 @@ class KspDtoCompiler(
 
     override fun getTargetType(baseProp: ImmutableProp): ImmutableType? =
         baseProp.targetType
+
+    override fun isGeneratedValue(baseProp: ImmutableProp): Boolean =
+        baseProp.annotation(GeneratedValue::class) !== null
 }

@@ -84,6 +84,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public Mandatory getMandatory() {
+        return Mandatory.OPTIONAL;
+    }
+
+    @Override
     public boolean isNewTarget() {
         return false;
     }

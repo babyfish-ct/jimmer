@@ -3,6 +3,7 @@ package org.babyfish.jimmer.apt;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoCompiler;
+import org.babyfish.jimmer.sql.GeneratedValue;
 
 import java.util.Collection;
 import java.util.Map;
@@ -31,5 +32,10 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
     @Override
     protected ImmutableType getTargetType(ImmutableProp baseProp) {
         return baseProp.getTargetType();
+    }
+
+    @Override
+    protected boolean isGeneratedValue(ImmutableProp baseProp) {
+        return baseProp.toElement().getAnnotation(GeneratedValue.class) != null;
     }
 }

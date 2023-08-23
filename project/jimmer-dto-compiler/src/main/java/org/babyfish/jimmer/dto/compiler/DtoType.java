@@ -12,7 +12,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final List<Anno> annotations;
 
-    private final boolean isInput;
+    private final Set<DtoTypeModifier> modifiers;
 
     @Nullable
     private final String name;
@@ -31,13 +31,13 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     DtoType(
             T baseType,
             List<Anno> annotations,
-            boolean isInput,
+            Set<DtoTypeModifier> modifiers,
             @Nullable String name,
             @Nullable String path
     ) {
         this.baseType = baseType;
         this.annotations = annotations;
-        this.isInput = isInput;
+        this.modifiers = modifiers;
         this.name = name;
         this.path = path;
     }
@@ -46,8 +46,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return baseType;
     }
 
-    public boolean isInput() {
-        return isInput;
+    public Set<DtoTypeModifier> getModifiers() {
+        return modifiers;
     }
 
     @Nullable
@@ -97,7 +97,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     public List<DtoProp<T, P>> getHiddenFlatProps() {
         List<DtoProp<T, P>> hfps = this.hiddenFlatProps;
         if (hfps == null) {
-            FlatDtoBuilder<T, P> builder = new FlatDtoBuilder<>(isInput, null);
+            FlatDtoBuilder<T, P> builder = new FlatDtoBuilder<>(modifiers, null);
             for (DtoProp<T, P> prop : getDtoProps()) {
                 if (prop.getNextProp() != null) {
                     builder.add(prop);
@@ -129,8 +129,14 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         for (Anno anno : annotations) {
             builder.append(anno).append(' ');
         }
-        if (isInput) {
+        if (modifiers.contains(DtoTypeModifier.ABSTRACT)) {
+            builder.append("abstract ");
+        }
+        if (modifiers.contains(DtoTypeModifier.INPUT)) {
             builder.append("input ");
+        }
+        if (modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+            builder.append("inputOnly ");
         }
         if (name != null) {
             builder.append(name).append(' ');
@@ -151,15 +157,15 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private class FlatDtoBuilder<T extends BaseType, P extends BaseProp> {
 
-        private final boolean isInput;
+        private final Set<DtoTypeModifier> modifiers;
 
         private final DtoProp<T, P> prop;
 
         // Value: FlatDtoBuilder | DtoProp
         private final Map<String, Object> childNodes = new LinkedHashMap<>();
 
-        FlatDtoBuilder(boolean isInput, DtoProp<T, P> prop) {
-            this.isInput = isInput;
+        FlatDtoBuilder(Set<DtoTypeModifier> modifiers, DtoProp<T, P> prop) {
+            this.modifiers = modifiers;
             this.prop = prop;
         }
 
@@ -171,7 +177,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
             } else {
                 FlatDtoBuilder<T, P> child = (FlatDtoBuilder<T, P>) childNodes.get(baseName);
                 if (child == null) {
-                    child = new FlatDtoBuilder<>(isInput, prop);
+                    child = new FlatDtoBuilder<>(modifiers, prop);
                     childNodes.put(baseName, child);
                 }
                 child.add(prop.getNextProp());
@@ -199,7 +205,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
                 }
                 props = Collections.unmodifiableList(props);
             }
-            DtoType<T, P> dtoType = new DtoType<>(null, annotations, isInput, null, null);
+            DtoType<T, P> dtoType = new DtoType<>(null, annotations, modifiers, null, null);
             dtoType.setProps(props);
             return dtoType;
         }

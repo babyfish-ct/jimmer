@@ -73,7 +73,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             parsedAnnotations = Collections.unmodifiableList(parsedAnnotations);
             this.annotations = parsedAnnotations;
         }
-        this.modifiers = modifiers;
+        this.modifiers = Collections.unmodifiableSet(modifiers);
         this.superNames = superNames;
         this.recursiveBaseProp = recursiveBaseProp;
         this.recursiveAlias = recursiveAlias;
@@ -115,6 +115,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
         if (allScalars.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
+                Mandatory mandatory;
+                if (allScalars.required != null) {
+                    mandatory = Mandatory.REQUIRED;
+                } else if (allScalars.optional != null) {
+                    mandatory = Mandatory.OPTIONAL;
+                } else {
+                    mandatory = Mandatory.DEFAULT;
+                }
                 if (isAutoScalar(baseProp)) {
                     autoScalarPropMap.put(
                             baseProp.getName(),
@@ -122,7 +130,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     this,
                                     baseProp,
                                     allScalars.start.getLine(),
-                                    allScalars.optional != null
+                                    mandatory
                             )
                     );
                 }
@@ -172,6 +180,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     );
                 }
                 for (P baseProp : ctx.getDeclaredProps(baseType).values()) {
+                    Mandatory mandatory;
+                    if (allScalars.required != null) {
+                        mandatory = Mandatory.REQUIRED;
+                    } else if (allScalars.optional != null) {
+                        mandatory = Mandatory.OPTIONAL;
+                    } else {
+                        mandatory = Mandatory.DEFAULT;
+                    }
                     if (isAutoScalar(baseProp) && !autoScalarPropMap.containsKey(baseProp.getName())) {
                         autoScalarPropMap.put(
                                 baseProp.getName(),
@@ -179,7 +195,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                         this,
                                         baseProp,
                                         qnCtx.stop.getLine(),
-                                        allScalars.optional != null
+                                        mandatory
                                 )
                         );
                     }
@@ -255,7 +271,19 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             }
             annotations = Collections.unmodifiableList(annotations);
         }
-        UserProp userProp = new UserProp(prop.prop, ctx.resolve(prop.typeRef()), annotations);
+        TypeRef typeRef = ctx.resolve(prop.typeRef());
+        if (!typeRef.isNullable() &&
+                !modifiers.contains(DtoTypeModifier.INPUT_ONLY) &&
+                !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
+            throw ctx.exception(
+                    prop.prop.getLine(),
+                    "Illegal user defined property \"" +
+                            prop.prop.getText() +
+                            "\", it is not null but its default value cannot be determined, " +
+                            "so it must be declared in dto type with the modifier 'inputOnly'"
+            );
+        }
+        UserProp userProp = new UserProp(prop.prop, typeRef, annotations);
         if (aliasPositivePropMap.put(userProp.getAlias(), userProp) != null) {
             throw ctx.exception(
                     prop.prop.getLine(),
@@ -269,6 +297,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     private boolean isAutoScalar(P baseProp) {
         return !baseProp.isFormula() &&
                 !baseProp.isTransient() &&
+                baseProp.getIdViewBaseProp() == null &&
                 baseProp.getManyToManyViewBaseProp() == null &&
                 !baseProp.isList() &&
                 ctx.getTargetType(baseProp) == null;
@@ -292,7 +321,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         dtoType = new DtoType<>(
                 baseType,
                 annotations,
-                modifiers.contains(DtoTypeModifier.INPUT),
+                modifiers,
                 name != null ? name.getText() : null,
                 ctx.getDtoFilePath()
         );
@@ -305,7 +334,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             superTypes = new ArrayList<>(superTypeBuilders.size());
             for (DtoTypeBuilder<T, P> superTypeBuilder : superTypeBuilders) {
                 DtoType<T, P> superType = superTypeBuilder.build();
-                if (modifiers.contains(DtoTypeModifier.INPUT) && !superType.isInput()) {
+                if (modifiers.contains(DtoTypeModifier.INPUT) && !superType.getModifiers().contains(DtoTypeModifier.INPUT)) {
                     assert name != null;
                     throw ctx.exception(
                             name.getLine(),
@@ -313,7 +342,27 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     name.getText() +
                                     "\", it is input type but the super type \"" +
                                     superType.getName() +
-                                    "\" is not"
+                                    "\" is not input"
+                    );
+                } else if (modifiers.contains(DtoTypeModifier.INPUT_ONLY) && !superType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+                    assert name != null;
+                    throw ctx.exception(
+                            name.getLine(),
+                            "Illegal type \"" +
+                                    name.getText() +
+                                    "\", it is inputOnly type but the super type \"" +
+                                    superType.getName() +
+                                    "\" is not inputOnly"
+                    );
+                } else if (!modifiers.contains(DtoTypeModifier.INPUT_ONLY) && superType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+                    assert name != null;
+                    throw ctx.exception(
+                            name.getLine(),
+                            "Illegal type \"" +
+                                    name.getText() +
+                                    "\", it is not inputOnly type but the super type \"" +
+                                    superType.getName() +
+                                    "\" is inputOnly"
                     );
                 }
                 superTypes.add(superType);

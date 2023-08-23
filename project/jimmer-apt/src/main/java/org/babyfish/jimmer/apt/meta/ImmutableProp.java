@@ -652,6 +652,7 @@ public class ImmutableProp implements BaseProp {
         return this._dependencies;
     }
 
+    @Override
     public ImmutableProp getIdViewBaseProp() {
         if (idViewBasePropResolved) {
             return _idViewBaseProp;

@@ -75,7 +75,7 @@ public class RecursiveTreeTest extends Tests {
                         "--->--->)" +
                         "--->]" +
                         ")",
-                new RecursiveTree(treeNode)
+                RecursiveTree.of(treeNode)
         );
     }
 
@@ -113,7 +113,7 @@ public class RecursiveTreeTest extends Tests {
                         "--->--->)" +
                         "--->]" +
                         ")",
-                new RecursiveTree(treeNode)
+                RecursiveTree.of(treeNode)
         );
     }
 

@@ -12,6 +12,7 @@ public class CompanyViewTest extends Tests {
     public void testDtoToEntity() {
 
         CompanyView view = new CompanyView();
+        view.setId(1L);
         view.setCountryName("myCountry");
         view.setProvinceName("myProvince");
         view.setCityName("myCity");
@@ -20,6 +21,7 @@ public class CompanyViewTest extends Tests {
 
         assertContentEquals(
                 "{" +
+                        "--->\"id\":1," +
                         "--->\"companyName\":\"myCompany\"," +
                         "--->\"street\":{" +
                         "--->--->\"streetName\":\"myStreet\"," +
@@ -42,6 +44,7 @@ public class CompanyViewTest extends Tests {
     public void testEntityToDto() {
 
         Company company = CompanyDraft.$.produce(draft -> {
+            draft.setId(1L);
             draft.setCompanyName("myCompany");
             draft.applyStreet(street -> {
                 street.setStreetName("myStreet");
@@ -59,7 +62,7 @@ public class CompanyViewTest extends Tests {
 
         assertContentEquals(
                 "CompanyView(" +
-                        "--->id=0, " +
+                        "--->id=1, " +
                         "--->companyName=myCompany, " +
                         "--->streetName=myStreet, " +
                         "--->cityName=myCity, " +

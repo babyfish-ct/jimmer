@@ -13,4 +13,6 @@ interface DtoPropImplementor extends AbstractProp {
 
     @Nullable
     String getFuncName();
+
+    Mandatory getMandatory();
 }

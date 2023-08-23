@@ -30,7 +30,7 @@ importedType
 dtoType
     :
     (annotations += annotation)*
-    (modifiers += Identifier)*
+    (modifiers += (Identifier | 'input-only'))*
     name=Identifier
     (':' superNames += Identifier (',' superNames += Identifier)*)?
     body=dtoBody
@@ -54,7 +54,7 @@ allScalars
     (
         '(' args+=qualifiedName (',' args+=qualifiedName)* ')'
     )?
-    (optional = '?')?
+    (optional = '?' | required = '!')?
     ;
 
 aliasGroup
@@ -83,7 +83,7 @@ positiveProp
     (annotations += annotation)*
     '+'?
     (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
-    (optional = '?')?
+    (optional = '?' | required = '!')?
     ('as' alias=Identifier)?
     ((annotations += annotation)* dtoBody (recursive='*')?)?
     ;

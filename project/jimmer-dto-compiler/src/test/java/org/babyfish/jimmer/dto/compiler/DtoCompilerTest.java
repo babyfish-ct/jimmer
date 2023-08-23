@@ -81,6 +81,39 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testRequiredAllScalars() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "input BookSpecification {\n" +
+                        "    #allScalars!" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookSpecification {" +
+                        "--->@required id, " +
+                        "--->@required name, " +
+                        "--->@required edition, " +
+                        "--->@required price, " +
+                        "--->@required tenant" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testRequired() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "inputOnly BookInput {\n" +
+                        "    id\n" +
+                        "    id(store)!\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "inputOnly BookInput {@optional id, @required id(store) as storeId}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
     public void testRecursive() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
                 "input TreeNodeInput {" +
@@ -214,7 +247,7 @@ public class DtoCompilerTest {
         assertContentEquals(
                 "[" +
                         "--->BookFlatView {" +
-                        "--->--->@optional id, " +
+                        "--->--->id, " +
                         "--->--->@optional name, " +
                         "--->--->@optional store.id as parentId, " +
                         "--->--->@optional store.name as parentName, " +
@@ -225,8 +258,8 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->flat(store): {" +
-                        "--->--->@optional id as parentId, " +
+                        "--->@optional flat(store): {" +
+                        "--->--->id as parentId, " +
                         "--->--->name as parentName, " +
                         "--->--->website as parentWebsite" +
                         "--->}" +
@@ -237,6 +270,29 @@ public class DtoCompilerTest {
 
     @Test
     public void testFlat2() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
+                "FlatTreeNode {\n" +
+                        "    #allScalars\n" +
+                        "    flat(parent) {\n" +
+                        "        as(^ -> parent) {\n" +
+                        "            #allScalars\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "FlatTreeNode {" +
+                        "--->id, " +
+                        "--->name, " +
+                        "--->@optional parent.id as parentId, " +
+                        "--->@optional parent.name as parentName" +
+                        "}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testFlat3() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "BookFlatView {\n" +
                         "    id\n" +
@@ -252,7 +308,7 @@ public class DtoCompilerTest {
         assertContentEquals(
                 "[" +
                         "--->BookFlatView {" +
-                        "--->--->@optional id, " +
+                        "--->--->id, " +
                         "--->--->name, " +
                         "--->--->@optional store.id as parentId, " +
                         "--->--->@optional store.name as parentName" +
@@ -262,8 +318,8 @@ public class DtoCompilerTest {
         );
         assertContentEquals(
                 "[" +
-                        "--->flat(store): {" +
-                        "--->--->@optional id as parentId, " +
+                        "--->@optional flat(store): {" +
+                        "--->--->id as parentId, " +
                         "--->--->name as parentName" +
                         "--->}" +
                         "]",
@@ -283,7 +339,7 @@ public class DtoCompilerTest {
                         "import java.util.SequencedSet as _OSet\n" +
                         "import com.company.pkg.TopLevel as _T\n" +
                         "\n" +
-                        "Customer {\n" +
+                        "input-only Customer {\n" +
                         "    a: Int\n" +
                         "    b: User?\n" +
                         "    c: MutableList<Cfg>\n" +
@@ -292,7 +348,7 @@ public class DtoCompilerTest {
                         "}"
         );
         assertContentEquals(
-                "Customer {" +
+                "inputOnly Customer {" +
                         "    a: Int, " +
                         "    b: com.company.pkg.data.User?, " +
                         "    c: MutableList<com.company.pkg.data.Configuration>, " +
@@ -558,6 +614,23 @@ public class DtoCompilerTest {
                 "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
                         "Cannot call the function \"flat\" " +
                         "because the current prop \"entity::authors\" is list",
+                ex.getMessage()
+        );
+    }
+
+    @Test
+    public void testIllegalRequired() {
+        DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
+            MyDtoCompiler.book().compile(
+                    "input BookSpecification {\n" +
+                            "    id\n" +
+                            "    id(store)!\n" +
+                            "}\n"
+            );
+        });
+        Assertions.assertEquals(
+                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                        "Illegal required modifier '!', it can only be used in inputOnlyType",
                 ex.getMessage()
         );
     }
@@ -893,6 +966,11 @@ public class DtoCompilerTest {
         @Override
         protected BaseType getTargetType(BaseProp baseProp) {
             return ((BasePropImpl) baseProp).getTargetType();
+        }
+
+        @Override
+        protected boolean isGeneratedValue(BaseProp baseProp) {
+            return true;
         }
 
         static {

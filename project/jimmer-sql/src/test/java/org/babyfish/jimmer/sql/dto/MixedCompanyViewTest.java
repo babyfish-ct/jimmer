@@ -11,6 +11,7 @@ public class MixedCompanyViewTest extends Tests {
     @Test
     public void testDtoToEntity() {
         MixedCompanyView view = new MixedCompanyView();
+        view.setId(1L);
         view.setCompanyName("myCompany");
         view.setStreetName("myStreet");
         view.setCityName("myCity");
@@ -26,6 +27,7 @@ public class MixedCompanyViewTest extends Tests {
 
         assertContentEquals(
                 "{" +
+                        "--->\"id\":1," +
                         "--->\"companyName\":\"myCompany\"," +
                         "--->\"street\":{" +
                         "--->--->\"streetName\":\"myStreet\"," +
@@ -48,6 +50,7 @@ public class MixedCompanyViewTest extends Tests {
     public void testEntityToDto() {
 
         Company company = CompanyDraft.$.produce(draft -> {
+            draft.setId(1L);
             draft.setCompanyName("myCompany");
             draft.applyStreet(street -> {
                 street.setStreetName("myStreet");
@@ -65,7 +68,7 @@ public class MixedCompanyViewTest extends Tests {
 
         assertContentEquals(
                 "MixedCompanyView(" +
-                        "--->id=0, " +
+                        "--->id=1, " +
                         "--->companyName=myCompany, " +
                         "--->streetName=myStreet, " +
                         "--->cityName=myCity, " +

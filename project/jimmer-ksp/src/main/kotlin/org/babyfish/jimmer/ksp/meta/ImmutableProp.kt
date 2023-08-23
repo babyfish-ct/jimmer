@@ -350,7 +350,7 @@ class ImmutableProp(
     val baseProp: ImmutableProp?
         get() = _idViewBaseProp ?: _manyToManyViewBaseProp
 
-    val idViewBaseProp: ImmutableProp?
+    override val idViewBaseProp: ImmutableProp?
         get() = _idViewBaseProp
 
     override val manyToManyViewBaseProp: ImmutableProp?

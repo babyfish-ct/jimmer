@@ -4,3 +4,12 @@ input RecursiveTree {
         name
     }*
 }
+
+FlatTreeNode {
+    #allScalars
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars
+        }
+    }
+}

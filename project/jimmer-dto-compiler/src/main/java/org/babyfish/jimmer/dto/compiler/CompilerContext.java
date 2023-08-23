@@ -12,21 +12,11 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     private final Importing importing;
 
-    private final boolean hasKey;
-
     private final Map<String, DtoTypeBuilder<T, P>> typeBuilderMap = new LinkedHashMap<>();
 
     public CompilerContext(DtoCompiler<T, P> compiler) {
         this.compiler = compiler;
         this.importing = new Importing(this);
-        boolean hasKey = false;
-        for (P baseProp : compiler.getProps(compiler.getBaseType()).values()) {
-            if (baseProp.isKey()) {
-                hasKey = true;
-                break;
-            }
-        }
-        this.hasKey = hasKey;
     }
 
     public DtoTypeBuilder<T, P> get(String name) {
@@ -51,16 +41,33 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         for (Token modifier : type.modifiers) {
             DtoTypeModifier dtoTypeModifier;
             switch (modifier.getText()) {
-                case "input":
-                    dtoTypeModifier = DtoTypeModifier.INPUT;
-                    break;
                 case "abstract":
                     dtoTypeModifier = DtoTypeModifier.ABSTRACT;
+                    break;
+                case "input":
+                    if (modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                        throw exception(
+                                modifier.getLine(),
+                                "'input' and 'inputOnly' cannot used together"
+                        );
+                    }
+                    dtoTypeModifier = DtoTypeModifier.INPUT;
+                    break;
+                case "inputOnly":
+                case "input-only":
+                    if (modifiers.contains(DtoTypeModifier.INPUT)) {
+                        throw exception(
+                                modifier.getLine(),
+                                "'input' and 'inputOnly' cannot used together"
+                        );
+                    }
+                    dtoTypeModifier = DtoTypeModifier.INPUT_ONLY;
                     break;
                 default:
                     throw exception(
                             modifier.getLine(),
-                            "If the modifier of dto type is specified, it must be 'input' or 'abstract'"
+                            "If the modifier of dto type is specified, it must be " +
+                                    "'abstract', 'input', 'inputOnly' or 'input-only'"
                     );
             }
             if (!modifiers.add(dtoTypeModifier)) {
@@ -113,8 +120,11 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getDeclaredProps(baseType);
     }
 
-    public boolean isImplicit(P baseProp) {
-        return baseProp.isId() && hasKey;
+    public boolean isImplicitId(P baseProp, Set<DtoTypeModifier> modifiers) {
+        if (modifiers.contains(DtoTypeModifier.INPUT) || modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+            return baseProp.isId() && compiler.isGeneratedValue(baseProp);
+        }
+        return false;
     }
 
     public T getTargetType(P baseProp) {

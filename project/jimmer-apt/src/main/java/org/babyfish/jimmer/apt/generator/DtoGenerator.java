@@ -69,7 +69,11 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
                         ParameterizedTypeName.get(
-                                dtoType.isInput() ? Constants.INPUT_CLASS_NAME : Constants.VIEW_CLASS_NAME,
+                                dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY) ?
+                                        Constants.INPUT_CLASS_NAME :
+                                        dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
+                                                Constants.VIEWABLE_INPUT_CLASS_NAME :
+                                                Constants.VIEW_CLASS_NAME,
                                 dtoType.getBaseType().getClassName()
                         )
                 );
@@ -149,7 +153,10 @@ public class DtoGenerator {
 
     private void addMembers() {
 
-        addMetadata();
+        boolean inputOnly = dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY);
+        if (!inputOnly) {
+            addMetadata();
+        }
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             addField(prop);
@@ -157,9 +164,12 @@ public class DtoGenerator {
         for (UserProp prop : dtoType.getUserProps()) {
             addField(prop);
         }
+
         addDefaultConstructor();
-        addConverterConstructor();
-        addOf();
+        if (!inputOnly) {
+            addConverterConstructor();
+            addOf();
+        }
         addToEntity();
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
@@ -314,7 +324,6 @@ public class DtoGenerator {
     private void addConverterConstructor() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
-                .addComment("This constructor is not public so that the `@Argument` of spring-graphql can work, please use `of`")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(
                         ParameterSpec
@@ -322,7 +331,7 @@ public class DtoGenerator {
                                 .addAnnotation(NotNull.class)
                                 .build()
                 );
-        if (dtoType.getDtoProps().stream().anyMatch(DtoProp::isNullable)) {
+        if (dtoType.getDtoProps().stream().anyMatch(it -> it.isNullable() || it.getNextProp() != null)) {
             builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
         }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
@@ -663,9 +672,8 @@ public class DtoGenerator {
     }
 
     public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
-        prop = prop.toTailProp();
         TypeName elementTypeName = getPropElementName(prop);
-        return prop.getBaseProp().isList() ?
+        return prop.toTailProp().getBaseProp().isList() ?
                 ParameterizedTypeName.get(
                         Constants.LIST_CLASS_NAME,
                         elementTypeName.isPrimitive() ?
@@ -751,13 +759,14 @@ public class DtoGenerator {
     }
 
     public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {
-        DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
+        DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+        DtoType<ImmutableType, ImmutableProp> targetType = tailProp.getTargetType();
         if (targetType != null) {
             if (targetType.getName() == null) {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
-                if (prop.isNewTarget()) {
-                    list.add(targetSimpleName(prop));
+                if (tailProp.isNewTarget()) {
+                    list.add(targetSimpleName(tailProp));
                 }
                 return ClassName.get(
                         getPackageName(),
@@ -770,9 +779,9 @@ public class DtoGenerator {
                     targetType.getName()
             );
         }
-        TypeName typeName = prop.isIdOnly() ?
-                prop.getBaseProp().getTargetType().getIdProp().getTypeName() :
-                prop.getBaseProp().getTypeName();
+        TypeName typeName = tailProp.isIdOnly() ?
+                tailProp.getBaseProp().getTargetType().getIdProp().getTypeName() :
+                tailProp.getBaseProp().getTypeName();
         if (typeName.isPrimitive() && prop.isNullable()) {
             return typeName.box();
         }

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
-import org.babyfish.jimmer.DraftConsumer;
-import org.babyfish.jimmer.GeneratedBy;
-import org.babyfish.jimmer.Input;
-import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.impl.util.FlatUtils;
 import org.babyfish.jimmer.meta.PropId;
@@ -64,6 +61,9 @@ class Constants {
 
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
+
+    public static final ClassName VIEWABLE_INPUT_CLASS_NAME =
+            ClassName.get(ViewableInput.class);
 
     public static final ClassName LOMBOK_DATA_CLASS_NAME =
             ClassName.get("lombok", "Data");

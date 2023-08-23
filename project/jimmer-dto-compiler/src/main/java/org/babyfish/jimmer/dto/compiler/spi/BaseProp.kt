@@ -6,6 +6,7 @@ interface BaseProp {
     val isList: Boolean
     val isFormula: Boolean
     val isTransient: Boolean
+    val idViewBaseProp: BaseProp?
     val manyToManyViewBaseProp: BaseProp?
     val isId: Boolean
     val isKey: Boolean
