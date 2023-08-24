@@ -46,6 +46,8 @@ public class ImmutableProp implements BaseProp {
 
     private final String beanGetterName;
 
+    private final String valueName;
+
     private final String loadedStateName;
 
     private final String deeperPropIdName;
@@ -162,6 +164,7 @@ public class ImmutableProp implements BaseProp {
         }
 
         slotName = "SLOT_" + Strings.upper(name);
+        valueName = "__" + name + "Value";
         loadedStateName = "__" + name + "Loaded";
         if (executableElement.getAnnotation(ManyToManyView.class) != null) {
             deeperPropIdName = "DEEPER_PROP_ID_" + Strings.upper(name);
@@ -382,6 +385,10 @@ public class ImmutableProp implements BaseProp {
 
     public String getBeanGetterName() {
         return beanGetterName;
+    }
+
+    public String getValueName() {
+        return valueName;
     }
 
     public String getLoadedStateName() {
