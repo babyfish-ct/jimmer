@@ -74,7 +74,7 @@ public class ImplGenerator {
                                         prop.getElementTypeName()
                                 ) :
                                 TypeName.get(prop.getReturnType()),
-                        prop.getName()
+                        prop.getValueName()
                 );
                 typeBuilder.addField(valueBuilder.build());
             }
@@ -146,16 +146,16 @@ public class ImplGenerator {
             if (prop.isLoadedStateRequired()) {
                 builder.beginControlFlow("if (!$L)", prop.getLoadedStateName());
             } else {
-                builder.beginControlFlow("if ($L == null)", prop.getName());
+                builder.beginControlFlow("if ($L == null)", prop.getValueName());
             }
             builder.addStatement(
                             "throw new $T($T.class, $S)",
                             unloadedExceptionClassName,
                             type.getClassName(),
-                            prop.getName()
+                            prop.getValueName()
                     )
                     .endControlFlow();
-            builder.addStatement("return $L", prop.getName());
+            builder.addStatement("return $L", prop.getValueName());
         }
         typeBuilder.addMethod(builder.build());
     }
@@ -248,7 +248,7 @@ public class ImplGenerator {
             } else if (prop.isLoadedStateRequired()) {
                 builder.addStatement("return $L", prop.getLoadedStateName());
             } else {
-                builder.addStatement("return $L != null", prop.getName());
+                builder.addStatement("return $L != null", prop.getValueName());
             }
         }
         builder.addStatement(
@@ -307,7 +307,7 @@ public class ImplGenerator {
             Class<?> boxType = prop.getBoxType();
             if (boxType != null) {
                 builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
-                builder.addStatement("hash = 31 * hash + $T.hashCode($L)", boxType, prop.getName());
+                builder.addStatement("hash = 31 * hash + $T.hashCode($L)", boxType, prop.getValueName());
                 if (!shallow) {
                     if (prop.getAnnotation(Id.class) != null) {
                         builder.addComment("If entity-id is loaded, return directly");
@@ -319,24 +319,24 @@ public class ImplGenerator {
                 if (prop.isLoadedStateRequired()) {
                     builder.beginControlFlow("if ($L)", prop.getLoadedStateName());
                 } else {
-                    builder.beginControlFlow("if ($L != null)", prop.getName());
+                    builder.beginControlFlow("if ($L != null)", prop.getValueName());
                 }
-                builder.addStatement("hash = 31 * hash + $T.identityHashCode($L)", System.class, prop.getName());
+                builder.addStatement("hash = 31 * hash + $T.identityHashCode($L)", System.class, prop.getValueName());
                 builder.endControlFlow();
             } else {
                 if (prop.isLoadedStateRequired()) {
                     builder.beginControlFlow(
                             "if ($L && $L != null)",
                             prop.getLoadedStateName(),
-                            prop.getName()
+                            prop.getValueName()
                     );
                 } else {
                     builder.beginControlFlow(
                             "if ($L != null)",
-                            prop.getName()
+                            prop.getValueName()
                     );
                 }
-                builder.addStatement("hash = 31 * hash + $L.hashCode()", prop.getName());
+                builder.addStatement("hash = 31 * hash + $L.hashCode()", prop.getValueName());
                 if (prop.getAnnotation(Id.class) != null) {
                     builder.addComment("If entity-id is loaded, return directly");
                     builder.addStatement("return hash");
@@ -379,7 +379,7 @@ public class ImplGenerator {
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement("boolean $L = this.$L", prop.getLoadedStateName(), prop.getLoadedStateName());
             } else {
-                builder.addStatement("boolean $L = $L != null", prop.getLoadedStateName(true), prop.getName());
+                builder.addStatement("boolean $L = $L != null", prop.getLoadedStateName(true), prop.getValueName());
             }
             builder
                     .beginControlFlow(
@@ -395,14 +395,14 @@ public class ImplGenerator {
                     builder
                             .beginControlFlow("if ($L)", prop.getLoadedStateName(true))
                             .addComment("If entity-id is loaded, return directly")
-                            .addStatement("return $L == __other.$L()", prop.getName(), prop.getGetterName())
+                            .addStatement("return $L == __other.$L()", prop.getValueName(), prop.getGetterName())
                             .endControlFlow();
                 } else {
                     builder
                             .beginControlFlow(
                                     "if ($L && $L != __other.$L())",
                                     prop.getLoadedStateName(true),
-                                    prop.getName(),
+                                    prop.getValueName(),
                                     prop.getGetterName()
                             )
                             .addStatement("return false")
@@ -418,7 +418,7 @@ public class ImplGenerator {
                         .addStatement(
                                 "return $T.equals($L, __other.$L())",
                                 Objects.class,
-                                prop.getName(),
+                                prop.getValueName(),
                                 prop.getGetterName()
                         )
                         .endControlFlow();
@@ -428,7 +428,7 @@ public class ImplGenerator {
                                 "if ($L && !$T.equals($L, __other.$L()))",
                                 prop.getLoadedStateName(true),
                                 Objects.class,
-                                prop.getName(),
+                                prop.getValueName(),
                                 prop.getGetterName()
                         )
                         .addStatement("return false")

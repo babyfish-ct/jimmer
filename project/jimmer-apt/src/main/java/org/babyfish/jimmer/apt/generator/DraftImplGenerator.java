@@ -535,13 +535,13 @@ public class DraftImplGenerator {
             if (prop.isList()) {
                 builder.addStatement(
                         "__tmpModified.$L = $T.of(__tmpModified.$L, $L)",
-                        prop.getName(),
+                        prop.getValueName(),
                         NonSharedList.class,
-                        prop.getName(),
+                        prop.getValueName(),
                         prop.getName()
                 );
             } else {
-                builder.addStatement("__tmpModified.$L = $L", prop.getName(), prop.getName());
+                builder.addStatement("__tmpModified.$L = $L", prop.getValueName(), prop.getName());
             }
             if (prop.isLoadedStateRequired()) {
                 builder.addStatement("__tmpModified.$L = true", prop.getLoadedStateName());
@@ -740,7 +740,7 @@ public class DraftImplGenerator {
                 builder.addStatement(
                         "$L().$L = null;break",
                         DRAFT_FIELD_MODIFIED,
-                        prop.getName()
+                        prop.getValueName()
                 );
             }
         }
@@ -829,20 +829,20 @@ public class DraftImplGenerator {
                     if (prop.isList()) {
                         builder.addStatement(
                                 "__tmpModified.$L = $T.of(__tmpModified.$L, $L.$L(__tmpModified.$L))",
-                                prop.getName(),
+                                prop.getValueName(),
                                 NonSharedList.class,
-                                prop.getName(),
+                                prop.getValueName(),
                                 DRAFT_FIELD_CTX,
                                 "resolveList",
-                                prop.getName()
+                                prop.getValueName()
                         );
                     } else if (prop.isAssociation(false)) {
                         builder.addStatement(
                                 "__tmpModified.$L = $L.$L(__tmpModified.$L)",
-                                prop.getName(),
+                                prop.getValueName(),
                                 DRAFT_FIELD_CTX,
                                 "resolveObject",
-                                prop.getName()
+                                prop.getValueName()
                         );
                     }
                 }
