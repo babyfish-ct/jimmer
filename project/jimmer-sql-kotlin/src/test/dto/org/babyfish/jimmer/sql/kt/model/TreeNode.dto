@@ -5,6 +5,12 @@ input RecursiveTree {
     }*
 }
 
+input TreeNodeInput {
+    #allScalars(TreeNode)
+    id!
+    id(parent)
+}
+
 FlatTreeNode {
     #allScalars
     flat(parent) {

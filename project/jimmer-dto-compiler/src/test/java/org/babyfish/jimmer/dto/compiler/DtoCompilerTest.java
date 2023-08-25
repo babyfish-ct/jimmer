@@ -100,15 +100,29 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testRequired() {
+    public void testInputRequired() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "input BookInput {\n" +
+                        "    id!\n" +
+                        "    id(store)\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "input BookInput {@required id, id(store) as storeId}",
+                dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testInputOnlyRequired() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "inputOnly BookInput {\n" +
-                        "    id\n" +
+                        "    id!\n" +
                         "    id(store)!\n" +
                         "}\n"
         );
         assertContentEquals(
-                "inputOnly BookInput {@optional id, @required id(store) as storeId}",
+                "inputOnly BookInput {@required id, @required id(store) as storeId}",
                 dtoTypes.get(0).toString()
         );
     }
@@ -630,7 +644,8 @@ public class DtoCompilerTest {
         });
         Assertions.assertEquals(
                 "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
-                        "Illegal required modifier '!', it can only be used in inputOnlyType",
+                        "Illegal required modifier '!' for non-id property, " +
+                        "it can only be used in input-only type",
                 ex.getMessage()
         );
     }

@@ -173,23 +173,35 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
         }
         if (prop.required != null) {
-            if (!parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
-                throw ctx.exception(
-                        prop.required.getLine(),
-                        "Illegal required modifier '!', it can only be used in inputOnlyType"
-                );
-            }
             if ("flat".equals(funcName)) {
                 throw ctx.exception(
                         prop.required.getLine(),
                         "Illegal required modifier '!', it is not allowed for the function `flat`"
                 );
             }
-            if (!baseProp.isNullable()) {
-                throw ctx.exception(
-                        prop.required.getLine(),
-                        "Illegal required modifier '!' because the base property is already nonnull"
-                );
+            if (baseProp.isId()) {
+                if (!parent.modifiers.contains(DtoTypeModifier.INPUT) &&
+                        !parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                    throw ctx.exception(
+                            prop.required.getLine(),
+                            "Illegal required modifier '!' for id property, " +
+                                    "it can only be used in input/input-only type"
+                    );
+                }
+            } else {
+                if (!parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                    throw ctx.exception(
+                            prop.required.getLine(),
+                            "Illegal required modifier '!' for non-id property, " +
+                                    "it can only be used in input-only type"
+                    );
+                }
+                if (!baseProp.isNullable()) {
+                    throw ctx.exception(
+                            prop.required.getLine(),
+                            "Illegal required modifier '!' because the base property is already nonnull"
+                    );
+                }
             }
         }
 
