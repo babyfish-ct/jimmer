@@ -317,4 +317,50 @@ public class FetcherTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void fetchEmptyList() {
+        OrderItemTable orderItem = OrderItemTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(orderItem)
+                        .where(orderItem.id().a().eq(9))
+                        .where(orderItem.id().b().eq(9))
+                        .where(orderItem.id().c().eq(9))
+                        .select(
+                                orderItem.fetch(
+                                        OrderItemFetcher.$
+                                                .allScalarFields()
+                                                .products(
+                                                        ProductFetcher.$
+                                                                .allScalarFields()
+                                                )
+                                )
+                        ),
+                ctx -> {
+                    ctx.sql(
+                            "select " +
+                                    "tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                    "tb_1_.NAME from ORDER_ITEM tb_1_ " +
+                                    "where " +
+                                    "--->tb_1_.ORDER_ITEM_A = ? " +
+                                    "and " +
+                                    "--->tb_1_.ORDER_ITEM_B = ? " +
+                                    "and " +
+                                    "--->tb_1_.ORDER_ITEM_C = ?"
+                    );
+                    ctx.statement(1).sql(
+                            "select " +
+                                    "tb_1_.PRODUCT_ALPHA, tb_1_.PRODUCT_BETA, tb_1_.NAME " +
+                                    "from PRODUCT tb_1_ " +
+                                    "inner join ORDER_ITEM_PRODUCT_MAPPING tb_2_ " +
+                                    "--->on tb_1_.PRODUCT_ALPHA = tb_2_.FK_PRODUCT_ALPHA " +
+                                    "--->and tb_1_.PRODUCT_BETA = tb_2_.FK_PRODUCT_BETA " +
+                                    "where " +
+                                    "--->(tb_2_.FK_ORDER_ITEM_A, tb_2_.FK_ORDER_ITEM_B, tb_2_.FK_ORDER_ITEM_C) " +
+                                    "--->= (?, ?, ?)"
+                    );
+                }
+        );
+    }
 }

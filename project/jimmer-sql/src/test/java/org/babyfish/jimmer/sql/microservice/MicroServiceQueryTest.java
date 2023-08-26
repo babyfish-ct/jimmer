@@ -70,6 +70,11 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                                     "--->--->--->\"id\":2," +
                                     "--->--->--->\"name\":\"ms-order-2\"" +
                                     "--->--->}" +
+                                    "--->}," +
+                                    "--->{" +
+                                    "--->--->\"id\":999," +
+                                    "--->--->\"name\":\"ms-order-X.item-X\"," +
+                                    "--->--->\"order\":null" +
                                     "--->}" +
                                     "]"
                     );
@@ -168,7 +173,7 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                     ctx.statement(1).sql(
                             "select tb_1_.ORDER_ITEM_ID, tb_1_.PRODUCT_ID " +
                                     "from MS_ORDER_ITEM_PRODUCT_MAPPING tb_1_ " +
-                                    "where tb_1_.ORDER_ITEM_ID in (?, ?, ?, ?)"
+                                    "where tb_1_.ORDER_ITEM_ID in (?, ?, ?, ?, ?)"
                     );
                     ctx.rows(
                             "[" +
@@ -231,6 +236,10 @@ public class MicroServiceQueryTest extends AbstractQueryTest {
                                     "--->--->--->--->\"name\":\"ms-product-3\"" +
                                     "--->--->--->}" +
                                     "--->--->]" +
+                                    "--->},{" +
+                                    "--->--->\"id\":999," +
+                                    "--->--->\"name\":\"ms-order-X.item-X\"," +
+                                    "--->--->\"products\":[]" +
                                     "--->}" +
                                     "]"
                     );

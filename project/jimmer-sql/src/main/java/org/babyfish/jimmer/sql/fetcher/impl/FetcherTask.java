@@ -198,7 +198,7 @@ class FetcherTask {
 
     private void setDraftProp(DraftSpi draft, Object value, boolean isImplicit) {
         PropId propId = field.getProp().getId();
-        if (value == null && field.getProp().isReferenceList(TargetLevel.PERSISTENT)) {
+        if (value == null && field.getProp().isReferenceList(TargetLevel.ENTITY)) {
             draft.__set(propId, Collections.emptyList());
         } else {
             draft.__set(propId, value);

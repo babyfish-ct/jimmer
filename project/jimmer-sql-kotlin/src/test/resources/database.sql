@@ -445,6 +445,7 @@ insert into ms_order_item(id, name, order_id) values(1, 'ms-order-1.item-1', 1);
 insert into ms_order_item(id, name, order_id) values(2, 'ms-order-1.item-2', 1);
 insert into ms_order_item(id, name, order_id) values(3, 'ms-order-2.item-1', 2);
 insert into ms_order_item(id, name, order_id) values(4, 'ms-order-2.item-2', 2);
+insert into ms_order_item(id, name, order_id) values(999, 'ms-order-X.item-X', 999);
 insert into ms_product(id, name) values(1, 'ms-product-1');
 insert into ms_product(id, name) values(2, 'ms-product-2');
 insert into ms_product(id, name) values(3, 'ms-product-3');
