@@ -33,7 +33,7 @@ DTO语言的代码体现为扩展名为`dto`的文件，一旦编译完成，这
 
 因此，第一件事，是在`src/main`下建立`dto`子目录。
 
-:::caution
+:::warning
 dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译。因此，有两点注意事项
 
 -   对于多工程结构的项目而言，dto文件需要定义在实体类型所在子项目中。
@@ -43,6 +43,8 @@ dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译�
     -   如果除了dto文件外还有其他Java/Kotlin文件被修改了，直接点击IDE中运行按钮可以导致dto文件的重新编译
 
     -   但是，如果除了dto文件外没有其他Java/Kotlin文件被修改，简单地点击IDE中运行按钮并不会导致dto文件被重新编译，除非显式地rebuild！
+
+以后，会提供更好的方案。
 :::
 
 假设存在一个Jimmer实体类型，其完整的类型名为`com.yourcompany.yourproject.Book`，该类被`@org.babyfish.jimmer.sql.Entity`修饰 *(DTO语言只支持Entity类型)*，那么
@@ -51,7 +53,7 @@ dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译�
 
 2.  在上一步建立的目录中新文件`Book.dto`，该文件必须和类同名，且扩展名为`dto`
 
-用户可以编辑`Book.dto`文件，定义任意个以`Book`类型为聚合根的形状。这里，我们先定一个：
+用户可以编辑`Book.dto`文件，定义任意个以`Book`类型为聚合根的形状。这里，我们先定一个DTO形状：
 
 ```sh title="Book.dto"
 BookView {
@@ -101,7 +103,7 @@ data class BookView(
 -   对于Java而言，其生产的类型假设用户使用了lombok。
 :::
 
-## 3. input修饰符
+## 3. input、input-only修饰符
 
 形状可以被`input`修饰符修饰，例如
 
@@ -125,16 +127,23 @@ input AnnotherBookInput {
 
 这表示
 
--   `BookView`和`AnnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View<E>`接口
+-   `BookView`和`AnnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View&lt;E&gt;`接口
 
     :::note
     建议输出形状为`View`结尾
     :::
 
--   `BookInput`和`AnnotherBookInput`用作保存输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input<E>`接口
+-   `BookInput`和`AnnotherBookInput`用作保存输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input&lt;E&gt;`接口
 
     :::note
     建议输入形状为`Input`结尾
+    :::
+
+-   事实上，还有另外一种没有直接的Input/Output语义的DTO对象，往往用做复杂动态查询API的查询规格参数。
+    如例子中的[AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto)类型定义。
+
+    :::note
+    Jimmer对这种查询规则参数类型是否应该定义为input类型不做任何建议，但是建议这种类型以`Specification`/`Spec`结尾。
     :::
 
 :::info
@@ -182,6 +191,26 @@ val anotherEntity: Book = dto.toEntity()
 
 </TabItem>
 </Tabs>
+
+除了`input`外，还可以使用`input-only`或`inputOnly`修饰符修饰，例如
+
+```sh title="Book.dto"
+input-only BookUpdateInfo {
+    ...略...
+}
+```
+
+或
+
+```sh title="Book.dto"
+inputOnly BookUpdateInfo {
+    ...略...
+}
+```
+
+`input-only`/`inputOnly`和`input`的作用类似，用于修饰输入类型，但只提供从DTO对象转化为实体对象的功能，不提供从实体对象转化为DTO对象的功能。
+
+`input-only`/`inputOnly`修饰符的用途，请参见[7. 可空性](#7-可空性)
 
 ## 4. 简单属性
 
@@ -314,38 +343,85 @@ BookView {
 }
 ```
 
-## 7. 可选属性
+## 7. 可空性
 
-:::info
-此功能将实体中不能为null的属性映射为DTO中可以为null的属性。这并非值得推荐使用的功能，除了在老项目中保持和老项目习惯一致，新项目不建议使用该功能。
+默认情况下，DTO属性的可空性和原始属性的可空性一样。但是我们可以采用问号`?`或`!`修饰DTO属性，改变DTO属性的可空性。
 
-如果实体的id被配置了自增策略，那么input DTO中的id属性应该为null，这几乎是这种做法唯一合理的场景。这是input DTO已经实现了的基本特性，前文已经对此做了阐述。除此之外，用户应避免使用此功能。
-:::
+### 7.1 `?`
 
-默认情况下，DTO属性的可空性和原始属性的可空性一样。但是我们可以采用问号`?`修饰DTO属性，让其可null
+我们可以采用`?`修饰DTO属性，让其可null。
 
-```sh title="UpdateBookInput"
+```sh title="Book.dto"
 input UpdateBookInput {
     #allScalars
     // highlight-next-line
     price?
 }
 ```
-在实体中`Book.price`不能为null，而对应的DTO属性`UpdateBookInput.price`可以为null，看似矛盾，但Jimmer可以处理这样的矛盾。
+在实体中`Book.price`不能为null，而对应的DTO属性`UpdateBookInput.price`可以为null，看似矛盾，但Jimmer可以处理这样的矛盾 *(暂不讨论特定场景下使用该功能是否妥当)*。
 
 -   把实体转化为DTO时，如果`Book.price`未加载 *(虽然该属性不能为null，但动态对象可以拥有未加载属性)*，那么转化后的`UpdateBookInput.price`为null。
 
 -   把DTO转化为实体时，如果`UpdateBookInput.price`为null，那么转化后的`Book.price`处于未加载状态，即，动态对象的这个属性根本不会被赋值。
 
-显然，这种操作在一定程度上为静态DTO对象带来了一定的动态灵活性，当此对象作为[保存指令](../../mutation/save-command)的参数对象时，`UpdateBookInput.price`是否为null控制着`Book.price`是否被设置，最终控制数据库该字段是否被update。
+你甚至可以对`allScalars`采用`?`，让所有自动映射的非关联属性全部可以为null
+
+```sh title="Book.dto"
+input UpdateBookInput {
+    // highlight-next-line
+    #allScalars?
+}
+```
 
 :::caution
-然而，这并不是一种值得推荐的做法，静态类型的意义就应该固定和明确的，而非去追求如动态类型一般的灵活多变。
+然而，此功能需要谨慎使用，静态类型的意义就应该固定和明确的，而非去追求如动态类型一般的灵活多变。
 
 对于本身就可以为null的实体属性而言，具有三种状态: 非null、null和unloaded *(未知)*；而静态DTO属性只有两种状态：非null和null。即，引入静态DTO类型这件事本身就已经导致了信息丢失。
 
 所以，对于本身就可以为null的实体属性而言，无论对应的DTO属性如何设置，经过DTO转化后的动态实体对象，其可空的属性一定为被赋值 *(可能为null)*，但不可能出现unloaded的情况。如果将其传递给[保存指令](../../mutation/save-command)，null一定会导致表中对应字段被update，而无法如同未被赋值的非null属性一样做到根本不更新。
+
+事实上，除了具备直接的Input/Output语义的DTO类型外，复杂动态查询往往设计到一种查询规格参数，例如例子中的[AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto)类型。
+
+对于查询规格参数`Specification`而言，这个功能是非常适合的，这是因为动态查询的每个查询参数都应该是可选的，除非因性能问题而不得不要求用户必须给出部分查询条件。
+
+但是，对于其他具备`Input`/`Output`语义的DTO类型而言，不推荐使用此功能。
 :::
+
+### 7.2 `!`
+
+我们可以采用`!`修饰DTO属性，让其非null。但其使用场景受限，只能用于一向两种情况。
+
+-   在`input`/`input-only`类型中修饰id属性
+
+    前文提过，如果id属性被配置自动增长策略，那么对应的input DTO类型将会把id属性设置为可null。
+
+    然而，这种行为并不总是符合用户预期，可以在`input`/`input-only`类型中使用`!`修饰id属性，让其非null，例如
+
+    ```sh  title="Book.dto"
+    input BookUpdateInfo {
+        #allScalars
+        #highlight-next-line
+        id!
+    }
+    ```
+
+-   在`input-only`中将可null的实体属性转化为非null，例如
+
+    ```sh  title="Book.dto"
+    input-only BookUpdateInfo {
+        #allScalars
+        #highlight-next-line
+        store! {
+            ...略...
+        }
+    }
+    ```
+    :::info
+    实体中属性可以为null，但是DTO中对应属性非null，所以，无法支持将实体对象转化为DTO对象，只能把DTO对象转化为实体对象。
+
+    这也是`input-only`或`inputOnly`关键字的含义。
+    :::
+
 
 ## 8. 重命名
 
@@ -581,7 +657,7 @@ RobotView {
 
     如果要对关联属性进行重命名，`as`子句应该在关联定义块之前，例如
 
-    ```sh title="CompositeBookInput.dto"
+    ```sh title="Book.dto"
     input CompositeBookInput {
         
         authors as authorList {
@@ -596,7 +672,7 @@ RobotView {
 
 对于实体中可递归的属性，比如，附带例子中的`TreeNode.parent`或`TreeNode.childNodes`，可以使用星号`*`将DTO对应的关联属性标记为递归属性。
 
-```sh title="TreeNodeView.dto"
+```sh title="TreeNode.dto"
 TreeNodeView {
     
     #allScalars
@@ -888,7 +964,327 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 }
 ```
 
-## 11. 实际应用
+## 11. 自定义字段
+
+### 11.1 初识自定义字段
+
+前面我们所讲的例子中，所有DTO属性都是由实体属性映射而来，成为映射属性。
+
+除了映射属性外，DTO类型还支持映射属性
+
+```sh title="Author.dto"
+import java.util.LocaleDateTime ❶
+
+AuthorSpecification {
+    
+    #allScalars(Author)? - id
+
+    minCreatedTime: LocaleDateTime?  ❷
+    maxCreatedTimeExclusive: LocaleDateTime?  ❸
+}
+```
+
+-   ❶ 导入类型，简化后续自定义属性的定义
+
+-   ❷ ❸ 定义自定义属性的定义
+
+    自定义属性采用类似于kotlin的语法，可以采用`?`明确定属性可为null，否则，不能为null。
+
+    :::cuation
+    这里的自定义的属性是可null，如果要去掉`?`以定义非null的自定义属性，必须使用`input-only`/`inputOnly`修饰符
+    :::
+
+    -   对于Kotlin项目而言，生成与之完全对应的类型
+
+    -   对于Java项目而言，除了顶层类型的`?`会被用于在目标Java类中生成`@org.jetbrains.annotations.Nullable`注解外，内部范型的`?`会被忽略
+
+这里，`AuthorSpecification`并没有直接的Input/Output语言，被用作复杂动态查询的查询规格参数，例如
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="AuthorRepository.java"
+public interface AuthorRepository extends JRepository<Author, Long> {
+    
+    AuthorTable table = AuthorTable.$;
+
+    default List<Author> find(AuthorSpecification spec) {
+        return sql()
+            .createQuery(table)
+            .whereIf(
+                StringUtils.hasContent(spec.getFirstName()),
+                table.firstName().ilike(spec.getFirstName() != null)
+            )
+            .whereIf(
+                StringUtils.hasContent(spec.getLastName()),
+                table.lastName().ilike(spec.getLastName() != null)
+            )
+            .whereIf(
+                spec.getGender() != null,
+                table.gender().eq(sepc.getGender());
+            )
+            .whereIf(
+                spec.getMinCreatedTime() != null,
+                () -> table.createdTime().ge(spec.getMinCreatedTime())
+            )
+            .whereIf(
+                spec.getMaxCreatedTimeExclusive() != null,
+                () -> table.createdTime().lt(spec.getMaxCreatedTimeExclusive())
+            )
+            .select(table)
+            .execute()
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="AuthorRepository.kt"
+interface AuthorRepository : KRepository<Author, Long> {
+
+    fun find(spec: AuthorSpecification): List<Author> =
+        sql
+            .createQuery(Author::class) {
+                spec.firstName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.firstName ilike it)
+                }
+                spec.lastName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.lastName ilike it)
+                }
+                spec.gender?.let {
+                    where(table.gender eq it)
+                }
+                spec.minCreatedTime?.let {
+                    where(table.createdTime ge it)
+                }
+                spec.maxCreatedTimeExclusive?.let {
+                    where(table.createdTime lt it)
+                }
+                select(table)
+            }
+            .execute()
+}
+```
+
+</TabItem>
+</Tabs>
+
+对于其他非关联字段而言，查询条件是`eq`和`ilike`这样的单值查询条件，所以简单地使用`#allScalars`映射即可。
+
+然而，`createdTime`所对应的查询条件相对复杂，是一个区域查询，并不能简单地对映射实体中的`createdTime`属性，而是需要两个边界属性：`minCreatedTime`和`maxCreatedTimeExclusive`。
+
+由此可见，对于`AuthorSpecification`这种查询规格参数而言，自定义属性能带来极大的便利，能映射的属性就映射，不能映射的属性就自定义。
+
+因此，建议如下
+
+-   Specificiation DTO：鼓励使用，自定义属性几乎就是为这种类型设计。
+
+-   Input DTO: 可以少量使用，允许在Input DTO中混杂少量控制信息。
+
+    DTO对象的`toEntity`方法会忽略这些信息，把其他信息转化为一个干净的动态实体对象供[保存指令](../../mutation/save-command)使用
+
+-   Output DTO: 不鼓励使用
+
+    -   首先，Output DTO本身不是必须的，让查询方法直接返回动态对象，并辅以@FetchBy注解(../../spring/client/api#声明fetchby)，已经是足够强大的方案了。
+
+    -   其次，即便使用了Output DTO，Output DTO对象也只会拥有实体对象的属性，除非你愿意手动填充自定义属性。
+
+    :::tip
+    对于输出类型而言，自定义属性是实体层面的事 *(所以Output DTO不是必须的)*。
+    
+    请参见*[视图属性](../../mapping/advanced/view)、[简单计算属性](../../mapping/advanced/calculated/formula)、或[复杂计算属性](../../mapping/advanced/calculated/transient)
+    :::
+
+### 11.2 内置类型
+
+所谓内置类型，就是DTO语言内置类型，无需采用`import`导入。
+
+-   原生和装箱类型
+
+    |DTO语言类型|生成的Java类型|生成的Kotlin类型|
+    |---|---|---|
+    |Boolean|boolean|Boolean|
+    |Boolean?|Boolean|Boolean?|
+    |Char|char|Char|
+    |Char?|Character|Char?|
+    |Byte|byte|Byte|
+    |Byte?|Byte|Byte?|
+    |Short|short|Short|
+    |Short?|Short|Short?|
+    |Int|int|Int|
+    |Int?|Integer|Int?|
+    |Long|long|Long|
+    |Long?|Long|Long?|
+    |Float|float|Float|
+    |Float?|Float|Float?|
+    |Double|double|Double|
+    |Double?|Double|Double?|
+
+-   字符串类型
+
+    |DTO语言类型|生成的Java类型|生成的Kotlin类型|
+    |---|---|---|
+    |String|String|String|
+
+-   数组类型
+
+    |DTO语言类型|生成的Java类型|生成的Kotlin类型|
+    |---|---|---|
+    |Array&lt;Boolean&gt;|boolean[]|BooleanArray|
+    |Array&lt;Boolean?&gt;|Boolean[]|Array&lt;Boolean?&gt;|
+    |Array&lt;Char&gt;|char[]|CharArray|
+    |Array&lt;Char?&gt;|Character[]|Array&lt;Char?&gt;|
+    |Array&lt;Byte&gt;|byte[]|ByteArray|
+    |Array&lt;Byte?&gt;|Byte[]|Array&lt;Byte?&gt;|
+    |Array&lt;Short&gt;|short[]|ShortArray|
+    |Array&lt;Short?&gt;|Short[]|Array&lt;Short?&gt;|
+    |Array&lt;Int&gt;|int[]|IntArray|
+    |Array&lt;Int?&gt;|Integer[]|Array&lt;Int?&gt;|
+    |Array&lt;Long&gt;|long[]|LongArray|
+    |Array&lt;Long?&gt;|Long[]|Array&lt;Long?&gt;|
+    |Array&lt;Float&gt;|float[]|FloatArray|
+    |Array&lt;Float?&gt;|Float[]|Array&lt;Float?&gt;|
+    |Array&lt;Double&gt;|double[]|DoubleArray|
+    |Array&lt;Double?&gt;|Double[]|Array&lt;Double?&gt;|
+    |Array&lt;UserType&gt;|UserType[]|Array&lt;UserType&gt;|
+    |Array&lt;UserType?&gt;|UserType[]|Array&lt;UserType?&gt;|
+
+-   集合类型
+
+    |DTO语言类型|生成的Java类型|生成的Kotlin类型|
+    |---|---|---|
+    |Iterable&lt;E&gt;|Iterable&lt;? extends E&gt;|Iterable&lt;E&gt;|
+    |MutableIterable&lt;E&gt;|Iterable&lt;E&gt;|MutableIterable&lt;E&gt;|
+    |Collection&lt;E&gt;|Collection&lt;? extends E&gt;|Collection&lt;E&gt;|
+    |MutableCollection&lt;E&gt;|Collection&lt;E&gt;|MutableCollection&lt;E&gt;|
+    |List&lt;E&gt;|List&lt;? extends E&gt;|List&lt;E&gt;|
+    |MutableList&lt;E&gt;|List&lt;E&gt;|MutableList&lt;E&gt;|
+    |Set&lt;E&gt;|Set&lt;? extends E&gt;|Set&lt;E&gt;|
+    |MutableSet&lt;E&gt;|Set&lt;E&gt;|MutableSet&lt;E&gt;|
+    |Map&lt;K, V&gt;|Map&lt;? extends K, ? extends V&gt;|Map&lt;K, V&gt;|
+    |MutableMap&lt;K, V&gt;|Map&lt;K, V&gt;|Mutable&lt;K, V&gt;|
+
+### 11.3 范型参数修饰
+
+除了内置类型中的范型类 *(数组和集合)* 型外，其他范型类都支持使用`in`或`out`修饰范型参数，例如
+
+|DTO语言类型|生成的Java类型|生成的Kotlin类型|
+|---|---|---|
+|UserType1&lt;UserType2&gt;|UserType1&lt;UserType2&gt;|UserType1&lt;UserType2&gt;|
+|UserType1&lt;out UserType2&gt;|UserType1&lt;? extends UserType2&gt;|UserType1&lt;out UserType2&gt;|
+|UserType1&lt;in UserType2&gt;|UserType1&lt;? super UserType2&gt;|UserType1&lt;in UserType2&gt;|
+
+### 11.4 导入语句
+
+除了内置类型外的其他类型外，其他类型在被引用时，要么书写全名，要么在文件开头使用import语句，否则，将会认为其同当前实体属于同一包。
+
+DTO语言支持多种风格的import语句，例如
+
+-   单类导入
+
+    ```
+    import java.time.LocalDateTime
+    ```
+
+-   单类重命名导入
+
+    ```
+    import java.time.LocalDateTime as LDT
+    ```
+
+-   多类导入
+
+    ```
+    import java.time.{ 
+        LocalDateTime, 
+        OffsetDataTime, 
+        ZonedDataTime 
+    }
+    ```
+
+-   多类重命名导入
+
+    ```
+    import java.time.{ 
+        LocalDateTime as LDT, 
+        OffsetDataTime as ODT, 
+        ZonedDataTime as ZDT
+    }
+    ```
+
+## 12. 注解
+
+### 12.1 基本用法
+
+你可以在DTO语言中使用注解修饰DTO类型、映射属性和自定义属性
+
+```sh title="Author.dto"
+import org.babyfish.jimmer.client.Doc
+import org.springframework.format.annotation.DateTimeFormat
+
+@Doc("Author对象复杂查询的查询规格")
+AuthorSpecification {
+    
+    #allScalars
+
+    @Doc("模糊匹配")
+    firstName
+
+    @Doc("模糊匹配")
+    lastName
+
+    @Doc("最小创建时间，闭")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    minCreatedTime: LocalDateTime?
+
+    @Doc("最小创建时间，开")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    maxCreatedTimeExclusive: LocalDateTime?
+}
+```
+
+:::tip
+有一个细节需要注意
+```sh title="BookView"
+...省略import... 
+
+BookView {
+
+    ...省略其他属性...
+
+    # highlight-next-line
+    @A authors @B {
+        ...省略关联对象属性...
+    }
+
+    ...省略其他DTO类型...
+}
+```
+其中
+
+-   `@A`修饰`authors`属性
+
+-   `@B`修饰匿名的关联类型
+:::
+
+### 12.2 注解合并
+
+-   实体属性本身可以拥有注解，其中，非jimmer注解会被复制到被生成的DTO类型中
+
+-   DTO语言也支持注解，直接控制被生成的DTO类型的注解
+
+在最终生成的DTO类型中，这两部分注解会合并。如果二者冲突，由开发人员直接负责
+
+:::tip
+后续版本可能会更改此行为
+:::
+
+### 12.3 value参数
+
+### 12.4 会和Java和Kotlin的语法
+
+## 13. 实际应用
 
 -   [在查询API中充当输出参数 *(可选)*](../../query/object-fetcher/dto)
 
