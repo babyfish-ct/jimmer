@@ -812,8 +812,10 @@ class DtoGenerator private constructor(
                 if (accept) {
                     val qualifiedName = declaration.qualifiedName!!.asString()
                     return qualifiedName != NotNull::class.java.name &&
-                        qualifiedName != Nullable::class.java.name &&
-                        !qualifiedName.startsWith("org.babyfish.jimmer.")
+                        qualifiedName != Nullable::class.java.name && (
+                            !qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                                qualifiedName.startsWith("org.babyfish.jimmer.client.")
+                        )
                 }
             }
             return false

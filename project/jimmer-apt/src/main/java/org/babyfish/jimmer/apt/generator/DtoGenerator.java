@@ -834,8 +834,10 @@ public class DtoGenerator {
                 return !qualifiedName.equals(NotNull.class.getName()) &&
                         !qualifiedName.equals(javax.validation.constraints.NotNull.class.getName()) &&
                         !qualifiedName.equals(Nullable.class.getName()) &&
-                        !qualifiedName.equals(javax.validation.constraints.Null.class.getName()) &&
-                        !qualifiedName.startsWith("org.babyfish.jimmer.");
+                        !qualifiedName.equals(javax.validation.constraints.Null.class.getName()) && (
+                                !qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                                qualifiedName.startsWith("org.babyfish.jimmer.client.")
+                        );
             }
         }
         return false;
