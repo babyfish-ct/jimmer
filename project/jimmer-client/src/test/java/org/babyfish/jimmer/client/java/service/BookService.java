@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Doc("BookService interface")
 @RequestMapping(value = "/java", method = Operation.HttpMethod.GET)
@@ -70,15 +71,18 @@ public interface BookService {
 
     @GetMapping("/tuples")
     Page<
-                Tuple2<
-                        ? extends @FetchBy("COMPLEX_FETCHER") Book,
-                        ? extends @FetchBy(value = "AUTHOR_FETCHER", nullable = true) Author
-                >
-        > findTuples(
+            Tuple2<
+                    ? extends @FetchBy("COMPLEX_FETCHER") Book,
+                    ? extends @FetchBy(value = "AUTHOR_FETCHER", nullable = true) Author
+                    >
+            > findTuples(
             @Doc("Match the book name, optional") @RequestParam("name") @Nullable String name,
             @Doc("Start from 0, not 1") @RequestParam("pageIndex") int pageIndex,
             @RequestParam("pageSize") int pageSize
     );
+
+    @GetMapping("/book/{id}")
+    Optional<@FetchBy("COMPLEX_FETCHER") Book> findBook(@PathVariable("id") long id);
 
     @PutMapping("/book")
     @ThrowsAll(SaveErrorCode.class)
