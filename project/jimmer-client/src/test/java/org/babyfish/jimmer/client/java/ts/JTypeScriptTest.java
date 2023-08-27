@@ -414,6 +414,14 @@ public class JTypeScriptTest {
                         "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
                         "    }\n" +
                         "    \n" +
+                        "    async findBook(options: BookServiceOptions['findBook']): Promise<\n" +
+                        "        BookDto['BookService/COMPLEX_FETCHER'] | undefined\n" +
+                        "    > {\n" +
+                        "        let _uri = '/java/book/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER'] | undefined\n" +
+                        "    }\n" +
+                        "    \n" +
                         "    /**\n" +
                         "     * Find book list\n" +
                         "     * \n" +
@@ -576,6 +584,7 @@ public class JTypeScriptTest {
                         "\n" +
                         "export type BookServiceOptions = {\n" +
                         "    'deleteBook': {readonly id: number},\n" +
+                        "    'findBook': {readonly id: number},\n" +
                         "    'findComplexBooks': {\n" +
                         "        readonly name: string, \n" +
                         "        readonly storeName?: string, \n" +
@@ -630,6 +639,58 @@ public class JTypeScriptTest {
                         "        let _uri = '/java/book/';\n" +
                         "        _uri += encodeURIComponent(options.id);\n" +
                         "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async findBook(options: {readonly id: number}): Promise<\n" +
+                        "        {\n" +
+                        "            readonly id: number, \n" +
+                        "            readonly name: string, \n" +
+                        "            readonly edition: number, \n" +
+                        "            readonly price: number, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * The bookstore to which the current book belongs, null is allowd\n" +
+                        "             */\n" +
+                        "            readonly store?: {\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly name: string\n" +
+                        "            }, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * All authors involved in writing the work\n" +
+                        "             */\n" +
+                        "            readonly authors: ReadonlyArray<{\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly firstName: string, \n" +
+                        "                readonly lastName: string\n" +
+                        "            }>\n" +
+                        "        } | undefined\n" +
+                        "    > {\n" +
+                        "        let _uri = '/java/book/';\n" +
+                        "        _uri += encodeURIComponent(options.id);\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as {\n" +
+                        "            readonly id: number, \n" +
+                        "            readonly name: string, \n" +
+                        "            readonly edition: number, \n" +
+                        "            readonly price: number, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * The bookstore to which the current book belongs, null is allowd\n" +
+                        "             */\n" +
+                        "            readonly store?: {\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly name: string\n" +
+                        "            }, \n" +
+                        "            \n" +
+                        "            /**\n" +
+                        "             * All authors involved in writing the work\n" +
+                        "             */\n" +
+                        "            readonly authors: ReadonlyArray<{\n" +
+                        "                readonly id: number, \n" +
+                        "                readonly firstName: string, \n" +
+                        "                readonly lastName: string\n" +
+                        "            }>\n" +
+                        "        } | undefined\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
