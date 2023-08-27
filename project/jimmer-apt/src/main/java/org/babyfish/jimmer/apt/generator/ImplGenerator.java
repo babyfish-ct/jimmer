@@ -152,7 +152,7 @@ public class ImplGenerator {
                             "throw new $T($T.class, $S)",
                             unloadedExceptionClassName,
                             type.getClassName(),
-                            prop.getValueName()
+                            prop.getName()
                     )
                     .endControlFlow();
             builder.addStatement("return $L", prop.getValueName());
