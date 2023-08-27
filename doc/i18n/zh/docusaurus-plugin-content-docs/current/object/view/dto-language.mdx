@@ -389,7 +389,7 @@ input UpdateBookInput {
 
 ### 7.2 `!`
 
-我们可以采用`!`修饰DTO属性，让其非null。但其使用场景受限，只能用于一向两种情况。
+我们可以采用`!`修饰DTO属性，让其非null。但其使用场景受限，只能用于以下两种情况。
 
 -   在`input`/`input-only`类型中修饰id属性
 
@@ -990,13 +990,13 @@ AuthorSpecification {
 
     自定义属性采用类似于kotlin的语法，可以采用`?`明确定属性可为null，否则，不能为null。
 
-    :::cuation
-    这里的自定义的属性是可null，如果要去掉`?`以定义非null的自定义属性，必须使用`input-only`/`inputOnly`修饰符
-    :::
-
     -   对于Kotlin项目而言，生成与之完全对应的类型
 
-    -   对于Java项目而言，除了顶层类型的`?`会被用于在目标Java类中生成`@org.jetbrains.annotations.Nullable`注解外，内部范型的`?`会被忽略
+    -   对于Java项目而言，除了顶层类型的`?`会被用于在目标Java字段上生成`@org.jetbrains.annotations.Nullable`注解外，内部范型的`?`会被忽略
+
+    :::caution
+    这里的自定义的属性允许为null，如果要定义非null的属性 *(即去掉`?`)*，必须使用`input-only`/`inputOnly`修饰符
+    :::
 
 这里，`AuthorSpecification`并没有直接的Input/Output语言，被用作复杂动态查询的查询规格参数，例如
 
@@ -1121,10 +1121,11 @@ interface AuthorRepository : KRepository<Author, Long> {
     |Double|double|Double|
     |Double?|Double|Double?|
 
--   字符串类型
+-   Any和String类型
 
     |DTO语言类型|生成的Java类型|生成的Kotlin类型|
     |---|---|---|
+    |Any|Object|Any|
     |String|String|String|
 
 -   数组类型
@@ -1149,6 +1150,7 @@ interface AuthorRepository : KRepository<Author, Long> {
     |Array&lt;Double?&gt;|Double[]|Array&lt;Double?&gt;|
     |Array&lt;UserType&gt;|UserType[]|Array&lt;UserType&gt;|
     |Array&lt;UserType?&gt;|UserType[]|Array&lt;UserType?&gt;|
+    |Array&lt;*&gt;|Object[]|Array&lt;*&gt;|
 
 -   集合类型
 
@@ -1223,26 +1225,34 @@ DTO语言支持多种风格的import语句，例如
 import org.babyfish.jimmer.client.Doc
 import org.springframework.format.annotation.DateTimeFormat
 
-@Doc("Author对象复杂查询的查询规格")
+@Doc("Author对象复杂查询的查询规格") ❶
 AuthorSpecification {
     
     #allScalars
 
-    @Doc("模糊匹配")
+    @Doc("模糊匹配")  ❷
     firstName
 
-    @Doc("模糊匹配")
+    @Doc("模糊匹配")  ❸
     lastName
 
-    @Doc("最小创建时间，闭")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @Doc("最小创建时间，闭") ❹
+    @DateTimeFormat(pattern = "yyyy-MM-dd") ❺
     minCreatedTime: LocalDateTime?
 
-    @Doc("最小创建时间，开")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @Doc("最小创建时间，开") ❻
+    @DateTimeFormat(pattern = "yyyy-MM-dd") ❼
     maxCreatedTimeExclusive: LocalDateTime?
 }
 ```
+
+其中
+
+-   ❶ 修饰类型
+
+-   ❷ ❸ 修饰映射属性
+
+-   ❹ ❺ ❻ ❼ 修饰自定义属性
 
 :::tip
 有一个细节需要注意
@@ -1268,21 +1278,78 @@ BookView {
 -   `@B`修饰匿名的关联类型
 :::
 
-### 12.2 注解合并
+### 12.2 注解替换
 
--   实体属性本身可以拥有注解，其中，非jimmer注解会被复制到被生成的DTO类型中
+-   如前文所述，DTO语言支持注解，直接控制被生成的DTO类型的注解
 
--   DTO语言也支持注解，直接控制被生成的DTO类型的注解
-
-在最终生成的DTO类型中，这两部分注解会合并。如果二者冲突，由开发人员直接负责
-
-:::tip
-后续版本可能会更改此行为
-:::
+-   如果DTO属性没有被任何注解修饰，就会复制原实体中对应属性的注解 *(如果DTO属性是映射而来，而非自定义的)*。
+    其中，除`org.babyfish.jimmer.client`包下的其他任何 **非** jimmer注解都会被复制到被生成的DTO类型中
 
 ### 12.3 value参数
 
-### 12.4 会和Java和Kotlin的语法
+注解中的`value`参数可以被简写，例如
+
+```
+@UserAnnotation(value = "a", value2 = "b", value3 = "c")
+```
+
+可以被简写为
+
+```
+@UserAnnotation("a", value2 = "b", value3 = "c")
+```
+
+和Java不同，无论注解有多少个参数，`value`参数都可以被缩写，只要保证被缩写的属性最先配置即可。
+
+### 12.4 混合Java和Kotlin的语法
+
+Java和Kotlin的注解语法存在一些微弱的差异，DTO语言混合了二者的特征，例如
+
+-   ```
+    @UserAnnotation(
+        "key1",
+        items = {
+            @Item("subKey1", description = "Detail information for subKey1 ..."),
+            @Item("subKey2", description = "Detail information for subKey2 ..."),
+            @Item("subKey3", description = "Detail information for subKey3 ...")
+        }
+    )
+    ```
+
+-   ```
+    @UserAnnotation(
+        "key1",
+        items = [
+            @Item("subKey1", description = "Detail information for subKey1 ..."),
+            @Item("subKey2", description = "Detail information for subKey2 ..."),
+            @Item("subKey3", description = "Detail information for subKey3 ...")
+        ]
+    )
+    ```
+
+-   ```
+    @UserAnnotation(
+        "key1",
+        items = {
+            Item("subKey1", description = "Detail information or subKey1 ..."),
+            Item("subKey2", description = "Detail information for subKey2 ..."),
+            Item("subKey3", description = "Detail information for subKey3 ...")
+        }
+    )
+    ```
+
+-   ```
+    @UserAnnotation(
+        "key1",
+        items = [
+            Item("subKey1", description = "Detail information for subKey1 ..."),
+            Item("subKey2", description = "Detail information for subKey2 ..."),
+            Item("subKey3", description = "Detail information for subKey3 ...")
+        ]
+    )
+    ```
+
+以上四种写法是等价的。你可以随意选择你喜欢的系法。
 
 ## 13. 实际应用
 

@@ -1,10 +1,14 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 title: DTO查询
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+
+之前我们介绍了，利用对象抓取器灵活控制被查询数据结构的形状。
+
+现在，我们介绍一个与之等价的功能：查询DTO对象。
 
 Jimmer提供了[DTO语言](../../object/view/dto-language)。
 
@@ -178,52 +182,36 @@ data class BookDetailView(
 -   对于Java而言，假设用户已经使用了lombok
 :::
 
-## 查询DTO类型
+## 查询DTO对象
 
-查询DTO类型的方案有多种：
-
--   使用从`JRepository/KRepostiory`中继承的方法
-
--   在自定义Repository中定义抽象方法
-
--   在自定义Repository中定义默认方法 *(其实也是底层API查询DTO类型的方法)*
-
-### 使用从Repository继承的方法
+### 使用findById
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-public static void main(String[] args) {
-    ApplicationContext ctx = SpringAppliction.run(MyApp.class, args);
-    BookRepository bookRepository = ctx.getBean(BookRepository.class);
-    Book view = bookRepository
-        // highlight-next-line
-        .viwer(BookDetailView.class)
-        .findNullable(1L);
-    System.out.println(view);
-}
+BookDetailView view = sqlClient.findNullable(
+    // highlight-next-line
+    BookDetailView.class, 
+    1L
+);
+System.out.println(view);
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-fun main(args: Array<String>) {
-    val ctx = runApplication<MyApp>(*args)
-    val bookRepository = ctx.getBean(BookRepository.class.java)
-    val view = bookRepository
-        // highlight-next-line
-        .viwer(BookDetailView.class)
-        .findNullable(1L)
-    println(view)
-}
+val view = sqlClient.findNullable(
+    // highlight-next-line
+    BookDetailView::class, 
+    1L
+);
+println(view)
 ```
 
 </TabItem>
 </Tabs>
-
-其中，`viewer(BookDetailView.class)`表示接下来的方法用于查询DTO对象，而非动态实体对象。
 
 打印结果如下 *(为方便阅读，人为进行了格式化)*
 
@@ -407,242 +395,47 @@ data class BookDetailView(
 这就是本文开头说DTO语言本质上是对象抓取器的另外一种表达方式的原因
 :::
 
-### 在自定义Repository中定义抽象方法
-
-有两种实施方案
-
--   直观但不推荐的方案
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-
-    ```java title="BookRepository.java"
-    // 直观但不推荐的方案
-    public interface BookRepository extends JRepository<Book, Long> {
-
-        // highlight-next-line
-        List<BookDetailView> findByNameLikeIgnoreCase(
-            @Nullable String name
-        );    
-    }
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin  title="BookRepository.kt"
-    // 直观但不推荐的方案
-    interface BookRepository : KRepository<Book, Long> {
-
-        fun findByNameLikeIgnoreCase(
-            name: String? = null
-        // highlight-next-line
-        ) : List<BookDetailView>    
-    }
-    ```
-
-    </TabItem>
-    </Tabs>
-
-    这种方案很简单，抽象方法不再返回代表任意数据的动态实体，直接返回固定形状的DTO类型即可。非常容易理解。
-
-    :::caution
-    然而，这种方案存是有缺点的，并不推荐。
-    :::
-
--   推荐做法
-
-    上面的代码虽然简单直观，但是违背了Jimmer一直努力追求重要价值观之一
-
-    :::tip
-    不要在数据层固化被查询的数据结构的形状，而应该由上层业务来决定。
-    :::
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-
-    ```java title="BookRepository.java"
-    public interface BookRepository extends JRepository<Book, Long> {
-
-        <V extends View<Book>> List<V> findByNameLikeIgnoreCase(
-            @Nullable String name,
-            // highlight-next-line
-            Class<V> viewType
-        );    
-    }
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin  title="BookRepository.kt"
-    interface BookRepository : KRepository<Book, Long> {
-
-        fun <V: View<Book>> findByNameLikeIgnoreCase(
-            name: String? = null
-            // highlight-next-line
-            viewType: KClass<V>
-        ) : List<V>    
-    }
-    ```
-
-    </TabItem>
-    </Tabs>
-
-    可以看到
-
-    1.  首先，定义一个方法级的范型参数`V`，该范型参数必须继承`org.babyfish.jimmer.View<Book>` *(这非常重要，否则Jimmer会通过异常提醒开发人员这样做)*。
-
-    2.  然后，利用`V`声明类型为`Class<V>`或`KClass<V>`的参数`viewType`，将数据结构形状的决策权交给调用者。
-
-    3.  最后，返回`V`、`List<V>`或`Page<V>`这类携带`V`类型的结果。
-
-    这样，我们就可以用它来查询各种形状的数据结构，以Java为例
-
-    -   bookRepository.findByNameLikeIgnoreCase(null, BookDetailView.class)
-
-    -   bookRepository.findByNameLikeIgnoreCase(null, SimpleBookView.class)
-
-    -   bookRepository.findByNameLikeIgnoreCase(null, DefaultBookView.class)
-
-    让我们来回忆一下，在我们介绍DTO类型之前，我们是如何直接使用对象抓取器来实现相同功能的
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-
-    ```java title="BookRepository.java"
-    public interface BookRepository extends JRepository<Book, Long> {
-
-        List<Book> findByNameLikeIgnoreCase(
-            @Nullable String name,
-            // highlight-next-line
-            fetcher<Book> fetcher
-        );    
-    }
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin  title="BookRepository.kt"
-    interface BookRepository : KRepository<Book, Long> {
-
-        fun findByNameLikeIgnoreCase(
-            name: String? = null
-            // highlight-next-line
-            viewType: Fetcher<Book>
-        ) : List<Book>    
-    }
-    ```
-
-    </TabItem>
-    </Tabs>
-
-    :::tip
-    对比使用DTO的代码和直接使用对象抓取器的代码，不难发现，二者异曲同工。
-
-    这再次印证了本文开头所说DTO语言本质上是对象抓取器的另外一种表达方式。
-    :::
-
-### 在自定义Repository中定义默认方法
+### 使用自定义查询
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookRepository.java"
-public interface BookRepository extends JRepository<Book, Long> {
+```java
+BookTable table = BookTable.$;
 
-    BookTable table = BookTable.$;
-
-    default <V extends View<Book>> List<V> find(
-        @Nullable String name,
-        @Nullable String storeName,
-        @Nullalbe String authorName,
+List<Book> books = sqlClient 
+    .createQuery(table)
+    .where(table.name().eq("GraphQL in Action"))
+    .orderBy(table.name())
+    .orderBy(table.edition().desc())
+    .select(
         // highlight-next-line
-        Class<V> viewType
-    ) {
-        return sql()
-            .createQuery(table)
-            whereIf(
-                StringUtils.hasText(name),
-                table.name().ilike(name)
-            )
-            .whereIf(
-                StringUtils.hasText(storeName),
-                table.store().name().ilike(storeName) 
-            )
-            .whereIf(
-                StringUtils.hasText(authorName),
-                table.id().in(
-                    sql()
-                        .createSubQuery(author)
-                        .where(
-                            Predicate.or(
-                                author.firstName().ilike(authorName),
-                                author.lastName().ilike(authorName)
-                            )
-                        )
-                        .select(
-                            author.books().id()
-                        )
-                )
-            )
-            .orderBy(table.name())
-            .orderBy(table.edition().desc())
-            // highlight-next-line
-            .select(table.fetch(viewType)) 
-            .execute();
-    }
-}
+        table.fetch(BookDetailView.class)
+    ) 
+    .execute()
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin  title="BookRepository.kt"
-interface BookRepository : KRepository<Book, Long> {
-
-    fun <V: View<Book>> findByNameLikeIgnoreCase(
-        name: String? = null
-        // highlight-next-line
-        viewType: KClass<V>
-    ) : List<V> =
-        sql
-            .createQuery(Book::class) {
-                name?.takeIf { it.isNotEmpty() }?.let {
-                    where(table.name ilike it)
-                }
-                storeName?.takeIf { it.isNotEmpty() }?.let {
-                    table.store.name ilike it
-                }
-                authorName?.takeIf { it.isNotEmpty() }?.let {
-                    where(
-                        table.id valueIn subQuery(Author::class) {
-                            where(
-                                or(
-                                    table.firstName ilike it,
-                                    table.lastName ilike it
-                                )
-                            )
-                            select(table.books.id)
-                        }
-                    )
-                }
-                orderBy(table.name)
-                orderBy(table.edition.desc())
-                // highlight-next-line
-                select(table.fetch(viewType))
-            }
-            .execute()    
-}
+```kotlin
+val books = sqlClient 
+    .createQuery(Book::class) {
+        where(table.name eq "GraphQL in Action")
+        orderBy(table.name)
+        orderBy(table.edition.desc())
+        select(
+            // highlight-next-line
+            table.fetch(BookDetailView::class)
+        )
+    }
+    .execute()
 ```
 
 </TabItem>
 </Tabs>
 
-这里，我们看到了，以前代码中的`table.fetch(fetcher)`被替换成了`table.fetch(viewType)`。
-
-其实，其他底层查询API也可以用`viewType`替换`fetcher`。比如`sqlClient.findById(fetcher, 1L)`可以被替换为`sqlClient.find(viewType, 1L)`。
+这里，我们看到了，以前代码中的`table.fetch(fetcher)`被替换成了`table.fetch(BookDetailView.class)`。
 
 :::tip
 所有底层查询API都可以用`viewType`替换`fetcher`，再次印证了本文开头所说DTO语言本质上是对象抓取器的另外一种表达方式。

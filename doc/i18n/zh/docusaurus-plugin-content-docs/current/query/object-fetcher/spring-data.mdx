@@ -1,0 +1,26 @@
+---
+sidebar_position: 7
+title: 和Spring Dta协同
+---
+
+我们已经介绍了，对象抓取器可以灵活控制被查询数据结构的形状，这为业务系统构建带来了巨额大的灵活性。
+
+而且我们还知道，有两种完全等价的使用方法
+
+-   直接使用对象抓取器，并返回动态实体对象
+
+-   采用[DTO语言](../../object/view/dto-language)定义输出DTO形状，自动生成相关Java/Kotlin类型，和实体之间的转换逻辑，以及该形状所对应的对象抓取器。
+
+Jimmer提供了Spring Boot Starter，并整合了Spring Data。对象抓取器也被整合进了Spring Data，相关文档链接为
+
+-   直接使用对象抓取器
+
+    - [抽象查询使用对象抓取器](../../spring/repository/abstract#对象抓取器)
+
+    - [复杂查询使用对象抓取器](../../spring/repository/default#对象抓取器)
+
+    - [结合@FetchBy注解自动生成类型系统严谨的客户端代码](../../spring/client/api)
+
+-   采用[DTO语言](../../object/view/dto-language)
+
+    [使用Spring Data查询DTO对象](../../spring/repository/dto)
