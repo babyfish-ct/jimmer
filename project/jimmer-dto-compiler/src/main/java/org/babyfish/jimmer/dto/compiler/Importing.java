@@ -75,38 +75,48 @@ class Importing {
         if (!ctx.genericArguments.isEmpty()) {
             arguments = new ArrayList<>(ctx.genericArguments.size());
             for (DtoParser.GenericArgumentContext arg : ctx.genericArguments) {
-                boolean in = false;
-                boolean out = false;
-                if (arg.modifier != null) {
-                    switch (arg.modifier.getText()) {
-                        case "in":
-                            in = true;
-                            break;
-                        case "out":
-                            out = true;
-                            break;
-                        default:
+                if (arg.wildcard != null) {
+                    arguments.add(
+                            new TypeRef.Argument(
+                                    null,
+                                    false,
+                                    false
+                            )
+                    );
+                } else {
+                    boolean in = false;
+                    boolean out = false;
+                    if (arg.modifier != null) {
+                        switch (arg.modifier.getText()) {
+                            case "in":
+                                in = true;
+                                break;
+                            case "out":
+                                out = true;
+                                break;
+                            default:
+                                throw this.ctx.exception(
+                                        arg.modifier.getLine(),
+                                        "The generic argument modifier is neither \"in\" nor \"out\""
+                                );
+                        }
+                        if (expectedArgumentCount != null) {
                             throw this.ctx.exception(
                                     arg.modifier.getLine(),
-                                    "The generic argument modifier is neither \"in\" nor \"out\""
+                                    "The modifier \"" +
+                                            arg.modifier.getText() +
+                                            "\" of the generic argument of standard collection cannot be specified"
                             );
+                        }
                     }
-                    if (expectedArgumentCount != null) {
-                        throw this.ctx.exception(
-                                arg.modifier.getLine(),
-                                "The modifier \"" +
-                                        arg.modifier.getText() +
-                                        "\" of the generic argument of standard collection cannot be specified"
-                        );
-                    }
+                    arguments.add(
+                            new TypeRef.Argument(
+                                    resolve(arg.typeRef()),
+                                    in,
+                                    out
+                            )
+                    );
                 }
-                arguments.add(
-                        new TypeRef.Argument(
-                               resolve(arg.typeRef()),
-                               in,
-                               out
-                        )
-                );
             }
         }
         return new TypeRef(
@@ -176,6 +186,7 @@ class Importing {
         autoImportedTypes.add(Long.class.getName());
         autoImportedTypes.add(Float.class.getName());
         autoImportedTypes.add(Double.class.getName());
+        autoImportedTypes.add(Object.class.getName());
         autoImportedTypes.add(String.class.getName());
         autoImportedTypes.add(Iterable.class.getName());
         autoImportedTypes.add(Collection.class.getName());
@@ -191,6 +202,7 @@ class Importing {
         autoImportedTypes.add("kotlin.Long");
         autoImportedTypes.add("kotlin.Float");
         autoImportedTypes.add("kotlin.Double");
+        autoImportedTypes.add("kotlin.Any");
         autoImportedTypes.add("kotlin.String");
         autoImportedTypes.add("kotlin.Array");
         autoImportedTypes.add("kotlin.BooleanArray");
@@ -222,6 +234,7 @@ class Importing {
         standardTypes.put(TypeRef.TN_LONG, 0);
         standardTypes.put(TypeRef.TN_FLOAT, 0);
         standardTypes.put(TypeRef.TN_DOUBLE, 0);
+        standardTypes.put(TypeRef.TN_ANY, 0);
         standardTypes.put(TypeRef.TN_STRING, 0);
         standardTypes.put(TypeRef.TN_ARRAY, 1);
         standardTypes.put(TypeRef.TN_ITERABLE, 1);

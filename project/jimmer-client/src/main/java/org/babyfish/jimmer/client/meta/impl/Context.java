@@ -478,6 +478,11 @@ class Context {
                         parseKotlinType(argumentTypes.get(1))
                 );
             }
+            if (Optional.class.isAssignableFrom(javaClass)) {
+                return NullableTypeImpl.of(
+                        parseKotlinType(argumentTypes.get(0))
+                );
+            }
             return new Context(this, type).objectType(
                     kotlinClass,
                     argumentTypes.stream().map(this::parseKotlinType).collect(Collectors.toList())

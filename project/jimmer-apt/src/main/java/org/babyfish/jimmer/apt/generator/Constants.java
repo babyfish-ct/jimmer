@@ -32,12 +32,6 @@ class Constants {
     public static final ClassName JSON_IGNORE_CLASS_NAME =
             ClassName.get(JsonIgnore.class);
 
-    public static final ClassName CONSTRUCTOR_PROPERTIES_CLASS_NAME =
-            ClassName.get(ConstructorProperties.class);
-
-    public static final ClassName OBJECT_CLASS_NAME =
-            ClassName.get(Object.class);
-
     public static final ClassName STRING_CLASS_NAME =
             ClassName.get(String.class);
 

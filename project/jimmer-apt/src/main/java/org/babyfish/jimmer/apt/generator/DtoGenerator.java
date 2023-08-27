@@ -270,13 +270,16 @@ public class DtoGenerator {
                 builder.addAnnotation(NotNull.class);
             }
         }
-        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
-            if (isCopyableAnnotation(annotationMirror, false)) {
-                builder.addAnnotation(AnnotationSpec.get(annotationMirror));
+        if (prop.getAnnotations().isEmpty()) {
+            for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
+                if (isCopyableAnnotation(annotationMirror, false)) {
+                    builder.addAnnotation(AnnotationSpec.get(annotationMirror));
+                }
             }
-        }
-        for (Anno anno : prop.getAnnotations()) {
-            builder.addAnnotation(annotationOf(anno));
+        } else {
+            for (Anno anno : prop.getAnnotations()) {
+                builder.addAnnotation(annotationOf(anno));
+            }
         }
         typeBuilder.addField(builder.build());
     }
@@ -683,7 +686,10 @@ public class DtoGenerator {
                 elementTypeName;
     }
 
-    public TypeName getTypeName(TypeRef typeRef) {
+    public TypeName getTypeName(@Nullable TypeRef typeRef) {
+        if (typeRef == null) {
+            return WildcardTypeName.subtypeOf(TypeName.OBJECT);
+        }
         TypeName typeName;
         switch (typeRef.getTypeName()) {
             case "Boolean":
@@ -710,8 +716,18 @@ public class DtoGenerator {
             case "Double":
                 typeName = typeRef.isNullable() ? TypeName.DOUBLE.box() : TypeName.DOUBLE;
                 break;
+            case "Any":
+                typeName = TypeName.OBJECT;
+                break;
+            case "String":
+                typeName = Constants.STRING_CLASS_NAME;
+                break;
             case "Array":
-                typeName = ArrayTypeName.of(getTypeName(typeRef.getArguments().get(0).getTypeRef()));
+                typeName = ArrayTypeName.of(
+                        typeRef.getArguments().get(0).getTypeRef() == null ?
+                                TypeName.OBJECT :
+                                getTypeName(typeRef.getArguments().get(0).getTypeRef())
+                );
                 break;
             case "Iterable":
             case "MutableIterable":
@@ -747,7 +763,7 @@ public class DtoGenerator {
             TypeName argTypeName = getTypeName(arg.getTypeRef());
             if (arg.isIn()) {
                 argTypeName = WildcardTypeName.supertypeOf(argTypeName);
-            } else if (arg.isOut() || isForceOut(typeRef.getTypeName())) {
+            } else if (arg.getTypeRef() != null && (arg.isOut() || isForceOut(typeRef.getTypeName()))) {
                 argTypeName = WildcardTypeName.subtypeOf(argTypeName);
             }
             argTypeNames[i] = argTypeName;

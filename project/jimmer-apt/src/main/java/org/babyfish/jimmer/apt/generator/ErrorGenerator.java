@@ -251,7 +251,7 @@ public class ErrorGenerator {
                         ParameterizedTypeName.get(
                                 Constants.MAP_CLASS_NAME,
                                 Constants.STRING_CLASS_NAME,
-                                Constants.OBJECT_CLASS_NAME
+                                TypeName.OBJECT
                         )
                 );
         if (fields.isEmpty()) {

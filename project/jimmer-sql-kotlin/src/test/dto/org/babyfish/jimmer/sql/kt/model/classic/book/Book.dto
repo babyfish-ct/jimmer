@@ -47,6 +47,13 @@ input-only BookSpecification {
     tag5: Array<Int>
     tag6: Array<Int?>
     tag7: LocalDateTime
+    tag8: Any
+    tag9: Array<*>
+    tag10: Array<Any>
+    tag11: List<*>
+    tag12: MutableList<*>
+    tag13: List<Any>
+    tag14: MutableList<Any>
 }
 
 input-only BookInput {

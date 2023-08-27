@@ -56,6 +56,9 @@ public class JFeignTest {
                         "    @DeleteMapping(\"/java/book/{id}\")\n" +
                         "    int deleteBook(@PathVariable(\"id\") long id);\n" +
                         "    \n" +
+                        "    @GetMapping(\"/java/book/{id}\")\n" +
+                        "    BookDto.BookService_COMPLEX_FETCHER findBook(@PathVariable(\"id\") long id);\n" +
+                        "    \n" +
                         "    /**\n" +
                         "     * Find book list\n" +
                         "     * \n" +

@@ -344,11 +344,14 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
-                        for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
-                            addAnnotation(anno.toAnnotationSpec())
-                        }
-                        for (anno in prop.annotations) {
-                            addAnnotation(annotationOf(anno))
+                        if (prop.annotations.isEmpty()) {
+                            for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
+                                addAnnotation(anno.toAnnotationSpec())
+                            }
+                        } else {
+                            for (anno in prop.annotations) {
+                                addAnnotation(annotationOf(anno))
+                            }
                         }
                     }
                     .build()
@@ -700,55 +703,70 @@ class DtoGenerator private constructor(
             }
     }
 
-    private fun typeName(typeRef: TypeRef): TypeName {
-        val typeName = when (typeRef.typeName) {
-            TypeRef.TN_BOOLEAN -> BOOLEAN
-            TypeRef.TN_CHAR -> CHAR
-            TypeRef.TN_BYTE -> BYTE
-            TypeRef.TN_SHORT -> SHORT
-            TypeRef.TN_INT -> INT
-            TypeRef.TN_LONG -> LONG
-            TypeRef.TN_FLOAT -> FLOAT
-            TypeRef.TN_DOUBLE -> DOUBLE
-            TypeRef.TN_STRING -> STRING
-            TypeRef.TN_ARRAY ->
-                if (typeRef.arguments[0].typeRef.isNullable) {
-                    ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
-                } else {
-                    when (typeRef.arguments[0].typeRef.typeName) {
-                        TypeRef.TN_BOOLEAN -> BOOLEAN_ARRAY
-                        TypeRef.TN_CHAR -> CHAR_ARRAY
-                        TypeRef.TN_BYTE -> BYTE_ARRAY
-                        TypeRef.TN_SHORT -> SHORT_ARRAY
-                        TypeRef.TN_INT -> INT_ARRAY
-                        TypeRef.TN_LONG -> LONG_ARRAY
-                        TypeRef.TN_FLOAT -> FLOAT_ARRAY
-                        TypeRef.TN_DOUBLE -> DOUBLE_ARRAY
-                        else -> ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+    private fun typeName(typeRef: TypeRef?): TypeName {
+        val typeName = if (typeRef === null) {
+            STAR
+        } else {
+            when (typeRef.typeName) {
+                TypeRef.TN_BOOLEAN -> BOOLEAN
+                TypeRef.TN_CHAR -> CHAR
+                TypeRef.TN_BYTE -> BYTE
+                TypeRef.TN_SHORT -> SHORT
+                TypeRef.TN_INT -> INT
+                TypeRef.TN_LONG -> LONG
+                TypeRef.TN_FLOAT -> FLOAT
+                TypeRef.TN_DOUBLE -> DOUBLE
+                TypeRef.TN_ANY -> ANY
+                TypeRef.TN_STRING -> STRING
+                TypeRef.TN_ARRAY ->
+                    if (typeRef.arguments[0].typeRef == null) {
+                        ARRAY.parameterizedBy(STAR)
+                    } else if (typeRef.arguments[0].typeRef?.isNullable == true) {
+                        ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+                    } else {
+                        val componentTypeRef = typeRef.arguments[0].typeRef
+                        if (componentTypeRef == null) {
+                            ARRAY.parameterizedBy(
+                                WildcardTypeName.producerOf(ANY)
+                            )
+                        } else {
+                            when (componentTypeRef.typeName) {
+                                TypeRef.TN_BOOLEAN -> BOOLEAN_ARRAY
+                                TypeRef.TN_CHAR -> CHAR_ARRAY
+                                TypeRef.TN_BYTE -> BYTE_ARRAY
+                                TypeRef.TN_SHORT -> SHORT_ARRAY
+                                TypeRef.TN_INT -> INT_ARRAY
+                                TypeRef.TN_LONG -> LONG_ARRAY
+                                TypeRef.TN_FLOAT -> FLOAT_ARRAY
+                                TypeRef.TN_DOUBLE -> DOUBLE_ARRAY
+                                else -> ARRAY.parameterizedBy(typeName(typeRef.arguments[0].typeRef))
+                            }
+                        }
                     }
-                }
-            TypeRef.TN_ITERABLE -> ITERABLE
-            TypeRef.TN_MUTABLE_ITERABLE -> MUTABLE_ITERABLE
-            TypeRef.TN_COLLECTION -> COLLECTION
-            TypeRef.TN_MUTABLE_COLLECTION -> MUTABLE_COLLECTION
-            TypeRef.TN_LIST -> LIST
-            TypeRef.TN_MUTABLE_LIST -> MUTABLE_LIST
-            TypeRef.TN_SET -> SET
-            TypeRef.TN_MUTABLE_SET -> MUTABLE_SET
-            TypeRef.TN_MAP -> MAP
-            TypeRef.TN_MUTABLE_MAP -> MUTABLE_MAP
-            else -> ClassName.bestGuess(typeRef.typeName)
+
+                TypeRef.TN_ITERABLE -> ITERABLE
+                TypeRef.TN_MUTABLE_ITERABLE -> MUTABLE_ITERABLE
+                TypeRef.TN_COLLECTION -> COLLECTION
+                TypeRef.TN_MUTABLE_COLLECTION -> MUTABLE_COLLECTION
+                TypeRef.TN_LIST -> LIST
+                TypeRef.TN_MUTABLE_LIST -> MUTABLE_LIST
+                TypeRef.TN_SET -> SET
+                TypeRef.TN_MUTABLE_SET -> MUTABLE_SET
+                TypeRef.TN_MAP -> MAP
+                TypeRef.TN_MUTABLE_MAP -> MUTABLE_MAP
+                else -> ClassName.bestGuess(typeRef.typeName)
+            }
         }
         val args = typeRef
-            .arguments
-            .takeIf { it.isNotEmpty() && typeRef.typeName != TypeRef.TN_ARRAY }
+            ?.arguments
+            ?.takeIf { it.isNotEmpty() && typeRef.typeName != TypeRef.TN_ARRAY }
             ?.let { args ->
                 Array(args.size) { i ->
                     typeName(args[i].typeRef).let {
                         when {
                             args[i].isIn -> WildcardTypeName.consumerOf(it)
                             args[i].isOut -> WildcardTypeName.producerOf(it)
-                            else ->it
+                            else -> it
                         }
                     }
                 }
@@ -758,7 +776,7 @@ class DtoGenerator private constructor(
         } else {
             (typeName as ClassName).parameterizedBy(*args)
         }.copy(
-            nullable = typeRef.isNullable
+            nullable = typeRef?.isNullable ?: false
         )
     }
 
@@ -884,27 +902,42 @@ class DtoGenerator private constructor(
 
                     TypeRef.TN_STRING -> "\"\""
 
-                    TypeRef.TN_ARRAY -> if (typeRef.arguments[0].typeRef.isNullable) {
+                    TypeRef.TN_ARRAY -> if (typeRef.arguments[0].typeRef == null) {
+                        "emptyArray<Any?>()"
+                    } else if (typeRef.arguments[0].typeRef?.isNullable == true) {
                         "emptyArray()"
                     } else {
-                        when (typeRef.arguments[0].typeRef.typeName) {
-                            TypeRef.TN_BOOLEAN -> "booleanArrayOf()"
-                            TypeRef.TN_CHAR -> "charArrayOf()"
-                            TypeRef.TN_BYTE -> "byteArrayOf()"
-                            TypeRef.TN_SHORT -> "shortArrayOf()"
-                            TypeRef.TN_INT -> "intArrayOf()"
-                            TypeRef.TN_LONG -> "longArrayOf()"
-                            TypeRef.TN_FLOAT -> "floatArrayOf()"
-                            TypeRef.TN_DOUBLE -> "doubleArrayOf()"
-                            else -> "emptyArray()"
+                        val componentTypeRef = typeRef.arguments[0].typeRef
+                        if (componentTypeRef === null) {
+                            "emptyArray()"
+                        } else {
+                            when (componentTypeRef.typeName) {
+                                TypeRef.TN_BOOLEAN -> "booleanArrayOf()"
+                                TypeRef.TN_CHAR -> "charArrayOf()"
+                                TypeRef.TN_BYTE -> "byteArrayOf()"
+                                TypeRef.TN_SHORT -> "shortArrayOf()"
+                                TypeRef.TN_INT -> "intArrayOf()"
+                                TypeRef.TN_LONG -> "longArrayOf()"
+                                TypeRef.TN_FLOAT -> "floatArrayOf()"
+                                TypeRef.TN_DOUBLE -> "doubleArrayOf()"
+                                else -> "emptyArray()"
+                            }
                         }
                     }
 
                     TypeRef.TN_ITERABLE, TypeRef.TN_COLLECTION, TypeRef.TN_LIST ->
-                        "emptyList()"
+                        if (typeRef.arguments[0].typeRef === null) {
+                            "emptyList<Any?>()"
+                        } else {
+                            "emptyList()"
+                        }
 
                     TypeRef.TN_MUTABLE_ITERABLE, TypeRef.TN_MUTABLE_COLLECTION, TypeRef.TN_MUTABLE_LIST ->
-                        "mutableListOf()"
+                        if (typeRef.arguments[0].typeRef === null) {
+                            "mutableListOf<Any?>()"
+                        } else {
+                            "mutableListOf()"
+                        }
 
                     TypeRef.TN_SET -> "emptySet()"
                     TypeRef.TN_MUTABLE_SET -> "mutableSetOf()"

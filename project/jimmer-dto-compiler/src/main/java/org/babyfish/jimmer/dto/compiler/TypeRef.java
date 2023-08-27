@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.dto.compiler;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
 
 public class TypeRef {
@@ -19,6 +21,8 @@ public class TypeRef {
     public static final String TN_FLOAT = "Float";
 
     public static final String TN_DOUBLE = "Double";
+
+    public static final String TN_ANY = "Any";
 
     public static final String TN_STRING = "String";
 
@@ -122,6 +126,7 @@ public class TypeRef {
             this.out = out;
         }
 
+        @Nullable
         public TypeRef getTypeRef() {
             return typeRef;
         }
@@ -169,6 +174,7 @@ public class TypeRef {
         set.add(TN_LONG);
         set.add(TN_FLOAT);
         set.add(TN_DOUBLE);
+        set.add(TN_ANY);
         set.add(TN_STRING);
         set.add(TN_ARRAY);
         set.add(TN_ITERABLE);
