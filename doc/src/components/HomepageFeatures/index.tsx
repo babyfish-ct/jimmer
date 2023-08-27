@@ -58,6 +58,7 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <ul>
           <li>查询任意形状的数据结构：可以理解成ORM的GraphQL化<ObjectFetcher/></li>
           <li>保存任意形状的数据结构：快速实现复杂表单保存业务<SaveCommand/></li>
+          <li>DTO语言：即使在某些特殊场景下，我们无法直接使用统一的ORM实体，不得不使用DTO对象，开发代价也仅仅是使用DTO语言定义这些DTO的形状而已， Jimmer能自动生成DTO定义、和实体的转化逻辑、甚至和数据库的交互逻辑。全然感觉不到传统技术方案中DTO爆炸带来的痛苦</li>
         </ul>
       </>
     ),
@@ -77,7 +78,7 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <li>
           以权限系统为代表技术常常导致不同用户看到不同的数据集，因此，Jimmer支持<ViewMore buttonText='多视图缓存' variant='text'><MultiViewCache/></ViewMore>，让不同的用户看到不同的缓存
         </li>
-        <li>强大的缓存一致性支持，开发人员专注于修改数据库即可，Jimmer自动保证缓存和数据库数据的一致性<CacheConsistency/></li>
+        <li>业界一流的缓存一致性维护，无论基于Jimmer自身的能力还是整合已有数据库CDC技术方案，Jimmer都会在修改数据库后自动清理受影响的缓存数据并保证最终一致性。无需开人员预测那些缓存数据会被影响，专注于修改数据库即可<CacheConsistency/></li>
       </ul>
     ),
   },
