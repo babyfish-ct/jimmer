@@ -245,7 +245,7 @@ public List<Book> findBooks(Sort sort) {
     return sqlClient
         .createQuery(table)
         // highlight-next-line
-        .orderBy(table, SpingOrders.toOrders(sort))
+        .orderBy(table, SpringOrders.toOrders(sort))
         .select(table)
         .execute();
 }

@@ -279,7 +279,7 @@ alter table CUSTOMER_ADDRESS_MAPPING
 
 -   右侧：本节要介绍从动方关联`Address.customer`，它是`Customer.address`的镜像
 
-这里，`@OneToOne(mappedBy = "store")`，指当前属性`BookStore.books`是`Book.store`的镜像。
+这里，`@OneToOne(mappedBy = "address")`，指当前属性`Address.customer`是`Customer.address`的镜像。
 
 <div style={{display: 'flex', alignItems: 'start'}}>
 <div>

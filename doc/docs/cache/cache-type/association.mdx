@@ -82,7 +82,7 @@ public CacheFactory cacheFactory(
         // 适用于一对多和多对多关联属性
         @Override
         // highlight-next-line
-        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
             return createPropCache(prop, Duration.ofMinutes(5));
         }
 

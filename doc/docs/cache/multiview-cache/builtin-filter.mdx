@@ -99,7 +99,7 @@ public CacheFactory cacheFactory(
         }
 
         @Override
-        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
             return createPropCache(
                 /* highlight-start */
                 prop == BookStoreProps.BOOKS.unwrap() || 
@@ -361,7 +361,7 @@ public CacheFactory cacheFactory(
         }
 
         @Override
-        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
             return createPropCache(
                 // highlight-next-line
                 getFilterState().isAffectedBy(prop.getTargetType()),

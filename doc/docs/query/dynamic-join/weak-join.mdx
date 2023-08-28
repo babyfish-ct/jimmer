@@ -138,7 +138,7 @@ private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> 
 
     @Override
     public Predicate on(ST source, TT target) {
-        return Prdicate.sql(
+        return Predicate.sql(
             "substr(%e, 1, 5) = substr(%e, 1, 5)",
             new Expression[] {
                 source.code(),

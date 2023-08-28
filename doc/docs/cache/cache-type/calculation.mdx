@@ -58,7 +58,7 @@ public CacheFactory cacheFactory(
         }
 
         @Override
-        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
             ...省略代码...
         }
 
