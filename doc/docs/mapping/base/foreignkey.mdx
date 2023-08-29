@@ -1,36 +1,36 @@
 ---
 sidebar_position: 5
-title: Real & Fake foreign keys
+title: Real and Fake Foreign Keys  
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-通过[关联映射](./association)的论述中，我们知道关联映射需要大量的外键。
+Through the discussion of [Association Mapping](./association), we know that association mapping requires a lot of foreign keys.
 
-Jimmer中外键有两种
+There are two types of foreign keys in Jimmer:
 
--   真外键：
+- Real foreign key:
 
-    数据库中存在对应的外键约束
+    There is a corresponding foreign key constraint in the database.
+    
+- Fake foreign key:
 
--   伪外键：
+    It is a foreign key in the developer's mind, but there is no corresponding foreign key constraint in the database.
 
-    在开发人员意识中是外键，但是数据库中并没有对应的外键约束
+:::info  
+When saving data:
 
-:::info
-在保存数据时
+- Real foreign keys rely on the ability of relational databases themselves to ensure referential integrity.
 
--   真外键靠关系性数据库本身的能力保证引用完整性
+- Fake foreign keys rely on additional checks inserted by the ORM in the upper layer code to ensure referential integrity.
 
--   伪外键靠ORM在上层代码中植入额外检查来保证引用完整性
-
-这种差异对用户透明，用户只需要配置外键的真伪即可，无需修改业务代码。
+This difference is transparent to the user. The user only needs to configure the authenticity of the foreign key without modifying the business code.
 :::
 
-## 明确指定真外键
+## Explicitly specify real foreign key
 
--   基于外键的关联属性
+- Association property based on foreign key
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -39,12 +39,12 @@ Jimmer中外键有两种
     @Entity
     public interface Book {
 
-        @ManyToOne
+        @ManyToOne  
         // highlight-next-line
         @JoinColumn(foreignKeyType = ForeignKeyType.REAL)
         BookStore store();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -56,18 +56,18 @@ Jimmer中外键有两种
     interface Book {
         
         @ManyToOne
-        // highlight-next-line
+        // highlight-next-line  
         @JoinColumn(foreignKeyType = ForeignKeyType.REAL)
         val store: BookStore
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   基于中间表的关联属性
+- Association property based on join table
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -85,7 +85,7 @@ Jimmer中外键有两种
         )
         List<Author> authors();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -106,35 +106,34 @@ Jimmer中外键有两种
         )
         val authors: List<Author>
         
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    :::info
-    和之前的例子不同，这里
+    :::info  
+    Different from previous examples:
     
-    -   配置`JoinTable.joinColumns`而非`JoinTable.joinColumnName`
+    - Configure `JoinTable.joinColumns` instead of `JoinTable.joinColumnName`
 
-        如果外键只有一列且不想明确指定外键的真伪，`joinColumnName`是一种简化配置；否则，应使用`joinColumns`
+        If the foreign key has only one column and the authenticity does not need to be explicitly specified, `joinColumnName` is a simplified configuration. Otherwise, `joinColumns` should be used.
 
-    -   配置`JoinTable.inverseJoinColumns`而非`JoinTable.inverseColumnName`
+    - Configure `JoinTable.inverseJoinColumns` instead of `JoinTable.inverseColumnName` 
 
-        如果外键只有一列且不想明确指定外键的真伪，`inverseColumnName`是一种简化配置；否则，应使用`inverseJoinColumns`
-
+        If the foreign key has only one column and the authenticity does not need to be explicitly specified, `inverseColumnName` is a simplified configuration. Otherwise, `inverseJoinColumns` should be used.
     :::
 
 :::caution
-如果数据方言不支持外键， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则不能明确指定真外键。
+If the database dialect does not support foreign keys (e.g. `org.babyfish.jimmer.sql.dialect.TiDBDialect`), real foreign keys cannot be explicitly specified. 
 
-因为，作为一个分布式关系型数据库，TiDB不支持外键约束。
+This is because TiDB, as a distributed relational database, does not support foreign key constraints.
 :::
 
-## 明确指定伪外键
+## Explicitly specify fake foreign key
 
--   基于外键的关联属性
+- Association property based on foreign key
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -149,7 +148,7 @@ Jimmer中外键有两种
         @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
         BookStore store();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -165,14 +164,14 @@ Jimmer中外键有两种
         @JoinColumn(foreignKeyType = ForeignKeyType.FAKE)
         val store: BookStore?
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   基于中间表的关联属性
+- Association property based on join table
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -190,7 +189,7 @@ Jimmer中外键有两种
         )
         List<Author> authors();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -211,38 +210,38 @@ Jimmer中外键有两种
         )
         val authors: List<Author>
         
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-## 不明确指定外键的真伪
+## Do not explicitly specify the authenticity of foreign keys  
 
-如果不想明确指定外键的真伪，可使用`@JoinColumn(foreignKeyType = ForeignKeyType.AUTO)`。
+To avoid explicitly specifying the authenticity of foreign keys, use `@JoinColumn(foreignKeyType = ForeignKeyType.AUTO)`.
 
-由于`ForeignKeyType.AUTO`是`@JoinColumn`注解的默认配置，所以，更好的选择是对此不做任何配置。
+Since `ForeignKeyType.AUTO` is the default configuration for the `@JoinColumn` annotation, an even better choice is to make no configuration at all.
 
-因此，代码和[关联映射](./association)中的示范的代码无差异，这里无需再做示范代码。
+Therefore, the code is no different from the sample code in [Association Mapping](./association), so there is no need for sample code here.
 
-如果没有明确指定外键的真伪，则通过以下两个步骤自动决定外键的真伪
+If the authenticity of the foreign key is not explicitly specified, whether the foreign key is real or fake is automatically determined by the following two steps:
 
-1.  如果数据库方言不支持外键， *（比如：`org.babyfish.jimmer.sql.dialect.TiDBDialect`）*，则判定为伪外键。
+1. If the database dialect does not support foreign keys (e.g. `org.babyfish.jimmer.sql.dialect.TiDBDialect`), it is determined to be a fake foreign key.
 
-    此时，已经有了判定结果，提前返回，不会执行步骤2
+    At this point, the judgment is completed and it returns early without executing step 2.
 
-2.  如果第一步无法完成判定，则参见Jimmer的全局配置`foreign-key-enabled-by-default`。
+2. If step 1 cannot complete the determination, check Jimmer's global configuration `foreign-key-enabled-by-default`.
 
-    如果此配置为true，则判定为真外键；否则，判定为伪外键。
+    If this configuration is true, it is determined to be a real foreign key; otherwise, it is determined to be a fake foreign key.
+    
+    The default value of this configuration is true. Users can override it to false:
 
-    该配置默认为true，用户可以将其覆盖为false
+    - When using SpringBoot
+        
+        Modify `application.yml` or `application.properties` and set `jimmer.foreign-key-enabled-by-default` to false
 
-    -   如果使用SpringBoot
-
-        修改`application.yml`或`application.properties`，将`jimmer.foreign-key-enabled-by-default`设置为false
-
-    -   如果不使用SpringBoot
+    - When not using SpringBoot
 
         <Tabs groupId="language">
         <TabItem value="java" label="Java">
@@ -252,7 +251,7 @@ Jimmer中外键有两种
             .newBuilder()
             // highlight-next-line
             .setForeignKeyEnabledByDefault(false)
-            ...省略其他配置...
+            ...Omit other configurations...
             .build();
         ```
 
@@ -263,10 +262,9 @@ Jimmer中外键有两种
         val sqlClient = newKSqlClient {
             // highlight-next-line
             setForeignKeyEnabledByDefault(false)
-            ...省略其他配置...
+            ...Omit other configurations...
         }
         ```
 
         </TabItem>
         </Tabs>
-

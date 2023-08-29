@@ -1,41 +1,41 @@
 ---
 sidebar_position: 1
-title: OneToOne
+title: One To One  
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-本通过介绍如何使用`@org.babyfish.jimmer.sql.OneToOne`注解可以声明一对一关联属性
+This chapter introduces how to use the `@org.babyfish.jimmer.sql.OneToOne` annotation to declare one-to-one association properties.
 
-一对一可支持双向关联，对于双向关联而言，其中一方必须主动方，另外一方为从动方。
+One-to-one supports bidirectional association. For bidirectional associations, one side must be the owning side and the other side must be the inverse side:
 
--   主动方(必须)：真正的数据库和关联属性之间映射，实现单向一对一关联。
+-   Owning side (required): The actual mapping between the database and association properties to implement unidirectional one-to-one association.
 
--   从动方(可选)：如果已经存在一个单向关联，可以为此配置从动方，作为主动方的镜像，形成双向关联。
+-   Inverse side (optional): If a unidirectional association already exists, the inverse side can be configured as a mirror of the owning side to form a bidirectional association.
 
-我们假设存在用户Customer和地址Address两种实体类型，并在它们之间建立双向一对一关联。
+Let's assume there are two entity types Customer and Address, and establish a bidirectional one-to-one association between them.
 
 :::info
-和JPA/Hibernate不同，主动方和从动方可以随意抉择，二者都可以用于保存关联。
+Unlike JPA/Hibernate, the owning side and inverse side can be chosen arbitrarily. Both can be used to persist associations. 
 
-本文例子抉择如下：
+The example in this article chooses:
 
--   主动方(必须)：`Customer.address`
+-   Owning side (required): `Customer.address`
 
--   从动方(可选)：`Address.customer`
+-   Inverse side (optional): `Address.customer`
 :::
 
-## 主动方
+## Owning Side
 
-有两种方法可以实现一对一关联，基于外键和基于中间表。
+There are two ways to implement a one-to-one association: based on foreign key and based on join table.
 
-### 1. 基于外键
+### 1. Based on Foreign Key
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
-```java title="Customer.java"
+```java title="Customer.java" 
 @Entity
 public interface Customer {
 
@@ -43,7 +43,7 @@ public interface Customer {
     @OneToOne
     Address address();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -54,27 +54,27 @@ public interface Customer {
 @Entity
 interface Customer {
 
-    // highlight-next-line
+    // highlight-next-line 
     @OneToOne
     val address: Address
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-这里并没有配合使用`@JoinColumn`明确指定外键列名，Jimmer会根据[命名策略](../naming-strategy)推导`address`属性对应的列名。
+Here `@JoinColumn` is not used together to explicitly specify the foreign key column name. Jimmer will deduce the column name corresponding to the `address` property based on the [naming strategy](../naming-strategy).
 
-如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`address`的外键列名为`ADDRESS_ID`。所以，之前的代码和这里的代码等价。
+If the default [naming strategy](../naming-strategy) is not overridden by the user, the foreign key column name of the `address` property is `ADDRESS_ID`. So the previous code is equivalent to: 
 
-因此，上面的代码和下面的代码等价
+Therefore, the above code is equivalent to the following:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Customer.java"
+```java title="Customer.java"  
 @Entity
 public interface Customer {
 
@@ -83,7 +83,7 @@ public interface Customer {
     @JoinColumn(name = "ADDRESS_ID")
     Address address();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -99,17 +99,17 @@ interface Customer {
     @JoinColumn(name = "ADDRESS_ID")
     val address: Address
 
-    ...省略其他代码...
+    ...Omit other code... 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-外键可真可假。伪外键在后续文档中讨论，这里假设外键是真实的，则数据库中对应的约束为
+The foreign key can be real or fake. Fake foreign keys are discussed in subsequent documents. Here we assume the foreign key is real, so the corresponding constraint in the database is:
 
 ```sql
-// 如果指向关联对象的外键是真的，建立外键约束
+// If foreign key pointing to associated entity is real, create foreign key constraint
 alter table CUSTOMER
     add constraint FK_CUSTOMER__ADDRESS
         /* highlight-next-line */
@@ -117,28 +117,18 @@ alter table CUSTOMER
             references ADDRESS(ID);
 ```
 
-但无论如何，都应该添加唯一性约束
-```sql
-// 这个约束非常重要。
-// 否则这张中间表表达的是多对一关联，而非一对一关联
-alter table BOOK
-    add constraint UQ_BOOK__BOOK_STORE
-        /* highlight-next-line */
-        unique(STORE_ID);
-```
-
-### 2. 基于中间表
+### 2. Based on Join Table
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Customer.java"
+```java title="Customer.java" 
 @Entity
 public interface Customer {
 
     @Nullable
     @OneToOne
-    // highlight-next-line
+    // highlight-next-line  
     @JoinTable
     Address address();
 
@@ -149,7 +139,7 @@ public interface Customer {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java title="Customer.kt"
+```kotlin title="Customer.kt"
 @Entity
 interface Customer {
 
@@ -165,15 +155,15 @@ interface Customer {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，Jimmer会根据[命名策略](../naming-strategy)推导`address`属性对应的列名。
+Here, no properties are specified for `@JoinTable`. Jimmer will deduce the column names corresponding to the `address` property based on the [naming strategy](../naming-strategy). 
 
-如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+If the default [naming strategy](../naming-strategy) is not overridden by the user, the deduced join table information is:
 
--   中间表表名: CUSTOMER_ADDRESS_MAPPING
--   中间表指向当前实体的外键的列名: CUSTOMER_ID
--   中间表指向关联实体的外键的列名: ADDRESS_ID
+-   Join table name: CUSTOMER_ADDRESS_MAPPING
+-   Join table foreign key column pointing to current entity: CUSTOMER_ID
+-   Join table foreign key column pointing to associated entity: ADDRESS_ID
 
-所以，之前的代码和这里的代码等价：
+So the previous code is equivalent to:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -189,7 +179,7 @@ public interface Customer {
         name = "CUSTOMER_ADDRESS_MAPPING",
         joinColumnName = "CUSTOMER_ID",
         inverseJoinColumnName = "ADDRESS_ID"
-        /* highlith-end */
+        /* highlight-end */  
     )
     Address address();
 
@@ -200,7 +190,7 @@ public interface Customer {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Customer.kt"
+```kotlin title="Customer.kt" 
 @Entity
 interface Customer {
 
@@ -221,7 +211,7 @@ interface Customer {
 </TabItem>
 </Tabs>
 
-中间表`CUSTOMER_ADDRESS_MAPPING`定义如下
+The join table `CUSTOMER_ADDRESS_MAPPING` is defined as follows:
 
 ```sql
 create table CUSTOMER_ADDRESS_MAPPING(
@@ -233,56 +223,54 @@ alter table ADDRESS_MAPPING
     add constraint PK_ADDRESS_MAPPING
         primary(CUSTOMER_ID, ADDRESS_ID);
 
-// 如果指向当前对象的外键是真的，建立外键约束
+// If foreign key pointing to current entity is real, create foreign key constraint
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint FK_CUSTOMER_ADDRESS_MAPPING__CUSTOMER
         foreign key(CUSTOMER_ID)
-            references CUSTOMER(ID);
+            references CUSTOMER(ID); 
 
-// 如果指向关联对象的外键是真的，建立外键约束
+// If foreign key pointing to associated entity is real, create foreign key constraint  
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint FK_CUSTOMER_ADDRESS_MAPPING__ADDRESS
         foreign key(ADDRESS_ID)
             references ADDRESS(ID);
 
-// 这两个约束非常重要。
-// 否则这张中间表表达的是多对多关联，而非一对一关联
+// These two constraints are very important.
+// Otherwise this join table expresses a many-to-many association rather than a one-to-one association
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint UQ_CUSTOMER_ADDRESS_MAPPING__CUSTOMER_ID
         unique(CUSTOMER_ID);
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint UQ_CUSTOMER_ADDRESS_MAPPING__ADDRESS_ID
-        unique(CUSTOMER_ID);
+        unique(ADDRESS_ID);
 ```
 
--   中间表的只有两个外键，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+-   The join table has only two foreign keys, both non-null. The join table maintains the association by inserting and deleting data, never storing null data itself.
 
--   中间表没有对应的ORM实体，无需独立主键，两个外键联合作为主键即可
+-   The join table has no corresponding ORM entity and does not need an independent primary key. The two foreign keys combined can serve as the primary key. 
 
--   默认情况下，中间表表示多对多关联。要让其退化为一对一关联，必须为中间表的每一个外键都指定唯一约束
+-   By default, the join table represents a many-to-many association. To degrade it to a one-to-one association, a unique constraint must be specified for each foreign key of the join table.
 
-:::caution
-注意
+:::caution  
+-   Unless for compatibility with existing database design, one-to-one associations are recommended to directly use foreign keys instead of join tables.
 
--   除非为了兼容已有数据库设计，一对一关联都建议直接使用外键，而非中间表
-
--   一旦使用中间表映射一对一关联，Jimmer关联属性必须可null，因为数据库无法保证任何实体在中间表中一定有对应数据
+-   Once a one-to-one association is mapped using a join table, the Jimmer association property must be nullable, because the database cannot guarantee that any entity must have corresponding data in the join table.
 :::
 
-## 从动方
+## Inverse Side
 
-从动方的配置非常简单，指定`Address.customer`属性是`Customer.address`属性的镜像即可。
+The configuration of the inverse side is very simple: just specify that `Address.customer` is the mirror of `Customer.address`.
 
-在下面的代码中
+In the following code:
+ 
+-   Left: The owning side discussed in the previous section  
 
--   左侧：上一节中讨论过的主动方
+-   Right: The inverse side association `Address.customer` introduced in this section, which is the mirror of `Customer.address`
 
--   右侧：本节要介绍从动方关联`Address.customer`，它是`Customer.address`的镜像
-
-这里，`@OneToOne(mappedBy = "address")`，指当前属性`Address.customer`是`Customer.address`的镜像。
+Here, `@OneToOne(mappedBy = "address")` indicates that the current property `Address.customer` is the mirror of `Customer.address`.
 
 <div style={{display: 'flex', alignItems: 'start'}}>
-<div>
+<div>  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -292,17 +280,17 @@ alter table CUSTOMER_ADDRESS_MAPPING
 public interface Customer {
 
     @OneToOne
-    @JoinColumn(name = "ADDRESS_ID")
+    @JoinColumn(name = "ADDRESS_ID") 
     Address address();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Customer.kt"
+```kotlin title="Customer.kt" 
 @Entity
 interface Customer {
 
@@ -310,7 +298,7 @@ interface Customer {
     @JoinColumn(name = "ADDRESS_ID")
     val address: Address
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -328,18 +316,18 @@ interface Customer {
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Address.java"
+```java title="Address.java"  
 @Entity
 public interface Address {
 
-    // `mappedBy`表示`Address.customer`
-    // 是`Customer.address`的镜像
+    // `mappedBy` indicates `Address.customer` 
+    // is the mirror of `Customer.address`
     // highlight-next-line
     @OneToOne(mappedBy = "address")
     @Nullable
     Customer customer();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -350,26 +338,24 @@ public interface Address {
 @Entity
 interface Address {
 
-    // `mappedBy`表示`Address.customer`
-    // 是`Customer.address`的镜像
+    // `mappedBy` indicates `Address.customer`
+    // is the mirror of `Customer.address` 
     // highlight-next-line
     @OneToOne(mappedBy = "address")
     val customer: Customer?
 
-    ...省略其他代码...
-}
+    ...Omit other code...
+} 
 ```
 
 </TabItem>
 </Tabs>
 
-</div>
+</div>  
 </div>
 
 :::caution
-注意
+-   Once the `mappedBy` property of `@OneToOne` is specified, annotations like `@JoinColumn` and `@JoinTable` must not be used.
 
--   一旦指定`@OneToOne`的`mappedBy`属性，就不得使用比如`@JoinColumn`和`@JoinTable`
-
--   作为从动方的一对一关联属性必须可null
+-   The one-to-one association property as the inverse side must be nullable. 
 :::

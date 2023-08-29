@@ -1,17 +1,17 @@
 ---
 sidebar_position: 2
-title: ManyToOne
+title: Many To One
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-本通过介绍如何使用`@org.babyfish.jimmer.sql.ManyToOne`注解可以声明多对一关联属性
+This chapter introduces how to use the `@org.babyfish.jimmer.sql.ManyToOne` annotation to declare many-to-one association properties.
 
-有两种方法可以实现多对一关联，基于外键和基于中间表。
+There are two ways to implement many-to-one associations: based on foreign key and based on join table.
 
-## 1. 基于外键
-    
+## 1. Based on Foreign Key
+
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
@@ -19,18 +19,18 @@ import TabItem from '@theme/TabItem';
 @Entity
 public interface Book {
 
-    // highlight-next-line
-    @ManyToOne
+    // highlight-next-line 
+    @ManyToOne  
     BookStore store();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Book.kt"
+```kotlin title="Book.kt" 
 @Entity
 interface Book {
 
@@ -38,19 +38,19 @@ interface Book {
     @ManyToOne
     val store: BookStore
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-这里并没有配合使用`@JoinColumn`明确指定外键列名，Jimmer会根据[命名策略](../naming-strategy)推导`store`属性对应的列名。
+Here `@JoinColumn` is not used together to explicitly specify the foreign key column name. Jimmer will deduce the column name corresponding to the `store` property based on the [naming strategy](../naming-strategy).
 
-如果默认的[命名策略](../naming-strategy)未被用户覆盖，属性`store`的外键列名为`STORE_ID`。所以，之前的代码和这里的代码等价。
+If the default [naming strategy](../naming-strategy) is not overridden by the user, the foreign key column name of the `store` property is `STORE_ID`. So the previous code is equivalent to:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="Book.java"
 @Entity
@@ -61,7 +61,7 @@ public interface Book {
     @JoinColumn(name = "STORE_ID")
     BookStore store();
 
-    ...省略其他代码...
+    ...Omit other code... 
 }
 ```
 
@@ -77,36 +77,36 @@ interface Book {
     @JoinColumn(name = "STORE_ID")
     val store: BookStore
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-外键可真可假。伪外键在后续文档中讨论，这里假设外键是真实的，则数据库中对应的约束为
+The foreign key can be real or fake. Fake foreign keys are discussed in subsequent documents. Here we assume the foreign key is real, so the corresponding constraint in the database is:
 
 ```sql
-// 如果指向关联对象的外键是真的，建立外键约束
-alter table BOOK
+// If foreign key pointing to associated entity is real, create foreign key constraint
+alter table BOOK  
     add constraint FK_BOOK__BOOK_STORE
         /* highlight-next-line */
         foreign key(STORE_ID)
-            references BOOK_STORE(ID);
+            references BOOK_STORE(ID); 
 ```
 
-## 2. 基于中间表
+## 2. Based on Join Table
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="Book.java"
-@Entity
+@Entity  
 public interface Book {
 
     @Nullable
     @ManyToOne
-    @JoinTable
+    @JoinTable  
     BookStore store();
 
     ...
@@ -114,9 +114,9 @@ public interface Book {
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin"> 
 
-```java title="Book.kt"
+```kotlin title="Book.kt"  
 @Entity
 interface Book {
 
@@ -132,20 +132,20 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这里，并没有为`@JoinTable`指定任何属性，Jimmer会根据[命名策略](../naming-strategy)推导`store`属性对应的列名。
+Here, no properties are specified for `@JoinTable`. Jimmer will deduce the column names corresponding to the `store` property based on the [naming strategy](../naming-strategy).
 
-如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+If the default [naming strategy](../naming-strategy) is not overridden by the user, the deduced join table information is:
 
--   中间表表名: BOOK_BOOK_STORE_MAPPING
--   中间表指向当前实体的外键的列名: BOOK_ID
--   中间表指向关联实体的外键的列名: STORE_ID
+-   Join table name: BOOK_BOOK_STORE_MAPPING
+-   Join table foreign key column pointing to current entity: BOOK_ID
+-   Join table foreign key column pointing to associated entity: STORE_ID
 
-所以，之前的代码和这里的代码等价：
+So the previous code is equivalent to:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java" 
 @Entity
 public interface Book {
 
@@ -184,7 +184,7 @@ interface Book {
 </TabItem>
 </Tabs>
 
-中间表`BOOK_BOOK_STORE_MAPPING`定义如下
+The join table `BOOK_BOOK_STORE_MAPPING` is defined as:
 
 ```sql
 create table BOOK_BOOK_STORE_MAPPING(
@@ -196,35 +196,33 @@ alter table BOOK_STORE_MAPPING
     add constraint PK_BOOK_STORE_MAPPING
         primary(BOOK_ID, STORE_ID);
 
-// 如果指向当前对象的外键是真的，建立外键约束
-alter table BOOK_BOOK_STORE_MAPPING
+// If foreign key pointing to current entity is real, create foreign key constraint
+alter table BOOK_BOOK_STORE_MAPPING  
     add constraint FK_BOOK_BOOK_STORE_MAPPING__BOOK
         foreign key(BOOK_ID)
             references BOOK(ID);
 
-// 如果指向关联对象的外键是真的，建立外键约束
+// If foreign key pointing to associated entity is real, create foreign key constraint 
 alter table BOOK_BOOK_STORE_MAPPING
     add constraint FK_BOOK_BOOK_STORE_MAPPING__STORE
         foreign key(STORE_ID)
             references BOOK_STORE(ID);
 
-// 这个约束非常重要。
-// 否则这张中间表表达的是多对多关联，而非多对一关联
+// This constraint is very important.
+// Otherwise this join table expresses a many-to-many association rather than a many-to-one association
 alter table BOOK_BOOK_STORE_MAPPING
     add constraint UQ_BOOK_BOOK_STORE_MAPPING__BOOK_ID
         unique(BOOK_ID);
 ```
 
--   中间表的只有两个外键，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+-   The join table has only two foreign keys, both non-null. The join table maintains the association by inserting and deleting data, never storing null data itself.
 
--   中间表没有对应的ORM实体，无需独立主键，两个外键联合作为主键即可
+-   The join table has no corresponding ORM entity and does not need an independent primary key. The two foreign keys combined can serve as the primary key.
 
--   默认情况下，中间表表示多对多关联。要让其退化为多对一关联，必须为指向当前对象的外键`BOOK_ID`指定唯一约束
+-   By default, the join table represents a many-to-many association. To degrade it to a many-to-one association, a unique constraint must be specified for the foreign key `BOOK_ID` pointing to the current entity. 
 
 :::caution
-注意
+-   Unless for compatibility with existing database design, many-to-one associations are recommended to use foreign keys directly instead of join tables.
 
--   除非为了兼容已有数据库设计，多对一关联都建议直接使用外键，而非中间表
-
--   一旦使用中间表映射多对一关联，Jimmer关联属性必须可null，因为数据库无法保证任何实体在中间表中一定有对应数据
+-   Once a many-to-one association is mapped using a join table, the Jimmer association property must be nullable, because the database cannot guarantee that any entity must have corresponding data in the join table.
 :::

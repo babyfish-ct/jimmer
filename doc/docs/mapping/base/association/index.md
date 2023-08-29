@@ -1,23 +1,23 @@
 ---
 sidebar_position: 3
-title: Association mapping
+title: Association Mapping
 ---
 
-在这里，你会了解到ORM最重要的能力：实体关系关系映射。你会了解到这些注解：
+Here, you will learn about the most important capability of ORM: entity relationship mapping. You will learn about these annotations:
 
--   org.babyfish.jimmer.sql.OneToOne
--   org.babyfish.jimmer.sql.ManyToOne
--   org.babyfish.jimmer.sql.OneToMany
--   org.babyfish.jimmer.sql.ManyToMany
--   org.babyfish.jimmer.sql.JoinColumn
--   org.babyfish.jimmer.sql.JoinTable
+- org.babyfish.jimmer.sql.OneToOne
+- org.babyfish.jimmer.sql.ManyToOne
+- org.babyfish.jimmer.sql.OneToMany
+- org.babyfish.jimmer.sql.ManyToMany
+- org.babyfish.jimmer.sql.JoinColumn
+- org.babyfish.jimmer.sql.JoinTable
 
 :::caution
-对于关联而言，实体类型中的基础属性的类型应该是关联对象，而非关联Id。
+For associations, the type of the basic properties in the entity type should be the associated object, not the associated Id. 
 
-如果想定义关联Id属性，请
+If you want to define associated Id properties, please
 
--   先按本目录的文档完成关联映射
+- First complete the association mapping according to this chapter
 
--   再按照[IdView](../../advanced/view/id-view)文档添加关联Id属性
+- Then add associated Id properties according to [IdView](../../advanced/view/id-view)
 :::
