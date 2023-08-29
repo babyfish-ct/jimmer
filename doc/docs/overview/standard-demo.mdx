@@ -1,93 +1,85 @@
 ---
 sidebar_position: 2
-title: Standard example
+title: Standard Example  
 ---
 
 import {ViewMore} from '@site/src/components/ViewMore';
 import {CacheConsistencyPanel} from '@site/src/components/HomepageFeatures/CacheConsistency';
 import {SwaggerAuthorize, GraphiqlHeaders} from '@site/src/components/Image';
 
-:::warning
-The original low-quality documentation is being completely rewritten and will eventually become high-quality documentation.
-
-However, after several months of hard work, only the Chinese part of the rewriting work has been completed, and the re-translation of the English document has not yet been completed.
-
-Now that the translation of English documents has only started, we will speed up the translation process. Before that, you can read [Old english document](../old-en)
-:::
-
 :::tip
-Running the example that comes with the framework directly is the most efficient way to familiarize yourself with Jimmer.
+Running the examples that come with the framework is the most efficient way to get familiar with Jimmer.  
 :::
 
-## Be aware beforehand
+## Prerequisites
 
-Like strongly typed SQL DSL implementations such as [JOOQ](https://www.jooq.org/),[JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html),[QueryDSL](http://querydsl.com/),[MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex), [Fluent-MyBatis](https://github.com/atool/fluent-mybatis), Jimmer needs to generate more source code based on user code.
+Like [JOOQ](https://www.jooq.org/), [JPA2.0 Criteria](https://docs.oracle.com/javaee/6/tutorial/doc/gjitv.html), [QueryDSL](http://querydsl.com/), [MyBatis-Flex](https://github.com/mybatis-flex/mybatis-flex), [Fluent-MyBatis](https://github.com/atool/fluent-mybatis) and other types of strong-typed SQL DSL implementations, Jimmer needs to generate more source code based on user code.
 
-- In the case of Java, it's the annotation processor
-- In the case of Kotlin, it is KSP
+- For Java, it is annotation processor
+- For Kotlin, it is ksp
 
-When user opens the a demo project for the first time using an IDE (such as Intellij), he will find that some classes that should have been automatically generated do not exist.
+When a user opens the accompanying examples in an IDE (such as IntelliJ) for the first time, some classes that should have been automatically generated will be missing. 
 
 :::info
-Don't be afraid at this time, click the run button and all errors will disappear automatically.
+Don't panic, click the run button and all errors will disappear automatically.
 :::
 
-## Example introduction
+## Example Introduction
 
-Jimmer provides supporting examples that are very helpful for quickly mastering Jimmer
+The accompanying examples of Jimmer are very helpful for quickly mastering Jimmer.
 
-General directory of all examples: https://github.com/babyfish-ct/jimmer/tree/main/example
+The root directory of all examples: https://github.com/babyfish-ct/jimmer/tree/main/example
 
-The project provides 5 examples, each with two versions, Java and Kotlin, for a total of 10 examples.
+This project provides 5 examples, each with Java and Kotlin versions, for a total of 10 examples.
 
 <table>
     <thead>
         <th>Java</th>
-        <th>Kotlin</th>
+        <th>Kotlin</th> 
         <th>Description</th>
-        <th>How to run</th>
-        <th>importance</th>
+        <th>How to Run</th>
+        <th>Importance</th>
     </thead>
     <tbody>
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-core">java/jimmer-core</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-core-kt">java/jimmer-core-kt</a></td>
-            <td>ORM agnostic example showing <a href="https://github.com/immerjs/immer">immer</a>-style immutable object</td>
-            <td>Execute main method</td>
+            <td>ORM-unrelated example demonstrating <a href="https://github.com/immerjs/immer">immer</a>-style immutable objects</td>
+            <td>Run main method</td>
             <td>★★★★</td>
         </tr>
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql">java/jimmer-sql</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt">java/jimmer-sql-kt</a></td>
-            <td>Leverage Jimmer to build REST services quickly. This example shows most of Jimmer's features and is the most important and basic example</td>
+            <td>Use Jimmer to quickly build REST services. This example demonstrates most of Jimmer's capabilities and is the most important and fundamental example.</td>
             <td>
                 <ol>
-                    <li>Execute main method</li>
-                    <li>Access swagger page: http://localhost:8080/ui</li>
-                    <li>Download TypeScript code：http://localhost:8080/ts.zip</li>
+                    <li>Run main method</li>  
+                    <li>Visit swagger page: http://localhost:8080/ui</li>
+                    <li>Download client TypeScript code: http://localhost:8080/ts.zip</li>
                 </ol>
-                <ViewMore buttonText="Notes" title="Considerations for jimmer-sql/jimmer-sql-kt" variant="outlined">
-                    <p>If you need to use the feature of saving data, you need to set tenant in the HTTP header, otherwise it will cause an exception. </p>
-                    <p>The tenants that are currently available in the database are `a` and `b`. Of course, for save operations, you can add new tenants. </p>
-                    <p>Using the `swagger` UI as an example, you can set it up like this: </p>
+                <ViewMore buttonText="Notes" title="Notes for jimmer-sql/jimmer-sql-kt" variant="outlined">
+                    <p>To use the data storage functionality, the tenant must be set in the HTTP header, otherwise an exception will occur.</p>
+                    <p>The tenants 'a' and 'b' already exist in the database. Of course, you can add new tenants for storage operations.</p>
+                    <p>For example, in the Swagger UI, you can set it like this:</p>
                     <SwaggerAuthorize/>
                 </ViewMore>
             </td>
-            <td>★★★★★</td>
+            <td>★★★★★</td> 
         </tr>
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql">java/jimmer-sql-graphql</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt">java/jimmer-sql-graphql-kt</a></td>
-            <td>Leverage Jimmer to quickly build GraphQL services</td>
+            <td>Use Jimmer to quickly build GraphQL services</td>
             <td>
                 <ol>
-                    <li>Execute main method</li>
-                    <li>Access the UI of Graph<b>i</b>QL界面: http://localhost:8080/graph<b>i</b>ql</li>
+                    <li>Run main method</li>
+                    <li>Visit Graph<b>i</b>QL page: http://localhost:8080/graph<b>i</b>ql</li> 
                 </ol>
-                <ViewMore buttonText="Notes" title="Considerations for jimmer-sql-graphql/jimmer-sql-graphql-kt" variant="outlined">
-                    <p>If you need to use the feature of saving data, you need to set tenant in the HTTP header, otherwise it will cause an exception. </p>
-                    <p>The tenants that are currently available in the database are `a` and `b`. Of course, for save operations, you can add new tenants. </p>
-                    <p>Using the `graphiql` UI as an example, you can set it up like this: </p>
+                <ViewMore buttonText="Notes" title="Notes for jimmer-sql-graphql/jimmer-sql-graphql-kt" variant="outlined">
+                    <p>To use the data storage functionality, the tenant must be set in the HTTP header, otherwise an exception will occur.</p>  
+                    <p>The tenants 'a' and 'b' already exist in the database. Of course, you can add new tenants for storage operations.</p>
+                    <p>For example, in GraphiQL, you can set it like this:</p>
                     <GraphiqlHeaders/>
                 </ViewMore>
             </td>
@@ -95,15 +87,15 @@ The project provides 5 examples, each with two versions, Java and Kotlin, for a 
         </tr>
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-cloud">java/jimmer-cloud</a></td>
-            <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt">java/jimmer-cloud-kt</a></td>
-            <td>Spring Cloud-based microservices project that showcases jimmer's remote association</td>
+            <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt">java/jimmer-cloud-kt</a></td> 
+            <td>Microservice project based on Spring Cloud, demonstrating Jimmer's remote associations</td>
             <td>
                 <ol>
-                    <li>Start the registry-center, run the main method of the registry-center subproject</li>
-                    <li>Start all microservices, run the main method in store-service, book-service, and author-service</li>
-                    <li>Wait about half a minute to ensure that the registry-center correctly identifies all microservices and avoid exceptions that some swagger calls in the next step do not recognize the remote service. </li>
+                    <li>Start the registry center by running the main method of the registry-center subproject</li>
+                    <li>Start all microservices by running the main method in store-service, book-service and author-service</li>
+                    <li>Wait about half a minute to ensure the registry center correctly identifies all microservices to avoid exceptions in subsequent swagger calls where some remote services cannot be recognized.</li>
                     <li>
-                        Access swagger-ui for any of the following microservices
+                        Visit the swagger-ui of any of the following microservices
                         <ul>
                             <li>store-service: http://localhost:7001/ui</li>
                             <li>book-service: http://localhost:7002/ui</li>
@@ -117,124 +109,121 @@ The project provides 5 examples, each with two versions, Java and Kotlin, for a 
         <tr>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command">java/save-command</a></td>
             <td><a href="https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt">kotlin/save-command-kt</a></td>
-            <td>Specific example for save command</td>
-            <td>Run all unit test cases</td>
+            <td>Dedicated example for save commands</td>
+            <td>Run all unit tests</td> 
             <td>★★★</td>
         </tr>
     </tbody>
 </table>
 
 :::tip
-The most important example to get started with is `jimer-sql`, and you can open either of these two examples according to your language preference
+When getting started, the most important examples are `jimer-sql`. Open either of them according to your language preference:
 
--   Java
+- Java
 
-    [example/java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)
+  [example/java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)
+  
+- Kotlin
 
--   Kotlin
-
-    [example/join/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
+  [example/join/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
 :::
 
-## Non-cached mode
+## Non-Cache Mode 
 
-Non-cached mode is the default operation mode for all examples, and all examples can be run directly without installing any external environment.
+Non-cache mode is the default running mode for all examples. No external environment needs to be installed for them to run directly. 
 
-If an example depends on a database, it uses H2 memory data in non-cached mode and automatically creates the database at startup time.
+If an example depends on a database, it will use the H2 in-memory database in non-cache mode, and automatically create the database at startup.
 
-As you can see, the non-cached mode is very simple and great for quickly familiarizing yourself with the example.
+As you can see, non-cache mode is very simple and ideal for quickly getting familiar with the examples.
 
-## Cache mode
+## Cache Mode
 
-The above 10 accompanying examples are presented, of which 4 can demonstrate Jimmer's caching and its consistency guarantees.
+As introduced above, there are 10 accompanying examples, 4 of which can demonstrate Jimmer's caching and cache consistency.
 
--   [java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql)和
-    [kotlin/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
+- [java/jimmer-sql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql) and
+  [kotlin/jimmer-sql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-kt)
+  
+- [java/jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql) and
+  [kotlin/jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt)
+  
+By default, caching is not used, and they run on embedded in-memory databases with automatic database initialization. This ensures no external environment installation is required. Just click the run button to demonstrate.
 
--   [java/jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql)和
-    [kotlin/jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt)
+You can also start them in cache mode by running the program with the spring-boot profile `maxwell` or `debezium`. 
 
-By default, they do not use caching, run on an in-memory database and automatically initialize the database, which guarantees that there is no need to install any external environment, click the run button and demonstrate.
-
-You can also have them start in cached mode, just run application with the spring-boot profile `maxwell` or `debezium`.
-
-These two spring profiles utilize the CDC push capabilities of [maxwell] (https://maxwells-daemon.io/) or [debezium] (https://debezium.io/) to achieve <ViewMore buttonText="Cache coherency" variant="text" ><CacheConsistencyPanel/></ViewMore>, therefore, you need to install an external environment.
+These two spring profiles utilize the CDC push capabilities of [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) to achieve <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>, so external environments need to be installed.
 
 :::tip
-In fact, using CDC push services such as [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) is not a the only way that can maintain the <ViewMore buttonText="cache consistency" variant="text">CacheConsistencyPanel</ViewMore>, Jimmer can do this is without the help of any outside technology.
+In fact, relying on CDC push services like [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) is not the only way to achieve <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>. Even without the help of any external technology, Jimmer can also achieve this capability.
 
-- Jimmer's own ability to capture changes of database is called `TransactionTrigger`
+- Jimmer's own capability to capture data changes is called `Transaction Trigger` 
 
-- The ability to push database changes to jimmer through external CDC technology is called `BinLogTrigger`
+- Pushing database changes to Jimmer via external CDC technology is called `BinLog Trigger`
 
-See [Trigger type](.. /mutation/trigger#触发器类型).
+Please refer to [Trigger Classification](../mutation/trigger#trigger-classification).
 
-`BinLogTrigger` has both better performance and better universality *(even if you bypass the API of the Jimmer to modify the database, you can modify the database in other ways, such as directly using the SQL IDE to modify the data, it can also be intercepted)*, which is the recommended solution.
+`BinLog Trigger` has better performance and universality (even if the database is changed through other means that bypass Jimmer, such as directly modifying the data using a SQL IDE, it can also be intercepted), so it is the recommended solution.
 
-So, while the `TransactionTrigger` can be implemented without any special external environment<ViewMore buttonText="cache coherency" variant="text"><CacheConsistencyPanel/></ViewMore>，
-However, the official side example still uses the `BinLogTrigger` to synchronize the cache, which is the more recommended way.
+Therefore, although `Transaction Trigger` can achieve <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore> without relying on any special external environment,
+the official examples still use `BinLog Trigger` to synchronize the cache, as this is the more recommended approach. 
 
-So, we need to set up CDC services like maxwell or debezium to push database changes to jimmer.
+So we need to set up CDC services like maxwell or debezium to push database changes to Jimmer.
 :::
 
-Enabling cached mode requires setting up an external environment.
+Enabling cache mode requires building an external environment.
 
-1. First, you need to install docker locally
+1. First, you need to install docker on your local machine.
 
 2. Install the external environment
 
-The accompanying example supports two external environments, and you can choose one way to experience the <ViewMore buttonText="cache coherency" variant="text"><CacheConsistencyPanel/></ViewMore>
-
+    The accompanying examples support two external environments. Feel free to choose either one to experience <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>
+    
 ### Maxwell + MySQL
 
-Although [maxwell](https://maxwells-daemon.io/) only supports MySQL, it is the simplest of all database change push techniques. Therefore, there is a demonstration value.
+Although [Maxwell](https://maxwells-daemon.io/) only supports MySQL, it is the simplest of all database change push technologies. So it has demonstrational value.
 
-Open the command line, change to the local directory corresponding to [example/env-with-cache/maxwell](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/maxwell), and execute
+Open the command line, enter the local directory corresponding to [example/env-with-cache/maxwell](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/maxwell), and execute
 ```
-bash ./install.sh
+bash ./install.sh 
 ```
 
-After the installation is complete, the port occupation of the docker host is enabled as follows
+After installation, docker host port usage is enabled as follows
 
-|Container|Port|Description|
-|-----|---|----|
-|maxwell-demo-zookeeper|4000|Support Kafka, users will not use it directly|
-|maxwell-demo-kafka|4100|The exposed address is localhost, i.e., assuming that the docker host is your local mechine. If you want to use a remote server as the docker host, you need to modify the kafka installation command in the install.sh and modify the spring-boot configuration file in the example|
-|maxwell-demo-kafdrop|4101|A Kafka graphical interface tool that can be accessed with a browser http://localhost:4101|
+|Container Name|Port|Description|
+|-|-|-|
+|maxwell-demo-zookeeper|4000|Support Kafka, users do not use directly|
+|maxwell-demo-kafka|4100|The exposed address is localhost, that is, assuming the docker host is your local machine. If you want to use a remote server as the docker host, you need to modify the kafka installation command in install.sh and modify the spring-boot configuration file in the examples|
+|maxwell-demo-kafdrop|4101|A Kafka GUI tool, visit http://localhost:4101 with a browser| 
 |maxwell-demo-mysql|4200|Database service in this mode|
-|maxwell-demo-maxwell|NA|Responsible for pushing MySQL change events to Kafka's background service|
-|maxwell-demo-redis|4400|Cache service in this mode|
+|maxwell-demo-maxwell|NA|Background service that pushes MySQL changes to Kafka|
+|maxwell-demo-redis|4400|Caching service in this mode|
 
 ### Debezium + Postgres
 
-[Debezium](https://debezium.io/) supports for many kinds of databases, with good commonality, examples use it to support postgres CDC.
+[Debezium](https://debezium.io/) supports many databases and has good versatility. The example uses it to support change propagation for Postgres. 
 
 :::info
-Postgres is a very good open source database. If your project is brand new and doesn't have any historical baggage, consider trying Postgres. This is also why Jimmer's example uses debezium to support Postgres.
+Postgres is a great open source database. If your project is brand new without any historical baggage, consider trying Postgres. This is why Jimmer's examples use Debezium to support Postgres.
 :::
 
-Open the command line, change to the local directory corresponding to [example/env-with-cache/debezium](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/debezium), and execute
+Open the command line, enter the local directory corresponding to [example/env-with-cache/debezium](https://github.com/babyfish-ct/jimmer/blob/main/example/env-with-cache/debezium), and execute
 ```
 bash ./install.sh
 ```
 
-After the installation is complete, the port occupation of the docker host is enabled as follows
+After installation, docker host port usage is enabled as follows
 
-|Container|Port|Description|
-|-----|---|----|
-|debezium-demo-zookeeper|5000|Support Kafka, users will not use it directly|
-|debezium-demo-kafka|5100|The exposed address is localhost, i.e., assuming that the docker host is your local mechine. If you want to use a remote server as the docker host, you need to modify the kafka installation command in the install.sh and modify the spring-boot configuration file in the example|
-|debezium-demo-kafdrop|5101|A Kafka graphical interface tool that can be accessed with a browser http://localhost:5101|
+|Container Name|Port|Description| 
+|-|-|-|
+|debezium-demo-zookeeper|5000|Support Kafka, users do not use directly|
+|debezium-demo-kafka|5100|The exposed address is localhost, that is, assuming the docker host is your local machine. If you want to use a remote server as the docker host, you need to modify the kafka installation command in install.sh and modify the spring-boot configuration file in the examples|
+|debezium-demo-kafdrop|5101|A Kafka GUI tool, visit http://localhost:5101 with a browser|
 |debezium-demo-postgres|5200|Database service in this mode|
-|debezium-demo-connect|5300|The kafka-connector, which is responsible for pushing postgres change events to Kafka, can check whether the pg-connector named `debezium-connector` is successfully installed by http://localhost:5300/connectors|
-|debezium-demo-redis|5400|Cache service in this mode|
+|debezium-demo-connect|5300|Responsible for pushing Postgres changes to Kafka using kafka-connector. You can verify whether the pg-connector named `debezium-connector` is successfully installed by visiting http://localhost:5300/connectors|
+|debezium-demo-redis|5400|Caching service in this mode|
     
 ## Notes
 :::caution
-If you install the external environment of `Maxwell + MySQL` and `Debezium + Postgres`, some containers may not be started due to insufficient memory.
+If both the `Maxwell + MySQL` and `Debezium + Postgres` external environments are installed, some containers may fail to start due to insufficient memory.
 
-Take my Mac as an example, by default, the Mac allocates 2GB of memory for docker, installs and starts all the above containers, plus several other containers that have nothing to do with it, resulting in insufficient memory, set to 3GB after the problem is solved.
+For example, on my Mac, the default memory allocated to docker is 2GB. Installing and starting all of the above containers, plus a few other unrelated containers, led to insufficient memory. The problem was resolved after setting to 3GB. 
 :::
-
-    
-

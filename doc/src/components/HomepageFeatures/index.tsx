@@ -78,7 +78,7 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <li>
           以权限系统为代表技术常常导致不同用户看到不同的数据集，因此，Jimmer支持<ViewMore buttonText='多视图缓存' variant='text'><MultiViewCache/></ViewMore>，让不同的用户看到不同的缓存
         </li>
-        <li>业界一流的缓存一致性维护，无论基于Jimmer自身的能力还是整合已有数据库CDC技术方案，Jimmer都会在修改数据库后自动清理受影响的缓存数据并保证最终一致性。无需开人员预测那些缓存数据会被影响，专注于修改数据库即可<CacheConsistency/></li>
+        <li>业界一流的缓存一致性维护，无论基于Jimmer自身的能力还是整合已有数据库CDC技术方案，Jimmer都会在修改数据库后自动清理受影响的缓存数据并保证最终一致性。无需开发人员预测那些缓存数据会被影响，专注于修改数据库即可<CacheConsistency/></li>
       </ul>
     ),
   },
@@ -139,37 +139,46 @@ const FEATURE_LIST_EN: FeatureItem[] = [
     title: 'Abstracting RDBMS into graph database',
     description: (
       <>
-        Using data structures of any shape as the basic operation unit, 
-        even handling infinite depth data structures with self-associated properties, 
-        allows developers to escape the <ViewMore buttonText="DTO Explosion" variant="text"><DtoExplosion/></ViewMore> hell
+        By taking arbitrary data structures as the basic operation unit, 
+        jimmer can even handle infinitely deep data structures with self-associated properties, 
+        freeing developers from the hell of <ViewMore buttonText="DTO Explosion" variant="text"><DtoExplosion/></ViewMore>:
         <ul>
-          <li>Querying data structures of any shape: can be understood as GraphQLization of ORM<ObjectFetcher/></li>
-          <li>Saving data structures of any shape: quickly implement complex form saving business<SaveCommand/></li>
+          <li>Query data structures of arbitrary shapes: Can be understood as GraphQLization of ORM<ObjectFetcher/></li>
+          <li>Save data structures of arbitrary shapes: Quickly implement complex form submission business logic<SaveCommand/></li>
+          <li>
+            DTO language: 
+            Even in some special scenarios where we cannot directly use the unified ORM entity and have to use DTO objects, 
+            the development cost is only to define the shape of these DTOs using the DTO language. 
+            Jimmer can automatically generate DTO definitions, transformations to/from entities, and even database interaction logic. 
+            You won't feel the pain of DTO explosion caused by traditional technical solutions at all
+          </li>
         </ul>
       </>
     ),
   },
   {
-    title: 'Powerful caching support',
+    title: 'Powerful Cache Support',
     description: (
       <ul>
-        <li>Whether to use caching is completely transparent to developers</li>
-        <li>Which caching technologies to use is determined by developers</li>
+        <li>Whether to use cache is completely transparent to developers</li>
+        <li>Developers decide which caching technologies to use</li>
         <li>
-          Not only supports simple <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore>, 
-          but also supports property-level cache, including 
+          Not only simple <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore> is supported, 
+          but also property-level cache, including 
           <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and 
           <ViewMore buttonText="Calaculated Cache" variant="text"><CalculatedCache/></ViewMore>. 
-          Ultimately, it provides caching capabilities for data structures of any shape, not just simple objects
+          Ultimately providing caching capabilities for data structures of arbitrary shapes, not just simple objects.
         </li>
         <li>
-           The technology represented by the permission system often causes different users to see different data sets. 
-           Therefore, jimmer supports <ViewMore buttonText='Multiview cache' variant='text'><MultiViewCache/></ViewMore>, 
-           allowing different users to see different cached data
-         </li>
+          Technologies like permission systems often cause different users to see different data sets. 
+          Therefore, Jimmer supports <ViewMore buttonText='Multiview cache' variant='text'><MultiViewCache/></ViewMore> to show different caches to different users.
+        </li>
         <li>
-          Powerful caching consistency support, developers can focus on modifying the database, 
-          and Jimmer automatically ensures the consistency of cache and database data.<CacheConsistency/>
+          First-class cache consistency maintenance in the industry. 
+          Whether based on Jimmer's own capabilities or integrating existing database CDC solutions, 
+          Jimmer will automatically clear affected cache data and ensure eventual consistency after modifying the database. 
+          Developers don't need to predict which cached data will be affected, just focus on modifying the database.
+          <CacheConsistency/>
         </li>
       </ul>
     ),
