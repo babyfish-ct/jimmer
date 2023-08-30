@@ -1,34 +1,34 @@
 ---
 sidebar_position: 1
-title: Simple calculation
+title: Formula
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-简单计算属性是使用`@org.babyfish.jimmer.sql.Formula`声明的属性，有两者用法
+Simple formula properties are properties declared with `@org.babyfish.jimmer.sql.Formula`. There are two usages:
 
--   基于Java/Kotlin的计算属性
--   基于SQL的计算属性
+- Formula properties based on Java/Kotlin calculation
+- Formula properties based on SQL calculation
 
 :::note
-简单计算属性为实现简单而快速的计算而设计，如果需要复杂的计算，请采用[复杂计算属性](./transient)
+Simple formula properties are designed for simple and fast calculations. For complex calculations, use [Complex Formula Properties](./transient) instead.
 :::
 
-在[定义实体](../../../overview/get-started/define-entity.mdx)一文中，我们为`Author`定义了两个字段：`firstName`和`lastName`。
+In [Define Entity](../../../overview/get-started/define-entity.mdx), we defined two fields for `Author`: `firstName` and `lastName`.
 
-接下来，让我们为`Author`添加一个叫新属性`fullName`：
+Next, let's add a new property `fullName` to `Author`: 
 
 ```
 fullName = firstName + ' ' + lastName
 ```
 
-接下来，我们用两者不同的方式，即基于Java/Kotlin的计算和基于SQL的计算，来实现`Author.fullName`
+Then we use two different ways, Java/Kotlin-based calculation and SQL-based calculation, to implement `Author.fullName`.
 
-## 基于Java/Kotlin的计算
+## Java/Kotlin-based Calculation
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="Author.java"
 package com.example.model;
@@ -40,17 +40,17 @@ public interface Author {
 
     @Formula(dependencies = {"firstName", "lastName"})
     default String fullName() {
-        return firstName() + ' ' + lastName();
+        return firstName() + ' ' + lastName(); 
     }
 
-    ...省略其他属性...
+    ...Omit other properties...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Author.kt"
+```kotlin title="Author.kt"  
 package com.example.model
 
 import org.babyfish.jimmer.sql.*
@@ -62,33 +62,33 @@ interface Author {
     val fullName: String
         get() = "$firstName $lastName"
 
-    ...省略其他属性...
+    ...Omit other properties...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-不难发现，基于Java/Kotlin的简单计算属性有以下特征：
+It is easy to see that Java/Kotlin-based simple formula properties have the following characteristics:
 
--   属性不是抽象的(Java下需要使用`default`关键字)，直接给出计算逻辑实现。
+- The property is not abstract (requires `default` keyword in Java) and directly provides calculation logic implementation.
 
--   `@Formula`的`dependencies`被指定，表示当前属性依赖于`Author.firstName`和`Author.lastName`。
+- `@Formula`'s `dependencies` is specified, indicating that this property depends on `Author.firstName` and `Author.lastName`.
 
-    即，动态实体必须确保同时具备`firstName`和`lastName`属性才可以计算`fullName`
-
-用法如下
+    That is, the dynamic entity must ensure the presence of both `firstName` and `lastName` properties to calculate `fullName`.
+    
+The usage is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Author author = authorRepository.findNullable(
     1L,
     AuthorFetcher.$
-        //查询id(隐含+强制)和fullName
+        // Query id (implicit + forced) and fullName  
         // highlight-next-line
-        .fullName() 
+        .fullName()
 );
 System.out.println(author);
 ```
@@ -99,10 +99,10 @@ System.out.println(author);
 ```kotlin
 val author = authorRepository.findNullable(
     1L,
-    newFetcher(Auhtor::class).by {
-        //查询id(隐含+强制)和fullName
+    newFetcher(Author::class).by {
+        // Query id (implicit + forced) and fullName
         // highlight-next-line
-        fullName() 
+        fullName()
     }
 );
 println(author)
@@ -111,39 +111,39 @@ println(author)
 </TabItem>
 </Tabs>
 
-执行的SQL为
+The executed SQL is:
 
-```sql
-select 
-    tb_1_.ID, 
-    /* highlight-start */
-    tb_1_.FIRST_NAME, 
-    tb_1_.LAST_NAME 
+```sql 
+select
+    tb_1_.ID,
+    /* highlight-start */  
+    tb_1_.FIRST_NAME,
+    tb_1_.LAST_NAME
     /* highlight-end */
-from AUTHOR as tb_1_ 
-    where tb_1_.ID = ?
+from AUTHOR as tb_1_
+where tb_1_.ID = ?  
 ```
 
-`fullName`是计算属性，在数据库中无对应字段，但其依赖于`firstName`和`lastName`，
-所以此SQL查询`FIRST_NAME`和`LAST_NAME`，让其依赖的属性存在。
+`fullName` is a formula property without corresponding field in the database, but depends on `firstName` and `lastName`. 
+So this SQL queries `FIRST_NAME` and `LAST_NAME` to make its dependent properties present.  
 
-接下来，我们看看代码中打印会输出什么
+Next, let's see what is printed:
 
 ```json
 {"id":1,"fullName":"Eve Procello"}
 ```
 
-我们看到，Jackson序列化（实体对象的`toString`方法是序列化的一种快捷方式）后只有`fullName`，但没有`firstName`和`lastName`。
+We can see that after Jackson serialization (the `toString` method of entity objects is a shortcut for serialization), there is only `fullName` but no `firstName` and `lastName`.
 
-这是，因为对象抓取器因抓取`fullName`而导致`firstName`和`lastName`被间接抓取，他们并未被直接抓取。
+This is because the object fetcher causes `firstName` and `lastName` to be indirectly fetched due to fetching `fullName`, but they are not directly fetched.
 
-在这种情况下，虽然动态对象具备`firstName`和`lastName`，但它们被标记成对Jackson不可见的状态，不会出现在Jackson序列化结果中。
+In this case, although the dynamic object has `firstName` and `lastName`, they are marked as invisible to Jackson and will not appear in the Jackson serialization result. 
 
 :::note
-如果让对象抓取器直接抓取`firstName`和`lastName`，那么它们一定会出现在序列化结果中。读者可以自行试验，这里不再赘述。
+If the object fetcher directly fetches `firstName` and `lastName`, they will definitely appear in the serialization result. Readers can try it themselves, no need to repeat here.
 :::
 
-## 基于SQL的计算
+## SQL-based Calculation
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -159,12 +159,12 @@ public interface Author {
     @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     String fullName();
 
-    ...省略其他属性...
-}
+    ...Omit other properties...
+} 
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin title="Author.kt"
 package com.example.model
@@ -177,33 +177,33 @@ interface Author {
     @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     val fullName: String
 
-    ...省略其他属性...
+    ...Omit other properties...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-不难发现，基于SQL的简单计算属性有以下特征
+It is easy to see that SQL-based simple formula properties have the following characteristics:
 
--   属性是抽象的。
+- The property is abstract.
 
--   `@Formula`的`sql`被指定为一个SQL表达式，内部有一个特殊的符号`%alias`
+- `@Formula`'s `sql` is specified as an SQL expression with a special token `%alias`
 
-    用户无法事先知道当前表在最终SQL中的别名，所以，Jimmer在这里约定`%alias`表示实际的表列名
+    Users cannot know the alias of the current table in the final SQL in advance, so Jimmer stipulates here that `%alias` represents the actual table column name.
+    
+The usage is:
 
-用法如下
-
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
 ```java
-Author author = authorRepository.findNullable(
+Author author = authorRepository.findNullable(  
     1L,
     AuthorFetcher.$
-        //查询id(隐含+强制)和fullName
+        // Query id (implicit + forced) and fullName
         // highlight-next-line
-        .fullName() 
+        .fullName()
 );
 System.out.println(author);
 ```
@@ -211,13 +211,13 @@ System.out.println(author);
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val author = authorRepository.findNullable(
     1L,
-    newFetcher(Auhtor::class).by {
-        //查询id(隐含+强制)和fullName
+    newFetcher(Author::class).by {
+        // Query id (implicit + forced) and fullName
         // highlight-next-line
-        fullName() 
+        fullName()
     }
 );
 println(author)
@@ -226,43 +226,43 @@ println(author)
 </TabItem>
 </Tabs>
 
-生成SQL如下:
+The generated SQL is:  
 
 ```sql
-select 
-    tb_1_.ID, 
-    /* 这里，@Formula.sql中的`alias`被替换成了`tb_1_` */
+select
+    tb_1_.ID,
+    /* Here, `%alias` in @Formula.sql is replaced with `tb_1_` */ 
     /* highlight-next-line */
-    concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME) 
-from AUTHOR as tb_1_ 
+    concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME)
+from AUTHOR as tb_1_
 where tb_1_.ID = ?
 ```
 
-最终打印结果
-```json
+The final printed result is:
+```json  
 {"id":1,"fullName":"Eve Procello"}
 ```
 
-### 和基于Java/Kotlin的简单计算的比较
+### Comparison with Java/Kotlin-based Simple Formula
 
-相比于基于Java/Kotlin的简单计算，基于SQL的简单计算有一个缺点和一个优点。
+Compared with Java/Kotlin-based simple formula, SQL-based simple formula has one disadvantage and one advantage:
 
--   缺点：如果对象抓取器同时抓取`firstName`、`lastName`和`fullName`，会导致最终SQL查询三列：
+- Disadvantage: If the object fetcher fetches `firstName`, `lastName` and `fullName` at the same time, it will cause the final SQL to query three columns: 
     
-    `tb_1_.FIRST_NAME`, `tb_1_.LAST_NAME`和`concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME)`。
-
-    很明显，返回数据包含冗余，是一种浪费。
-
--   优点：基于Java/Kotlin的计算属性只能作为对象抓取器的被抓取字段，无法为SQL DSL所用。
-
-    而基于SQL的计算属性会被代码生成器生成到强类型SQL DSL的API中，为SQL DSL所用，如
-
-    Java的`where(table.fullName().eq("Eve Procello"))`或Kotlin的`where(table.fullName eq "Eve Procello")`
-
-    :::tip
-    所有计算属性中，只有基于SQL的简单计算属性可以被SQL DSL使用。
+    `tb_1_.FIRST_NAME`, `tb_1_.LAST_NAME` and `concat(tb_1_.FIRST_NAME, ' ', tb_1_.LAST_NAME)`.
     
-    建议使用支持函数索引的数据库，并和函数索引结合使用。
+    Obviously, the returned data contains redundancy and is wasteful.
+    
+- Advantage: Java/Kotlin-based formula properties can only be used as fields to be fetched by object fetchers, and cannot be used by SQL DSL.
+
+    SQL-based formula properties will be generated into the strongly typed SQL DSL API by the code generator, available for SQL DSL, such as:
+
+    Java's `where(table.fullName().eq("Eve Procello"))` or Kotlin's `where(table.fullName eq "Eve Procello")`
+
+    :::tip  
+    Among all formula properties, only SQL-based simple formula properties can be used by SQL DSL.
+    
+    It is recommended to use databases that support function indexes and use them in combination with function indexes.
     :::
-
-因此，建议认真考虑@Formula计算属性应该基于Java/Kotlin计算还是基于SQL计算。
+    
+Therefore, it is recommended to carefully consider whether @Formula formula properties should be based on Java/Kotlin calculation or SQL calculation.
