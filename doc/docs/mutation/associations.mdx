@@ -1,30 +1,30 @@
 ---
-sidebar_position: 5
-title: Mutate middle table directly
+sidebar_position: 5  
+title: Directly Modify Junction Table
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
+## Premise of This Article
 
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
+Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers. 
 
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
 
-本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
 
-## 简述
+## Overview
 
-首先，中间表被对象模型隐藏，没有与之直接对应的实体类型。此问题已在[查询中间表](../query/associations)一文中被阐述，此处不作重复。
+First, the junction table is hidden by the object model, with no direct corresponding entity type. This problem has been explained in [Query Junction Table](../query/associations), so I won't repeat it here.
 
-另外，在[Save指令](./save-command)章节中，我们介绍了save指令。它能对比数据库现有数据和用户要保存的新数据，如果某个基于中间表的关联属性发生了变化，中间表就会被修改。
+In addition, in the [Save Command](./save-command) section, we introduced the save command. It can compare the existing data in the database with the new data the user wants to save. If a relation attribute based on the junction table has changed, the junction table will be modified.
 
-诚然，Save指令功能非常强大，对中间表的修改只是其中很小的一个功能点。然而，有时候，我们只需要简单地对中间表进行插入或删除操作，我们不需要Save指令那么强大的功能。
+Admittedly, the Save Command feature is very powerful, and modifying the junction table is just a very small part of its capabilities. However, sometimes we just need a simple way to insert or delete data directly from the junction table, we don't need the full capabilities of the Save Command.  
 
-Jimmer允许开发人员用更简单的方式，直接对中间表的数据进行插入和删除。
+Jimmer allows developers to directly insert and delete data from the junction table in a simpler way.
 
-## 插入关联
+## Insert Association
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -33,13 +33,14 @@ Jimmer允许开发人员用更简单的方式，直接对中间表的数据进�
 sqlClient
     .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
-    .save(12L, 3L);
+    .save(12L, 3L); 
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 sqlClient
     .getAssociations(Book::authors)
     // highlight-next-line
@@ -49,80 +50,82 @@ sqlClient
 </TabItem>
 </Tabs>
 
-生成的SQL如下
+The generated SQL is:
 
 ```sql
-insert into 
+insert into
     BOOK_AUTHOR_MAPPING(
         /* highlight-next-line */
-        BOOK_ID, AUTHOR_ID
-    ) 
+        BOOK_ID, AUTHOR_ID  
+    )
     values (?, ?)
 ```
 
-这个例子演示如何使用关联属性`Book.authors`操作中间表。
+This example shows how to use the association property `Book.authors` to operate the junction table.
 
-同理我们也可以通过关联属性`Authors.books`达到相同目的：
+Similarly, we can achieve the same goal through the association property `Authors.books`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 sqlClient
-    .getAssociations(AuthorProps.BOOKS)
+    .getAssociations(AuthorProps.BOOKS) 
     // highlight-next-line
     .save(3L, 12L);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 sqlClient
     .getAssociations(Author::books)
-    // highlight-next-line
-    .save(3L, 12L)
+    // highlight-next-line 
+    .save(3L, 12L) 
 ```
 
 </TabItem>
 </Tabs>
 
-注意，和上一个例子相比，因为关联的方向不同，所以`save`方法的参数顺序不同。
+Note that compared to the previous example, the parameter order of the `save` method is different due to the different association direction.
 
-生成的SQL如下
+The generated SQL is:
 
 ```sql
-insert into 
+insert into
     BOOK_AUTHOR_MAPPING(
         /* highlight-next-line */
         AUTHOR_ID, BOOK_ID
-    )
+    ) 
     values (?, ?)
 ```
 
-不难发现，insert语句列的顺序也不同。
+It's easy to see that the order of the insert statement columns is also different.
 
-## 逆变换
+## Reverse Conversion  
 
-对于双向关联，可以使用`reverse`在正反关联之间切换
+For bidirectional associations, `reverse` can be used to switch between forward and reverse associations:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Associations bookToAuthor = sqlClient
     .getAssociations(BookProps.AUTHORS);
 Associations authorToBook = sqlClient
     .getAssociations(AuthorProps.BOOKS);
-Associations authorToBook2 = 
+Associations authorToBook2 =
     // highlight-next-line
-    bookToAuthor.reverse();
+    bookToAuthor.reverse(); 
 Associations bookToAuthor2 =
     // highlight-next-line
     authorToBook.reverse();
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -132,53 +135,54 @@ val bookToAuthor =
     )
 val authorToBook = 
     sqlClient.getAssociations(
-        Author::books
+        Author::books  
     )
-val authorToBook2 = 
+val authorToBook2 =
     // highlight-next-line
     bookToAuthor.reverse()
-val bookToAuthor2 = 
-    // highlight-next-line
+val bookToAuthor2 =
+    // highlight-next-line 
     authorToBook.reverse()
 ```
 
 </TabItem>
 </Tabs>
 
-这段代码中：
-- `bookToAuthor`和`bookToAuthor2`完全等价
-- `authorToBook`和`authorToBook2`完全等价
+In this code:
+-   `bookToAuthor` and `bookToAuthor2` are completely equivalent. 
+-   `authorToBook` and `authorToBook2` are completely equivalent.
 
-## 批量插入
+## Bulk Insert  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 sqlClient
     .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
     .batchSave(
         Arrays.asList(
             new Tuple2<>(10L, 1L),
-            new Tuple2<>(11L, 1L),
+            new Tuple2<>(11L, 1L), 
             new Tuple2<>(12L, 1L),
             new Tuple2<>(10L, 3L),
             new Tuple2<>(11L, 3L),
-            new Tuple2<>(12L, 3L)
+            new Tuple2<>(12L, 3L)  
         )
     );
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 sqlClient
     .getAssociations(
-        Book::authors
-    ) 
-    // highlight-next-line
+        Book::authors  
+    )
+    // highlight-next-line 
     .batchSave(
         listOf(
             Tuple2(10L, 1L),
@@ -188,39 +192,39 @@ sqlClient
             Tuple2(11L, 3L),
             Tuple2(12L, 3L)
         )
-    )
+    ) 
 ```
 
 </TabItem>
 </Tabs>
 
-这里有3本书，两个作者，共6种组合方式。`batchSave`方法把这6种组合全部插入到中间表中，生成的SQL如下
+Here there are 3 books, two authors, and 6 total combination ways. The `batchSave` method inserts all 6 combinations into the junction table, generating the following SQL:
 
-```sql
+```sql  
 insert into BOOK_AUTHOR_MAPPING(
     BOOK_ID, AUTHOR_ID
-) values 
+) values
     /* highlight-start */
+    (?, ?),
     (?, ?), 
-    (?, ?), 
-    (?, ?), 
-    (?, ?), 
-    (?, ?), 
-    (?, ?)
+    (?, ?),
+    (?, ?),
+    (?, ?),
+    (?, ?) 
     /* highlight-end */
 ```
 
-上面这种写法很繁琐，`3 * 2 = 6`还可以接受，但`7 * 9 = 63`呢？难道构建63个元组吗？
+The above approach is very cumbersome. For `3 * 2 = 6` it is still acceptable, but what about `7 * 9 = 63`? Should we really construct 63 tuples? 
 
-jimmer-sql提供一种快捷写法
+Jimmer-sql provides a shorthand syntax:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 sqlClient
     .getAssociations(BookProps.AUTHORS)
-    // 保存两个id集合的笛卡尔乘积
+    // Save cartesian product of two id sets  
     // highlight-next-line
     .batchSave(
         Arrays.asList(
@@ -232,6 +236,7 @@ sqlClient
     );
 ```
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -239,23 +244,23 @@ sqlClient
     .getAssociations(
         Book::authors
     )
-    // 保存两个id集合的笛卡尔乘积
-    // highlight-next-line
+    // Save cartesian product of two id sets
+    // highlight-next-line 
     .batchSave(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L)
     )
 ```
-</TabItem>
+</TabItem>  
 </Tabs>
 
-上面的`batchSave`方法接受两个集合参数，把这两个集合形成的笛卡尔乘积插入中间表，所以，功能和上一个例子的相同。
+The above `batchSave` method takes two collection parameters and inserts the cartesian product of the two collections into the junction table, so its functionality is the same as the previous example.
 
-## 检查存在性
+## Check Existence
 
-如果向中间表插入已经存在的id元组，数据库会被报错，因为违背了唯一性约束。
+Inserting id tuples that already exist into the junction table will cause errors, as it violates uniqueness constraints.
 
-为了解决这个问题，可以进行存在性检查。
+To solve this problem, existence checks can be performed.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -266,7 +271,7 @@ sqlClient
     .batchSaveCommand(
         Arrays.asList(
             10L, 11L, 12L
-        ),
+        ), 
         Arrays.asList(
             1L, 3L
         )
@@ -276,9 +281,10 @@ sqlClient
     .execute();
 ```
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 sqlClient
     .getAssociations(
         Book::authors
@@ -291,39 +297,41 @@ sqlClient
         checkExistence = true
     )
 ```
+
 </TabItem>
 </Tabs>
 
-这里`checkExistence()`表示先检查要插入的数据有哪些已经存在，然后只插入不存在的数据。
+Here `checkExistence()` indicates that it will first check which data to be inserted already exists, and then only insert data that does not exist.
 
-生成的SQL语句如下
+The generated SQL statements are:
 
-1. 检查哪些待插入数据已经存在数据
+1.  Check which data to be inserted already exists:
+
     ```sql
-    select 
-        BOOK_ID, AUTHOR_ID 
-    from BOOK_AUTHOR_MAPPING 
-    where 
+    select
+        BOOK_ID, AUTHOR_ID
+    from BOOK_AUTHOR_MAPPING
+    where
         (BOOK_ID, AUTHOR_ID) in(
-            (?, ?), 
             (?, ?),
+            (?, ?), 
             (?, ?)
         )
     ```
 
-2. 利用上一步的查询结果，可以计算得到真正需要插入的数据。如果没有需要插入的数据，跳过本步骤；否则，执行本步骤。
+2.  Using the results of the previous query, the data that really needs to be inserted can be calculated. Skip this step if no data needs to be inserted; otherwise, execute this step.
 
-    这里，假设判断后真正需要插入的数据还剩两条，生成的SQL为:
+    Here, assuming it is determined that only two rows of data really need to be inserted, the generated SQL is:
 
-    ```sql
+    ```sql 
     insert into BOOK_AUTHOR_MAPPING(
-        BOOK_ID, AUTHOR_ID
-    ) values 
-        (?, ?), 
+        BOOK_ID, AUTHOR_ID  
+    ) values
+        (?, ?),
         (?, ?)
     ```
 
-## 删除关联
+## Delete Association  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -336,13 +344,14 @@ sqlClient
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 sqlClient
     .getAssociations(
         Book::authors
-    ) 
+    )
     // highlight-next-line
     .delete(12L, 3L)
 ```
@@ -350,28 +359,28 @@ sqlClient
 </TabItem>
 </Tabs>
 
-生成的SQL如下
+The generated SQL is:
 
 ```sql
-delete from BOOK_AUTHOR_MAPPING 
-where 
+delete from BOOK_AUTHOR_MAPPING
+where
     (BOOK_ID, AUTHOR_ID) in (
-        (?, ?)
+        (?, ?) 
     )
 ```
 
-## 批量删除
+## Bulk Delete
 
-和批量插入类似，有两种批量删除的写法
+Similar to bulk insert, there are two ways to bulk delete:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 sqlClient
     .getAssociations(
         BookTableEx.claBookProps.AUTHORS)
-    // highlight-next-line
+    // highlight-next-line 
     .batchDelete(
         Arrays.asList(
             new Tuple2<>(10L, 1L),
@@ -379,19 +388,20 @@ sqlClient
             new Tuple2<>(12L, 1L),
             new Tuple2<>(10L, 3L),
             new Tuple2<>(11L, 3L),
-            new Tuple2<>(12L, 3L),
+            new Tuple2<>(12L, 3L), 
         )
     );
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 sqlClient
     .getAssociations(
         Book::authors
-    ) 
+    )
     // highlight-next-line
     .batchDelete(
         listOf(
@@ -408,7 +418,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-或
+Or:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -420,50 +430,51 @@ sqlClient
     .batchDelete(
         Arrays.asList(10L, 11L, 12L),
         Arrays.asList(1L, 3L)
-    );
+    ); 
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 sqlClient
     .getAssociations(
         Book::authors
-    ) 
+    )
     // highlight-next-line
     .batchDelete(
         listOf(10L, 11L, 12L),
-        listOf(1L, 3L)
+        listOf(1L, 3L) 
     )
 ```
 
 </TabItem>
 </Tabs>
 
-生成的SQL如下
+The generated SQL is:
 
 ```sql
-delete from BOOK_AUTHOR_MAPPING 
-where 
+delete from BOOK_AUTHOR_MAPPING  
+where
     (BOOK_ID, AUTHOR_ID) in (
-        (?, ?), 
+        (?, ?),
         (?, ?)
     )
 ```
 
-## 注意事项
+## Notes  
 
 :::caution
-请不要滥用此功能，此功能仅适用于对中间表进行简单插入和删除的场合，即推荐仅在面临最简单的增量操作时才使用。
+Please do not abuse this feature. This feature is only suitable for simple insertion and deletion of junction tables. It is recommended to only use it when facing the simplest incremental operations.  
 :::
 
-我们来看一个例子，如果需要和数据库现有数据做比对，该功能明显不是最优选择，代码会很繁琐，如下
+Let's look at an example. If comparison with existing data in the database is needed, this feature is obviously not the optimal choice, and the code will be very cumbersome, as follows:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
-```java title="不恰当用法示范"
+```java title="Inappropriate Usage Example" 
 public void setAuthors(long bookId, Collection<Long> authorIds) {
 
     // Get old author ids
@@ -493,9 +504,10 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
 }
 ```
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="不恰当用法示范"
+```kotlin title="Inappropriate Usage Example"
 fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
     // Get old author ids
     val oldAuthorIds = sqlClient.queries.forList(Book::authors) {
@@ -508,25 +520,26 @@ fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
         .getAssociations(Book::authors)
         .batchDelete(listOf(bookId), oldAuthorIds - authorIds)
 
-    // Insert `authorIds - oldAuthorIds`
+    // Insert `authorIds - oldAuthorIds` 
     sqlClient
         .getAssociations(Book::authors)
         .batchSave(listOf(bookId), authorIds - oldAuthorIds)
 }
 ```
+
 </TabItem>
 </Tabs>
 
-很明显，这样处理很繁琐。
+It is obvious that dealing with it this way is very cumbersome.  
 
 :::tip
-当业务场景不再是简单的添加或删除时，[Save指令](./save-command)才是更好的选择，如下
+When the business scenario is no longer simple addition or deletion, [Save Command](./save-command) is a better choice, as follows:
 :::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="更好的用法示范"
+```java title="Better Usage Example"
 public void setAuthors(long bookId, Collection<Long> authorIds) {
     sqlClient.save(
         BookDraft.$.produce(book -> {
@@ -537,9 +550,10 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
 }
 ```
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="更好的用法示范"
+```kotlin title="Better Usage Example"  
 fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
     sqlClient.save(
         new(Book::class).by {
@@ -549,5 +563,6 @@ fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
     )
 }
 ```
+
 </TabItem>
 </Tabs>

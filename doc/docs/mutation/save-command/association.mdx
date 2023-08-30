@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: Association
+title: Save Association
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,64 +8,64 @@ import TabItem from '@theme/TabItem';
 import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 
-## 关联类型
+## Association Types  
 
-站在用户角度，被保存数据结构中存在两种关联
+From the user's perspective, there are two types of associations in the data structure to be saved:
 
-### 短关联
+### Short Association
 
-所谓短关联，表示仅修改当前对象和其他对象之间的关联本身，对关联对象的修改没兴趣。
+A so-called short association indicates that only the association itself between the current object and other objects is modified, with no interest in modifying the associated objects.
 
-通常，UI设计会采用单选框 *(关联引用)* 或多选框 *(关联集合)*。
+Usually, the UI design will use radio buttons *(associated reference)* or checkboxes *(associated collection)*. 
 
 <ShortAssociation/>
 
 <div>&nbsp;</div>
 
-其中
+Where:
 
--   单选框对应多对一关联`Book.store`
+-   Radio buttons correspond to the many-to-one association `Book.store`
 
--   多选框对应多对多关联`Book.authors`
+-   Checkboxes correspond to the many-to-many association `Book.authors`
 
 :::note
-实际项目中，待选数据可能很多，并不适合设计为下拉UI。这时，可以使用具备筛选条件和分页功能的对象框来代替下拉框，这是一种常见的变通方式。
+In actual projects, the available data may be too much to be designed as a dropdown UI. In this case, an object selector with filtering and pagination can be used instead of a dropdown, which is a common workaround.
 :::
 
-由于用户只想修改当前对象和其他对象的关联，不想进一步修改关联对象，所以UI不可能出现多层关联嵌套。这就是称其为 **短关联** 的原因。
+Since the user only wants to modify the association itself between the current object and other objects, without further modifying the associated objects, the UI cannot have nested multi-level associations. This is why it is called a **short association**. 
 
 :::info
-为save指令传递任意形状的数据结构作为参数时，指定短关联有两种方法
+When passing data structures of arbitrary shapes as parameters to the save command, short associations can be specified in two ways:
 
--   要么让关联对象只有id属性
+-   The associated object has only the id attribute
 
--   要么让关联对象只有key属性
+-   The associated object has only the key attribute  
 :::
 
-两种方法示范如下
+Two examples are shown below:
 
--   让关联对象只有id属性
+-   The associated object has only the id attribute:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     Book book = BookDraft.$.produce(draft -> {
         draft.setName("SQL in Action");
         draft.setEdition(1);
         draft.setPrice(new BigDecimal("39.9"));
         draft.applyStore(store -> {
-            // 关联对象只有id属性
+            // Associated object has only id attribute  
             // highlight-next-line
             store.setId(2L);
         });
         draft.addIntoAuthors(author -> {
-            // 关联对象只有id属性
-            // highlight-next-line
-            author.setId(4L);
+            // Associated object has only id attribute
+            // highlight-next-line 
+            author.setId(4L); 
         });
         draft.addIntoAuthors(author -> {
-            // 关联对象只有id属性
+            // Associated object has only id attribute
             // highlight-next-line
             author.setId(5L);
         });
@@ -74,6 +74,7 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
@@ -82,17 +83,17 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
         edition = 1
         price = BigDecimal("39.9")
         store().apply {
-            // 关联对象只有id属性
+            // Associated object has only id attribute
             // highlight-next-line
             id = 2L
         }
         authors().addBy {
-            // 关联对象只有id属性
+            // Associated object has only id attribute
             // highlight-next-line
             id = 4L
         }
         authors().addBy {
-            // 关联对象只有id属性
+            // Associated object has only id attribute 
             // highlight-next-line
             id = 5L
         }
@@ -104,26 +105,27 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
     </Tabs>
 
     :::note
-    这里对被保存数据结构进行硬编码仅为示范，实际项目中被保存的数据结构由前端界面提交。
+    The data structure is hard-coded here only for demonstration. In actual projects the data structure to be saved is submitted by the front-end UI.
 
-    当然，如果用户按照[映射篇/进阶映射/视图属性/IdView](../../mapping/advanced/view/id-view)一文的方法定义了`authorIds`属性，上述代码可以被简化，例如：
+    Of course, if the user defines the `authorIds` attribute according to [Mapping Section/Advanced Mapping/View Properties/IdView](../../mapping/advanced/view/id-view), the above code can be simplified, for example:
     
     ```
     draft.setAuthorIds(Arrays.asList(4L, 5L));
     ```
-    为了让例子更具普适性，这里并不假设用户为实体类型定义了[IdView](../../mapping/advanced/view/id-view)属性。后续所有文档都如此，不再提醒。
+    
+    For greater applicability of the examples, it is not assumed here that the user has defined [IdView](../../mapping/advanced/view/id-view) attributes for the entity type. Subsequent documents will not be reminded again. 
     :::
-
--   让关联对象只有key属性
+    
+-   The associated object has only the key attribute:
 
     :::note
-    下面代码，假设
+    In the following code, it is assumed that:
     
-    -   `BookStore`类型的key属性是`name`
+    - The key attribute of `BookStore` type is `name`
 
-    -   `Author`类型的key属性是`firstName`和`lastName` 
+    - The key attributes of `Author` type are `firstName` and `lastName`
 
-        > 实际项目中，这个唯一性约束并不合理，这里为简化例子，姑且这样假设，请读者对此细节别太较真
+        > In actual projects, this uniqueness constraint is not reasonable. It is assumed here to simplify the example. Please don't take this detail too seriously.
     :::
 
     <Tabs groupId="language">
@@ -135,17 +137,17 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
         draft.setEdition(1);
         draft.setPrice(new BigDecimal("39.9"));
         draft.applyStore(store -> {
-            // 关联对象只有key属性，即`BookStore.name`
+            // Associated object has only key attribute, i.e. `BookStore.name`
             // highlight-next-line
             store.setName("MANNING");
         });
         draft.addIntoAuthors(author -> {
-            // 关联对象只有key属性，即`Author.firstName`和`Author.lastName`
+            // Associated object has only key attributes, i.e. `Author.firstName` and `Author.lastName` 
             // highlight-next-line
             author.setFirstName("Boris").setLastName("Cherny");
         });
         draft.addIntoAuthors(author -> {
-            // 关联对象只有key属性，即`Author.firstName`和`Author.lastName`
+            // Associated object has only key attributes, i.e. `Author.firstName` and `Author.lastName`
             // highlight-next-line
             author.setFirstName("Samer").setLastName("Buna");
         });
@@ -154,6 +156,7 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
@@ -162,19 +165,19 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
         edition = 1
         price = BigDecimal("39.9")
         store().apply {
-            // 关联对象只有key属性，即`BookStore.name`
+            // Associated object has only key attribute, i.e. `BookStore.name`
             // highlight-next-line
             name = "MANNING"
         }
         authors().addBy {
-            // 关联对象只有key属性，即`Author.firstName`和`Author.lastName`
+            // Associated object has only key attributes, i.e. `Author.firstName` and `Author.lastName`
             // highlight-next-line
             firstName = "Boris"
-            // highlight-next-line
+            // highlight-next-line  
             lastName = "Cherny"
         }
         authors().addBy {
-            // 关联对象只有key属性，即`Author.firstName`和`Author.lastName`
+            // Associated object has only key attributes, i.e. `Author.firstName` and `Author.lastName`
             // highlight-next-line
             firstName = "Samer"
             // highlight-next-line
@@ -187,40 +190,40 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
     </TabItem>
     </Tabs>
 
-### 长关联
+### Long Association
 
-所谓长关联，表示除了要修改当前对象和其他对象之间的关联本身外，还要进一步修改关联对象。
+A so-called long association indicates that in addition to modifying the association itself between the current object and other objects, the associated objects need to be further modified. 
 
-通常，UI设计会采用内嵌表格，例如
+Usually, the UI design will use nested tables, for example:
 
 <LongAssociation/>
 
 <div>&nbsp;</div>
 
-由于用户不但要修改当前对象和其他对象的关联，还要进一步修改关联对象，而关联对象可以包含更深的关联，所以，理论上讲，UI可出多层关联嵌套。这就是称其为 **长关联** 的原因。
+Since the user wants not only to modify the association between the current object and other objects, but also to further modify the associated objects, and the associated objects can contain deeper associations, theoretically the UI can have nested multi-level associations. This is why it is called a **long association**.
 
 :::note
-虽然设计人员为了保证UI的简洁性会刻意避免在内嵌表格中嵌套更深的内嵌表格，但是实际项目中仍然存在需要在UI上维护多层嵌套关联的场景，比如：
+Although designers deliberately avoid nesting deeper nested tables in nested tables to ensure UI simplicity, there are still scenarios in actual projects that require maintaining multi-level nested associations on the UI, such as:
 
--   表单本身是一颗树结构，编辑好了后，作为一个整体保存。
+- The form itself is a tree structure that is edited and then saved as a whole.
 
--   可视化UI设计，因为UI组件本身就是树形结构，用户进行一系列可视化拖拉拽的设计后，把UI组件树作为一个整体保存。
+- Visual UI design, because the UI components themselves are tree structures. After a series of visual drag-and-drop designs by the user, the UI component tree is saved as a whole.
 :::
 
 :::info
-为save指令传递任意形状的数据结构作为参数时，指定长关联有两种方法
+When passing data structures of arbitrary shapes as parameters to the save command, long associations can be specified in two ways:
 
--   如果已经为关联对象指定了id属性，继续为对象指定任何非id属性 *（包括key属性）*
+- If the id attribute has already been specified for the associated object, continue to specify any non-id attributes for the object *(including key attributes)*
 
--   如果已经为关联对象指定了所有key属性，继续为对象指定任何既非id也非key的属性
+- If all key attributes have already been specified for the associated object, continue to specify any attributes that are neither id nor key for the object
 :::
 
-例子如下
+Examples:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Order order = Order.$.produce(draft -> {
     draft.applyCustomer(customer -> customer.setId(1L));
     draft.setProvince("四川");
@@ -228,13 +231,13 @@ Order order = Order.$.produce(draft -> {
     draft.setAddress("龙泉驿区洪玉路与十洪路交叉口");
     draft.addIntoItems(item -> {
         item.applyProduct(product -> product.setId(1L));
-        // 既非id也非key的属性
+        // Attribute neither id nor key  
         // highlight-next-line
         item.setQuantity(2);
     });
     draft.addIntoItems(item -> {
         item.applyProduct(product -> product.setId(10L));
-        // 既非id也非key的属性
+        // Attribute neither id nor key
         // highlight-next-line
         item.setQuantity(1);
     });
@@ -243,23 +246,24 @@ sqlClient.save(order);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 val order = new(Order::class).by {
     customer().apply { id = 1L }
     province = "四川"
-    city = "成都"
+    city = "成都" 
     address = "龙泉驿区洪玉路与十洪路交叉口"
     items().addBy {
         product().apply { id = 1L }
-        // 既非id也非key的属性
+        // Attribute neither id nor key
         // highlight-next-line
         quantity = 2
     }
     items().addBy {
         product().apply { id = 10L }
-        // 既非id也非key的属性
+        // Attribute neither id nor key
         // highlight-next-line
         quantity = 1
     }
@@ -271,27 +275,27 @@ sqlClient.save(order)
 </Tabs>
 
 :::note
-这里对被保存数据结构进行硬编码仅为示范，实际项目中被保存的数据结构由前端界面提交。
+The data structure is hard-coded here only for demonstration. In actual projects the data structure to be saved is submitted by the front-end UI. 
 :::
 
-## 一对多关联的特殊性
+## Speciality of One-To-Many Associations
 
-之前提到
+It was mentioned before:
 
 :::info
-如果实体类型声明了Key属性 *(也意味着id除了充当唯一标识符外无任何业务意义)*，那么
+If the entity type declares the Key attribute *(which also means the id has no business meaning other than serving as a unique identifier)*, then
 
--   对于被保存的聚合根对象而言，建议为其指定id属性或key属性。否则会被理解成强行插入。
+-   For the aggregated root object to be saved, it is recommended to specify either the id attribute or the key attribute, otherwise it will be understood as forced insertion.
 
--   对于被保存的关联对象而言，要么指定id属性，要么指定所有key属性。否则会异常。
+-   For associated objects to be saved, either the id attribute or all key attributes must be specified, otherwise an exception will occur.
 :::
 
 
-但是，有一种情况例外，一对多关系。
+However, there is one exceptional case for one-to-many relationships.
 
-让我来看一个例子
+Let's look at an example:
 
-### 实体定义
+### Entity Definition
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -305,7 +309,7 @@ public interface TreeNode {
     long id();
 
     // highlight-next-line
-    @Key
+    @Key 
     String name();
 
     // highlight-next-line
@@ -314,14 +318,15 @@ public interface TreeNode {
     @ManyToOne
     TreeNode parent();
 
-    ...省略其他属性...
+    ...other attributes omitted... 
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="TreeNode.kt"
+```kotlin title="TreeNode.kt" 
 @Entity
 public interface TreeNode {
 
@@ -334,23 +339,23 @@ public interface TreeNode {
     val name: String
 
     // highlight-next-line
-    @Key
+    @Key 
     @ManyToOne
     val parent: TreeNode?
 
-    ...省略其他属性...
+    ...other attributes omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-### 使用保存指令
+### Using Save Command
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 TreeNode treeNode = TreeNodeDraft.$.produce(food -> {
     food
         // highlight-next-line
@@ -383,6 +388,7 @@ sqlClient.save(treeNode);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -391,7 +397,7 @@ val treeNode = new(TreeNode::class).by {
     parent = null
     name = "Food"
     childNodes().addBy {
-        name = "Drinks"
+        name = "Drinks" 
         childNodes().addBy {
             name = "Cococola"
         }
@@ -415,27 +421,26 @@ sqlClient.save(treeNode)
 </TabItem>
 </Tabs>
 
-`TreeNode`类型的key属性为`name`和`parent`
+The key attributes of the `TreeNode` type are `name` and `parent`:
 
--   对根节点而言，如果没有指定id属性，建议指定`name`和`parent`属性，否则会被理解为强行插入。
+-   For the root node, if the id attribute is not specified, it is recommended to specify the `name` and `parent` attributes, otherwise it will be understood as forced insertion.
 
--   对子节点而言，如果没有指定id属性，则必须指定`name`和`parent`属性，否则异常。
+-   For the child nodes, if the id attribute is not specified, the `name` and `parent` attributes must be specified, otherwise an exception will occur.
 
-然而，在这这个例子中，除了根节点对象外，其他所有对象的`parent`属性都未被指定。这段代码看起来似乎无法正常执行。
+However, in this example, except for the root node object, the `parent` attribute of all other objects is not specified. This code does not seem to execute normally.
 
-事实上，这段代码可以正确运行，因为save指令为一对多关联做了一个特殊的规定：
+In fact, this code can run correctly, because the save command makes a special provision for one-to-many associations: 
 
 :::tip
-如果被保存的数据结构中，父对象通过一对多关联 *(本例中为`TreeNode.childNodes`)* 持有了某些子对象，
-那么这些子对象的逆向多对一关联 *(本例中为`TreeNode.parent`)* 将会被保存指令视为已被设置。
+If the data structure to be saved contains some child objects held by the parent object through a one-to-many association *(`TreeNode.childNodes` in this example)*, then the reverse many-to-one association of these child objects *(`TreeNode.parent` in this example)* will be deemed by the save command to have been set.
 :::
 
-所以，上例中，保存指令会认为所有子节点的`parent`属性都已经被设置了。即，所有子对象都同时具备`name`和`parent`属性，保存指令可顺利运行。
+So in the above example, the save command will consider the `parent` attribute of all child nodes to have already been set. That is, all child objects have both the `name` and `parent` attributes at the same time, so the save command can run smoothly.
 
-## 脱勾操作
+## Dissociate Operations  
 
-对于关联对象而言，插入或更新操作和之前介绍过的保存聚合根对象操作并无较大差异。用户只需要记住关联对象不受[保存模式](./save-mode)控制 *(也可认为关联对象的保存模式只有`UPSERT`)* 即可。
+For associated objects, insert or update operations are not much different from saving the aggregated root object operations introduced earlier. The user just needs to remember that associated objects are not controlled by [Save Mode](./save-mode) *(or it can be considered that the save mode for associated objects is only `UPSERT`)*.
 
-然而，关联对象具有一个非常特殊的操作：脱勾。
+However, associated objects have a very special operation: dissociation. 
 
-脱勾操作时一个非常重要的概念，限于篇幅，我们会在[下一篇文档](./dissociation)中对其详细介绍。
+Dissociation is a very important concept. Due to limited space, we will discuss it in detail in the [next document](./dissociation).

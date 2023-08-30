@@ -1,30 +1,30 @@
 ---
 sidebar_position: 6
-title: Draft interceptor
+title: Interceptor
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
+## Premise of This Article
 
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
+Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers.
 
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
 
-本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
 
-## 定义被拦截数据格式
+## Define Intercepted Data Format  
 
-Draft拦截器和[Save指令](./save-command)配合使用，在对象被保存之前调整数据。
+Draft interceptors work with [Save Command](./save-command) to adjust data before objects are saved.
 
-假如大部分实体表都具备created_time、modified_time、created_by和modified_by四个字段，可以提供如下超类
+If most entity tables have the four fields created_time, modified_time, created_by and modified_by, a super class can be provided as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-// highlight-next-line
+// highlight-next-line  
 @MappedSuperclass
 public interface BaseEntity {
 
@@ -43,6 +43,7 @@ public interface BaseEntity {
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -59,25 +60,25 @@ interface BaseEntity {
     val createdBy: User
 
     @ManyToOne
-    @OnDissociate(DissociateAction.SET_NULL)
+    @OnDissociate(DissociateAction.SET_NULL) 
     val modifiedBy: User
 }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-所有需要这些字段的实体都从此超类派生即可。
+All entities that need these fields can derive from this superclass.
 
 :::note
-这里的`@OnDissociate(DissociateAction.SET_NULL)`是为了防止因这两个外键导致相关`User`数据的删除操作被阻止。当相关`User`被删除后，这两个外键自动清空。
+The `@OnDissociate(DissociateAction.SET_NULL)` here is to prevent deletion operations on related `User` data from being blocked due to these two foreign keys. When related `User` is deleted, these two foreign keys are automatically cleared.
 :::
 
-## 定义拦截器
+## Define Interceptor  
 
-假设有一个叫做`UserService`的服务类，其java方法`getCurrentUserId()`或kotlin属性`currentUserId`返回当前登录用户的id。
+Assume there is a service class called `UserService` whose Java method `getCurrentUserId()` or Kotlin property `currentUserId` returns the id of the currently logged in user.
 
-拦截器必须实现`org.babyfish.jimmer.sql.DraftInterceptor`接口，如果使用Spring托管，代码方式如下：
+The interceptor must implement the `org.babyfish.jimmer.sql.DraftInterceptor` interface. If using Spring management, the code is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -98,7 +99,7 @@ public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDr
             draft.setModifiedTime(LocalDateTime.now());
         }
         if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.EDITOR)) {
-            draft.applyModifiedBy(user - > {
+            draft.applyModifiedBy(user -> {
                 user.setId(userService.getCurrentUserId());
             });
         }
@@ -107,7 +108,7 @@ public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDr
                 draft.setCreatedTime(LocalDateTime.now());
             }
             if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATOR)) {
-                draft.applyCreatedBy(user - > {
+                draft.applyCreatedBy(user -> {
                     user.setId(userService.getCurrentUserId());
                 });
             }   
@@ -117,12 +118,13 @@ public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDr
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 @Component
 class BaseEntityDraftInterceptor(
-    private val userService: UserService
+    private val userService: UserService  
 ) : DraftInterceptor<BaseEntityDraft> {
 
     override fun beforeSave(draft: BaseEntityDraft, isNew: Boolean) {
@@ -154,31 +156,31 @@ class BaseEntityDraftInterceptor(
 </TabItem>
 </Tabs>
 
-其中，`beforeSave`方法在某个对象被保存之前被调用，用户可以对即将保存的数据做出最后调整。
+The `beforeSave` method is called before an object is saved, where the user can make final adjustments to the data to be saved. 
 
-如果参数`isNew`为true，则表示稍后操作是insert操作；否则，是update操作。
+If the `isNew` parameter is true, it means the subsequent operation is an insert; otherwise, it is an update.
 
 :::warning
-请不要在`beforeSave`方法中，修改被`@Id`或`@Key`修饰的属性。
+Please do not modify attributes decorated with `@Id` or `@Key` in the `beforeSave` method.
 :::
 
-### Spring环境下配置拦截器
+### Configure Interceptor in Spring
 
-上文中，我们定义的类`BaseEntityDraftInterceptor`被`@Compoent`修饰，很明显这是一个Spring托管对象。
+In the above, the class `BaseEntityDraftInterceptor` is decorated with `@Component`, obviously a Spring-managed object.
 
 :::info
-如果使用SpringBoot Starter且保证拦截器被Spring托管，那么Jimmer就会将注册它，无需额外的配置。
+If using Spring Boot Starter and ensuring the interceptor is Spring-managed, then Jimmer will register it automatically without additional configuration.
 
-否则，必需手动注册
+Otherwise, it must be manually registered.
 :::
 
-### 底层API配置拦截器
+### Configure Interceptor in Low Level API
 
-将拦截器挂接到SqlClient对象上，即可生效
+Attach the interceptor to the SqlClient object to take effect.
 
-## 配置拦截器
+## Configure Interceptor
 
-将拦截器挂接到SqlClinet对象上，即可生效
+Attaching the interceptor to the SqlClient object makes it take effect:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -187,30 +189,31 @@ class BaseEntityDraftInterceptor(
 @Bean
 public JSqlClient sqlClient(
     List<DraftInterceptor<?>> interceptors,
-    ...省略其他参数...
+    ...other params omitted...  
 ) {
     return JSqlClient
         .newBuilder()
         // highlight-next-line
         .addDraftinterceptors(interceptors)
-        ...省略其他配置...
+        ...other config omitted...
         .build();
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
-@Bean
+```kotlin 
+@Bean  
 fun sqlClient(
     interceptors: List<DraftInterceptor<?>>,
-    ...省略其他参数...
+    ...other params omitted...
 ): KSqlClient =
     newKSqlClient {
         // highlight-next-line
         addDraftinterceptors(interceptors)
-        ...省略其他配置...
+        ...other config omitted...
     }
 ```
 
@@ -218,19 +221,19 @@ fun sqlClient(
 </Tabs>
 
 :::tip
-虽然在本文仅示范了一个`DraftInterceptor`，实际项目中可能有很多个。
+Although only one `DraftInterceptor` is demoed in this article, there may be many in an actual project.
 
-所以，这里使用集合，让Spring注入所有的`DraftInterceptor`。
+So here a collection is used for Spring to inject all `DraftInterceptor` instances.
 :::
 
-## 最终使用
+## Final Usage  
 
-假如`Book`继承了`BaseEntity`，则可以这么使用
+Assume `Book` inherits from `BaseEntity`, then it can be used like:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 Book book = BookDraft.$.produce(draft -> {
     draft.setName("SQL in Action");
     draft.setEdition(1);
@@ -241,11 +244,12 @@ sqlClient.getEntities().save(book);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 val book = new(Book::class).by {
-    name = "SQL in Action"
+    name = "SQL in Action" 
     edition = 1
     price = BigDecimal("59")
     store().id = 2
@@ -256,38 +260,40 @@ sqlClient.entities.save(book)
 </TabItem>
 </Tabs>
 
--   如果上面的保存指令最终导致了insert操作，生成的SQL如下
+-   If the above save command finally results in an insert operation, the generated SQL is:
+
     ```sql
     insert into BOOK(
         /* highlight-start */
         CREATED_TIME,
-        MODIFIED_TIME,
+        MODIFIED_TIME, 
         CREATED_BY,
         MODIFIED_BY,
         /* highlight-end */
-        NAME, 
-        EDITION, 
-        PRICE, 
-        STORE_ID
+        NAME,
+        EDITION,
+        PRICE,
+        STORE_ID  
     ) values(
         /* highlight-next-line */
-        ?, ?, ?, ?,
+        ?, ?, ?, ?, 
         ?, ?, ?, ?
     )
     ```
 
-    其中，为`CREATED_TIME`、 `MODIFIED_TIME`、`CREATED_BY`和`MODIFIED_BY`赋值的行为由拦截器自动添加
+    Where the assignment behavior for `CREATED_TIME`, `MODIFIED_TIME`, `CREATED_BY` and `MODIFIED_BY` is automatically added by the interceptor.
+    
+-   If the above save command finally results in an update operation, the generated SQL is: 
 
--   如果上面的保存指令最终导致了update操作，生成的SQL如下
     ```sql
-    update BOOK set 
+    update BOOK set
         /* highlight-start */
-        MODIFIED_TIME = ?,
+        MODIFIED_TIME = ?, 
         MODIFIED_TIME,
-        /* highlight-end */
-        PRICE = ?, 
-        STORE_ID = ? 
+        /* highlight-end */ 
+        PRICE = ?,
+        STORE_ID = ?
     where ID = ?
     ```
-
-其中，为`MODIFIED_TIME`和`MODIFIED_BY`赋值的行为由拦截器自动添加
+    
+    Where the assignment behavior for `MODIFIED_TIME` and `MODIFIED_BY` is automatically added by the interceptor.

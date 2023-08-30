@@ -34,7 +34,7 @@ export const LongAssociation: FC = memo(() => {
     }, [i18n.currentLocale]);
 
     const users = useMemo(() => {
-        return isZh ? ZH_USERS : ZH_USERS
+        return isZh ? ZH_USERS : EN_USERS
     }, [isZh]);
     
     const userMap = useMemo<Map<number, User>>(() => {
@@ -169,7 +169,7 @@ export const LongAssociation: FC = memo(() => {
                         <TextField
                         fullWidth
                         select
-                        label="购买人"
+                        label={isZh ? "购买人" : "Purchaser"}
                         value={order.userId}
                         onChange={onUserChange}>
                         {
@@ -186,21 +186,21 @@ export const LongAssociation: FC = memo(() => {
                     <Grid item xs={4}>
                         <TextField
                         fullWidth
-                        label="省份"
+                        label={isZh ? "省份" : "Province"}
                         value={order.province}
                         onChange={onPrivinceChange}/>
                     </Grid>
                     <Grid item xs={4}>
                         <TextField
                         fullWidth
-                        label="城市"
+                        label={isZh ? "城市" : "City"}
                         value={order.city}
                         onChange={onCityChange}/> 
                     </Grid>
                     <Grid item xs={12}>
                         <TextField
                         fullWidth
-                        label="地址"
+                        label={isZh ? "地址" : "Address"}
                         value={order.address}
                         onChange={onAddressChange}/>
                     </Grid>
@@ -210,11 +210,11 @@ export const LongAssociation: FC = memo(() => {
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>商品</TableCell>
-                                        <TableCell>数量</TableCell>
-                                        <TableCell>单价</TableCell>
-                                        <TableCell>明细价</TableCell>
-                                        <TableCell>删除</TableCell>
+                                        <TableCell>{isZh ? "商品" : "Commodity"}</TableCell>
+                                        <TableCell>{isZh ? "数量" : "Quantity"}</TableCell>
+                                        <TableCell>{isZh ? "单价" : "Unit price"}</TableCell>
+                                        <TableCell>{isZh ? "明细价" : "Item price"}</TableCell>
+                                        <TableCell>{isZh ? "删除" : "Delete"}</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -267,7 +267,7 @@ export const LongAssociation: FC = memo(() => {
                                     <TableRow>
                                         <TableCell colSpan={5}>
                                             <Button variant="outlined" onClick={onAddClick}>
-                                                <AddIcon/>添加
+                                                <AddIcon/>{isZh ? "添加" : "Add"}
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -343,20 +343,23 @@ const ZH_USERS: ReadonlyArray<User> = [
 ];
 
 const EN_USERS: ReadonlyArray<User> = [
-    
+    {id: 1, nickName: "Schneewittchen", province: "Berlin", city: "Berlin Prenzlauer Berg", address: "Brandenburgische Straße 9, Berlin Prenzlauer Berg, Berlin, Germany"},
+    {id: 2, nickName: "Cinderella", province: "Basse-Normandie", city: "Lisieux", address: "20 rue Léon Dierx, Lisieux, Basse-Normandie, France"},
+    {id: 3, nickName: "Nuwa", province: "ShanXi", city: "Taiyuan", address: "Qian Feng Nan Lu 99hao, Taiyuan, ShanXi, China"},
+    {id: 4, nickName: "Pinocchio", province: "Palazzo Pignano", city: "Cremona", address: "Via Giovanni Amendola 134, Palazzo Pignano, Cremona, Italy"},
 ];
 
 const ZH_PRODUCTS: ReadonlyArray<Product> = [
-    {id: 1, name: "zippo夜光流沙打火机", price: 268},
-    {id: 2, name: "杰登(Jayden)印度塔布拉鼓", price: 9238},
-    {id: 3, name: "浪琴(Longines)机械手表", price: 13900},
-    {id: 4, name: "viney男士皮带", price: 139},
-    {id: 5, name: "雅诗兰黛绒雾哑光唇膏", price: 310},
-    {id: 6, name: "CIRCUIT男子滑雪单板", price: 2044},
-    {id: 7, name: "特仑苏脱脂牛奶", price: 47},
-    {id: 8, name: "乐高积木布加迪", price: 374},
-    {id: 9, name: "双喜燃气电磁通用压力锅", price: 137},
-    {id: 10, name: "憨憨宠猫爬架", price: 238},
+    {id: 1, name: "Timeless Vitamin C Plus E 10 Percent Ferulic Acid Serum Serum Unisex 1 oz", price: 14.69},
+    {id: 2, name: "Dockers Men's Tiller Boat Shoe", price: 52.41},
+    {id: 3, name: "Paxcoo 124 Skeins Embroidery Floss Cross Stitch Thread with Needles", price: 29.99},
+    {id: 4, name: "Michael Kors Crossbody", price: 70.6},
+    {id: 5, name: "Crocs unisex-child Classic Graphic Clog", price: 34.99},
+    {id: 6, name: "Timex Time Machines Digital 35mm Watch", price: 28.95},
+    {id: 7, name: "Scalex Mite & Lice Spray for Birds, 8 oz.", price: 14.75},
+    {id: 8, name: "Under Armour Men's Storm Liner", price: 13.03},
+    {id: 9, name: "Nike Women's Pro 3\" Training Shorts", price: 35.86},
+    {id: 10, name: "Olaplex No. 4 Bond Maintenance Shampoo", price: 30},
 ];
 
 const EN_PRODUCTS: ReadonlyArray<Product> = [

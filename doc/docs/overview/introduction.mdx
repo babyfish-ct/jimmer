@@ -40,77 +40,77 @@ Whether you have ORM experience or not, after completing the Jimmer learning jou
 
 As mentioned earlier, completing basic CRUD access to databases is only the most fundamental and simple part of actual project work. Here are some common pain points that have always plagued developers:
 
-1. DTO explosion problem
+1.  DTO explosion problem
 
-   Even for the same data type (aggregate root), different business functions expect query data formats to be different, which often leads projects to define a large number of DTO types, forming a <ViewMore buttonText="DTO explosion problem" variant="text"><DtoExplosion/></ViewMore>.
+    Even for the same data type (aggregate root), different business functions expect query data formats to be different, which often leads projects to define a large number of DTO types, forming a <ViewMore buttonText="DTO explosion problem" variant="text"><DtoExplosion/></ViewMore>.
 
-   :::info
-   The number of DTO types is huge, and although they are different from each other, they often have high redundancy with high similarity.
+    :::info
+    The number of DTO types is huge, and although they are different from each other, they often have high redundancy with high similarity.
    
-   Especially for mobile applications, due to the limitation of screen size leading to severe UI fragmentation, even for the same data type (aggregate root), different UI screens will have different emphases, further exacerbating this situation.
-   :::
+    Especially for mobile applications, due to the limitation of screen size leading to severe UI fragmentation, even for the same data type (aggregate root), different UI screens will have different emphases, further exacerbating this situation.
+    :::
 
-   The large number of highly redundant DTO types is cumbersome and difficult to maintain just by defining these types. At the business code implementation level, it also makes traditional solutions (whether ORM or non-ORM) very inconvenient to handle, for example:
+    The large number of highly redundant DTO types is cumbersome and difficult to maintain just by defining these types. At the business code implementation level, it also makes traditional solutions (whether ORM or non-ORM) very inconvenient to handle, for example:
 
-   - Traditional ORM solutions
+    -   Traditional ORM solutions
 
-     Although they have good convenience, they lack flexibility.
+        Although they have good convenience, they lack flexibility.
      
-     Even considering JPA 2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), the flexibility is ultimately limited, especially when business scenarios only need part of the properites of some entity objects.
+        Even considering JPA 2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), the flexibility is ultimately limited, especially when business scenarios only need part of the properites of some entity objects.
      
-     Finally, in order to cope with ever-changing flexibility, especially the flexibility of only needing part of an object's properites, developers often choose to query only part of an object's properites and manually convert them to DTO types. This goes against the purpose of ORM to pursue convenience and fails to reflect the value of ORM.
+        Finally, in order to cope with ever-changing flexibility, especially the flexibility of only needing part of an object's properites, developers often choose to query only part of an object's properites and manually convert them to DTO types. This goes against the purpose of ORM to pursue convenience and fails to reflect the value of ORM.
 
-     :::info
-     To make up for the lack of flexibility in traditional ORM, developers often have to work around in ways that undermine the original purpose of ORM: convenience.
-     :::
+        :::info
+        To make up for the lack of flexibility in traditional ORM, developers often have to work around in ways that undermine the original purpose of ORM: convenience.
+        :::
 
-     :::note
-     This is one of the common criticisms of people who oppose ORM, believing that ORM attempts to replace SQL but does not achieve its purpose. This view has its merits.
-     :::
+        :::note
+        This is one of the common criticisms of people who oppose ORM, believing that ORM attempts to replace SQL but does not achieve its purpose. This view has its merits.
+        :::
      
-   - Non-ORM solutions represented by MyBatis
+    -    Non-ORM solutions represented by MyBatis
    
-     They are flexible but have serious repetitive labor problems.
+        They are flexible but have serious repetitive labor problems.
      
-     Facing various types of DTO queries, developers often need to define a lot of similar but different `Result Mappers`, and even manual data stitching operations if necessary. This represents a huge workload.
+        Facing various types of DTO queries, developers often need to define a lot of similar but different `Result Mappers`, and even manual data stitching operations if necessary. This represents a huge workload.
 
-     :::info
-     This solution has absolute flexibility and control (it can do very little work for you, most of the time it is the code written by developers to complete the functions, which is of course flexible), but at the cost of high workload. The R&D capability of the team is directly reflected in the number of people and communication costs.
-     :::
+        :::info
+        This solution has absolute flexibility and control (it can do very little work for you, most of the time it is the code written by developers to complete the functions, which is of course flexible), but at the cost of high workload. The R&D capability of the team is directly reflected in the number of people and communication costs.
+        :::
      
-   :::tip
-   Through innovation, thoroughly unleash the flexibility of ORM and form a new solution that combines the convenience of ORM and the flexibility of MyBatis. This is one of the core values of Jimmer.
-   :::
+    :::tip
+    Through innovation, thoroughly unleash the flexibility of ORM and form a new solution that combines the convenience of ORM and the flexibility of MyBatis. This is one of the core values of Jimmer.
+    :::
 
-   To this end, Jimmer's solution is to query data structures of arbitrary shapes <ObjectFetcher/>
+    To this end, Jimmer's solution is to query data structures of arbitrary shapes <ObjectFetcher/>
    
-2. Complex form problem
+2.  Complex form problem
 
-   Often, the data structure that the client needs to save is not a flat object, but a <ViewMore buttonText="data structure with some complexity" variant="text"><LongAssociation/></ViewMore>. If developers have to compare the differences between the client data structure and the existing data and perform appropriate add/delete/modify operations, it would be very cumbersome.
+    Often, the data structure that the client needs to save is not a flat object, but a <ViewMore buttonText="data structure with some complexity" variant="text"><LongAssociation/></ViewMore>. If developers have to compare the differences between the client data structure and the existing data and perform appropriate add/delete/modify operations, it would be very cumbersome.
    
-   Also, similar to the query function, the data structure format that can be saved for the same aggregate root type by different business functions should be diversified, and should not be fixed at the ORM level through configuration.
+    Also, similar to the query function, the data structure format that can be saved for the same aggregate root type by different business functions should be diversified, and should not be fixed at the ORM level through configuration.
 
-   For this, Jimmer's solution is to save data structures of arbitrary shapes <SaveCommand/>
+    For this, Jimmer's solution is to save data structures of arbitrary shapes <SaveCommand/>
    
-3. Cache
+3.  Cache
 
-   - Whether to use cache should be completely transparent to developers. Introducing cache should not increase the complexity of business code, reduce code quality and maintainability, and should be as simple as pure SQL projects.
+    -   Whether to use cache should be completely transparent to developers. Introducing cache should not increase the complexity of business code, reduce code quality and maintainability, and should be as simple as pure SQL projects.
 
-   - The cache should not only have simple object caching, but also <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>.
+    -   The cache should not only have simple object caching, but also <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>.
 
-   - Global filtering capabilities represented by permission systems often allow different users to see different data. Therefore, different caches should also be <ViewMore buttonText="visible to different users" variant="text"><MultiViewCache/></ViewMore>
+    -   Global filtering capabilities represented by permission systems often allow different users to see different data. Therefore, different caches should also be <ViewMore buttonText="visible to different users" variant="text"><MultiViewCache/></ViewMore>
    
-   - Cache consistency maintenance, the most headache problem, <ViewMore buttonText="should be solved by the underlying solution" title="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore> as much as possible, rather than penetrating into business code for developers to solve.
+    -   Cache consistency maintenance, the most headache problem, <ViewMore buttonText="should be solved by the underlying solution" title="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore> as much as possible, rather than penetrating into business code for developers to solve.
    
-4. Automatic client integration
+4.  Automatic client integration
 
-   - The server should automatically generate client code (such as TypeScript) for clients (such as web frontends).
+    -   The server should automatically generate client code (such as TypeScript) for clients (such as web frontends).
    
-   - The server is the producer. Developers want to see simplified APIs and programming models, because it means less work to be done. The client is the consumer. Developers want to see complete APIs and programming models, because it means it’s comfortable to use. The traditional approach of making server and client APIs and programming models completely consistent needs to be changed.
+    -   The server is the producer. Developers want to see simplified APIs and programming models, because it means less work to be done. The client is the consumer. Developers want to see complete APIs and programming models, because it means it’s comfortable to use. The traditional approach of making server and client APIs and programming models completely consistent needs to be changed.
    
-5. Microservice data stitching
+5.  Microservice data stitching
 
-   In microservice architectures, the database is fragmented. Querying different parts of the data from different microservices first, and then stitching them together as a whole to return is cumbersome and frequent, so it should be hidden and automated by the underlying solution.
+    In microservice architectures, the database is fragmented. Querying different parts of the data from different microservices first, and then stitching them together as a whole to return is cumbersome and frequent, so it should be hidden and automated by the underlying solution.
    
 ## Revolutionary Features
    
@@ -126,9 +126,9 @@ This feature also solves a flaw in GraphQL: inability to recursively query self-
 
 ### 2. Save data structures of arbitrary shapes
 
-- The shape of the data structure to be saved should be arbitrarily determined by the developer, rather than fixed configuration on entities as in traditional ORM (such as the cascade parameter of `@OneToMany` annotation in JPA)
+-   The shape of the data structure to be saved should be arbitrarily determined by the developer, rather than fixed configuration on entities as in traditional ORM (such as the cascade parameter of `@OneToMany` annotation in JPA)
 
-- It should be like <a href="https://react.dev/learn">React</a> or <a href="https://vuejs.org/">Vue</a> in the web area. Developers only need to provide the data structure to be covered, and the framework will automatically find the `DIFF` and execute SQL operations.
+-   It should be like <a href="https://react.dev/learn">React</a> or <a href="https://vuejs.org/">Vue</a> in the web area. Developers only need to provide the data structure to be covered, and the framework will automatically find the `DIFF` and execute SQL operations.
 
 <SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small" variant="outlined">Learn More</Button>
 
@@ -144,11 +144,11 @@ Therefore, Jimmer introduces this set of powerful caching management mechanisms 
 
 This caching mechanism supports the following important concepts:
 
-- <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore>, <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>
+-   <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore>, <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>
 
-- <ViewMore buttonText="Multi-view Cache" variant="text"><MultiViewCache/></ViewMore>, different caches visible to different users, often combined with permission systems
+-   <ViewMore buttonText="Multi-view Cache" variant="text"><MultiViewCache/></ViewMore>, different caches visible to different users, often combined with permission systems
 
-- <ViewMore buttonText="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>
+-   <ViewMore buttonText="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>
 
 <Button href="../cache" size="small" variant="outlined">Learn More</Button>
 
@@ -168,9 +168,9 @@ For REST services, generate client code (such as TypeScript) for clients (such a
 
 Note that unlike other technologies that automatically generate client code, the programming models on the server side and client side are different.
 
-- The server side as a producer, its programming model is simplified (eliminating DTO explosions), greatly reducing implementation costs
+-   The server side as a producer, its programming model is simplified (eliminating DTO explosions), greatly reducing implementation costs
 
-- The client side as a consumer adopts a complete programming model (recreating DTO explosions), which provides a good development experience
+-   The client side as a consumer adopts a complete programming model (recreating DTO explosions), which provides a good development experience
 
 Thus, the server side and client side both get programming models most suitable for themselves
 
@@ -178,13 +178,13 @@ Thus, the server side and client side both get programming models most suitable 
 
 ### 6. Smart Pagination
 
-- Extremely simple
+-   Extremely simple
   
-  Developers only need to write queries for all data before paging. Queries for total number of rows and query page data will be automatically generated. So Jimmer's paged queries will make you feel unprecedentedly simple.
+    Developers only need to write queries for all data before paging. Queries for total number of rows and query page data will be automatically generated. So Jimmer's paged queries will make you feel unprecedentedly simple.
   
-- Fully optimized
+-   Fully optimized
 
-  Jimmer will fully optimize paged queries at the SQL level
+    Jimmer will fully optimize paged queries at the SQL level
   
 <Button href="../query/paging" size="small" variant="outlined">Learn More</Button>  
 
@@ -195,11 +195,11 @@ DTO Language is a simple language that comes with Jimmer.
 Even in some special scenarios where we cannot directly use the unified ORM entity and have to use DTO objects, the development cost is only to define the shape of these DTOs using the DTO language. 
 The remaining work
 
-- DTO related Java/Kotlin definitions
+-   DTO related Java/Kotlin definitions
 
-- Data transformation logic between entities and DTOs
+-   Data transformation logic between entities and DTOs
 
-- Logic to query DTOs
+-   Logic to query DTOs
 
 is all automatic, completely without the pain caused by DTO explosions in traditional technical solutions.
 
@@ -239,9 +239,9 @@ The features that can be analogous to other similar technical systems include:
 <td><a href="https://graphql.org/">GraphQL</a></td>
 <td>
 
-- Unlike GraphQL which is only used as a protocol for exposing HTTP interfaces, Jimmer extends this capability to ORM APIs, that is, ubiquitous local code invocations. *(Of course, you can also choose to quickly expose GraphQL using Jimmer's capabilities)*
+-   Unlike GraphQL which is only used as a protocol for exposing HTTP interfaces, Jimmer extends this capability to ORM APIs, that is, ubiquitous local code invocations. *(Of course, you can also choose to quickly expose GraphQL using Jimmer's capabilities)*
 
-- Jimmer can recursively query self-referential fields
+-   Jimmer can recursively query self-referential fields
 
 </td>
 </tr>
@@ -287,9 +287,9 @@ Even in some special scenarios where we cannot directly use the unified ORM enti
 <td><a href="https://github.com/graphql/dataloader">DataLoader</a></td> 
 <td>
 
-- Calculated properties have no [N+1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) problems
+-   Calculated properties have no [N+1](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) problems
 
-- Calculation rules are decoupled from ORM, and any information (such as identity permission information) can be used for calculation, and technologies other than relational databases can also be used for calculation
+-   Calculation rules are decoupled from ORM, and any information (such as identity permission information) can be used for calculation, and technologies other than relational databases can also be used for calculation
 
 </td>
 </tr>
@@ -302,9 +302,9 @@ Even in some special scenarios where we cannot directly use the unified ORM enti
 <td><a href="https://www.apollographql.com/docs/federation/">Apollo Federation</a></td>
 <td>
 
-- Entity relationships across microservices, the associated entities on both sides belong to different microservices (also means, belong to different databases)
+-   Entity relationships across microservices, the associated entities on both sides belong to different microservices (also means, belong to different databases)
 
-- If the queried data structure contains remote associations, cross-service data access will be automatically
+-   If the queried data structure contains remote associations, cross-service data access will be automatically
 
 </td>
 </tr>
