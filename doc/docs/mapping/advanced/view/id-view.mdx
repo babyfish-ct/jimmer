@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 1  
 title: IdView
 ---
 
@@ -8,11 +8,11 @@ import TabItem from '@theme/TabItem';
 
 import { ShortAssociation } from '@site/src/components/ShortAssociation';
 
-## 基本概念：短关联
+## Basic Concepts: Short Associations 
 
-在介绍Id视图之前，我们要先介绍一个概念：短关联。
+Before introducing IdView, we need to first introduce a concept: short associations.
 
-在介绍短关联之前，我们先看一看普通关联
+Before introducing short associations, let's first look at a normal association
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -42,7 +42,7 @@ System.out.println(book);
 
 ```kotlin
 val book = bookRepository.findNullable(
-    1L,
+    1L, 
     newFetcher(Book::class).by {
         allScalarFields()
         // highlight-next-line
@@ -62,25 +62,25 @@ System.out.println(book);
 </TabItem>
 </Tabs>
 
-代码中
--   通过关联属性`Book.store`关联抓取关联对象`BookStore`，并期望获得关联对象的所有非关联属性
--   通过关联属性`Book.authors`关联抓取关联对象`Author`，并期望获得关联对象的的`id`(隐含+强制)、`firstName`和`lastName`
+In this code:
+-   Fetches associated `BookStore` object via `store` association property of `Book`, expecting to get all non-association properties of associated object
+-   Fetches associated `Author` objects via `authors` association property of `Book`, expecting `id` (implicit + mandatory), `firstName` and `lastName` of associated objects
 
-输出结果为
+The output is:
 
-```json
+```json 
 {
     "id":1,
-    "name":"Learning GraphQL",
+    "name":"Learning GraphQL",  
     "edition":1,
-    "price":45,
+    "price":45,  
     // highlight-next-line
     "store":{
         "id":1,
         "name":"O'REILLY",
         "website":null
     },
-    // highlight-next-line
+    // highlight-next-line 
     "authors":[
         {
             "id":2,
@@ -88,7 +88,7 @@ System.out.println(book);
             "lastName":"Banks"
         },
         {
-            "id":1,
+            "id":1, 
             "firstName":"Eve",
             "lastName":"Procello"
         }
@@ -96,41 +96,41 @@ System.out.println(book);
 }
 ```
 
-这里，聚合根对象`Book`上的关联对象，`BookStore`和`Author`，具备除了id以外的其他属性，具有相对完善的信息。
+Here, associated objects `BookStore` and `Author` on aggregate root `Book` have properties other than `id`, with relatively complete information. 
 
-更重要的是，非`id`属性当然也包括关联属性，所以此数据结构可以多层嵌套甚至递归，这种关联也可以叫做“长关联”。
+More importantly, non-`id` properties of course also include associated properties, so this data structure can be nested multiple levels or even recursive. This kind of association can also be called a "long association".
 
 :::info
-然而，并非所有时候都需要层次很深的数据结构。实际项目中，有时需要的只是一种非常简单的界面，如下
+However, not all cases require such a deep data structure. In actual projects, sometimes only a very simple UI is needed, like below:
 :::
 
 <ShortAssociation/>
 
-在这个界面中
+In this UI:
 
--   `Book.store`是多对一关联，在界面上体现为单选下拉框
--   `Book.authors`是多对多关联，在界面上体现为多选下拉框
+-   `Book.store` is a many-to-one association, rendered as a dropdown selector
+-   `Book.authors` is a many-to-many association, rendered as a multiple dropdown selector
 
-> *当然，如果候选数据很多，下拉列表不再是合理的设计，这时，改进为弹出对话框并在对话框中使用分页。但，这些UI细节不重要，和现有话题无关。*
+> *Of course, if there are too many options, a dropdown list is no longer a reasonable design. In this case, improve it to a popup dialog with pagination. But these UI details are unimportant and irrelevant to the current topic.*
 
-很明显，这时，用户只关注关联对象对象的`id`，对关联对象的其他属性没有兴趣。
+It is obvious that at this point, the user only cares about the `id` of the associated object, and has no interest in other properties of the associated object. 
 
-**即, 希望关联对象只有id属性**
+**That is, we want the associated object to only have the id property** 
 
-为了让聚合根挂上一些只有id的的关联对象，我们可以改进代码。
+To allow aggregate roots to be associated with some objects that only have id, we can improve the code.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Book book = bookRepository.findNullable(
     1L,
     BookFetcher.$
         .allScalarFields()
         // highlight-next-line
-        .store() //无参数表示id only
+        .store() // no args means id only  
         // highlight-next-line
-        .authors() //无参数表示id only
+        .authors() // no args means id only
 );
 System.out.println(book);
 ```
@@ -144,10 +144,10 @@ val book = bookRepository.findNullable(
     newFetcher(Book::class).by {
         allScalarFields()
         // highlight-next-line
-        store() //无参数表示id only
-        // highlight-next-line
-        authors() //无参数表示id only
-    }
+        store() // no args means id only
+        // highlight-next-line 
+        authors() // no args means id only
+    } 
 );
 System.out.println(book);
 ```
@@ -155,7 +155,7 @@ System.out.println(book);
 </TabItem>
 </Tabs>
 
-这次，我们得到了这样的数据结构
+This time, we get a data structure like this: 
 
 ```json
 {
@@ -164,18 +164,18 @@ System.out.println(book);
     "edition":1,
     "price":45,
     "store":{
-        // 只有id属性
+        // Only has id property  
         // highlight-next-line
         "id":1
-    },
+    }, 
     "authors":[
         {
-            // 只有id属性
+            // Only has id property
             // highlight-next-line
             "id":1
         },
         {
-            // 只有id属性
+            // Only has id property 
             // highlight-next-line
             "id":2
         }
@@ -184,58 +184,58 @@ System.out.println(book);
 ```
 
 :::note
-在Hibernate中，这种只有id属性的对象被称为代理对象。
+In Hibernate, this kind of object with only id property is called a proxy object. 
 :::
 
-但是，只有id的关联对象，并没有关联id那么简单。让同样的的数据用关联id而非关联对象来表达的样子。
+However, associated objects with only id are not as simple as just the id of the association. Let's look at the same data expressed with associated ids instead of associated objects:
 
 ```json
 {
-    "id":1,
+    "id":1, 
     "name":"Learning GraphQL",
     "edition":1,
-    "price":45,
-    // highlight-next-line
+    "price":45,  
+    // highlight-next-line 
     "storeId": 1,
     // highlight-next-line
-    "authorIds":[1, 2]
+    "authorIds":[1, 2] 
 }
 ```
 
-很明显，对于短关联业务而言，关联id或其集合比只有id的关联对象或其集合简单。
+It is obvious that for short association use cases, associated ids or their collections are simpler than associated objects or their collections with only id.
 
-## Microsoft的解决方案
+## Microsoft's Solution 
 
-`ADO.NET EF Core`是Microsoft的ORM，让我们来看看其设计: [https://learn.microsoft.com/en-us/ef/core/modeling/relationships?tabs=fluent-api%2Cfluent-api-simple-key%2Csimple-key](https://learn.microsoft.com/en-us/ef/core/modeling/relationships?tabs=fluent-api%2Cfluent-api-simple-key%2Csimple-key)
+`ADO.NET EF Core` is Microsoft's ORM. Let's look at its design: [https://learn.microsoft.com/en-us/ef/core/modeling/relationships?tabs=fluent-api%2Cfluent-api-simple-key%2Csimple-key](https://learn.microsoft.com/en-us/ef/core/modeling/relationships?tabs=fluent-api%2Cfluent-api-simple-key%2Csimple-key)
 
-```csharp title="这段C#代码从上面的链接的页面复制"
-public class Post
+```csharp
+public class Post 
 {
     public int PostId { get; set; }
     public string Title { get; set; }
     public string Content { get; set; }
 
     // highlight-start
-    public int BlogId { get; set; }
+    public int BlogId { get; set; } 
     public Blog Blog { get; set; }
     // highlight-end
 }
 ```
 
-不难发现
+It's easy to see that:
 
--   关联对象: `public Blog Blog { get; set; }`
--   关联id: `public int BlogId { get; set; }`
+-   Associated object: `public Blog Blog { get; set; }`  
+-   Associated id: `public int BlogId { get; set; }`
 
-二者并存。
+They coexist.
 
-Jimmer借鉴`ADO.NET EF Core`这种设计，提供了`@IdView`属性。
+Jimmer learns from this design of `ADO.NET EF Core` and provides the `@IdView` property.
 
-## IdView属性
+## IdView Property
 
-### 声明视图属性
+### Declaring View Properties
 
-IdView属性由`@org.babyfish.jimmer.sql.IdView`声明
+IdView properties are declared with `@org.babyfish.jimmer.sql.IdView`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -249,43 +249,43 @@ import org.jetbrains.annotations.Nullable;
 @Entity
 public interface Book {
 
-    ...省略其他属性...
-
-    @ManyToOne
+    ...other properties omitted... 
+    
+    @ManyToOne  
     @Nullable
     BookStore store();
 
     @ManyToMany
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
-        joinColumnName = "BOOK_ID",
+        joinColumnName = "BOOK_ID", 
         inverseJoinColumnName = "AUTHOR_id"
     )
     List<Author> authors();
 
-    // highlight-next-line
-    @IdView // 关联对象store的id的视图
+    // highlight-next-line 
+    @IdView // View of store id
     Long storeId();
 
-    // 关联对象集合authors中所有对象的id的视图
+    // View of all author ids in authors collection
     // highlight-next-line
-    @IdView("authors") 
-    List<Long> authorIds();
+    @IdView("authors")  
+    List<Long> authorIds(); 
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Book.kt"
+```kotlin title="Book.kt" 
 package com.example.model
 
 import org.babyfish.jimmer.sql.*
 
-@Entity
+@Entity  
 interface Book {
 
-    ...省略其他属性...
+    ...other properties omitted...
 
     @ManyToOne
     val store: BookStore?
@@ -294,65 +294,65 @@ interface Book {
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
         joinColumnName = "BOOK_ID",
-        inverseJoinColumnName = "AUTHOR_id"
+        inverseJoinColumnName = "AUTHOR_id" 
     )
-    val authors: List<Auhtor>
+    val authors: List<Author>
 
     // highlight-next-line
-    @IdView // 关联对象store的id的视图
-    val storeId: Long?
+    @IdView // View of store id
+    val storeId: Long? 
 
-    // 关联对象集合authors中所有对象的id的视图
-    // highlight-next-line
-    @IdView("authors") 
-    val authorIds: List<Long>
+    // View of all author ids in authors collection
+    // highlight-next-line 
+    @IdView("authors")
+    val authorIds: List<Long>  
 }
 ```
 
 </TabItem>
 </Tabs>
 
-其中：
+Where: 
 
--   `Book.storeId`: 关联`Book.store`对象的id的视图。
+-   `Book.storeId`: View of the id of associated `Book.store` object.
 
-    - `storeId`本身以`Id`结尾，这种情况下，可以不指定`@IdView`注解的参数，Jimmer认为该视图属性的原始关联属性为`Book.store`。
+    -   Since `storeId` itself ends with `Id`, the parameter of `@IdView` annotation can be omitted. Jimmer infers the original association property to be `Book.store`.
 
-    - 原始关联属性和IdView属性的可空性必须一致。
+    -   Nullability of original association property and IdView property must be consistent. 
 
-        在这个例子中，`Book.store`属性可以为null，即，Java版本被`@Nullable修饰`，Kotlin版本返回`BookStore?`。
+        In this example, `Book.store` property can be null, i.e. annotated with `@Nullable` in Java, or returns `BookStore?` in Kotlin.
 
-        因此，`Book.storeId`也必须可以为null，即，Java版本返回必须返回`Long`而非`long`，Kotlin版本必须返回`Long?`而非`Long`。
+        Therefore, `Book.storeId` must also be nullable, i.e. returns `Long` instead of `long` in Java, or returns `Long?` instead of `Long` in Kotlin.
 
-        否则，会导致编译错误。
+        Otherwise it would cause compile error.
 
--   `Book.authorIds`: 关联`Book.authors`对象集合中，所有Auhtor对象的id形成的视图。
+    -   `Book.authorIds`: View of ids of all `Author` objects in associated `Book.authors` collection.
 
-    `authorIds`本身不以`Id`结尾，必须指定`@IdView`注解的参数，明确表示其原始关联为`Book.authors`。
+        `authorIds` itself does not end with `Id`, so the parameter of `@IdView` annotation must be specified to explicitly indicate its original association is `Book.authors`.
 
-    > 这种情况下，需要这样做的原因是英文存在不规则名词复数变形的问题。
+        > This is required in this case due to irregular noun pluralization in English.
 
-### 视图的本质
+### Essence of View Properties 
 
-上文反复强调`视图`二字是有原因的。IdView属性并没有自己的数据，它只是原始关联属性的视图。
+The emphasis on the word "view" above is intentional. IdView properties do not have their own data, they are just views of original association properties. 
 
 :::info
-IdView属性和原始关联属性是联动的，设置一个，必然影响另外一个。
+IdView properties and original association properties are linked. Setting one necessarily affects the other.
 :::
 
--   设置视图属性，影响原始属性:
+-   Setting view property affects original property:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
-    // 设置视图属性
+    ```java 
+    // Set view property
     Book book = BookDraft.$.produce(draft -> {
         draft.setStoreId(10L);
-        draft.setAuthorIds(Arrays.asList(100L, 101L));
+        draft.setAuthorIds(Arrays.asList(100L, 101L)); 
     });
 
-    // 打印原始属性
+    // Print original property  
     System.out.println("Store: " + book.store());
     System.out.println("Authors:" + book.authors());
     ```
@@ -361,62 +361,62 @@ IdView属性和原始关联属性是联动的，设置一个，必然影响另�
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    // 设置视图属性
-    val book = new(Book::class).by {
+    // Set view property
+    val book = new(Book::class).by { 
         storeId = 10L
         authorIds = listOf(100L, 101L)
     }
 
-    // 打印原始属性
-    println("Store: $book.store}")
+    // Print original property
+    println("Store: $book.store}")  
     println("Authors: ${book.authors}")
     ```
 
     </TabItem>
     </Tabs>
 
-    打印结果：
+    Prints:
 
     ```
     Store: {"id":10}
     Authors: [{"id":100},{"id":101}]
     ```
 
--   设置原始属性，影响视图属性:
+-   Setting original property affects view property:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    // 设置原始属性
+    // Set original property
     Book book = BookDraft.$.produce(draft -> {
         draft.applyStore(store -> {
-            store.setId(10L).storeName("TURING")
+            store.setId(10L).storeName("TURING")  
         });
         draft.addIntoAuthors(author -> {
             author.setId(101L);
             author.setFirstName("Fabrice");
-            author.setLastName("Marguerie");
+            author.setLastName("Marguerie"); 
         });
         draft.addIntoAuthors(author -> {
             author.setId(101L);
             author.setFirstName("Steve");
-            author.setLastName("Eichert"); 
+            author.setLastName("Eichert");  
         });
     });
 
-    // 打印视图属性
-    System.out.println("StoreId: " + book.storeId());
+    // Print view property
+    System.out.println("StoreId: " + book.storeId()); 
     System.out.println("AuthorIds:" + book.authorIds());
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin
-    // 设置原始属性
+    ```kotlin 
+    // Set original property
     val book = new(Book::class).by {
-        store().apply {
+        store().apply { 
             id = 10L
             name = "TURING"
         }
@@ -426,44 +426,44 @@ IdView属性和原始关联属性是联动的，设置一个，必然影响另�
             lastName = "Marguerie"
         }
         authors().addBy {
-            id = 101L
+            id = 101L  
             firstName = "Steve"
-            lastName = "Eichert" 
+            lastName = "Eichert"  
         }
     }
 
-    // 打印视图属性
+    // Print view property
     println("Store: $book.storeId}")
-    println("Authors: ${book.authorIds}")
+    println("Authors: ${book.authorIds}") 
     ```
 
     </TabItem>
     </Tabs>
 
-    打印结果：
+    Prints:
 
     ```
     StoreId: 10
-    AuthorIds: [100, 101]
+    AuthorIds: [100, 101] 
     ```
 
 :::tip
-这说明视图属性和原始属性是高度统一的，Jimmer仍然是以关联对象为核心的ORM框架，视图属性仅仅是一种语法糖。
+This shows that view properties and original properties are highly unified. Jimmer is still a ORM framework that is core-associated-object-oriented. View properties are just syntactic sugar.
 
-除了接下来要讲解的视图属性对对象抓取器的影响外，视图属性对ORM和核心逻辑不会造成任何影响。
-:::
+Except for the impact on object fetchers to be explained below, view properties do not affect ORM and core logic at all.
+:::  
 
-## 抓取IdView属性
+## Fetching IdView Properties  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 Book book = bookRepository.findNullable(
     1L,
     BookFetcher.$
         .allScalarFields()
-        // highlight-next-line
+        // highlight-next-line  
         .storeId()
         // highlight-next-line
         .authorIds()
@@ -478,20 +478,20 @@ System.out.println(book);
 val book = bookRepository.findNullable(
     1L,
     newFetcher(Book::class).by {
-        allScalarFields()
+        allScalarFields() 
         // highlight-next-line
         storeId()
         // highlight-next-line
         authorIds()
     }
 );
-System.out.println(book);
+System.out.println(book); 
 ```
 
 </TabItem>
 </Tabs>
 
-打印结果为
+Prints:
 
 ```json
 {
@@ -500,18 +500,18 @@ System.out.println(book);
     "edition":1,
     "price":45,
     // highlight-next-line
-    "storeId": 1,
+    "storeId": 1,  
     // highlight-next-line
     "authorIds":[1, 2]
 }
 ```
 
 :::tip
-对Jimmer动态实体而言，原始关联属性和视图属性绝对一致，要么都可以访问，要么都缺失。
+For Jimmer dynamic entities, original association properties and view properties are absolutely consistent. Either both can be accessed, or both are missing.
 
-无论选择抓取原始关联属性，还是选择抓取IdView视图属性，都不会影响Jimmer底层执行逻辑，当然包括最终生成的SQL。
+Whether choosing to fetch the original association property or choosing to fetch the IdView view property does not affect the underlying execution logic of Jimmer, including the ultimately generated SQL. 
 
-不同选择带来差异只有一个，原始关联属性和视图属性的Jackson可见性标志不同。
+The only difference brought by different choices is that the Jackson visibility flags of original association properties and view properties are different.
 
-即，使用Jackson序列化时，被直接抓取的属性会被序列化，未被直接抓取的属性会被忽略。
+That is, properties fetched directly will be serialized by Jackson, while properties not fetched directly will be ignored.
 :::

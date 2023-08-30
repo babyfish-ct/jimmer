@@ -228,10 +228,6 @@ Assume the entity package is "com.example.model". **Ignore associated properties
     </TabItem>
     </Tabs>
 
-    :::info
-    See **TODO** for details on mapping custom scalars.
-    :::
-
 - TreeNode
 
     <Tabs groupId="language">
@@ -715,7 +711,7 @@ We've seen entities declared as interfaces, not classes. Why?
 
             But Jimmer can restore static typing on client by auto-generating TypeScript DTOs for all use cases.
 
-            See **TODO** for more.
+            See [Dynamic](../../object/dynamic) for more.
             :::
 
     - Compared to dynamic language ORMs
@@ -749,7 +745,7 @@ We've seen entities declared as interfaces, not classes. Why?
     to Java/Kotlin and makes it the foundational programming model for the entire ORM. 
     The name "Jimmer" is also a tribute to [immer](https://github.com/immerjs/immer). 
     
-    See **TODO** for details on how to create and "modify" immutable objects.
+    See [Immutability/Solution](../../object/immutable/solution) for details on how to create and "modify" immutable objects.
 
 In summary, because Jimmer entities themselves are dynamic and immutable, they are not simple Java objects. 
 Their types have complex internal implementations. Therefore, Jimmer chooses to have developers write interfaces, 
