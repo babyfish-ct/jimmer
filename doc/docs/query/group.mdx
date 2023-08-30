@@ -1,12 +1,12 @@
 ---
-sidebar_position: 6
-title: Aggregation and grouping
+sidebar_position: 6  
+title: Aggregation and Grouping
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 聚合
+## Aggregation
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -29,7 +29,7 @@ long count = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 val count = sqlClient
     .createQuery(Book::class) {
         where(table.name.ilike("graphq"))
@@ -47,11 +47,11 @@ val count = sqlClient
 </TabItem>
 </Tabs>
 
-生成的SQL为
+The generated SQL is:
 
 ```sql
 select
-    // highlight-next-line
+    // highlight-next-line 
     count(distinct tb_2_.AUTHOR_ID)
 from BOOK tb_1_
 inner join BOOK_AUTHOR_MAPPING tb_2_
@@ -60,12 +60,12 @@ where
     lower(tb_1_.NAME) like ? /* %graphq% */
 ```
 
-## 分组
+## Grouping  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 BookTable table = BookTable.$;
 
 List<Tuple2<Long, BigDecimal>> tuples = sqlClient
@@ -96,26 +96,26 @@ val tuples: List<Tuple2<Long, BigDecimal>> = sqlClient
 </TabItem>
 </Tabs>
 
--   ❶ 按照`BOOK`表的外键`STORE_ID`分组
+-   ❶ Group by `STORE_ID`, the foreign key of `BOOK` table
 
-    :::info
-    这里，Jimmer不会把`table.store`视为表连接操作，而是整体视`table.store.id`为外键字段
+    :::info  
+    Here Jimmer does not treat `table.store` as a join operation, but considers `table.store.id` as a whole as the foreign key field. 
 
-    请参见[幻连接](./dynamic-join/optimization#幻连接)
+    Please see [phantom joins](./dynamic-join/optimization#phantom-joins).
     :::
 
--   ❷ 分组列可以被直接查询
+-   ❷ Grouping columns can be directly queried.
 
--   ❸ 非分组列不能直接查询，只能作为聚合函数表达式的参数查询
+-   ❸ Non-grouping columns can only be queried as parameters of aggregate functions.
 
     :::caution
-    Kotlin代码多调用了个函数：`asNonNull()`
+    The Kotlin code has an extra function call: `asNonNull()`.
 
-    在Jimmer的Kotlin DSL中，聚合函数`avg` *(以及`sum`、`min`、`max`)* 返回类型都是Nullable的。在不使用分组的前提下，对没有数据的表的任何列进行聚合运算都会得到null。
+    In Jimmer Kotlin DSL, aggregate functions like `avg` *(also `sum`, `min`, `max`)* return Nullable types. For a table with no data, aggregating any column would return null without grouping.
 
-    然而，和分组配合使用后不再如此。分组后，每一组内部至少有一条数据，如果被聚合的原始字段本身非null，则聚合后的结果不会为null。
+    However this is not the case when used with grouping. After grouping, each group has at least one row internally, if the original field being aggregated is non-null itself, the result after aggregation would not be null.
 
-    所以，这里通过`asNonNull()`将Nullable表达式转换为NonNull表达式，最终`execute()`函数查询到的数据类型是`List<Tuple2<Long, BigDecimal>>`，和第一行明确指定变量`tuples`的类型相同。
+    So here `asNonNull()` converts the Nullable expression to NonNull, such that `execute()` returns `List<Tuple2<Long, BigDecimal>>`, same as the type explicitly specified for `tuples` in the first line. 
         
-    如果去掉这里的`asNonNull()`，`execute()`函数查询到的数据类型是`List<Tuple2<Long, BigDecimal?>>`，从而导致编译错误。
+    If `asNonNull()` is removed, `execute()` would return `List<Tuple2<Long, BigDecimal?>>`, causing compile error.
     :::

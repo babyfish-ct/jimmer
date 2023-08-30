@@ -1,17 +1,16 @@
 ---
-sidebar_position: 10
-title: Native SQL expressions
+sidebar_position: 9
+title: Native SQL Expressions
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+Native SQL expressions are an important feature to leverage database-specific capabilities, as database products always have proprietary features.
 
-NativeSQL表达式是一个重要的功能，数据库产品总会有特有的功能，需要把数据库产品特有的能力发挥出来。
+## Example 1: Regular Expression Matching
 
-## 例子一：正则表达式匹配
-
-这个例子，演示如何使用Oracle和HSQLDB的正则表达式匹配。
+This example shows how to use regular expression matching in Oracle and HSQLDB:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -23,7 +22,7 @@ List<Author> authors = sqlClient
     .createQuery(table)
     .where(
         Predicate.sql(
-            "regexp_like(%e, %v)",
+            "regexp_like(%e, %v)", 
             it -> it
                 .expression(table.firstName())
                 .value("^Ste(v|ph)en$")
@@ -48,54 +47,56 @@ val authors = sqlClient
         )
         select(table)
     }
-    .execute()
+    .execute() 
 ```
 
 </TabItem>
 </Tabs>
 
 :::info
-在Java代码中，我们调用了`Predicate.sql`创建基于本地SQL的查询条件。事实上，其它表达式类型也支持NativeSQL表达式，`sql`函数共有5个
+In the Java code, `Predicate.sql` is called to create a query condition based on native SQL. In fact, other expression types also support native SQL expressions. There are 5 `sql` functions:
 
-1. Predicate.sql(...)
-2. Expression.string().sql(...)
-3. Expression.numeric().sql(...)
-4. Expression.comparable().sql(...)
-5. Expression.any().sql(...)
+1.  Predicate.sql(...)
+2.  Expression.string().sql(...) 
+3.  Expression.numeric().sql(...)
+4.  Expression.comparable().sql(...)
+5.  Expression.any().sql(...)
 
-kotlin没有这个问题，其API是统一的
+Kotlin does not have this issue, its API is unified.
 :::
 
-`sql(...)`方法的第一个参数是SQL字符串模板，可以包含特殊符号`%e`和`%v`。
+The first parameter of `sql(...)` is the SQL template string, which can contain special symbols `%e` and `%v`:
 
-- `%e`: 即Expression，植入一个表达式
-- `%v`: 即Value，植入一个值
+- `%e`: Expression, to embed an expression
+- `%v`: Value, to embed a value
 
-`sql(...)`方法的第二个参数是一个可选的，是一个lambda表达式，lambda表达式的参数是一个对象，该对象支持两个方法：
-- `expression(Expresion<?>)`: 植入一个表达式，和SQL模板中的"%e"匹配。
-- `value(Object)`: 植入一个值，和SQL模板中的"%v"匹配。
+The second parameter of `sql(...)` is optional, a lambda expression whose parameter is an object supporting two methods:
 
-最终生成的SQL是
+- `expression(Expression<?>)`: Embed an expression, corresponding to `%e` in SQL template.
+- `value(Object)`: Embed a value, corresponding to `%v` in SQL template.
+
+The final generated SQL is:
+
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.FIRST_NAME, 
+select
+    tb_1_.ID,
+    tb_1_.FIRST_NAME,
     tb_1_.LAST_NAME, 
-    tb_1_.GENDER 
-from AUTHOR as tb_1_ 
+    tb_1_.GENDER
+from AUTHOR as tb_1_  
 where
     /* highlight-next-line */
-    regexp_like(tb_1_.FIRST_NAME, ?)
+    regexp_like(tb_1_.FIRST_NAME, ?) 
 ```
 
-## 例子二：分析函数
+## Example 2: Analytic Functions
 
-让我们再来看一个例子，使用分析函数
+Let's look at another example using analytic functions:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
     .createQuery(table)
     .select(
@@ -108,7 +109,7 @@ List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
         ),
         Expression.numeric().sql(
             Integer.class,
-            // hight-next-line
+            // hight-next-line 
             "rank() over(partition by %e order by %e desc)",
             new Expression[] { table.store().id(), table.price() }
         )
@@ -141,15 +142,13 @@ val tuples = sqlClient
 </TabItem>
 </Tabs>
 
-这里查询了三列
+Three columns are queried here:
 
--   第一列：Book对象
+-   First column: Book object
+-   Second column: The rank of the book price among all books
+-   Third column: The rank of the book price within its store
 
--   第二列：书籍的价格在所有书籍中的名次
-
--   第二列：书籍的价格在所属书店的中的名次
-
-生成的SQL如下
+The generated SQL is:
 
 ```sql
 select
@@ -162,10 +161,10 @@ select
     rank() over(
         order by tb_1_.PRICE desc
     ),
-    /* highlight-next-line */
+    /* highlight-next-line */ 
     rank() over(
-        partition by tb_1_.STORE_ID 
-        order by tb_1_.PRICE desc
+        partition by tb_1_.STORE_ID
+        order by tb_1_.PRICE desc 
     )
 from BOOK tb_1_
 ```

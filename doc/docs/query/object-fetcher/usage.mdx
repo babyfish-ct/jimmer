@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Basic usage
+title: Basic Usage
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,49 +8,49 @@ import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
 import { DtoExplosion } from "@site/src/components/Image";
 
-## 引入对象抓取器的原因
+## Why Introduce Object Fetchers
 
-在了解对象抓取器之前，有必要先了解常规的属性查询。
+Before understanding object fetchers, it is necessary to first understand conventional attribute queries.
 
-例如，我需要这样一个SQL：
+For example, I need a SQL like this:
 
 ```sql
 select 
-    b.id, 
-    b.name, 
-    b.edition 
-    // 不需要`b.price`和`b.store_id`
-from book b 
-where b.edition = 3;
+    b.id,
+    b.name,
+    b.edition
+    /* Don't need `b.price` and `b.store_id` */
+from book b
+where b.edition = 3; 
 ```
 
-在这个SQL中，我们只查询部分列，对应的Jimmer写法：
+In this SQL, we only query some columns. The corresponding Jimmer code is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 BookTable table = BookTable.$;
 List<Tuple3<Long, String, Integer>> tuples = sqlClient
-    .createQuery(book)
+    .createQuery(book) 
     .where(table.edition().eq(3))
-    // highlight-next-line
+    // highlight-next-line 
     .select(
-        table.id(), 
-        table.name(), 
-        table.edition()
+        table.id(),
+        table.name(),
+        table.edition() 
     )
     .execute();
 System.out.println(tuples);
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val tuples = sqlClient
     .createQuery(Book::class) {
-        where(table.edition.eq(3))
+        where(table.edition.eq(3)) 
         // highlight-next-line
         select(
             table.id
@@ -59,13 +59,13 @@ val tuples = sqlClient
         )
     }
     .execute()
-println(tuples)
+println(tuples) 
 ```
 
 </TabItem>
 </Tabs>
 
-打印输出为 *(为了方便乐队，这里认为进行了格式化)*：
+The printed output is *(formatted for readability)*:
 ```
 [
     {
@@ -73,17 +73,17 @@ println(tuples)
         "_2" : "Learning GraphQL",
         "_3" : 3
     }
-    ...省略其他对象
+    ...Other objects omitted  
 ]
 ```
 
 :::info
-由于只查询对象的部分属性，所以无法简单地使用`select(table)`，而是用了`select(expr1, expr2, ..., expr3)`。
+Since only some object properties are queried, `select(table)` cannot be simply used. Instead, `select(expr1, expr2, ..., expr3)` is required.
 
-然而，这会导致返回的结果类型是元组，而非Book对象。
+However, this results in tuples being returned instead of Book objects.  
 :::
 
-元组中属性的顺序对应`selece()`中的顺序，在上述例子中，每一个元组中的对应关系为:
+In the tuples, the attribute order corresponds to the `select()` order. In the above example, the mapping in each tuple is:  
 
 ```
 _1 -> id
@@ -91,9 +91,9 @@ _2 -> name
 _3 -> edition
 ```
 
-如果我们需要返回对象，则必须定义一个BookDTO类型 *(假设Java版使用了lombok)*
+If we want to return objects, we must define a BookDTO type *(assuming lombok is used for Java)*:
 
-和原始的实体类型`Book`不同，`BookDTO`仅仅包含我们需要的属性，而非所有属性。
+Unlike the original `Book` entity type, `BookDTO` only contains the properties we need rather than all properties.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -102,7 +102,7 @@ _3 -> edition
 @Data
 public class BookDTO {
     private long id;
-    private String name;
+    private String name; 
     private int edtion;
 }
 ```
@@ -110,7 +110,7 @@ public class BookDTO {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookDTO.kt"
+```kotlin title="BookDTO.kt" 
 data class BookDTO(
     val id: Long,
     val name: String,
@@ -119,15 +119,15 @@ data class BookDTO(
 ```
 
 </TabItem>
-</Tabs>
+</Tabs> 
 
-再把元祖转化为`BookDTO`对象，有两种办法
+There are two ways to convert the tuples to `BookDTO` objects:
 
--   不修改之前的代码，先查询出`Tuple3<Long, String, Integer>`集合，再用Stream API转换
+-   Keep previous code unchanged, first query `Tuple3<Long, String, Integer>` collection, then convert using Stream API
 
--   利用Jimmer的快捷API，直接转换查询结果
+-   Use Jimmer's utility API to directly transform the query result
 
-这里，我们采用第二种方式，代码如下
+Here we use the second approach:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -138,8 +138,8 @@ List<BookDTO> bookDTOs = sqlClient
     .createQuery(book)
     .where(table.edition().eq(3))
     .select(
-        table.id(), 
-        table.name(), 
+        table.id(),
+        table.name(),
         table.edition()
     )
     // highlight-next-line
@@ -148,14 +148,14 @@ List<BookDTO> bookDTOs = sqlClient
         dto.setId(tuple.get_1());
         dto.setName(tuple.get_2());
         dto.setEdition(tuple.get_3());
-    });
+    }); 
 System.out.println(bookDTOs);
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val bookDTOs = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
@@ -173,56 +173,57 @@ println(tuples)
 ```
 
 </TabItem>
-</Tabs>
+</Tabs>  
 
-转化后的结果才是我们需要的类型：
+The result after conversion is the type we want:
 
 ```
 [
     {
-        "id" : 3,
+        "id" : 3, 
         "name" : "Learning GraphQL",
         "edition" : 3
     }
-    ...省略其他对象
+    ...Other objects omitted
 ]
 ```
 
-尽管JPA与MyBatis都有各自的一套映射方法，但是都有各自的局限性：
+Although JPA and MyBatis have their own sets of mapping methods, both have limitations:
 
--   JPA默认返回对象的所有属性，想要自定义返回属性的话，
+-   For JPA, it returns all object properties by default. To customize returned properties:
+  
+    -   Use HQL or interfaces
+    
+    -   Or use `query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
+    
+-   MyBatis needs to write type mappings in XML. MyBatis-Plus provides some wrappers to simplify this process.
 
-    -   要么使用HQL，要么使用接口
-
-    -   或者使用`query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
-
--   MyBatis需要在xml中写类型映射，MyBatis-Plus提供了一些封装可以简化这一流程
-
-但是不论是JPA还是MyBatis亦或是MyBatis-Plus都避免不了需要额外再写一个DTO类，接下来我们使用对象抓取器来简化这一流程。
-
+However, neither JPA nor MyBatis nor MyBatis-Plus can avoid having to write an extra DTO class. Next we'll use object fetchers to simplify this process.
+  
 :::info
-不幸的是，查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
-最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>
+Unfortunately, query requirements are often diverse. Formats diversification inevitably leads to more DTO types *(as the aggregate root type, format diversification is likely; as associated types of other DTOs, diversification is even more likely)*.
+
+This ultimately results in <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore>  
 :::
+  
+## Using Object Fetchers
+  
+For each entity interface, Jimmer generates a corresponding Fetcher class. These Fetchers are object fetchers.
+  
+Based on the fetched properties, object fetchers automatically package objects, eliminating the need to manually map and write additional DTO classes.
 
-## 使用对象抓取器
-
-Jimmer会根据每个实体接口，生成对应的Fetcher类，这些Fetcher就是对象抓取器。
-
-对象抓取器会根据抓取的属性，自动封装成对象，免去了手动映射以及编写额外DTO类的烦恼。
-
-### 抓取指定属性
+### Fetch Specified Properties
 
 :::note
-Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
+The Annotation processor will automatically generate a Fetcher class for each entity interface, which is `BookFetcher` in this example. 
 :::
+  
+The query in the above example can be written using object fetchers as:
 
-上方示例中的查询，以对象抓取器的形式可以写成：
-
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
-```java
+```java  
 BookTable table = BookTable.$;
 List<Book> books = sqlClient.createQuery(table)
         .where(table.edition().eq(3))
@@ -230,14 +231,15 @@ List<Book> books = sqlClient.createQuery(table)
             // highlight-next-line
             table.fetch(
                 BookFetcher.$
-                    // id是隐含的、强制的
+                    // id is implicit and mandatory  
                     .name()
                     .edition()
             )
         )
         .execute();
-System.out.println(books);
+System.out.println(books); 
 ```
+
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
@@ -248,7 +250,7 @@ val books = sqlClient
         select(
             // highlight-next-line
             table.fetchBy {
-                // id是隐含的、强制的
+                // id is implicit and mandatory
                 name
                 edition
             }
@@ -257,26 +259,28 @@ val books = sqlClient
     .execute()
 println(books)
 ```
+
 </TabItem>
 </Tabs>
+  
+We can see the return type is `Book` directly, without needing further mapping, saving a lot of time in daily coding.
+  
+The output is:
 
-可以看到得到的返回值就是`Book`类型，不需要再进行映射，这为日常编码节省了很多时间。
-
-输出结果如下：
-```
+```json
 [
     {
         "id" : 3,
         "name" : "Learning GraphQL",
         "edition" : 3
     }
-    ...省略其他对象
-]
+    ...Other objects omitted
+] 
 ```
-
-在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
-
-例如，我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
+  
+In Jimmer, for query output formats, there is absolutely no <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore>. Combined with Jimmer entity [dynamics](../../object/dynamic), an object of arbitrary shape can be easily expressed.
+  
+For example, we can modify the code to not fetch book edition, but book price:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -289,17 +293,18 @@ List<Book> books = sqlClient.createQuery(table)
             // highlight-next-line
             table.fetch(
                 BookFetcher.$
-                    .name()
+                    .name()  
                     .price()
             )
         )
         .execute();
 System.out.println(books);
 ```
+
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 val books = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
@@ -307,70 +312,71 @@ val books = sqlClient
             // highlight-next-line
             table.fetchBy {
                 name
-                price
+                price 
             }
         )
     }
     .execute()
 println(books)
 ```
-</TabItem>
-</Tabs>
 
-此时输出的JSON为：
+</TabItem> 
+</Tabs>
+  
+The JSON output is now:
 
 ```json
 [
     {
         "id" : 3,
-        "name" : "Learning GraphQL",
+        "name" : "Learning GraphQL", 
         "price" : 51.00
     }
-]
+] 
 ```
-
+  
 :::tip
-借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO并进行映射，只需要改变对象抓取器的属性即可。
-
-对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
+With Jimmer entity [dynamics](../../object/dynamic), extra DTOs and mappings are no longer needed. Just change the object fetcher properties.
+  
+For query output, eliminating <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore> can greatly improve server-side productivity.
 :::
-
-### 抓取所有属性
-
-上面的写法存在一个问题，如果需要查询的属性很多，每一个都手动抓取会非常繁琐。
-
-:::info
-这也是[GraphQL](https://graphql.org/)的问题之一。
+  
+### Fetch All Properties
+  
+The above approach has a problem. If many properties need to be queried, fetching each manually can be very tedious.
+  
+:::info  
+This is also one problem with [GraphQL](https://graphql.org/).
 :::
-
-为解决这个问题，Jimmer也提供了如下两个API用于快速抓取大量属性。
-
-由于这些特性会在后续文档中详细讲述，这里只给出链接即可。这两个API是：
-
+  
+To solve this, Jimmer also provides the following two APIs for quickly fetching many properties.
+  
+Since these will be explained in detail in subsequent docs, only the links are provided here. The two APIs are:
+  
 -   `allScalarFields`
     
-    抓取所有标量属性，不包含关联属性、计算属性和视图属性。
-
-    请查看[抓取所有标量属性](./props#抓取所有标量属性)以了解更多。
-
+    Fetch all scalar properties, excluding associative, computed, and view properties.
+    
+    See [Fetch All Scalar Properties](./props#fetch-all-scalar-properties) for details.
+    
 -   `allTableFields`
 
-    抓取表定义中的所有属性，包含所有标量属性、基于外键的一对一/多对一属性，但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
-
-    请查看[抓取所有表定义的属性](./association#抓取所有表定义属性)以了解更多。
-
-也可以参考[二者的区别](association#allscalarfields与alltablefields的区别)
-
-## 和JPA的差别
-
-当对象抓取器用于抓取关联属性时 *(后续文档讨论，本文未示范)*，和[JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)比较类似，但存在如下差异
-
--   对象抓取器使用`batch-load`策略加载关联对象，而非使用JPA中`join-fetch`的概念，这很重要，因为
-
-    -   抓取集合关联属性不会像[JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)那样[破坏分页查询](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html)
+    Fetch all properties defined in the table, including all scalar properties and one-to-one/many-to-one properties based on foreign keys, but excluding one-to-many, many-to-many, one-to-one/many-to-one associations based on join tables, computed properties, and view properties.
     
-    -   对[关联缓存](../../cache/cache-type/association)和[远程关联](../../spring/spring-cloud)友好
+    See [Fetch All Table-defined Properties](./association#fetch-all-table-defined-properties) for details.
+    
+See also [Differences between the two](./association#differences-between-allscalarfields-and-alltablefields).
+  
+## Differences from JPA
+  
+When object fetchers are used to fetch associative properties *(discussed in subsequent docs, not demonstrated here)*, they are similar to [JPA's EntityGraph](https://www.baeldung.com/jpa-entity-graph), but have the following differences:
+  
+-   Object fetchers use `batch-load` strategy to load associated objects, not JPA's `join-fetch` concept. This is important because:
 
--   JPA的EntityGraph仅仅控制关联属性，但对象抓取器可以控制任何属性，和GraphQL一样，精确控制到每个属性
-
--   对于因为自关联属性导致的无限递归结构，对象抓取器支持[递归查询](./recursive)
+    -   Fetching collection associations [does not break paginated queries](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html) like [JPA's EntityGraph](https://www.baeldung.com/jpa-entity-graph).
+    
+    -   More friendly to [association caching](../../cache/cache-type/association) and [remote associations](../../spring/spring-cloud).
+    
+-   JPA's EntityGraph only controls associative properties, but object fetchers can control any properties, same as GraphQL, with precision down to each property.
+  
+-   For infinite recursive structures caused by self-referencing properties, object fetchers support [recursive querying](./recursive).

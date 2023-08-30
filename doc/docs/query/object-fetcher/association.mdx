@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: Associaton properties
+title: Associations  
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,13 +8,13 @@ import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
 import FilterRef from './_filter-ref.md';
 
-## 抓取关联对象
+## Fetching Associated Objects
 
-在[上一篇文档](./props)中，我们介绍了标量属性的抓取，在本文中，我们讨论关联属性的抓取。
+In [last doc](./props) we introduced scalar property fetching. In this doc we discuss association fetching.
 
-### 抓取只有id的关联对象
+### Fetching Associated Objects With Only id  
 
-不带任何参数抓取关联对象时，得到的关联对象只有`id`属性。
+When fetching an association without any parameters, the associated object only has the `id` property.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -38,7 +38,7 @@ List<Book> books = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val books = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
@@ -56,58 +56,58 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-这里，`authors`表示对多对多关联进行抓取。我们并未为`authors()`指定任何参数，这表示只抓取关联对象的id属性。
+Here `authors` fetches the many-to-many association. We did not specify any parameters for `authors()`, meaning fetching only the `id` property of associated objects.
 
-生成两条SQL:
+Two SQLs are generated:
 
-1.  查询`Book`对象本身
+1.  Query for the `Book` objects themselves:
+
     ```sql
-    select 
-        tb_1_.ID, 
-        tb_1_.NAME, 
-        tb_1_.EDITION, 
-        tb_1_.PRICE, 
-        tb_1_.STORE_ID 
-    from BOOK as tb_1_ 
-    where tb_1_.EDITION = ?
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
+        tb_1_.STORE_ID
+    from BOOK as tb_1_
+    where tb_1_.EDITION = ? 
     ```
 
-2.  根据关联`Book.authors`查询仅包含id的所有`Author`对象
+2.  Query for all `Author` objects with only `id` based on association `Book.authors`:
 
     ```sql
-    select 
+    select
         tb_1_.BOOK_ID, /* batch-map key */
         tb_1_.AUTHOR_ID /* batch-map value */
-    from BOOK_AUTHOR_MAPPING as tb_1_ 
-        where tb_1_.BOOK_ID in (?, ?, ?, ?)
+    from BOOK_AUTHOR_MAPPING as tb_1_
+        where tb_1_.BOOK_ID in (?, ?, ?, ?) 
     ```
 
 :::info
-Book对象具备两个关联属性，`Book.store`和`Book.authors`，这里选用`Book.authors`作为例子是有原因的。
+There are two associations for `Book`, `Book.store` and `Book.authors`. `Book.authors` is chosen here for a reason. 
 
-`Book.store`是一个直接基于外键的多对一关联，当仅抓取关联对象的id且关联对象不受<ViewMore buttonText="过滤器" variant="text"><FilterRef/></ViewMore>影响时，
-关联对象的id其实就是当前表的外键`store_id`。因此，最终结果只会有一条SQL，而非这里你所看到的两条SQL。
+`Book.store` is a direct many-to-one association mapped by foreign key. When fetching it with only id and no <ViewMore buttonText="filters" variant="text"><FilterRef/></ViewMore>, the associated id is just the foreign key `store_id` of the current table. So there would only be one SQL instead of two here.
 
-因此，对于这个例子而言，`Book.authors`更具演示效果，而`Book.store`将会在下个例子中被示范。
+Therefore `Book.authors` has better demo effect for this example, `Book.store` will be shown in next example.  
 :::
 
-这个例子说明了以下问题
+This example illustrates:
 
--   当前查询仅需要关联对象的id，也没有使用过滤器（过滤器是后文将会讲解的概念）。
+-   The query only needs id of associated objects, and no filters are used (filters will be introduced later).
 
-    Jimmmer会对这种情况进行优化，仅仅查询中间表`BOOK_AUTHOR_MAPPING`，而没有查询`AUTHOR`表。
+    Jimmer optimizes this case by querying only the association table `BOOK_AUTHOR_MAPPING` without querying the `AUTHOR` table.
 
--   `where tb_1_.BOOK_ID in (?, ?, ?, ?)`是批量查询，这是因为第一条查询返回主对象有4个。
+-   `where tb_1_.BOOK_ID in (?, ?, ?, ?)` is batch query because the first query returns 4 main objects.
 
-    Jimmer使用批量查询来解决`N + 1`问题，这点和GraphQL的`DataLoader`一样。
+    Jimmer uses batch query to solve the `N+1` problem, same as `DataLoader` in GraphQL.
 
-    当一个批次的列表过于太长后，jimmer-sql会对进行分批切割，这会在后文的[BatchSize节](#batchsize)中讲解。
+    When a batch becomes too large, jimmer-sql will split it into multiple batches. This will be explained in [Batch Size](#batch-size) section below.
+  
+-   Jimmer queries associated objects via additional SQL instead of LEFT JOIN in main query SQL.
 
--   Jimmer通过额外的SQL去查询关联对象，而非在主查询的SQL中使用LEFT JOIN。
+    This is designed to prevent duplication in query results when joining on collection associations, as such duplications can be devastating for paged queries. 
 
-    这样设计的目的是为了防止对集合关联进行JOIN导致查询结果重复，因为这种数据重复对分页查询有毁灭性的破坏效果。
-
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+The printed result is (formatted for readability):
 
 ```json
 {
@@ -115,25 +115,25 @@ Book对象具备两个关联属性，`Book.store`和`Book.authors`，这里选�
     "name":"Learning GraphQL",
     "edition":3,
     "price":51.00,
-    // highlight-next-line
+    // highlight-next-line  
     "authors":[
         {"id":1},
         {"id":2}
     ]
 }
-...省略第2个对象...,
-...省略第3个对象...,
-...省略第4个对象...
+...omit 2nd object...,  
+...omit 3rd object...,
+...omit 4th object...
 ```
 
-### 抓取完整的关联对象
+### Fetching Complete Associated Objects
 
-这个例子中，我们抓取多对一关联属性`Book.store`，并为`store()`函数指定参数，明确要求查询关联对象的所有标量属性。
+In this example, we fetch the many-to-one association `Book.store` and specify parameters for `store()` to explicitly request all scalar properties of the associated object.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 BookTable book = BookTable.$;
 List<Book> list = sqlClient.createQuery(book)
     .where(book.edition().eq(3))
@@ -178,9 +178,9 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-生成乳香两条SQL：
+Two SQLs are generated:
 
--   查询Book对象
+-   Query for `Book` objects:
 
     ```sql
     select
@@ -189,10 +189,11 @@ val books = sqlClient
         tb_1_.EDITION,
         tb_1_.PRICE,
         tb_1_.STORE_ID
-    from BOOK tb_1_
+    from BOOK tb_1_ 
     where tb_1_.EDITION = ?
     ```
--   上一步得到所有数据的外键`STORE_ID`去重后有有两个值，查询他们对应的`BookStore`关联对象
+
+-   The `STORE_ID` values from previous step are deduplicated and there are two values. Query the associated `BookStore` objects for them:
 
     ```sql
     select
@@ -200,11 +201,11 @@ val books = sqlClient
         tb_1_.NAME,
         tb_1_.WEBSITE
     from BOOK_STORE tb_1_
-    where tb_1_.ID in (?, ?)
+    where tb_1_.ID in (?, ?) 
     ```
 
-输出的返回值如下：
-```json
+The output is:
+```json  
 [
     {
         "id": 3,
@@ -218,20 +219,20 @@ val books = sqlClient
             "website": null
         }
     }
-    ...省略其他对象
+    ...omit other objects
 ]
 ```
 
-### 抓取所有表定义字段
+### Fetch All Table-defined Fields 
 
-在一些场景下需要抓取表定义中的所有字段，此时使用`allTableFields`。
+In some cases all table-defined fields need to be fetched. Use `allTableFields` for this.
 
-`allTableFields`抓取表定义中的所有属性，包含所有标量属性、基于外键的一对一/多对一属性，但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
+`allTableFields` fetches all properties defined in the table, including all scalar properties and foreign key based one-to-one/many-to-one associations, but not collection associations, one-to-one/many-to-one associations based on join tables, computed properties or view properties.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 BookTable book = BookTable.$;
 List<Book> list = sqlClient.createQuery(book)
     .where(book.edition().eq(3))
@@ -266,7 +267,7 @@ val bookAllTableFields = sqlClient
 </TabItem>
 </Tabs>
 
-输出的结果为：
+The output is: 
 
 ```json
 [
@@ -279,27 +280,27 @@ val bookAllTableFields = sqlClient
             "id": 1
         }
     }
-    ...省略其他对象
+    ...omit other objects
 ]
 ```
 
 :::info
-虽然`allTableFields`包括基于外键的多对一/一对一关联属性，对于本例而言，
+Although `allTableFields` includes foreign key based one-to-one/many-to-one associations, for this example:  
 
 `allTableFields` = `allScalarFields` + `store`
 
-然而，得到关联对象只有id属性。
+However, only the `id` property of associated objects is fetched.  
 
-`allTableFields`的字面意思就是查询当前表的所有字段。在只查询一样表的情况下，对于关联对象而言只有id是已知的，因为关联对象的id就是本表的外键。
+The literal meaning of `allTableFields` is querying all fields of the current table. When querying only one table, only `id` of associated objects is known since `id` is the foreign key in current table.
 :::
 
-某些情况下，`select(table.fetch(XxxFetcher.$.allTableFields()))`和`select(table)`等价。此时，可以认为后者是前者的简写方式。
+In some cases, `select(table.fetch(XxxFetcher.$.allTableFields()))` is equivalent to `select(table)`. The latter can be seen as a shorthand for the former. 
 
-:::caution
-二者等价的前提：关联对象不受<ViewMore buttonText="过滤器" variant="text"><FilterRef/></ViewMore>影响
+:::caution  
+Equivalence prerequisite: Associations are not affected by <ViewMore buttonText="filters" variant="text"><FilterRef/></ViewMore>
 :::
 
-等价的简单写法如下
+The simpler equivalent form is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -309,9 +310,9 @@ BookTable book = BookTable.$;
 List<Book> list = sqlClient.createQuery(book)
     .where(book.edition().eq(3))
     // highlight-next-line
-    .select(book)
+    .select(book)  
     .execute();
-System.out.println(toJson(list));
+System.out.println(toJson(list)); 
 ```
 
 </TabItem>
@@ -332,20 +333,21 @@ val bookAllScalarFields = sqlClient
 </Tabs>
 
 
-## allScalarFields与allTableFields的区别
+## Differences between allScalarFields and allTableFields
 
-因为抓取所有标量字段与抓取所有表定义的字段，非常常见，每一个属性都写一遍太过繁琐，因此Jimmer提供了两个API来简化这一流程。
+Since fetching all scalar fields and all table-defined fields are very common, writing each property repeatedly would be tedious. So Jimmer provides two APIs to simplify this process.
 
-需要注意的是：
--   `allScalarFields`只抓取所有标量属性，不包含任何关联属性、计算属性和视图属性。
+Note that:
+-   `allScalarFields` only fetches scalar properties, no associations, computed or view properties.
 
--   `allTableFields`抓取表定义中的所有字段，也包含基于外键的一对一/多对一关联，但不包含一对多关联、多对多关联、基于中间表的多对一/一对一关联、计算属性、视图属性。
+-   `allTableFields` fetches all fields defined in table, including foreign key based one-to-one/many-to-one associations, but not collections, many-to-one/one-to-one associations based on join tables, computed or view properties.
 
-就本文所讨论的`Book而言`，有一个多对一属性`Book.store`，它直接基于外键映射，而非基于中间表。因此
+For `Book` discussed in this doc, there is a many-to-one property `Book.store` mapped directly by foreign key instead of through join table. So 
 
 `allTableFields` = `allScalarFields` + `store`
 
-以下是两个示例：
+Here are two examples:
+
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
@@ -375,14 +377,14 @@ List<Book> booksWithTablesFields = sqlClient.createQuery(book)
     .execute();
 
 System.out.println(booksWithScalarFields);
-System.out.println(booksWithTablesFields);
+System.out.println(booksWithTablesFields); 
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val booksWithScalarFields = sqlClient 
+val booksWithScalarFields = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
         select(
@@ -411,7 +413,7 @@ println(booksWithTablesFields)
 </TabItem>
 </Tabs>
 
-输出的结果为：
+The output is:
 ```
 [ ❶
     {
@@ -420,7 +422,7 @@ println(booksWithTablesFields)
         "edition": 3,
         "price": 51.00
     }
-    ...省略其他对象
+    ...omit other objects
 ]
 [ ❷
     {
@@ -432,30 +434,30 @@ println(booksWithTablesFields)
             "id": 1
         }
     }
-    ...省略其他对象
-]
+    ...omit other objects
+] 
 ```
 
-对比输出结果，`allScalarFields`只包含标量属性，不包含任何关联属性；`allTableFields`则在`allScalar的基础上`，增加了关联属性`Book.tore`。
+Comparing the outputs, `allScalarFields` contains only scalar properties without any associations, while `allTableFields` additionally includes the `store` association based on `allScalarFields`.
 
-## 关联对象的特殊配置
+## Special Configurations for Associations
 
 ### BatchSize
 
-在一对多/多对多的关联中，如果关联对象的数量很多，将可能对应用程序的性能造成影响，因此提供了一个BatchSize的配置项进行管理。
+For one-to-many/many-to-many associations, a large number of associated objects may impact application performance. The `batchSize` configuration is provided for management.
 
-以下示例没有配置BatchSize：
+The following example does not configure `batchSize`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 BookTable book = BookTable.$;
 List<Book> list = sqlClient.createQuery(book)
     .where(book.edition().eq(3))
     .select(
         book.fetch(
-            BookFetcher.$.allScalarFields()
+                BookFetcher.$.allScalarFields()
                 // highlight-next-line
                 .authors(AuthorFetcher.$.allScalarFields())
         )
@@ -487,9 +489,9 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-生成SQL如下：
-```sql
-# 1.首先查询book表得到所有BOOK_ID
+The generated SQL is:
+```sql  
+# 1. Query book table to get all BOOK_ID
 select
     tb_1_.ID,
     tb_1_.NAME,
@@ -498,7 +500,7 @@ select
 from BOOK tb_1_
 where tb_1_.EDITION = ?
 
-# 2.用上一步得到的所有BOOK_ID关联查询author表和中间表
+# 2. Use BOOK_ID from previous step to join query author table
 select
     tb_2_.BOOK_ID,
     tb_1_.ID,
@@ -510,12 +512,10 @@ inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
 where tb_2_.BOOK_ID in (?, ?, ?, ?)
 ```
 
-在该sql中，因为没有配置BatchSize所以会使用默认值，有多少个BOOK_ID都会直接使用在第二个SQL查询的in()列表里。
+In the SQL, no `batchSize` is configured so the default will be used. All BOOK_ID will be directly used in the `in(...)` list of the second query.
 
-
-输出结果如下：
-```
-
+The output is:
+```json
 [
     {
         "id": 3,
@@ -537,12 +537,12 @@ where tb_2_.BOOK_ID in (?, ?, ?, ?)
             }
         ]
     },
-    ...省略其他对象
+    ...omit other objects
 ]
 
 ```
 
-上面的例子中，我们看到这样的查询
+In the example above, we see the query:
 ```sql
 select
     tb_2_.BOOK_ID,
@@ -551,13 +551,13 @@ select
     tb_1_.LAST_NAME,
     tb_1_.GENDER
 from AUTHOR tb_1_
-inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
+inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID  
 where tb_2_.BOOK_ID in (?, ?, ?, ?)
 ```
 
-这里，`in`表达式实现了批量查询，解决了`N + 1`问题。
+Here, the `in` expression implements batch query to solve `N+1` problem.
 
-如果一个批量太大，就会根据一个叫`batchSize`的设置进行分批切割，如
+If a batch is too large, it will be split into multiple batches based on `batchSize` configuration, such as:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -577,7 +577,7 @@ List<Book> list = sqlClient.createQuery(book)
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val books = sqlClient
@@ -600,26 +600,26 @@ val books = sqlClient
 </Tabs>
 
 :::danger
-这里，`authors`关联的batchSize被设置为2。此配置设置的值太小会导致性能低下，这里仅仅为了演示，实际项目中请不要设置如此小的值。
+Here the `batchSize` for `authors` is set to 2. Such a small value would cause poor performance, it is only for demo purposes. Please do not use such small values in real projects.
 :::
 
-这样会导致`in(?, ?, ?, ?)`被切割为两个`in(?, ?)`，抓取关联对象的Sql会比分裂成两条。
+This would cause the `in(?, ?, ?, ?)` to be split into two `in(?, ?)`, and the SQL to fetch associated objects would be split into two.
 
-1.
+1.  
 ```sql
 select
     tb_2_.BOOK_ID,
     tb_1_.ID,
     tb_1_.FIRST_NAME,
-    tb_1_.LAST_NAME,
+    tb_1_.LAST_NAME, 
     tb_1_.GENDER
 from AUTHOR tb_1_
 inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
-where tb_2_.BOOK_ID in (?, ?)
+where tb_2_.BOOK_ID in (?, ?) 
 ```
 
 2.
-```sql
+```sql  
 select
     tb_2_.BOOK_ID,
     tb_1_.ID,
@@ -631,12 +631,12 @@ inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
 where tb_2_.BOOK_ID in (?, ?)
 ```
 
-实际开发中，绝大部分情况都不会这样设置batchSize，而是采用SqlClient中的全局配置。
+In real projects, in most cases `batchSize` would not be configured like this at fetcher level. Instead, use the global configurations in `SqlClient`: 
 
-1. `JSqlClient.getDefaultBatchSize()`: 一对一和多对一关联属性的默认batchSize，默认128
-2. `JSqlClient.getDefaultListBatchSize()`: 一对多和多对多关联属性的默认batchSize，默认16
+1.  `JSqlClient.getDefaultBatchSize()`: Default `batchSize` for one-to-one and many-to-one associations, default 128
+2.  `JSqlClient.getDefaultListBatchSize()`: Default `batchSize` for one-to-many and many-to-many associations, default 16
 
-创建SqlClient时，可以更改全局配置:
+When creating `SqlClient`, the global configs can be changed:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -644,7 +644,7 @@ where tb_2_.BOOK_ID in (?, ?)
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
-    .setDefaultBatchSize(256)
+    .setDefaultBatchSize(256) 
     .setDefaultListBatchSize(32)
     ....
     build();
@@ -653,7 +653,7 @@ JSqlClient sqlClient = JSqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 val sqlClient = newKSqlClient {
     setDefaultBatchSize(256)
     setDefaultListBatchSize(32)
@@ -662,27 +662,27 @@ val sqlClient = newKSqlClient {
 ```
 
 </TabItem>
-</Tabs>
+</Tabs>  
 
 :::caution
-无论是对象抓取器级的batchSize，还是全局级的batchSize，都不要超过1000，因为Oracle数据库中`in(...)`最多允许1000个值。
+No matter association-level `batchSize` or global `batchSize`, do not set above 1000 because Oracle database allows max 1000 values in `in(...)`.
 :::
 
 
-### 关联级分页
+### Pagination at Association Level
 
-对于集合关联，可以在抓取属性时指定`limit(limit, offset)`，即关联级别的分页。
+For collection associations, `limit(limit, offset)` can be specified during fetching to do pagination at association level.
 
 :::caution
-关联级分页和批量加载无法共存，因此，关联级分页必然导致`N + 1`问题，请谨慎使用此功能！
+Association-level pagination and batch loading cannot coexist. Association-level pagination necessarily causes `N+1` problem. Please use this feature cautiously!
 
-如果使用了关联级分页，必须把batchSize指定为1，否则会导致异常。此设计的目的在于让开发人员和阅读代码的人很清楚当前代码存在`N + 1`性能风险。
+If association-level pagination is used, `batchSize` must be set to 1, otherwise exceptions would be thrown. This is designed to make it clear to developers and readers that the code has `N+1` performance risk.
 :::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 BookTable book = BookTable.$;
 
 List<Book> books = sqlClient
@@ -728,54 +728,54 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-- 因关联分页无法解决`N + 1`问题，生成的SQL比较多
-- 因不同数据库分页查询方法不同，为了简化讨论，这里假设方言使用了`H2Dialect`
+-   Since association pagination cannot solve `N+1` problem, multiple SQLs are generated
+-   For simplicity let's assume `H2Dialect` is used so different databases have the same paging SQL
 
-1. 查询当前`Book`对象
-```sql
-select
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE
-from BOOK as tb_1_
-where tb_1_.EDITION = ?
-```
+1.  Query current `Book` objects
+    ```sql   
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
+    from BOOK as tb_1_
+    where tb_1_.EDITION = ?
+    ```
 
-2. 对第1个`Book`对象的`authors`集合进行分页查询
-```sql
-select
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where tb_1_.BOOK_ID = ?
-/* highlight-next-line */
-limit ? offset ?
-```
+2.  Paginated query on `authors` collection of the 1st `Book` object 
+    ```sql
+    select
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME, 
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_  
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where tb_1_.BOOK_ID = ?
+    /* highlight-next-line */
+    limit ? offset ?  
+    ```
 
-3. 对第2个`Book`对象的`authors`集合进行分页查询
+3.  Paginated query on `authors` collection of the 2nd `Book` object
 
-同上，略
+    Same as above, omitted.
 
-4. 对第3个`Book`对象的`authors`集合进行分页查询
+4.  Paginated query on `authors` collection of the 3rd `Book` object 
 
-同上，略
+    Same as above, omitted.
 
-5. 对第4个`Book`对象的`authors`集合进行分页查询
+4.  Paginated query on `authors` collection of the 4th `Book` object
 
-同上，略
+    Same as above, omitted.
 
-### 属性过滤器
+### Property-level Filters
 
-在抓取关联属性时，可以指定过滤器，为关联对象指定过滤条件。
+When fetching associations, filters can be specified to filter associated objects.
 
-这里，为了对比，我们让查询选取两列，两列都是`Book`类型。
+Here for comparison, the query selects two columns, both are `Book` type. 
 
-- 第一列对象的`Book.authors`使用过滤器
-- 第二列对象的`Book.authors`不使用过滤器
+-   The `Book.authors` of the first column uses filter
+-   The `Book.authors` of the second column does not use filter
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -786,14 +786,14 @@ BookTable book = BookTable.$;
 List<Tuple2<Book, Book>> books = sqlClient
     .createQuery(book)
     .select(
-        // 第一列
+        // First column  
         book.fetch(
             BookFetcher.$
             .allScalarFields()
             .authors(
                 AuthorFetcher.$.allScalarFields(),
 
-                // 使用过滤器
+                // Use filter
                 // highlight-next-line
                 it -> it.filter(args -> {
                     args.where(args.getTable().firstName().ilike("a"));
@@ -801,13 +801,13 @@ List<Tuple2<Book, Book>> books = sqlClient
             )
         ),
 
-        // 第二列
+        // Second column
         book.fetch(
             BookFetcher.$
                 .allScalarFields()
                 .authors(
                     AuthorFetcher.$.allScalarFields()
-                // 不使用过滤器
+                // No filter used
                 )
         )
     )
@@ -817,30 +817,30 @@ List<Tuple2<Book, Book>> books = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val tuples: List<Tuple2<Book, Book>> = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
         select(
 
-            // 第一列
+            // First column
             table.fetchBy {
                 allScalarFields()
                 authors({
-                // 使用过滤器
-                // highlight-next-line
-                filter {
-                where(table.firstName ilike "a")
-                }
+                    // Use filter
+                    // highlight-next-line
+                    filter {
+                    where(table.firstName ilike "a")
+                    }
                 }) {
-                allScalarFields()
+                    allScalarFields()
                 }
             },
 
-            // 第二列
+            // Second column
             table.fetchBy {
                 allScalarFields()
-                authors { // 不使用过滤器
+                authors { // No filter used  
                     allScalarFields()
                 }
             }
@@ -852,78 +852,81 @@ val tuples: List<Tuple2<Book, Book>> = sqlClient
 </TabItem>
 </Tabs>
 
-生成三条SQL
+Three SQLs are generated:
 
-1. 查询元组需要的两个`Book`对象
+1.  Query the two `Book` objects needed for the tuple
 
-```sql
-select
+    ```sql
+    select
 
-/* For tuple._1 */
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE,
+    /* For tuple._1 */  
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
 
-/* For tuple._2 */
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE
+    /* For tuple._2 */
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION, 
+        tb_1_.PRICE
 
-from BOOK as tb_1_
-where tb_1_.EDITION = ?
-```
+    from BOOK as tb_1_ 
+    where tb_1_.EDITION = ?
+    ```
 
-2. 为第1列的4个`Book`对象查询`authors`关联属性，使用过滤器
-```sql
-select
+2.  For the `authors` association of the 4 `Book` objects in column 1, use filter
+    ```sql   
+    select
 
-    tb_1_.BOOK_ID,
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where
-    tb_1_.BOOK_ID in (?, ?, ?, ?)
-and
-    /* Use filter here */
-    /* highlight-next-line */
-    lower(tb_3_.FIRST_NAME) like ?
-```
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID 
+    where
+        tb_1_.BOOK_ID in (?, ?, ?, ?)  
+    and
+        /* Use filter here */
+        /* highlight-next-line */
+        lower(tb_3_.FIRST_NAME) like ?
+    ```
 
-3. 为第2列的4个`Book`对象查询`authors`关联属性，不使用过滤器
-```sql
-select
+3.  For the `authors` association of the 4 `Book` objects in column 2, no filter
+    ```sql
+    select
 
-    tb_1_.BOOK_ID,
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where
-    tb_1_.BOOK_ID in (?, ?, ?, ?)
-/* No filter here */
-```
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (?, ?, ?, ?)
+    /* No filter here */ 
+    ```
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
-```
+The printed result is (formatted for readability):
+```json 
 Tuple2{
     _1={
         "id":3,
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
+
+        // Filter used, incomplete collection
+        // highlight-next-line
         "authors":[
             {
                 "id":2,
                 "firstName":"Alex",
                 "lastName":"Banks",
-                "gender":"MALE"
+                "gender":"MALE" 
             }
         ]
     },
@@ -932,6 +935,9 @@ Tuple2{
         "name":"Learning GraphQL",
         "edition":3,
         "price":51.00,
+
+        // No filter, complete collection 
+        // highlight-next-line
         "authors":[
             {
                 "id":2,
@@ -950,31 +956,26 @@ Tuple2{
 ```
 
 :::note
-过滤器不仅可以筛选关联对象，还可以排序关联对象，原理类似，本文不做示范
+Filters can not only filter associated objects, but also sort them. The principle is similar so not demonstrated here. 
 :::
 
 :::caution
 
-1.
-对于同时满足以下两个条件的关联属性
-- 多对一
-- 不为null
+1.  For associations satisfying both below conditions, applying filters would cause exceptions:
+    -   Many-to-one
+    -   Not null
 
-施加过滤器会导致异常。
+2.  After field filters are used, [association cache](../../cache/cache-type/association) for that field becomes invalid. 
 
-2.
-使用了字段级过滤器后，该字段的[关联缓存](../../cache/cache-type/association)会失效。
+    To keep association cache valid, global filters supporting [multi-view cache](../../cache/multiview-cache) can be used.
 
-如果不想让关联缓存失效，可以使用支持[多视角缓存](../../cache/multiview-cache)的全局过滤器。
+3.  A common mistake in real development (Java for example) is:
 
-3.
-有一种实际开发中常见的错误（以Java为例）
+    `filter(it -> args.getTable().firstName().ilike("a"))`
 
-`filter(it -> args.getTable().firstName().ilike "a")`。
+    This creates the condition expression but does not call `args.where`. Filter code not calling either `args.where` or `args.orderBy` is meaningless.
 
-这段代码创建了条件表达式，但是并没有调用`args.where`。既不调用`args.where`也不调用`args.orderBy`的过滤器代码是没有意义的。
+    The correct code is:
 
-正确的代码是
-
-`filter(it -> args.where(args.getTable().firstName().ilike "a"))`。
+    `filter(it -> args.where(args.getTable().firstName().ilike("a")))`
 :::

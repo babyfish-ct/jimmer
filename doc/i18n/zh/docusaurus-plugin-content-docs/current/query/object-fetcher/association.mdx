@@ -604,30 +604,30 @@ val books = sqlClient
 这样会导致`in(?, ?, ?, ?)`被切割为两个`in(?, ?)`，抓取关联对象的Sql会比分裂成两条。
 
 1.
-```sql
-select
-    tb_2_.BOOK_ID,
-    tb_1_.ID,
-    tb_1_.FIRST_NAME,
-    tb_1_.LAST_NAME,
-    tb_1_.GENDER
-from AUTHOR tb_1_
-inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
-where tb_2_.BOOK_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_2_.BOOK_ID,
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
+    where tb_2_.BOOK_ID in (?, ?)
+    ```
 
 2.
-```sql
-select
-    tb_2_.BOOK_ID,
-    tb_1_.ID,
-    tb_1_.FIRST_NAME,
-    tb_1_.LAST_NAME,
-    tb_1_.GENDER
-from AUTHOR tb_1_
-inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
-where tb_2_.BOOK_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_2_.BOOK_ID,
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
+    where tb_2_.BOOK_ID in (?, ?)
+    ```
 
 实际开发中，绝大部分情况都不会这样设置batchSize，而是采用SqlClient中的全局配置。
 
@@ -729,42 +729,44 @@ val books = sqlClient
 - 因关联分页无法解决`N + 1`问题，生成的SQL比较多
 - 因不同数据库分页查询方法不同，为了简化讨论，这里假设方言使用了`H2Dialect`
 
-1. 查询当前`Book`对象
-```sql
-select
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE
-from BOOK as tb_1_
-where tb_1_.EDITION = ?
-```
+1.  查询当前`Book`对象
 
-2. 对第1个`Book`对象的`authors`集合进行分页查询
-```sql
-select
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where tb_1_.BOOK_ID = ?
-/* highlight-next-line */
-limit ? offset ?
-```
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
+    from BOOK as tb_1_
+    where tb_1_.EDITION = ?
+    ```
 
-3. 对第2个`Book`对象的`authors`集合进行分页查询
+2.  对第1个`Book`对象的`authors`集合进行分页查询
 
-同上，略
+    ```sql
+    select
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where tb_1_.BOOK_ID = ?
+    /* highlight-next-line */
+    limit ? offset ?
+    ```
 
-4. 对第3个`Book`对象的`authors`集合进行分页查询
+3.  对第2个`Book`对象的`authors`集合进行分页查询
 
-同上，略
+    同上，略
 
-5. 对第4个`Book`对象的`authors`集合进行分页查询
+4.  对第3个`Book`对象的`authors`集合进行分页查询
 
-同上，略
+    同上，略
+
+5.  对第4个`Book`对象的`authors`集合进行分页查询
+
+    同上，略
 
 ### 属性过滤器
 
@@ -852,61 +854,63 @@ val tuples: List<Tuple2<Book, Book>> = sqlClient
 
 生成三条SQL
 
-1. 查询元组需要的两个`Book`对象
+1.  查询元组需要的两个`Book`对象
 
-```sql
-select
+    ```sql
+    select
 
-/* For tuple._1 */
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE,
+    /* For tuple._1 */
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
 
-/* For tuple._2 */
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE
+    /* For tuple._2 */
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
 
-from BOOK as tb_1_
-where tb_1_.EDITION = ?
-```
+    from BOOK as tb_1_
+    where tb_1_.EDITION = ?
+    ```
 
-2. 为第1列的4个`Book`对象查询`authors`关联属性，使用过滤器
-```sql
-select
+2.  为第1列的4个`Book`对象查询`authors`关联属性，使用过滤器
 
-    tb_1_.BOOK_ID,
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where
-    tb_1_.BOOK_ID in (?, ?, ?, ?)
-and
-    /* Use filter here */
-    /* highlight-next-line */
-    lower(tb_3_.FIRST_NAME) like ?
-```
+    ```sql
+    select
+
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (?, ?, ?, ?)
+    and
+        /* Use filter here */
+        /* highlight-next-line */
+        lower(tb_3_.FIRST_NAME) like ?
+    ```
 
 3. 为第2列的4个`Book`对象查询`authors`关联属性，不使用过滤器
-```sql
-select
 
-    tb_1_.BOOK_ID,
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where
-    tb_1_.BOOK_ID in (?, ?, ?, ?)
-/* No filter here */
-```
+    ```sql
+    select
+
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (?, ?, ?, ?)
+    /* No filter here */
+    ```
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 ```json
@@ -959,26 +963,23 @@ Tuple2{
 
 :::caution
 
-1.
-对于同时满足以下两个条件的关联属性
-- 多对一
-- 不为null
+1.  对于同时满足以下两个条件的关联属性
+    - 多对一
+    - 不为null
 
-施加过滤器会导致异常。
+    施加过滤器会导致异常。
 
-2.
-使用了字段级过滤器后，该字段的[关联缓存](../../cache/cache-type/association)会失效。
+2.  使用了字段级过滤器后，该字段的[关联缓存](../../cache/cache-type/association)会失效。
 
-如果不想让关联缓存失效，可以使用支持[多视角缓存](../../cache/multiview-cache)的全局过滤器。
+    如果不想让关联缓存失效，可以使用支持[多视角缓存](../../cache/multiview-cache)的全局过滤器。
 
-3.
-有一种实际开发中常见的错误（以Java为例）
+3.  有一种实际开发中常见的错误（以Java为例）
 
-`filter(it -> args.getTable().firstName().ilike "a")`。
+    `filter(it -> args.getTable().firstName().ilike "a")`。
 
-这段代码创建了条件表达式，但是并没有调用`args.where`。既不调用`args.where`也不调用`args.orderBy`的过滤器代码是没有意义的。
+    这段代码创建了条件表达式，但是并没有调用`args.where`。既不调用`args.where`也不调用`args.orderBy`的过滤器代码是没有意义的。
 
-正确的代码是
+    正确的代码是
 
-`filter(it -> args.where(args.getTable().firstName().ilike "a"))`。
-:::
+    `filter(it -> args.where(args.getTable().firstName().ilike "a"))`。
+    :::

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 5
-title: View properties 
+title: View Properties
 ---
 
 import Tabs from '@theme/Tabs';
@@ -9,15 +9,15 @@ import TabItem from '@theme/TabItem';
 
 ## IdView
 
-对于数据结构，前后端各自偏好有所不同，后端倾向于结构化数据，而前端倾向于平铺化数据。
+For data structures, frontends and backends have different preferences. Backends prefer structured data, while frontends prefer flattened data.
 
-对于IdOnly的对象，Jimmer提供了`@IdView`注解，可以很方便的将IdOnly对象展开成一个字段。
+For IdOnly objects, Jimmer provides the [@IdView](../../mapping/advanced/view/id-view) annotation to easily flatten IdOnly objects into a field.
 
-### 修改示例实体接口
+### Modify the Example Entity Interface
 
-在示例实体接口中，分别添加了两个`@IdView`的属性，这是一个视图属性，该属性的值将自动同步对应关联对象的值。
+In the example entity interface, two `@IdView` properties are added, which are view properties. The value of these properties will be automatically synchronized with the value of the corresponding associated object.
 
-对于集合属性的`IdView`，需要手动写明其对应的是哪个关联属性。
+For the `IdView` of a collection property, the corresponding association property needs to be specified manually.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -26,15 +26,7 @@ import TabItem from '@theme/TabItem';
 @Entity
 public interface Book {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long id();
-
-    String name();
-
-    int edition();
-
-    BigDecimal price();
+    ...Other properties omitted...
 
     @Nullable
     @ManyToOne
@@ -61,13 +53,7 @@ public interface Book {
 @Entity
 interface Book {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long
-
-    val name: String
-
-    val edition: Int
+    ...Other properties omitted...
 
     @ManyToOne
     val store: BookStore?
@@ -88,50 +74,60 @@ interface Book {
 </TabItem>
 </Tabs>
 
-### 抓取`IdView`视图属性
+### Fetch `@IdView` Properties
 
-视图属性需要手动抓取，`allScalarFields`和`allTableFields`不会自动抓取视图属性。
+:::caution
+View properties need to be fetched manually. `allScalarFields` and `allTableFields` will not automatically fetch view properties.
+:::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 BookTable book = BookTable.$;
-List<Book> bookWithIdViews = sqlClient.createQuery(book)
+
+List<Book> bookWithIdViews = sqlClient
+    .createQuery(book)
     .where(book.edition().eq(3))
     .select(
         book.fetch(
-            BookFetcher.$.allScalarFields()
-            // highlight-next-line
-            .storeId().authorIds()
+            BookFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .storeId()
+                // highlight-next-line
+                .authorIds()
         )
     )
     .execute();
-System.out.println(toJson(bookWithIdViews));
+System.out.println(bookWithIdViews);
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-var bookWithIdViews = sqlClient.createQuery(Book::class) {
-    where(table.edition.eq(3))
-    select(
-        table.fetchBy {
-            allScalarFields
-            storeId
-            authorIds
-        }
-    )
+var bookWithIdViews = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition eq 3)
+        select(
+            table.fetchBy {
+                allScalarFields
+                // highlight-next-line
+                storeId
+                // highlight-next-line
+                authorIds
+            }
+        )
     }
     .execute()
-println(toJson(bookWithIdViews))
+println(bookWithIdViews)
 ```
 
 </TabItem>
 </Tabs>
 
-输出结果为：
+The output is:
 ```json
 [
     {
@@ -139,27 +135,28 @@ println(toJson(bookWithIdViews))
         "name": "Learning GraphQL",
         "edition": 3,
         "price": 51.00,
+        // highlight-next-line
         "storeId": 1,
-        "authorIds": [
-            1,
-            2
-        ]
+        // highlight-next-line
+        "authorIds": [1,2]
     }
-    ...省略其他对象
+    ...Other objects omitted
 ]
 ```
 
-## ManyToManyView
+## ManyToManyView 
 
-某些场景下，多对多关联的中间表，不再是纯粹的由双方id组成，而是夹杂了一些其他字段。在这种情况下，需要查询中间表的属性，以及多对多关联表的属性。
+In some scenarios, the join table of a many-to-many association contains not only the IDs of both sides, but also some other fields.
 
-传统实现方式，将`ManyToMany`的两个实体拆分成三个实体：两个原本的实体与一个中间表实体。三方关系变为原本的两个实体一对多中间实体，中间实体为两个多对一。
+A join table with additional fields besides the two IDs cannot be directly mapped to a `ManyToMany` association. We have no choice but to create three entity types: the original two entities and an intermediate entity. Each side entity has a one-to-many association pointing to the intermediate entity, and the intermediate entity has two many-to-one associations pointing to the two side entities.
 
-为了更好的举例，这里不在使用书籍、作者，而是更具真实含义的学生(student)、课程(course)、课程得分(learning_link)三张表为例。
+Fortunately, Jimmer provides [@ManyToManyView](../../mapping/advanced/view/many-to-many-view) to abstract a many-to-many association between the two side entities on top of this three-entity structure.
 
-### 数据准备
+To better demonstrate, instead of using books and authors, a more realistic example with students, courses, and learning_link tables is used.
 
-为了示例方便，这里使用的是H2数据库，首先使用以下sql建立表结构和初始化数据：
+### Prepare Data 
+
+For convenience, H2 database is used here. First create the table structure and initialize data with:
 
 ```sql
 drop table course if exists;
@@ -218,346 +215,266 @@ values  (1, 1, 100), (1, 2, 90), (1, 3, 80), (1, 4, 70), (1, 5, 60),
         (5, 1, 60), (5, 2, 100), (5, 3, 90), (5, 4, 80), (5, 5, 70);
 ```
 
-### 建立实体
+### Define Entities
 
-Student学生实体：
+-   Student
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-```java
-@Entity
-public interface Student {
+    ```java  
+    @Entity
+    public interface Student {
 
-    @Id
-    long id();
+        @Id
+        long id();
 
-    String name();
-    // 一对多关联，指向中间实体课程得分
-    @OneToMany(mappedBy = "student")
-    List<LearningLink> learningLinks();
+        String name();
 
-    // 多对多视图，prop值为由`@OneToMany`注解的属性，从当前实体指向中间表的属性名
-    @ManyToManyView(prop = "learningLinks")
-    // @ManyToManyView(prop = "learnLinks", deeperProp = "course")
-    List<Course> courses();
-}
-```
+        @OneToMany(mappedBy = "student")
+        List<LearningLink> learningLinks();
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+        // ManyToMany view property
+        // prop: One-to-many to intermediate entity `learningLinks`
+        // deeperProp: Many-to-one from intermediate to target entity `course` (optional)
+        // highlight-next-line
+        @ManyToManyView(prop = "learningLinks", deeperProp = "course") 
+        List<Course> courses();
+    }
+    ```
 
-```kotlin
-@Entity
-interface Student {
-    @Id
-    val id: Long
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-    val name: String
+    ```kotlin
+    @Entity  
+    interface Student {
+        @Id
+        val id: Long
 
-    // 一对多关联，指向中间实体课程得分
-    @OneToMany(mappedBy = "student")
-    val learningLinks: List<LearningLink>
+        val name: String
 
-    // 多对多视图，prop值为由`@OneToMany`注解的属性，从当前实体指向中间表的属性名
-    @ManyToManyView(prop = "learningLinks")
-    val courses: List<Course>
-}
-```
+        @OneToMany(mappedBy = "student")
+        val learningLinks: List<LearningLink>
 
-</TabItem>
-</Tabs>
+        // ManyToMany view property
+        // prop: One-to-many to intermediate entity `learningLinks`
+        // deeperProp: Many-to-one from intermediate to target entity `course` (optional)
+        // highlight-next-line
+        @ManyToManyView(prop = "learningLinks", deeperProp = "course")
+        val courses: List<Course>
+    }
+    ```
 
-Course课程实体：
+    </TabItem>
+    </Tabs>
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+-   Course
 
-```java
-@Entity
-public interface Course {
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-    @Id
-    long id();
+    ```java
+    @Entity
+    public interface Course {
 
-    String name();
+        @Id
+        long id();
 
-    int academicCredit();
+        String name();
 
-    // 一对多关联，指向中间实体课程得分
-    @OneToMany(mappedBy = "course")
-    List<LearningLink> learningLinks();
+        int academicCredit();
 
-    // 多对多视图，prop值为由`@OneToMany`注解的属性，从当前实体指向中间表的属性名
-    // deeperProp值为中间实体中由`@ManyToOne`注解的指向目标属性的名称
-    @ManyToManyView(prop = "learningLinks", deeperProp = "student")
-    // 默认情况下会自动推断deeperProp，可以省略
-    // or @ManyToManyView(prop = "learningLinks")
-    List<Student> students();
-}
+        @OneToMany(mappedBy = "course")
+        List<LearningLink> learningLinks();
 
-```
+        // ManyToMany view property
+        // prop: One-to-many to intermediate entity `learningLinks`
+        // deeperProp: Many-to-one from intermediate to target entity `student` (optional)
+        // highlight-next-line  
+        @ManyToManyView(prop = "learningLinks", deeperProp = "student")
+        List<Student> students();
+    }
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+    ```
 
-```kotlin
-@Entity
-interface Course {
-    @Id
-    val id: Long
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-    val name: String
+    ```kotlin 
+    @Entity
+    interface Course {
+        @Id
+        val id: Long
 
-    val academicCredit: Int
+        val name: String
 
-    // 一对多关联，指向中间实体课程得分
-    @OneToMany(mappedBy = "course")
-    val learningLinks: List<LearningLink>
+        val academicCredit: Int
 
-    // 多对多视图，prop值为由`@OneToMany`注解的属性，从当前实体指向中间表的属性名
-    // deeperProp值为中间实体中由`@ManyToOne`注解的指向目标属性的名称
-    @ManyToManyView(prop = "learningLinks", deeperProp = "student")
-    val students: List<Student>
-}
-```
+        @OneToMany(mappedBy = "course")
+        val learningLinks: List<LearningLink>
 
-</TabItem>
-</Tabs>
+        // ManyToMany view property
+        // prop: One-to-many to intermediate entity `learningLinks` 
+        // deeperProp: Many-to-one from intermediate to target entity `student` (optional)
+        // highlight-next-line
+        @ManyToManyView(prop = "learningLinks", deeperProp = "student")
+        val students: List<Student>
+    }
+    ```
 
-LearningLink课程得分：
+    </TabItem>
+    </Tabs>
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+-   Intermediate Entity LearningLink
 
-```java
-@Entity
-public interface LearningLink {
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    long id();
+    ```java
+    @Entity
+    public interface LearningLink {
 
-    // 多对一关联，指向学生实体
-    @ManyToOne
-    @OnDissociate(DissociateAction.DELETE)
-    Student student();
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        long id();
 
-    // 多对一关联，指向课程实体
-    @ManyToOne
-    @OnDissociate(DissociateAction.DELETE)
-    Course course();
+        // Many-to-one, points to Student entity
+        @ManyToOne
+        @OnDissociate(DissociateAction.DELETE)
+        Student student();
 
-    Integer score();
+        // Many-to-one, points to Course entity
+        @ManyToOne
+        @OnDissociate(DissociateAction.DELETE)
+        Course course();
 
-    @IdView
-    long studentId();
+        Integer score();
+    }
+    ```
 
-    @IdView
-    long courseId();
-}
-```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+    ```kotlin
+    @Entity
+    interface LearningLink {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long
 
-```kotlin
-@Entity
-interface LearningLink {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long
+        // Many-to-one, points to Student entity
+        @ManyToOne
+        @OnDissociate(DissociateAction.DELETE)
+        val student: Student
 
-    // 多对一关联，指向学生实体
-    @ManyToOne
-    @OnDissociate(DissociateAction.DELETE)
-    val student: Student
+        // Many-to-one, points to Course entity  
+        @ManyToOne
+        @OnDissociate(DissociateAction.DELETE)
+        val course: Course
 
-    // 多对一关联，指向课程实体
-    @ManyToOne
-    @OnDissociate(DissociateAction.DELETE)
-    val course: Course
+        val score: Int
+    }
+    ```
 
-    val score: Int
+    </TabItem>
+    </Tabs>
 
-    @IdView
-    val studentId: Long
+### Fetch `@ManyToManyView` Properties
 
-    @IdView
-    val courseId: Long
-}
-```
+With the introduction of the intermediate entity, Student and Course entities are no longer directly associated. Although they can be indirectly associated through a `Student->LearningLink->Course` path, the path is too long.
 
-</TabItem>
-</Tabs>
+Besides, the intermediate `LearningLink` entity should be hidden as much as possible, only used when reading/writing scores.
 
+[@ManyToManyView](../../mapping/advanced/view/many-to-many-view) properties *(e.g. `Student.courses` in this example)* can be used in object fetchers to reduce the path length.
 
-### 直接查询中间表属性
-
-查询选修课程得分大于等于90分以上的学生姓名和课程名称和得分
+For example, the following query gets all course names for the student with id 1:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-LearningLinkTable learningLink = LearningLinkTable.$;
-List<LearningLink> list = sqlClient.createQuery(learningLink)
-    .where(learningLink.score().ge(90))
-    .select(
-        learningLink.fetch(
-            LearningLinkFetcher.$
-                .student(StudentFetcher.$.name())
-                .course(CourseFetcher.$.name())
-                .score()
-        )
+Student student = sqlClient
+    .findNullable(
+        1L,
+        StudentFetcher.$
+            .name()
+            // highlight-next-line
+            .courses(
+                CourseFetcher.$
+                    .name()
+            )
     )
-    .execute();
-System.out.println(toJson(list));
-
+System.out.println(student);
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val books = sqlClient
-    .createQuery(LearningLink::class) {
-        where(learningLink.score().ge(90))
-        select(
-            table.fetchBy {
-                student {
-                    name
-                }
-                course {
-                    name
-                }
-                score
+val student = sqlClient
+    .findNullable(
+        1L,
+        newFetcher(Student::class).by {
+            name()
+            // highlight-next-line
+            courses {
+                name()
             }
-        )
-    }
-    .execute()
+        }
+    )
+println(student)
 ```
 
 </TabItem>
 </Tabs>
 
-生成的sql如下：
+The generated SQL is:
 
-```sql
-# 1.查询课程得分表，得到关联学生id、关联课程id
-select
-    tb_1_.ID,
-    tb_1_.STUDENT_ID,
-    tb_1_.COURSE_ID,
-    tb_1_.SCORE
-from LEARNING_LINK tb_1_
-where tb_1_.SCORE >= ?
+1.  Query `Student`
 
-# 2.查询学生表，得到学生名称
-select
-    tb_1_.ID,
-    tb_1_.NAME
-from STUDENT tb_1_
-where tb_1_.ID in (?, ?, ?, ?, ?)
+    ```sql
+    select 
+        tb_1_.ID, tb_1_.NAME  
+    from STUDENT tb_1_
+    where tb_1_.ID = ? /* 1 */
+    ```
 
-# 3.查询课程表，得到课程名称
-select
-    tb_1_.ID,
-    tb_1_.NAME
-from COURSE tb_1_
-where tb_1_.ID in (?, ?, ?, ?, ?)
+2.  Query `LearningLink`
 
-```
+    ```sql
+    select  
+        tb_1_.STUDENT_ID,
+        tb_1_.ID, tb_1_.COURSE_ID
+    from LEARNING_LINK tb_1_ 
+    where tb_1_.STUDENT_ID in (? /* 1 */)
+    ```
 
-输出结果如下：
-```json
-[
-    {
-        "id": 100,
-        "student": {
-            "id": 1,
-            "name": "John"
-        },
-        "course": {
-            "id": 1,
-            "name": "Math"
-        },
-        "score": 100
-    },
-    {
-        "id": 101,
-        "student": {
-            "id": 1,
-            "name": "John"
-        },
-        "course": {
-            "id": 2,
-            "name": "English"
-        },
-        "score": 90
-    }
-    ...省略其他对象
-]
-```
+3.  Query `Course`
 
-### 查询多对多视图属性
+    ```sql
+    select
+        tb_1_.ID, tb_1_.NAME   
+    from COURSE tb_1_
+    where tb_1_.ID in (
+        ? /* 1 */, ? /* 2 */, ? /* 3 */,
+        ? /* 4 */, ? /* 5 */  
+    )
+    ```
 
-由于引入了中间实体，学生实体与课程实体不再直接互相关联，虽然可以通过`学生->课程得分->课程`这样的链路间接关联，但是路径太长。
-
-而且中间实体应该只在必要时候进行操作，其他情况下应该尽量隐藏中间实体。
-
-因此Jimmer提供了多对多视图来减少调用链路。
-
-例如以下查询：id为1的学生的所有课程名称
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-StudentTable student = StudentTable.$;
-Student result = sqlClient.createQuery(student)
-    .where(student.id().eq(1L))
-    .select(student.fetch(StudentFetcher.$.name().courses(CourseFetcher.$.name())))
-    .fetchOne();
-System.out.println(toJson(result));
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-val books = sqlClient
-    .createQuery(LearningLink::class) {
-        where(table.id.eq(1))
-        select(
-            table.fetchBy {
-                student {
-                    name
-                }
-                course {
-                    name
-                }
-            }
-        )
-    }
-    .execute()
-```
-
-</TabItem>
-</Tabs>
-
-输出结果为：
-```json
+The output is:
+```json 
 {
     "id": 1,
     "name": "John",
+    // highlight-next-line
     "courses": [
         {
             "id": 1,
             "name": "Math"
         },
         {
-            "id": 2,
+            "id": 2, 
             "name": "English"
         },
         {
@@ -566,7 +483,7 @@ val books = sqlClient
         },
         {
             "id": 4,
-            "name": "Science"
+            "name": "Science" 
         },
         {
             "id": 5,
@@ -576,4 +493,4 @@ val books = sqlClient
 }
 ```
 
-使用多对多视图，可以像没有引入中间实体时一样方便快捷的直接操作关联对象。
+With many-to-many view properties, associated objects can be operated as conveniently as if the intermediate entity did not exist at all.

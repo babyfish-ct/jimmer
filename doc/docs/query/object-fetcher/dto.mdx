@@ -1,4 +1,443 @@
 ---
-sidebar_position: 6
-title: DTO query
+sidebar_position: 6 
+title: Querying DTOs
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Previously we introduced using object fetchers to flexibly control the shape of queried data structures. 
+
+Now we introduce an equivalent capability: querying DTO objects.
+
+Jimmer provides a [DTO language](../../object/view/dto-language) 
+
+:::tip
+This language is essentially another way to express object fetchers.
+:::
+
+Using this language, developers can quickly define various data structure shapes with an entity type as the aggregate root. The compiler will generate corresponding Java/Kotlin DTO classes for each defined shape. Each DTO type contains mutual conversion logic with the original dynamic type, and an object fetcher matching its own shape.
+
+In some cases, after the server queries data in a certain shape, it is not meant to be returned as an HTTP response, but rather used internally to drive subsequent complex business logic. This is an ideal scenario for this approach.
+
+:::caution
+Note that if the server queries data in a certain shape not for its own use, but directly as the HTTP response, it is more recommended to directly return the dynamic entity object and use the solutions in [Spring section/Zero Frontend Coupling](../../spring/client) to automatically generate client code with a great developer experience.
+:::
+
+## Defining DTO Shapes 
+
+This article focuses on explaining how to query static DTO types, not a systematic introduction to the DTO language itself. Please refer to [Object section/DTO Mapping/DTO Language](../../object/view/dto-language) for the complete DTO language.
+
+Assuming the fully qualified name of the `Book` class is `com.yourcompany.yourpoject.model.Book`, you can
+
+1.  **In the project where the entity is defined**, create the directory `src/main/dto`
+
+2.  Under `src/main/dto`, create subdirectories following the package path of the entity type `com/yourcompany/yourpoject/model` 
+
+3.  In the directory created in the previous step, create a file `Book.dto`. The file name must match the entity class name, and the extension must be `dto`
+
+4.  Edit this file, use the DTO language to define various DTO shapes for the Book entity
+
+    ```sh title="Book.dto" 
+    # highlight-next-line
+    BookDetailView {
+        
+        #allScalars
+        
+        store {
+            #allScalars
+        }
+
+        authors {
+            #allScalars
+        }
+    }
+
+    SimpleBookView { ...omitted... }
+
+    ...Omit definitions of other DTO shapes...
+    ```
+
+## Auto-generated DTO Types  
+
+Jimmer is responsible for compiling dto files and automatically generating DTO types matching these shapes. 
+
+:::caution
+If Java/Kotlin source code files other than dto files are modified, running the application directly from the IDE can trigger recompilation of dto files. 
+
+However, if no Java/Kotlin files other than dto files are modified, simply clicking the run button in the IDE does not cause dto files to be recompiled unless explicitly rebuilding!
+:::
+
+Taking `BookDetailView` in the above code as an example, after the dto file is successfully compiled by Jimmer, the following DTO type will be automatically generated:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookDetailView.java"
+package com.yourcompany.yourpoject.model.dto;
+
+import com.yourcompany.yourpoject.model.Book;
+import org.babyfish.jimmer.View;
+
+@lombok.Data
+public class BookDetailView implements View<Book> {
+
+    private long id;
+
+    private String name;
+
+    private int edition;
+
+    private BigDecimal price;
+
+    // highlight-next-line
+    private TargetOf_store store;
+
+    // highlight-next-line
+    private List<TargetOf_authors> authors;
+
+    @lombok.Data
+    // highlight-next-line
+    public static class TargetOf_store implements View<BookStore> {
+
+        private long id;
+    
+        private String name;
+
+        @Nullable
+        private String website;
+
+        ...other members omitted...
+    }
+
+    @lombok.Data
+    // highlight-next-line
+    public static class TargetOf_authors implements View<Author> {
+
+        private long id;
+        
+        private String firstName;
+
+        private String lastName;
+
+        private Gender gender;
+
+        ...other members omitted...
+    }
+
+    ...other members omitted...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookDetailView.kt"
+package com.yourcompany.yourpoject.model.dto
+
+import com.yourcompany.yourpoject.model.Book
+import org.babyfish.jimmer.View
+
+data class BookDetailView(
+    val id: Long = 0,
+    val name: String = "",
+    val edition: Int = 0,
+    val price: BigDecimal,
+
+    // highlight-next-line
+    val store: TargetOf_store? = null,
+    // highlight-next-line
+    val authors: List<TargetOf_authors> = emptyList(),
+) : View<Book> {
+
+    // highlight-next-line
+    data class TargetOf_store(
+        val id: Long = 0,
+        val name: String = "",
+        val website: String? = null,
+    ) : View<BookStore> {
+        ...other members omitted...
+    }
+
+    // highlight-next-line
+    data class TargetOf_authors(
+        val id: Long = 0,
+        public val firstName: String = "",
+        public val lastName: String = "",
+        public val gender: Gender,
+    ) : View<Author> {
+        ...other members omitted...
+    }
+
+    ...other members omitted...
+} 
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+-   The generated DTO classes are in the `dto` subpackage of the entity package, not the entity package itself.
+
+-   For Java, it is assumed lombok is already in use.
+:::
+
+## Querying DTO Objects
+
+### Using findById
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookDetailView view = sqlClient.findNullable(
+    // highlight-next-line
+    BookDetailView.class, 
+    1L
+);
+System.out.println(view);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val view = sqlClient.findNullable(
+    // highlight-next-line
+    BookDetailView::class, 
+    1L
+);
+println(view)
+```
+
+</TabItem>
+</Tabs>
+
+The printed result is as follows *(formatted manually for readability)*:
+
+```
+// highlight-next-line  
+BookDetailView(
+    id=1,
+    name=Learning GraphQL,
+    edition=1,
+    price=50.00,
+    // highlight-next-line
+    store=BookDetailView.TargetOf_store(
+        id=1,
+        name=O'REILLY,
+        website=null,
+        version=0
+    ),
+    authors=[
+        // highlight-next-line
+        BookDetailView.TargetOf_authors(
+            id=2,
+            firstName=Alex,
+            lastName=Banks,
+            gender=MALE  
+        ),
+        // highlight-next-line 
+        BookDetailView.TargetOf_authors(
+            id=1,
+            firstName=Eve,
+            lastName=Procello,
+            gender=FEMALE
+        )
+    ]
+)
+```
+
+It's easy to see that although dynamic entity objects are no longer returned, the functionality is exactly the same as object fetchers. Why is this?
+
+The DTO types generated from the DTO language all contain object fetchers matching their own shapes, as follows:
+
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookDetailView.java" 
+@Data
+public class BookDetailView implements View<Book> {
+
+    public static final ViewMetadata<Book, BookDetailView> METADATA =  
+        new ViewMetadata<Book, BookDetailView>(
+            // highlight-start     
+            BookFetcher.$
+                .name()
+                .edition()
+                .price()
+                .store(TargetOf_store.METADATA.getFetcher())
+                .authors(TargetOf_authors.METADATA.getFetcher()),
+            // highlight-end
+            BookDetailView::new
+    );
+
+    @Data
+    public static class TargetOf_store implements View<BookStore> {
+
+        public static final ViewMetadata<BookStore, TargetOf_store> METADATA =  
+            new ViewMetadata<BookStore, TargetOf_store>(
+                // highlight-start
+                BookStoreFetcher.$
+                    .name()
+                    .website()
+                    .version(),
+                // highlight-end
+                TargetOf_store::new
+        );
+
+        ...other members omitted...
+    }
+
+    @Data
+    public static class TargetOf_authors implements View<Author> {
+
+        public static final ViewMetadata<Author, TargetOf_authors> METADATA =
+            new ViewMetadata<Author, TargetOf_authors>(
+                // highlight-start
+                AuthorFetcher.$
+                    .firstName()
+                    .lastName()
+                    .gender(),
+                // highlight-end
+                TargetOf_authors::new
+        );
+
+        ...other members omitted...
+    }
+
+    ...other members omitted...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookDetailView.kt"
+@Data  
+data class BookDetailView(
+    ...omitted...
+) : View<Book> {
+
+    ...other members omitted...
+
+    companion object {
+        @JvmStatic
+        public val METADATA: ViewMetadata<Book, BookDetailView> =  
+            ViewMetadata<Book, CompositeBookInput>(
+                // highlight-start
+                newFetcher(Book::class).by {
+                    name()
+                    edition()
+                    price()
+                    store(TargetOf_store.METADATA.fetcher) 
+                    authors(TargetOf_authors.METADATA.fetcher)
+                }
+                // highlight-end
+            ) {
+                CompositeBookInput(it)
+            }
+
+    }
+
+    @Data
+    public static class TargetOf_store implements View<BookStore> {
+
+        ...other members omitted...
+
+        companion object {
+
+            @JvmStatic
+            val METADATA: ViewMetadata<BookStore, TargetOf_store> =  
+                ViewMetadata<BookStore, TargetOf_store>(
+                    // highlight-start
+                    newFetcher(BookStore::class).by {
+                        name()
+                        website()
+                    }
+                    // highlight-end
+                ) {
+                    TargetOf_store(it)
+                }
+
+        }
+    }
+
+    @Data
+    public static class TargetOf_authors implements View<Author> {
+
+        ...other members omitted...
+
+        companion object {
+
+            @JvmStatic
+            val METADATA: ViewMetadata<Author, TargetOf_authors> =
+                ViewMetadata<Author, TargetOf_authors>(
+                    // highlight-start  
+                    newFetcher(Author::class).by {
+                        firstName()
+                        lastName()
+                        gender()
+                    }
+                    // highlight-end
+                ) {
+                    TargetOf_authors(it)
+                }
+        }   
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::tip
+This is why this article says at the beginning that the DTO language is essentially another way to express object fetchers.
+:::
+
+### Using Custom Queries 
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable table = BookTable.$;
+
+List<Book> books = sqlClient  
+    .createQuery(table)
+    .where(table.name().eq("GraphQL in Action"))
+    .orderBy(table.name())
+    .orderBy(table.edition().desc())
+    .select(
+        // highlight-next-line
+        table.fetch(BookDetailView.class)  
+    )  
+    .execute()
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin 
+val books = sqlClient  
+    .createQuery(Book::class) {
+        where(table.name eq "GraphQL in Action")
+        orderBy(table.name)
+        orderBy(table.edition.desc())
+        select(
+            // highlight-next-line
+            table.fetch(BookDetailView::class)
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+Here we see that `table.fetch(fetcher)` in previous code is replaced with `table.fetch(BookDetailView.class)`.
+
+:::tip
+All low-level query APIs can replace `fetcher` with `viewType`, again proving that the DTO language is essentially another way to express object fetchers, as stated at the beginning.
+:::

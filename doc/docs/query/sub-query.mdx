@@ -1,14 +1,14 @@
 ---
-sidebar_position: 9
+sidebar_position: 10
 title: Subqueries
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 有类型子查询
+## Typed Subqueries
 
-### 基于单列的IN表达式
+### IN expression based on single column
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -21,7 +21,7 @@ List<Book> books = sqlClient
     .createQuery(book)
     .where(
         book.id().in(sqlClient
-            .createSubQuery(author)
+            .createSubQuery(author) 
             .where(author.firstName().eq("Alex"))
             .select(author.books().id())
         )
@@ -33,14 +33,14 @@ List<Book> books = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 val books = sqlClient
     .createQuery(Book::class) {
-        where( 
+        where(
             // highlight-next-line
             table.id valueIn subQuery(Author::class) {
                 where(table.firstName eq "Alex")
-                select(table.books.id)
+                select(table.books.id) 
             }
         )
         select(table)    
@@ -51,31 +51,30 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
     tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-where 
-    /* highlight-next-line */
+    tb_1_.STORE_ID
+from BOOK as tb_1_
+where
+    /* highlight-next-line */  
     tb_1_.ID in (
-        select 
-            tb_3_.BOOK_ID 
-        from AUTHOR as tb_2_ 
-        inner join BOOK_AUTHOR_MAPPING as tb_3_ 
-            on tb_2_.ID = tb_3_.AUTHOR_ID 
-        where 
-            tb_2_.FIRST_NAME = ?
+        select
+            tb_3_.BOOK_ID
+        from AUTHOR as tb_2_
+        inner join BOOK_AUTHOR_MAPPING as tb_3_
+            on tb_2_.ID = tb_3_.AUTHOR_ID
+        where
+            tb_2_.FIRST_NAME = ?  
     )
-
 ```
 
-### 基于多列的IN表达式
+### IN expression based on multiple columns
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -94,7 +93,7 @@ List<Book> newestBooks = sqlClient
             .groupBy(book.name())
             .select(
                 book.name(),
-                book.edition().max()
+                book.edition().max() 
             )
         )
     )
@@ -105,18 +104,18 @@ List<Book> newestBooks = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val newestBooks = sqlClient
     .createQuery(Book::class) {
-        where( 
+        where(
             // highlight-next-line
             tuple(
-                table.name, 
-                table.edition
+                table.name,
+                table.edition  
             ) valueIn subQuery(Book::class) {
                 groupBy(table.name)
                 select(
-                    table.name,
+                    table.name, 
                     max(table.edition).asNonNull()
                 )
             }
@@ -129,33 +128,33 @@ val newestBooks = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
 ```sql
-select 
-    tb_1_.ID, 
+select
+    tb_1_.ID,
     tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-where 
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_  
+where
     /* highlight-next-line */
     (tb_1_.NAME, tb_1_.EDITION) in (
-        select 
-            tb_2_.NAME, 
-            max(tb_2_.EDITION) 
-            from BOOK as tb_2_ 
-            group by tb_2_.NAME
+        select
+            tb_2_.NAME,
+            max(tb_2_.EDITION)
+        from BOOK as tb_2_
+        group by tb_2_.NAME 
     )
 ```
 
-### 将子查询视为简单值
+### Treat subquery as simple value
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 BookTable book = BookTable.$;
 
 List<Book> newestBooks = sqlClient
@@ -182,8 +181,8 @@ List<Book> newestBooks = sqlClient
 ```kotlin
 val books = sqlClient
     .createQuery(Book::class) {
-        where( 
-            // highlight-next-line
+        where(
+            // highlight-next-line 
             table.price gt subQuery(Book::class) {
                 select(
                     avg(table.price)
@@ -193,32 +192,32 @@ val books = sqlClient
         )
         select(table)
     }
-    .execute()
+    .execute() 
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
-```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
+```sql 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
     tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-where 
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_   
+where
     /* highlight-next-line */
     tb_1_.PRICE > (
-        select 
-            coalesce(avg(tb_2_.PRICE), ?) 
-        from BOOK as tb_2_
+        select
+            coalesce(avg(tb_2_.PRICE), ?)
+        from BOOK as tb_2_  
     )
 ```
 
-### 在select和orderBy子句中使用子查询
+### Use subquery in select and orderBy clauses
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -227,27 +226,27 @@ where
 BookStoreTable store = BookStoreTable.$;
 BookTable book = BookTable.$;
 
-MutableRootQuery<BookStoreTable> query =
+MutableRootQuery<BookStoreTable> query = 
     sqlClient.createQuery(store);
 TypedSubQuery<BigDecimal> subQuery =
     sqlClient
-        .createSubQuery(book)
+        .createSubQuery(book) 
         .where(book.store().eq(store))
         .select(
             book
                 .price()
                 .avg()
-                .coalesce(BigDecimal.ZERO)
+                .coalesce(BigDecimal.ZERO)  
         );
 List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples =
     query
         
         .orderBy(
             // highlight-next-line
-            subQuery.desc()
+            subQuery.desc() 
         )
         .select(
-            store, 
+            store,
             // highlight-next-line
             subQuery
         )
@@ -257,7 +256,7 @@ List<Tuple2<BookStore, BigDecimal>> storeAvgPriceTuples =
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val storeAvgPriceTuples = sqlClient
     .createQuery(BookStore::class) {
         val avgPriceSubQuery = subQuery(Book::class) {
@@ -281,27 +280,27 @@ val storeAvgPriceTuples = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:  
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.WEBSITE, 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.WEBSITE,
     (
-        /* highlight-next-line */
-        select coalesce(avg(tb_2_.PRICE), ?) 
+        /* highlight-next-line */  
+        select coalesce(avg(tb_2_.PRICE), ?)
         from BOOK as tb_2_
-    ) 
-from BOOK_STORE as tb_1_ 
-order by (
+    )
+from BOOK_STORE as tb_1_
+order by (  
     /* highlight-next-line */
-    select coalesce(avg(tb_2_.PRICE), ?) 
-    from BOOK as tb_2_
+    select coalesce(avg(tb_2_.PRICE), ?)
+    from BOOK as tb_2_ 
 ) desc
 ```
 
-### 使用any运算符
+### Use ANY operator
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -323,14 +322,14 @@ List<Book> books = sqlClient
             .select(author.books().id())
             // highlight-next-line
             .any()
-        )
+        )  
     )
     .select(book)
     .execute();
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin"> 
 
 ```kotlin
 val books = sqlClient
@@ -343,7 +342,7 @@ val books = sqlClient
                         table.firstName valueIn listOf(
                             "Alex",
                             "Bill"
-                        )
+                        )  
                     )
                     select(table.id)
                 }
@@ -357,30 +356,30 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
 from BOOK as tb_1_ 
-where tb_1_.ID = 
-    /* highlight-next-line */
+where tb_1_.ID =
+    /* highlight-next-line */ 
     any(
-        select 
-            tb_3_.BOOK_ID 
-        from AUTHOR as tb_2_ 
+        select
+            tb_3_.BOOK_ID
+        from AUTHOR as tb_2_
         inner join BOOK_AUTHOR_MAPPING as tb_3_ 
-            on tb_2_.ID = tb_3_.AUTHOR_ID 
-        where 
-            tb_2_.FIRST_NAME in (?, ?)
+            on tb_2_.ID = tb_3_.AUTHOR_ID
+        where
+            tb_2_.FIRST_NAME in (?, ?) 
     )
 ```
 
-### 使用all运算符
+### Use ALL operator
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -390,12 +389,12 @@ BookTable book = BookTable.$;
 AuthorTableEx author = AuthorTableEx.$;
 
 List<Book> books = sqlClient
-    .createQuery(book)
+    .createQuery(book) 
     .where(
         book.id().ne(sqlClient
             .createSubQuery(author)
             .where(
-                author.firstName().in(
+                author.firstName().in(  
                     Arrays.asList("Alex", "Bill")
                 )
             )
@@ -405,13 +404,13 @@ List<Book> books = sqlClient
         )
     )
     .select(book)
-    .execute();
+    .execute(); 
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val books = sqlClient
     .createQuery(Book::class) {
         where(
@@ -421,7 +420,7 @@ val books = sqlClient
                     where(
                         table.firstName valueIn listOf(
                             "Alex",
-                            "Bill"
+                            "Bill"  
                         )
                     )
                     select(table.id)
@@ -436,35 +435,35 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
 ```sql
-select 
-    tb_1_.ID, 
+select
+    tb_1_.ID,
     tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-where tb_1_.ID = 
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_  
+where tb_1_.ID =
     /* highlight-next-line */
     all(
-        select 
-            tb_3_.BOOK_ID 
-        from AUTHOR as tb_2_ 
-        inner join BOOK_AUTHOR_MAPPING as tb_3_ 
-            on tb_2_.ID = tb_3_.AUTHOR_ID 
-        where 
-            tb_2_.FIRST_NAME in (?, ?)
+        select
+            tb_3_.BOOK_ID
+        from AUTHOR as tb_2_
+        inner join BOOK_AUTHOR_MAPPING as tb_3_
+            on tb_2_.ID = tb_3_.AUTHOR_ID
+        where
+            tb_2_.FIRST_NAME in (?, ?) 
     )
 ```
 
-### 使用exists运算符
+### Use EXISTS operator
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
-```java
+```java 
 BookTable book = BookTable.$;
 AuthorTableEx author = AuthorTableEx.$;
 
@@ -474,7 +473,7 @@ List<Book> books = sqlClient
         .createSubQuery(author)
         .where(
             author.books().eq(book),
-            author.firstName().eq("Alex")
+            author.firstName().eq("Alex") 
         )
         .select(author)
         // highlight-next-line
@@ -497,63 +496,63 @@ val books = sqlClient
                     where(
                         table.books eq parentTable,
                         table.firstName eq "Alex"
-                    )
+                    )  
                     select(table)
                 }
             )
         )
         select(table)
     }
-    .execute()
+    .execute() 
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:  
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-where 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_   
+where
     /* highlight-next-line */
     exists (
-        select 
-            1 
-        from AUTHOR as tb_2_ 
-        inner join BOOK_AUTHOR_MAPPING as tb_3_ 
-            on tb_2_.ID = tb_3_.AUTHOR_ID 
-        where 
-            tb_1_.ID = tb_3_.BOOK_ID 
-        and 
-            tb_2_.FIRST_NAME = ?
+        select
+            1
+        from AUTHOR as tb_2_
+        inner join BOOK_AUTHOR_MAPPING as tb_3_
+            on tb_2_.ID = tb_3_.AUTHOR_ID
+        where
+            tb_1_.ID = tb_3_.BOOK_ID
+        and
+            tb_2_.FIRST_NAME = ?  
     )
 ```
 
 :::info
-注意，在最终生成的SQL中，子查询选取的列是常量`1`，并非Java代码的设置。
+Note that in the final SQL, the selected column in the subquery is the constant `1`, not what is specified in the Java code.  
 
-这是因为`exists`运算符只在乎子查询是否能匹配到数据，并不在乎子查询选取了那些列。无论你在Java代码中让子查询选取什么，都会被无视。
+This is because the `exists` operator only cares if the subquery can match data, not what columns are selected. Whatever you select in the Java code will be ignored.
 :::
 
-## 无类型子查询
+## Untyped Subqueries
 
-上一节最后一个例子是`exists`子查询，无论你在Java代码中让子查询选取什么都会被无视。
+The last example in previous section is `exists` subquery where whatever is selected in Java code gets ignored.
 
-既然如此，为什么要为`exists`子查询指定返回格式呢？
+In that case, why specify the return type for `exists` subqueries in Java code?
 
-因此，jimmer-sql支持无类型子查询(Wild sub query)，和普通子查询不同，无类型子查询实现中，不再需要最后那一句select方法调用，即，不需要返回类型。
+Therefore, jimmer-sql supports untyped subqueries (wild subqueries). Unlike normal subqueries, for wild subqueries the final `select()` call is no longer needed, i.e. no return type. 
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
-BookTable book = BookTable.$;
+BookTable book = BookTable.$; 
 AuthorTableEx author = AuthorTableEx.$;
 
 List<Book> books = sqlClient
@@ -564,8 +563,8 @@ List<Book> books = sqlClient
             author.books().eq(book),
             author.firstName().eq("Alex")
         )
-        // 此处无select
-        .exists()
+        // No select here  
+    .exists()
     )
     .select(book)
     .execute();
@@ -582,46 +581,46 @@ val books = sqlClient
                 // highlight-next-line
                 wildSubQuery(Author::class) {
                     where(
-                        table.books eq parentTable,
+                        table.books eq parentTable, 
                         table.firstName eq "Alex"
                     )
-                    // 此处无select
+                    // No select here
                 }
-            )
+            ) 
         )
         select(table)
     }
-    .execute()
+    .execute()  
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成的SQL不变，仍然是
+The final SQL remains the same:
 
-```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-where 
-    /* highlight-next-line */
+```sql 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_    
+where
+    /* highlight-next-line */ 
     exists (
-        select 
-            1 
-        from AUTHOR as tb_2_ 
-        inner join BOOK_AUTHOR_MAPPING as tb_3_ 
-            on tb_2_.ID = tb_3_.AUTHOR_ID 
-        where 
-            tb_1_.ID = tb_3_.BOOK_ID 
-        and 
-            tb_2_.FIRST_NAME = ?
+        select
+            1
+        from AUTHOR as tb_2_
+        inner join BOOK_AUTHOR_MAPPING as tb_3_
+            on tb_2_.ID = tb_3_.AUTHOR_ID
+        where
+            tb_1_.ID = tb_3_.BOOK_ID
+        and
+            tb_2_.FIRST_NAME = ?   
     )
 ```
 
 :::info
-无类型子查询唯一的价值，就是和`exists`运算符配合。
+The only value of untyped subqueries is when used with `exists` operator.
 :::

@@ -1,14 +1,14 @@
 ---
 sidebar_position: 1
-title: Basic usage
+title: Overview
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## select后置风格
+## Select-After Style
 
-和原生SQL不同，在Jimmer提供的DSL中，`select`语句出现在`where`，`orderBy`，`groupBy`，`having`之后，例如
+Unlike native SQL, in the DSL provided by Jimmer, the `select` statement comes after `where`, `orderBy`, `groupBy`, `having`, etc. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -20,7 +20,7 @@ List<Book> books = sqlClient
     .createQuery(table) ❶
     .where(table.name().eq("SQL in Action"))
     .orderBy(table.name().asc(), table.edition().desc())
-    // highlight-next-line
+    // highlight-next-line  
     .select(table) ❷
     .limit(10, 100)
     .execute(); ❸
@@ -45,101 +45,102 @@ val books = sqlClient
 </Tabs>
 
 :::tip
-`select`放在后面并非Jimmer的首创，首次把这种风格带入主流编程领域的是C#3.5推出的[LINQ](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/)。
+Putting `select` after is not invented by Jimmer. This style was first brought to mainstream by [LINQ](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/) introduced in C# 3.5.  
 
-这种风格对构建基于强类型DSL框架有天生的优势，因此Jimmer很自然地沿用了这种风格。
+This style has innate advantages for building strongly typed DSL frameworks, so Jimmer naturally adopts it.
 :::
 
-## 代码结构
+## Code Structure
 
-现在，解释上述代码。
+Now let's explain the code:
 
--   ❶处创建查询，得到一个可变查询对象。以该对象为目标的操作持续到❷处为止
+-   ❶ Create the query, get a mutable query object. Operations targeting this object continue until ❷.
 
-    所谓可变查询对象，指对其进行任何操作，比如，`where`, `orderBy`，`groupBy`, `having`，都是直接修改当前查询对象
+    A mutable query object means any operations like `where`, `orderBy`, `groupBy`, `having` directly modify the current query object. 
 
--   ❷处调用`select`，把可变查询对象转化为不可变查询对象。以该对象为目标的操作持续到❸处为止
+-   ❷ Call `select`, convert the mutable query object into an immutable one. Operations targeting this object continue until ❸.
 
-    所谓不可变查询对象，指对其进行任何操作，比如，`distinct`, `limit`, `forUpdate`, `reselect`，`withoutSortingAndPaging`, `union`, `unionAll`, `minus`, `intersect`，都是不会改变当前查询对象，而是创建新的对象
+    An immutable query object means any operations like `distinct`, `limit`, `forUpdate`, `reselect`, `withoutSortingAndPaging`, `union`, `unionAll`, `minus`, `intersect`, do not change the current object but create a new one.
 
-    例如 *(为了简短，这段伪码使用kotlin)*
+    For example *(to be concise, this pseudo-code uses Kotlin)*:
     ```kotlin
     val query = sqlClient.createQuery(Book::class) {
         where(...)
         orderBy(...)
         select(...)
     }
-    val query1 = query.limit(10, 0);
+    val query1 = query.limit(10, 0); 
     val query2 = query.limit(10, 1);
     val query3 = query.limit(10, 2);
     ```
-    这里`query`是最原始的查询，`query1`、`query2`、`query3`都是基于它创建的其他查询。`limit`方法并不会改变原本的`query`本身，而是创建新的不可变查询对象。
+    Here `query` is the original query, `query1`, `query2`, `query3` are other queries created based on it. `limit` does not change `query` itself but creates new immutable query objects. 
+    
+    Finally, `query1`, `query2`, `query3` share the same filters, sorting and structure projection as `query`, only differing in paging range. They can coexist without interfering with each other.
 
-    最终，`query1`、`query2`、`query3`共享的相同的筛选条件、排序和结构投影，只是分页范围不同而已。它们可并存，彼此并不影响。
+    Also, the mutable query before `select` has no return type, while the immutable query after `select` has a return type. That is, `select` assigns the final return type to the query.
 
-    另外，`select`之前的的可变查询没有返回类型，而`select`之后的不可变查询有返回类型。即，`select`为查询语句赋予了最终返回类型。
+-   ❸ Call `execute` to execute the query and return data.  
 
--   ❸处调用`execute`，执行查询并返回最终数据。
+    No execution happens before this step no matter how the DSL is adjusted to shape the SQL.
 
-    在这一步之前，如何如何操作DSL调整SQL语句，都不会执行。
+    Besides `execute`, there are other methods to execute queries:
 
-    除`execute`外，还有其他方法可以执行查询
+    -   `fetchOne`: Assume the query returns exactly one row, get that row. Throw exception if 0 or more rows are returned during actual execution.
 
-    -   `fetchOne`：假设查询必然返回一条数据，得到这条数据。如果实际执行后发现返回了0或多条数据，则抛出异常
+    -   `fetchOneOrNull`: Assume the query returns 0 or 1 row, get that row or null. Throw exception if more rows are returned during actual execution.
 
-    -   `fetchOneOrNull`：假设查询必然返回0或1条数据，得到这条数据或null。如果实际执行后发现返回了多条数据，则抛出异常
-
-    -   `fetchOptional`：功能同`fetchOneOrNull`类似，只是把返回类型从`null | T`变成了`java.util.Optional<T>`
+    -   `fetchOptional`: Similar to `fetchOneOrNull` but returns `java.util.Optional<T>` instead of `null | T`.
 
         :::caution
-        此API仅存在于Java API中，不存在于kotlin API。因为kotlin不需要`java.util.Optional<T>`
+        This API only exists in Java API, not in Kotlin API since Kotlin does not need `java.util.Optional<T>`.
         :::
 
-    -   `map`：直接执行，并在返回的原始集合的基础上再进行一次JVM层面的集合map操作。
+    -   `map`: Execute directly and do an additional collection map operation at JVM level on top of the returned raw collection.
 
-    -   `forEach`：如果因返回数据太多而不想返回一个大集合，就可以调用`forEach`并传递一个callback，遍历所有数据
+    -   `forEach`: If returning too much data to avoid materializing a large collection, `forEach` can be called with a callback to traverse all data.
 
-    -   `count`：在用户编写的原始数据查询基础上，自动生成分页查询所需要的count聚合查询，并执行获取分页前的数据总行数。
+    -   `count`: Based on the original data query written by users, automatically generate the count aggregate query needed for paging, execute and get total rows before paging.  
 
         :::info
-        这是一个足够智能和高级的操作，请参见[分页查询](./paging)
+        This is a smart and advanced operation, please see [Paging](./paging).
         :::
     
     :::tip
-    上述所有用于执行查询的方法，都有两个重载版本
+    All the methods above to execute queries have two overloaded versions:
 
-    -   无参版本 *(上述代码所示)*，利用Jimmer的连接管理机制 *(通常对接spring事务管理机制)* 获取JDBC连接并执行。
+    -   Parameterless version *(as shown in the code)* utilizes Jimmer's connection management *(usually integrating with Spring transaction management)* to get JDBC connection and execute.
 
-    -   有参数版本：参数接受一个JDBC连接。特殊情况下，开发人员可以弃Jimmer连接管理机制 *(通常对接spring事务管理机制)* 于不顾，在自己指定的JDBC连接上执行。
+    -   Version with a parameter accepting a JDBC connection. In special cases developers can discard Jimmer's connection management *(usually integrating with Spring transaction management)* and execute on a specified JDBC connection.
     :::
 
-现在，可以用如下简图总结
+Now the process can be summarized as:
 
 ```
-+-----------------+
-| ❶ createQuery  |
-+-------+---------+
-        |
-     可变查询
-(以where, orderBy为代表的操作，
-直接修改当前查询)
-        |
-        |
-       \|/
-+-----------------+
-| ❷ select       |
-+-------+---------+
-        |
-     不可变查询
-(以limit, distinct为代表的操作，
-并不修改当前查询，而是创建新的查询)
-        |
-        |
-       \|/
-+-----------------+
-| ❸ exceute或其他 |
-+-------+---------+
-        |
-     执行结果
-(其类型由❷处select指定)
++----------------------+ 
+|    ❶ createQuery    |
++-----------+----------+
+            |
+     Mutable Query
+(Operations like where, orderBy
+directly modify the query) 
+            |
+            |
+           \|/
++----------------------+
+|     ❷ select        |
++-----------+----------+
+            |
+    Immutable Query 
+(Operations like limit, distinct
+create new queries without modifying current one)
+            |
+            |
+           \|/
++----------------------+
+| ❸ exceute or others |
++-----------+----------+
+            |
+           \|/
+     Execution Result
+(Type specified by ❷ select)
 ```
