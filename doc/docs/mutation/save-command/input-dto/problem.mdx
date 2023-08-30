@@ -3,26 +3,26 @@ sidebar_position: 1
 title: Problem
 ---
 
-本文我们讨论三个议题
+In this article we discuss:
 
--   动态实体作为入参的问题
+-   The problem of using dynamic entities as method parameters 
 
--   解决方案
+-   Solutions
 
--   和[GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/)相比较
+-   Comparison with [GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/)
 
-## 动态实体作为入参的问题
+## Problem of Dynamic Entities Parameters
 
-截止到目前为止，我们已经系统性地讲解了保存指令的所有功能。
+Up to this point, we have systematically explained all the capabilities of save commands. 
 
-现在，我们知道了，无论要保存的数据结构的形状是什么，我们都可以使用一行代码调用保存指令将之写入数据库，所有的内部细节都被隐藏起来了，这一个非常便捷的底层功能。
+Now we know that no matter what shape the data structure to be saved is, we can persist it to the database in one line of code calling save commands, with all internal details hidden. This is a very convenient low-level capability.
 
-然而，业务系统上层API该如何设计呢？直接用`@RequestBody`接受动态对象吗？
+However, how should the upper layer APIs of business systems be designed? Should we directly accept dynamic objects via `@RequestBody`?
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 @PutMapping("/book")
 public void saveBook(
     // highlight-next-line
@@ -42,124 +42,128 @@ fun saveBook(
     @RequestBody book: Book
 ) {
     bookRepository.save(book)
-}
+} 
 ```
 
 </TabItem>
 </Tabs>
 
-这段代码的确可以工作，允许HTTP客户端传入任意形状的的形状，这是看起来似乎是一个非常强大的功能。
+This code can work, allowing HTTP clients to submit data structures of arbitrary shapes. This seems to be an extremely powerful capability. 
 
-然而，该方法存在两个问题：
+However, this approach has two problems:
 
--   安全性问题
+-   Security issue
 
--   API模糊问题
+-   API ambiguity
 
-### 安全性问题
+### Security Issue
 
-客服端被赋予过于强大的能力，可以提交的很深很广的树形数据结构，远远超过当前安全策略允许它的修改的数据范围。这是巨大的安全漏洞。
+The client is granted too much power, being able to submit very deep and wide tree-shaped data structures that far exceed its allowed scope of modification under current security policies. This is a huge security vulnerability. 
 
-比如，客户端完全可以提交这样的数据
+For example, the client can totally submit data like:
 
 ```json
 {
-    "name": "SQL in Motion",
-    "edtion": 1,
+    "name": "SQL in Motion", 
+    "edition": 1,
     "price": 41.99,
     "store":{
         "name": "MANNING",
         "location": {
             "city": "Vancouver",
-            "contry": "Canada",
-            ...略...
+            "country": "Canada",
+            ...
         }
     },
     "authors":[
         {
             "firstName": "Ben",
-            "lastName": "Brumm",
+            "lastName": "Brumm", 
             "job":{
                 "company": {
                     "name": "IBM"
                 },
                 "title": "Senior HR Manager",
-                ...略...
+                ...
             }
-            ...略...
+            ...
         }
     ]
 }
 ```
 
-假如你提供这个HTTPAPI的本意是，能够被影响的表仅限于`BOOK`, `BOOK_STORE`, `AUTHOR`和`BOOK_AUTHOR_MAPPING`这四张表。
+Assume your intention in providing this HTTP API is that only the `BOOK`, `BOOK_STORE`, `AUTHOR` and `BOOK_AUTHOR_MAPPING` tables can be affected. 
 
-然而，现在客户端提交的数据的波及范围太大，具备远超你所设想的破坏能力。上面的例子，至少存在4个意外破坏：
+However, now the scope of data submitted by the client is too large, with far greater destructive power than you anticipated. In the above example, there are at least 4 unexpected destructions:
 
--   `<root>.store.location.city`被修改，从`New York`变成`Vancouver`
+-   `<root>.store.location.city` is modified from `New York` to `Vancouver` 
 
--   `<root>.store.location.contry`被修改，从`USA`变成`Canada`
+-   `<root>.store.location.country` is modified from `USA` to `Canada`
 
--   `<root>.authors[0].job.comany`被修改，从`NAB`变成`IBM`
+-   `<root>.authors[0].job.company` is modified from `NAB` to `IBM` 
 
--   `<root>.authors[0].job.title`被修改，从`Senior Business Analyst`变成`Senior HR Manager`
+-   `<root>.authors[0].job.title` is modified from `Senior Business Analyst` to `Senior HR Manager`
 
 :::warning
-直接在对外API中使用`@RequestBody`接受动态对象作为Input参数，是一件非常危险的事，会导致严重的安全性问题。
+Using `@RequestBody` to directly accept dynamic objects as input parameters in external APIs is very dangerous and will lead to serious security issues.
 
-因此，保持指令必须作为底层功能被封印在服务内部，绝对不能通过HTTP API直接暴露其原始能力。
+Therefore, save commands must be sealed internally as a low-level capability, and their raw capabilities must absolutely not be directly exposed through HTTP APIs.
 :::
 
-### API模糊性问题
+### API Ambiguity
 
-参数是动态对象会导致API出现模糊行问题。客户端开发人员不知道哪些字段是业务系统自动决定，哪些字段必须由自己指定，从而不知道应该如何调用。
+Using dynamic objects as parameters leads to ambiguity in the API. Client developers do not know which fields are decided automatically by the business system and which must be specified by themselves, so they do not know how to invoke the API properly.
 
-这个问题对insert操作尤为明显。和update操作可以只修改少量属性不同，insert操作通常需要指定很多属性，否则会导致异常，客户端开发人员并不清楚必须指定哪些属性方可不避免报错。
+This issue is especially obvious for insert operations. Unlike update operations which can modify just a few properties, insert operations often need to specify many properties, otherwise exceptions will occur. Client developers are unclear about exactly which properties must be specified to avoid errors. 
 
-## 解决方案
+## Solutions
 
-为解决此问题，Jimmer提供了三种解决方案
+To resolve this issue, Jimmer provides three solutions:
 
--   [孤单表单](./lonely)
+-   [Lonely Form](./lonely)
 
-    一个简陋的方案，仅供学习或简单项目使用。
+    :::caution
+    This is a very crude solution, only for learning or very simple projects.
+    :::
     
-    该方案只针对单表数据保存操作，且只解决安全性问题，而不解决API模糊性问题。
+    This solution only handles data persistence operations on a single table, and only resolves the security issue rather than the API ambiguity issue.
 
--   [基于DTO语言的自动Input DTO](./dto-lang)
+    It is also the only solution that does not require defining Input DTOs.
 
-    此方案用很小的代价快速自动生成Input DTO。
+-   [Auto-Generated Input DTOs via DTO Language](./dto-lang)
 
-    这是一个完备且极其便捷的方案，所以是推荐方案。其巨大的便捷性优势将会在后文介绍。
+    This solution quickly auto-generates Input DTOs with very little cost.
+
+    It is a complete and extremely convenient solution, so is the recommended approach. Its huge convenience advantage will be introduced later.
 
     :::info
-    框架自带的例子全部采用此方案
+    All built-in examples use this solution.
     :::
-
--   [基于Mapstruct的手动Input DTO](./mapstruct)
-
-    此方案由开发人员手动创建Input DTO并负责将其转化为动态对象。
-
-    这是一个绝对灵活的方案，但开发人员的工作量很大。
     
-## 和GraphQLInput相比较
+-   [Manual Input DTOs via MapStruct](./mapstruct)
 
-上面提三种解决方案。其中，后两种方案虽然差异很大，但是有一个共同点，依赖于Input DTO。
+    This solution requires developers to manually create Input DTOs and handle conversion to dynamic objects.
 
-如果把Jimmer的Input DTO和[GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/)相比较
+    It is absolutely flexible, but requires a lot of work from developers.
 
--   相同点
+## Comparison with GraphQLInput
 
-    在GraphQL中，查询返回的GraphQLObject，即任意形状的动态对象；然而，如果修改操作接受对象参数，必须是GraphQLInput，即固定形状的静态对象。
+The above introduces three solutions. Among them, although the latter two solutions differ greatly, they share one commonality - relying on Input DTOs. 
 
-    GraphQLInput和这里提到的InputDTO理念完全一样，这是解决安全性问题的必然设计，殊途同归。
+Comparing Jimmer's Input DTOs with [GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/):
 
--   不同点
+-   Similarities
 
-    -   GraphQLInput只是一个协议，仅仅约束对象类型的入参必须是形状固定的静态对象。
-    
-        虽然好处是不对具体的实现技术做任何限定，但坏处是每一种特定形状的GraphQLInput的保存业务都需要开发人员自己去实现。繁琐工作量仍然客观存在的，开发能真真切切感受Input DTO爆炸带来的痛苦。
+    In GraphQL, query results are GraphQLObjects, i.e. dynamic objects of arbitrary shapes. However, if modification operations accept object parameters, they must be GraphQLInputs, i.e. static objects of fixed shapes. 
 
-    -   Jimmer的InputDTO只是为了应对安全性问题将动态实体换了一个表达方式而已。一旦用户完成从Input DTO到动态实体的转化，还是可以享受保存指令一句话保存任意形状的数据结构的巨大便利。
+    GraphQLInput has exactly the same idea as InputDTO here, which is the inevitable design to resolve security issues - different routes leading to the same destination.
 
-        如果开发人员采用[基于DTO语言的自动Input DTO](./dto-lang)方案，Input DTO类会被自动生成，Input DTO和动态实体对象之间的转化逻辑也会被自动生成。这样，Input DTO爆炸带来的痛苦不再存在。所以，这是推荐方案。
+-   Differences
+
+    -   GraphQLInput is just a protocol, merely constraining that object parameters for modification operations must be static objects of fixed shapes.
+
+        The benefit is not limiting specific implementation technologies. But the downside is saving business logic needs to be implemented by developers for every specific GraphQLInput shape. Tedious work still exists objectively, and developers can truly feel the pain of Input DTO explosion.
+
+    -   Jimmer's InputDTO is just an alternative representation of the dynamic entity to address security issues. Once the user finishes converting Input DTO to dynamic entity, the huge convenience of persisting arbitrary shaped data structures in one line of code via save commands can still be enjoyed. 
+
+        If developers adopt the [Auto-Generated Input DTOs via DTO Language](./dto-lang) solution, Input DTO classes will be auto-generated, and the conversion logic between Input DTOs and dynamic entities will also be auto-generated. Thus the pain of Input DTO explosion no longer exists. So this is the recommended solution.

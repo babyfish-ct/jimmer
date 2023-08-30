@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Save mode
+title: Save Modes
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,28 +8,28 @@ import TabItem from '@theme/TabItem';
 import Key from '../../_shared/key.mdx';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-保存指令支持3种保存模式，控制聚合根本身的保存方式
+Save commands support 3 save modes that control how the aggregate root itself is saved:
 
--   UPSERT: 这是默认的模式。先通过查询判断被保存的聚合根对象是否存在：
+-   UPSERT: This is the default mode. First check if the aggregate root object to be saved exists via a query:
 
-    -   如果不存在：执行INSERT语句
+    - If it does not exist: Execute INSERT
+    
+    - If it exists: Execute UPDATE
 
-    -   如果存在：执行UPDATE语句
-
--   INSERT_ONLY: 无条件执行INSERT语句
-
--   UPDATE_ONLY: 无条件执行UPDATE语句
+-   INSERT_ONLY: Unconditionally execute INSERT
+  
+-   UPDATE_ONLY: Unconditionally execute UPDATE
 
 :::info
-保存模式仅影响聚合根对象，不影响其他关联对象。也可以理解为关联对象的保存模式只能是UPSERT。
+Save modes only affect the aggregate root object, not other associated objects. Associated objects can be considered to always use the UPSERT mode. 
 :::
 
-## 指定对象的id
+## Specifying Object Id
 
-让我们来看一个例子
+Let's look at an example:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 Book book = BookDraft.$.produce(draft -> {
@@ -55,7 +55,7 @@ val book = new(Book::class).by {
     edition = 1
     price = BigDecimal("39.9")
     store = makeIdOnly(BookStore::class, 2L)
-}
+} 
 // highlight-next-line
 sqlClient.save(book)
 ```
@@ -63,33 +63,33 @@ sqlClient.save(book)
 </TabItem>
 </Tabs>
 
-在这个例子中，`save(book)`是一个简写方式，和`save(book, SaveMode.UPSERT)`等价，因为`UPSERT`是默认的保存方式。
+In this example, `save(book)` is shorthand equivalent to `save(book, SaveMode.UPSERT)`, because `UPSERT` is the default save mode.
 
-执行代码会生成两句SQL
+Executing the code will generate two SQL statements:
 
-1.  查询该对象在数据库中是否存在
+1.  Query if the object exists in the database
 
     ```sql
     select
-        tb_1_.ID
+        tb_1_.ID 
     from BOOK tb_1_
     where
         tb_1_.ID = ? /* 20 */
     ```
 
-2.  第二条SQL语句会因第一条SQL的执行结果的不同而不同
+2.  The second SQL statement will differ depending on the result of the first SQL:
 
-    -   如果第一条SQL无法查询到数据，插入
+    - If no data is returned from the first SQL, execute INSERT:
 
         ```sql
         insert into BOOK(ID, NAME, EDITION, PRICE, STORE_ID)
         values(
-            ? /* 20 */, ? /* SQL in Action */, 
+            ? /* 20 */, ? /* SQL in Action */,  
             ? /* 1 */, ? /* 39.9 */, ? /* 2 */
         )
         ```
 
-    -   如果第一条SQL查询到了已有数据，更新
+    - If data is returned from the first SQL, execute UPDATE: 
 
         ```sql
         update BOOK
@@ -102,55 +102,55 @@ sqlClient.save(book)
             ID = ? /* 20 */
         ```
 
-这就是默认保存模式`UPSERT`的用法，另外两种模式的用法很简单：
+The usage of the other two modes is simple:
 
 -   INSERT_ONLY:
 
-    ```java
+    ```java 
     sqlClient.save(book, SaveMode.INSERT_ONLY)
     ```
-    或
+    or
     ```java
     sqlClient.insert(book)
     ```
 
-    如果执行，则只会生成一条SQL语句，就是上面的`INSERT`语句，不会生成`SELECT`语句。
+    If executed, it will only generate the INSERT SQL above, without the SELECT.
 
 -   UPDATE_ONLY:
 
     ```java
-    sqlClient.save(book, SaveMode.UPDATE_ONLY)
+    sqlClient.save(book, SaveMode.UPDATE_ONLY) 
     ```
-    或
+    or
     ```java
     sqlClient.update(book)
     ```
 
-    如果执行，则只会生成一条SQL语句，就是上面的`UPDATE`语句，不会生成`SELECT`语句。
+    If executed, it will only generate the UPDATE SQL above, without the SELECT.
+    
+## Not Specifying Object Id
 
-## 不指定对象的id
+In the above example, we specify the id for the object to be saved.
 
-在上面的例子中，我们为被保存的对象指定了id。
-
-然而，很多时候，我们的实体的id具备自动增长策略，如果为了插入对象，则无需指定id。
+However, often our entities have auto-incrementing id strategies, so specifying the id is unnecessary for insertion. 
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java"  
 @Entity
 public interface Book {
 
     @Id
     // highlight-next-line
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     long id();
 
     String name();
 
     int edition();
 
-    ...省略其他属性...
+    ...other properties omitted...
 }
 ```
 
@@ -170,29 +170,29 @@ public interface Book {
 
     val edition: Int
 
-    ...省略其他属性...
+    ...other properties omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-这里，`Book.id`被`@GeneratedValue`修饰，采用了自动编号。因此，插入Book时无需指定id。
+Here, `Book.id` is decorated with `@GeneratedValue` using auto increment. So specifying the id is unnecessary for inserting a Book.
 
-为了插入id属性缺失的对象，有两种方法
+There are two ways to insert an object without an id property:
 
--   不指定@Key属性
+-   Not specifying @Key property 
 
--   指定@Key属性
+-   Specifying @Key property
 
-`@Key`是保存指令中一个非常重要的概念，后文会做详细介绍，这里暂不讨论。
+`@Key` is a very important concept in save commands that will be explained in detail later. It is not discussed here. 
 
-### 不指定@Key属性 *(不推荐)*
+### Not Specifying @Key Property *(Not Recommended)*
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Book book = BookDraft.$.produce(draft -> {
     draft.setName("SQL in Action");
     draft.setEdition(1);
@@ -220,41 +220,41 @@ sqlClient.save(book)
 </TabItem>
 </Tabs>
 
-很明显，被保存的对象的id属性并未被指定，`Book`类型也并未声明@Key属性。所以，这是一个既无id也无key的对象。
+Obviously, the id property of the object to be saved is not specified, and the `Book` type does not declare a `@Key` property either. So this is an object without neither id nor key.  
 
 :::warning
-这里，既无id也无key的对象是聚合根。
+Here, the object without neither id nor key is the aggregate root. 
 
-然而，对于关联对象而言，默认情况下，既无id也无key的关联对象会导致异常。这将在后续文档中讨论。
+However, for associated objects, by default, associated objects without neither id nor key will lead to exceptions. This will be discussed in later docs.
 :::
 
-如果试图保存既无id也无key的聚合根对象，不同的保存模式对应不同的行为：
+Trying to save an aggregate root object without neither id nor key results in different behaviors for different save modes:
 
--   `UPSERT`: 不经查询和判断，直接插入对象，如同INSERT_ONLY一般
+-   UPSERT: Insert the object without querying or checking, same as INSERT_ONLY.
 
--   `INSERT_ONLY`: 插入对象
+-   INSERT_ONLY: Insert the object.
 
--   `UPDATE_ONLY`: 不执行任何SQL，同时告诉开发人员影响行数为0
+-   UPDATE_ONLY: Do not execute any SQL, just tell the developer the affected row count is 0.
 
-上面的例子的保存模式是默认的`UPSERT`，因此，生成如下SQL
+The save mode in the above example is the default `UPSERT`, so it generates: 
 
 ```sql
 insert into BOOK(NAME, EDITION, PRICE, STORE_ID)
 values
-    (? /* SQL in Action */, ? /* 1 */, ? /* 39.9 */, ? /* 2 */)
+    (? /* SQL in Action */, ? /* 1 */, ? /* 39.9 */, ? /* 2 */) 
 ```
 
-这里，并未指定ID列的值，采用数据库的自动编号。
+Here, the ID column value is not specified, using the database's auto increment.
 
-开发人员也可以获取数据被插入后被自动分配的id，如下：
+The developer can also obtain the automatically assigned id after insertion:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-Book book = ...略...;
+Book book = ...
 long newestBookId = sqlClient.save(book)
-    // highlight-next-line
+    // highlight-next-line 
     .getNewEntity()
     .getId();
 ```
@@ -262,8 +262,8 @@ long newestBookId = sqlClient.save(book)
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
-val book = ...略...
+```kotlin 
+val book = ...
 val newestBookId = sqlClient.save(book)
     // highlight-next-line
     .modifiedEntity
@@ -273,41 +273,44 @@ val newestBookId = sqlClient.save(book)
 </TabItem>
 </Tabs>
 
-`save`函数返回一个对象，包含 *（但不限于）* 两个属性：`originalEntity`和`modifiedEntity`。其中，`originalEntity`就是期望被保存的原始数据结构；
-而`modifiedEntity`表示一个新的数据结构，其形状和`originalEntity`的形状完全一致，它们的区别在于：
+The `save` function returns an object containing *(but not limited to)* two properties: `originalEntity` and `modifiedEntity`. 
 
--   如果`originalEntity`中某些对象的id属性没有被指定，那么`modifiedEntity`中对应的对象的id属性会被指定
+Among them, `originalEntity` is the original data structure to be saved passed in by the developer. 
 
--   如果`originalEntity`中某些对象具备乐观锁属性且对应了UPDATE语句，那么`modifiedEntity`中对应的对象的乐观锁字段会持有新的版本号
+`modifiedEntity` represents a new data structure identical in shape to `originalEntity`. Their differences are:
 
-因此，我们可以通过`modifiedEntity.id`获取聚合根对象被插入数据库后被分配的id。
+-   If the `id` property of some objects in `originalEntity` is not specified, the `id` property of the corresponding objects in `modifiedEntity` will be specified.
 
-### 指定@Key属性 *(推荐)*
+-   If some objects in `originalEntity` have optimistic locking properties and correspond to UPDATE statements, the optimistic locking fields of the corresponding objects in `modifiedEntity` will hold the new version number.
 
-如果某个实体的id被指定了某种自动生成策略 *(比如自动编号、序列、UUID、雪花ID)*，那么就会带来一个问题，实体的id属性除了充当唯一性标识外，没有任何实际的义务意义。
+So we can obtain the assigned id of the inserted aggregate root object via `modifiedEntity.id`.
 
-为了应对这种情况，Jimmer引入了一个叫做`@Key`的概念，为实体引入一个具备实际业务意义的“第二主键”。限于篇幅，请点击<ViewMore buttonText="这里" title="Key的定义"><Key/></ViewMore>查看Key的精确定义。
+### Specifying @Key Property *(Recommended)*
+
+If the `id` of an entity is designated some auto-generation strategy *(e.g. auto increment, sequence, UUID, snowflake id etc.)*, it brings a problem that the `id` property of the entity serves no purpose other than being a unique identifier. 
+
+To address this, Jimmer introduces a concept called `@Key`, adding a "second primary key" with actual business meaning to entities. Due to limited space, click <ViewMore buttonText="here" title="Key Definition"><Key/></ViewMore> for the precise definition of `Key`.
 
 :::tip
-对保存指令而言，`@Key`是一个极其重要的概念。
+For save commands, `@Key` is an extremely important concept.
 
-只要实体的id除了充当唯一性标识外没有任何实际的义务意义，就应该为实体配置key属性。
+As long as the `id` of an entity serves no purpose other than being a unique identifier, a `key` property should be configured for the entity.
 :::
 
-1.  为实体类型`Book`定义`@Key`属性
+1.  Define `@Key` property for entity type `Book`
 
-    为实体定义Key属性有两种方法
+    There are two ways to define the Key property for an entity:
 
-    -   在实体上用注解静态配置，静态配置是全局的。
+    -   Use annotation to statically configure it globally.
 
-    -   在代码中代码动态配置，但动态配置只影响当前保存指令。动态配置可以覆盖静态配置。
+    -   Dynamically configure it in code, but dynamic configuration only affects the current save command, and can override static configuration.
 
-    下面我们给出两种方法的示范
+    Below we demonstrate both approaches:
 
-    -   静态配置 *(默认配置，供绝大部分业务使用)*
-
+    -   Static configuration *(default for most business scenarios)*
+    
         <Tabs groupId="language">
-        <TabItem value="java" label="Java">
+        <TabItem value="java" label="Java"> 
 
         ```java title="Book.java"
         @Entity
@@ -318,14 +321,14 @@ val newestBookId = sqlClient.save(book)
             long id();
 
             // highlight-next-line
-            @Key
+            @Key     
             String name();
 
             // highlight-next-line
             @Key
             int edition();
 
-            ...省略其他属性...
+            ...other properties omitted...
         }
         ```
 
@@ -348,29 +351,29 @@ val newestBookId = sqlClient.save(book)
             @Key
             val edition: Int
 
-            ...省略其他属性...
+            ...other properties omitted...
         }
         ```
 
         </TabItem>
         </Tabs>
 
-        这个例子中，`name`和`edition`两个属性联合组成key，这表示，这两个属性联合起来形成一个唯一性约束，作为具备业务意义的第二主键。
-        
-        即，虽然书名可以重复，但仅限在不同的发行版本中重名，书名和发行版本联合起来一定唯一。这意味着你需要为表添加如下唯一约束:
+        In this example, `name` and `edition` together form the key. This means these two properties jointly form a uniqueness constraint as a business-meaningful second primary key. 
+
+        That is, book names can repeat, but only within different editions. Book name and edition combined must be unique. This requires adding the following unique constraint on the table:
 
         ```sql
         alter table BOOK
             add constraint UQ_BOOK
-                unique(NAME, EDITION);
+                unique(NAME, EDITION); 
         ```
 
-    -   运行时覆盖 *(仅针对单条保存指令，极少数有特殊需求的业务使用)*
+    -   Override at runtime *(only for individual save commands, rarely needed for special requirements)*
 
         <Tabs groupId="language">
         <TabItem value="java" label="Java">
 
-        ```java
+        ```java 
         sqlClient
             .getEntities()
             .saveCommand(book)
@@ -393,10 +396,10 @@ val newestBookId = sqlClient.save(book)
         </Tabs>
 
         :::info
-        若无特殊情况，绝大部分情况下，应该使用注解静态配置实体类型Key属性。
+        Without special circumstances, Key properties should be statically configured via annotations for entity types in most cases.
         :::
 
-2.  使用保存指令保存无id对象
+2.  Use save commands to save objects without id
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -429,9 +432,9 @@ val newestBookId = sqlClient.save(book)
     </TabItem>
     </Tabs>
 
-    这次，将会生成两条SQL
+    This time, two SQL statements will be generated:
 
-    1.  查询该对象在数据库中是否存在
+    1.  Check if the object exists in the database
 
         ```sql
         select
@@ -447,11 +450,11 @@ val newestBookId = sqlClient.save(book)
                 tb_1_.EDITION = ? /* 1 */
         ```
 
-        这里，使用key *(`name`和`edition`)* 来判断即将被保存的无id对象。
+        Here, the key *(`name` and `edition`)* is used to determine the existence of the to-be-saved object without id.
 
-    2.  第二条SQL语句会因第一条SQL的执行结果的不同而不同
+    2.  The second SQL statement will differ depending on the result of the first SQL: 
 
-        -   如果第一条SQL无法查询到数据，插入
+        - If no data is returned from the first SQL, insert:
 
             ```sql
             insert into BOOK(NAME, EDITION, PRICE, STORE_ID)
@@ -460,7 +463,7 @@ val newestBookId = sqlClient.save(book)
             )
             ```
 
-        -   如果第一条SQL查询到了已有数据，更新
+        - If data is returned from the first SQL, update:
 
             ```sql
             update BOOK
@@ -468,62 +471,62 @@ val newestBookId = sqlClient.save(book)
                 NAME = ? /* SQL in Action */,
                 EDITION = ? /* 1 */,
                 PRICE = ? /* 39.9 */,
-                STORE_ID = ? /* 2 */
+                STORE_ID = ? /* 2 */ 
             where
                 ID = ? /* 20 */
             ```
-
+        
         :::caution
-        一旦为实体类型声明了Key属性，对于被保存的对象 *(无论是否是聚合根)* 而言
+        Once Key properties are declared for an entity type, for objects to be saved *(whether aggregate root or not)*: 
 
-        -   要么指定id属性
-
-        -   要么指定所有key属性 *(对这个例子而言，就是`name`和`edition`属性)*
-
-            如果某个key属性是一个基于外键 *(无论真伪)* 的关联对象，那么这个关联对象
-
-            -   要么为null
-
-            -   要么至少具备id属性
-
-        否则，保存指令回抛出异常，指明对象的某些`key`属性未被设置。
+        - Either the `id` property must be specified
+        
+        - Or all key properties must be specified *(`name` and `edition` for this example)*
+        
+            If a key property is an associated object based on foreign key *(whether fake or not)*, this associated object:
+            
+            - Either must be `null`
+            
+            - Or must at least have the `id` property
+        
+        Otherwise, the save command will throw an exception indicating some `key` properties are not set for the object.
         :::
 
-## 总结
+## Summary
 
-`INSERT_ONLY`和`UPDATE_ONLY`模式非常简单，无需总结，这里重点讨论`UPSERT`模式。
+`INSERT_ONLY` and `UPDATE_ONLY` modes are simple and need no summary. Here we focus on summarizing the `UPSERT` mode.
 
-如果实体类型配置了Key属性，那么`UPSERT`模式的行为如下
+If Key properties are configured for the entity type, the behavior of the `UPSERT` mode is:
 
 <table>
 <thead>
 <tr>
-<th>前提</th>
-<th>判断对象是否存在</th>
-<th>判断结果</th>
-<th>最终行为</th>
+<th>Precondition</th>
+<th>Check if object exists</th>
+<th>Check result</th>
+<th>Final behavior</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td rowspan="2">id属性被指定</td>
-<td rowspan="2">按照id属性查询数据是否存在</td>
-<td>数据存在</td>
-<td>按照id更新被指定的属性，包括key属性</td>
+<td rowspan="2">Id property specified</td> 
+<td rowspan="2">Query data existence by id</td>
+<td>Data exists</td>
+<td>Update specified properties including key properties by id</td>
 </tr>
 <tr>
-<td>数据不存在</td>
-<td>插入数据，因为id是已知的，无需id生成策略介入</td>
+<td>Data does not exist</td>
+<td>Insert data, no id generation needed since id is known</td>
 </tr>
 <tr>
-<td rowspan="2">id属性未被指定</td>
-<td rowspan="2">按照所有key属性查询数据是否存在</td>
-<td>数据存在</td>
-<td>按照查询到的id更新被指定的属性，不包括key属性</td>
+<td rowspan="2">Id property not specified</td>
+<td rowspan="2">Query data existence by all key properties</td>
+<td>Data exists</td> 
+<td>Update specified properties except key properties by queried id</td>
 </tr>
 <tr>
-<td>数据不存在</td>
-<td>插入数据，因为id是未知的，需要id生成策略介入</td>
+<td>Data does not exist</td>
+<td>Insert data, id generation needed since id is unknown</td> 
 </tr>
 </tbody>
 </table>

@@ -1,42 +1,42 @@
 ---
 sidebar_position: 3
-title: Imcomplete object
+title: Incomplete Objects
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-保存指令的参数是动态对象，如果动态只有部分属性被指定了，那么该对象就是一个不完整对象。
+The parameter of a save command is a dynamic object. If only some of the properties are specified, then the object is an incomplete object.
 
-为了说明不完整对象的价值，让我们来看一个实际的例子，将id为8的`Book`的`store`修改为null。
+To demonstrate the value of incomplete objects, let's look at a real example - changing the `store` of the `Book` with id 8 to null. 
 
-为了实现这个目的，我们有两种方式
+There are two ways to achieve this:
 
--   通过[修改语句](../update-statement)执行一条UPDATE语句
+-   Execute an UPDATE statement via [update statements](../update-statement)
 
--   得到一个`Book`对象，修改其null属性，并保存它
+-   Obtain a `Book` object, change its `store` property to null, and save it
 
-大部分开发人员都比较偏好第二种方法，因此，本文讨论第二种方式。
+Most developers prefer the second approach. So in this article, we will discuss the second approach.
 
-## JPA示范
+## JPA Example
 
-在介绍Jimmer保存不完整对象的功能之前，让我们先来看看如何使用JPA实现这个功能
+Before introducing Jimmer's support for saving incomplete objects, let's first see how to implement this with JPA:
 
-```java title="JPA示范"
-EntityManager entityManager = ...从当前事务上下文中获取JPA会话对象，略...
+```java title="JPA Example" 
+EntityManager entityManager = ...get JPA session from current transaction context, omitted...
 Book book = entityManager.find(Book.class, 8L);
 
-book.setStore(null); // JPA中实体是可变的，将关联修改为null
+book.setStore(null); // JPA entities are mutable, change association to null
 
-// 这里调用merge仅为了清晰，可以不调，因为事务提交时JPA必然修改数据库
+// Calling merge here just for clarity, can be omitted since JPA will update db on tx commit anyway
 entityManager.merge(book);
 ```
 
-除了要将`store`修改为null外，我们并不知道其他属性的现有值。在JPA中，苦于基于简单的POJO的实体是形状固定静态类型，我们不得不查询对象的所有属性，修改`store`属性 *(其他属性保持不变)*，再次保存这个对象。
+Apart from setting `store` to null, we do not know the existing values of other properties. In JPA, constrained by the fixed shape of plain POJO entities, we have to query all properties of the object, modify the `store` property *(keeping others unchanged)*, and save the object again. 
 
-哪怕对象有上百个属性，我们也不得不这样做，这形成了非常明显的浪费。
+Even if the object has hundreds of properties, we have to do this, which is obviously wasteful.
 
-## Jimmer示范
+## Jimmer Example
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -65,18 +65,18 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
--   明确使用`update` *(或`save(book, SaveMode.UPDATE_ONLY)`)* 明确表示这是一个更新操作，避免`UPSERT`模型带来的试探性查询，简化讨论。
+-   Explicitly use `update` *(or `save(book, SaveMode.UPDATE_ONLY)`)* to indicate this is an update operation, avoiding the probing query of the `UPSERT` model to simplify the discussion.
 
--   **凭空捏造**一个Book对象，只对其`id`属性和`store`属性赋值，而其他所有属性都处于未知状态。
+-   **Make up** a Book object out of thin air, only assigning its `id` property and `store` property, while all other properties are unknown.
 
-    这个不完整对象告诉Jimmer，除`store`属性外，不修改其他任何属性。
-
-Jimmer将直接生成如下SQL
+    This incomplete object tells Jimmer to not modify any other properties except `store`.
+  
+Jimmer will directly generate the following SQL:
 
 ```sql
 update BOOK
 set
-    STORE_ID = ? /* <null: long> */
+    STORE_ID = ? /* <null: long> */  
 where
     ID = ? /* 8 */
 ```

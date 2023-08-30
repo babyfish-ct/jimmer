@@ -1,40 +1,40 @@
 ---
 sidebar_position: 8
-title: Other features
+title: Other Features
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 保存指令返回结果
+## Save Command Result
 
-保存指令返回的结果是一个对象，例如，对于保存单个对象的对象的`save`方法而言，其返回类型为`SimpleSaveResult<E>/KSimpleSaveResult<E>`。
+The result returned by a save command is an object, e.g. `SimpleSaveResult<E>/KSimpleSaveResult<E>` for the `save` method that saves a single object.
 
-该结果存支持如下行为：
+The result supports the following behaviors:
 
--   `originalEntity`属性：返回开发人员传递给`save`方法的原始参数。
+-   `originalEntity` property: Returns the original parameter passed to the `save` method by the developer.
 
--   `modifiedEntity`属性：形状和`originalEntity`完全一样的数据结构，二者区别在于
+-   `modifiedEntity` property: A data structure identical in shape to `originalEntity`, with the differences:
 
-    -   如果`originalEntity`中包含一些没有id属性的对象，依赖于id自动生成策略 *(例如：自动编号，序列，UUID, 雪花id)*，`modifiedEntity`中对应的对象必然具备id属性，其值为数据库/应用为其自动分配的值。
+    -   If `originalEntity` contains some objects without id properties that rely on id generation strategies *(e.g. auto increment, sequence, UUID, snowflake id etc.)*, the corresponding objects in `modifiedEntity` will necessarily have the id property set to the value automatically assigned by the database/application.
 
-    -   如果某些对象所属实体类型具备乐观锁字段，`modifiedEntity`中对应的对象的`version`属性比为修改后数据中最新版本号。
+    -   If some objects belong to entity types with optimistic locking fields, the `version` properties of the corresponding objects in `modifiedEntity` will have the latest version number after modification.
 
     :::info
-    `modifiedEntity`在前面的文档中多次讨论，本文不予讨论。
+    `modifiedEntity` is discussed many times in previous docs, so is not elaborated here.
     :::
 
--   `totalAffectedRowCount`属性：保存指令的执行可能导致数据库中多张表被修改，此属性为一个证书，表示所有被修改的表的影响行数之和。
+-   `totalAffectedRowCount` property: The execution of a save command may modify multiple tables in the database. This property summarizes the total number of affected rows across all modified tables.
 
--   `getAffectedRowCountMap`属性：被影响的表和其影响行数形成的Map。
+-   `getAffectedRowCountMap` property: A map of affected tables and their affected row counts.
 
--   `getAffectedRowCount`方法，给定一个参数，获取指定表的影响行数。接受两种参数
+-   `getAffectedRowCount` method, taking a parameter to get the affected row count of the specified table. Accepts two kinds of parameters:
 
-    -   类型：获取该实体对应的表的影响行数
+    - Entity type: Gets affected row count of the table corresponding to this entity type.
 
-    -   基于中间表的关联属性：获取该关联属性对应的中间表的影响行数
+    - Association property based on join table: Gets affected row count of the join table corresponding to this association property.
 
-让我们来看看`totalAffectedRowCount`属性和`getAffectedRowCount`方法的例子
+Let's look at some examples of the `totalAffectedRowCount` property and `getAffectedRowCount` method:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -47,7 +47,7 @@ SimpleSaveResult<Book> result = sqlClient.update(
             draft.addIntoAuthors(author -> author.setId(1L));
             draft.addIntoAuthors(author -> author.setId(3L));
             draft.addIntoAuthors(author -> {
-                author.setId(1000L); // 不存在，自动创建
+                author.setId(1000L); // does not exist, created automatically
                 author.setFirstName("Svetlana");
                 author.setLastName("Isakova");
                 author.setGender(Gender.FEMALE);
@@ -55,24 +55,24 @@ SimpleSaveResult<Book> result = sqlClient.update(
         })
 );
 System.out.println(
-    "总影响行数: " + 
+    "Total affected row count: " + 
     // highlight-next-line
-    result.getTotalAffectedRowCount()
+    result.getTotalAffectedRowCount() 
 );
 System.out.println(
-    "实体表BOOK的影响行数: " + 
+    "Affected row count for entity table BOOK: " +
     // highlight-next-line
     result.getAffectedRowCount(Book.class)
-);
+); 
 System.out.println(
-    "实体表AUTHOR的影响行数: " + 
+    "Affected row count for entity table AUTHOR: " +
     // highlight-next-line
     result.getAffectedRowCount(Author.class)
 );
 System.out.println(
-    "中间表BOOK_AUTHOR_MAPPING的影响行数: " + 
+    "Affected row count for join table BOOK_AUTHOR_MAPPING: " +
     // highlight-next-line
-    result.getAffectedRowCount(BookProps.AUTHORS)
+    result.getAffectedRowCount(BookProps.AUTHORS) 
 );
 ```
 
@@ -87,7 +87,7 @@ val result = sqlClient.update(
         authors().addBy { id = 1L }
         authors().addBy { id = 3L }
         authors().addBy {
-            id = 1000L // 不存在，自动创建
+            id = 1000L // does not exist, created automatically
             firstName = "Svetlana"
             lastName = "Isakova"
             gender = Gender.FEMALE
@@ -95,23 +95,23 @@ val result = sqlClient.update(
     }
 );
 println(
-    "总影响行数: " + 
+    "Total affected row count: " +
     // highlight-next-line
     result.totalAffectedRowCount
 )
 println(
-    "实体表BOOK的影响行数: " +
-    // highlight-next-line 
-    result.getAffectedRowCount(Book::class)
+    "Affected row count for entity table BOOK: " +
+    // highlight-next-line
+    result.getAffectedRowCount(Book::class)  
 )
 println(
-    "实体表AUTHOR的影响行数: " +
-    // highlight-next-line 
+    "Affected row count for entity table AUTHOR: " + 
+    // highlight-next-line
     result.getAffectedRowCount(Author::class)
 )
 println(
-    "中间表BOOK_AUTHOR_MAPPING的影响行数: " + 
-    // highlight-next-line
+    "Affected row count for join table BOOK_AUTHOR_MAPPING: " +
+    // highlight-next-line  
     result.getAffectedRowCount(Book::authors)
 )
 ```
@@ -120,52 +120,52 @@ println(
 </Tabs>
 
 :::tip
-例子中的写法`getAffectedRowCount(BookProps.AUTHORS)`和另外一种写法`getAffectedRowCount(AuthorProps.BOOKS)`等价
+The syntax `getAffectedRowCount(BookProps.AUTHORS)` is equivalent to `getAffectedRowCount(AuthorProps.BOOKS)`
 :::
 
-打印结果为：
+The printed result is:
 ```
-总影响行数: 5
-实体表BOOK的影响行数: 1
-实体表AUTHOR的影响行数: 1
-中间表BOOK_AUTHOR_MAPPING的影响行数: 3
+Total affected row count: 5
+Affected row count for entity table BOOK: 1  
+Affected row count for entity table AUTHOR: 1
+Affected row count for join table BOOK_AUTHOR_MAPPING: 3
 ```
 
-解释如下：
+The explanation is:
 
--   `BOOK`表的影响行数为1:
+-   The affected row count for table `BOOK` is 1:
 
-    聚合根对象`Book(id=3L)`的`price`被修改
+    The `price` of the aggregate root object `Book(id=3L)` is modified.
 
--   `AUTHOR`表的影响行数为1:
+-   The affected row count for table `AUTHOR` is 1:
 
-    长关联对象`Author(id=1000L)`不存在，自动创建
+    The associated object `Author(id=1000L)` does not exist and is created automatically.
 
--   `BOOK_AUTHOR_MAPPING`表的影响行数为3:
+-   The affected row count for table `BOOK_AUTHOR_MAPPING` is 3:
 
-    -   `Book(id=3L)`和`Author(id=2L)`之间脱钩 *(对中间表脱钩操作而言，就是删除关联)*
+    -   Dissociation between `Book(id=3L)` and `Author(id=2L)` *(For dissociation operations on join tables, this is deleting the association)*.
 
-    -   `Book(id=3L)`和`Author(id=3L)`之间新建关联
+    -   New association between `Book(id=3L)` and `Author(id=3L)`.
 
-    -   `Book(id=3L)`和`Author(id=1000L)`之间新建关联
+    -   New association between `Book(id=3L)` and `Author(id=1000L)`.
 
-## AppendOnly模式
+## AppendOnly Mode  
 
 :::warning
-早期文档极不健全，为解决首批用户无法理解为什么保存指令需要key的问题而提供的不成熟API。
+This is an immature API provided in early deficient documentation to address the inability of initial users to understand why save commands need keys.
 
-该API违背了保存指令的设计初衷，导致了功能严重退化，以后有可能被删除，应该避免使用。
+It violates the core design philosophy of save commands, leading to severely degraded capabilities, and may be removed in the future. Usage should be avoided.  
 :::
 
-有两种使用方法
+There are two usage methods:
 
--   设置特定的关联属性为AppendOnly模式
+-   Set specific association properties to AppendOnly mode
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    Book book = ...略...;
+    Book book = ...
     sqlClient
         .getEntities()
         .saveCommand(book)
@@ -178,7 +178,7 @@ println(
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val book = ...略...;
+    val book = ...
     sqlClient.saveBook(book) {
         // highlight-next-line
         setAppendOnly(BookProps.AUTHORS)
@@ -188,13 +188,13 @@ println(
     </TabItem>
     </Tabs>
 
--   设置所有关联属性为AppendOnly模式
+-   Set all association properties to AppendOnly mode
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    Book book = ...略...;
+    Book book = ...
     sqlClient
         .getEntities()
         .saveCommand(book)
@@ -207,7 +207,7 @@ println(
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val book = ...略...;
+    val book = ...
     sqlClient.saveBook(book) {
         // highlight-next-line
         setAppendOnlyAll()
@@ -216,19 +216,19 @@ println(
 
     </TabItem>
     </Tabs>
+  
+Regardless of usage, once enabled, the consequences are:
 
-无论哪种用法，一旦使用，后果如下：
+-   Idempotency of saving associated objects is lost.
 
--   关联对象的保存不再支持幂等性。
+    This config allows associated objects to have neither id nor key properties, resulting in unconditional insertion of associated objects.
+  
+-   Associated properties lose [dissociation](./dissociation) capability.
 
-    该配置允许关联对象既无id属性也无key属性，一旦出现这种情况，无条件插入关联对象。
-
--   关联属性丧失[脱钩能力](./dissociation)。
-
-    该配置只会对用户给定的关联对象进行insert或update，不会对存在于数据库中但不存在于用户要保存的数据结构中的其它关联对象进行[脱钩操作](./dissociation)。
+    This config will only insert or update the associated objects provided by the user, and will not dissociate other associated objects existing in the database but absent from the data structure to be saved.
 
 :::info
-作者本人认为这个API和保存指令的核心理念背道而驰，因此不应该被保留。
+The author believes this API runs counter to the core philosophy of save commands, and should not be retained.
 
-欢迎你的提出你的见解。请参见[讨论](../../resource/discuss)
+You are welcome to share your insights. Please see [Discussions](../../resource/discuss).
 :::

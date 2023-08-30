@@ -1,6 +1,6 @@
 ---
 sidebar_position: 6
-title: Id checking for short associations
+title: Short Association Id Checking
 ---
 
 import Tabs from '@theme/Tabs';
@@ -9,17 +9,17 @@ import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-## 基本概念
+## Basic Concepts
 
-### 只针对短关联
+### For Short Associations Only 
 
-关联id检查是一个只针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的功能，对<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>无意义。
+Association id checking is a feature that only applies to <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, and is meaningless for <ViewMore buttonText="long associations" variant="text"><LongAssociation/></ViewMore>.
 
-通过之前的介绍，我们知道保存指令可以保存任意形状的数据结构，任何对象都可以进一步持有关联对象。
+As we learned before, save commands can persist arbitrary data shapes, and any object can further hold associated objects. 
 
-如果某个关联对象的id被指定了，但其所代表的对象在数据库中不存在时，Jimmer如何应对呢？
+If the id of an associated object is specified, but the object it represents does not exist in the database, how does Jimmer handle this scenario?
 
-首先，对于<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
+First, for <ViewMore buttonText="long associations" variant="text"><LongAssociation/></ViewMore>, Jimmer will first create the non-existing associated object, then establish the association between the current object and the new associated object. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -32,7 +32,7 @@ sqlClient.update(
         draft.addIntoAuthors(author -> author.setId(2L));
         // highlight-next-line
         draft.addIntoAuthors(author -> {
-            author.setId(1000L); // 非法关联id，1000
+            author.setId(1000L); // illegal associated id, 1000
             author.setFirstName("Svetlana");
             author.setLastName("Isakova");
             author.setGender(Gender.FEMALE);
@@ -48,11 +48,11 @@ sqlClient.update(
 sqlClient.update(
     new(Book::class).by {
         id = 3L
-        authors().addBy { id = 1L }
+        authors().addBy { id = 1L } 
         authors().addBy { id = 2L }
         // highlight-next-line
         authors().addBy {
-            id = 1000L // 非法关联id，1000
+            id = 1000L // illegal associated id, 1000
             firstName = "Svetlana"
             lastName = "Isakova"
             gender = Gender.FEMALE
@@ -65,14 +65,14 @@ sqlClient.update(
 </Tabs>
 
 :::note
-这个例子混合了长关联和短关联，但是，高亮标注的那行代码是长关联。
+This example mixes long and short associations, but the highlighted line of code is a long association.
 :::
 
-生成的SQL如下
+The generated SQL is:
 
 ```sql
 
-// 判断关对象是否存在
+// Check if associated object exists
 select
     tb_1_.ID,
     tb_1_.FIRST_NAME,
@@ -81,58 +81,58 @@ from AUTHOR tb_1_
 where
     tb_1_.ID = ? /* 1000 */
 
-// 关联对象不存在，创建之
-// highlight-next-line
+// Associated object does not exist, create it
+// highlight-next-line  
 insert into AUTHOR(ID, FIRST_NAME, LAST_NAME, GENDER)
 values
     (? /* 1000 */, ? /* Svetlana */, ? /* Isakova */, ? /* F */)
 
-// 查询当前`Book`和`Author`之间的的关系
+// Query current `Book` and `Author` mapping
 select
     AUTHOR_ID
-from BOOK_AUTHOR_MAPPING
+from BOOK_AUTHOR_MAPPING 
 where
     BOOK_ID = ? /* 3 */
 
-// 连接当前`Book`和刚被新建的`Author`
+// Map current `Book` with the newly created `Author`  
 insert into BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)
 values
     (? /* 3 */, ? /* 1000 */)
 ```
 
 :::info
-可见，在保存<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为1000)*，Jimmer也会按照此id创建新的关联对象。
+As you can see, when saving a <ViewMore buttonText="long association" variant="text"><LongAssociation/></ViewMore>, even if an illegal id is specified for the associated object *(1000 in this example)*, Jimmer will still create a new associated object using that id.
 
-因此，长关联根本不存在`关联id检查问题`。
+Therefore, `association id checking` is not an issue at all for <ViewMore buttonText="long associations" variant="text"><LongAssociation/></ViewMore>.
 
-然而，对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
+However, for <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, Jimmer is only responsible for creating the association between the current object and the associated object, and will not automatically create non-existing associated objects.
 
-因此，`关联id检查`是一个仅对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>有意义的话题。本文接下来的例子，所有的讨论都是针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的。
+Therefore, `association id checking` is a topic that only makes sense for <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>. In the following examples of this article, all discussions are about <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>.
 :::
 
-### 目标外键
+### Target Foreign Key
 
-要讨论短关联的id检查问题，我们先为关联属性定义定一个概念：目标外键。
+To discuss the id checking problem of short associations, we first define a concept for associated properties: the target foreign key.
 
--   如果关联基于中间表，则中间表中指向目标实体表的外键就是目标外键。
+-   For associations based on join tables, the foreign key in the join table that points to the target entity table is the target foreign key.
 
-    比如：`Book.authors`的目标外键是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段，`Author.books`的目标外键是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
+    For example: The target foreign key for `Book.authors` is the `AUTHOR_ID` field in the `BOOK_AUTHOR_MAPPING` table. The target foreign key for `Author.books` is the `BOOK_ID` field in the `BOOK_AUTHOR_MAPPING` table.
 
--   如果关联基于外键，无论外键真假 *(请参见[真假外键](../../mapping/base/foreignkey))*，关联本身的外键就是目标外键。
+-   For associations based on foreign keys, whether the foreign key is fake or not (please refer to [Fake Foreign Keys](../../mapping/base/foreignkey)), the foreign key of the association itself is the target foreign key.
 
-    比如：`Book.store`的目标外键是`BOOK`表的`STORE_ID`字段。
+    For example: The target foreign key for `Book.store` is the `STORE_ID` field in the `BOOK` table.
 
--   如果以上两个情况都不是，则认为关联没有目标外键。
+-   If neither of the above two cases apply, the association is considered to not have a target foreign key.
 
-    没有目标外键的关联属性，就是被指定了`mappedBy`的一对一或一对多属性。即，被`@OneToOne(mappedBy = "...")`或`@OneToMany(mappedBy="...")`修饰的属性，比如：`BookStore.books`。
+    Properties without a target foreign key are the ones with `mappedBy` specified for one-to-one or one-to-many mappings. That is, properties decorated with `@OneToOne(mappedBy = "...")` or `@OneToMany(mappedBy="...")`, such as: `BookStore.books`.
 
-## 检查机制
+## Checking Mechanism
 
-用户可以配置是否检查短关联对象的id，下面我们讨论具备不同目标外键的属性在检查和不检查两种情况下的行为
+Users can configure whether to check the ids of short associated objects. Below we discuss the behaviors with and without checking enabled for properties with different target foreign keys.
 
--   没有目标外键的属性
+-   Properties without target foreign keys
 
-    以`BookStore.books`为例，保存短关联的代码为
+    Take `BookStore.books` as an example. The code to save a short association is:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -157,7 +157,7 @@ values
         new(BookStore::class).by {
             id = 2L
             books().addBy { id = 8L }
-            books().addBy { id = 9L }
+            books().addBy { id = 9L }  
             books().addBy { id = 1000L }
             books().addBy { id = 1001L }
         }
@@ -167,23 +167,23 @@ values
     </TabItem>
     </Tabs>
 
-    -   不检查
-
-        没有目标外键的属性，id非法的所有子对象将会被自动忽略。比如
+    -   Without checking
+    
+        Properties without a target foreign key will automatically ignore associated objects with illegal ids. For example:
 
         ```
         update book set store_id = 2 where id in(1, 2, 1000, 10001)
         ```
+        
+        If 1000 and 10001 are ids that do not exist in the database, this update statement will only affect the two existing records, and the two non-existing records will be naturally ignored.
 
-        假如1000，10001是数据库中不存在的id，那么这条update语句只会影响两条存在的数据，不存在的两条数据会被自然地忽略。
+    -   With checking
 
-    -   要检查
-
-        Jimmer会执行如下查询检查所有短关联的id
+        Jimmer will execute the following query to check all short associated ids:
 
         ```sql
         select
-            tb_1_.ID
+            tb_1_.ID 
         from BOOK tb_1_
         where
             tb_1_.ID in (
@@ -191,15 +191,15 @@ values
             )
         ```
 
-        假如，数据库中不存在id为1000和1001的书籍，会得到如下异常
+        If ids 1000 and 1001 do not exist in the database, the following exception will be thrown:
 
         ```
         Save error caused by the path: "<root>.books": Illegal ids: [1000, 1001]
         ```
 
--   有目标外键的属性
-
-    以`Book.store`为例，保存短关联的代码为
+-   Properties with target foreign keys
+  
+    Take `Book.store` as an example. The code to save a short association is:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -228,78 +228,78 @@ values
     </TabItem>
     </Tabs>
 
-    假如数据库中并没有id为321的BookStore
+    Assume id 321 does not exist for BookStore in the database.
 
-    -   不检查
+    -   Without checking
 
-        -   如果外键是假的，在数据库中并没有真正的外键约束，那么Jimmer就会纵容`BOOK.STORE_ID`被修改为非法的值。
+        - If the foreign key is fake, there is no real foreign key constraint in the database, and Jimmer will allow `BOOK.STORE_ID` to be modified to an illegal value.
 
-        -   如果外键是真的，在数据库中有真正的外键约束，那么最终底层数据库报错。
+        - If the foreign key is real, there is a real foreign key constraint in the database, and the underlying database will throw an error eventually.
 
-    -   要检查
+    -   With checking
 
-        无论外键真假，Jimmer都会执行如下查询检查短关联的id
+        Regardless of whether the foreign key is fake or not, Jimmer will execute the following query to check the short associated id:
 
         ```sql
         select
-            tb_1_.ID
+            tb_1_.ID 
         from BOOK_STORE tb_1_
         where
             tb_1_.ID in (
                 ? /* 321 */
-            )
+            ) 
         ```
 
-        一旦查询不到任何数据，得到如下异常
+        Once the query returns no data, the following exception will be thrown:
 
         ```
         Save error caused by the path: "<root>.store": Illegal ids: [321]
         ```
-
+  
     :::info
-    可见，对于目标外键为真的属性而言，无论是否是否启用Jimmer的短关联id检查，都会得到异常。
+    As you can see, for properties with a real target foreign key, exceptions will be thrown regardless of whether Jimmer's short association id checking is enabled.
 
-    -   不验证，由数据库报错。好处是少执行一条SQL查询，坏处是异常信息和异常类型难控制
+    -   Without checking, the database throws the error. The advantage is avoiding an extra SQL query, the disadvantage is less control over the exception message and type.
 
-    -   验证，由Jimmer报错。好处是异常信息和异常类型明确，坏处是多执行一条SQL查询
+    -   With checking, Jimmer throws the error. The advantage is clear exception message and type, the disadvantage is an extra SQL query.
     :::
 
 :::tip
-只要项目不是对修改业务性能要求到吹毛求疵的那种，就建议此检查机制对所有属性全开，以得到理想的异常信息 *(稍后我们会介绍如何配置)*。
+It is recommended to turn on this checking mechanism for all properties if your project does not have extreme performance requirements, in order to get ideal exception information *(we will introduce how to configure it later)*.
 :::
 
-## 配置
+## Configuration
 
-用户可以配置关联属性是否检察关联id。分为全局配置和指令级配置。
+Users can configure whether to check associated ids for properties. There are global configuration and command-level configuration.
 
-### 全局配置
+### Global Configuration
 
-全局配置提供了三个等级
+The global configuration provides three levels: 
 
 -   `NONE`
--   `FAKE`
+-   `FAKE` 
 -   `ALL`
 
-功能如下
+The behaviors are:
 
 |   |NONE|FAKE|ALL|
 |---|----|----|---|
-|没有目标外建的关联|不检查|检查|检查|
-|目标外建为假的关联|不检查|检查|检查|
-|目标外建为真的关联|不检查|不检查|检查|
+|Associations without target foreign key|No checking|Checking|Checking|  
+|Associations with fake target foreign key|No checking|Checking|Checking|
+|Associations with real target foreign key|No checking|No checking|Checking|
 
-全局配置有两种实现方法
+There are two ways to configure globally:
 
--   通过SpringBoot Starter配置
-
-    修改`application.yml` *(或`application.properties`)*，添加如下配置
+-   Via Spring Boot Starter configuration
+  
+    Modify `application.yml` *(or `application.properties`)* and add the following:
 
     ```
     jimmer:
         id-only-target-checking-level: ALL
     ```
 
--   通过底层API配置
+-   Via low-level API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -308,7 +308,7 @@ values
     JSqlClient sqlClient = JSqlClient
         .newBuilder()
         .setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel.ALL)
-        ...省略其他配置...
+        ...other configurations omitted...
         .build();
     ```
 
@@ -317,31 +317,31 @@ values
 
     ```kotlin
     val sqlClient = newKSqlClient {
-        setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel.ALL)
-        ...省略其他配置...
+        setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel.ALL) 
+        ...other configurations omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-### 指令级配置
+### Command-Level Configuration
 
-指令级别配置可以覆盖全局配置，但仅仅影响当前保存指令。
+The command-level configuration can override the global configuration, but only affects the current save command.
 
-指令级配置有三个功能点，如下
+There are three features for command-level configuration:
 
--   明确指定属性需要检查
+-   Explicitly specify properties to check
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    Book book = ...略...
+    Book book = ...
     sqlClient
         .getEntities()
         .saveCommand(book)
-        // highlight-next-line
+        // highlight-next-line  
         .setAutoIdOnlyTargetChecking(BookProps.STORE)
         // highlight-next-line
         .setAutoIdOnlyTargetChecking(BookProps.AUTHORS)
@@ -352,11 +352,11 @@ values
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val book = ...略...;
+    val book = ...
     sqlClient.save(book) {
         // highlight-next-line
-        setAutoIdOnlyTargetChecking(Book::store)
-        // highlight-next-line
+        setAutoIdOnlyTargetChecking(Book::store) 
+        // highlight-next-line  
         setAutoIdOnlyTargetChecking(Book::authors)
     }
     ```
@@ -365,16 +365,16 @@ values
     </Tabs>
 
     :::info
-    如果全局配置已经打开了检查机制，就不需要如此调整保存指令了。
+    If the global configuration already enables checking, no need to adjust the save command like this.
     :::
 
--   指定所有属性需要检查
+-   Specify all properties to check
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    Book book = ...略...
+    Book book = ...
     sqlClient
         .getEntities()
         .saveCommand(book)
@@ -387,7 +387,7 @@ values
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val book = ...略...;
+    val book = ...
     sqlClient.save(book) {
         // highlight-next-line
         setAutoIdOnlyTargetCheckingAll()
@@ -398,16 +398,16 @@ values
     </Tabs>
 
     :::info
-    如果全局配置已经打开了检查机制，就不需要如此调整保存指令了。
+    If the global configuration already enables checking, no need to adjust the save command like this.
     :::
-
--   负配置，明确指定属性不需要检查
+  
+-   Negative configuration, explicitly specify properties to not check
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    Book book = ...略...
+    Book book = ...
     sqlClient
         .getEntities()
         .saveCommand(book)
@@ -421,7 +421,7 @@ values
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val book = ...略...;
+    val book = ...
     sqlClient.save(book) {
         setAutoIdOnlyTargetCheckingAll()
         // highlight-next-line

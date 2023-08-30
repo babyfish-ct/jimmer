@@ -286,7 +286,7 @@ export const LongAssociation: FC = memo(() => {
                         }
                     </Grid>
                     <Grid item xs={12}>
-                        <Button variant="contained" onClick={onSubmitClick}>提交</Button>
+                        <Button variant="contained" onClick={onSubmitClick}>{isZh ? "提交" : "Submit"}</Button>
                     </Grid>
                 </Grid>
             </Box>
@@ -300,7 +300,7 @@ export const LongAssociation: FC = memo(() => {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onDialogClose}>关闭</Button>
+                    <Button onClick={onDialogClose}>{isZh ? "关闭" : "Close"}</Button>
                 </DialogActions>
             </Dialog>
         </Paper>
@@ -343,7 +343,7 @@ const ZH_USERS: ReadonlyArray<User> = [
 ];
 
 const EN_USERS: ReadonlyArray<User> = [
-    {id: 1, nickName: "Schneewittchen", province: "Berlin", city: "Berlin Prenzlauer Berg", address: "Brandenburgische Straße 9, Berlin Prenzlauer Berg, Berlin, Germany"},
+    {id: 1, nickName: "Schneewittchen", province: "Berlin", city: "Prenzlauer Berg", address: "Brandenburgische Straße 9, Prenzlauer Berg, Berlin, Germany"},
     {id: 2, nickName: "Cinderella", province: "Basse-Normandie", city: "Lisieux", address: "20 rue Léon Dierx, Lisieux, Basse-Normandie, France"},
     {id: 3, nickName: "Nuwa", province: "ShanXi", city: "Taiyuan", address: "Qian Feng Nan Lu 99hao, Taiyuan, ShanXi, China"},
     {id: 4, nickName: "Pinocchio", province: "Palazzo Pignano", city: "Cremona", address: "Via Giovanni Amendola 134, Palazzo Pignano, Cremona, Italy"},

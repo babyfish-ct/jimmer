@@ -1,20 +1,20 @@
 ---
 sidebar_position: 7
-title: Optimistic lock & Pessimistic lock
+title: Optimistic Locking and Pessimistic Locking
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-保存指令支持乐观锁和悲观锁。
+Save commands support both optimistic locking and pessimistic locking.
 
-## 乐观锁
+## Optimistic Locking
 
-Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
+Jimmer supports optimistic locking via the `@org.babyfish.jimmer.sql.Version` annotation. 
 
-### 修改实体类型
+### Modify Entity Types
 
--   修改`BookStore`
+- Modify `BookStore`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -23,11 +23,11 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     @Entity
     public interface BookStore {
 
-        // highlight-next-line
-        @Version
+        // highlight-next-line    
+        @Version        
         int version();
 
-        ...省略其他属性...
+        ...other properties omitted...
     }
     ```
 
@@ -41,28 +41,28 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
         // highlight-next-line
         @Version
         val version: Int
-
-        ...省略其他属性...
+        
+        ...other properties omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   修改`Book`
+- Modify `Book`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java title="Book.java"
-    @Entity
+    @Entity    
     public interface Book {
 
         // highlight-next-line
         @Version
         int version();
 
-        ...省略其他属性...
+        ...other properties omitted...
     }
     ```
 
@@ -77,20 +77,20 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
         @Version
         val version: Int
 
-        ...省略其他属性...
+        ...other properties omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-### 示范
+### Demo
 
-悲观锁的特性
+Characteristics of optimistic locking:
 
--   当插入对象时 *(无论明确地进行INSERT操作，还是UPSERT操作被判定为INSERT)*，将对象的`version`插入到数据库。
+- When inserting objects *(whether explicitly doing INSERT, or UPSERT determined to be INSERT)*, the `version` of the object will be inserted into the database.
 
-    例子如下
+    For example:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -140,20 +140,20 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     </Tabs>
 
     :::tip
-    对插入操作而言，如果对象的version并未被赋值，Jimmer自动插入0。
+    For INSERT operations, if the `version` of the object is not assigned, Jimmer will automatically insert 0.
 
-    然而，在这种情况下，后文即将讨论的修改操作会抛出异常。因此，如果你无法断言某个UPSERT模式的保存指令最终会被判定为`INSERT`还是`UPDATE`，则应该坚持指定`version`属性。
+    However, in this case, the modification operations discussed later will throw exceptions. Therefore, if you cannot ascertain whether a UPSERT save command will ultimately be determined as `INSERT` or `UPDATE`, you should insist on specifying the `version` property.
 
-    下面的例子，基于一个假设，明确知道`save`操作一定会被判定为`INSERT`，而非`UPDATE`，所以未指定对象的`version`属性。
+    The following example assumes we know for sure the `save` will be determined as `INSERT` rather than `UPDATE`, so the `version` properties are not specified.
     :::
 
-    所有对象都没有指定id属性，Jimmer根据每个对象的key去判断它们是否存在。
-    
-    假设所有对象都不存在，因此，三条新数据会被插入。
+    No ids are specified so Jimmer determines existence per object key.
 
-    所有对象都没有指定`version`属性，所以，它们会被自动填充为0。
+    Assuming none of the objects exist, 3 new records will be inserted.
 
-    最终打印结果为 *(为了便于阅读，这里进行了格式化)*
+    No `version` properties are specified, so they are filled with 0 automatically.
+
+    The final printed result will be *(formatted for readability)*:
 
     ```json
     {
@@ -189,12 +189,12 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     ```
 
     :::info
-    当然，如果用户为这些对象指定了`version`属性，这时，会插入用户指定的值，而非0。
+    Of course, if the user specifies `version` for these objects, the specified values rather than 0 will be inserted.
     :::
 
--   当修改对象时 *(无论明确地进行UPDATE操作，还是UPSERT操作被判定为UPDATE)*，Jimmer会为每个对象比较用户传递的`version`和数据库中现有的`version`，如果二者不一致，抛出异常。
+- When modifying objects *(whether explicitly doing UPDATE, or UPSERT determined to be UPDATE)*, Jimmer will compare the `version` passed by the user and the existing `version` in the database for each object. If they differ, an exception will be thrown.
 
-    我们稍微修改一下代码，再次执行
+    Let's modify the code a bit and execute again:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -217,7 +217,7 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
                     book.setEdition(2);
                     book.setPrice(new BigDecimal("39.99"));
 
-                    // 非法version
+                    // illegal version
                     // highlight-next-line
                     book.setVersion(9999);
                 });
@@ -240,14 +240,14 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
                 edition = 3;
                 price = BigDecimal("44.99")
                 // highlight-next-line
-            version = 0
+                version = 0
             }
             books().addBy {
                 name = "The Pragmatic Programmer"
                 edition = 2
-                price = BigDecimal("49.99")
+                price = BigDecimal("39.99")
 
-                // 非法version
+                // illegal version
                 // highlight-next-line
                 version = 9999
             }
@@ -260,23 +260,23 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     </Tabs>
 
     :::caution
-    对修改操作而言，如果对象的version并未被赋值，Jimmer会抛出异常。
+    For modification operations, if the `version` of the object is not assigned, Jimmer will throw an exception.
 
-    如果你无法判断某个UPSERT模式的保存指令最终会被判定为`INSERT`还是`UPDATE`，则应该坚持指定`version`属性。
+    If you cannot determine whether a UPSERT save command will ultimately be `INSERT` or `UPDATE`, you should insist on specifying the `version` property.
     :::
 
-    再次执行，由于数据库中已经存在数据，所以三个对象都会被UPDATE。
-    
-    很明显，最后一本书籍的version`9999`是非法的，上面的的代码将会得到如下异常：
+    When executed again, since data already exists, the 3 objects will be updated.
 
-    -   异常类型：`org.babyfish.jimmer.sql.runtime.SaveException`
+    Obviously, the last book's `version` `9999` is illegal. The above code will result in the following exception:
 
-    -   异常编码：`org.babyfish.jimmer.sql.runtime.SaveErrorCode.ILLEGAL_VERSION`
+    - Exception Type: `org.babyfish.jimmer.sql.runtime.SaveException`
 
-    -   异常消息：
-        > Save error caused by the path: "&lt;root&gt;.books": Cannot update the entity whose type is "org.doc.j.model.Book", id is "101" and version is "9999"
+    - Exception Code: `org.babyfish.jimmer.sql.runtime.SaveErrorCode.ILLEGAL_VERSION`
 
-    让我们再修改一下代码，让所有对象都持有正确的`version`，如下
+    - Exception Message:
+      > Save error caused by the path: "&lt;root&gt;.books": Cannot update the entity whose type is "org.doc.j.model.Book", id is "101" and version is "9999"
+
+    Let's modify the code again to use the correct `version` for all objects:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -325,7 +325,7 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
             books().addBy {
                 name = "The Pragmatic Programmer"
                 edition = 2
-                price = BigDecimal("49.99")
+                price = BigDecimal("39.99")
                 // highlight-next-line
                 version = 0
             }
@@ -337,7 +337,7 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     </TabItem>
     </Tabs>
 
-    最终打印结果为 *(为了便于阅读，这里进行了格式化)*
+    The final printed result will be *(formatted for readability)*:
 
     ```json
     {
@@ -373,30 +373,30 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     ```
 
     :::info
-    可见数据被修改后，乐观锁会自动加1。
+    As you can see, the version is incremented by 1 automatically after data modification.
 
-    实际项目中，乐观锁版本号往往是表单界面的隐藏字段。如果某个表单保存后不自动跳转，而是保持界面不变以支持多次提交，则应该在每次保存成功后利用这样的返回信息更新表单界面的隐藏字段。
+    In real projects, the version number of optimistic locking is often a hidden field in the form. If the form does not automatically redirect after saving, but keeps the UI unchanged to support multiple submissions, the hidden field should be updated with such return info after each successful save.
     :::
 
-## 悲观锁
+## Pessimistic Locking
 
-和乐观锁不同，悲观锁生命周期很短，仅在一个jdbc事务内有效。
+Unlike optimistic locking, pessimistic locks are very short-lived, only valid within a single jdbc transaction.
 
-通常，Jimmer会生成一些查询SQL以辅助保存指令的执行，比如
+Normally, Jimmer generates some query SQL to aid save command execution, such as:
 
--   判断`UPSERT`操作最终应该判定为`INSERT`还是`UPDATE`
+- Determining whether a `UPSERT` should ultimately be `INSERT` or `UPDATE` 
 
--   判断哪些关联对象需要被[脱钩](./dissociation)
+- Determining which associated objects need to be [dissociated](./dissociation)
 
-接下来，我们对比不使用悲观锁和使用悲观锁两种情况，来观察这些查询SQL有何不同。
+Next, we compare the differences in these query SQL between using and not using pessimistic locking. 
 
 :::info
-在前面的例子中，为了介绍乐观锁，假设`BookStore`和`Book`类型都定义了`version`属性。
+In the previous examples, to demonstrate optimistic locking, we assumed the `BookStore` and `Book` types both defined a `version` property.
 
-后续例子为了介绍悲观锁，不再有此假设。
-:::
+In the following examples to demonstrate pessimistic locking, we no longer make that assumption.
+:::  
 
-### 未启用悲观锁
+### Without Pessimistic Locking
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -443,9 +443,9 @@ sqlClient.save(
 </TabItem>
 </Tabs>
 
-生成6条SQL，如下
+This generates 6 SQL statements:
 
-1.  判断书店是否存在
+1. Check if the book store exists
 
     ```sql
     select
@@ -453,14 +453,14 @@ sqlClient.save(
         tb_1_.NAME
     from BOOK_STORE tb_1_
     where
-        tb_1_.NAME = ? /* TURING */
+        tb_1_.NAME = ? /* TURING */ 
     ```
 
-2.  根据前一条查询的结果，决定`INSERT`还是`UPDATE`
+2. Determine `INSERT` or `UPDATE` based on previous query
 
-    insert或update，略
+    insert or update, omitted
 
-3.  判断第1本书籍是否存在
+3. Check if the 1st book exists 
     
     ```sql
     select
@@ -473,11 +473,12 @@ sqlClient.save(
         and
             tb_1_.EDITION = ? /* 3 */
     ```
-4.  根据前一条查询的结果，决定`INSERT`还是`UPDATE`
+    
+4. Determine `INSERT` or `UPDATE` based on previous query
 
-    insert或update，略
-
-5.  判断第2本书籍是否存在
+    insert or update, omitted
+    
+5. Check if the 2nd book exists
 
     ```sql
     select
@@ -491,36 +492,36 @@ sqlClient.save(
             tb_1_.EDITION = ? /* 2 */
     ```
 
-6.  根据前一条查询的结果，决定`INSERT`还是`UPDATE`
+6. Determine `INSERT` or `UPDATE` based on previous query
 
-    insert或update，略
+    insert or update, omitted
 
-:::info
-这些查询语句用于进行条件判断，以决定后续SQL该如何生成。
+:::info  
+These query statements are used to make conditional judgments to determine how to generate subsequent SQL. 
 
-然而，这些查询没有使用悲观锁，经它们判断而成立的条件和假设，有可能被其它并发行为破坏，从而导致后续SQL执行出现异常。
+However, without pessimistic locking, the conditions and assumptions made via these queries can potentially be invalidated by concurrent operations, leading to exceptions when executing subsequent SQL.
 
-为了避免这种并发问题，可以启用悲观锁。接下来，我们讨论悲观锁如何实现。
+To avoid such concurrency issues, pessimistic locking can be enabled. Next we discuss how to implement pessimistic locking.
 :::
 
-### 启用悲观锁
+### Enabling Pessimistic Locking 
 
-有两种启用悲观锁的方法
+There are two ways to enable pessimistic locking:
 
--   全局配置
+- Global configuration
 
-    有两种方法可以通过全局配置启用悲观锁
+    There are two ways to enable pessimistic locking globally:
 
-    -   Spring Boot Starter的配置
+    - Via Spring Boot Starter configuration
 
-        修改`application.yml` *(或`application.properties`)*
+        Modify `application.yml` *(or `application.properties`)*: 
         
         ```
         jimmer:
             save-command-pessimistic-lock: true
         ```
 
-    -   底层API的配置
+    - Via low-level API configuration
 
         <Tabs groupId="language">
         <TabItem value="java" label="Java">
@@ -530,7 +531,7 @@ sqlClient.save(
             .newBuilder()
             // highlight-next-line
             .setSaveCommandPessimisticLock()
-            ...省略其他配置...
+            ...other configurations omitted...
             .build();
         ```
 
@@ -547,20 +548,20 @@ sqlClient.save(
         </TabItem>
         </Tabs>
 
--   指令级配置
+- Command-level configuration
 
-    和影响所有保存指令的全局配置不同，指令级配置仅仅影响当前保存指令
+    Unlike global configuration affecting all save commands, command-level configuration only affects the current save command.
 
     :::info
-    如果已经通过全局配置打开了悲观锁控制，就不再需要指令级配置了
+    If pessimistic locking is already enabled globally, no need for command-level configuration.
     :::
 
-    调用保存指令的配置方法`setPessimisticLock`，即可启用悲观锁，如下
+    Calling `setPessimisticLock()` on the save command enables pessimistic locking:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     sqlClient
             .getEntities()
             .saveCommand(
@@ -609,27 +610,27 @@ sqlClient.save(
 
     </TabItem>
     </Tabs>
+    
+Once pessimistic locking is enabled, the generated query statements will change significantly:
 
-一旦启用了悲观锁，生成的查询语句会有显著变化，如下
-
-1.  判断书店是否存在
+1. Check if the book store exists
 
     ```sql
     select
         tb_1_.ID,
-        tb_1_.NAME
+        tb_1_.NAME 
     from BOOK_STORE tb_1_
     where
         tb_1_.NAME = ? /* TURING */
-    /* highlight-next-line */
+    /* highlight-next-line */    
     for update
     ```
 
-2.  根据前一条查询的结果，决定`INSERT`还是`UPDATE`
+2. Determine `INSERT` or `UPDATE` based on previous query
 
-    insert或update，略
+    insert or update, omitted
 
-3.  判断第1本书籍是否存在
+3. Check if the 1st book exists
     
     ```sql
     select
@@ -642,28 +643,27 @@ sqlClient.save(
         and
             tb_1_.EDITION = ? /* 3 */
     /* highlight-next-line */
-    for update
-    ```
-4.  根据前一条查询的结果，决定`INSERT`还是`UPDATE`
 
-    insert或update，略
+4.  Determine `INSERT` or `UPDATE` based on previous query
 
-5.  判断第2本书籍是否存在
+    insert or update, omitted
+
+5.  Check if the 2nd book exists
 
     ```sql
     select
-        tb_1_.ID,
+        tb_1_.ID, 
         tb_1_.NAME,
         tb_1_.EDITION
     from BOOK tb_1_
     where
             tb_1_.NAME = ? /* The Pragmatic Programmer */
-        and
+        and 
             tb_1_.EDITION = ? /* 2 */
     /* highlight-next-line */
     for update
     ```
 
-6.  根据前一条查询的结果，决定`INSERT`还是`UPDATE`
+6.  Determine `INSERT` or `UPDATE` based on previous query
 
-    insert或update，略
+    insert or update, omitted

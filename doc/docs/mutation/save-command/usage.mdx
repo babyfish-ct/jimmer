@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Basic usage
+title: Basic Usage
 ---
 
 import Tabs from '@theme/Tabs';
@@ -9,37 +9,37 @@ import { LongAssociation } from '@site/src/components/LongAssociation';
 import Grid from '@mui/material/Grid';
 import {Save} from '@site/src/components/Image';
 
-## 简介
+## Introduction
 
-所谓保存指令，指保存任意形状的数据结构，如图：
+A save command saves arbitrary shaped data structures, like:
 
 <Save/>
 
--   右上角
+-   Top right:
     
-    用户要保存的数据结构，记为`A`
+    The data structure `A` the user wants to save
 
--   左上角
+-   Top left:
 
-    按照`A`的形状，从数据库现有数据中得到已有数据结构，记为`B`。
+    Get the existing data structure `B` from the database according to the shape of `A`.
 
--   下方
+-   Bottom:
 
-    Jimmer比较旧数据结构`B`和新数据结构`A`，找不同之处，执行适当的<span style={{color: 'orange'}}>修改</span>、<span style={{color: 'green'}}>插入</span>甚至<span style={{color: 'red'}}>删除</span>操作，最终让数据库中的数据结构和`A`整体完全一致，用户不用关心中间细节。
+    Jimmer compares the old data structure `B` and the new data structure `A`, finds the differences, and executes appropriate <span style={{color: 'orange'}}>modifications</span>, <span style={{color: 'green'}}>insertions</span> and even <span style={{color: 'red'}}>deletions</span>, finally making the data structure in the database completely consistent with `A`. The user does not need to care about the details.
 
     :::info
-    `B`和`A`的形状一样，因此数据库中已有数据查询成本，以及新旧数据之间的比较成本，完全视`A`*(用户要保存的数据结构)*的形状而定。
+    Since `B` and `A` have the same shape, the cost of querying existing data in the database, and comparing old and new data, depends entirely on the shape of `A` *(the data structure the user wants to save)*.
     :::
 
     :::tip
-    如果你了解Web领域的[React](https://react.dev/)或[Vue](https://vuejs.org/)，不难看出这个功能很像`Virtual DOM diff`。
+    If you are familiar with [React](https://react.dev/) or [Vue](https://vuejs.org/) in web development, it is not difficult to see this is analogous to `Virtual DOM diff`.
     :::
 
-## 基本概念
+## Basic Concepts
 
-保存指令将一个任意形状的数据结构写入到到数据库中，例如
+A save command persists an arbitrary shaped data structure to the database, for example:
 
--   保存简单对象
+-   Saving a simple object
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -68,7 +68,7 @@ import {Save} from '@site/src/components/Image';
     </TabItem>
     </Tabs>
 
--   保存复杂数据结构
+-   Saving a complex data structure
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -106,10 +106,10 @@ import {Save} from '@site/src/components/Image';
         store().apply {
             name = MANNING;
         }
-        authors().appBy {
-            firstName("Dmitry");
-            lastName("Jamerov");
-            gender(Gender.MALE);
+        authors().addBy {
+            firstName = "Dmitry"
+            lastName = "Jamerov"
+            gender = Gender.MALE
         }
         authors().addBy {
             firstName = "Svetlana"
@@ -124,28 +124,27 @@ import {Save} from '@site/src/components/Image';
     </Tabs>
 
 :::tip
-Save指令和其他ORM框架的save方法之间存在本质差异。
+There are fundamental differences between save commands and `save` methods in other ORM frameworks.
 
-以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
-关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)和[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论如何开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
+Take JPA/Hibernate for example. Whether ordinary properties need to be saved is controlled via [Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--) and [Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--), and whether associated properties need to be saved is controlled via [OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--), [ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--), [OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--) and [ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--). However, no matter how developers configure them, the shape of the data structure JPA/Hibernate can save for you is fixed. 
 
-Jimmer采用完全不同方法，被保存的Jimmer对象具备[动态性](../../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
+Jimmer takes a completely different approach. Jimmer objects have [dynamicity](../../object/dynamic). Set properties will be saved while unset properties are ignored, so arbitrary shaped data structures can be persisted.  
 :::
 
-## API
+## APIs
 
-Save指令为不同语言和不同的开发模式提供了多个API，但功能都一样
+Save commands provide multiple APIs for different languages and coding patterns, but with the same functionality:
 
 <table>
     <thead>
         <tr>
             <th rowspan="2"></th>
             <th rowspan="2">Spring Boot API</th>
-            <th colspan="2">底层API</th>
+            <th colspan="2">Low-level API</th>
         </tr>
         <tr>
-            <th>追求快捷性的API</th>
-            <th>追求可配置性的API</th>
+            <th>APIs focused on conciseness</th>
+            <th>APIs focused on configurability</th>
         </tr>
     </thead>
     <tbody>
@@ -200,12 +199,12 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     </tbody>
 </table>
 
-其中
+Among them:
 
--   Java方法中名称中包含`Command`的方法比较特殊，和其他方法立即执行保存指令不同，这些方法仅仅创建指令，并不马上执行，用户可以对其配置，最后调用`execute`方法执行。例如
+-   Java methods containing `Command` are special. Unlike other methods that execute save commands immediately, these methods only create the command without immediate execution. The user can configure them and finally call `execute` to execute the command. For example:
 
     ```java
-    BookStore store = ...略...;
+    BookStore store = ...
     sqlClient
         .getEntities()
         .saveCommand(store) ❶
@@ -213,30 +212,30 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
         .execute(); ❸
     ```
 
-    -   ❶ 创建保存指令，但并不马上执行
+    - ❶ Create save command, do not execute immediately
 
-    -   ❷ 进行某些配置
+    - ❷ Make some configurations 
 
-    -   ❸ 完成配之后，最终调用`execute`执行保存指令
+    - ❸ After configuration is done, finally call `execute` to execute the save command
 
-    Kotlin不需要`saveCommand`方法，它采用了另外一种写法
+    Kotlin does not need `saveCommand` methods, it uses a different syntax:
 
     ```kotlin
-    val store = ...略...;
+    val store = ...
     sqlClient.save(store) {
-        setPessimisticLock() 
+        setPessimisticLock()
     }
     ```
 
--   名称中包含`All`或`batch`的方法表示保存多个对象，而非一个对象
+-   Methods containing `All` or `batch` indicate saving multiple objects rather than one object
 
--   对于被保存的聚合根而言，具备三种保存模式：UPSERT(默认)、INSERT_ONLY、UPDATE_ONLY *(更详细的描述请参见[保存模式](./save-mode))*。这需要通过配置来实现
+-   For the aggregate root being saved, there are 3 save modes: UPSERT (default), INSERT_ONLY, UPDATE_ONLY *(see [Save Modes](./save-mode) for more details)*. This is configured like:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    BookStore store = ...略...;
+    BookStore store = ...
     sqlClient.save(store, SaveMode.INSERT_ONLY);
     ```
 
@@ -244,20 +243,20 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    val store = ...略...;
+    val store = ...
     sqlClient.save(store, SaveMode.INSERT_ONLY)
     ```
 
     </TabItem>
     </Tabs>
 
-    `insert`和`update`方法是对`INSERT_ONLY`和`UPDATE_ONLY`的简写方式，上述代码可以简化为
+    The `insert` and `update` methods are shorthand for `INSERT_ONLY` and `UPDATE_ONLY`. The above can be simplified to:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    BookStore store = ...略...;
+    BookStore store = ...
     sqlClient.insert(store);
     ```
 
@@ -265,14 +264,14 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    BookStore store = ...略...;
+    BookStore store = ...
     sqlClient.insert(store);
     ```
 
     </TabItem>
     </Tabs>
 
-## 重要概念: 全量和增量
+## Important Concepts: Full Replacement vs Incremental Change
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -340,7 +339,7 @@ sqlClient.save(treeNode)
 </TabItem>
 </Tabs>
 
-这段代码企图保存一棵树
+This code tries to save a tree:
 
 ```
 +-Food
@@ -358,26 +357,26 @@ sqlClient.save(treeNode)
     \-----Ciabatta
 ```
 
-其中，`Food`为聚合根，而其他所有关联对象都是子节点。
+Where `Food` is the aggregate root, and all other associated objects are child nodes.
 
--   聚合根节点
+-   Aggregate root node
 
-    对应增量操作，最终生成一条INSERT语句或UPDATE语句
+    Corresponds to incremental change, ultimately generating one INSERT or UPDATE statement.
 
--   子节点（或称关联对象）
+-   Child nodes (or associated objects)
 
-    默认情况下，对应全量覆盖操作。
+    By default correspond to full replacement operations.
 
-    以`Food`为例，它有两个子节点`Drinks`和`Bread`。然而，这并非仅仅表示对`Drinks`和`Bread`这两个子节点简单地进行insert或update。
-    在`Food`节点在数据库中已经存在的情况下，还要考虑其是否有非`Drinks`和`Breads`的其他子节点，并将这些子节点和父节点脱勾（比如，删除这些子节点）
+    Take `Food` as an example. It has two child nodes `Drinks` and `Bread`. This does not simply mean inserting or updating `Drinks` and `Bread`.  
+    When `Food` already exists in the database, we also need to consider whether it has other child nodes besides `Drinks` and `Bread`, and dissociate these child nodes from the parent (e.g. deleting them).
 
-    例如
+    For example:
 
     <table>
     <thead>
     <tr>
-    <th>数据库已有数据结构</th>
-    <th>用户期望保存的数据结构</th>
+    <th>Existing data structure in database</th>
+    <th>Data structure user wants to save</th>
     </tr>
     </thead>
     <tbody>
@@ -389,9 +388,9 @@ sqlClient.save(treeNode)
     |
     |
     |
-    +-----Meat(忽略子节点)
+    +-----Meat(ignore child nodes)
     |
-    \-----Bread(忽略子节点)
+    \-----Bread(ignore child nodes)
     ```
 
     </td>
@@ -400,11 +399,11 @@ sqlClient.save(treeNode)
     ```
     +-Food
     |
-    +-----Drinks(忽略子节点)
+    +-----Drinks(ignore child nodes)
     |
     |
     |
-    \-----Bread(忽略子节点)
+    \-----Bread(ignore child nodes)
     ```
 
     </td>
@@ -412,18 +411,18 @@ sqlClient.save(treeNode)
     </tbody>
     </table>
 
-    最终，对子节点而言，会导致的操作为
-    -   旧数据结构没有`Drinks`，新数据结构有`Drinks`，所以插入`Drinks`
-    -   新旧数据结构都有`Bread`，所以修改`Bread`
-    -   旧数据结构有`Meat`，新数据结构没有`Meat`，所以删除`Meat`
+    Ultimately, for the child nodes, the operations are:
+    -   `Drinks` does not exist in old data structure but exists in new data structure, so insert `Drinks`.
+    -   Both old and new data structures have `Bread`, so update `Bread`. 
+    -   Old data structure has `Meat` while new data structure does not, so delete `Meat`.
 
-        > 子节点脱勾方式有多种，这里假设采用删除操作
-
-由此可见，默认情况下，除了聚合根外，其他的子节点的对应的操作都是全量覆盖，而非增量修改。
+        > There are multiple ways to dissociate child nodes. Here we assume delete operations are used.
+        
+As you can see, by default, operations on child nodes other than the aggregate root correspond to full replacement rather than incremental modification.
 
 ## Q & A
 
-如上所讨论，默认情况下，除了聚合根外，被保存数据结构中的关联对应全量覆盖操作，而非增量修改操作。
+As discussed above, by default, associated objects other than the aggregate root correspond to full replacement operations rather than incremental modification.
 
 <Grid container spacing={3}>
 <Grid item xs={1}>
@@ -432,20 +431,20 @@ sqlClient.save(treeNode)
 
 </Grid>
 <Grid item xs={11}>
-为什么除聚合根外的所有关联对象全部默认全量操作？
+Why do all associated objects other than the aggregate root default to full replacement operations?
 </Grid>
 <Grid item xs={1}>
 
-**A:**
+**A:** 
 
 </Grid>
 <Grid item xs={11}>
 
-底层数据库的INSERT、UPDATE和DELETE语句本身就是增量操作，即便使用只提供最简单的CRUD能力的SQL方案，也可以轻松实现按照增量修改数据库，这从来就不是业务系统开发的难点。
+INSERT, UPDATE, and DELETE statements in relational databases are incremental operations themselves. Even using the simplest SQL scheme with just basic CRUD capabilities, incrementally modifying the database is never the real difficulty in application development.
 
-真正复杂的问题，是把某个复杂数据结构作为整体进行覆盖保存。如果Jimmer不提供类似的能力，开发人员就需要编写复杂的代码去对比新旧数据发现需发生变化的部分，这会导致复杂数据的修改业务很复杂。
+The truly complex problem is to save an entire complex data structure in one go. If Jimmer does not provide such capabilities, developers have to write complex code to compare new and old data to find differences and determine what needs to change. This makes modifying complex data very difficult.
 
-另外还有一个好处，就是保证幂等性。
+There is another benefit - ensuring idempotency. 
 
 </Grid>
 <Grid item xs={1}>
@@ -454,8 +453,8 @@ sqlClient.save(treeNode)
 
 </Grid>
 <Grid item xs={11}>
-使用场景是什么？
-</Grid>
+What are the use cases?
+</Grid> 
 <Grid item xs={1}>
 
 **A:**
@@ -463,18 +462,18 @@ sqlClient.save(treeNode)
 </Grid>
 <Grid item xs={11}>
 
-任何需要把复杂数据结构作为整体进行覆盖保存的场景。其中一种典型的场景是复杂表单，例如
+Any scenario requiring saving an entire complex data structure in one go. One typical case is complex forms, for example: 
 
 <LongAssociation/>
 
 <div>&nbsp;</div>
 
-在这个例子中，表单内嵌了子对象表格。用户可以对表单，包括内嵌的子表格，进行任意复杂操作，最终客户端将作为整个表单作为一个整体提交到服务端。
+In this example, the form embeds child object tables. The user can perform arbitrarily complex operations on the form, including the embedded child tables, and finally submit the entire form as a whole to the server.
 
-通过保存指令，服务端只需通过一行代码即可保存这个数据结构即可，无需考虑客户端提交的数据结构和数据库相比有何不同。
+With save commands, the server can persist this data structure in one line of code, without considering how the data structure submitted by the client differs from the database.
 
-:::tip
-无论表单多复杂，关联关系嵌套了多深，都可以将其作为一个整体，使用一行代码保存。
+:::tip 
+No matter how complex the form, or how deeply nested the associations, the entire structure can be saved in one line of code.
 :::
 
 </Grid>
