@@ -1,27 +1,27 @@
 ---
-sidebar_position: 4
-title: Deep paging optimization
+sidebar_position: 4 
+title: Deep Pagination Optimization
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-分页查询有一个问题，在表的数据量很大的情况下，如果分页区间太靠后 *（即offset太大）*，会引起性能问题。
+Pagination queries have a problem - when the data volume is large, if the pagination range is too far back (i.e. offset is too large), performance issues can occur.
 
-因此，Jimmer支持深分页优化，为分页查询的offset设置一个阈值`offset-optimizing-hreshold`，一旦offset达到这个阈值，改变分页查询的实现方式。
+Therefore, Jimmer supports deep pagination optimization. Set a threshold `offset-optimizing-threshold` for the pagination offset. Once the offset reaches this threshold, the implementation of the pagination query is changed.
 
-## 设置阈值
+## Set Threshold
 
--   使用Spring Boot Starter
+-   Using Spring Boot Starter:  
 
-    修改`application.yml` *(或application.properties)*，添加配置项目`offset-optimizing-hreshold`，如下
+    Modify `application.yml` *(or application.properties)*, add config item `offset-optimizing-threshold`:
 
     ```
     jimmer:
-        offset-optimizing-hreshold: 1000
+        offset-optimizing-threshold: 1000
     ```
 
--   使用底层API
+-   Using low-level API:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -29,8 +29,8 @@ import TabItem from '@theme/TabItem';
     ```java
     JSqlClient sqlClient = JSqlClient
         .newBuilder()
-        .setOffsetOptimizingThreshold(1000)
-        ...省略其他配置...
+        .setOffsetOptimizingThreshold(1000)  
+        ...Other config omitted...
         .build();
     ```
 
@@ -40,20 +40,20 @@ import TabItem from '@theme/TabItem';
     ```kotlin
     val sqlClient = newKSqlClient {
         setOffsetOptimizingThreshold(1000)
-        ...省略其他配置...
+        ...Other config omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-:::info
-如果不设置这个阈值，其默认值为`Integer.MAX_VALUE`，这表示没有分页查询可以启用该功能。
+:::info  
+If this threshold is not set, the default is `Integer.MAX_VALUE`, meaning no pagination query can enable this feature. 
 :::
 
-## 效用
+## Effectiveness
 
-讨论此功能无需count-query，关注于data-query即可。让我们来看这个简单的分页查询
+To discuss this feature, focusing on the data query instead of the count query is sufficient. Let's look at this simple pagination query:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -64,15 +64,15 @@ public List<Book> findBooks(int limit, int offset) {
     return sqlClient
             .createQuery(table)
             .select(table)
-            .limit(limit, offset)
-            .execute();
+            .limit(limit, offset) 
+            .execute();  
 }
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
-```kotlin
+```kotlin 
 fun findBooks(limit: Int, offset: Int): List<Book> =
     sqlClient.createQuery(Book::class) {
         select(table)
@@ -84,29 +84,25 @@ fun findBooks(limit: Int, offset: Int): List<Book> =
 </TabItem>
 </Tabs>
 
+Pagination query support differs for different dialects. Oracle is more complex. See [Pagination/Usage#Dialects](./usage#dialects).
 
-不同的方言对分页查询的支持不相同，其中，Oracle还比复杂。请参见[分页查询/用法#方言](./usage#方言)
+To simplify discussion, assume using `org.babyfish.jimmer.sql.H2Dialect`. Pagination queries under it generate simple SQL:
 
-为了简化讨论，我们假设用户采用`org.babyfish.jimmer.sql.H2Dialect`，该方言下的分页查询生成的SQL很简单。
-
-假如`offset-optimizing-hreshold`被设置为1000
-
--   当offset小于1000时，比如调用`findBooks(10, 90)`，生成的SQL如下
+-   When offset is less than 1000, e.g. calling `findBooks(10, 90)`, the generated SQL:
 
     ```sql
     select
         tb_1_.ID,
-        tb_1_.NAME,
+        tb_1_.NAME, 
         tb_1_.EDITION,
         tb_1_.PRICE,
         tb_1_.STORE_ID
-    from BOOK tb_1_
+    from BOOK tb_1_  
     limit ? /* 10 */ offset ? /* 90 */
     ```
 
+-   When offset is greater than or equal to 1000, e.g. calling `findBooks(10, 1000)`, the generated SQL: 
 
--   当offset大约或等于1000时，比如调用`findBooks(10, 1000)`，生成的SQL如下
-  
     ```sql
     select
         optimize_.ID,
@@ -116,17 +112,19 @@ fun findBooks(limit: Int, offset: Int): List<Book> =
         optimize_.STORE_ID
     from (
     select
-        tb_1_.ID optimize_core_id_
-        from BOOK tb_1_
-    limit ? /* 10 */ offset ? /* 1000 */
+        tb_1_.ID optimize_core_id_  
+    from BOOK tb_1_
+    limit ? /* 10 */ offset ? /* 1000 */ 
     ) optimize_core_ inner join BOOK optimize_
         on optimize_.ID = optimize_core_.optimize_core_id_
     ```
+    
+As you can see, when offset is too large, Jimmer queries page ids first, then converts the paged id set to object set. This is useful when data volume is large.
 
-由此可见，当offset过大时，Jimmer会先对id列进行分页查询，再把分页后的id集合转化为对象集合。当表的数据量很大时，很有用。
+## Set to 0
 
-## 设置为0
+For some databases (e.g. MySQL), if data volume is large, performance is poor even when querying the first page (offset is 0). 
 
-对于某些数据库 *(比如MySQL)* 而言，只要表的数据量大，哪怕查询第一页 *(offset为0)*，性能也不理想。
+In this case, simply set `offset-optimizing-threshold` to 0 directly.
 
-这时，不妨直接将`offset-optimizing-hreshold`设置成0。
+```

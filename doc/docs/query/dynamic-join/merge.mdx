@@ -1,6 +1,6 @@
 ---
-sidebar_position: 3
-title: Merge conflict joins
+sidebar_position: 3  
+title: Merge Conflict Joins
 ---
 
 import DynamicJoinProblem from '../../_shared/dynamic-join-problem.mdx';
@@ -8,17 +8,18 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-## 使用方法
+## Usage 
 
-在[动态连接介绍](./)中，我们论述了目前技术方案存在问题，并简要介绍了Jimmer中动态JOIN的编程风格。
+In the [introduction to dynamic joins](./), we discussed the problems with current technical solutions and briefly introduced the programming style for dynamic JOIN in Jimmer.
 
-在<ViewMore buttonText="目前技术方案存在问题"><DynamicJoinProblem/></ViewMore>中，我们列举了两个场景，本文讨论是否如何解决这两个场景的问题。
+In <ViewMore buttonText="Problems with current solutions"><DynamicJoinProblem/></ViewMore>, we listed two scenarios. This article discusses how to resolve the problems in these two scenarios.
 
 :::note
-这个问题有两种解决方啊，本文演示第一种解决办法
+There are two ways to solve this problem. This article demonstrates the first solution.
 :::
 
--   解决场景1的问题
+-   Solve the problem in scenario 1:
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -37,7 +38,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
                 () -> book.name().like(name)
             )
             .whereIf(
-                storeName != null,
+                storeName != null, 
                 () -> table
                     .store() ❶
                     .name()
@@ -56,18 +57,19 @@ import { ViewMore } from '@site/src/components/ViewMore';
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
     fun findBooks(
         name: String? = null,
-        storeName: String? = null,
+        storeName: String? = null, 
         storeWebsite: String? = null
-    ): List<Book> =
+    ): List<Book> = 
         sqlClient
             .createQuery(Book::class) {
                 name?.let {
-                    where(table.name like it)
+                    where(table.name like it) 
                 }
                 storeName?.let {
                     where(
@@ -87,80 +89,80 @@ import { ViewMore } from '@site/src/components/ViewMore';
             }
             .execute()
     ```
-
+    
     </TabItem>
     </Tabs>
 
-    这是一个典型的动态查询，三个查询参数都允许为null。
+    This is a typical dynamic query where all three query parameters are nullable.
 
-    -   指定`name`，但`storeName`和`storeWebsite`仍然为null。
+    -   Specify `name` but `storeName` and `storeWebsite` are still null.
 
-        这时，❶和❷两处的代码都不会执行，最终生成的SQL不会包含任何join。
+        In this case, the code at ❶ and ❷ will not execute. The final generated SQL does not contain any joins.
 
         ```sql
         select 
             tb_1_.ID, 
-            tb_1_.NAME, 
-            tb_1_.EDITION, 
-            tb_1_.PRICE, 
-            tb_1_.STORE_ID 
+            tb_1_.NAME,  
+            tb_1_.EDITION,
+            tb_1_.PRICE,
+            tb_1_.STORE_ID
         from BOOK as tb_1_ 
             where tb_1_.NAME = ?
         ```
 
-    -   指定`name`和`storeName`, 但`storeWebsite`仍然为null。
+    -   Specify `name` and `storeName`, but `storeWebsite` is still null.
 
-        这时，❶处的连接生效但❷处的代码不会被执行，最终生成的SQL如下。
+        In this case, the join at ❶ takes effect but the code at ❷ does not execute. The final generated SQL is:
 
         ```sql
-        select 
-            tb_1_.ID, 
+        select
+            tb_1_.ID,
             tb_1_.NAME, 
-            tb_1_.EDITION, 
-            tb_1_.PRICE, 
-            tb_1_.STORE_ID 
-        from BOOK as tb_1_ 
-        /* highlight-start */
-        inner join BOOK_STORE as tb_2_ 
-            on tb_1_.STORE_ID = tb_2_.ID
-        /* highlight-end */ 
-        where 
-            tb_1_.NAME = ? 
+            tb_1_.EDITION,
+            tb_1_.PRICE,
+            tb_1_.STORE_ID
+        from BOOK as tb_1_
+        /* highlight-start */ 
+        inner join BOOK_STORE as tb_2_
+            on tb_1_.STORE_ID = tb_2_.ID 
+        /* highlight-end */
+        where
+            tb_1_.NAME = ?
         and 
-            tb_2_.NAME = ?
+            tb_2_.NAME = ? 
         ```
 
-    -   指定所有参数，`name`, `storeName`和`storeWebsite`都非null。
-        
-        这时，❶、❷两处的连接都生效，这种情况叫连接冲突。
+    -   Specify all parameters, `name`, `storeName` and `storeWebsite` are all non-null.
+    
+        In this case, both joins at ❶ and ❷ take effect. This situation is called join conflict.
         
         :::tip
-        这种冲突并不会导致任何问题，冲突的join对象会被合并成一个join对象。
+        This conflict does not cause any problems. Conflicting join objects are merged into one join object.
 
-        因此，在最终生成的SQL，不会导致重复的join操作。
+        So in the final generated SQL, there will be no duplicate join operations.
         :::
 
         ```sql
-        select 
-            tb_1_.ID, 
-            tb_1_.NAME, 
+        select
+            tb_1_.ID,
+            tb_1_.NAME,
             tb_1_.EDITION, 
-            tb_1_.PRICE, 
-            tb_1_.STORE_ID 
-        from BOOK as tb_1_ 
+            tb_1_.PRICE,
+            tb_1_.STORE_ID
+        from BOOK as tb_1_
             /* highlight-start */
-            inner join BOOK_STORE as tb_2_ on 
-                tb_1_.STORE_ID = tb_2_.ID 
+            inner join BOOK_STORE as tb_2_ on
+                tb_1_.STORE_ID = tb_2_.ID
             /* highlight-end */
-        where 
-            tb_1_.NAME = ? 
-        and 
-            tb_2_.NAME = ? 
-        and 
-            tb_2_.WEBSITE = ?
+        where
+            tb_1_.NAME = ?
+        and
+            tb_2_.NAME = ?
+        and
+            tb_2_.WEBSITE = ? 
         ```
 
--   解决场景2的问题
+-   Solve the problem in scenario 2:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -195,7 +197,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
             )
             .whereIf(
                 eId != null,
-                () -> table.asTableEx().bs().cs().ds().es().id().like(eId)
+                () -> table.asTableEx().bs().cs().ds().es().id().like(eId)  
             )
             .select(book.id())
             .distinct()
@@ -204,6 +206,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
@@ -241,28 +244,28 @@ import { ViewMore } from '@site/src/components/ViewMore';
     </Tabs>
 
     :::info
-    -   有了前面的基础，这里不再需要罗列不同的参数组合下会生成和何种SQL。明白无论如何最终SQL都不会包含重复的连接操作即可。
+    - Given the basics above, no need to list the generated SQL for different parameter combinations here. Just understand that the final SQL will not contain duplicate joins.
 
-    -   这里的`asTableEx`是后续文档[分页安全性](./table-ex)要介绍的概念。这里，请读者先忽略它。
+    - `asTableEx` here is a concept to be introduced in later docs [Pagination Safety](./table-ex). Please ignore it for now.
     :::
 
-## 合并规则
+## Merge Rules
 
-假设有三个表连接路径，分别是
+Assume there are three join paths:
 
 -   a -> b -> c -> d -> e -> f -> g
 -   a -> b -> c -> h -> i -> j
--   a -> x -> y -> z -> a-> b -> c -> d
+-   a -> x -> y -> z -> a -> b -> c -> d
 
-为了消除冲突，Jimmer会先把这些路径中的节点合并成一棵树
+To eliminate conflicts, Jimmer first merges these paths into a tree:
 
 ```
 -+-a
  |
  +----+-b
  |    |
- |    \----+-c 
- |         |
+ |    \----+-c
+ |         | 
  |         +----+-d
  |         |    |
  |         |    \----+-e
@@ -270,7 +273,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
  |         |         \----+-f
  |         |              |
  |         |              \------g
- |         |
+ |         | 
  |         \----+-h
  |              |
  |              \----+-i
@@ -292,18 +295,19 @@ import { ViewMore } from '@site/src/components/ViewMore';
                                \------d
 ```
 
-然后根据这棵树来生成最终SQL中的join子句。
+Then generate the join clause in the final SQL based on this tree.
 
-另外一个需要说明的规则，就是连接方式。创建join对象的方法具备参数，以指定连接方式，比如，左连接：
+Another rule to note is join type. The method to create join objects takes a parameter to specify join type, e.g. left join:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-book.store(JoinType.LEFT)
+book.store(JoinType.LEFT) 
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -313,7 +317,7 @@ book.`store?`
 </TabItem>
 </Tabs>
 
-连接方式合并规则如下：
+The merge rules for join types:
 
-- 如果发生冲突的join节点的连接方式全部一样，合并后连接方式不变。
-- 否则，合并后一定是内连接。
+-   If join types of all conflicting join nodes are the same, the merge preserves that join type.
+-   Otherwise, the merge result is always inner join.
