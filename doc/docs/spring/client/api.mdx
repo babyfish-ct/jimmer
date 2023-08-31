@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Generate front-end API
+title: Generate Frontend API
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,35 +8,35 @@ import TabItem from '@theme/TabItem';
 import { DtoExplosion } from "@site/src/components/Image";
 import { ViewMore } from '@site/src/components/ViewMore';
 
-## 基本概念
+## Basic Concepts
 
-如果使用Jimmer构建服务端系统，开发人员有三种解决<ViewMore buttonText="DTO爆炸"><DtoExplosion/></ViewMore>的方法。
+If using Jimmer to build backend systems, developers have three ways to solve the <ViewMore buttonText="DTO Explosion"><DtoExplosion/></ViewMore> problem.
 
-||描述|返回对象的形状被限定的地方|Web前端体验|
-|---|---|---------------|----------|
-|方案一|使用Jimmer构建GraphQL服务|客户端|好|
-|方案二|使用Jimmer构建REST服务，由客户端指定需要的对象的形状|客户端|差|
-|方案三|使用Jimmer构建REST服务，由服务端罗列客户端所需对象的所有形状|服务端|好|
+||Description|Where object shapes are restricted|Frontend experience|
+|-|-|-|-|
+|Solution 1|Use Jimmer to build GraphQL services|Client side|Good|
+|Solution 2|Use Jimmer to build REST services, shapes specified by client|Client side|Bad| 
+|Solution 3|Use Jimmer to build REST services, shapes enumerated by server|Server side|Good|
 
-现在分别对这三种情况加一讨论
+Let's discuss the three cases separately:
 
-### 方案一(GraphQL)
+### Solution 1 (GraphQL)
 
-使用Jimmer构建GraphQL服务
+Use Jimmer to build GraphQL services
 
-服务端：[使用Jimmer开发GraphQL服务端](../../graphql)
+Backend: [Develop GraphQL Backend with Jimmer](../../graphql) 
 
-客户端：有大量的客户端框架可以选择。其中，使用我的[graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client)可以获得极致的TypeScript开发体验
+Frontend: Many client frameworks to choose from. Using my [graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client) can get the ultimate TypeScript experience
 
 :::caution
-Jimmer本身支持自关联属性的递归查询，然而，截止到目前为止，GraphQL协议尚未支持此特性，这意味着此特性将丢失。
+Jimmer itself supports recursive query of self-associated properties, but so far, the GraphQL protocol does not support this feature, which means the feature will be lost.
 :::
 
-### 方案二(不推荐)
+### Solution 2 (Not Recommended) 
 
-使用Jimmer构建REST服务，由客户端指定需要的对象的形状
+Use Jimmer to build REST services, shapes specified by client
 
-这种方法其实是为REST赋予GraphQL的能力，客户端传递一个字符串，服务端通过`org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler`将其解析为Fetcher即可
+This approach actually gives REST the capabilities of GraphQL. The client passes a string, and the server parses it into a Fetcher via `org.babyfish.jimmer.sql.fetcher.compiler.FetcherCompiler`
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -72,96 +72,96 @@ fun findBookById(
 </TabItem>
 </Tabs>
 
-客户端调用时，指定fetcherCode参数即可，比如
+When calling, specify the fetcherCode parameter, for example
 ```
 {
     id
-    name
+    name 
     authors {
         id
         firstName
-        lastName
+        lastName 
     }
 }
 ```
-或
-```
+or
+``` 
 { id, name, authors { id, firstName, lastName }}
 ```
 :::info
-想了解如何用字符串代码表达更复杂的Fetcher，参考Fetcher的`toString()`方法即可。
+To learn how to express more complex Fetchers in string code, refer to the `toString()` method of Fetcher.
+:::  
+
+:::caution  
+Although this approach can give REST capabilities similar to GraphQL, which is very flexible, it only facilitates server-side writing. The client will get a messy type system, so it is not recommended.
+
+If due to some historical constraints, the client uses JavaScript instead of TypeScript, and there is no foreseeable hope of any improvement, then consider this usage.
 :::
 
-:::caution
-虽然这种做法可以为REST赋予类似于GraphQL的能力，非常灵活。但它只是方便了服务端的书写，客户端会得到混乱的类型系统，因此不推荐。
+### Solution 3 (Topic of This Article)
 
-如果因为某些历史包袱导致客户端采用JavaScript而非TypeScript，而且在可预见的未来看不到任何改进的希望，可以考虑这种用法。
-:::
+Use Jimmer to build REST services, shapes enumerated by server 
 
-### 方案三(本文议题)
+This usage is more in line with the original intention of the REST protocol, and it is also easier to manage permissions *(although the previous two usages are flexible, permission control is very difficult)*, and it is also the topic to be discussed in this article.
 
-使用Jimmer构建REST服务，由服务端罗列客户端所需对象的所有形状
+Let's look at a contradiction first
 
-这种用法比较符合REST协议的初衷，也比较便于权限管理 *(前面两种用法虽然灵活，但权限控制很难)*，也是本文要讨论的话题。
+-   Jimmer uses dynamic entities. As long as the root entity types are the same, any data structure shape can be expressed with the same Java/Kotlin type.
 
-让我们先来看一个矛盾
+-   The client needs to see rich data types. The shapes returned by the same entity type in different HTTP interfaces are different.
 
--   Jimmer采用动态实体，只要聚合根类型相同，任何形状的数据结构都用同一个Java/Kotlin类型表达。
+This contradiction is essentially the difference in awareness of <ViewMore buttonText="DTO Explosion"><DtoExplosion/></ViewMore> between the server side and the client side.
 
--   客户端需要看到丰富的数据类型，同一个实体类型在不同的HTTP接口中返回的形状不一样。
+-   Server perspective, i.e. producer perspective.
 
-这个矛盾，本质上就是服务端和客户端对<ViewMore buttonText="DTO爆炸"><DtoExplosion/></ViewMore>的认知不同。
+    From the producer's point of view, DTO explosion is a very annoying problem, which means that their own development costs will also increase dramatically.
 
--   服务端视角，即生产者视角。
+    Therefore, Jimmer uses dynamic entities combined with [object fetchers](../../query/object-fetcher) to eliminate DTO explosions on the server side.
 
-    在生产者眼中，DTO爆炸是一个非常头疼的问题，这意味着自己的开发成本也会急剧上升。
-    
-    因此，Jimmer使用动态实体配合[对象抓取器](../../query/object-fetcher)，在服务端消灭了DTO爆炸。
+-   Frontend perspective, i.e. consumer perspective. 
 
--   前端视角，即消费者视角。
+    From the consumer's point of view, DTO explosion is beneficial, each business scenario has an accurate return type, which is very nice to use. *(Difficult to implement? What does that have to do with me?)*
 
-    在消费者眼中，DTO爆炸是有益的，每一个业务场景都有精确的返回类型，使用起来体验非常好。*（实现不容易？和我有什么关系？）*
-
-    因此，Jimmer服务端能自动生成TypeScript代码，把服务端消灭掉的DTO爆炸在客户端中恢复出来。
+    Therefore, Jimmer server can automatically generate TypeScript code to restore the DTO explosion eliminated on the server side on the client side.
 
 :::tip
-服务端消灭DTO爆炸，客户端恢复DTO爆炸，这是Jimmer的前后端免对接功能的根本价值，也是Jimmer和其他任何自动生成客户端代码的技术的本质区别。
+The server eliminates DTO explosions, and the client restores DTO explosions. This is the fundamental value of Jimmer's automatic front-end integration, and it is also the essential difference between Jimmer and any other technology that automatically generates client code.
 
-只有让服务端和客服端使用完全不同的编程模型，才能同时让双方都获得极致的开发体验。
+Only by letting the server and client use completely different programming models can both sides get the ultimate development experience at the same time.
 :::
 
-## 使用
+## Usage
 
-### 声明@FetchBy
+### Declare @FetchBy
 
-前面讨论了，使用Jimmer构建REST服务并由服务端罗列客户端所需对象的所有形状是本文要讨论的话题。
+Previously we discussed that using Jimmer to build REST services with shapes enumerated by the server is the topic to be discussed in this article.
 
-要使用这种开发方式，需要在REST API中使用注解`@org.babyfish.jimmer.client.FetchBy`修饰返回类型中的动态实体类型，为客户端标注动态对象的具体形状。
+To use this development approach, you need to use the `@org.babyfish.jimmer.client.FetchBy` annotation to decorate dynamic entity types in REST API return types, to mark specific shapes of dynamic objects for the client.
 
 :::tip
-`@FetchBy`并不是简单地修饰REST API的返回值，而是用于修饰类型引用，其声明代码如下
+`@FetchBy` does not simply decorate the return value of the REST API, but is used to decorate type references. Its declaration code is as follows
 ```java
 package org.babyfish.jimmer.client;
 
 import java.lang.annotation.*;
 
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.RUNTIME)  
 // highlight-next-line
 @Target(ElementType.TYPE_USE)
 public @interface FetchBy {
 
-    ...略...
+    ...omitted...
 }
 ```
 
-因此，REST API的返回类型非常灵活，你可以在任何地方 *(包括范型参数)* 使用它修饰Jimmer实体类型，例如
+Therefore, the return type of the REST API is very flexible. You can use it to decorate Jimmer entity types anywhere *(including generic parameters)*, for example
 
 -   `@FetchBy("...") Book`
--   `List<@FetchBy("...") Book>`
+-   `List<@FetchBy("...") Book>` 
 -   `Page<@FetchBy("...") Book>`
 -   `Tuple2<@FetchBy("...") BookStore, @FetchBy("...") Author>`
--   `Map<String, Map<String, @FetchBy("...") Book>>`
+-   `Map<String, Map<String, @FetchBy("...") Book>>` 
 :::
 
 <Tabs groupId="language">
@@ -170,7 +170,7 @@ public @interface FetchBy {
 ```java title="BookController.java"
 @GetMapping("/books")
 public Page<
-    @FetchBy("SIMPLE_FETCHER") Book ❶
+    @FetchBy("SIMPLE_FETCHER") Book ❶   
 > findBookById(
     @RequestParam(defaultValue = "0") int pageIndex,
     @RequestParam(defaultValue = "5") int pageSize,
@@ -198,7 +198,7 @@ findComplexBook(
 private static final Fetcher<Book> SIMPLE_FETCHER = ❺
     BookFetcher.$
         .allScalarFields()
-        .tenant(false);
+        .tenant(false); 
 
 private static final Fetcher<Book> COMPLEX_FETCHER = ❻
     BookFetcher.$
@@ -235,7 +235,7 @@ fun findBooks(
         SIMPLE_FETCHER ❷
     )
 
-@GetMapping("/book/{id}")
+@GetMapping("/book/{id}") 
 fun findBookById(
     @PathVariable id: Long,
 ): @FetchBy("COMPLEX_FETCHER") Book? = ❸
@@ -273,41 +273,41 @@ companion object {
 </TabItem>
 </Tabs>
 
--   ❶ 对外承诺，`GET /books`返回的分页对象中的每一个`Book`对象的形状为静态常量`SIMPLE_FETCHER`所表达的形状
+-   ❶ Promise externally that the shape of each `Book` object in the paged object returned by `GET /books` is expressed by the static constant `SIMPLE_FETCHER` 
 
--   ❷ 内部实现，`GET /books`内部使用静态常量`SIMPLE_FETCHER`查询数据
+-   ❷ Internal implementation, `GET /books` uses static constant `SIMPLE_FETCHER` internally to query data
+
+        :::caution
+        ❶ as external commitment and ❷ as internal implementation must be consistent
+        :::
+
+-   ❸ Promise externally that if `GET /book/{id}` returns non-null, its shape is expressed by the static constant `COMPLEX_FETCHER`
+
+-   ❹ Internal implementation, `GET /book/{id}` uses static constant `COMPLEX_FETCHER` internally to query data
 
     :::caution
-    作为对外承诺的❶和作为内部实现的❷必须一致
+    ❸ as external commitment and ❹ as internal implementation must be consistent 
     :::
+    
+-   ❺ and ❻, declare object shapes as static constants.
 
--   ❸ 对外承诺，如果`GET /book/{id}`返回非null, 其形状为静态常量`COMPLEX_FETCHER`所表达的形状
-
--   ❹ 内部实现，`GET /book/{id}`内部使用静态常量`COMPLEX_FETCHER`查询数据
-
-    :::caution
-    作为对外承诺的❸和作为内部实现的❹必须一致
-    :::
-
--   ❺和❻，以静态常量的方式声明对象的形状。
-
-通过@FetchBy的修饰，Jimmer就明白每个对象对外返回的数据的具体形状了，它就可以为客户端生成代码了，包括TypeScript。
+With the decoration of @FetchBy, Jimmer understands the specific shape of each object's externally returned data, so it can generate code for the client, including TypeScript.
 
 :::info
-在这个例子中，使用注解`@FetchBy`的类和用静态常量声明对象的形状的类是同一个类。
+In this example, the class annotated with `@FetchBy` and the class declaring object shapes with static constants are the same class. 
 
-若非如此，可以使用`@FetchBy`的`ownerType`参数，例如
+If not, you can use the `ownerType` parameter of `@FetchBy`, for example
 
 `@FetchBy(value = "COMPLEX_FETCHER", ownerType = FetcherConstants.class)`
 :::
 
-### 生成客户端代码
+### Generate Client Code
 
-可以在`application.yml`或`application.properties`中声明如下配置，用于下载相关的客户端代码
+The following configuration can be declared in `application.yml` or `application.properties` to download related client code
 
 ```
 jimmer:
-    ...省略其他配置...
+    ...other configurations omitted... 
     client:
         ts:
             path: ts.zip ❶
@@ -315,56 +315,56 @@ jimmer:
             path: java-feign.zip ❷
 ```
 
-目前，Jimmer支持生成两种客户端代码，TypeScript和Spring Cloud所需的Java Feign Client代码
+Currently, Jimmer supports generating two types of client code, TypeScript and Java Feign Client code required by Spring Cloud
 
--   ❶ 可通过 http://localhost:8080/ts.zip 下载Web客户端所需的TypeScript代码
+-   ❶ Can download Web client required TypeScript code through http://localhost:8080/ts.zip
 
--   ❷ 可通过 http://localhost:8080/java-feign.zip 下载Spring Cloud所需的Java Feign Client代码
+-   ❷ Can download Spring Cloud required Java Feign Client code through http://localhost:8080/java-feign.zip
 
-接下来，我们讨论TypeScript代码。
+Next we discuss the TypeScript code.
 
-启动服务，下载http://localhost:8080/ts.zip，解压缩。设解压缩后的根目录为`${ts_root}`:
+Start the service, download http://localhost:8080/ts.zip, decompress it. Let the root directory after decompression be `${ts_root}`:
 
-让我们先看`${ts_root}/model/dto/BookDto.ts`
+Let's take a look at `${ts_root}/model/dto/BookDto.ts` first
 
-```ts title="BookDto.ts"
+```ts title="BookDto.ts" 
 export type BookDto = {
     // highlight-next-line
     'BookService/SIMPLE_FETCHER': {
         readonly id: number, 
-        readonly name: string, 
+        readonly name: string,
         readonly edition: number,
         readonly price: number,
-    }, 
-    // highlight-next-line
+    },
+    // highlight-next-line 
     'BookService/COMPLEX_FETCHER': {
-        readonly id: number, 
-        readonly name: string, 
-        readonly edition: number, 
-        readonly price: number, 
+        readonly id: number,
+        readonly name: string,
+        readonly edition: number,
+        readonly price: number,
         readonly store?: {
-            readonly id: number, 
-            readonly name: string, 
-            readonly website?: string, 
+            readonly id: number,
+            readonly name: string,
+            readonly website?: string,
             readonly avgPrice: number
-        }, 
+        },
         readonly authors: ReadonlyArray<{
-            readonly id: number, 
-            readonly firstName: string, 
-            readonly lastName: string, 
-            readonly gender: Gender
+            readonly id: number,
+            readonly firstName: string,
+            readonly lastName: string,
+            readonly gender: Gender 
         }>
     }
 }
-```
+``` 
 
 :::info
-很明显，在服务端被消灭掉的DTO爆炸，在客户端被恢复了。
+It is obvious that the DTO explosion eliminated on the server side is restored on the client side. 
 :::
 
-让我们再看看`${ts_root}/services/BookService.ts`
+Let's also take a look at `${ts_root}/services/BookService.ts`
 
-```ts
+```ts 
 import type { BookDto } from '../model/dto';
 import type { Page } from '../model/static';
 
@@ -375,10 +375,10 @@ export class BookService {
     ): Promise<
         Page<
             // highlight-next-line
-            BookDto['BookService/SIMPLE_FETCHER']
+            BookDto['BookService/SIMPLE_FETCHER'] 
         >
     > {
-        ...省略代码...
+        ...code omitted...
     }
 
     async findBookById(
@@ -388,54 +388,48 @@ export class BookService {
         BookDto['BookService/COMPLEX_FETCHER'] | 
         undefined
     > {
-        ...省略代码...
+        ...code omitted...
     }
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 
 export type BookServiceOptions = {
     'findBooks': {
-        readonly pageIndex: number, 
-        readonly pageSize: number, 
+        readonly pageIndex: number,
+        readonly pageSize: number,
         readonly sortCode: string
     },
     'findBookById': {
         readonly id: number
-    }
+    } 
 }
 ```
 
 :::info
-很明显，每个业务场景的返回类型都得到了精确的定义。
+It is obvious that the return type of each business scenario is accurately defined.
 :::
 
-### 开发Web客户端项目
+### Develop Web Client Project
 
-1.  创建项目
+1. Create project
 
-    首先创建一个基于typescript的react项目
+    First create a typescript based react project
 
     ```sh
-    yarn create react-app my-web-app --template typescript
+    yarn create react-app my-web-app --template typescript 
     ```
 
-2.  自动生成客户端代码 
+2. Automatically generate client code
 
-    很显然，不可能在每次服务端发生变化的时候，都要求客户端开发人员都需要手动下载服务端代码，解压，并替换本地代码。
+    Obviously, it is impossible to require client developers to manually download server code, decompress it, and replace local code every time changes occur on the server side.
 
-    所以，我们需要编写一个小脚本，自动完成最新TypeScript代码的下载、解压和替换。
+    So we need to write a small script to automatically complete the download, decompression and replacement of the latest TypeScript code.
 
-    在项目根目录下添加文件夹`scripts`，在其下添加文件`generate-api.js`，该文件由nodejs执行，是开发工具的代码，不是客户端本身的代码。
-
-    很显然，不可能在每次服务端发生变化的时候，都要求客户端开发人员都需要手动下载服务端代码，解压，并替换本地代码。
-
-    所以，我们需要编写一个小脚本，自动完成最新TypeScript代码的下载、解压和替换。
-
-    在项目根目录下添加文件夹`scripts`，在其下添加文件`generate-api.js`，该文件由nodejs执行，是开发工具的代码，不是客户端本身的代码。
+    Add folder `scripts` under project root, and add file `generate-api.js` under it. This file is executed by nodejs and is tooling code for development, not the code of the client itself.
 
     ```js title="scripts/generate-api.js"
-    const http = require('http'); 
+    const http = require('http');
     const fs = require('fs');
     const fse = require('fs-extra');
     const uuid = require('uuid');
@@ -460,7 +454,7 @@ export type BookServiceOptions = {
             if (fs.existsSync(generatePath)) {
                 console.log("Removing existing generatePath...");
                 fse.removeSync(generatePath);
-                console.log("Existing generatePath removed.");
+                console.log("Existing generatePath removed."); 
             }
 
             // Unzip the file using adm-zip
@@ -469,7 +463,7 @@ export type BookServiceOptions = {
             zip.extractAllTo(generatePath, true);
             console.log("File unzipped successfully.");
 
-            // Remove the temporary file
+            // Remove the temporary file  
             console.log("Removing temporary file...");
             fs.unlink(tmpFilePath, (err) => {
                 if (err) {
@@ -482,44 +476,46 @@ export type BookServiceOptions = {
     });
     ```
 
-    其中，`adm-zip`需要单独安装
+    Here, `adm-zip` needs to be installed separately
     ```
     yarn add adm-zip --dev
     ```
 
-    修改项目的`package.json`，在其"scripts"字段下添加如下代码
-    ```json
+    Modify project's `package.json` and add the following code under its "scripts" field
+    ```json 
     {
-        ...省略其他代码...
+        ...other code omitted...
         "scripts": {
-            ...省略其他代码...
+            ...other code omitted... 
             //highlight-next-line
-            "api": "node scripts/generate-api.js"
+            "api": "node scripts/generate-api.js" 
         }
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
-    这样，每次服务端团队通知REST API发生变化时，都可以简单地执行`yarn api`刷新本地的TypeScript客户端代码
+    So every time the server team notifies that REST API changes have occurred, just execute `yarn api` simply to refresh the local TypeScript client code
 
     :::caution
-    这个方法仅仅使用规模很少的前端团队，如果前端对象人数较多，更推荐的做法是对CI环境实施二次开发，实现如下功能：
+    This method is only suitable when the front-end team is very small in size. If there are many front-end developers, it is more recommended to implement secondary development on the CI environment to achieve the following:
     
-    每次服务端特定分支代码被提交后，由CI环境编译并启动后端服务，然后，下载ts代码，解压，并提交到git中。最后，前端工程师统一从git拉取最新代码即可。
+    Each time the backend service code on a specific branch is committed, the CI environment compiles and starts the backend service, then downloads the ts code, decompresses it, and commits it to git. Finally, front-end engineers can simply pull the latest code from git.
     :::
 
-3.  创建全局API对象
+Here is the English translation:
 
-    生成的TypeScript代码中，有一个`__generated/Api.ts`文件，需要用该类实例化一个全局变量并完成必要的配置。
+3.  Create Global API Object
 
-    在`src`下创建`ApiInstance.ts`，定义并导出全部变量`api`
+    The generated TypeScript code has a `__generated/Api.ts` file that needs to be instantiated into a global variable and configured properly.
+
+    Under `src`, create `ApiInstance.ts` and export the global variable `api`
 
     ```ts title="src/ApiInstance.ts"
     import { Api } from "../__generated";
 
     const BASE_URL = "http://localhost:8080";
 
-    // 导出全局变量`api`
+    // Export global variable `api` 
     // highlight-next-line
     export const api = 
         new Api(async({uri, method, body}) => {
@@ -527,7 +523,7 @@ export type BookServiceOptions = {
                 body: body !== undefined ? JSON.stringify(body) : undefined,
                 headers: {
                     'content-type': 'application/json;charset=UTF-8',
-                    ...其他重要HTTP请求头，比如Authorization...
+                    ...other important HTTP headers, e.g. Authorization...
                 }
             });
             if (response.status !== 200) {
@@ -541,22 +537,22 @@ export type BookServiceOptions = {
         });
     ```
 
-4.  调用REST API
+4. Call REST APIs
 
-    现在，我们就可以基于全局变量`api`调用REST API了。
+    Now we can call REST APIs based on global variable `api`.
 
-    :::info 
-    下面的例子，基于[use-immer](https://github.com/immerjs/use-immer)和[TanStack/Query](https://github.com/TanStack/query)。
+    :::info
+    The following examples are based on [use-immer](https://github.com/immerjs/use-immer) and [TanStack/Query](https://github.com/TanStack/query).
 
-    熟练使用或快熟掌握各种远程请求库，是web前端工程师的基本素养，所以，这里不再细致交代。
+    Being proficient in or quickly mastering various remote request libraries is the basic literacy of web front-end engineers, so the details are not elaborated here.  
     :::
 
-    -   体验`api.bookService.findBooks`
+    -   Experience `api.bookService.findBooks`
 
         ```ts
         const [options, setOptions] = useImmer<
-            // RequestOf是Jimmer生成的TypeScript辅助类，
-            // 用于提取任何REST API的参数类型
+            // RequestOf is a TypeScript helper class generated by Jimmer,
+            // used to extract parameter types of any REST API  
             RequestOf<
                 typeof api.bookService.findBooks
             >
@@ -569,83 +565,84 @@ export type BookServiceOptions = {
         });
 
         const { 
-            isLoading, 
-            // 如果`data`非`undefined`, 则其类型必为
+            isLoading,
+            // If `data` is not `undefined`, its type must be 
             // `Page<BookDto['BookService/SIMPLE_FETCHER']>`
             // highlight-next-line
             data, 
-            error, 
-            refetch 
+            error,
+            refetch
         } = useQuery({
             queryKey: ["Books", options],
-            // `data`的类型由此决定
-            // highlight-next-line
-            queryFn: () => api.bookService.findBooks(options) 
+            // The type of `data` is determined here
+            // highlight-next-line  
+            queryFn: () => api.bookService.findBooks(options)
         });
         ```
+        
+        If request succeeds, the type of `data` is `Page<BookDto['BookService/SIMPLE_FETCHER']>`.
 
-        如果请求成功，`data`的类型为`Page<BookDto['BookService/SIMPLE_FETCHER']>`。
-
-        其中, `BookDto['BookService/SIMPLE_FETCHER']`的定义为
+        Where `BookDto['BookService/SIMPLE_FETCHER']` is defined as
         ```ts
         {
-            readonly id: number, 
-            readonly name: string, 
-            readonly edition: number,
+            readonly id: number,
+            readonly name: string,
+            readonly edition: number, 
             readonly price: number,
         }
         ```
 
-    -   体验`api.bookService.findBookById`
+    -   Experience `api.bookService.findBookById`
 
-        在下面的代码中，假设`id`为当前React主键的参数
+        In the following code, assume `id` is the current React primary key parameter
 
-        ```ts
-        const { 
-            // 如果`data`非`undefined`, 则其类型必为
-            // `BookDto['BookService/COMPLEX_FETCHER']`
+        ```ts  
+        const {
+            // If `data` is not `undefined`, its type must be
+            // `BookDto['BookService/COMPLEX_FETCHER']` 
             // highlight-next-line
-            data, 
-            isLoading, 
-            error 
+            data,
+            isLoading,
+            error
         } = useQuery({
             queryKey: ["book/detail", id],
             queryFn: () => api.bookService.findBookById({id: id!}),
             enabled: id !== undefined
         });
         ```
+        
+        If request succeeds and `data` is not null, its type is `BookDto['BookService/COMPLEX_FETCHER']`. This type is defined as:
 
-        如果请求成功且`data`非null, 其类型为`BookDto['BookService/COMPLEX_FETCHER']`。该类型定义如下
         ```ts
         {
-            readonly id: number, 
-            readonly name: string, 
-            readonly edition: number, 
-            readonly price: number, 
+            readonly id: number,
+            readonly name: string,
+            readonly edition: number,
+            readonly price: number,
             readonly store?: {
-                readonly id: number, 
-                readonly name: string, 
-                readonly website?: string, 
-                readonly avgPrice: number
-            }, 
+                readonly id: number,
+                readonly name: string,
+                readonly website?: string,
+                readonly avgPrice: number  
+            },
             readonly authors: ReadonlyArray<{
-                readonly id: number, 
-                readonly firstName: string, 
-                readonly lastName: string, 
+                readonly id: number,
+                readonly firstName: string,
+                readonly lastName: string,
                 readonly gender: Gender
             }>
         }
         ```
 
     :::tip
-    可见，任何REST API调用都会返回严格的数据类型定义，这些严格的类型定义也会影响`tsx`文件中React UI模板代码。
+    It can be seen that any REST API call will return strict data type definitions, and these strict type definitions will also affect the React UI template code in `tsx` files.
 
-    这会充分发挥TypeScript的优势，让前端项目具备良好的IDE智能提示，并保证在编译时发现所有问题，具备良好的开发体验。
+    This will give full play to the advantages of TypeScript, providing good IDE intelligence, and ensuring all problems are discovered at compile time, thus having a good development experience.
     :::
 
-## 和自定义数据结合
+## Integrate with Custom Data
 
-虽然`@FetchBy`和Jimmer动态实体相结合能够在客户端代码中还原DTO类型定义，但仍然需要认真考虑一种情况：返回的数据类型和底层实体模型差异很大。例如
+Although `@FetchBy` combined with Jimmer's dynamic entities can restore DTO type definitions in client code, one situation still needs to be carefully considered: the returned data type differs greatly from the underlying entity model. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -673,9 +670,9 @@ data class ActiveAutorInfo(
 </TabItem>
 </Tabs>
 
-在这个例子中，`ActiveAutorInfo`表示活跃度很高的作者，里面包含了作者的原始信息`raw`，以及所有售卖他/她的书籍的书店的集合。
+In this example, `ActiveAutorInfo` represents a very active author, containing the original information of the author `raw`, and the collection of all bookstores selling his/her books. 
 
-对应的HTTP服务接口为
+The corresponding HTTP service interface is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -683,9 +680,9 @@ data class ActiveAutorInfo(
 ```java title="AuthorController.java"
 @GetMapping("/authors/mostActive")
 public List<ActiveAutorInfo> findMostActiveAuthorInfos(
-    @RequestParam(defaultValue = "10") int limit
+    @RequestParam(defaultValue = "10") int limit  
 ) {
-    ...略...
+    ...omitted...
 }
 ```
 
@@ -697,47 +694,47 @@ public List<ActiveAutorInfo> findMostActiveAuthorInfos(
 fun findMostActiveAuthorInfos(
     @RequestParam(defaultValue = "10") limit: Int
 ): List<ActiveAutorInfo> {
-    ...略...
+    ...omitted... 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-很明显，这个数据结构和底层实体模型差异较大。在实体模型中，`BookStore`和`Book`之间存在关联，`Book`和`Author`之间也存在关联，但是，`BookStore`和`Author`之间并不存在关联。
+Obviously, this data structure differs greatly from the underlying entity model. In the entity model, there is an association between `BookStore` and `Book`, and there is also an association between `Book` and `Author`, but there is no association between `BookStore` and `Author`.
 
 :::tip
-某些情况下，客户端需要的数据可能包含多种实体对象，它们之间并不存在直接的ORM关联，只是特定业务层面的一种的联系。
+In some cases, the data required by the client may contain multiple entity objects that have no direct ORM association, but only a certain business-level correlation.
 
-如果这种特定业务层面的联系毫无通用性，那么为实体定义[复杂计算属性](../../mapping/advanced/calculated/transient)也并非一个好的选择。
+If such business-level correlations are not generic at all, then defining [complex calculated properties](../../mapping/advanced/calculated/transient) for entities is not a good choice either.
 
-这时，我们可以打破实体对象图的定式思维，用自定义数据表示返回结果，就如同这里的`ActiveAutorInfo`
+At this point, we can break the stereotypical thinking of the entity object graph and use custom data to represent the return results, just like `ActiveAutorInfo` here.
 :::
 
-然而，`ActiveAutorInfo`并不是纯粹的用户自定义数据类型，其内部混合使用了Jimmer实体。我们不妨称之为为混合类型。
+However, `ActiveAutorInfo` is not a purely custom user data type, it mixes the use of Jimmer entities internally. Let's call it a hybrid type. 
 
-可以用`@FetchBy`注解修饰这种混合类型的字段，比如
+The `@FetchBy` annotation can be used to decorate the fields of this hybrid type, for example:
 
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
 ```java title="ActiveAutorInfo.java"
 @lombok.Data
 public class ActiveAutorInfo {
 
-    // highlight-next-line
+    // highlight-next-line 
     private @FetchBy("AUTHOR_FETCHER") Author raw;
 
     // highlight-next-line
     private List<@FetchBy("STORE_FETCHER") BookStore> stores;
 
-    private static final Fetcher<Author> AUTHOR_FETCHER = 
+    private static final Fetcher<Author> AUTHOR_FETCHER =  
         AuthorFetcher.$
             .firstName()
             .lastName();
 
-    private static final Fetcher<BookStore> STORE_FETCHER = 
-        AuthorFetcher.$.name();
+    private static final Fetcher<BookStore> STORE_FETCHER =
+        AuthorFetcher.$.name(); 
 }
 ```
 
@@ -750,7 +747,7 @@ data class ActiveAutorInfo(
     // highlight-next-line
     val raw: @FetchBy("AUTHOR_FETCHER") Author,
 
-    // highlight-next-line
+    // highlight-next-line 
     val stores: List<@FetchBy("STORE_FETCHER") BookStore>
 ) {
     companion object {
@@ -761,7 +758,7 @@ data class ActiveAutorInfo(
                 lastName()
             }
 
-        private val STORE_FETCHER = 
+        private val STORE_FETCHER =
             new Fetcher(BookStore::class) {
                 name()
             }
@@ -772,7 +769,7 @@ data class ActiveAutorInfo(
 </TabItem>
 </Tabs>
 
-最终，`ActiveAutorInfo`所生成的TypeScript相关类型如下 *(为了方便，这里混合了多个TypeScript文件的代码)*
+Finally, the TypeScript related types generated for `ActiveAutorInfo` are as follows *(for convenience, the code of multiple TypeScript files is mixed here)*:
 
 ```ts
 export interface ActiveAutorInfo {
@@ -781,7 +778,7 @@ export interface ActiveAutorInfo {
     readonly raw: AuthorDto['ActiveAutorInfo/AUTHOR_FETCHER'];
 
     readonly stores: ReadonlyArray<
-        // highlight-next-line
+        // highlight-next-line 
         BookStoreDto['ActiveAutorInfo/STORE_FETCHER']
     >;
 }
@@ -791,9 +788,9 @@ export type AuthorDto {
     'ActiveAutorInfo/AUTHOR_FETCHER': {
         readonly id: number,
         readonly firstName: string,
-        readonly lastName: string
+        readonly lastName: string 
     },
-    ...省略其他DTO类型定义...
+    ...other DTO types omitted...
 }
 
 export type BookStoreDto {
@@ -802,6 +799,6 @@ export type BookStoreDto {
         readonly id: number,
         readonly name: string
     },
-    ...省略其他DTO类型定义...
+    ...other DTO types omitted... 
 }
 ```

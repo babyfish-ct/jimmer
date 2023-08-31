@@ -1,19 +1,19 @@
 ---
 sidebar_position: 2
-title: Built-in filters
+title: Support Built-in Filters  
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 定义软删除标志
+## Define Soft Delete Flag
 
-Jimmer支持逻辑删除，例如
+Jimmer supports logical delete, for example
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java"  
 @Entity
 public interface Book {
 
@@ -24,7 +24,7 @@ public interface Book {
     )
     boolean isDeleted();
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
@@ -42,39 +42,39 @@ interface Book {
     )
     val isDeleted: Boolean
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-逻辑删除其实是Jimmer的内置[全局过滤器](../../query/global-filter)，因此，`Book`实体被施加了全局过滤器。
+Logical delete is actually a built-in [global filter](../../query/global-filter) in Jimmer, so the `Book` entity is applied with a global filter. 
 
-一旦实体具备了全局过滤器，那么以下属性
+Once an entity has a global filter, the following properties  
 
--   以`Book`作为目标类型的关联属性。比如，`BookStore.books`、`Author.books`
+-   Association properties that target `Book`. For example, `BookStore.books`, `Author.books`
 
--   依赖于上述关联属性的计算属性。比如，`BookStore.avgPrice`、`BookStore.newestBooks`*(文档没提及`newestBook`，可参见例子)*
+-   Computed properties that depend on the above association properties. For example, `BookStore.avgPrice`, `BookStore.newestBooks`
 
-都会对过滤器敏感，都会因过滤行为的不同而导致不同的客户端看到不同的数据。
+will be sensitive to the filter and show different data to different clients due to different filtering behaviors.
 
-这些对过滤器敏感的属性，要么不支持缓存，要么就支持多视角缓存。
+These filter-sensitive properties either do not support caching or support multi-view caching. 
 
 :::caution
-上述代码中的`useMultiViewCache = true`非常重要。
+The `useMultiViewCache = true` in the above code is very important.
 
-该属性默认值为`false`，表示所有对此过滤器敏感的属性 *（`BookStore.books`、`Author.books`、`BookStore.avgPrice`和`BookStore.newestBooks`）* 均不支持缓存，这是比较保守的选项。
+The default value is `false`, which means all filter-sensitive properties *(`BookStore.books`, `Author.books`, `BookStore.avgPrice`, and `BookStore.newestBooks`)* do NOT support caching. This is a conservative option.
 
-要让这些属性都支持缓存 *(当然也必须支持多视角属性)*，就必须配置`useMultiViewCache = true`。
+To make these properties cacheable *(of course they must also support multi-view properties)*, you must configure `useMultiViewCache = true`.
 :::
 
-## 启用多视图缓存
+## Enable Multi-view Cache
 
-### 普通的写法
+### Normal Approach
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 @Bean
@@ -90,16 +90,16 @@ public CacheFactory cacheFactory(
 
         @Override
         public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
-            ...省略代码...
+            ...code omitted...
         }
 
         @Override
         public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
-            ...省略代码...
+            ...code omitted...
         }
 
         @Override
-        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
             return createPropCache(
                 /* highlight-start */
                 prop == BookStoreProps.BOOKS.unwrap() || 
@@ -166,7 +166,7 @@ public CacheFactory cacheFactory(
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-@Bean
+@Bean  
 fun cacheFactory(
     connectionFactory: RedisConnectionFactory,
     objectMapper: ObjectMapper
@@ -177,17 +177,17 @@ fun cacheFactory(
     return object: KCacheFactory {
 
         override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-            ...省略代码...
+            ...code omitted...
 
         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-            ...省略代码...
+            ...code omitted...
 
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
             createPropCache(
                 /* highlight-start */
                 prop === BookStore::books.toImmutableProp() ||
-                    prop === Author::books.toImmutableProp(), 
-                /* highlight-end */
+                    prop === Author::books.toImmutableProp(),
+                /* highlight-end */ 
                 prop,
                 Duration.ofHours(1)
             )
@@ -196,7 +196,7 @@ fun cacheFactory(
             createPropCache(
                 /* highlight-start */
                 prop === BookStore::avgPrice.toImmutableProp() ||
-                    prop === BookStore::newestBooks.toImmutableProp(), 
+                    prop === BookStore::newestBooks.toImmutableProp(),
                 /* highlight-end */
                 prop,
                 Duration.ofHours(1)
@@ -240,28 +240,28 @@ fun cacheFactory(
 }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-上面的代码中`RedisHashBinder`是非常重要的实现类，利用redis支持多视图缓存，其背后存储结构对应[Redis Hashes](https://redis.io/docs/data-types/hashes/)，即，嵌套的Hash结构。
+The `RedisHashBinder` class in the above code is a very important implementation that utilizes Redis' support for multi-view caching. The underlying storage structure corresponds to [Redis Hashes](https://redis.io/docs/data-types/hashes/), i.e. nested Hash structures.
 
 <table>
     <thead>
         <tr>
-            <th>缓存技术风格</th>
-            <th>多视图</th>
-            <th>抽象接口❶</th>
-            <th>内置实现❷</th>
+            <th>Cache Style</th>
+            <th>Multi-view</th>  
+            <th>Abstract API❶</th>
+            <th>Built-in Impl❷</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td rowspan="2">
-                支持自Loading的缓存
-                <div><i>(通常是一级缓存技术：比如Guava, Caffine)</i></div>
+                Cache with self-loading
+                <div><i>(usually first-level cache technologies like Guava, Caffine)</i></div>
             </td>
             <td>
-                否
+                No
             </td>
             <td>
                 LoadingBinder&lt;K, V&gt;
@@ -272,22 +272,22 @@ fun cacheFactory(
         </tr>
         <tr>
             <td>
-                是
+                Yes
             </td>
             <td>
                 LoadingBinder.Parameterized&lt;K, V&gt;
             </td>
             <td>
-                无
+                None
             </td>
         </tr>
         <tr>
             <td rowspan="2">
-                不支持自Loading的缓存
-                <div><i>(通常是二级缓存技术：比如Redis)</i></div>
+                Cache without self-loading
+                <div><i>(usually second-level cache technologies like Redis)</i></div>
             </td>
             <td>
-                否
+                No
             </td>
             <td>
                 SimpleBinder&lt;K, V&gt;
@@ -298,7 +298,7 @@ fun cacheFactory(
         </tr>
         <tr>
             <td>
-                是
+                Yes
             </td>
             <td>
                 SimpleBinder.Parameterized&lt;K, V&gt;
@@ -310,44 +310,43 @@ fun cacheFactory(
     </tbody>
 </table>
 
--   ❶ 抽象接口：所在项目为`jimmer-sql`，所在的包为`org.babyfish.jimmer.sql.cache.chain`
+-   ❶ Abstract API: located in project `jimmer-sql`, package `org.babyfish.jimmer.sql.cache.chain`
 
--   ❷ 内置实现：所在项目为`jimmer-spring-boot-starter`，所在的包为`org.babyfish.jimmer.spring.cache`
+-   ❷ Built-in implementations: located in project `jimmer-spring-boot-starter`, package `org.babyfish.jimmer.spring.cache`  
 
 :::caution
-目前，暂时没有`Caffeine`的多视图缓存实现。所以，上述代码中，多视图缓存仅针对Redis。即，多视图模式下，缓存只有一级，而非两级。
+Unfortunately, there is currently no multi-view cache implementation for `Caffeine`. So in the above code, multi-view caching only applies to Redis. That is, in multi-view mode, there is only one cache level instead of two.
 :::
 
-### 更好的写法
+### Better Approach  
 
-在上面的代码中，`createAssociatedIdListCache`方法内部对参数`prop`进行判断，以决定究竟应该构建多视图缓存还是单视图缓存。然而
+In the above code, the `createAssociatedIdListCache` method judges the `prop` parameter to decide whether to build multi-view cache or single-view cache. However,
 
 :::tip
-就关联属性而言，是否需要构建多视图缓存的唯一判断依据是目标实体是否被施加了过滤器，Jimmer为此提供了更好的支持。
+For association properties, whether multi-view cache needs to be built can be determined solely by whether the target entity is filtered. Jimmer provides better support for this.
 
-开发人员只需要把超接口`CacheFactory/KCacheFactory`替换为超类`AbstractCacheFactory/AbstractKCacheFactory`，
-即可继承的一个叫做`getFilterState/filterState`的成员，它可以帮助我们判断是否应该构建多视图缓存。
+Developers only need to replace the super interface `CacheFactory`/`KCacheFactory` with the super class `AbstractCacheFactory`/`AbstractKCacheFactory` to inherit a member called `getFilterState`/`filterState` which can help us determine whether to build multi-view cache.
 :::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 @Bean
 public CacheFactory cacheFactory(
     RedisConnectionFactory connectionFactory,
-    ObjectMapper objectMapper
+    ObjectMapper objectMapper  
 ) {
 
     RedisTemplate<String, byte[]> redisTemplate = 
         RedisCaches.cacheRedisTemplate(connectionFactory);
 
-    // highlight-next-line
+    // highlight-next-line  
     return new AbstractCacheFactory() {
 
         @Override
         public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
-            ...省略代码...
+            ...code omitted...
         }
 
         @Override
@@ -361,7 +360,7 @@ public CacheFactory cacheFactory(
         }
 
         @Override
-        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
             return createPropCache(
                 // highlight-next-line
                 getFilterState().isAffectedBy(prop.getTargetType()),
@@ -373,8 +372,8 @@ public CacheFactory cacheFactory(
         @Override
         public Cache<?, ?> createResolverCache(ImmutableProp prop) {
             return createPropCache(
-                /* highlight-start */
-                prop == BookStoreProps.AVG_PRICE.unwrap() || 
+                /* highlight-start */   
+                prop == BookStoreProps.AVG_PRICE.unwrap() ||
                     prop == BookStoreProps.NEWEST_BOOKS.unwrap()
                 /* highlight-end */
                 prop, 
@@ -388,7 +387,7 @@ public CacheFactory cacheFactory(
             ImmutableProp prop, 
             Duration duration
         ) {
-            ...省略代码...
+            ...code omitted...
         }
     };
 }
@@ -399,7 +398,7 @@ public CacheFactory cacheFactory(
 
 ```kotlin
 @Bean
-fun cacheFactory(
+fun cacheFactory(  
     connectionFactory: RedisConnectionFactory,
     objectMapper: ObjectMapper
 ): KCacheFactory {
@@ -410,10 +409,10 @@ fun cacheFactory(
     return object: AbstractKCacheFactory() {
 
         override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-            ...省略代码...
+            ...code omitted...    
 
         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-            ...省略代码...
+            ...code omitted...
 
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
             createPropCache(
@@ -437,28 +436,28 @@ fun cacheFactory(
             prop: ImmutableProp, 
             duration: Duration
         ): Cache<K, V> {
-            ...省略代码...
+            ...code omitted...
         }
     }
 }
 ```
 
 </TabItem>
-</Tabs>
+</Tabs> 
 
 :::caution
-很遗憾，这种方法仅能用于简化关联缓存构建，即，简化`createAssociatedIdCache`和`createAssociatedIdListCache`方法。
+Unfortunately, this method can only simplify the construction of association caches, i.e. simplify the `createAssociatedIdCache` and `createAssociatedIdListCache` methods.
 
-对于计算属性而言，由于框架对用户自定义计算属性的内部逻辑一无所知，无法简化，用户需根据自己业务特点自行决定是否需要构建多视图缓存。
+For computed properties, since the framework is unaware of the internal logic used by user-defined computed properties, it cannot simplify them. Users need to decide whether to build multi-view caches based on their own business characteristics.
 :::
 
-## 计算属性的SubKey
+## SubKey of Computed Properties  
 
-逻辑删除是内置的过滤器，所有受影响的关联属性都会自动为其关联缓存指定`SubKey`。
+Logical delete is a built-in filter, and all affected association properties will automatically specify `SubKey` for their association caches.
 
-然而，不幸的是，由于计算属性引入了框架无法理解的用户自定义计算规则，开发人员必须手动为计算属性的`Resolver`实现指定`SubKey`
+However, unfortunately, due to the introduction of user-defined computation rules that the framework cannot understand, developers must manually specify `SubKey` for the `Resolver` implementation of computed properties.
 
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
 ```java title="BookStoreAvgPriceResolver.java"
@@ -475,14 +474,14 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
             .getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreAvgPriceResolver.kt"
+```kotlin title="BookStoreAvgPriceResolver.kt" 
 @Compoent
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
@@ -495,28 +494,28 @@ class BookStoreAvgPriceResolver(
             .getTargetParameterMapRef(BookStore::books)
     }
 
-    ...省略其他代码...
+    ...other code omitted... 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-很明显，计算属性`BookStore.avgPrice`其实是由关联属性`BookStore.books`决定的，随后者的变化而变化。
+Obviously, the computed property `BookStore.avgPrice` is actually determined by the association property `BookStore.books` and changes with it. 
 
-因此，在当前调用上下文中，`BookStore.books`为多视图缓存系统指定什么`SubKey`，`BookStore.avgPrice`就指定什么。
+Therefore, whatever `SubKey` the association property `BookStore.books` specifies for the multi-view cache system in the current invocation context, the computed property `BookStore.avgPrice` should specify the same one.
 
 :::note
-`BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。
+`BookStore.avgPrice` is also affected by `Book.price`. It changes when `Book.price` changes.
 
-然而，`Book.price`是对象的非关联属性，而非关联属性，故与多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
+However, `Book.price` is a non-association property of the object, so it is irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here.
 :::
 
-## 使用
+## Usage  
 
-### 正常使用
+### Normal Usage
 
-现在，我们已经让关联属性`BookStore.books`和计算属性`BookStore.avgPrice`都支持了多视角缓存，让我们使用对象抓取器来查询它们
+Now that we have made the association property `BookStore.books` and the computed property `BookStore.avgPrice` support multi-view caching, let's use object fetchers to query them
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -537,11 +536,11 @@ List<BookStore> stores = sqlClient
         )
     )
     .execute();
-System.out.println(stores);
+System.out.println(stores); 
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val stores = sqlClient
@@ -563,114 +562,114 @@ println(stores)
 </TabItem>
 </Tabs>
 
--   第一步：查询聚合根
+-   Step 1: Query the aggregate root
 
-    首先查询聚合根对象，执行如下SQL
+    First query the aggregate root objects by executing the following SQL
     
     ```sql
     select
         tb_1_.ID,
         tb_1_.NAME,
-        tb_1_.WEBSITE
+        tb_1_.WEBSITE 
     from BOOK_STORE tb_1_
     ```
 
-    这里实现了代码中的查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
+    This implements the query in the code and obtains some BookStore objects. Such objects directly queried by users are called aggregate root objects.
     
     :::caution
-    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
+    Jimmer does NOT cache the returned aggregate objects queried by users because the consistency of such query results cannot be guaranteed. 
+    Even if caching them at the cost of sacrificing consistency is required, it should be handled by users as a business problem rather than an behavior that should be abstracted and unified by the framework.
     :::
 
--   第二步：通过关联缓存查询❶处的`BookStore.books`
+-   Step 2: Query `BookStore.books` ❶ via association cache
 
-    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象，这两条BOOK_STORE的主键`ID`为1和2。
+    The above code will obtain a list of aggregate root objects. If using the official sample data, it will get two aggregate root objects with `ID` of 1 and 2.
 
-    Jimmer先从Redis查找数据，被查找的键为`BookStore.books-1`和`BookStore.books-2`。
+    Jimmer first looks up the data in Redis with keys `BookStore.books-1` and `BookStore.books-2`. 
 
-    假设无法在Redis中找到这些键所对应的数据
+    Assuming the data for these keys cannot be found in Redis
     ```
     127.0.0.1:6379> keys BookStore.books-*
     (empty array)
     ```
 
-    所以，执行如下SQL，完成关联属性`BookStore.books`
+    Then the following SQL is executed to resolve the association property `BookStore.books`
     ```sql
-    SQL: select,
+    select
         tb_1_.STORE_ID,
         tb_1_.ID
-    from BOOK tb_1_
+    from BOOK tb_1_  
     where
             tb_1_.STORE_ID in (
-                ? /* 1 */, ? /* 2 */
+                ? /* 1 */, ? /* 2 */  
             )
         and
             // highlight-next-line
             tb_1_.DELETED = ? /* false */
     order by
-        tb_1_.NAME asc,
+        tb_1_.NAME asc, 
         tb_1_.EDITION desc
     ```
 
     :::info
-    其中`tb_1_.DELETED = false`这个过滤条件来自逻辑删除功能所隐含的内置过滤器
+    The filtering condition `tb_1_.DELETED = false` comes from the implicit built-in filter of the logical delete feature. 
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
-    ``` sh
-    127.0.0.1:6379> keys BookStore.books-*
+    Jimmer will put the query results into Redis, so we can view the data in redis:
+    ```
+    127.0.0.1:6379> keys BookStore.books-*  
     1) "BookStore.books-2"
     2) "BookStore.books-1"
 
     127.0.0.1:6379> hgetall BookStore.books-1
-    # highlight-next-line
+    # highlight-next-line  
     1) "{\"logicalDeleted\":false}"
     2) "[6,5,3,2,9,8]"
-    
+
     127.0.0.1:6379> hgetall BookStore.books-2
     # highlight-next-line
-    1) "{\"logicalDeleted\":false}"
+    1) "{\"logicalDeleted\":false}" 
     2) "[12,11]"
     ```
     :::info
-    多视角缓存采用Redis的Hash结构，所以，这里需要使用redis的`hgetall`指令，普通`get`指令会报错
+    The multi-view cache uses Redis Hash structure, so the `hgetall` command of redis is needed instead of simple `get`. 
 
-    Redis的Hash是两层KV结构的嵌套
+    Redis Hash is a nested two-layer KV structure.
 
-    -   外层结构的Redis Key，`BookStore.books-1`和`BookStore.books-2`，和单视图缓存的RedisKey无异。
+    -   The outer layer Redis Key like `BookStore.books-1` and `BookStore.books-2` is no different from keys in single-view cache.
 
-    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
+    -   The inner layer Hash Key, also called SubKey in Jimmer, is the parameter of global filters.
 
-        这里，`{"logicalDeleted":false}`由逻辑删除所对应的内置全局过滤器提供，表示当前缓存项的值并非所有关联对象的id集合，而仅仅包含未被逻辑删除的关联对象的id。
+        Here, `{"logicalDeleted":false}` is provided by the built-in global filter of logical delete, indicating the cached value is not the collection of ids of all associated objects, but only the ids of those undeleted associated objects.
     :::
 
     :::tip
-    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，相关SQL不会被生成。
+    Undoubtedly, if the cached data in Redis is not cleared due to timeout, executing the above Java/Kotlin code again will directly return the association data from Redis without generating related SQL.
     :::
 
--   第三步：把id集合转化为关联对象
+-   Step 3: Convert id collection to associated objects
 
-    在上一步中，我们得到了关联属性`BookStore.books`所对应的关联对象id集合，它们所对应的数据全部都是未被逻辑删除的。
+    In the previous step, we obtained the collection of ids of the associated objects corresponding to the association property `BookStore.books`. They are all undeleted objects.  
 
-    现在，就可以利用`Book`类型的对象缓存，把`Book` id的集合转化为`Book`的集合。
-    
-    这个步骤非常简单，无需讨论。
+    Now we can use the object cache of `Book` type to convert the `Book` id collection to `Book` collection. 
 
--   第四步：通过计算缓存查询❷处的`BookStore.avgPrice`
+    This step is very simple and needs no discussion.
 
-    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象，这两条BOOK_STORE的主键`ID`为1和2。
-    
-    Jimmer先从Redis查找数据，被查找的键为`BookStore.avgPrice-1`和`BookStore.avgPrice-2`。
+    - Step 4: Query `BookStore.avgPrice` ❷ via computed cache 
 
-    假设无法在Redis中找到这些键所对应的数据
+    The above code will obtain a list of aggregate root objects. If using the official sample data, there will be two aggregate root objects with `ID` of 1 and 2.
+
+    Jimmer first looks up the data in Redis with keys `BookStore.avgPrice-1` and `BookStore.avgPrice-2`.
+
+    Assuming the data for these keys cannot be found in Redis
     ```
-    127.0.0.1:6379> keys BookStore.avgPrice-*
+    127.0.0.1:6379> keys BookStore.avgPrice-* 
     (empty array)
     ```
 
-    所以，执行如下SQL，完成计算属性的计算
+    Then the following SQL is executed to compute the calculated property
     ```sql
-    select
+    select 
         tb_1_.ID,
         avg(tb_2_.PRICE)
     from BOOK_STORE tb_1_
@@ -678,23 +677,24 @@ println(stores)
         on tb_1_.ID = tb_2_.STORE_ID
     where
             tb_1_.ID in (
-                ? /* 1 */, ? /* 2 */
+                ? /* 1 */, ? /* 2 */  
             )
         and
             // highlight-next-line
             tb_1_.DELETED = ? /* false */
-    group by
+    group by 
         tb_1_.ID
     ```
 
-    :::info
-    其中`tb_1_.DELETED = false`这个过滤条件来自逻辑删除功能所隐含的内置过滤器。
+    :::info  
+    The filtering condition `tb_1_.DELETED = false` comes from the built-in global filter of logical delete.
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer will put the query results into Redis, so we can view the data in Redis:
+
     ```sh
     127.0.0.1:6379> keys BookStore.avgPrice-*
-    1) "BookStore.avgPrice-2"
+    1) "BookStore.avgPrice-2"  
     2) "BookStore.avgPrice-1"
 
     127.0.0.1:6379> hgetall BookStore.avgPrice-1
@@ -703,31 +703,31 @@ println(stores)
     2) "59.333333"
 
     127.0.0.1:6379> hgetall BookStore.avgPrice-2
-    # highlight-next-line
+    # highlight-next-line 
     1) "{\"logicalDeleted\":false}"
-    2) "80.5"
+    2) "80.5" 
     127.0.0.1:6379>
     ```
 
     :::info
-    多视角缓存采用Redis的Hash结构，所以，需要使用redis的`hgetall`指令，而非`get`
+    The multi-view cache uses Redis Hash structure, so the `hgetall` command is needed instead of `get`.
 
-    Redis的Hash是两层KV结构的嵌套
+    Redis Hash is a nested two-layer KV structure.  
 
-    -   外层结构的Redis Key，`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
+    - The outer layer Redis Key like `BookStore.avgPrice-1` and `BookStore.avgPrice-2` is no different from keys in single-view cache.
 
-    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
+    - The inner layer Hash Key, also called SubKey in Jimmer, is the parameter of global filters.
 
-        这里，`{"logicalDeleted":false}`由逻辑删除所对应的内置全局过滤器提供，表示当前缓存项的值并非依赖所有关联数据，而是依赖于未被逻辑删除的数据。
+    Here, `{"logicalDeleted":false}` is provided by the built-in global filter of logical delete, indicating the cached value depends on the undeleted associated data rather than all associated data.
     :::
 
-    这样，两个`BookStore`对象可以通过其计算属性`BookStore.avgPrice`得到各自未被逻辑删除的书籍的平均价格。
+    Thus, the two `BookStore` objects can obtain the average prices of their respective undeleted books via the computed property `BookStore.avgPrice`.
 
     :::tip
-    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，相关SQL不会被生成。
+    Undoubtedly, if the cached data in Redis is not cleared due to timeout, executing the above Java/Kotlin code again will directly return the computed data from Redis without generating related SQL.
     :::
 
-最终，Jimmer把4个步骤的结果拼接在一起，作为最终返回给用户的数据
+Finally, Jimmer concatenates the results of the 4 steps as the final data returned to the user.
 
 ```json
 [
@@ -739,29 +739,29 @@ println(stores)
         "books":[
             {
                 "id":6,
-                "name":"Effective TypeScript",
+                "name":"Effective TypeScript", 
                 "edition":3,
                 "price":88
             },
             {
                 "id":5,
-                ...略...
+                ...omitted...
             },
             {
                 "id":3,
-                ...略...
+                ...omitted...
             },
             {
                 "id":2,
-                ...略...
+                ...omitted...
             },
             {
                 "id":9,
-                ...略...
+                ...omitted...
             },
             {
                 "id":8,
-                ...略...
+                ...omitted...
             }
         ],
         // highlight-next-line
@@ -781,7 +781,7 @@ println(stores)
             },
             {
                 "id":11,
-                ...略...
+                ...omitted...
             }
         ],
         "avgPrice":80.5
@@ -789,27 +789,27 @@ println(stores)
 ]
 ```
 
-### 调整过滤行为
+### Adjust Filtering Behavior
 
-在[逻辑删除](../../query/global-filter/logical-deleted)一文中，我们曾经介绍过，逻辑删除过滤器可以被忽略甚至反转。
+In the [Logical Delete](../../query/global-filter/logical-deleted) documentation, we introduced that the logical delete filter can be ignored or even reversed.
 
--   忽略过滤行为
+-   Ignore filtering behavior
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java  
     BookTable table = BookTable.$;
 
     List<Book> books = sqlClient
-        .filters(cfg -> { 
+        .filters(cfg -> {
             // highlight-next-line
-            cfg.disable( 
+            cfg.disable(
                 cfg
-                    .getFilterManager() 
-                    .builtIns() 
-                    .getDeclaredNotDeletedFilter(Book.class) 
-            );
+                    .getFilterManager()
+                    .builtIns()
+                    .getDeclaredNotDeletedFilter(Book.class)
+            ); 
         })
         .createQuery(table)
         .select(table)
@@ -821,23 +821,23 @@ println(stores)
 
     ```kotlin
     val books = sqlClient
-        .filters { 
-            // highlight-next-line
-            disable( 
-                filterManager 
-                    .builtIns 
-                    .getDeclaredNotDeletedFilter(Book::class) 
+        .filters {
+            // highlight-next-line 
+            disable(
+                filterManager
+                    .builtIns
+                    .getDeclaredNotDeletedFilter(Book::class)
             )
         }
         .createQuery(table)
         .select(table)
-        .execute()
+        .execute() 
     ```
 
     </TabItem>
     </Tabs>
 
-    执行代码后，如果之前例子中存入的缓存信息未被清理，那么Redis中最新的数据应该为
+    After executing the code, if the cached information entered in the previous example has not been cleared, the latest data in Redis should be:
 
     ```sh
     127.0.0.1:6379> keys BookStore.books-*
@@ -853,7 +853,7 @@ println(stores)
 
     127.0.0.1:6379> hgetall BookStore.books-2
     1) "{\"logicalDeleted\":false}"
-    2) "[12,11]"
+    2) "[12,11]" 
     # highlight-next-line
     3) "{}"
     4) "[12,11,10]"
@@ -869,7 +869,7 @@ println(stores)
     3) "{}"
     4) "58.5"
 
-    127.0.0.1:6379> hgetall BookStore.avgPrice-2
+    127.0.0.1:6379> hgetall BookStore.avgPrice-2 
     1) "{\"logicalDeleted\":false}"
     2) "80.5"
     # highlight-next-line
@@ -877,13 +877,13 @@ println(stores)
     4) "8.333333"
     ```
 
-    -   外层结构的Redis Key，`BookStore.books-1`、`BookStore.books-2`、`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
+    -   The outer layer Redis Keys like `BookStore.books-1`, `BookStore.books-2`, `BookStore.avgPrice-1` and `BookStore.avgPrice-2` are no different from keys in single-view cache.
 
-    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
+    -   The inner layer Hash Keys, also called SubKeys in Jimmer, are the parameters of global filters. 
 
-        `{}`为当前例子的对应的SubKey，响应的缓存值为过滤器被忽略后的数据。这也是我们在单视图缓存相关文档中我们看到的数据
+      `{}` is the corresponding SubKey for this example, and the corresponding cached value is the data when the filter is ignored. This is also what we see in the documentation about single-view cache.
 
--   反转过滤行为
+-   Reverse filtering behavior
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -900,7 +900,7 @@ println(stores)
                     .builtIns()
                     .getDeclaredNotDeletedFilter(Book.class)
             );
-            // highlight-next-line
+            // highlight-next-line 
             cfg.enable(
                 cfg
                     .getFilterManager()
@@ -916,7 +916,7 @@ println(stores)
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin
+    ```kotlin 
     val books = sqlClient
         .filters {
             // highlight-next-line
@@ -941,7 +941,7 @@ println(stores)
     </TabItem>
     </Tabs>
 
-    执行代码后，如果之前例子中存入的缓存信息未被清理，那么Redis中最新的数据应该为
+    After executing the code, if the cached information entered in the previous example has not been cleared, the latest data in Redis should be:
 
     ```sh
     127.0.0.1:6379> keys BookStore.books-*
@@ -974,7 +974,7 @@ println(stores)
     3) "{}"
     4) "58.5"
     1) "{\"logicalDeleted\":false}"
-    2) "59.333333"
+    2) "59.333333" 
     # highlight-next-line
     1) "{\"logicalDeleted\":true}"
     2) "56.833333"
@@ -989,30 +989,31 @@ println(stores)
     2) "80"
     ```
 
-    -   外层结构的Redis Key，`BookStore.books-1`、`BookStore.books-2`、`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
+    -   The outer layer Redis Keys like `BookStore.books-1`, `BookStore.books-2`, `BookStore.avgPrice-1` and `BookStore.avgPrice-2` are no different from keys in single-view cache.
 
-    -   内层结构的Hash Key，在Jimmer中也称SubKey，为全局过滤器的参数。
+    -   The inner layer Hash Keys, also called SubKeys in Jimmer, are the parameters of global filters.
 
-        `{"logicalDeleted":true}`为当前例子的对应的SubKey，表示当前缓存项的值并非依赖所有关联数据，而是依赖于已被逻辑删除的数据，这种行为和默认过滤器的逻辑刚好相反。
+        `{"logicalDeleted":true}` is the corresponding SubKey for this example, indicating the cached value depends on the deleted associated data rather than all associated data, which is the opposite of the default filtering logic.
 
     :::tip
-    读者可以仔细看看这些`redis-cli`命令，很容易发现，SubKey`{"logicalDeleted":false}`的数据和SubKey`{"logicalDeleted":true}`的数据合并起来刚好就是SubKey`{}`的数据。
+    Readers can take a close look at these `redis-cli` commands and easily find that the data of SubKey `{"logicalDeleted":false}` merged with the data of SubKey `{"logicalDeleted":true}` is exactly the data of SubKey `{}`.
     :::
 
-## 一致性
+## Consistency
 
-现在，让我们来修改id为6的`Book`对象的逻辑删除标志。
+Now let's modify the logical delete flag of the `Book` object with id 6.
 
-由于`Book-6`隶属于`BookStore-1`，所以可以预见的是，属性`BookStore.books-1`和`BookStore.avgPrice-1`所对应的多视角缓存必然失效。
+Since `Book-6` belongs to `BookStore-1`, it is foreseeable that the multi-view caches corresponding to the properties `BookStore.books-1` and `BookStore.avgPrice-1` will definitely be invalidated.
 
--   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+-   If BinLog trigger is enabled, modifying the database in any way can lead to Jimmer's cache consistency involvement. For example, directly executing the following SQL in SQL IDE
+
     ```sql
-    update BOOK
-    set DELETED = true 
+    update BOOK  
+    set DELETED = true
     where ID = 6;
     ```
 
--   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+-   If only Transaction trigger is enabled, the database must be modified using Jimmer's API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -1032,10 +1033,10 @@ println(stores)
     </Tabs>
 
     :::info
-    由于`Book`实体配置了逻辑删除字段，所以，默认的删除策略就是逻辑删除，上述代码的`DeleteMode.LOGICAL`其实是可以省略的，这里仍然选择将其显式地写出来只是为了强调而已。
+    Since the `Book` entity is configured with a logical delete field, the default delete policy is logical delete. So the `DeleteMode.LOGICAL` above can actually be omitted. It is written explicitly here just for emphasis.
     :::
 
-无论通过上述何种方式修改数据，你都会在看到如下日志输出
+No matter which way above is used to modify the data, you will see the following log output:
 
 ```
 Delete data from redis: [Book-6] ❶
@@ -1044,46 +1045,31 @@ Delete data from redis: [BookStore.books-1] ❸
 Delete data from redis: [BookStore.avgPrice-1] ❹
 ```
 
--   ❶ 更新被修改实体的对象缓存
+-   ❶ Update object cache of modified entity 
 
--   ❷ 所有目标类型为`Book`的关联属性必然被影响，当然包括`Author.books`
+-   ❷ Any association property targeting `Book` must be affected, of course including `Author.books`
 
-    按数据库现有数据，受影响的`Author`对象的id为3
+    According to existing database data, the affected `Author` object id is 3
 
--   ❸ 所有目标类型为`Book`的关联属性必然被影响，当然包括`BookStore.books`
+-   ❸ Any association property targeting `Book` must be affected, of course including `BookStore.books`
 
-    按数据库现有数据，受影响的`BookStore`对象的id为1
+    According to existing database data, the affected `BookStore` object id is 1  
 
--   ❹ id为1的`BookStore`对象的计算缓存`BookStore.avgPrice`也被影响了，这是最奇妙的特征。
+-   ❹ The computed cache `BookStore.avgPrice` of `BookStore` object with id 1 is also affected. This is the most amazing characteristic. 
 
-    虽然框架并不知道用户在计算属性中使用何种计算方法，但是在[计算缓存](../cache-type/calculation)一文中，我们在`BookStoreAvgPriceResolver`类中讨论过如下代码
+    If you have forgotten the specific logic of this code, you can review the following code in the [Computed Cache](../cache-type/calculation) documentation:
 
     <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-
-    ```java
-    @EventListener
-    public void onAssociationChange(AssociationEvent e) {
-        if (sqlClient.getCaches().isAffectedBy(e) && 
-            // highlight-next-line
-            e.isChanged(BookStoreProps.BOOKS) 
-        ) {
-            ...省略...
-        }
-    }
-    ```
-
-    </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
     @EventListener
     fun onAssociationChange(e: AssociationEvent) {
-        if (sqlClient.caches.isAffectedBy(e) &&
+        if (sqlClient.caches.isAffectedBy(e) && 
             // highlight-next-line
             e.isChanged(BookStore::books)
         ) {
-            ...省略...
+            ...code omitted...
         }
     }
     ```
@@ -1091,12 +1077,12 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
     </TabItem>
     </Tabs>
 
-    如果忘记了这段代码的具体逻辑，可以回顾[计算缓存](../cache-type/calculation)一文，这里关注高亮的那行代码即可。这里，当前计算属性对`BookStore.books`关联的变化感兴趣。
+    If you focus on the highlighted line, this computed property cares about changes to the association property `BookStore.books`.
 
     :::tip
-    修改表之间关联字段并非触发关联属性变更事件的唯一方法，修改关联对象中能影响全局过滤器的被过滤字段，*比如这里的`DELETED`*，也可以触发关联属性变更事件。
+    Modifying the association field between tables is not the only way to trigger association change events. Modifying the filtered field in associated objects, *like `DELETED` here*, can also trigger association change events.  
 
-    这是Jimmer触发器机制中一个非常重要的特性！
+    This is a very important characteristic of Jimmer's trigger mechanism!
     :::
 
-    很明显，❸处已经感知到了`BookStore.books`关联属性发生了变更，因此，会进一步导致此处计算属性也会受影响。
+    It is obvious that ❸ has already sensed the change of association property `BookStore.books`, so it will further lead to the invalidation of the computed cache here.
