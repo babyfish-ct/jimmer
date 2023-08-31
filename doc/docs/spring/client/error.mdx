@@ -1,6 +1,6 @@
 ---
-sidebar_position: 2
-title: Generate front-end exceptions
+sidebar_position: 2 
+title: Generate Frontend Exceptions
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,32 +8,32 @@ import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
 import {VsModule, VsApi, VsFamily, VsCode, VsField} from '@site/src/components/Image';
 
-这部分功能其实和ORM没有关系。
+This part is actually unrelated to ORM. 
 
-然而，既然提供了[前后端API免对接](./api)，那么就必须提供这部分功能，否则就不是一套完整的方案。
+However, since [backend and frontend API integration](./api) is provided, this part of the functionality must also be provided to make it a complete solution.
 
-## 异常簇
+## Exception Clusters
 
-我们需要定义特别的Java/Kotlin业务异常，它们能够被直接翻译成客户端可以理解的数据。
+We need to define special Java/Kotlin business exceptions that can be directly translated into data that the client can understand.
 
-该如何定义这种特别的业务异常类型呢？有两种极端的选择
+How do we define this special type of business exception? There are two extreme choices:
 
--   整个应用程序共享一个业务异常类，并内置客户端可以立即的error code
+- Share one business exception class across the entire application, with built-in error codes that the client can immediately understand
 
--   每个业务错误都定义一个业务异常类
+- Define a business exception class for each business error
 
-很明显，上述两种方案都不合适。第一种方案粒度太粗，全局的error code难以维护；第二种方案粒度太细，需要定义的异常类是在太多了。
+Obviously, both of the above solutions are unsuitable. The first option is too coarse-grained, with globally maintained error codes that are difficult to maintain. The second option is too fine-grained, requiring the definition of too many exception classes. 
 
-所以，Jimmer选择折中方案，把业务异常分为多个簇，每个簇用一套Error Code。
+So, Jimmer chooses a compromise: dividing business exceptions into multiple clusters, with each cluster using one set of Error Codes.
 
-Jimmer采用枚举来定义异常簇，枚举也是这簇异常的错误码，例如
+Jimmer uses enums to define exception clusters, where the enum also serves as the error code for that cluster, e.g.
 
-### 定义异常簇
+### Define Exception Clusters
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="UserInfoErrorCode.java"
+```java title="UserInfoErrorCode.java"  
 package com.example.business.error;
 
 import org.babyfish.jimmer.error.ErrorFamily;
@@ -67,33 +67,33 @@ enum class UserInfoErrorCode {
 </TabItem>
 </Tabs>
 
-`@org.babyfish.jimmer.error.ErrorFamily`表示该枚举表示一簇业务异常，该枚举也是这簇异常的ErrorCode.
+The `@org.babyfish.jimmer.error.ErrorFamily` annotation indicates that this enum represents a cluster of business exceptions, and the enum itself serves as the error code for this cluster. 
 
-注解`@ErrorFamily`会被Jimmer的预编译器处理
+The `@ErrorFamily` annotation will be processed by Jimmer's precompiler
 
 :::info
-这里的预编译器，对于Java而言就是Annotation Processor；对于Kotlin而言就是KSP。
+Here, the precompiler refers to Annotation Processor for Java, and KSP for Kotlin.
 
-这部分类型已经在[概述/快速上手/生成代码](../../overview/get-started/generate-code)一节中讨论过，此处不在重复。
+This part of the code has been discussed in [Overview/Get Started/Generate Code](../../overview/get-started/generate-code), so it won't be repeated here.
 :::
 
-预编译器会会根据此枚举生成如下异常类
+The precompiler will generate the following exception class based on this enum:
 
 :::info
-用作声明异常簇的枚举可以选择用`ErrorCode`或`Error`结尾。
+For enums used to declare exception clusters, you can choose to use `ErrorCode` or `Error` as a special suffix. 
 
--   如果有这样的特殊结尾，异常类名 = 枚举名去掉这样的结尾并加 + `Exception`
+- If there is such a special suffix, the exception class name = enum name without the suffix + `Exception`
 
--   否则，异常类名 = 枚举名 + `Exception`
+- Otherwise, exception class name = enum name + `Exception`
 
-所以，这里生成的异常名为`UserInfoException`
+So here the generated exception name is `UserInfoException` 
 :::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="UserInfoException.java"
-public abstract class UserInfoException 
+public abstract class UserInfoException
     extends CodeBasedException { ❶
 
     private UserInfoException(String message, Throwable cause) {
@@ -288,36 +288,36 @@ public abstract class UserInfoException private constructor(
 </TabItem>
 </Tabs>
 
--   ❶ 基于枚举错误码的异常必然继承`org.babyfish.jimmer.error.CodeBasedException`
+- ❶ Exceptions based on enum error codes must inherit from `org.babyfish.jimmer.error.CodeBasedException`
 
--   ❷ 这一簇异常的错误码的类型为`UserInfoErrorCode`
+- ❷ The error code type for this cluster of exceptions is `UserInfoErrorCode` 
 
--   ❸❹ 构建错误码为`ILLEGAL_USER_NAME`的异常的静态方法
+- ❸❹ Static method to construct exception with error code `ILLEGAL_USER_NAME`
 
--   ❺❻ 构建错误码为`PASSWORD_TOO_SHORT`的异常的静态方法
+- ❺❻ Static method to construct exception with error code `PASSWORD_TOO_SHORT` 
 
--   ❼❽ 构建错误码为`PASSWORDS_NOT_SAME`的异常的静态方法
+- ❼❽ Static method to construct exception with error code `PASSWORDS_NOT_SAME`
 
--   ❾ 异常类`UserInfoException.IllegalUserName`的错误码为`ILLEGAL_USER_NAME`
+- ❾ Exception class `UserInfoException.IllegalUserName` has error code `ILLEGAL_USER_NAME`
 
--   ❿ 异常类`UserInfoException.PasswordTooShort`的错误码为`PASSWORD_TOO_SHORT`
+- ❿ Exception class `UserInfoException.PasswordTooShort` has error code `PASSWORD_TOO_SHORT`  
 
--   ⓫ 异常类`UserInfoException.PasswordsNotSame`的错误码为`PASSWORDS_NOT_SAME`
+- ⓫ Exception class `UserInfoException.PasswordsNotSame` has error code `PASSWORDS_NOT_SAME`
 
-### 为异常码添加字段
+### Add Fields to Error Codes
 
-可以为任何一个错误码添加附加字段。
+Additional fields can be added to any error code. 
 
-比如，`ILLEGAL_USER_NAME`表示非法的用户名，即用户名包含了非法字符。我们可以为其添加字段`illegalChars`
+For example, `ILLEGAL_USER_NAME` indicates an illegal username, i.e. the username contains illegal characters. We can add the field `illegalChars` for it.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="UserInfoErrorCode.java"
 @ErrorFamily
 public enum UserInfoErrorCode {
 
-    // highlight-next-line
+    // highlight-next-line  
     @ErrorField(name = "illegalChars", type = Character.class, list = true)
     ILLEGAL_USER_NAME,
     
@@ -331,11 +331,11 @@ public enum UserInfoErrorCode {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="UserInfoErrorCode.kt"
-@ErrorFamily
+@ErrorFamily  
 enum class UserInfoErrorCode {
     
     // highlight-next-line
-    @ErrorField(name = "illegalChars", type = Char::class, list = true)
+    @ErrorField(name = "illegalChars", type = Char::class, list = true) 
     ILLEGAL_USER_NAME,
 
     PASSWORD_TOO_SHORT,
@@ -347,7 +347,7 @@ enum class UserInfoErrorCode {
 </TabItem>
 </Tabs>
 
-生成的代码的如下
+The generated code is as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -360,7 +360,7 @@ public abstract class UserInfoException extends CodeBasedException {
         // highlight-next-line
         @NotNull List<Character> illegalChars
     ) {
-        ...省略代码...
+        ...omit code...
     }
 
     public static UserInfoException illegalUserName(
@@ -369,7 +369,7 @@ public abstract class UserInfoException extends CodeBasedException {
         // highlight-next-line
         @NotNull List<Character> illegalChars
     ) {
-        ...省略代码...
+        ...omit code...
     }
 
     public static class IllegalUserName extends UserInfoException {
@@ -399,10 +399,10 @@ public abstract class UserInfoException extends CodeBasedException {
             return illegalChars;
         }
 
-        ...省略其他代码...
+        ...omit other code...
     }
 
-    ...省略其他代码...
+    ...omit other code...
 }
 ```
 
@@ -426,9 +426,9 @@ public abstract class UserInfoException private constructor(
             // highlight-next-line
             illegalChars: List<Char>,
         ): UserInfoException = 
-            ...省略代码...
+            ...omit code...
 
-        ...省略其他代码...
+        ...omit other code...
     }
 
     public class IllegalUserName(
@@ -444,7 +444,7 @@ public abstract class UserInfoException private constructor(
                 "illegalChars" to illegalChars
             )
 
-        ...省略其他代码...
+        ...omit other code...
     }
 }
 ```
@@ -452,9 +452,9 @@ public abstract class UserInfoException private constructor(
 </TabItem>
 </Tabs>
 
-## 为REST API声明异常
+## Declare Exceptions for REST APIs  
 
-### 允许抛出异常簇中所有异常
+### Allow All Exceptions in Cluster
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -466,16 +466,16 @@ import org.babyfish.jimmer.client.ThrowsAll;
 
 @PostMapping("/user")
 // highlight-next-line
-@ThrowsAll(UserInfoErrorCode.class)
+@ThrowsAll(UserInfoErrorCode.class) 
 public void registerUser(@RequestBody RegisterUserInput input) {
-    ...省略代码...
+    ...omit code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="UserController.kt"
+```kotlin title="UserController.kt" 
 package com.example.service
 
 import import org.babyfish.jimmer.client.ThrowsAll
@@ -484,7 +484,7 @@ import import org.babyfish.jimmer.client.ThrowsAll
 // highlight-next-line
 @ThrowsAll(UserInfoErrorCode::class)
 fun registerUser(@RequestBody input: RegisterUserInput) {
-    ...省略代码...
+    ...omit code...
 }
 ```
 
@@ -492,12 +492,12 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 </Tabs>
 
 :::info
-注解`@org.babyfish.jimmer.client.ThrowsAll`允许REST API抛出异常簇中所有异常。
+The `@org.babyfish.jimmer.client.ThrowsAll` annotation allows the REST API to throw all exceptions in the cluster.
 :::
 
-### 允许抛出异常簇中部分异常
+### Allow Some Exceptions in Cluster
 
-让我定位另外一个业务异常簇
+Let's locate another business exception cluster:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -520,20 +520,20 @@ enum class PlatformErrorCode {
     PERMISSION_DENIED,
     DATA_IS_FROZEN,
     SERVICE_IS_SUSPENDED
-}
+} 
 ```
 
-</TabItem>
+</TabItem>  
 </Tabs>
 
-为了能声明某个REST API只能抛出这簇异常中的部分异常，定义如下注解
+To be able to declare that a REST API can only throw some of the exceptions in this cluster, define the following annotation:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="ThrowsPlatformError.java"
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.RUNTIME)  
 @Target(ElementType.METHOD)
 public @interface ThrowsPlatformError {
     PlatformErrorCode[] value();
@@ -545,7 +545,7 @@ public @interface ThrowsPlatformError {
 
 ```kotlin title="ThrowsPlatformError.kt"
 @Retention(AnnotationRetention.RUNTIME)
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION)  
 annotation class ThrowsPlatformError(
     val value: Array<PlatformErrorCode>
 )
@@ -554,32 +554,32 @@ annotation class ThrowsPlatformError(
 </TabItem>
 </Tabs>
 
-这个注解满足以下5个条件
+This annotation satisfies the following 5 conditions:
 
--   `Retention`被配置为`RUNTIME`，即运行时可反射
+- `Retention` is configured as `RUNTIME`, i.e. reflectable at runtime
 
--   `Target`被配置为`METHOD`或`FUNCTION` *(kotlin)*，可以用于修饰方法
+- `Target` is configured as `METHOD` or `FUNCTION` *(kotlin)*, can be used to decorate methods
 
--   具备一个名称为`value`的属性
+- Has a property named `value` 
 
--   `value`属性的类型为数组
+- The `value` property is of array type  
 
--   `value`数组的元素类型时被`@ErrorFamily`修饰的枚举。
+- The array element type of `value` is an enum decorated with `@ErrorFamily`.
 
 :::tip
-如果一个注解满足以上所有条件时，就可以用它修饰REST API，为其声明所抛出的异常。就如同我们使用`@ThrowsAll`那样
+If an annotation satisfies all the above conditions, it can be used to decorate REST APIs to declare the exceptions that can be thrown. Just like how we use `@ThrowsAll`.
 :::
 
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
-```java title="UserController.java"
+```java title="UserController.java"  
 @PostMapping("/user")
 @ThrowsAll(UserInfoErrorCode.class)
 // highlight-next-line
 @ThrowsPlatformError({PlatformErrorCode.SERVICE_IS_SUSPENDED})
 public void registerUser(@RequestBody RegisterUserInput input) {
-    ...省略代码...
+    ...omit code...
 }
 ```
 
@@ -588,40 +588,40 @@ public void registerUser(@RequestBody RegisterUserInput input) {
 
 ```kotlin title="UserController.kt"
 @PostMapping("/user")
-@ThrowsAll(UserInfoErrorCode::class)
+@ThrowsAll(UserInfoErrorCode::class) 
 // highlight-next-line
-@ThrowsPlatformError([PlatformErrorCode.SERVICE_IS_SUSPENDED])
+@ThrowsPlatformError([PlatformErrorCode.SERVICE_IS_SUSPENDED])  
 fun registerUser(@RequestBody input: RegisterUserInput) {
-    ...省略代码...
+    ...omit code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-## 导出服务端异常
+## Export Server Side Exceptions  
 
-前面的工作只是声明REST API有可能抛出何种异常。接下来我们讨论在服务端真正抛出异常
-
-### 抛出异常
+### Throw Exceptions
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="UserController.java"
+```java title="UserController.java"  
 @PostMapping("/user")
 @ThrowsAll(UserInfoErrorCode.class)
 @ThrowsPlatformError({PlatformErrorCode.SERVICE_IS_SUSPENDED})
 public void registerUser(@RequestBody RegisterUserInput input) {
-    if (...某些条件...) {
+    if (...some condition...) {
         // highlight-next-line
         throw PlatformException.serviceIsSuspended(
             "The service is suspended"
         );
     }
-    ...省略其他代码...
+    ...omit other code...
 }
-```
+
+</TabItem>
+好的,让我补充后续被截断的内容:
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
@@ -631,13 +631,13 @@ public void registerUser(@RequestBody RegisterUserInput input) {
 @ThrowsAll(UserInfoErrorCode::class)
 @ThrowsPlatformError([PlatformErrorCode.SERVICE_IS_SUSPENDED])
 fun registerUser(@RequestBody input: RegisterUserInput) {
-    if (...某些条件...) {
+    if (...some condition...) {
         // highlight-next-line
         throw PlatformException.serviceIsSuspended(
             "The service is suspended"
         )
     }
-    ...省略其他代码...
+    ...omit other code...
 }
 ```
 
@@ -645,16 +645,16 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 </Tabs>
 
 :::caution
-内部代码抛出的异常的种类，不得超过对外声明的种类
+The kinds of exceptions thrown internally must not exceed those declared externally.
 :::
 
-### 将异常消息写入HTTP响应
+### Write Exception Messages to HTTP Responses
 
 :::tip
-只要使用了Jimmer的Spring Boot Starter，无需任何工作，服务抛出任何继承自`CodeBasedException`的异常都会被自动翻译。
+As long as Jimmer's Spring Boot Starter is used, no extra work is required. Any exception inherited from `CodeBasedException` thrown by the service will be automatically translated.
 :::
 
-翻译结果为
+The translation result is:
 
 ```json
 {
@@ -665,16 +665,16 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 }
 ```
 
-为了方便开发和测试，可以在`application.yml`或`appliction.properties`中配置
+To facilitate development and testing, you can configure in `application.yml` or `application.properties`:
 ```
 jimmer:
     error-translator:
         debug-info-supported: true
 ```
 
-此配置将会在HTTP返回中附带便于在开发和测试阶段定位问题的信息。由于内容较长，请点击下面的按钮查看结果。
+This configuration will include information useful for locating issues during development and testing in the HTTP response. Since the content is quite long, please click the button below to view the result.
 
-<ViewMore buttonText="查看结果" title="附带调试信息的异常返回">
+<ViewMore buttonText="View Result" title="Exception Return with Debug Info">
 
 ```json
 {
@@ -925,38 +925,38 @@ jimmer:
 }
 ```
 
-</ViewMore>
+</ViewMore>  
 
 :::warning
-此配置仅用于辅助开发和测试，绝不能在生产环境中开启此开关！
+This configuration is only for assisting development and testing, and must NOT be enabled in production environments!
 
-比如，请在`application-dev.yml`和`application-test.yml`中开启此开关，但绝对不能在`application-prod.yml`中开启。
+For example, enable this switch in `application-dev.yml` and `application-test.yml`, but absolutely do NOT enable it in `application-prod.yml`.
 :::
 
-## 客户端
+## Client
 
-### 生成的TypeScript代码
+### Generated TypeScript Code  
 
 ```ts
 export type AllErrors = ❶
     {
         readonly family: "PLATFORM_ERROR_CODE", ❷
         readonly code: "SERVICE_IS_SUSPENDED" ❸
-    } | 
+    } |
     {
         readonly family: "USER_INFO_ERROR_CODE",
         readonly code: "ILLEGAL_USER_NAME",
         readonly "illegalChars": ReadonlyArray<number> ❹
-    } | 
+    } |
     {
         readonly family: "USER_INFO_ERROR_CODE",
         readonly code: "PASSWORDS_NOT_SAME"
-    } | 
+    } |
     {
         readonly family: "USER_INFO_ERROR_CODE",
         readonly code: "PASSWORD_TOO_SHORT"
     } |
-    ...省略其他代码...
+    ...omit other code...
 ;
 
 export type ApiErrors = { ❺
@@ -966,81 +966,80 @@ export type ApiErrors = { ❺
                 readonly family: 'USER_INFO_ERROR_CODE',
                 readonly code: 'ILLEGAL_USER_NAME',
                 readonly [key:string]: any
-            } | 
+            } |
             {
                 readonly family: 'USER_INFO_ERROR_CODE',
                 readonly code: 'PASSWORD_TOO_SHORT',
                 readonly [key:string]: any
-            } | 
+            } |
             {
                 readonly family: 'USER_INFO_ERROR_CODE',
                 readonly code: 'PASSWORDS_NOT_SAME',
                 readonly [key:string]: any
-            } | 
+            } |
             {
                 readonly family: 'PLATFORM_ERROR_CODE',
                 readonly code: 'SERVICE_IS_SUSPENDED',
                 readonly [key:string]: any
             }
         ),
-        ...省略其他代码...
+        ...omit other code...
     },
     "bookController": {
-        ...省略代码...
+        ...omit code...
     },
-    ...省略其他代码...
+    ...omit other code...
 };
 ```
 
--   ❶ `AllErrors`定义所有错误类型
+- ❶ `AllErrors` defines all error types
 
-    :::cuation
-    只有REST API使用注解明确声明会被抛出错误码才会被用于生成TypeScript代码。
+    :::caution  
+    Only REST APIs that explicitly declare exceptions that may be thrown via annotations in Java/Kotlin code will be used to generate TypeScript code.
     
-    比如，上文中我们使用Java/Kotlin代码定义了错误码`PlatformError.PERMISSION_DENIED`和`PlatformErrorCode.DATA_IS_FROZEN`，
-    但它们暂未被被任何REST API使用`@ThrowsAll`或自定义的`@ThrowsPlatformError`声明。所以，它们不会在`AllErrors`中被定义。
+    For example, in the Java/Kotlin code above, we defined the error codes `PlatformError.PERMISSION_DENIED` and `PlatformErrorCode.DATA_IS_FROZEN`, but they have not yet been declared as throwable by any REST API using `@ThrowsAll` or custom `@ThrowsPlatformError`. So they will not be defined in `AllErrors`.
     :::
 
--   ❷ 被`@ErrorFamily`修饰的枚举名，在客户端代码中是错误的`family`字段。用于鉴别错误属于哪一簇
+- ❷ The enum name decorated with `@ErrorFamily` is the `family` field in client code, used to identify which cluster the error belongs to
 
--   ❸ 枚举变量的名字，在客户端代码中是错误的`code`字段。用于鉴别错误是哪一种
+- ❸ The enum variable name is the `code` field in client code, used to identify which specific error it is
 
--   ❹ 服务端使用`@ErrorField` *(此注解可以重复)* 为某个错误码声明任意个附加字段 *(本例只有一个)*，因此，这里生成所有附加字段
+- ❹ The server uses `@ErrorField` *(can repeat)* to declare arbitrary additional fields for an error code *(only one here)*, so all additional fields are generated here
 
     :::tip
-    ❶处的`AllErrors`定义所有错误，绝不重复。
+    ❶ `AllErrors` defines all errors, never duplicated.
     
-    稍后❺处的`ApiErrors`引用错误，可能重复。因为不同的REST API可能都会被声明未抛出同一种错误码。
+    `ApiErrors` at ❺ refers to errors, may have duplicates. Because different REST APIs may declare throwing the same error code.
 
-    所以，附加字段总是被声明在`AllErrors`中，不会被声明再`ApiErrors`中。这也是`AllErrors`和`ApiErrors`分离的根本原因。
+    So additional fields are always declared in `AllErrors`, not in `ApiErrors`. This is the fundamental reason `AllErrors` and `ApiErrors` are separated.
     :::
 
--   ❺ 各REST API可能抛出的错误
+- ❺ Errors that each REST API may throw 
 
--   ❻ `userController`模块可能抛出的错误
+- ❻ Errors that `userController` module may throw
 
--   ❼ `userController.registerUser`接口可能抛出的错误
+- ❼ Errors that `userController.registerUser` API may throw
 
-### TypeScript IDE的效果
+### TypeScript IDE Effects
 
-上面的TypeScript代码较多，考虑到部分读者没有TypeScript的背景知识，这里罗列一些IDE的智能提示截图
+The above TypeScript code is quite lengthy, and considering some readers may not have TypeScript background knowledge, here are some IDE auto-complete screenshots:
 
--   全局类型`ApiErrors`下面有两个选项: `userController`和`bookController`
+-   Under global type `ApiErrors`, there are two options: `userController` and `bookController`
 
     <VsModule/>
 
--   `ApiErrors["userController"]`下面有三个选项: `login`、`logout`和`registerUser`
+-   `ApiErrors["userController"]` has three options: `login`, `logout` and `registerUser`
 
     <VsApi/>
 
--   `ApiErrors["userController"]["registerUser"]`的`family`字段有两个选项: `USER_INFO_ERROR_CODE`和`PLATFORM_ERROR_CODE`
+-   For `ApiErrors["userController"]["registerUser"]`, the `family` field has two options: `USER_INFO_ERROR_CODE` and `PLATFORM_ERROR_CODE`
 
-    <VsFamily/>
+    <VsFamily/> 
 
--   一旦`family`被确定为`UserInfoErrorCode`，`code`字段有三个选项: `ILLEGAL_USER_NAME`、`PASSWORD_TOO_SHORT`和`PASSWORDS_NOT_SAME`
+-   Once `family` is determined as `UserInfoErrorCode`, the `code` field has three options: `ILLEGAL_USER_NAME`, `PASSWORD_TOO_SHORT` and `PASSWORDS_NOT_SAME`
 
     <VsCode/>
 
--   一旦`code`被确定为`ILLEGAL_USER_NAME`，则可以使用`illegalChars`附加字段   
+-   Once `code` is determined as `ILLEGAL_USER_NAME`, the additional `illegalChars` field can be used
 
     <VsField/>
