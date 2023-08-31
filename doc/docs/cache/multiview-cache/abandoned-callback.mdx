@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: The reason why the cache is not in effect
+title: Cache Abandoned Reason
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,29 +8,29 @@ import TabItem from '@theme/TabItem';
 
 ## CacheAbandonedCallback
 
-按照前面文档的阐述，使用多视图缓存相对严苛，必须同时满足以下两个条件
+According to the previous documentation, using multi-view caches is relatively strict and the following two conditions must be met at the same time:
 
-1.  必须明确为需要属性置顶多视图缓存。
+1.  The properties that need multi-view caching must be explicitly specified.
 
-    缓存是多层的，需要为用于构建缓存实例的`ChainCacheBuilder<K, V>`指定多个`Binder`对象，即`LoadingBinder/KLoadingBinder`或`SimpleBinder/KSimpleBinder`。
+    Caching is multi-layered. Multiple `Binder` objects must be specified for the `ChainCacheBuilder<K, V>` used to build the cache instance, i.e. `LoadingBinder/KLoadingBinder` or `SimpleBinder/KSimpleBinder`.
     
-    对于多视图缓存而言，所有`Binder`对象都必须实现`LoadingBinder.Parameterized<K, V>/KLoadingBinder.Parameterized<K, V>`或`SimpleBinder.Parameterized<K, V>/KSimpleBinder.Parameterized<K, V>`接口。否则，最终`ChainCacheBuilder<K, V>`创建的缓存是单视图缓存。
+    For multi-view caches, all `Binder` objects must implement the `LoadingBinder.Parameterized<K, V>/KLoadingBinder.Parameterized<K, V>` or `SimpleBinder.Parameterized<K, V>/KSimpleBinder.Parameterized<K, V>` interface. Otherwise, the final cache created by `ChainCacheBuilder<K, V>` is a single-view cache.
 
-2.  关联属性的过滤规则和计算属性的计算规则必须支持缓存友好。
+2.  The filtering rules for associative properties and the calculation rules for computed properties must be cache friendly.
 
-    -   对于关联属性而言，影响其关联对象的 **所有** 全局过滤器必须是缓存友好的过滤器。任何一个过滤器不对缓存友好都可能导致该属性无法使用缓存。
+    -   For associative properties, **all** global filters that affect their associated objects must be cache friendly filters. If any one filter is not cache friendly, it may cause the property to be unable to use caching.
 
-        -   对于用户自定义的缓存过滤器而言，必须实现`CacheableFilter<E>/KCacheableFilter<E>`接口。
+        - For user-defined cache filters, the `CacheableFilter<E>/KCacheableFilter<E>` interface must be implemented.
 
-        -   对于软删除注解`@LogicalDeleted`而言，必须将其属性`useMultiViewCache`配置为`true`*(这会导致其内置全局过滤器实现`CacheableFilter<E>/KCacheableFilter<E>`接口)*。
+        - For the `@LogicalDeleted` soft deletion annotation, its `useMultiViewCache` property must be configured as `true` *(this will cause its built-in global filter to implement the `CacheableFilter<E>/KCacheableFilter<E>` interface)*.
 
-    -   对于计算属性而言，其`TransientResolver<ID, V>/KTransientResolver<ID, V>`的方法`getParameterMapRef`不得返回null。
+    -   For computed properties, the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` must not return null.
+    
+3.  The property uses attribute-level filters in [object fetchers](../../query/object-fetcher).
 
-3.  对属性使用了[对象抓取器](../../query/object-fetcher)中的属性级过滤器
+If these prerequisite conditions are not fully met, even if caching is specified for associative or computed properties, Jimmer will abandon them. Although the reasons have been explained in detail in previous documents, troubleshooting such issues during actual development is inconvenient. 
 
-如果这些前提条件并未完全满足，即便为关联属性或计算属性指定了缓存，Jimmer也会弃之不用。虽然前面的文档详细解释过原因，但实际开发中遇到这类问题时排查不方便。
-
-为了让开发人员快速得知属性级缓存未生效的事实及其原因，Jimmer定义了一个回调接口，如下
+To quickly inform developers of the fact that property-level caching did not take effect and the reason, Jimmer defines a callback interface as follows:
 
 ```java
 package org.babyfish.jimmer.sql.cache;
@@ -44,45 +44,44 @@ public interface CacheAbandonedCallback {
     enum Reason {
 
         CACHEABLE_FILTER_REQUIRED,
-
+       
         PARAMETERIZED_CACHE_REQUIRED,
-
+   
         FIELD_FILTER_USED
     }
 }
 ```
 
-该回调接口告诉开发人员，虽然某个属性的缓存被指定了但并未被Jimmer所采纳，以及原因。其`abandoned`方法具备两个参数
+This callback interface tells developers that although caching is specified for a property, it is not adopted by Jimmer, and the reason. Its `abandoned` method has two parameters:
 
--   `prop`： 哪个属性并为采纳用户配置的缓存。
+-   `prop`: Which property does not adopt the caching configured by the user. 
 
--   `reason`：该属性的缓存未被采纳的原因，有以下三种可能：
+-   `reason`: The reason why the caching of this property is not adopted. There are three possible values:
 
-    -   CACHEABLE_FILTER_REQUIRED: 关联对象受到某些全局过滤器的影响，但并非所有过滤器都实现了`CacheableFilter<E>/KCacheableFilter<E>`接口。
+    -   CACHEABLE_FILTER_REQUIRED: The associated objects are affected by some global filters, but not all filters implement the `CacheableFilter<E>/KCacheableFilter<E>` interface.
 
-    -   PARAMETERIZED_CACHE_REQUIRED: 影响关联属性的某些`CacheableFilter<E>/KCacheableFilter<E>`对象的`getParameters`方法或实现计算属性的`TransientResolver<ID, V>/KTransientResolver<ID, V>`的`getParamterMapRef`方法返回了长度非0的Map，
-        但是，开发人员并未为该属性配置的缓存并不是多视图缓存。
+    -   PARAMETERIZED_CACHE_REQUIRED: The `getParameters` method of some `CacheableFilter<E>/KCacheableFilter<E>` objects affecting the associative properties or the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` implementing the computed properties returns a Map of non-zero length, but the caching configured for that property by the developer is not a multi-view cache.
 
-    -   FIELD_FILTER_USED: 开发人员对属性使用了[对象抓取器](../../query/object-fetcher)中的属性级过滤器。
+    -   FIELD_FILTER_USED: The developer uses attribute-level filters for the property in [object fetchers](../../query/object-fetcher).
 
-开发人员可以自己实现`CacheAbandonedCallback`接口，创建对象并将其注册到SqlClient中。被注册的回调对象数量无限制。
+Developers can implement the `CacheAbandonedCallback` interface themselves, create an object, and register it with SqlClient. There is no limit on the number of registered callback objects.
 
-## 注册Callback
+## Registering Callback
 
-有两种方法可以为Jimmer注册`CacheAbandonedCallback`
+There are two ways to register `CacheAbandonedCallback` for Jimmer:
 
--   使用Spring Boot Starter
+-   Using Spring Boot Starter
 
-    只需用`@Component`修饰`CacheAbandonedCallback`的实现类即可
+    Just decorate the implementation class of `CacheAbandonedCallback` with `@Component`:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    // highlight-next-line
+    // highlight-next-line 
     @Component
     public class MyCallback implements CacheAbandonedCallback {
-        ...省略代码...
+        ...omit code...
     }
     ```
 
@@ -93,30 +92,30 @@ public interface CacheAbandonedCallback {
     // highlight-next-line
     @Component
     class MyCallback : CacheAbandonedCallback {
-        ...省略代码...
+        ...omit code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   使用底层API 
+-   Using underlying API
 
     
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    JSqlClient sqlClient = 
+    JSqlClient sqlClient =
         JSqlClient
             .newBuilder()
             // highlight-next-line
             .addCacheAbandonedCallback(
                 new CacheAbandonedCallback() {
-                    ...省略代码...
+                    ...omit code...
                 }
             )
-            ...省略其他配置...
+            ...omit other configuration...
             .build();
     ```
 
@@ -128,23 +127,23 @@ public interface CacheAbandonedCallback {
         // highlight-next-line
         addCacheAbandonedCallback(
             object: CacheAbandonedCallback {
-                ...省略代码...
+                ...omit code...
             }
         )
-        ...省略其他配置...
+        ...omit other configuration...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-## Spring Boot Starter默认行为
+## Default Behavior of Spring Boot Starter
 
-如果用户并未注册任何callback实现，Spring Boot Starter会默认注册一个Callback实现，将缓存未被采纳的原因作为警告日志输出，例如：
+If no callback implementation is registered by the user, the Spring Boot Starter will register a default callback implementation by default, outputting the reason why the cache is not adopted as a warning log, for example:
 
 ```
 !!!Jimmer warning!!!
 Property-level cache is abandoned.
-    Property: `com.yourcompany.yourproject.model.BookStore.books` +
+    Property: `com.yourcompany.yourproject.model.BookStore.books`
     Reason: CACHEABLE_FILTER_REQUIRED
-``` 
+```

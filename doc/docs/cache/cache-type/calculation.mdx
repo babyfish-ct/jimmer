@@ -1,65 +1,65 @@
 ---
 sidebar_position: 3
-title: Calculated cache
+title: Computed Caching
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
-import { CalculatedCache } from '@site/src/components/Image';
+import {CalculatedCache} from '@site/src/components/Image';
 
-所谓计算缓存，指把当前对象id映射为用户定义的[复杂计算属性](../../mapping/advanced/calculated/transient)的计算值。
+Computed caching refers to mapping the current object id to the computed value of the user-defined [complex computed property](../../mapping/advanced/calculated/transient).
 
 <CalculatedCache/>
 
-## 计算属性回顾
+## Computed Property Recap
 
-在[复杂计算属性](../../mapping/advanced/calculated/transient)一文中，我们详细地讲解了复杂计算属性。
+In the [Complex Computed Properties](../../mapping/advanced/calculated/transient) article, we discussed complex computed properties in detail.
 
 :::caution
-本文聚焦于计算缓存，并不重复介绍[复杂计算属性](../../mapping/advanced/calculated/transient)，请读者先了解[复杂计算属性](../../mapping/advanced/calculated/transient)再阅读此文
+This article focuses on computed caching and does not repeat the introduction to [complex computed properties](../../mapping/advanced/calculated/transient). Please read [complex computed properties](../../mapping/advanced/calculated/transient) before reading this article.
 :::
 
-在本文中，我们将为[复杂计算属性](../../mapping/advanced/calculated/transient)中定义的计算属性`BookStore.avgPrice`添加缓存支持。
+In this article, we will add cache support for the computed property `BookStore.avgPrice` defined in [complex computed properties](../../mapping/advanced/calculated/transient).
 
 :::info
-为简化文档，本文只讨论`BookStore.avgPrice`，不讨论另外一个关联型计算属性`BookStore.newestBooks`，读者可阅读和运行如下官方例子
+To simplify the documentation, this article only discusses `BookStore.avgPrice` and does not discuss the other association-based computed property `BookStore.newestBooks`. Readers can read and run the following official examples:
 -   example/java/jimmer-sql
--   example/java/jimmer-sql-graphql
+-   example/java/jimmer-sql-graphql 
 -   example/kotlin/jimmer-sql-kt
 -   example/kotlin/jimmer-sql-graphql-kt
 :::
 
-## 启用计算缓存
+## Enabling Computed Caching
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 @Bean
 public CacheFactory cacheFactory(
     RedisConnectionFactory connectionFactory,
     ObjectMapper objectMapper
 ) {
 
-    RedisTemplate<String, byte[]> redisTemplate = 
+    RedisTemplate<String, byte[]> redisTemplate =  
         RedisCaches.cacheRedisTemplate(connectionFactory);
 
     return new CacheFactory() {
 
         @Override
         public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
-            ...省略代码...
+            ...omit code...
         }
 
         @Override
         public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
-            ...省略代码...
+            ...omit code... 
         }
 
         @Override
-        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
-            ...省略代码...
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            ...omit code...
         }
 
         @Override
@@ -75,9 +75,9 @@ public CacheFactory cacheFactory(
                 )
                 .add(
                     new RedisValueBinder<>(
-                        redisTemplate, 
-                        objectMapper, 
-                        prop, 
+                        redisTemplate,  
+                        objectMapper,
+                        prop,
                         duration
                     )
                 )
@@ -102,13 +102,13 @@ fun cacheFactory(
     return object: KCacheFactory {
 
         override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-            ...省略代码...
+            ...omit code...
 
         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-            ...省略代码...
+            ...omit code...
 
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-            ...省略代码...
+            ...omit code...
 
         // highlight-next-line
         override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
@@ -117,13 +117,13 @@ fun cacheFactory(
         private fun <K, V> createPropCache(prop: ImmutableProp, duration: Duration): Cache<K, V> =
             ChainCacheBuilder<Any, Any>()
                 .add(
-                    CaffeineBinder(512, Duration.ofSeconds(1))
+                    CaffeineBinder(512, Duration.ofSeconds(1))   
                 )
                 .add(
                     RedisValueBinder(
-                        redisTemplate, 
-                        objectMapper, 
-                        prop, 
+                        redisTemplate,
+                        objectMapper,
+                        prop,
                         duration
                     )
                 )
@@ -132,10 +132,10 @@ fun cacheFactory(
 }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-## 使用
+## Usage
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -159,7 +159,7 @@ System.out.println(stores);
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val stores = sqlClient
     .createQuery(BookStore::class) {
         select(
@@ -177,46 +177,47 @@ println(stores)
 </TabItem>
 </Tabs>
 
--   第一步：查询聚合根
+-   Step 1: Query aggregate root
 
-    首先查询聚合根对象，执行如下SQL
+    First, query the aggregate root object, executing the following SQL:
     
     ```sql
     select
         tb_1_.ID,
         tb_1_.NAME,
-        tb_1_.WEBSITE
+        tb_1_.WEBSITE 
     from BOOK_STORE tb_1_
     ```
 
-    这里实现了代码中的查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
+    The query in the code is implemented here to obtain some BookStore objects. Such objects obtained by direct user queries are called aggregate root objects.
     
     :::caution
-    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
+    Jimmer does not cache aggregate objects returned by user queries, because the consistency of such query results cannot be guaranteed.
+
+    Even if caching them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
     :::
 
--   第二步：通过计算缓存把当前对象id转化为计算值
+-   Step 2: Convert current object id to computed value via computed cache
 
-    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象。
+    The above code will return a series of aggregate root objects. If using the official sample data in the database, it will return two aggregate root objects.
 
-    代码中的对象抓取器包含了计算属性`BookStore.avgPrice`
+    The object fetcher in the code contains the computed property `BookStore.avgPrice`
 
-    这2条BOOK_STORE的主键`ID`为1和2。
+    The primary keys `ID` of these 2 BOOK_STOREs are 1 and 2.
     
-    Jimmer先从Redis查找数据，被查找的键为`BookStore.avgPrice-1`和`BookStore.avgPrice-2`。
+    Jimmer first looks up the data in Redis with keys `BookStore.avgPrice-1` and `BookStore.avgPrice-2`.
 
-    假设无法在Redis中找到这些键所对应的数据
+    Suppose the data corresponding to these keys cannot be found in Redis:
     ```
     127.0.0.1:6379> keys BookStore.avgPrice-*
     (empty array)
     ```
 
-    所以，执行如下SQL，完成计算属性的计算
+    So the following SQL is executed to compute the computed property:
     ```sql
     select
         tb_1_.ID,
-        avg(tb_2_.PRICE)
+        avg(tb_2_.PRICE) 
     from BOOK_STORE tb_1_
     left join BOOK tb_2_
         on tb_1_.ID = tb_2_.STORE_ID
@@ -228,9 +229,9 @@ println(stores)
         tb_1_.ID
     ```
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer will put the query results into Redis, so we can view this data in Redis:
     ```
-    127.0.0.1:6379> keys BookStore.avgPrice-*
+    127.0.0.1:6379> keys BookStore.avgPrice-* 
     1) "BookStore.avgPrice-2"
     2) "BookStore.avgPrice-1"
     127.0.0.1:6379> get BookStore.avgPrice-1
@@ -240,17 +241,17 @@ println(stores)
     127.0.0.1:6379>
     ```
 
-    这样，两个`BookStore`对象可以通过其计算属性`BookStore.avgPrice`得到各自书籍的平均价格。
+    Thus, the two `BookStore` objects can obtain the average price of their respective books through their computed property `BookStore.avgPrice`.
 
-    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+    Undoubtedly, before the data in Redis expires, executing the Java/Kotlin code above again will directly return the associated data from Redis without generating the second SQL statement.
 
-最终，Jimmer把3个步骤的结果拼接在一起，作为最终返回给用户的数据
+Finally, Jimmer concatenates the results of the 3 steps as the final data returned to the user:
 
 ```json
 [
     {
         "id":2,
-        "name":"MANNING",
+        "name":"MANNING", 
         "website":null,
         // highlight-next-line
         "avgPrice":58.5
@@ -258,34 +259,33 @@ println(stores)
     {
         "id":1,
         "name":"O'REILLY",
-        "website":null,
+        "website":null, 
         // highlight-next-line
         "avgPrice":80.333333
     }
 ]
 ```
 
-## 一致性
+## Consistency  
 
-### 响应触发器
+### Responding to Triggers
 
 :::caution
-和对象缓存、关联缓存那种全自动的缓存一致性不同，计算缓存的一致性维护需要用户辅助。
+Unlike the fully automatic cache consistency of object caching and association caching, maintaining the consistency of computed caching requires user assistance.
 
-这是因为计算属性引入了ORM框架无法理解的用户自定义计算规则
+This is because computed properties introduce custom computing rules that the ORM framework cannot understand.
 :::
 
-就`BookStore.avgPrice`这个计算属性而言，以下两种情况都会导致计算缓存的失效
+For the computed property `BookStore.avgPrice`, the following two cases will both invalidate the computed cache:
 
--   修改`BOOK`记录的`STORE_ID`外键字段，新旧值对应的两个书店的`avgPrice`缓存数据都需要被删除
+-   Modifying the `STORE_ID` foreign key field of the `BOOK` record will affect the `avgPrice` cache data of the two bookstores corresponding to the old and new values.
 
--   修改`BOOK`记录的`PRICE`字段，其所属书店的`avgPrice`缓存数据需要被删除
+-   Modifying the `PRICE` field of the `BOOK` record will invalidate the `avgPrice` cache data of the bookstore it belongs to.
 
-
-在[复杂计算属性](../../mapping/advanced/calculated/transient)一文中，为支持计算属性`BookStore.avgPrice`定义了一个类`BookStoreAvgPriceResolver`，其代码如下。
+In the [Complex Computed Properties](../../mapping/advanced/calculated/transient) article, a class `BookStoreAvgPriceResolver` is defined to support the computed property `BookStore.avgPrice`. The code is as follows:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="BookStoreAvgPriceResolver.java"
 package com.example.business.resolver;
@@ -299,12 +299,12 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     
     @Override
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
-        ...省略代码...
+        ...omit code...
     }
 
     @Override
     public BigDecimal getDefaultValue() {
-        ...省略代码...
+        ...omit code...
     }
 }
 ```
@@ -312,7 +312,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreAvgPriceResolver.kt"
+```kotlin title="BookStoreAvgPriceResolver.kt" 
 package com.example.business.resolver
 
 import org.babyfish.jimmer.sql.*
@@ -321,40 +321,40 @@ import org.springframework.stereotype.Component
 
 @Component
 class BookStoreAvgPriceResolver(
-    ...略...
+    ...omit...
 ) : KTransientResolver<Long, BigDecimal> {
 
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> {
-        ...省略代码...
+        ...omit code...
     }
 
     override fun getDefaultValue(): BigDecimal =
-        ...省略代码...
+        ...omit code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-我们需要修改此类，添加两个Spring事件监听方法
+We need to modify this class to add two Spring event listener methods:
 
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
 ```java title="BookStoreAvgPriceResolver.java"
-package com.example.business.resolver;
+package com.example.business.resolver;  
 
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component 
 public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
     
-    // 构造注入sqlClient
-    private final JSqlClient sqlClient; 
+    // Inject sqlClient via constructor
+    private final JSqlClient sqlClient;
 
-    ...省略其他代码...
+    ...omit other code...
 
     @EventListener
     // highlight-next-line
@@ -363,7 +363,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     }
 
     @EventListener
-    // highlight-next-line
+    // highlight-next-line 
     public void onEntityChange(EntityEvent<?> e) {
         // TODO
     }
@@ -382,11 +382,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class BookStoreAvgPriceResolver(
-    // 构造注入sqlClient
-    private val sqlClient KSqlClient
+    // Inject sqlClient via constructor
+    private val sqlClient: KSqlClient   
 ) : KTransientResolver<Long, BigDecimal> {
 
-    ...省略其他代码...
+    ...omit other code...
 
     @EventListener
     // highlight-next-line
@@ -396,38 +396,38 @@ class BookStoreAvgPriceResolver(
 
     @EventListener
     // highlight-next-line
-    fun onEntityChange(e: EntityEvent<?>) {
+    fun onEntityChange(e: EntityEvent<*>) {
         // TODO
     }
 }
 ```
 
 </TabItem>
-</Tabs>
+</Tabs>  
 
 :::info
-如果使用SpringBoot Starter，触发器事件，即`EntityEvent`和`AssociationEvent`，会被作为Spring事件发送。
+If using the SpringBoot Starter, trigger events, i.e. `EntityEvent` and `AssociationEvent`, will be sent as Spring events.
 
-所以，用注解`@org.springframework.context.event.EventListener`响应Jimmer触发器的事件即可。
+So responding to Jimmer trigger events with the `@org.springframework.context.event.EventListener` annotation works.  
 
-如果使用底层API，采用Jimmer的触发器API响应事件
+If using the underlying API, respond to events using Jimmer's trigger API:
 
-<ViewMore buttonText="非Spring模式">
+<ViewMore buttonText="Non-Spring Mode">
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStoreAvgPriceResolver.java"
+```java title="BookStoreAvgPriceResolver.java" 
 package com.example.business.resolver;
 
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.TransientResolver;
 
-public class BookStoreAvgPriceResolver 
+public class BookStoreAvgPriceResolver  
 implements TransientResolver<Long, BigDecimal> {
     
     private final JSqlClient sqlClient;
 
-    ...省略其他代码...
+    ...omit other code...
 
     public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
@@ -464,15 +464,15 @@ import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.springframework.stereotype.Component
 
 class BookStoreAvgPriceResolver(
-    private val sqlClient KSqlClient
+    private val sqlClient: KSqlClient
 ) : KTransientResolver<Long, BigDecimal> {
 
-    ...省略其他代码...
+    ...omit other code... 
 
     init {
         // highlight-next-line
         sqlClient.triggers.addAssociationListener {
-            this.onAssociationChange(it)
+            this.onAssociationChange(it) 
         }
         // highlight-next-line
         sqlClient.triggers.addEntityListener {
@@ -486,41 +486,41 @@ class BookStoreAvgPriceResolver(
     }
 
     // highlight-next-line
-    private fun onEntityChange(e: EntityEvent<?>) {
+    private fun onEntityChange(e: EntityEvent<*>) {
         // TODO
     }
 }
 ```
 
 </TabItem>
-</Tabs>
+</Tabs> 
 </ViewMore>
 :::
 
-接下来，我们会实现上面的空白方法：`onEntityChange`和`onAssociationChange`。
+Next, we will implement the empty methods above: `onEntityChange` and `onAssociationChange`.
 
-### 修改BOOK.STORE_ID
+### Modifying BOOK.STORE_ID  
 
-用户可以通过修改`BOOK`表的外键`STORE_ID`来改变`BOOK_STORE`和`BOOK`之间的关联，这必然会影响某些书店的`BookStore.avgPrice`。
+Users can change the association between `BOOK_STORE` and `BOOK` by modifying the foreign key `STORE_ID` of `BOOK`. This will inevitably affect the `BookStore.avgPrice` of some bookstores. 
 
-对此，我们可以通过`onAssociationChange`方法来了解对象之间的关系变化。
+For this, we can understand the relationship change between objects through the `onAssociationChange` method:
 
 :::tip
-如果监听多对一关联`Book.store`的变化，那么就需要针对修改前的旧值和修改后的新值处理两个父对象，还要考虑它们是否为null。
+If listening for changes to the many-to-one association `Book.store`, then the two parent objects corresponding to the old and new values need to be handled, and whether they are null must be considered.
 
-幸运的是，本例所基于的实体模型中，存在逆向的一对多关联`BookStore.books`。
+Fortunately, the entity model on which this example is based has the reverse one-to-many association `BookStore.books`.  
 
-如果监听一对多关联`BookStore.books`的变化，我们只需要考虑当前`BookStore`对象的id即可，代码会得到简化，如下
+If listening for changes to the one-to-many association `BookStore.books`, we only need to consider the id of the current `BookStore` object, which simplifies the code as follows:
 :::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 @EventListener
 public void onAssociationChange(AssociationEvent e) {
     if (sqlClient.getCaches().isAffectedBy(e) && ❶
-        e.isChanged(BookStoreProps.BOOKS) ❷
+        e.isChanged(BookStoreProps.BOOKS) ❷  
     ) {
         sqlClient
                 .getCaches()
@@ -534,7 +534,7 @@ public void onAssociationChange(AssociationEvent e) {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-@EventListener
+@EventListener  
 fun onAssociationChange(e: AssociationEvent) {
     if (sqlClient.caches.isAffectedBy(e) && ❶
         e.isChanged(BookStore::books) ❷
@@ -550,39 +550,40 @@ fun onAssociationChange(e: AssociationEvent) {
 </TabItem>
 </Tabs>
 
--   ❶ 如果触发器的类型被设置为`BOTH`，任何修改导致的触发器事件通知都会被执行两次。
+-   ❶ If the trigger type is set to `BOTH`, any modification that triggers event notifications will be executed twice.
 
     :::note
-    第1次：`e.connection`非null，表示这是Transaction触发器发出的通知。
+    1st time: `e.connection` is non-null, indicating this is a notification sent by the Transaction trigger.
 
-    第2次：`e.connection`为null，表示这是BinLog触发器发出的通知。
+    2nd time: `e.connection` is null, indicating this is a notification sent by the BinLog trigger.
     :::
 
-    然而，计算缓存的一致性维护工作只需要做一次，无需做两次。
+    However, the computed cache consistency maintenance work only needs to be done once, no need to do it twice.
 
-    `sqlClient.caches.isAffectedBy(e)`可以解决这个问题，即使触发器的类型被设置为`BOTH`，也可保证这里的代码只会执行一次。
+    `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
 
     :::tip
-    无论Jimmer的触发器的类型是否被设置为`BOTH`，都建议将此检查作为一个纪律性动作加上。
+    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplinary action.
     :::
 
--   ❷ 如果一对多关联`BookStore.books`被修改
+-   ❷ If the one-to-many association `BookStore.books` is modified.
 
--   ❸ 获得计算属性`BookStore.avgPrice`所对应的计算缓存
+-   ❸ Get the computed cache corresponding to the computed property `BookStore.avgPrice`. 
 
--   ❹ 按照当前`BookStore`对象的id删除计算缓存
+-   ❹ Delete the computed cache according to the id of the current `BookStore` object.
 
-现在，让我们来验证修改`Book.store`的效果
+Now let's verify the effect of modifying `Book.store`:
 
--   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+-   If BinLog trigger is enabled, modifying the database by any means can lead to Jimmer's cache consistency intervention. For example, directly execute the following SQL in the SQL IDE:
+
     ```sql
-    update BOOK 
-    /* Old value: 1, New value: 2 */
-    set STORE_ID = 2 
+    update BOOK
+    /* Old value: 1, New value: 2 */ 
+    set STORE_ID = 2
     where ID = 7;
     ```
 
--   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+-   If only Transaction trigger is enabled, Jimmer's API must be used to modify the database:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -596,10 +597,10 @@ fun onAssociationChange(e: AssociationEvent) {
         .where(table.id().eq(7L))
         .execute();
     ```
-
+    
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
-
+    
     ```kotlin
     sqlClient
         .createUpdate(Book::class) {
@@ -609,28 +610,28 @@ fun onAssociationChange(e: AssociationEvent) {
         }
         .execute()
     ```
-
+    
     </TabItem>
     </Tabs>
 
-无论通过上述何种方式修改数据，你都会在看到如下日志输出
+Regardless of which way above is used to modify the data, you will see the following log output:
 
 ```
 Delete data from redis: [Book-7]
-Delete data from redis: [Book.store-7]
+Delete data from redis: [Book.store-7] 
 Delete data from redis: [BookStore.avgPrice-1] ❶
 Delete data from redis: [BookStore.books-1]
 Delete data from redis: [BookStore.avgPrice-2] ❷
 Delete data from redis: [BookStore.books-2]
 ```
 
--   ❶ 外键修改前的旧值`1`所引用的父对象的计算缓存`BookStore.avgPrice-1`被删除
+-   ❶ The computed cache `BookStore.avgPrice-1` of the parent object referenced by the old value `1` of the foreign key is deleted.
 
--   ❷ 外键修改后的新值`2`所引用的父对象的计算缓存`BookStore.avgPrice-2`被删除
+-   ❷ The computed cache `BookStore.avgPrice-2` of the parent object referenced by the new value `2` of the foreign key is deleted.
 
-### 修改BOOK.PRICE
+### Modifying BOOK.PRICE
 
-用户还可以修改书籍的价格，这必然会影响其所属书店的`BookStore.avgPrice`。对此，我们可如此实现`onEntityChange`方法：
+Users can also modify the price of a book, which will inevitably affect the `BookStore.avgPrice` of its bookstore. We can implement the `onEntityChange` method as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -670,65 +671,65 @@ fun onEntityChange(e: EntityEvent<*>) {
                 ?.delete(storeId) ❻
         }
     }
-}
+} 
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ 如果触发器的类型被设置为`BOTH`，任何修改导致的触发器事件通知都会被执行两次。
+-   ❶ If the trigger type is set to `BOTH`, any modification that triggers event notifications will be executed twice.
 
     :::note
-    第1次：`e.connection`非null，表示这是Transaction触发器发出的通知。
+    1st time: `e.connection` is non-null, indicating this is a notification sent by the Transaction trigger.
 
-    第2次：`e.connection`为null，表示这是BinLog触发器发出的通知。
+    2nd time: `e.connection` is null, indicating this is a notification sent by the BinLog trigger.
     :::
 
-    然而，计算缓存的一致性维护工作只需要做一次，无需做两次。
+    However, the computed cache consistency maintenance work only needs to be done once, no need to do it twice.
 
-    `sqlClient.caches.isAffectedBy(e)`可以解决这个问题，即使触发器的类型被设置为`BOTH`，也可保证这里的代码只会执行一次。
+    `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
 
     :::tip
-    无论Jimmer的触发器的类型是否被设置为`BOTH`，都建议将此检查作为一个纪律性动作加上。
+    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplinary action.
     :::
 
--   ❷ `e.isChanged(BookProps.PRICE)`/`e.isChanged(Book::price)`同时包含了两个含义
+-   ❷ `e.isChanged(BookProps.PRICE)`/`e.isChanged(Book::price)` contains two meanings at the same time:
 
-    -   被修改的实体类型是`Book`
+    - The modified entity type is `Book`.
 
-    -   被修改的实体属性是`Book.price`
+    - The modified entity property is `Book.price`.
 
-    当以上条件满足时，我们需要清理其所属书店的计算属性`BookStore.avgPrice`的计算缓存。
+    When the above conditions are met, we need to clean up the computed cache of `BookStore.avgPrice` of its bookstore.
 
--   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)`表示，
-    如果基于外键的`Book.store`没有被修改，返回其一个`Ref`包装对象，其内是未被修改的关联对象。如果该动态对象非null，则只有id属性。
+-   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)` means that if the foreign key-based `Book.store` has not been modified, return a `Ref` wrapper object containing the unmodified associated object. If the dynamic object is non-null, it only has the id property.
 
     :::info
-    -   如果`getUnchangedRef`返回的包装对象`Ref`本身为null，表示这个属性被修改了，并非`Unchanged`属性。
+    - If `getUnchangedRef` returns a null wrapper object `Ref`, it means this property has been modified rather than being an `Unchanged` property.
 
-    -   如果`getUnchangedRef`返回的包装对象`Ref`非null但其内部的`value`为null，表示这个属性未被修改，且其值一直保持为null。
+    - If `getUnchangedRef` returns a non-null wrapper object `Ref` but its internal `value` is null, it means this property has not been modified and its value has remained null all along.
     :::
-
--   ❹ 如果被修改的数据的的外键未被修改且非null
+    
+-   ❹ If the foreign key of the modified data has not been modified and is non-null.
 
     :::tip
-    这里无需考虑外键字段被修改的情况，因为前面我们已经讨论过的`onAssociationChange`会妥善处理这种情况。
+    The case where the foreign key field is modified does not need to be considered here, because the `onAssociationChange` discussed above will handle this case properly.
     :::
+    
+-   ❺ Get the computed cache corresponding to the computed property `BookStore.avgPrice`.
 
--   ❺ 获得计算属性`BookStore.avgPrice`所对应的计算缓存
+-   ❻ Delete the computed cache according to the id of the parent object.
 
--   ❻ 按照父对象id删除计算缓存
+Now let's verify the effect of modifying `Book.price`: 
 
-现在，让我们来验证修改`Book.price`的效果
+-   If BinLog trigger is enabled, modifying the database by any means can lead to Jimmer's cache consistency intervention. For example, directly execute the following SQL in the SQL IDE:
 
--   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
     ```sql
-    update BOOK 
-    set PRICE = PRICE + 1 
+    update BOOK
+    set PRICE = PRICE + 1
     where ID = 7;
-    ```
-
--   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+  ```
+  
+-   If only Transaction trigger is enabled, Jimmer's API must be used to modify the database:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -749,19 +750,19 @@ fun onEntityChange(e: EntityEvent<*>) {
     sqlClient
         .createUpdate(Book::class) {
             set(table.price, table.price + BigDecimal.ONE)
-            where(table.id eq 7L)
+            where(table.id eq 7L) 
         }
         .execute()
     ```
 
     </TabItem>
     </Tabs>
-
-无论通过上述何种方式修改数据，你都会在看到如下日志输出
+  
+Regardless of which way above is used to modify the data, you will see the following log output:
 
 ```
 Delete data from redis: [BookStore.avgPrice-1] ❶
-Delete data from redis: [Book-7]
+Delete data from redis: [Book-7] 
 ```
 
--   ❶ 外键所引用的父对象的计算缓存`BookStore.avgPrice-1`被删除
+- ❶ The computed cache `BookStore.avgPrice-1` of the parent object referenced by the foreign key is deleted.

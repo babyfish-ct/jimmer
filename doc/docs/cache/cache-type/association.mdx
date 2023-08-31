@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Association cache
+title: Association Caching
 ---
 
 import Tabs from '@theme/Tabs';
@@ -10,48 +10,48 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import {AssociationCache} from '@site/src/components/Image';
 
-所谓关联缓存，指把当前对象id映射为关联对象id或集合。
+Association caching refers to mapping the current object id to the associated object id or collection.
 
 <AssociationCache/>
 
-其中
--   `BookStore.books-*`: 一对多关联缓存
--   `Book.store-*`: 多对一关联缓存
--   `Book.authors-*`: 多对多关联缓存
--   `Author.books-*`: 多对多关联缓存
+Where:
+-   `BookStore.books-*`: One-to-many association caching  
+-   `Book.store-*`: Many-to-one association caching
+-   `Book.authors-*`: Many-to-many association caching
+-   `Author.books-*`: Many-to-many association caching  
 
 :::caution
-和其他关联缓存不同，有一种场景不需要使用一对一或多对一关联缓存。
+Unlike other association caches, there is one scenario that does not require using one-to-one or many-to-one association caching.
 
-如果一对一或多对一关联基于真实外键，在数据库中存在对应的外键约束，那么外键本身就是关联对象id，无需使用关联缓存。
+If a one-to-one or many-to-one association is based on a real foreign key with a corresponding foreign key constraint in the database, then the foreign key itself is the associated object id, and association caching is not required.
 
-其他情况下，Jimmer都会使用一对一或多对一关联缓存，这些情况包括：
+In other cases, Jimmer will use one-to-one or many-to-one association caching. These cases include:
 
--   引用关联属性是反向映射
+-   The referenced association property is reverse mapped
 
-    即`@OneToOne`的`mappedBy`被配置
+    That is, `@OneToOne`'s `mappedBy` is configured.
 
--   引用关联属性基于伪外键
+-   The referenced association property is based on a pseudo foreign key
 
-    所谓伪外键，即在开发人员意识中是外键，但是数据库中并没有对应的外键约束
+    A pseudo foreign key means that it is conceptually a foreign key in the developer's mind, but there is no corresponding foreign key constraint in the database.
 
-    伪外键字段可能是非法值，非null并不意味着关联对象的存在，所以，需要用关联缓存过滤得到合法的关联对象
+    The pseudo foreign key field may contain illegal values. Being non-null does not mean the associated object exists, so association caching is required to filter out valid associated objects.
+    
+-   The referenced association property is based on a join table rather than a foreign key. 
 
--   引用关联属性基于中间表，而非基于外键
+-   For an existing Jimmer object, lazily loading a one-to-one or many-to-one associated object when the association property is absent.
 
--   对于已经存在的Jimmer对象，在其一对一或多对一关属性缺时加载一对一或多一关联对象
-
-    这种特殊的案例，在[用Jimmer实现GraphQL](../../graphql)时会出现，其他情况下基本不会出现
+    This special case will appear when using Jimmer to implement GraphQL. It basically does not appear in other cases. 
 :::
 
-在附带的官方示例中，多对一关联`Book.store`基于真实外键，所以，其多对一缓存不会被使用。
+In the official sample code included, the many-to-one association `Book.store` is based on a real foreign key, so its many-to-one cache will not be used.
 
-因此，本文的例子基于一对多关联`BookStore.books`和多对多关联`Book.authors`。
+Therefore, the examples in this article are based on the one-to-many association `BookStore.books` and the many-to-many association `Book.authors`.
 
-## 启用关联缓存
+## Enabling Association Caching
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 @Bean
@@ -67,22 +67,22 @@ public CacheFactory cacheFactory(
 
         @Override
         public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
-            ...省略代码...
+            ...omit code...
         }
 
-        // 将当前对象id映射为关联对象id
-        // 适用于一对一和多对一关联属性
+        // Map current object id to associated object id
+        // Applies to one-to-one and many-to-one associations 
         @Override
         // highlight-next-line
         public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
             return createPropCache(prop, Duration.ofMinutes(10));
         }
 
-        // 将当前对象id映射为关联对象id集合
-        // 适用于一对多和多对多关联属性
+        // Map current object id to collection of associated object ids
+        // Applies to one-to-many and many-to-many associations
         @Override
         // highlight-next-line
-        public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
             return createPropCache(prop, Duration.ofMinutes(5));
         }
 
@@ -102,7 +102,7 @@ public CacheFactory cacheFactory(
                 .build();
         }
 
-        ...省略其他代码...
+        ...omit other code...
     };
 }
 ```
@@ -114,7 +114,7 @@ public CacheFactory cacheFactory(
 @Bean
 fun cacheFactory(
     connectionFactory: RedisConnectionFactory,
-    objectMapper: ObjectMapper
+    objectMapper: ObjectMapper  
 ): KCacheFactory {
 
     val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
@@ -122,21 +122,21 @@ fun cacheFactory(
     return object: KCacheFactory {
 
         override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
-            ...省略代码...
+            ...omit code...
 
-        // 将当前对象id映射为关联对象id
-        // 适用于一对一和多对一关联属性
+        // Map current object id to associated object id
+        // Applies to one-to-one and many-to-one associations
         // highlight-next-line
         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
             createPropCache(prop, Duration.ofMinutes(10))
 
-        // 将当前对象id映射为关联对象id集合
-        // 适用于一对多和多对多关联属性
+        // Map current object id to collection of associated object ids
+        // Applies to one-to-many and many-to-many associations 
         // highlight-next-line
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
             createPropCache(prop, Duration.ofMinutes(5))
 
-        private fun <K, V> createPropCache(prop: ImmutableProp, duration: Duration): Cache<K, V>  =
+        private fun <K, V> createPropCache(prop: ImmutableProp, duration: Duration): Cache<K, V> =
             ChainCacheBuilder<Any, Any>()
                 .add(
                     CaffeineBinder(512, Duration.ofSeconds(1))
@@ -145,13 +145,13 @@ fun cacheFactory(
                     RedisValueBinder(
                         redisTemplate, 
                         objectMapper, 
-                        prop, 
+                        prop,  
                         duration
                     )
                 )
                 .build()
 
-        ...省略其他代码...
+        ...omit other code...
     }
 }
 ```
@@ -159,12 +159,12 @@ fun cacheFactory(
 </TabItem>
 </Tabs>
 
-## 集合关联排序
+## Sorting Collection Associations  
 
 :::caution
-对于集合类型的关联，如果我们使用[对象抓取器](../../query/object-fetcher)的字段级过滤器来实现关联级排序，将会导致Jimmer无视关联缓存。
+For collection type associations, if we use the field filter of [object fetchers](../../query/object-fetcher) to implement association-level sorting, it will cause Jimmer to ignore association caching.
 
-如果既要充分利用关联缓存，又要让[对象抓取器](../../query/object-fetcher)查询返回的关联对象集合的排序可控，可以在实体上使用静态配置制定默认排序。
+To make full use of association caching while keeping the sorting of the associated object collection returned by the [object fetcher](../../query/object-fetcher) query controllable, you can specify the default sorting statically on the entity.
 :::
 
 -   `BookStore.books`
@@ -186,7 +186,7 @@ fun cacheFactory(
         )
         List<Book> books();
 
-        ...省略其他代码...
+        ...omit other code...
     }
     ```
 
@@ -194,7 +194,7 @@ fun cacheFactory(
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin title="BookStore.kt"
-    @Entity
+    @Entity  
     interface BookStore {
 
         @OneToMany(
@@ -207,7 +207,7 @@ fun cacheFactory(
         )
         val books : List<Book>
 
-        ...省略其他代码...
+        ...omit other code...
     }
     ```
 
@@ -228,11 +228,11 @@ fun cacheFactory(
             orderedProps = {
                 @OrderedProp("firstName"),
                 @OrderedProp("lastName")
-            }
+            }  
         )
         List<Author> authors();
 
-        ...省略其他代码...
+        ...omit other code...
     }
     ```
 
@@ -252,18 +252,18 @@ fun cacheFactory(
         )
         val authors : List<Author>
 
-        ...省略其他代码...
+        ...omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-## 使用
+## Usage
 
-如本文开头所言，本文的的示范基于一对多关联`BookStore.books`和多对多关联`Book.authors`。
+As mentioned at the beginning of this article, the examples here are based on the one-to-many association `BookStore.books` and the many-to-many association `Book.authors`.
 
-### 一对多：BookStore.books
+### One-to-Many: BookStore.books  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -288,7 +288,7 @@ System.out.println(stores);
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val stores = sqlClient
@@ -310,9 +310,9 @@ println(stores)
 </TabItem>
 </Tabs>
 
--   第一步：查询聚合根
+-   Step 1: Query aggregate root
 
-    首先查询聚合根对象，执行如下SQL
+    First, query the aggregate root object, executing the following SQL:
     
     ```sql
     select
@@ -322,30 +322,31 @@ println(stores)
     from BOOK_STORE tb_1_
     ```
 
-    这里实现了代码中的查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
+    The query in the code is implemented here to obtain some BookStore objects. Such objects obtained by direct user queries are called aggregate root objects.
     
     :::caution
-    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务需要，不应由框架抽象并统一其行为。
+    Jimmer does not cache aggregate objects returned by user queries, because the consistency of such query results cannot be guaranteed.
+
+    Even if caching them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
     :::
 
--   第二步：通过关联缓存把当前对象id转化为关联对象id
+-   Step 2: Convert current object id to associated object id via association cache
 
-    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象。
+    The above code will return a series of aggregate root objects. If using the official sample data in the database, it will return two aggregate root objects.
 
-    代码中的对象抓取器包含了一对多关联`BookStore.books`
+    The object fetcher in the code contains the one-to-many association `BookStore.books`
 
-    这2条BOOK_STORE的主键`ID`为1和2。
+    The primary keys `ID` of these 2 BOOK_STOREs are 1 and 2.
     
-    Jimmer先从Redis查找数据，被查找的键为`BookStore.books-1`和`BookStore.books-2`。
+    Jimmer first looks up the data in Redis with keys `BookStore.books-1` and `BookStore.books-2`.
 
-    假设无法在Redis中找到这些键所对应的数据
+    Suppose the data corresponding to these keys cannot be found in Redis:
     ```
     127.0.0.1:6379> keys BookStore.books-*
     (empty array)
     ```
 
-    所以，执行如下SQL，从数据库加载数据
+    So the following SQL is executed to load data from the database:
     ```sql
     select
         tb_1_.STORE_ID,
@@ -363,7 +364,7 @@ println(stores)
         tb_1_.EDITION desc
     ```
 
-    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer will put the results of the query into Redis, so we can view this data in Redis:
     ```
     127.0.0.1:6379> keys BookStore.books-*
     1) "BookStore.books-2"
@@ -371,23 +372,23 @@ println(stores)
     127.0.0.1:6379> get BookStore.books-1
     "[6,5,4,3,2,1,9,8,7]"
     127.0.0.1:6379> get BookStore.books-2
-    "[12,11,10]"
+    "[12,11,10]" 
     127.0.0.1:6379>
     ```
 
-    这样，两个`BookStore`对象可以通过的一对多关联`BookStore.books`得到各自的关联对象id集合。
+    Thus, the two `BookStore` objects can obtain the associated object id collections of their respective one-to-many associations `BookStore.books`.
 
-    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+    Undoubtedly, before the data in Redis expires, executing the Java/Kotlin code above again will directly return the associated data from Redis without generating the second SQL statement.
 
--   第三步：通过对象缓存把关联对象id转化为关联对象
+-   Step 3: Convert associated object id to associated object via object cache
 
-    这类操作在[对象缓存](./object)中详细讨论过，本文聚焦于关联缓存，不再赘述。
+    Such operations have been discussed in detail in [Object Caching](./object), so they are not repeated here. This article focuses on association caching.
 
     :::caution
-    在启用缓存的配置中，如果对某个关联属性启用关联缓存但并未对其关联对象的类型启用对象缓存，将会导致异常。
+    In the caching configuration, if association caching is enabled for an association property but object caching is not enabled for its associated object type, an exception will be thrown.
     :::
 
-最终，Jimmer把两个步骤的结果拼接在一起，作为最终返回给用户的数据
+Finally, Jimmer concatenates the results of the two steps as the final data returned to the user:
 
 ```json
 [
@@ -405,35 +406,35 @@ println(stores)
             },
             {
                 "id":5,
-                ...略...
+                ...omit...
             },
             {
                 "id":4,
-                ...略...
+                ...omit...
             },
             {
                 "id":3,
-                ...略...
+                ...omit...
             },
             {
                 "id":2,
-                ...略...
+                ...omit...
             },
             {
                 "id":1,
-                ...略...
+                ...omit...
             },
             {
                 "id":9,
-                ...略...
+                ...omit...
             },
             {
                 "id":8,
-                ...略...
+                ...omit...
             },
             {
                 "id":7,
-                ...略...
+                ...omit...
             }
         ]
     },
@@ -451,38 +452,38 @@ println(stores)
             },
             {
                 "id":11,
-                ...略...
+                ...omit...
             },
             {
                 "id":10,
-                ...略...
+                ...omit...
             }
         ]
     }
 ]
-```
+```  
 
 :::info
-如果没有启用缓存，生成的SQL会有差异
+The generated SQL would differ if caching is not enabled:
 
-<ViewMore buttonText="不启用缓存的差异">
+<ViewMore buttonText="Difference without Caching">
 
-<Divider><Chip label="缓存模式"/></Divider>
+<Divider><Chip label="Caching Mode"/></Divider>
 
-在缓存模式下，这个例子具有三个执行步骤：
+In caching mode, this example has three execution steps:
 
-1.  从数据库查询聚合根
-    
-    无论是否启用缓存，这个步骤都相同，无需讨论
+1.  Query aggregate root from database
 
-2.  根据`BookStore.books`属性的关联缓存，把聚合根对象的id映射为关联对象的id
+    Regardless of whether caching is enabled, this step is the same, no need to discuss.
 
-    如果缓存中无相关数据，会导致如下SQL被执行
+2.  Based on the `BookStore.books` association cache, map the aggregate root object id to the associated object id
+
+    If no related data exists in the cache, the following SQL will be executed:
 
     ```sql
     select
-        ...略...
-    from BOOK tb_1_
+        ...omit...
+    from BOOK tb_1_ 
     where
         tb_1_.STORE_ID in (
             ? /* 1 */, ? /* 2 */
@@ -492,12 +493,12 @@ println(stores)
         tb_1_.EDITION desc
     ```
 
-3.  根据`Book`类型的对象缓存，把关联对象的id映射为关联对象
+3.  Based on the `Book` object cache, map the associated object id to the associated object
 
-    如果缓存中无相关数据，会导致如下SQL被执行
-    ```sql
+    If no related data exists in the cache, the following SQL will be executed:
+    ```sql 
     select
-        ...略...
+        ...omit...
     from BOOK tb_1_
     where
         tb_1_.ID in (
@@ -506,14 +507,14 @@ println(stores)
         )
     ```
 
-<Divider><Chip label="无缓存模式"/></Divider>
+<Divider><Chip label="No Caching Mode"/></Divider>
 
-如果未启用缓存，此查询只需要两个步骤，第一个步骤完全相同，第二个步骤执行如下SQL查询
+If caching is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
 
 ```sql
 select
-    ...略...
-from BOOK tb_1_
+    ...omit...
+from BOOK tb_1_ 
 where
     tb_1_.STORE_ID in (
         ? /* 1 */, ? /* 2 */
@@ -523,16 +524,16 @@ order by
     tb_1_.EDITION desc
 ```
 
-<Divider><Chip label="差异和总结"/></Divider>
+<Divider><Chip label="Difference and Summary"/></Divider>
 
-无缓存模式：尽可能生成少的SQL，每条SQL所执行的任务尽可能多，这样的SQL拥有最好的性能。
+No caching mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
 
-有缓存模式：并不力求生成的SQL数量的最小化，从SQL层面分析，性能不是最佳的，但是和缓存系统结合后，综合性能最佳。
+Caching mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the caching system, the overall performance is optimal.
 
-</ViewMore>
+</ViewMore>  
 :::
 
-### 多对多：Book.authors
+### Many-to-Many: Book.authors
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -575,15 +576,15 @@ val books = sqlClient
         )
     }
     .execute()
-println(books)
+println(books) 
 ```
 
 </TabItem>
 </Tabs>
 
--   第一步：查询聚合根
+-   Step 1: Query aggregate root
 
-    首先查询聚合根对象，执行如下SQL
+    First, query the aggregate root object, executing the following SQL:
     
     ```sql
     select
@@ -596,30 +597,33 @@ println(books)
         tb_1_.EDITION = ? /* 1 */
     ```
 
-    这里实现了代码中的查询，得到了一些Book对象。这种被用户直接查询而得的对象叫做聚合根对象
+    The query in the code is implemented here to obtain some Book objects. Such objects obtained by direct user queries are called aggregate root objects.
     
     :::caution
-    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不应由框架抽象并统一其行为。
+    Jimmer does not cache aggregate objects returned by user queries, because the consistency of such query results cannot be guaranteed.
+
+    Even if caching them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
     :::
 
--   第二步：通过关联缓存把当前对象id转化为关联对象id
+-   Step 2: Convert current object id to associated object ids via association cache
 
-    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到4个聚合根对象。
+    The above code will return a series of aggregate root objects. If using the official sample data in the database, it will return 4 aggregate root objects.
 
-    代码中的对象抓取器包含了一对多关联`Book.authors`
+    The object fetcher in the code contains the many-to-many association `Book.authors`
 
-    这4条BOOK的主键`ID`为1、4、7和10。
-    
-    Jimmer先从Redis查找数据，被查找的键为`Book.authors-1`、`Book.authors-4`、`Book.authors-7`和`Book.authors-10`。
+    The primary keys `ID` of these 4 BOOKs are 1, 4, 7 and 10.
 
-    假设无法在Redis中找到这些键所对应的数据
+    Jimmer first looks up the data in Redis with keys `Book.authors-1`, `Book.authors-4`, `Book.authors-7` and `Book.authors-10`.
+
+    Suppose the data corresponding to these keys cannot be found in Redis:
+
     ```
     127.0.0.1:6379> keys Book.authors-*
     (empty array)
     ```
 
-    所以，执行如下SQL，从数据库加载数据
+    So the following SQL is executed to load data from the database:
+
     ```sql
     select
         tb_1_.BOOK_ID,
@@ -635,15 +639,17 @@ println(books)
         tb_3_.FIRST_NAME asc,
         tb_3_.LAST_NAME asc
     ```
+
     :::note
-    如果不通过`@ManyToMany.orderedProps`为关联属性`Book.authors`指定默认排序，这里就的`join`不会出现
+    If no default sort is specified for the association property `Book.authors` via `@ManyToMany.orderedProps`, the `join` here will not appear.
     :::
 
-    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer will put the results of the query into Redis, so we can view this data in Redis:
+
     ```
     127.0.0.1:6379> keys Book.authors-*
     1) "Book.authors-4"
-    2) "Book.authors-1"
+    2) "Book.authors-1" 
     3) "Book.authors-10"
     4) "Book.authors-7"
     127.0.0.1:6379> get Book.authors-1
@@ -657,91 +663,91 @@ println(books)
     127.0.0.1:6379>
     ```
 
-    这样，我们就得到4个`Book`对象各自通过多对多关联`Book.authors`可以得到的关联对象id集合。
+    Thus, we have obtained the associated object id collections that the 4 `Book` objects can get through their respective many-to-many association `Book.authors`.
 
-    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+    Undoubtedly, before the data in Redis expires, executing the Java/Kotlin code above again will directly return the associated data from Redis without generating the second SQL statement.
 
--   第三步：通过对象缓存把关联对象id转化为关联对象
+-   Step 3: Convert associated object id to associated object via object cache
 
-    这类操作在[对象缓存](./object)中详细讨论过，本文聚焦于关联缓存，不再赘述。
+    Such operations have been discussed in detail in [Object Caching](./object), so they are not repeated here. This article focuses on association caching.
 
     :::caution
-    在启用缓存的配置中，如果对某个关联属性启用关联缓存但并未对其关联对象的类型启用对象缓存，将会导致异常。
+    In the caching configuration, if association caching is enabled for an association property but object caching is not enabled for its associated object type, an exception will be thrown.
     :::
 
-最终，Jimmer把3个步骤的结果拼接在一起，作为最终返回给用户的数据
+Finally, Jimmer concatenates the 3 steps results as the final data returned to the user:
 
 ```json
 [
-    {
-        "id":1,
-        "name":"Learning GraphQL",
-        "edition":1,
-        "price":51,
-        // highlight-next-line
-        "authors":[
-            {
-                "id":2,
-                "firstName":"Alex",
-                "lastName":"Banks",
-                "gender":"MALE"
-            },
-            {
-                "id":1,
-                "firstName":"Eve",
-                "lastName":"Procello",
-                "gender":"FEMALE"
-            }
-        ]
-    },
-    {
-        "id":4,
-        "name":"Effective TypeScript",
-        "edition":1,
-        "price":73,
-        // highlight-next-line
-        "authors":[...略...]
-    },
-    {
-        "id":7,
-        "name":"Programming TypeScript",
-        "edition":1,
-        "price":47.5,
-        // highlight-next-line
-        "authors":[...略...]
-    },
-    {
-        "id":10,
-        "name":"GraphQL in Action",
-        "edition":1,
-        "price":80,
-        // highlight-next-line
-        "authors":[...略...]
-    }
+  {
+    "id": 1,
+    "name": "Learning GraphQL", 
+    "edition": 1,
+    "price": 51,
+    // highlight-next-line  
+    "authors": [
+      {
+        "id": 2,
+        "firstName": "Alex",
+        "lastName": "Banks", 
+        "gender": "MALE"
+      },
+      {  
+        "id": 1,
+        "firstName": "Eve",
+        "lastName": "Procello",
+        "gender": "FEMALE"  
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Effective TypeScript",
+    "edition": 1, 
+    "price": 73,
+    // highlight-next-line
+    "authors": [...omit...]
+  },
+  {
+    "id": 7, 
+    "name": "Programming TypeScript",
+    "edition": 1,
+    "price": 47.5,
+    // highlight-next-line
+    "authors": [...omit...]
+  },
+  {
+    "id": 10,
+    "name": "GraphQL in Action",
+    "edition": 1,
+    "price": 80, 
+    // highlight-next-line
+    "authors": [...omit...]
+  }
 ]
 ```
 
 :::info
-如果没有启用缓存，生成的SQL会有差异
+The generated SQL would differ if caching is not enabled:
 
-<ViewMore buttonText="不启用缓存的差异">
+<ViewMore buttonText="Difference without Caching">
 
-<Divider><Chip label="缓存模式"/></Divider>
+<Divider><Chip label="Caching Mode"/></Divider>
 
-在缓存模式下，这个例子具有三个执行步骤：
+In caching mode, this example has three execution steps:
 
-1.  从数据库查询聚合根
-    
-    无论是否启用缓存，这个步骤都相同，无需讨论
+1.  Query aggregate root from database
 
-2.  根据`BookStore.books`属性的关联缓存，把聚合根对象的id映射为关联对象的id
+    Regardless of whether caching is enabled, this step is the same, no need to discuss.
 
-    如果缓存中无相关数据，会导致如下SQL被执行
+2.  Based on the `Book.authors` association cache, map the aggregate root object id to the associated object ids
+
+    If no related data exists in the cache, the following SQL will be executed:
 
     ```sql
     select
         tb_1_.BOOK_ID,
-        tb_1_.AUTHOR_ID
+        tb_1_.AUTHOR_ID 
     from BOOK_AUTHOR_MAPPING tb_1_
     inner join AUTHOR tb_3_
         on tb_1_.AUTHOR_ID = tb_3_.ID
@@ -754,9 +760,10 @@ println(books)
         tb_3_.LAST_NAME asc
     ```
 
-3.  根据`Book`类型的对象缓存，把关联对象的id映射为关联对象
+3.  Based on the `Author` object cache, map the associated object ids to associated objects
 
-    如果缓存中无相关数据，会导致如下SQL被执行
+    If no related data exists in the cache, the following SQL will be executed:
+
     ```sql
     select
         tb_1_.ID,
@@ -766,13 +773,13 @@ println(books)
     from AUTHOR tb_1_
     where
         tb_1_.ID in (
-            ? /* 2 */, ? /* 1 */, ? /* 4 */, ? /* 3 */, ? /* 5 */
+            ? /* 2 */, ? /* 1 */, ? /* 4 */, ? /* 3 */, ? /* 5 */ 
         )
     ```
 
-<Divider><Chip label="无缓存模式"/></Divider>
+<Divider><Chip label="No Caching Mode"/></Divider>
 
-如果未启用缓存，此查询只需要两个步骤，第一个步骤完全相同，第二个步骤执行如下SQL查询
+If caching is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
 
 ```sql
 select
@@ -789,38 +796,39 @@ where
         ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
     )
 order by
-    tb_1_.FIRST_NAME asc,
+    tb_1_.FIRST_NAME asc, 
     tb_1_.LAST_NAME asc
 ```
 
-<Divider><Chip label="差异和总结"/></Divider>
+<Divider><Chip label="Difference and Summary"/></Divider> 
 
-无缓存模式：尽可能生成少的SQL，每条SQL所执行的任务尽可能多，这样的SQL拥有最好的性能。
+No caching mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
 
-有缓存模式：并不力求生成的SQL数量的最小化，从SQL层面分析，性能不是最佳的，但是和缓存系统结合后，综合性能最佳。
+Caching mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the caching system, the overall performance is optimal.
 
 </ViewMore>
 :::
 
-## 一致性
+## Consistency
 
 :::caution
-要使用Jimmer缓存的自动一致性，需要先启用[触发器](../../mutation/trigger)
+To use Jimmer's automatic cache consistency, [triggers](../../mutation/trigger) need to be enabled first.
 :::
 
-### 一对多：BookStore.books
+### One-to-Many: BookStore.books
 
-修改BOOK表的外键`STORE_ID`，Jimmer自动删除多对一关联`Book.store`和一对多`BookStore.books`的关联缓存
+Modify the foreign key `STORE_ID` of the BOOK table, Jimmer automatically deletes the many-to-one association cache `Book.store` and the one-to-many association cache `BookStore.books`.
 
--   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+-   If BinLog trigger is enabled, modifying the database by any means can lead to Jimmer's cache consistency intervention. For example, directly execute the following SQL in the SQL IDE:
+
     ```sql
-    update BOOK 
+    update BOOK
     /* Old value: 1, New value: 2 */
-    set STORE_ID = 2 
+    set STORE_ID = 2
     where ID = 7;
     ```
 
--   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+-   If only Transaction trigger is enabled, Jimmer's API must be used to modify the database:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -829,7 +837,7 @@ order by
     BookTable table = BookTable.$;
     sqlClient
         .createUpdate(table)
-        // Old value: 1L, New value: 2L
+        // Old value: 1L, New value: 2L  
         .set(table.store().id, 2L)
         .where(table.id().eq(7L))
         .execute();
@@ -851,62 +859,64 @@ order by
     </TabItem>
     </Tabs>
 
-无论通过上述何种方式修改数据，你都会在看到如下日志输出
+Regardless of which way above is used to modify the data, you will see the following log output:
 
 ```
-Delete data from redis: [Book-7]
+Delete data from redis: [Book-7]  
 Delete data from redis: [Book.store-7] ❶
 Delete data from redis: [BookStore.books-1] ❷
 Delete data from redis: [BookStore.books-2] ❸
 ```
 
--   ❶ 对于id为`7`的Book对象而言，其多对一关联`Book.store`对应的关联缓存被删除
--   ❷ 对于id为`1` *(修改前的旧值)* 的BookStore对象而言，其一对多关联`BookStore.books`对应的关联缓存被删除
--   ❸ 对于id为`2` *(修改前的新值)* 的BookStore对象而言，其一对多关联`BookStore.books`对应的关联缓存被删除
+-   ❶ For the Book object with id `7`, its many-to-one association cache `Book.store` is deleted.
+-   ❷ For the BookStore object with id `1` *(old value before modification)*, its one-to-many association cache `BookStore.books` is deleted. 
+-   ❸ For the BookStore object with id `2` *(new value before modification)*, its one-to-many association cache `BookStore.books` is deleted.
 
-### 多对多：Book.authors
+### Many-to-Many: Book.authors
 
-为中间表`BOOK_AUTHOR_MAPPING`插入数据，Jimmer自动删除多对多关联`Book.authors`和`Author.books`的关联缓存
+Inserting data into the intermediate table `BOOK_AUTHOR_MAPPING` automatically deletes the many-to-many association caches `Book.authors` and `Author.books`.
 
-:::note
-从中间表中删除数据也可以达到相同的效果，这里我们使用插入来展示效果
+:::note 
+Deleting data from the intermediate table can achieve the same effect. Here insertion is used to demonstrate the effect.
 :::
 
--   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+-   If BinLog trigger is enabled, modifying the database by any means can lead to Jimmer's cache consistency intervention. For example, directly execute the following SQL in the SQL IDE:
+
     ```sql
-    insert into 
-    BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID)
+    insert into
+    BOOK_AUTHOR_MAPPING(BOOK_ID, AUTHOR_ID) 
     values(10, 3);
     ```
 
--   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+-   If only Transaction trigger is enabled, Jimmer's API must be used to modify the database:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
-
+    
     ```java
     sqlClient
         .getAssociations(BookProps.AUTHORS)
         .save(10L, 3L);
     ```
-
+    
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
-
+    
     ```kotlin
     sqlClient
         .getAssociations(Book::authors)
         .save(10L, 3L);
     ```
-
+    
     </TabItem>
     </Tabs>
 
-无论通过上述何种方式修改数据，你都会在看到如下日志输出
-```
+Regardless of which way above is used to modify the data, you will see the following log output:
+
+```  
 Delete data from redis: [Book.authors-10] ❶
 Delete data from redis: [Author.books-3] ❷
 ```
 
--   ❶ 对于id为`10`的Book对象而言，其一对多关联`Book.authors`对应的关联缓存被删除
--   ❷ 对于id为`3`的Author对象而言，其一对多关联`Author.books`对应的关联缓存被删除
+-   ❶ For the Book object with id `10`, its many-to-many association cache `Book.authors` is deleted.
+-   ❷ For the Author object with id `3`, its many-to-many association cache `Author.books` is deleted.
