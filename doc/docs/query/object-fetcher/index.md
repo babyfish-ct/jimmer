@@ -1,39 +1,41 @@
 ---
 sidebar_position: 2
-title: Object fetcher
+title: Object Fetcher
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+
 import { ObjectFetcherPanel } from '@site/src/components/HomepageFeatures/ObjectFetcher';
 
-## 概念
-对象抓取器，是Jimmer的一个重要功能，抓取指定的字段，然后组装成对象，这一切是自动完成的，节省了很多手写转换逻辑的时间。
+## Concept
 
-对象抓取器和以下这类技术类似，但更加强大
+The object fetcher is an important feature of Jimmer that automatically fetches specified fields and assembles them into objects, saving a lot of time writing manual conversion logic.
 
-- [JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)
+The object fetcher is similar to the following technologies, but more powerful:
 
-- [ADO.NET EntityFramework的Include](https://docs.microsoft.com/en-us/dotnet/api/system.data.objects.objectquery-1.include?view=netframework-4.8)
+-   [JPA's EntityGraph](https://www.baeldung.com/jpa-entity-graph)
 
-- [ActiveRecord的include](https://guides.rubyonrails.org/active_record_querying.html#includes)
+-   [ADO.NET EntityFramework's Include](https://docs.microsoft.com/en-us/dotnet/api/system.data.objects.objectquery-1.include?view=netframework-4.8) 
 
-虽然在查询中返回整个对象的代码很简单，但是默认对象格式往往不能很好地符合开发需求。很容易遇到两个问题
+-   [ActiveRecord's include](https://guides.rubyonrails.org/active_record_querying.html#includes)
 
--   over fetch问题
+Although the code to return entire objects in queries is simple, the default object format often does not meet development needs very well. It is easy to encounter two problems:
 
-    我们不需要的对象属性查询了，形成了浪费，尤其是对象字段很多的时。
+-   Over fetching problem
 
-    以JPA为例，其返回对象默认是一个完整对象，不需要的非关联属性也会包含在内。这是传统ORM一个很大的问题。
+    Object properties that we don't need are queried, causing waste, especially when there are many object fields.
 
--   under fetch问题
+    Take JPA as an example. The returned object by default is a complete object that contains non-associative properties that are not needed. This is a big problem for traditional ORMs.
 
-    我们需要的对象属性被并未被获取，处于不可用unloaded状态，程序无法正确运行。
+-   Under fetching problem
 
-对象抓取器很好地解决这个问题，通过让用户指定要抓取的属性，然后利用动态对象的特性，让查询返回的对象既不over fetch也不under fetch。
+    The object properties we need have not been fetched and are in an unavailable unloaded state, causing the program to fail to run correctly.
 
-利用对象抓取器的可以轻松指定查询的返回格式，因为动态对象可以描述任意形状的数据结构，你可以决定某个业务视角是否需要查询某些实体、关系、甚至每一个属性。
+The object fetcher solves this problem very well by allowing users to specify properties to fetch, and then utilizing the characteristics of dynamic objects to make the returned objects from the query neither over fetched nor under fetched.
 
-## 例子
+By using the object fetcher, it is easy to specify the return format of queries, because dynamic objects can describe data structures of any shape. You can decide whether a certain business perspective needs to query some entities, relationships, or even every attribute.
+
+## Examples 
 
 <ObjectFetcherPanel/>

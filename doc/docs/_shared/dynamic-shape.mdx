@@ -2,59 +2,59 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import {Shape} from '@site/src/components/Image';
 
-Jimmer将RDBMS抽象为图数据库，**以任意形状的数据结构作为基本操作单元**。其中
+Jimmer abstracts RDBMS as a graph database, **taking data structures of any shape as the basic operating unit**. Among them
 
--   查询任意形状的数据结构：可以理解成ORM的GraphQL化
+- Querying data structures of arbitrary shapes: can be understood as the GraphQLization of ORM
 
--   保存任意形状的数据结构：快速实现复杂表单保存业务
+- Saving data structures of arbitrary shapes: quickly implement complex form submission business logic
 
-让我们来看一个实际的例子
+Let's take a look at a real example
 
 <Shape/>
 
-图中，我们列画三个业务视角作为例子，对于任何一个业务视角而言，都可以自由决定每个业务视角是否关注某些实体、关联、甚至属性。
+In the figure, we list three business perspectives as examples. For any business perspective, it can freely decide whether each business perspective cares about certain entities, associations, or even attributes.
 
-要实现这种精确到属性的数据结构形状裁切，唯一的办法是让实体对象支持动态性。
+To achieve this kind of data structure shape tailoring that is accurate to attributes, the only way is to make entity objects support dynamism. 
 
 :::info
-Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型安全的动态性。它只是[Hibernate中@Basic注解的`fetch = FetchType.LAZY`](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement)被拓展到任何属性的结果。
+The dynamism of Jimmer entities is not the kind of dynamism that gives up spell checking and type safety like dynamic languages. It is just that [the `fetch = FetchType.LAZY` of the @Basic annotation in Hibernate](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement) is extended to any attribute. 
 
-所以，Jimmer实体是100%强类型的，具备拼写安全、类型安全、甚至空安全(限Kotlin)。它只是允许对象的任何属性缺失。
+So Jimmer entities are 100% strongly typed, with spell safety, type safety, and even null safety (limited to Kotlin). It just allows any attribute of an object to be missing.
 :::
 
-让我们来看如下几个例子。
+Let's look at the following examples.
 
 
--   不完整对象
+-   Incomplete object
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     Book book = BookDraft.$.product(book -> {
         book.setName("Learning GraphQL");
     });
     ```
-
+    
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
     val book = new(Book::class).by {
-        name = "Learning GraphQL"
+        name = "Learning GraphQL" 
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    这时，`book`对象对应的JSON如下
+    At this point, the JSON corresponding to the `book` object is:
 
     ```json
     {"name": "Learning GraphQL"}
     ```
 
--   完整但孤单的对象
+-   Complete but solitary object
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -62,7 +62,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     ```java
     Book book = BookDraft.$.product(book -> {
         book.setName("Learning GraphQL");
-        book.setEdition(1);
+        book.setEdition(1); 
         book.setPrice(new BigDecimal("49.99"));
     });
     ```
@@ -81,9 +81,9 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     </TabItem>
     </Tabs>
 
-    这时，`book`对象对应的JSON如下
+    At this point, the JSON corresponding to the `book` object is:
 
-    ```json
+    ```json 
     {
         "name": "Learning GraphQL",
         "edition": 1,
@@ -91,7 +91,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     }
     ```
 
--   附带关联的对象
+-   Object with associated objects
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -100,10 +100,10 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     Book book = BookDraft.$.product(book -> {
         book.setName("Learning GraphQL");
         book.setEdition(1);
-        book.setPrice(new BigDecimal("49.99"));
+        book.setPrice(new BigDecimal("49.99")); 
         book.applyStore(store -> {
             store.setName("O'REILLY");
-            store.setWebsite("https://www.oreilly.com/");
+            store.setWebsite("https://www.oreilly.com/"); 
         });
     });
     ```
@@ -114,7 +114,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     ```kotlin
     val book = new(Book::class).by {
         name = "Learning GraphQL"
-        edition = 1
+        edition = 1 
         price = BigDecimal("49.99")
         store().apply {
             name = "O'REILLY"
@@ -126,21 +126,21 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     </TabItem>
     </Tabs>
 
-    这时，`book`对象对应的JSON如下
+    At this point, the JSON corresponding to the `book` object is:
 
     ```json
     {
-        "name": "Learning GraphQL",
+        "name": "Learning GraphQL", 
         "edition": 1,
         "price": 49.99,
         "store": {
             "name": "O'REILLY",
-            "website": "https://www.oreilly.com/"
+            "website": "https://www.oreilly.com/" 
         }
     }
     ```
 
--   附带更多的关联
+-   With more associations
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -154,12 +154,12 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
             store.setName("O'REILLY");
             store.setWebsite("https://www.oreilly.com/");
         });
-        book.addIntoAutors(author -> { 
+        book.addIntoAutors(author -> {
             author.setFirstName("Eve");
             author.setLastName("Procello");
-            author.setGender(Gender.FEMALE);
+            author.setGender(Gender.FEMALE); 
         });
-        book.addIntoAutors(author -> { 
+        book.addIntoAutors(author -> {
             author.setFirstName("Alex");
             author.setLastName("Banks");
             author.setGender(Gender.MALE);
@@ -174,7 +174,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     val book = new(Book::class).by {
         name = "Learning GraphQL"
         edition = 1
-        price = BigDecimal("49.99")
+        price = BigDecimal("49.99") 
         store().apply {
             name = "O'REILLY"
             website = "https://www.oreilly.com/"
@@ -195,13 +195,13 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     </TabItem>
     </Tabs>
 
-    这时，`book`对象对应的JSON如下
+    At this point, the JSON corresponding to the `book` object is:
 
     ```json
     {
         "name": "Learning GraphQL",
         "edition": 1,
-        "price": 49.99,
+        "price": 49.99, 
         "store": {
             "name": "O'REILLY",
             "website": "https://www.oreilly.com/"
@@ -209,7 +209,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
         "authors": [
             {
                 "firstName": "Eve",
-                "lastName": "Procello",
+                "lastName": "Procello", 
                 "gender:" "FEMALE"
             },
             {
@@ -221,7 +221,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     }
     ```
 
--   附带更深的关联
+-   With deeper associations
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -238,7 +238,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
                 address.setCity("Sevastopol");
                 address.setState("California");
             });
-        });
+        }); 
     });
     ```
 
@@ -255,7 +255,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
             website = "https://www.oreilly.com/"
             address().apply {
                 city = "Sevastopol"
-                state = "California"
+                state = "California" 
             }
         }
     }
@@ -264,7 +264,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     </TabItem>
     </Tabs>
 
-    这时，`book`对象对应的JSON如下
+    At this point, the JSON corresponding to the `book` object is:
 
     ```json
     {
@@ -272,7 +272,7 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
         "edition": 1,
         "price": 49.99,
         "store": {
-            "name": "O'REILLY",
+            "name": "O'REILLY", 
             "website": "https://www.oreilly.com/",
             "address": {
                 "city": "Sevastopol",
@@ -282,10 +282,10 @@ Jimmer实体的动态性，并非动态语言那种放弃拼写检查和类型�
     }
     ```
 
-Jimmer对象这种无处不在动态性，可以轻松表达任意形状的数据结构，最终为Jimmer项目带来了如下重要特性：
+The ubiquitous dynamism of Jimmer objects can easily express data structures of any shape, which ultimately brings the following important characteristics to the Jimmer project:
 
 :::tip
-使用统一的实体模型来表达任何业务所需的数据格式，而非为每一个业务场景所需的数据格式定义DTO。
+Use a unified entity model to express any data format required by the business, rather than define DTOs for each data format required by the business scenario.
 
-这是Jimmer既能避免传统ORM那种灵活性的缺失又能避免MyBatis那种重复劳动的关键所在。
+This is the key for Jimmer to avoid both the lack of flexibility of traditional ORM and the repetitive labor of MyBatis.
 :::

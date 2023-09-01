@@ -3,10 +3,10 @@ sidebar_position: 2
 title: Spring Data style
 ---
 
-Jimmer提供了Spring Data Repository风格的API，你可以
+Jimmer provides Spring Data Repository style APIs, so you can:
 
--   [定义Repository](./concept)
+-   Define Repository
 
--   [通过抽象方法声明简单查询](./abstract)
+-   Declare simple queries through abstract methods
 
--   [通过default方法实现复杂查询](./default)
+-   Implement complex queries through default methods

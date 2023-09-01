@@ -1,30 +1,30 @@
-# 使用jimmer颠覆你的业务开发体验
+# Using jimmer to subvert your business development experience
 
-## 写在开头
+## Preface
 
 > There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.--Leon Bambrick
 
-如果你是一个有不少开发经验的程序员，那么你看到上面这句名言时，大概会会心一笑。这句话一点也不夸张，是日常开发中的真实写照，有无数的程序员每天都被命名和缓存困扰着。
+If you are a programmer with considerable development experience, you will probably smile knowingly when you see the famous quote above. This quote is not exaggerated at all, it is a true reflection of daily development, and countless programmers are troubled by naming and caching every day.
 
-那么简单的介绍一下我自己，一个有7年开发经验的普普通通的程序员，主要使用的编程语言是java，Golang、Kotlin、Python也都会一点点，就职过的公司说得上号的也就是中行以及现在的中电科了。
+Let me briefly introduce myself. I am an ordinary programmer with 7 years of development experience. The main programming language I use is Java. I also know a little Golang, Kotlin, and Python. The well-known companies I have worked for are only ICBC and currently CETC.
 
-## 使用过的ORM框架体验感受
+## Experience with ORM frameworks 
 
-我相信作为一名java web后端的业务开发程序员，最经常打交道的一个环节就是对数据库表的操作了吧，所以ORM框架可以说是业务开发中必不可少的一环。市面上常见的ORM框架，我基本可以说是都有过长时间的使用体验了：JPA、QueryDSL、Jooq、JdbcTemplate、MyBatis、MyBatis-plus、Fluent-MyBatis等等。
+I believe that as a Java web back-end business developer, one of the most frequent parts of daily work is operating on database tables, so ORM frameworks are an indispensable part of business development. The common ORM frameworks on the market, I can say that I have had long-term use experience with almost all of them: JPA, QueryDSL, Jooq, JdbcTemplate, MyBatis, MyBatis-plus, Fluent-MyBatis, etc.
 
-这些框架基本上可以大致分为两类，一类是以`JPA`或者`Hibernate`为代表的面向对象的ORM，另一类是以`MyBatis`为代表的写原生sql的ORM。
+These frameworks can be roughly divided into two categories. One represented by `JPA` or `Hibernate` is object-oriented ORM, and the other represented by `MyBatis` is ORM that writes native SQL.
 
-这两类各有优劣，以`JPA`为代表的ORM框架，符合`Java`面向对象的思维，以操作对象来替代操作数据库表，具有强类型、隔离SQL方言的优势，但缺点是在动态条件查询很弱，书写起来很复杂，而且如果要只查询某些列而不是整个对象时，也比较复杂。以`MyBatis`为代表的ORM框架，优点是足够灵活，直接写SQL的方式使得其可以应对非常复杂的业务，但缺点也很明显，SQL是字符串，及其容易出错，即使是MyBatis老手了也很经常栽在这里。
+Each has its own pros and cons. ORM frameworks represented by `JPA` conform to the object-oriented thinking of `Java`, replacing operating database tables with operating objects, with the advantages of strong typing and isolating SQL dialects, but the disadvantages are that dynamic conditional queries are very weak, writing is complicated, and it is also complicated to query only some columns instead of the entire object. ORM frameworks represented by `MyBatis` have the advantage of being flexible enough. Writing SQL directly allows it to handle very complex business logic, but the disadvantages are also obvious. SQL is a string and it is easy to make mistakes. Even MyBatis veterans often stumble here.
 
-那么有没有一种方式兼具JPA的强类型和MyBatis的灵活呢？有，那就是JPA+QueryDSL，QueryDSL补足了JPA在动态条件查询、只查询某些列这两个弱项，让我可以以强类型的方式书写SQL，但这接下来就遇到了另一个问题：`VO`爆炸式增长带来的命名问题。
+So is there a way to combine the strong typing of JPA and the flexibility of MyBatis? Yes, that's JPA+QueryDSL. QueryDSL makes up for JPA's two weaknesses in dynamic conditional queries and querying only some columns, allowing me to write SQL in a strongly typed way, but then I encountered another problem: the explosive growth of `VO` brought naming issues.
 
-## 命名问题
+## Naming issues
 
-随着项目的演变，各类`POJO:VO, DTO, BO...`（为了表述方便，后文只称其为`VO`）将会充斥着整个项目，这些`VO`大部分是同一类对象的不同属性的各种组合，需要为这些`VO`取不同的名字！
+As the project evolves, various `POJO: VO, DTO, BO...` (for ease of expression, they are collectively referred to as `VO` below) will be filled with the entire project. Most of these `VOs` are different combinations of attributes of the same type of object, and different names need to be given to these `VOs`!
 
-但是**合适**名字也不是那么好取的，不然也不会有各种命名规范了。我们来看一个很常见的示例：
+However, suitable names are not so easy to come up with, otherwise there would not be various naming conventions. Let's look at a very common example:
 
-一个`User`对象，对应数据库表`user`
+A `User` object corresponds to the `user` table in the database
 ```java
 @Data
 @Entity
@@ -39,7 +39,7 @@ public class User {
     private LocalDateTime updateTime;
 }
 ```
-现有需求：根据`id`查询`User`的`name`, `age`, `gender`，那么此时你需要创建一个`UserVo`如下：
+Existing requirements: Query `User`'s `name`, `age`, and `gender` according to `id`, then you need to create a `UserVo` as follows:
 ```java
 @Data
 public class UserVo {
@@ -48,8 +48,8 @@ public class UserVo {
     private Gender gender;
 }
 ```
-那么还有一个需求：查询所有`User`列表，同时需要根据创建时间排序，为了安全性考虑，`password`这个属性是不应该对前端暴漏的。所以你需要在创建一个`UserVo2`如下：
-```java
+Then there is another requirement: Query all `User` lists, and sort by creation time. For security reasons, the `password` attribute should not be exposed to the front end. So you need to create another `UserVo2` as follows:
+```java 
 @Data
 public class UserVo2 {
     private int id;
@@ -60,18 +60,18 @@ public class UserVo2 {
     private LocalDateTime updateTime;
 }
 ```
-再来一个需求：`Gender`性别这一个属性，不要默认的`男,女,未知`，而是翻译成`帅哥，美女，秘密`。此时又需要再次创建一个`UserVo3`：
+Another requirement: The `Gender` gender attribute should not use the default `male, female, unknown`, but translate it to `handsome guy, beauty, secret`. At this time, `UserVo3` needs to be created again:
 ```java
 @Data
 public class UserVo {
     private String name;
     private int age;
-    private String gender;
+    private String gender; 
 }
 ```
-如果还有其他的需求呢？每一个需求要查询的属性都有部分相似，但都有一些不同，你需要为每一个这样的需求创建一个`VO`。长期以往，项目中就会充斥着大量相似但不同的同类型对象，随着这种对象的爆炸式增长，命名就成了一个大难题。
+What if there are other requirements? The attributes that need to be queried for each requirement are partially similar but somewhat different. You need to create a `VO` for each such requirement. In the long run, the project will be filled with a large number of similar but different objects of the same type. As these objects explode, naming becomes a big problem.
 
-这里给一个我实际项目的中的`VO`列表：
+Here is a list of `VOs` in my actual project:
 ```
 +--- AlarmTerminalBean.java
 +--- AppBean.java
@@ -120,102 +120,102 @@ public class UserVo {
 +--- SP_UserBean.java
 +--- TransvalueBean.java
 
-...省略其他的几百个，不要吐槽这命名了，这项目经手了N多人，这样的命名我自己看着都烦，但是不能改，牵一发而动全身呀        
+...Omit hundreds of others. Don't complain about this naming. This project has been handled by many people. I find such naming annoying myself, but I can't change it because it affects everything...
 ```
 
-而且还带来了另一个问题：维护成本的上升！
+And it brings another problem: the increase of maintenance costs!
 
-维护成本的上升主要体现在以下几点：
-1. 接手这个项目的人，他不会对所有的VO都了如指掌，当实现新的需求时，会想当然的在随手增加一个`VO`，进一步让`VO`的数量上升。
-2. 同一个属性结果有不同的名称，比如一个`UserVo3`对象，将`name`改成了`username`，而另一个`UserVo4`将`name`改成了`nickname`，与其他服务对接时，就会很困惑到底应该要什么名字。
-3. 随着业务演变之后，一些`VO`已不再使用，但是维护人员是不敢随意删除这些`VO`的，毕竟“代码能跑就行”（偷笑
-4. 无聊且重复的体力劳动，很多`VO`大部分属性是相同的，只有少部分属性不同，而维护人员避免不了复制已有属性，再手动敲剩下的不同的属性，这个过程是纯粹的无聊且重复的体力劳动。
+The increase in maintenance costs is mainly reflected in the following points:
+1. People taking over this project will not be proficient in all VOs. When implementing new requirements, they will inadvertently increase a `VO`, further increasing the number of `VOs`.
+2. The same attribute has different names in different places. For example, a `UserVo3` object changes `name` to `username`, while another `UserVo4` changes `name` to `nickname`. It will be very confusing which name to use when interfacing with other services.
+3. As business evolves, some `VOs` are no longer used, but maintenance personnel dare not delete these `VOs` at will. After all, "the code can run" (sneer).
+4. Boring and repetitive manual work. Most `VOs` have mostly the same attributes, with only a few different attributes. Maintenance personnel inevitably have to copy existing attributes and then manually type the remaining different attributes. This process is purely boring and repetitive manual work.
 
-## 解决`VO`爆炸带来的命名难题
+## Solving the naming problem caused by VO explosion
 
-所以当我厌烦了这种`VO`爆炸的问题之后，我开始寻找有没有一种可能，让Java能用一个对象表达多种可能的`VO`。所幸我找到了，那就是接下来要说的Jimmer！
+So after I got tired of this VO explosion problem, I started looking for a possibility that would allow Java to use one object to express many possible `VOs`. Fortunately I found it, that's Jimmer I'm going to talk about next!
 
-Jimmer采用动态对象的设计，让其具备了复杂的表达能力，还是以上面的`User`的几个需求为例。
+Jimmer uses dynamic object design, giving it complex expressive capabilities. Still use the above User requirements as examples.
 
-注：以下仅为示例，并非从头搭建，完整搭建Jimmer项目，请去官网查看相关文档。
+Note: The following are only examples, not a complete setup from scratch. For complete setup of a Jimmer project, please check the related documents on the official website.
 
-需求1: 只查询`User`的的`name`, `age`, `gender`
+Requirement 1: Only query User's `name`, `age` and `gender`
 ```java
-// 真实情况应该从dao层查询数据库后返回该对象，这里为了方便就直接先手动创建一个对象了
-User user = UserDraft.$.produce(draft -> draft.setName("张三").setAge(20).setGender(Gender.MAN));
+// In real cases it should be returned from dao query, here for convenience manually create an object
+User user = UserDraft.$.produce(draft -> draft.setName("Zhang San").setAge(20).setGender(Gender.MAN));
 ```
-返回给前端的json为
+The json returned to the front end is: 
 ```json
 {
-	"name": "张三",
-	"age": 20,
-	"gender": "MAN"
+    "name": "Zhang San",
+    "age": 20,
+    "gender": "MAN"
 }
 ```
 
-需求2: 查询所有`User`列表，去掉`password`属性
-```java
-// 真实情况应该从dao层查询数据库后返回该对象，这里为了方便就直接先手动创建一个对象了
-User user = UserDraft.$.produce(draft -> draft.setId(1).setName("张三").setAge(20).setGender(Gender.MAN).setCreateTime(LocalDateTime.now()).setUpdateTime(LocalDateTime.now()));
+Requirement 2: Query all `User` lists, remove `password` attribute
+```java 
+// In real cases it should be returned from dao query, here for convenience manually create an object
+User user = UserDraft.$.produce(draft -> draft.setId(1).setName("Zhang San").setAge(20).setGender(Gender.MAN).setCreateTime(LocalDateTime.now()).setUpdateTime(LocalDateTime.now()));
 ```
-返回给前端的json为
+The json returned to the front end is:
 ```json
 {
-	"id": 1,
-	"name": "张三",
-	"age": 20,
-	"gender": "MAN",
-	"createTime": "2023-04-12T18:12:46.273",
-	"updateTime": "2023-04-12T18:12:46.273"
+    "id": 1,
+    "name": "Zhang San", 
+    "age": 20,
+    "gender": "MAN",
+    "createTime": "2023-04-12T18:12:46.273",
+    "updateTime": "2023-04-12T18:12:46.273"
 }
 ```
-可以看到Jimmer框架提供的这个动态对象，具有无穷的表达能力，无论`User`的属性怎么组合，始终属于`User`这个范畴内，那就可以只用这一个`User`类型，而不必再创建无穷多的`VO`，一举解决了`VO`爆炸的管理问题以及命名问题！
+It can be seen that the dynamic object provided by the Jimmer framework has infinite expressive power. No matter how the attributes of `User` are combined, it always belongs to the category of `User`, then only this one `User` type can be used, instead of creating infinitely many `VOs`, which solves the management problem and naming problem caused by VO explosion!
 
-使用了Jimmer的项目中，将不再有爆炸数量的`VO`，我终于不再为`VO`烦恼了，可以把精力和脑力用来更为专注的写业务代码了。这个功能是最吸引我的，是我决定尝试Jimmer的最主要原因！
+In projects using Jimmer, there will no longer be an explosive number of `VOs`. I no longer have to worry about `VOs`, and can devote my energy and brainpower to writing business code more focused! This feature is the most appealing to me and the main reason I decided to try Jimmer!
 
-## 发现问题越早，修复问题所付出的成本就越低
+## The earlier problems are discovered, the lower the cost to fix them
 
-工程质量管理中有个早鸟原则：发现越早，损失越小。
+There is an early bird principle in engineering quality management: The earlier discovered, the smaller the loss.
 
-Jimmer采用与QueryDSL、Jooq类似的提前编译技术，根据实体接口生成代理对象，由此提供强类型约束，让你在写代码时直接操作对象的API，而不是书写SQL字符串，让潜在的错误在编译时就不通过。将发现错误的时间提前到编译期而不是运行时，带来的好处就是可以以极低的成本进行修复，相反，如果是项目上线了，在运行时才暴露出问题，此时造成的生产环境的损失就不可估量了。
+Jimmer adopts pre-compilation technology similar to QueryDSL and Jooq to generate proxy objects based on entity interfaces, thus providing strong type constraints, allowing you to directly operate object APIs when writing code, rather than writing SQL strings, so that potential errors do not pass at compile time instead of runtime. The benefit of bringing forward error discovery to compile time instead of runtime is that fixes can be made at extremely low cost. On the contrary, if problems are only exposed at runtime after the project goes online, the resulting losses in the production environment would be inestimable.
 
-以上面的两个需求为例，dao层代码如下：
+Take the two requirements above as examples, the dao layer code is as follows:
 
 ```java
-// 再次感慨，不用针对每种不同的属性组合而书写对应的`VO`是真的很爽啊！
-// 这两个方法都返回的User，而不是特定的UserVo1，UserVo2
+// Once again feel that not having to write corresponding `VO` for different attribute combinations is really cool!
+// These two methods both return User, not specific UserVo1, UserVo2  
 public User findUserById(int id){
     UserTable user = UserTable.$;
     // select id, name, age, gender from user where id = :id
     return sqlClient.createQuery(user)
-					.where(user.id().eq(id))
-					.select(user.fetch(UserFetcher.name().age().gender()))
-					.execute();
+            .where(user.id().eq(id))
+            .select(user.fetch(UserFetcher.name().age().gender()))
+            .execute(); 
 }
 
 public User findUserWithoutPassword(int id){
     UserTable user = UserTable.$;
-    // select id, name, age, gender, create_time, update_time from user where id = :id
+    // select id, name, age, gender, create_time, update_time from user where id = :id 
     return sqlClient.createQuery(user)
-					.where(user.id().eq(id))
-					.select(user.fetch(UserFetcher.allScalarFields().password(false)))
-					.execute();
+            .where(user.id().eq(id))
+            .select(user.fetch(UserFetcher.allScalarFields().password(false)))
+            .execute();
 }
 ```
 
-可以看到，该查询是强类型的，中间没有任何字符串的影子，因此绝不会有手写SQL时的最经常出现的语法错误等问题。任何时候只要你使用DSL写的代码不符合规范时，编译器就会直接告诉你错误，这可以让你在开发时就注意到问题，而此时所付出的修复成本，就远比在运行时才发现问题后的修复成本要低得多！
+It can be seen that this query is strongly typed without any string shadows, so there will never be syntax errors and other common problems when writing SQL by hand. Whenever the DSL code you write does not conform to the specification, the compiler will tell you the error directly. This allows you to notice problems during development, and the cost of fixing at this time is much lower than the cost of fixing after the problem is discovered at runtime! 
 
-这种提前编译的风格是我一向的偏爱，可以享受到强类型的各种好处：书写代码时，ide会给你提示api，拥有极其流畅的体验，书写错误时，ide会给出错误警告。如果说`Jimmer`动态对象无穷的表达能力，是让我感兴趣尝试的原因，那么这提前编译，将错误提前到编译期而不是运行时，以及流畅的api书写体验，就是我决定深度使用的原因了！
+I have always favored this precompilation style. You can enjoy all the benefits of strong typing: when writing code, IDE will give you API prompts and provide an extremely fluent experience. When writing errors, IDE will give error warnings. If I say the infinite expressiveness of Jimmer's dynamic objects is what made me interested in trying it out, then this precompilation that brings errors forward to compile time rather than runtime, along with the fluent API writing experience, is the reason I decided to use it in depth!
 
-## 完全透明的缓存机制
+## Fully transparent cache mechanism 
 
-还记得本文开头的那句名言么，除了命名，还有一个缓存也是一个让无数程序员头疼的问题。
+Do you still remember the famous quote at the beginning of this article? In addition to naming, caching is also a problem that gives headaches to countless programmers.
 
-在日常开发中，经常需要先查看是否命中缓存，如果命中缓存了则直接返回缓存中的数据，这也是很无聊的重复劳动，需要在每个地方都手写一遍该过程。而这还是最简单的情况，如果情况稍微复杂一点，需要返回一个带有关联关系的数据，比如需要返回`User`对象关联的`Role`对象，那么这就得从多个地方去重复上述步骤，得到缓存之后再进行组装，最后再进行返回。
+In daily development, we often need to check if the cache is hit first, and directly return the data in the cache if hit, which is also a boring repetition that needs to be done manually everywhere. And this is the simplest case. If the situation is slightly more complicated, a data with associations needs to be returned, such as returning the `Role` object associated with the `User` object, then this process needs to be repeated from multiple places to get the cache and then assemble it before finally returning it.
 
-而在`Jimmer`中，提供了完全透明的缓存机制，它不与任何缓存技术耦合，你可以选择任意你所喜爱的缓存技术，`Jimmer`将自动保证缓存的一致性。
+In `Jimmer`, a completely transparent cache mechanism is provided. It does not couple with any caching technology. You can choose any caching technology you like, and `Jimmer` will automatically ensure cache consistency.
 
-以下代码截取自官方：
+The following code is excerpted from the official website:
 ```java
 @Configuration
 public class CacheConfig {
@@ -233,19 +233,19 @@ public class CacheConfig {
             @Override
             public Cache<?, ?> createObjectCache(ImmutableType type) {
                 return new ChainCacheBuilder<>()
-                        .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
+                        .add(new CaffeineBinder<>(512, Duration.ofSeconds(1))) 
                         .add(new RedisValueBinder<>(redisTemplate, objectMapper, type, Duration.ofMinutes(10)))
                         .build();
             }
 
-            // Id -> TargetId, for one-to-one/many-to-one
+            // Id -> TargetId, for one-to-one/many-to-one 
             @Override
             public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
                 return createPropCache(
                         TenantAware.class.isAssignableFrom(prop.getTargetType().getJavaClass()),
                         prop,
                         redisTemplate,
-                        objectMapper,
+                        objectMapper,  
                         Duration.ofMinutes(5)
                 );
             }
@@ -285,12 +285,12 @@ public class CacheConfig {
             Duration redisDuration
     ) {
         /*
-         * If multi-view cache is required, only redis can be used, because redis support hash structure.
+         * If multi-view cache is required, only redis can be used, because redis support hash structure.  
          * The value of redis hash is a nested map, so that different users can see different data.
-         *
+         * 
          * Other simple key value caches can be divided into two levels.
          * The first level is caffeine, the second level is redis.
-         *
+         * 
          * Note: Once the multi-view cache takes affect, it will consume
          * a lot of cache space, please only use it for important data.
          */
@@ -303,15 +303,15 @@ public class CacheConfig {
         return new ChainCacheBuilder<K, V>()
                 .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
                 .add(new RedisValueBinder<>(redisTemplate, objectMapper, prop, redisDuration))
-                .build();
+                .build(); 
     }
 }
 
 ```
-只要定义一个`CacheFactory`的Bean，实现`CacheFactory`里的几个方法即可，而具体实现可以由你自己定制。以上代码使用了两个缓存：一级缓存`Caffeine`和二级缓存`Redis`。你甚至可以直接copy该代码，不用自己实现（偷懒）。
+Just define a `CacheFactory` Bean and implement the methods in `CacheFactory` . Specific implementation can be customized by yourself. The above code uses two caches: first level cache `Caffeine` and second level cache `Redis`. You can even directly copy this code without implementing it yourself (lazy).
 
-而有了以上配置之后，Jimmer将自动负责所有经过Jimmer自身API的增删改查的缓存一致性，从此再也不用从各处代码中组装缓存了！抛弃原来的方式吧，在各处拼接查询缓存、组装缓存的操作，对代码的侵入性太强了。
+With the above configuration, Jimmer will automatically be responsible for cache consistency of all CRUD operations through Jimmer's own APIs. From now on, you don't need to assemble caches from various places in the code! Abandon the old way of splicing query caches and assembling caches from various places, which is too invasive to the code.
 
-## 总结
+## Summary
 
-Jimmer采用的提前编译、动态对象、流畅的API设计、透明的缓存一致性，让我经过半年多的深度使用后，已经彻底迷上了这款ORM，极大程度的将我的精力从无聊重复的体力劳动中解脱了出来，代码开发效率有了质的提升！只要设计好对象之间的关联关系，写起业务来真的太简单了，得心应手，流畅至极！
+Jimmer's precompilation, dynamic objects, fluent API design, and transparent cache consistency allow me to thoroughly fall in love with this ORM after more than half a year of intensive use, greatly freeing me from boring repetitive manual work and significantly improving code development efficiency! As long as the associations between objects are well designed, It's really easy to write business, it's handy, and it's extremely smooth!
