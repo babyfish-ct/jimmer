@@ -1,4 +1,1362 @@
+Here is the translation of the file into English:
+
 ---
 sidebar_position: 1
-title: DTO language
+title: DTO Language
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import { ShortAssociation } from '@site/src/components/ShortAssociation';
+import FlatProblem from './_flat-problem.md';
+import { ViewMore } from '@site/src/components/ViewMore';
+
+## 1. Concepts
+
+The DTO language is a very powerful feature provided by Jimmer. It is a concept highly similar to [Object Fetcher](../../query/object-fetcher), but at an earlier stage during compilation.
+
+The DTO language is used to quickly define the shape of data structures. According to these shapes, DTOs can be compiled to:
+
+-   Generate static DTO types corresponding to specific data structures
+
+-   Generate conversion logic between DTO static objects and Jimmer dynamic objects
+
+-   Generate [Object Fetchers](../../query/object-fetcher) defined by this shape
+
+This approach is very efficient. It is tailored for Jimmer and much faster than using [mapstruct](./mapstruct). It is the recommended way.
+
+:::tip
+Even in some special scenarios where we cannot directly use unified ORM entities and have to use DTO objects, the development cost is only to define the shape of these DTOs. All other work *(DTO related Java/Kotlin definitions, conversion between DTOs and entities, interaction logic with database)* is fully automated. You won't feel the pain of DTO explosion caused by traditional technical solutions at all.
+:::
+
+## 2. Create Files
+
+The code for the DTO language is reflected in files with the extension `.dto`. Once compilation is complete, these files have no value. So these files cannot be packaged in `src/main/resources`, but should be placed in the `src/main/dto` directory.
+
+Therefore, the first step is to create the `dto` subdirectory under `src/main`.
+
+:::warning
+dto files are compiled by Jimmer's Annotation Processor *(Java)* or Kotlin *(Kotlin)*. So there are two points to note:
+
+-   For projects with multi-module structure, dto files need to be defined in the subproject where the entity types are located.
+
+-   If you are using an IDE like Intellij to develop projects
+  
+    - If Java/Kotlin files other than dto files are also modified, clicking the run button in the IDE directly can cause dto files to recompile
+
+    - However, if no Java/Kotlin files other than dto files are modified, simply clicking the run button in the IDE will not cause dto files to recompile unless rebuild is explicitly invoked!
+
+Better solutions will be provided later.
+:::
+
+Assume there is a Jimmer entity type with the fully qualified type name `com.yourcompany.yourproject.Book`, which is decorated by `@org.babyfish.jimmer.sql.Entity` *(DTO language only supports Entity types)*, then
+
+1.  Create the directory `com/yourcompany/yourproject` in `src/main/dto`, i.e. create a directory consistent with the package name
+
+2.  Create a new file `Book.dto` in the directory created in the previous step. This file must have the same name as the class and have the extension `.dto`
+
+Users can edit the `Book.dto` file to define any number of shapes with `Book` type as the aggregate root. Here, let's define a DTO shape first:
+
+```sh title="Book.dto"
+BookView {
+    ...omit...
+}
+```
+
+After compilation, the Java/Kotlin type `BookView` will be generated
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookView.java"
+package com.yourcompany.yourproject.dto;
+
+import com.yourcompany.yourproject.Book;
+import org.babyfish.jimmer.View;
+
+@lombok.Data
+public class BookView implements View<Book> {
+    ...omit...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookView.kt"
+package com.yourcompany.yourproject.dto
+
+import com.yourcompany.yourproject.Book
+import org.babyfish.jimmer.View
+
+data class BookView(
+    ...omit...
+) : View<Book> {
+    ...omit...
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+-   The generated type is in the package `com.yourcompany.yourproject.dto`, which has a `dto` subpackage relative to the package where the entity is located.
+
+-   For Java, the generated type assumes the user uses lombok.
+:::
+
+## 3. input, input-only modifiers
+
+Shapes can be modified by the `input` modifier, for example:
+
+```sh title="Book.dto"
+BookView {
+    ...omit...
+}
+
+AnnotherBookView {
+    ...omit... 
+}
+
+input BookInput {
+    ...omit...
+}
+
+input AnnotherBookInput {
+    ...omit...
+}
+```
+
+This means:
+
+-   `BookView` and `AnnotherBookView` are used as query outputs. The generated Java/Kotlin types implement the `org.babyfish.jimmer.View<E>` interface
+
+    :::note
+    It is recommended that output shapes end with `View`
+    :::
+
+-   `BookInput` and `AnnotherBookInput` are used as save inputs. The generated Java/Kotlin types implement the `org.babyfish.jimmer.Input<E>` interface
+
+    :::note
+    It is recommended that input shapes end with `Input`
+    :::
+
+-   In fact, there is another kind of DTO object without direct Input/Output semantics, which is often used as the query specification parameter for complex dynamic query APIs. 
+    Like the [AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto) type defined in the example.
+
+    :::note
+    Jimmer makes no recommendation on whether this type of query rule parameter should be defined as input type. But it is recommended that this type ends with `Specification`/`Spec`.
+    :::  
+
+:::info
+Compared with Output DTO:
+
+-   The id attribute in the input DTO is nullable if the id attribute of the entity is configured with auto growth strategy.
+
+-   The input DTO can only define attributes that can be saved, such as simple attributes, ordinary ORM association attributes and view attributes.
+    Attributes that cannot be saved, such as transient attributes, formula attributes, calculated attributes, and remote associations, cannot be defined, otherwise compilation errors will occur. 
+:::
+
+Whether it is an output shape or an input shape, the generated Java/Kotlin type has the following capabilities:
+
+-   Constructor: Convert Jimmer dynamic entity object to static DTO object
+
+-   `toEntity()`: Convert static DTO object to Jimmer dynamic entity object
+
+Take `BookView` as an example:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+Book entity = ...omit...
+
+// Entity -> DTO
+BookView dto = new BookView(entity); 
+
+// DTO -> Entity  
+Book anotherEntity = dto.toEntity();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val entity: Book = ...omit...
+
+// Entity -> DTO
+val dto = BookView(entity)  
+
+// DTO -> Entity
+val anotherEntity: Book = dto.toEntity()
+```
+
+</TabItem>
+</Tabs>
+
+In addition to `input`, the `input-only` or `inputOnly` modifier can also be used, for example:
+
+```sh title="Book.dto"
+input-only BookUpdateInfo {
+    ...omit...
+} 
+```
+
+or
+
+```sh title="Book.dto"  
+inputOnly BookUpdateInfo {
+    ...omit...
+}
+```
+
+`input-only`/`inputOnly` works similarly to `input` and is used to modify input types, but only provides the ability to convert from DTO objects to entity objects, not the ability to convert from entity objects to DTO objects.
+
+The purpose of the `input-only`/`inputOnly` modifier is described in [7. Nullability](#7-nullability)
+
+## 4. Simple Attributes  
+
+```sh title="Book.dto"
+BookView {
+    id
+    name
+    editon
+}
+```
+
+This means that the DTO only maps the three attributes `id`, `name` and `editon` of the entity, as follows:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">  
+
+```java title="BookView.java" 
+@lombok.Data
+public class BookView implements View<Book> {
+
+    private long id;
+    private String name;
+    private String edition;
+
+    public BookView(Book book) {
+        ...omit...
+    }
+
+    @Override
+    public Book toEntity() {
+        ...omit... 
+    }
+
+    ...omit other members...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookView.kt"
+data class BookView(
+    val id: Long = 0, 
+    val name: String = "",
+    val edition: Int = 0  
+) : View<Book> {
+
+    constructor(book: Book): this(...omit...)
+
+    override fun toEntity(): Book {
+        ...omit...
+    }
+
+    ...omit other members...
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 5. allScalars
+
+The DTO language supports a special macro attribute, `#allScalars`, which means mapping all scalar attributes in the entity.
+
+```sh title="Book.dto" 
+BookView {
+    #allScalars
+}
+```
+
+Same as the official example `Book` type definition:
+
+-   `Book` itself has scalar attributes `id`, `name`, `edition` and `price`
+
+-   `Book` inherits `TenantAware`, `TenantAware` interface defines attribute `tenant`  
+
+-   `Book` also inherits `CommonEntity` *(multiple inheritance)*, `CommonEntity` interface defines attributes `createdTime` and `modifiedTime`
+
+`#allScalars` means automatically mapping all scalar attributes of the entity, including inherited ones.  
+
+If this is not the behavior you want, then you can use `allScalars(Book)` to mean mapping only all scalar attributes defined by the `Book` type itself, not including inherited attributes.
+
+In fact, `#allScalars` supports multiple parameters, for example:
+
+|Macro Expression|Automatically Mapped Attributes|
+|---|---|
+|#allScalars|createdTime, modifiedTime, tenant, id, name, edition, price|
+|#allScalars(Book)|id, name, edition, price|
+|#allScalars(TenantAware)|tenant|
+|#allScalars(CommonEntity)|createdTime, modifiedTime| 
+|#allScalars(Book, TenantAware)|tenant, id, name, edition, price|
+|#allScalars(Book, CommonEntity)|createdTime, modifiedTime, id, name, edition, price|
+|#allScalars(TenantAware, CommonEntity)|createdTime, modifiedTime, tenant|
+|#allScalars(Book, TenantAware, CommonEntity)|createdTime, modifiedTime, tenant, id, name, edition, price|
+
+:::info
+-   If using the `#allScalars` macro, it must be defined as the first attribute, otherwise a compilation error will occur.
+
+-   If parameters are specified for the `#allScalars` macro, each parameter must be the current entity or its base type, otherwise a compilation error will occur. 
+:::
+
+## 6. Negative Attributes  
+
+The `#allScalars` macro and inheritance discussed later will batch map multiple attributes. Negative attributes can remove some attributes:
+
+```sh title="Book.dto"
+BookView {
+    #allScalars
+    // highlight-next-line  
+    -tenant 
+}
+```
+
+Same as before, if we understand according to the inheritance relationship of `Book` type in the official example:  
+
+- `#allScalars` will add attributes `createdTime`, `modifiedTime`, `tenant`, `id`, `name`, `edition` and `price`.
+
+- `-tenant` removes the `tenant` attribute from it, finally adding attributes `createdTime`, `modifiedTime`, `id`, `name`, `edition` and `price`.
+
+:::info
+The negative attribute specifies the actual name of the DTO attribute, not the entity attribute name. Here the two are the same, so there is no difference.
+
+The difference between the two will be revealed in the later section [Renaming](#8-renaming).
+:::
+
+It is not difficult to see that for this example, there is another syntax equivalent to it:
+
+```sh title="Book.dto" 
+BookView {
+    // Exclude `TenantAware`
+    #allScalars(Book, CommonEntity)
+} 
+```
+
+## 7. Nullability
+
+By default, the nullability of DTO attributes is the same as that of the original attributes. But we can use `?` or `!` to modify the nullability of DTO attributes.
+
+### 7.1 `?` 
+
+We can use `?` to make the DTO attribute nullable.
+
+```sh title="Book.dto"
+input UpdateBookInput {  
+    #allScalars
+    // highlight-next-line
+    price?
+}
+```
+In the entity `Book.price` cannot be null, while the corresponding DTO attribute `UpdateBookInput.price` can be null. This seems contradictory, but Jimmer can handle such contradictions *(without discussing whether it is appropriate to use this feature in specific scenarios)*.
+
+- When converting an entity to a DTO, if `Book.price` is not loaded *(although the attribute cannot be null, dynamic objects can have unloaded attributes)*, then `UpdateBookInput.price` in the converted DTO is null.
+
+- When converting a DTO to an entity, if `UpdateBookInput.price` is null, then `Book.price` in the converted entity is in an unloaded state, that is, this attribute of the dynamic object is not assigned at all.
+
+You can even use `?` for `allScalars` to make all automatically mapped non-associated attributes nullable:
+
+```sh title="Book.dto"
+input UpdateBookInput {
+    // highlight-next-line 
+    #allScalars? 
+}
+```
+
+:::caution
+However, this feature needs to be used with caution. The meaning of static types should be fixed and clear, not as flexible and changeable as dynamic types.
+
+For entity attributes that can be null in the first place, there are three states: non-null, null and unloaded *(unknown)*; while static DTO attributes only have two states: non-null and null. That is, introducing static DTO types itself has already led to loss of information.
+
+Therefore, for entity attributes that can be null in the first place, no matter how the corresponding DTO attribute is set, after DTO conversion, the nullable attribute of the dynamic entity object must be assigned *(may be null)*, but the unloaded state cannot appear. If passed to [save command](../../mutation/save-command), null will definitely cause the corresponding field in the table to be updated, rather than not updated like non-null attributes that have not been assigned.
+
+In fact, in addition to DTO types with direct Input/Output semantics, complex dynamic queries often involve a kind of query specification parameter, such as [AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto) in the example.
+
+For query specification parameters `Specification`, this feature is very suitable, because each query parameter of dynamic query should be optional, unless users have to be required to provide some query conditions due to performance issues.
+
+However, for other DTO types with `Input`/`Output` semantics, this feature is not recommended. 
+:::
+
+### 7.2 `!`
+
+We can use `!` to modify the DTO attribute to be non-null. But its usage is limited and can only be used in the following two cases:
+
+- Modify the id attribute in `input`/`input-only` types
+
+    As mentioned earlier, if the id attribute is configured with auto growth strategy, the corresponding input DTO type will set the id attribute to nullable.
+
+    However, this behavior does not always match the user's expectations. `!` can be used in `input`/`input-only` types to modify the id attribute to make it non-null, for example:
+
+    ```sh title="Book.dto"
+    input BookUpdateInfo {
+        #allScalars 
+        #highlight-next-line
+        id!
+    }
+    ```
+
+- In `input-only`, convert a nullable entity attribute to non-null, for example:
+
+    ```sh title="Book.dto"  
+    input-only BookUpdateInfo {
+        #allScalars
+        #highlight-next-line
+        store! {
+            ...omit...
+        }
+    }
+    ```
+    :::info
+    The attribute in the entity can be null, but the corresponding attribute in the DTO is non-null, so it is impossible to support converting entity objects to DTO objects, only converting DTO objects to entity objects.
+
+    This is also the meaning of the `input-only` or `inputOnly` keywords.
+    :::
+
+
+## 8. Renaming
+
+The `as` keyword can be used to set an alias for the attribute, so that the entity attribute name and DTO attribute name can be different.
+
+`as` has two usage, it can set alias for one attribute precisely, it can also set aliases for multiple attributes vaguely.
+
+### 8.1. Rename Single Attribute
+
+```sh title="Book.dto"
+BookView {
+    name as bookName 
+}
+```
+
+### 8.2. Rename Multiple Attributes
+
+Assume there is an entity type called `Robot`
+
+```sh title="Robot.dto" 
+OrderView {
+    as (^ -> oldSystem) { ❶
+        prop1
+        prop2 
+    }
+    as ($ -> ForNewSystem) { ❷
+        prop3
+        prop4
+    }
+}
+```
+
+Where: 
+
+- ❶ Add prefix `oldSystem` for `prop1` and `prop2`, where `^` indicates the start position
+
+- ❷ Add suffix `ForNewSystem` for `prop3` and `prop4`, where `$` indicates the end position
+
+The generated `RobotView` class is:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookView.java"
+@lombok.Data  
+public class RobotView implements View<Robot> {
+
+    private String oldSystemProp1;
+    private String oldSystemProp2;
+
+    private String prop3ForNewSystem; 
+    private String prop4ForNewSystem;
+
+    ...omit other members...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookView.kt" 
+data class RobotView(
+    
+    val oldSystemProp1 = "",
+    val oldSystemProp2 = "",
+
+    val prop3ForNewSystem = "",
+    val prop4ForNewSystem = ""  
+) : View<Robot> {
+
+    ...omit other members...
+}
+```
+
+</TabItem>
+</Tabs>
+
+Most attributes can be defined in the `as() {...}` block, including `#allScalars`, for example: 
+
+```sh title="Robot.dto" 
+RobotView {
+    # highlight-next-line
+    as(^ -> robot) {
+        # highlight-next-line  
+        #allScalars
+    }
+}
+```
+
+The following list all usages of `as() {...}` block:
+
+|Code Demo|Description |
+|---|---|
+|as(^ -> prefix)|Add prefix|
+|as(^prefix ->)|Remove prefix| 
+|as(^prefix -> newPrefix)|Replace prefix|
+|as($ -> suffix)|Add suffix|
+|as($suffix ->)|Remove suffix|
+|as($suffix -> newSuffix)|Replace suffix|
+|as(infix -> )|Remove any position content|
+|as(infix -> newInfix)|Replace any position content|
+
+:::caution
+`^` and `$` cannot appear at the same time, because it means renaming a single attribute precisely, which duplicates existing functionality
+:::
+
+## 9. Association Attributes  
+
+Handling association attributes is a very powerful feature of the DTO language. There are three usages:
+
+- Use directly
+- Recursive association
+- Use after calling id function
+- Use after calling flat function
+
+### 9.1. Common Association
+
+- Basic usage
+
+    ```sh title="Robot.dto" 
+    input CompositeBookInput {
+        
+        #allScalars(Book)
+
+        # highlight-next-line
+        store {
+            #allScalars(BookStore)
+            -id 
+        }
+
+        # highlight-next-line
+        authors {
+            #allScalars(Author)
+            -id
+        }
+    }
+    ```
+
+    The generated code is:
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="CompositeBookInput.java"
+    @lombok.Data
+    public class CompositeBookInput implements Input<Book> {
+
+        @Nullable
+        private Long id;
+
+        private String name;
+
+        private int edition;
+
+        private BigDecimal price;
+
+        // highlight-next-line
+        private TargetOf_store store;
+
+        // highlight-next-line 
+        private List<TargetOf_authors> authors;
+
+        @lombok.Data
+        // highlight-next-line
+        public static class TargetOf_store implements Input<BookStore> {
+        
+            private String name;
+
+            @Nullable
+            private String website;
+
+            ...omit other members...
+        }
+
+        @lombok.Data
+        // highlight-next-line
+        public static class TargetOf_authors implements Input<Author> {
+            
+            private String firstName;
+
+            private String lastName;
+
+            private Gender gender;
+
+            ...omit other members...
+        }
+
+        ...omit other members...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="CompositeBookInput.kt"
+    data class CompositeBookInput(
+        val id: Long? = null,
+        val name: String = "",
+        val edition: Int = 0,
+        val price: BigDecimal,
+
+        // highlight-next-line
+        val store: TargetOf_store? = null,
+        // highlight-next-line
+        val authors: List<TargetOf_authors> = emptyList(),
+    ) : Input<Book> {
+
+        // highlight-next-line
+        data class TargetOf_store(
+            val name: String = "",
+            val website: String? = null,
+        ) : Input<BookStore> {
+            ...omit other members...
+        }
+
+        // highlight-next-line
+        data class TargetOf_authors(
+            public val firstName: String = "",
+            public val lastName: String = "",
+            public val gender: Gender,
+        ) : Input<Author> {
+            ...omit other members...
+        }
+
+        ...omit other members...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+- Renaming
+
+    If you want to rename association attributes, the `as` clause should be before association definition block, for example:
+
+    ```sh title="Book.dto"
+    input CompositeBookInput {
+        
+        authors as authorList {
+            ...omit...
+        }
+
+        ...omit...
+    }
+    ```
+
+### 9.2 Recursive Association
+
+For recursively associated attributes like `TreeNode.parent` or `TreeNode.childNodes` in the attached example, the asterisk `*` can be used to mark the corresponding associated attribute of the DTO as a recursive attribute.
+
+```sh title="TreeNode.dto"
+TreeNodeView {
+    
+    #allScalars
+
+    childNodes {
+        #allScalars
+    #highlight-next-line
+    }*
+}
+```
+
+### 9.3. id Function
+
+For <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, of course we choose to define [@IdView](../../mapping/advanced/view/id-view) properties in entities, for example:
+
+<Tabs groupId="language"> 
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Nullable
+    @ManyToOne  
+    BookStore store();
+
+    @ManyToMany
+    val authors: List<Author>
+
+    // highlight-next-line
+    @IdView
+    Long storeId();
+
+    // highlight-next-line 
+    @IdView("authors")
+    List<Long> authorIds();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">  
+
+```kotlin title="Book.kt" 
+@Entity
+interface Book {
+
+    @ManyToOne
+    val store: BookStore?
+
+    @ManyToMany
+    val authors: List<Author>
+    
+    // highlight-next-line
+    @IdView
+    val storeId: Long?
+
+    // highlight-next-line
+    @IdView("authors")
+    val authorIds: List<Long>
+}
+```
+
+</TabItem>
+</Tabs>
+
+In cases where [@IdView](../../mapping/advanced/view/id-view) properties have been defined in entities, just simple reference them in DTO language:
+
+```sh title="Book.dto"
+BookView {
+
+    // highlight-next-line
+    storeId
+
+    // highlight-next-line 
+    authorIds
+
+    ...omit...
+}
+``` 
+
+:::tip  
+However, we cannot always rely on entity types to always declare [@IdView](../../mapping/advanced/view/id-view) properties. A better approach should not have this assumption.
+
+Therefore, the DTO language supports calling the `id` function on associated attributes to achieve the same purpose. 
+:::
+
+```sh title="Book.dto"  
+BookView {
+
+    // highlight-next-line
+    id(store)
+
+    // highlight-next-line
+    id(authors) as authorIds
+
+    ...omit...
+}
+```
+
+The functionality of this code is exactly the same as the previous example, but no longer assumes that entity types always declare [@IdView](../../mapping/advanced/view/id-view) properties, which is a better approach.
+
+### 9.4. flat Function  
+
+The `flat` function can only be used for associations *(one-to-one or many-to-one)*, not collection associations *(one-to-many or many-to-many)*. It is used to lift the attributes of the associated DTO to the current DTO type to obtain a flat object without associations.
+
+Take the `TreeNode` entity in the official example as an example *(in fact, this example is wrong, we will discuss this issue later)*:
+
+```sh title="TreeNode.dto"  
+FlatTreeNodeView {
+    
+    #allScalars(TreeNode)
+
+    # highlight-next-line
+    flat(parent) {
+        #allScalars(TreeNode)
+    }
+}
+```
+
+As mentioned earlier, this example is wrong, because the aggregate root and associated object both have the attributes `id` and `name`. Unconditionally extracting the attributes of the associated object to the aggregate root must inevitably lead to name conflicts, eventually causing the DTO language to report compilation errors.
+
+The correct approach is to combine it with the `as(...) {}` block that renames multiple user attributes vaguely. Let's look at a new example:
+
+```sh title="TreeNode.dto"
+FlatTreeNodeView {
+    
+    #allScalars(TreeNode) // id, name
+
+    # highlight-next-line
+    flat(parent) {
+        # highlight-next-line
+        as(^ -> parent) {
+            // parentId, parentName
+            #allScalars(TreeNode)
+        }
+    }
+} 
+```
+
+This way, we get a flat DTO type with 4 attributes: `id`, `name`, `parentId` and `parentName`. 
+
+You can even nest the `flat` function to flatten multi-level associations into flat objects:
+
+```sh title="TreeNode.dto"  
+FlatTreeNodeView {
+    
+    #allScalars(TreeNode)
+
+    # highlight-next-line
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars(TreeNode) 
+        }
+        # highlight-next-line
+        flat(grandParent) {
+            as(^ -> parent) {
+                #allScalars(TreeNode)
+            }
+            
+        }   
+    }
+}
+```
+
+This way, we get a flat DTO type with 6 attributes: `id`, `name`, `parentId`, `parentName`, `grandParentId`, `grandParentName`.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">  
+
+```java
+TreeNode treeNode = treeNodeDraft.$.produce(cola -> {
+    cola.setId(4L);
+    cola.setName("Coca cola");
+    cola.applyParent(drinks -> {
+        drinks.setId(3L);
+        drinks.setName("Drinks");
+        drinks.applyParent(food -> {
+            food.setId(2L);
+            food.setName("Food");
+        })
+    })
+});
+
+// Convert hierarchical Entity to flat DTO
+FlatTreeNodeView view = new FlatTreeNodeView(treeNode); 
+
+System.out.println(view);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin 
+val treeNode = new(TreeNode::class).by {
+    id = 4L
+    name = "Coca cola" 
+    parent().apply {
+        id = 3L
+        name = "Drinks"
+        parent().apply {
+            id = 2L
+            name = "Food"
+        }   
+    }
+}
+
+// Convert hierarchical Entity to flat DTO
+val view = FlatTreeNodeView(treeNode)
+
+println(view) 
+```
+
+</TabItem>
+</Tabs>
+
+The output is *(formatted for readability)*:  
+
+```
+com.yourcompany.yourproject.FlatTreeNodeView(
+    id = 4,
+    name = Coco cola, 
+    parentId = 3,
+    parentName = Drinks,
+    grandParentId = 2,
+    grandParentName = "Food"
+)
+```
+
+The `flat` approach also has drawbacks. For **output** DTOs, the `flat` approach is controversial and is not recommended for blind adoption.
+
+Please refer to <ViewMore buttonText="Controversy over whether output DTOs should use flat mode" variant="text"><FlatProblem/></ViewMore>
+
+## 10. Inheritance  
+
+Inheritance between DTO type definitions is supported, with the following features:
+
+- Inheritance between DTO type definitions is inheritance at the configuration level only. So it is irrelevant to the inheritance relationship of the original entities, nor to the generated DTO types *(as of the current version, Java/Kotlin classes with inheritance relationships will not be generated)*. 
+
+- Inheritance between DTO types is only within the dto file.
+
+- Inheritance between DTO types is multiple inheritance, that is, a DTO type definition can inherit from multiple DTO types.
+
+- input type definitions can only inherit from input type definitions.
+
+For example: 
+
+```sh title="Robot.dto"
+
+BaseRobotView1 {
+    ...omit...
+}
+
+BaseRobotView2 {
+    ...omit... 
+}
+
+# highlight-next-line
+DefaultRobotView : BaseRobotView1, BaseRobotView2 {
+    ...omit...
+}
+```
+
+For the generated Java/Kotlin type `DefaultRobotView` class, there is no Java/Kotlin inheritance relationship at all, because:
+
+- Classes are generated rather than interfaces, multiple inheritance cannot be achieved
+
+- Due to the existence of negative attribute features, derived DTO type definitions may have fewer attributes than base DTO type definitions
+
+This is the fundamental reason why "Inheritance between DTO type definitions is inheritance only at the configuration level".
+
+However, the above code will lead to the generation of the `BaseRobotView1` and `BaseRobotView2` classes in Java/Kotlin.  
+
+If you expect the base DTO type definition to be used only for the derived DTO type definition, without generating any Java/Kotlin types itself, you can add the `abstract` modifier, as follows:
+
+```sh title="Robot.dto"
+
+# highlight-next-line 
+abstract BaseRobotView1 {
+    ...omit...
+}
+
+# highlight-next-line
+abstract BaseRobotView2 {
+    ...omit...
+}
+
+DefaultRobotView : BaseRobotView1, BaseRobotView2 {
+    ...omit... 
+} 
+```
+
+## 11. Custom Fields  
+
+### 11.1 Getting Started with Custom Fields
+
+In the examples we have discussed so far, all DTO attributes are mapped from entity attributes and become mapping attributes.
+
+In addition to mapping attributes, DTO types also support custom attributes:
+
+```sh title="Author.dto"
+import java.util.LocaleDateTime ❶
+
+AuthorSpecification {
+    
+    #allScalars(Author)? - id
+
+    minCreatedTime: LocaleDateTime?  ❷
+    maxCreatedTimeExclusive: LocaleDateTime?  ❸
+}
+```
+
+- ❶ Import types to simplify subsequent custom attribute definitions
+
+- ❷ ❸ Define custom attribute definitions
+
+    Custom attributes use syntax similar to Kotlin, `?` can be used to explicitly make the attribute nullable, otherwise it cannot be null.
+
+    - For Kotlin projects, types that match exactly are generated
+
+    - For Java projects, in addition to the top level type `?` being used to generate `@org.jetbrains.annotations.Nullable` annotations on the target Java field, the `?` in the internal generics will be ignored
+
+    :::caution
+    The custom attributes here allow null. To define non-null attributes *(i.e. remove `?`)*, the `input-only`/`inputOnly` modifier must be used
+    :::
+
+Here, `AuthorSpecification` does not have direct Input/Output semantics, it is used as a query specification parameter for complex dynamic queries, for example:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java"> 
+
+```java title="AuthorRepository.java"  
+public interface AuthorRepository extends JRepository<Author, Long> {
+    
+    AuthorTable table = AuthorTable.$;
+
+    default List<Author> find(AuthorSpecification spec) {
+        return sql()
+            .createQuery(table)
+            .whereIf(
+                StringUtils.hasContent(spec.getFirstName()),
+                table.firstName().ilike(spec.getFirstName() != null)
+            )
+            .whereIf(
+                StringUtils.hasContent(spec.getLastName()),
+                table.lastName().ilike(spec.getLastName() != null)
+            )
+            .whereIf(
+                spec.getGender() != null,
+                table.gender().eq(sepc.getGender());
+            )
+            .whereIf(
+                spec.getMinCreatedTime() != null,
+                () -> table.createdTime().ge(spec.getMinCreatedTime())
+            )
+            .whereIf(
+                spec.getMaxCreatedTimeExclusive() != null,
+                () -> table.createdTime().lt(spec.getMaxCreatedTimeExclusive())
+            )
+            .select(table)
+            .execute()
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="AuthorRepository.kt" 
+interface AuthorRepository : KRepository<Author, Long> {
+
+    fun find(spec: AuthorSpecification): List<Author> =
+        sql
+            .createQuery(Author::class) {
+                spec.firstName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.firstName ilike it)
+                }
+                spec.lastName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.lastName ilike it)
+                }
+                spec.gender?.let {
+                    where(table.gender eq it)
+                }
+                spec.minCreatedTime?.let {
+                    where(table.createdTime ge it)
+                }
+                spec.maxCreatedTimeExclusive?.let {
+                    where(table.createdTime lt it)
+                }
+                select(table)
+            }
+            .execute()
+}
+```
+
+</TabItem>
+</Tabs>
+
+For other non-associated fields, the query condition is a single value query condition like `eq` and `ilike`, so simply using `#allScalars` mapping is sufficient.
+
+However, the query conditions corresponding to `createdTime` are relatively complex, which is a range query, and cannot simply map the `createdTime` attribute in the mapped entity, but needs two boundary attributes: `minCreatedTime` and `maxCreatedTimeExclusive`.
+
+It can be seen that for query specification parameters like `AuthorSpecification`, custom attributes can bring great convenience, mapping attributes that can be mapped, and customizing attributes that cannot be mapped.
+
+Therefore, the following is recommended:
+
+- Specificiation DTO: Encouraged to use, custom attributes are designed for this type.
+
+- Input DTO: A small number can be used, allowing a small amount of control information to be mixed in the Input DTO.
+
+    The `toEntity` method of the DTO object will ignore this information and convert other information into a clean dynamic entity object for [save command](../../mutation/save-command) to use
+
+- Output DTO: Not recommended
+
+    - First, Output DTOs themselves are not required. Letting query methods return dynamic objects directly, supplemented by @FetchBy annotations(../../spring/client/api#declare-fetchby), is already a very powerful solution.
+
+    - Second, even if Output DTOs are used, Output DTO objects will only have the attributes of entity objects, unless you are willing to manually populate custom attributes.
+
+    :::tip
+    For output types, custom attributes are entity-level things *(so Output DTOs are not required)*.
+    
+    Please refer to *[View Attributes](../../mapping/advanced/view)、[Simple Calculated Properties](../../mapping/advanced/calculated/formula)、or [Complex Calculated Properties](../../mapping/advanced/calculated/transient)*
+    :::
+
+### 11.2 Built-in Types  
+
+So-called built-in types are types built into the DTO language that do not require import through `import`.
+
+- Primitive and boxed types
+
+    |DTO Language Type|Generated Java Type|Generated Kotlin Type|
+    |---|---|---|
+    |Boolean|boolean|Boolean|
+    |Boolean?|Boolean|Boolean?|
+    |Char|char|Char|
+    |Char?|Character|Char?|
+    |Byte|byte|Byte|
+    |Byte?|Byte|Byte?|
+    |Short|short|Short|
+    |Short?|Short|Short?|
+    |Int|int|Int|
+    |Int?|Integer|Int?|
+    |Long|long|Long|
+    |Long?|Long|Long?|
+    |Float|float|Float| 
+    |Float?|Float|Float?|
+    |Double|double|Double|
+    |Double?|Double|Double?|
+
+- Any and String types
+
+    |DTO Language Type|Generated Java Type|Generated Kotlin Type|
+    |---|---|---|
+    |Any|Object|Any|
+    |String|String|String|
+
+- Array types
+
+    |DTO Language Type|Generated Java Type|Generated Kotlin Type|
+    |---|---|---|
+    |Array&lt;Boolean&gt;|boolean[]|BooleanArray|
+    |Array&lt;Boolean?&gt;|Boolean[]|Array&lt;Boolean?&gt;|
+    |Array&lt;Char&gt;|char[]|CharArray|
+    |Array&lt;Char?&gt;|Character[]|Array&lt;Char?&gt;|
+    |Array&lt;Byte&gt;|byte[]|ByteArray|
+    |Array&lt;Byte?&gt;|Byte[]|Array&lt;Byte?&gt;|
+    |Array&lt;Short&gt;|short[]|ShortArray|
+    |Array&lt;Short?&gt;|Short[]|Array&lt;Short?&gt;|
+    |Array&lt;Int&gt;|int[]|IntArray|
+    |Array&lt;Int?&gt;|Integer[]|Array&lt;Int?&gt;|
+    |Array&lt;Long&gt;|long[]|LongArray|
+    |Array&lt;Long?&gt;|Long[]|Array&lt;Long?&gt;|
+    |Array&lt;Float&gt;|float[]|FloatArray|
+    |Array&lt;Float?&gt;|Float[]|Array&lt;Float?&gt;|
+    |Array&lt;Double&gt;|double[]|DoubleArray|
+    |Array&lt;Double?&gt;|Double[]|Array&lt;Double?&gt;|
+    |Array&lt;UserType&gt;|UserType[]|Array&lt;UserType&gt;|
+    |Array&lt;UserType?&gt;|UserType[]|Array&lt;UserType?&gt;|
+    |Array&lt;*&gt;|Object[]|Array&lt;*&gt;|
+
+- Collection types
+
+    |DTO Language Type|Generated Java Type|Generated Kotlin Type|
+    |---|---|---|
+    |Iterable&lt;E&gt;|Iterable&lt;? extends E&gt;|Iterable&lt;E&gt;|
+    |MutableIterable&lt;E&gt;|Iterable&lt;E&gt;|MutableIterable&lt;E&gt;|
+    |Collection&lt;E&gt;|Collection&lt;? extends E&gt;|Collection&lt;E&gt;|
+    |MutableCollection&lt;E&gt;|Collection&lt;E&gt;|MutableCollection&lt;E&gt;|
+    |List&lt;E&gt;|List&lt;? extends E&gt;|List&lt;E&gt;|
+    |MutableList&lt;E&gt;|List&lt;E&gt;|MutableList&lt;E&gt;|
+    |Set&lt;E&gt;|Set&lt;? extends E&gt;|Set&lt;E&gt;|
+    |MutableSet&lt;E&gt;|Set&lt;E&gt;|MutableSet&lt;E&gt;|
+    |Map&lt;K, V&gt;|Map&lt;? extends K, ? extends V&gt;|Map&lt;K, V&gt;|
+    |MutableMap&lt;K, V&gt;|Map&lt;K, V&gt;|Mutable&lt;K, V&gt;|
+
+### 11.3 Generic Parameter Modifiers
+
+In addition to generics in built-in array and collection types, generics of other generic classes also support using `in` or `out` to modify generic parameters, for example:
+
+|DTO Language Type|Generated Java Type|Generated Kotlin Type|
+|---|---|---|
+|UserType1&lt;UserType2&gt;|UserType1&lt;UserType2&gt;|UserType1&lt;UserType2&gt;|  
+|UserType1&lt;out UserType2&gt;|UserType1&lt;? extends UserType2&gt;|UserType1&lt;out UserType2&gt;|
+|UserType1&lt;in UserType2&gt;|UserType1&lt;? super UserType2&gt;|UserType1&lt;in UserType2&gt;|
+
+### 11.4 Import Statements  
+
+In addition to built-in types, other types must be written in full when referenced, or imported at the beginning of the file using import statements, otherwise they will be considered to be in the same package as the current entity.
+
+The DTO language supports multiple styles of import statements, for example:
+
+- Single class import
+
+    ```
+    import java.time.LocalDateTime
+    ```
+
+- Single class renamed import
+
+    ```
+    import java.time.LocalDateTime as LDT
+    ```
+
+- Multiple class import
+
+    ```
+    import java.time.{
+        LocalDateTime,
+        OffsetDataTime,
+        ZonedDataTime
+    }
+    ```
+
+- Multiple class renamed import
+
+    ```
+    import java.time.{
+        LocalDateTime as LDT,
+        OffsetDataTime as ODT,
+        ZonedDataTime as ZDT
+    }
+    ```
+
+## 12. Annotations  
+
+### 12.1 Basic Usage
+
+You can use annotations to modify DTO types, mapping attributes and custom attributes in DTO language:
+
+```sh title="Author.dto"
+import org.babyfish.jimmer.client.Doc
+import org.springframework.format.annotation.DateTimeFormat
+
+@Doc("Query specification for complex queries of Author objects") ❶
+AuthorSpecification {
+    
+    #allScalars
+
+    @Doc("Fuzzy match")  ❷  
+    firstName
+
+    @Doc("Fuzzy match")  ❸
+    lastName
+
+    @Doc("Minimum create time, inclusive") ❹
+    @DateTimeFormat(pattern = "yyyy-MM-dd") ❺
+    minCreatedTime: LocalDateTime?
+
+    @Doc("Maximum create time, exclusive") ❻
+    @DateTimeFormat(pattern = "yyyy-MM-dd") ❼
+    maxCreatedTimeExclusive: LocalDateTime?
+}
+```
+
+Where:
+
+- ❶ Modify type  
+
+- ❷ ❸ Modify mapping attributes
+
+- ❹ ❺ ❻ ❼ Modify custom attributes
+
+:::tip
+There is a detail to note
+```sh title="BookView" 
+...omit import...
+
+BookView {
+
+    ...omit other attributes...
+
+    # highlight-next-line
+    @A authors @B {
+        ...omit association object attributes... 
+    }
+
+    ...omit other DTO types...
+}
+```
+Where:
+
+- `@A` modifies the `authors` attribute  
+
+- `@B` modifies the anonymous association type
+:::
+
+### 12.2 Annotation Override
+
+- As mentioned earlier, DTO language supports annotations to directly control the annotations of the generated DTO types
+
+- If a DTO attribute is not modified by any annotation, the annotations on the corresponding attribute of the original entity will be copied *(if the DTO attribute is mapped, not custom)*.
+    Where any **non**-jimmer annotations other than those in the `org.babyfish.jimmer.client` package will be copied to the generated DTO type
+
+### 12.3 value Parameter  
+
+The `value` parameter in annotations can be abbreviated, for example:
+
+```
+@UserAnnotation(value = "a", value2 = "b", value3 = "c")
+```
+
+Can be abbreviated to:
+
+``` 
+@UserAnnotation("a", value2 = "b", value3 = "c")
+```
+
+Unlike Java, no matter how many parameters the annotation has, the `value` parameter can be abbreviated, as long as the abbreviated attribute is configured first.
+
+### 12.4 Mix Java and Kotlin Syntax
+
+There are some minor differences between Java and Kotlin annotation syntax. DTO language mixes the features of both, for example:
+
+- ```
+  @UserAnnotation(
+      "key1", 
+      items = {
+          @Item("subKey1", description = "Detail information for subKey1 ..."),
+          @Item("subKey2", description = "Detail information for subKey2 ..."),
+          @Item("subKey3", description = "Detail information for subKey3 ...")
+      }
+  )
+  ```
+
+- ```
+  @UserAnnotation(
+      "key1",
+      items = [
+          @Item("subKey1", description = "Detail information for subKey1 ..."),
+          @Item("subKey2", description = "Detail information for subKey2 ..."),
+          @Item("subKey3", description = "Detail information for subKey3 ...")
+      ]
+  )
+  ```
+
+- ```
+  @UserAnnotation(
+      "key1",
+      items = {
+          Item("subKey1", description = "Detail information or subKey1 ..."),
+          Item("subKey2", description = "Detail information for subKey2 ..."),
+          Item("subKey3", description = "Detail information for subKey3 ...")
+      }
+  )
+  ```
+
+- ```
+  @UserAnnotation(
+      "key1",
+      items = [
+          Item("subKey1", description = "Detail information for subKey1 ..."),
+          Item("subKey2", description = "Detail information for subKey2 ..."),
+          Item("subKey3", description = "Detail information for subKey3 ...")
+      ]
+  )
+  ```
+
+The above four styles are equivalent. You can freely choose the style you like.  
+
+## 13. Practical Applications
+
+- [As output parameters in query APIs *(optional)*](../../query/object-fetcher/dto)
+
+- [As input parameters in save APIs *(required)*](../../mutation/save-command/input-dto/dto-lang)

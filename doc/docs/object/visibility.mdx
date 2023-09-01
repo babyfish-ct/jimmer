@@ -1,25 +1,25 @@
 ---
-sidebar_position: 6
-title: Visibility 
+sidebar_position: 6  
+title: Visibility
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-之前文档已经详细讨论了Jimmer属性的[动态性](./dynamic)和不可变性(./immutable)，这里介绍一个新的特性：可见性。
+Previous documents have discussed in detail the [dynamic](./dynamic) and immutable properties of Jimmer entities. This introduces a new feature: visibility.
 
-## 纠缠属性
+## Entangled Properties
 
-对于Jimmer实体而言，虽然大部分情况下属性之间是彼此独立的，但也一些情况，多个属性会共享同一份私有数据，从而导致彼此影响。我们称多个属性之间才生了纠缠。
+For Jimmer entities, although properties are mostly independent, in some cases multiple properties share private data and thus affect each other. We call this entanglement between properties.
 
-这些情况包括
+These cases include:
 
--   基于Java/Kotlin的计算属性 *([回顾所有细节](../mapping/advanced/calculated/formula#基于javakotlin的计算))*
+-   Java/Kotlin-based calculated properties *([review details](../mapping/advanced/calculated/formula#based-on-java-kotlin))*
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java title="Author.java"
+    ```java title="Author.java"  
     package com.example.model;
 
     import org.babyfish.jimmer.sql.*;
@@ -37,7 +37,7 @@ import TabItem from '@theme/TabItem';
             return firstName() + ' ' + lastName();
         }
 
-        ...省略其他属性...
+        ...Omit other properties...
     }
     ```
 
@@ -61,20 +61,20 @@ import TabItem from '@theme/TabItem';
         val fullName: String
             get() = "$firstName $lastName"
 
-        ...省略其他属性...
+        ...Omit other properties...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    `Author.fullName`属性只是一个计算规则，并没有自己的私有数据。它依赖于`Author.firstName`和`Author.lastName`。
+    `Author.fullName` has no private data, it depends on `Author.firstName` and `Author.lastName`.
 
-    虽然`Author.fullName`这种基于Java/Kotin计算规则的属性被定义为计算属性，但是换一个思考角度，也可以认为它是视图属性。
+    Although `Author.fullName` is defined as a calculated property, it can also be considered a view property from another perspective.
 
-    如果将`Author.firstName`和`Author.lastName`的视为原始属性，那么也可以认为`Author.fullName`是基于它们的视图属性。
+    If treating `Author.firstName` and `Author.lastName` as original properties, then `Author.fullName` can be considered a view property based on them.
 
--   @IdView视图属性 *([回顾所有细节](../mapping/advanced/view/id-view))*
+-   @IdView view properties *([review details](../mapping/advanced/view/id-view))*
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -88,7 +88,7 @@ import TabItem from '@theme/TabItem';
     @Entity
     public interface Book {
 
-        ...省略其他属性...
+        ...Omit other properties...
 
         @ManyToOne
         @Nullable
@@ -103,12 +103,12 @@ import TabItem from '@theme/TabItem';
         List<Author> authors();
 
         // highlight-next-line
-        @IdView // 关联对象store的id的视图
+        @IdView // View of associated object store's id  
         Long storeId();
 
-        // 关联对象集合authors中所有对象的id的视图
+        // View of ids of all objects in associated collection authors
         // highlight-next-line
-        @IdView("authors") 
+        @IdView("authors")
         List<Long> authorIds();
     }
     ```
@@ -124,7 +124,7 @@ import TabItem from '@theme/TabItem';
     @Entity
     interface Book {
 
-        ...省略其他属性...
+        ...Omit other properties...
 
         @ManyToOne
         val store: BookStore?
@@ -138,12 +138,12 @@ import TabItem from '@theme/TabItem';
         val authors: List<Auhtor>
 
         // highlight-next-line
-        @IdView // 关联对象store的id的视图
+        @IdView // View of associated object store's id
         val storeId: Long?
 
-        // 关联对象集合authors中所有对象的id的视图
+        // View of ids of all objects in associated collection authors
         // highlight-next-line
-        @IdView("authors") 
+        @IdView("authors")
         val authorIds: List<Long>
     }
     ```
@@ -151,11 +151,11 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
-    -   `Book.store`是原始属性，`Book.storeId`是基于它们的视图属性
+    - `Book.store` is the original property, `Book.storeId` is the view property based on it
+  
+    - `Book.authors` is the original property, `Book.authorIds` is the view property based on it
 
-    -   `Book.authors`是原始属性，`Book.authorIds`是基于它们的视图属性
-
--   @ManyToManyView视图属性 *([回顾所有细节](../mapping/advanced/view/many-to-many-view))*
+-   @ManyToManyView view properties *([review details](../mapping/advanced/view/many-to-many-view))*
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -164,26 +164,26 @@ import TabItem from '@theme/TabItem';
     @Entity
     public interface Student {
 
-        // 第一步中，已经声明了一对多关联`learningLinks`
+        // In step 1, already declared one-to-many association `learningLinks`
         @OneToMany(mappedBy = "student")
         List<LearningLink> learningLinks();
 
         // highlight-next-line
         @ManyToManyView(
             prop = "learningLinks",
-            deeperProp = "course"
+            deeperProp = "course"  
         )
         
         List<Course> courses();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Student.kt"
+    ```kotlin title="Student.kt"
     @Entity
     interface Student {
 
@@ -197,48 +197,48 @@ import TabItem from '@theme/TabItem';
         )
         val courses: List<Course>
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    `Student.learningLinks`是原始属性，`Student.courses`是基于它的视图属性。
+    `Student.learningLinks` is the original property, `Student.courses` is the view property based on it.
 
-上面的这类例子，我们可以总结出共同特点，存在原始属性和视图属性。
+The commonality in the examples above is that there are original properties and view properties. 
 
-原始属性具备自己的私有数据，而视图属性没有，它只是换用另外一个视角观察原始属性的值而已。
+The original properties have their own private data, while the view properties have none. The view properties just observe the values of the original properties from a different perspective.
 
-从内部实现机制的层面讲，视图属性其实和原始属性共享同一份私有数据。这表示，知道其中一个的值，必然知道另外一个值的部分信息，因此，可以形象地称它们为纠缠属性。
+From an internal implementation perspective, a view property actually shares private data with the original property. This means knowing one value necessarily reveals partial information about the other's value. Hence they can be metaphorically described as entangled properties.
 
-## 对象抓取器和纠缠属性
+## Object Fetchers and Entangled Properties
 
-之前我们已经介绍了纠缠属性，有原始属性和视图属性。真正的数据被原始数据持有，视图属性只有一个观察者。
+We introduced entangled properties, with original properties and view properties. The real data is held by the original properties, while the view properties only observe.
 
-如果在利用[对象抓取器](../query/object-fetcher)抓取视图属性，其内部逻辑会将之换转化为对原始属性的抓取，例如
+When using an [object fetcher](../query/object-fetcher) to fetch a view property, the internal logic will translate it into fetching the original property, for example:
 
--   抓取`Author.fullName`，内部逻辑视为抓取`Author.firstName`和`Author.lastName`
+-   Fetching `Author.fullName` is translated internally into fetching `Author.firstName` and `Author.lastName` 
 
--   抓取`Book.storeId`，内部逻辑视为抓取`Book.store`
+-   Fetching `Book.storeId` is translated internally into fetching `Book.store`
 
--   抓取`Book.authorIds`，内部逻辑视为抓取`Book.authors`
+-   Fetching `Book.authorIds` is translated internally into fetching `Book.authors` 
 
--   抓取`Student.courses`，内部逻辑视为抓取`Student.learningLinks`
+-   Fetching `Student.courses` is translated internally into fetching `Student.learningLinks`
 
-我们从中选取`Book.authorIds`和`Book.authors`，来展示[对象抓取器](../query/object-fetcher)对原始属性和视图属性的处理有何不同
+Let's take `Book.authorIds` and `Book.authors` to demonstrate how object fetchers handle original properties and view properties differently:
 
--   抓取原始属性
+-   Fetch the original property
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     Book book = sqlClient.findById(
         BookFetcher.$
             .allScalarFields()
             // highlight-next-line
-            .authors(), // 只有id的关联对象
+            .authors(), // Associated objects with only id  
         1L
     );
     System.out.println(book);
@@ -252,9 +252,9 @@ import TabItem from '@theme/TabItem';
         newFetcher(Book::class).by {
             allScalarFields()
             // highlight-next-line
-            authors() // 只有id的关联对象
+            authors() // Associated objects with only id
         },
-        1L
+        1L  
     )
     println(book)
     ```
@@ -262,24 +262,24 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
-    对象抓取器中的`authors()`没有任何参数，表示是抓取只有id属性的author对象的集合，结果如下 *(为提高本稳定可读性，人为进行了格式化)*
+    The `authors()` in the fetcher has no arguments, indicating it fetches a collection of author objects with only id properties. The result is *(manually formatted for readability)*:
 
     ```json
     {
-        "id":1,
+        "id":1, 
         "name":"Learning GraphQL",
         "edition":1,
         "price":50,
         "authors":[
             // highlight-next-line
             { "id":2 },
-            // highlight-next-line
-            { "id":1 }
+            // highlight-next-line 
+            { "id":1 }  
         ]
     }
     ```
 
--   抓取视图属性
+-   Fetch the view property
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -289,7 +289,7 @@ import TabItem from '@theme/TabItem';
         BookFetcher.$
             .allScalarFields()
             // highlight-next-line
-            .authorIds(), // 关联id，不是对象
+            .authorIds(), // Associated ids, not objects
         1L
     );
     System.out.println(book);
@@ -303,7 +303,7 @@ import TabItem from '@theme/TabItem';
         newFetcher(Book::class).by {
             allScalarFields()
             // highlight-next-line
-            authorIds() // 关联id，不是对象
+            authorIds() // Associated ids, not objects
         },
         1L
     )
@@ -313,14 +313,14 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
-    这次结果为 *(为提高本稳定可读性，人为进行了格式化)*
+    This time the result is *(manually formatted for readability)*:
 
-    ```json
+    ```json 
     {
         "id":1,
         "name":"Learning GraphQL",
         "edition":1,
-        "price":50,
+        "price":50, 
         "authorIds":[
             // highlight-next-line
             2, 1
@@ -328,33 +328,33 @@ import TabItem from '@theme/TabItem';
     }
     ```
 
-虽然两次查询饭回的数据是等价的，但格式完全不同。
+Although the returned data is equivalent, the formats are completely different.
 
-前面说过，[对象抓取器](../query/object-fetcher)抓取视图属性，其内部逻辑会将之换转化为对原始属性的抓取。
+We said earlier that when an object fetcher fetches a view property, it translates internally into fetching the original property.
 
-既然如此，二者底层逻辑应该完全一样，这种差异从何而来？
+Since this is the case, the underlying logic should be exactly the same. Where does this difference come from?
 
-## 属性可见性
+## Property Visibility
 
-前面提出一个一个问题，底层逻辑完全一样的两次查询，为什么返回的数据格式有差异。
+The question above is, with identical underlying logic, why do two queries with the same logic return data in different formats?
 
-Jimmer可以控制每个属性的可见性，让其显示或隐藏。
+Jimmer can control the visibility of each property, making it shown or hidden.
 
-和[动态性](./dynamic)中提及的属性可以具备已加载和未加载两种状态不同，可见性是另外一个纬度的特性，和动态性毫无关系。
+Unlike [dynamic](./dynamic) where a property can be loaded or unloaded, visibility is an orthogonal feature, completely unrelated to dynamism.
 
-可见性仅仅影响对象的[Jackson序列化](./jackson) *(包括对象自己的toString行为)*，决定对象的属性是否被序列化。除此之外，不会影响对象的其他任何行为。
+Visibility only affects [Jackson serialization](./jackson) of objects *(including their own toString behavior)*, deciding whether a property is serialized. Other than that, it does not impact any other behavior of the object.
 
 :::tip
-只有下面两个条件同时满足时，属性才会参与Jackson序列化
+Only when both conditions below are met will a property participate in Jackson serialization
 
--   动态性：属性被设置
--   可见性：属性被显示
+-   Dynamism: the property is set
+-   Visibility: the property is shown
 
-可以参考[工具方法](./tool)，了解如何自己控制Jimmer对象属性的可见性
+See [tool methods](./tool) for how to control visibility of Jimmer object properties yourself
 :::
 
-因此，之前例子就很容易解释了
+So the previous examples can be easily explained:
 
--   第一次查询：`Book.authors`被显示，`Book.authorIds`被隐藏
+-   First query: `Book.authors` is shown, `Book.authorIds` is hidden
 
--   第二次查询：`Book.authors`被隐藏，`Book.authorIds`被显示
+-   Second query: `Book.authors` is hidden, `Book.authorIds` is shown

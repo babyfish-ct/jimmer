@@ -1,13 +1,15 @@
-动态对象可能缺失任何属性，也可以换一种说法，动态对象并不要求其所有属性都被设置。
+Here is the English translation, preserving indentation of code blocks:
+
+Dynamic objects may lack any attribute, or in other words, dynamic objects are not required to have all attributes set.
 
 :::caution
-在动态对象中，属性缺失和属性被设置为null是完全不同的两回事。
+In dynamic objects, missing attributes and attributes set to null are completely different things.
 
--   属性缺失: 对象该属性的值**未知**，当前业务对其不感兴趣
+-   Missing attribute: The value of the attribute of the object is **unknown**, the current business is not interested in it  
 
--   属性被设置为null: 对象该属性的值**已知**，真的是啥都没有
+-   Attribute set to null: The value of the attribute of the object is **known**, it really is nothing
 
-而在静态的POJO中，二者其实是无法区分的。更糟的是，开发人员常借助于Java语言不支持null safety的特性，有意或无意地混淆二者。
+In static POJOs, the two are actually indistinguishable. What's worse, developers often intentionally or unintentionally confuse the two by taking advantage of Java's lack of null safety.
 
-动态对象这个概念非常重要，是理解Jimmer的关键！
+The concept of dynamic objects is very important and key to understanding Jimmer!
 :::

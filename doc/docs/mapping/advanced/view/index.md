@@ -1,13 +1,13 @@
 ---
 sidebar_position: 4
-title: View properties
+title: View Attributes
 ---
 
-视图属性并不维护自己的数据，它只是其所属实体类型另外一个属性 *（称为原始属性）* 的另外一种表现形式。
+View attributes do not maintain their own data, they are just another representation of another attribute *(called original attribute)* of their owning entity type.
 
-视图属性和原始属性共享相同的底层数据，只是返回的数据格式和原始属性不同而已。
+View attributes and original attributes share the same underlying data, the only difference is that the returned data format is different from the original attribute.
 
-在这里，你会了解到这些注解
+In this article, you will learn about these annotations:
 
 -   org.babyfish.jimmer.sql.IdView
 -   org.babyfish.jimmer.sql.ManyToView

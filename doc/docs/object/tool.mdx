@@ -1,25 +1,26 @@
 ---
 sidebar_position: 7
-title: Tool methods
+title: Tool Methods
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer提供了一系列静态工具方法，用于操作动态对象或其Draft。
+Jimmer provides a series of static tool methods for operating on dynamic objects or their Drafts.
 
 :::info
-这些方法既然有强类型重构版本，也有弱类型的重构版本。为节省篇幅，本文仅列举强类型用法。
+For brevity, this article only lists the strongly typed usages.  
+There are also weakly typed versions of these refactoring methods.
 :::
 
-## 操作不可变对象
+## Operating on Immutable Objects
 
 ### isLoaded
 
--   作用：判断动态对象的某个属性是否被加载
+-   Purpose: Determine if a property of a dynamic object is loaded
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 if (ImmutableObjects.isLoaded(book, BookProps.AUTHORS)) {
@@ -30,7 +31,7 @@ if (ImmutableObjects.isLoaded(book, BookProps.AUTHORS)) {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 if (isLoaded(book, Book::authors)) {
     ...
 }
@@ -41,15 +42,15 @@ if (isLoaded(book, Book::authors)) {
 
 ### get
 
--   作用：动态获取对象的某个属性
+-   Purpose: Dynamically get a property of an object  
 
--   异常：对象的该属性处于未加载状态
+-   Exception: The property of the object is in an unloaded state
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-List<Author> authors = 
+List<Author> authors =   
     ImmutableObjects.get(book, BookProps.AUTHORS);
 ```
 
@@ -57,7 +58,7 @@ List<Author> authors =
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val authors = get(book, Book::authors)
+val authors = get(book, Book::authors) 
 ```
 
 </TabItem>
@@ -65,14 +66,14 @@ val authors = get(book, Book::authors)
 
 ### isIdOnly
 
--   作用：是否是只被设置了id属性的动态对象
+-   Purpose: Check if a dynamic object is only set with an id property  
 
--   前提：对象类型被`@Entity`修饰，是ORM实体，具备id
+-   Precondition: The object type is annotated with `@Entity` and is an ORM entity with an id
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 if (ImmutableObjects.isIdOnly(book)) {
     ...
 }
@@ -92,9 +93,9 @@ if (isIdOnly(book)) {
 
 ### makeIdOnly
 
--   作用：用指定类型构建一个对象，并设置其id属性
+-   Purpose: Construct an object of the given type and set its id property
 
--   前提：对象类型被`@Entity`修饰，是ORM实体，具备id
+-   Precondition: The object type is annotated with `@Entity` and is an ORM entity with an id
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -106,28 +107,28 @@ Book book = ImmutableObjects.makeIdOnly(Book.class, 1L);
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
-Book book = makeIdOnly(Book::class, 1L)
+```kotlin  
+val book = makeIdOnly(Book::class, 1L)
 ```
 
 </TabItem>
 </Tabs>
 
 :::tip
--   对于kotlin而言，参数id不得为null，返回值也不为null。
+-   For Kotlin, the id parameter must be non-null, and the return value is also non-null.
 
-    如果要要接受可能为null的id，并在id真为null时直接返回null，请调用`makeNullableIdOnly`
+    To accept a possibly null id and directly return null when id is null, call `makeNullableIdOnly`
 
--   Java的`makeIdOnly`，其实和Kotlin的`makeNullableIdOnly`等价。
+-   Java's `makeIdOnly` is actually equivalent to Kotlin's `makeNullableIdOnly`.
 
 :::
 
 ### isLonely
 
--   作用：是否是只被设置了id属性的孤单对象。即，是否没有任何关联属性被设置为非null *(包含未设置和设置为null)*。
+-   Purpose: Check if an object is only set with an id property. I.e. no associated properties are set to non-null *(including unset and set to null)*.
 
     :::info
-    如果对象是一个ORM实体，若直接基于外键的一对一或多对一属性被设置为只有id的关联对象，则例外。
+    If the object is an ORM entity, it is an exception if a one-to-one or many-to-one property based directly on a foreign key is set to an associated object with only an id.
     :::
 
 <Tabs groupId="language">
@@ -136,7 +137,7 @@ Book book = makeIdOnly(Book::class, 1L)
 ```java
 if (ImmutableObjects.isLonely(book)) {
     ...
-}
+} 
 ```
 
 </TabItem>
@@ -153,16 +154,16 @@ if (isLonely(book)) {
 
 ### toLonely
 
--   作用：根据一个已有的对象，创建新对象。新对象从旧对象复制所有非关联属性，但所有关联属性保持未设置状态
+-   Purpose: Create a new object based on an existing object. The new object copies all non-associated properties from the old object, but all associated properties remain unset.
 
     :::info
-    如果对象是一个ORM实体，对于直接外键的一对一或多对一属性而言，进行特殊处理，将其设置为只有id的关联对象或null
+    For ORM entities, special handling is performed for one-to-one and many-to-one properties based directly on foreign keys. These are set to associated objects with only ids or null.
     :::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 Book lonelyBook = ImmutableObjects.toLonely(book);
 ```
 
@@ -170,7 +171,7 @@ Book lonelyBook = ImmutableObjects.toLonely(book);
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-val lonelyBook = toLonely(book)
+val lonelyBook = toLonely(book) 
 ```
 
 </TabItem>
@@ -178,15 +179,15 @@ val lonelyBook = toLonely(book)
 
 ### toIdOnly
 
--   作用：根据一个已有的对象，创建新对象。新对象仅从旧对象复制id属性
+-   Purpose: Create a new object based on an existing object. The new object only copies the id property from the old object.
 
--   前提：对象类型被`@Entity`修饰，是ORM实体，具备id
+-   Precondition: The object type is annotated with `@Entity` and is an ORM entity with an id
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-Book lonelyBook = ImmutableObjects.toIdOnly(book);
+Book lonelyBook = ImmutableObjects.toIdOnly(book); 
 ```
 
 </TabItem>
@@ -199,7 +200,7 @@ val lonelyBook = toIdOnly(book)
 </TabItem>
 </Tabs>
 
-或
+Or 
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -211,7 +212,7 @@ List<Book> lonelyBooks = ImmutableObjects.toIdOnly(books);
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 val lonelyBooks = toIdOnly(books)
 ```
 
@@ -220,15 +221,15 @@ val lonelyBooks = toIdOnly(books)
 
 ### fromString
 
-作用：JSON反序列化的快捷方式
+-   Purpose: Shortcut for JSON deserialization
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 Book book = ImmutableObjects.fromObject(
-    Book.class,
-    "{\"id\":1,\"name\":\"Learning GraphQL\",\"authorIds\":[2,1]}"  
+    Book.class, 
+    "{\"id\":1,\"name\":\"Learning GraphQL\",\"authorIds\":[2,1]}"   
 );
 ```
 
@@ -238,25 +239,25 @@ Book book = ImmutableObjects.fromObject(
 ```kotlin
 val book = fromString(
     Book::class,
-    """{"id":1,"name":"Learning GraphQL","authorIds":[2,1]}"""
+    """{"id":1,"name":"Learning GraphQL","authorIds":[2,1]}"""  
 )
 ```
 
 </TabItem>
 </Tabs>
 
-## 操作可变Draft
+## Operating on Mutable Drafts
 
 ### set
 
-作用：动态设置Draft属性
+-   Purpose: Dynamically set Draft properties
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 Book newBook = BookDraft.$.produce(book, draft -> {
-    DraftObjects.set(draft, BookProps.AUTHOR_IDS, Arrays.asList(1L, 3L));
+    DraftObjects.set(draft, BookProps.AUTHOR_IDS, Arrays.asList(1L, 3L)); 
 });
 ```
 
@@ -274,19 +275,19 @@ val newBook = new(Book::class).by(book) {
 
 ### unload
 
-作用：卸载Draft属性，即，将某个属性标记成未加载状态
+-   Purpose: Unload a Draft property, i.e. mark a property as unloaded
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 Book newBook = BookDraft.$.produce(book, draft -> {
-    DraftObjects.unload(draft, BookProps.AUTHOR_IDS);
+    DraftObjects.unload(draft, BookProps.AUTHOR_IDS);  
 });
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin"> 
 
 ```kotlin
 val newBook = new(Book::class).by(book) {
@@ -299,12 +300,12 @@ val newBook = new(Book::class).by(book) {
 
 ### show
 
-作用：显示某属性
+-   Purpose: Show a property
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Book newBook = BookDraft.$.produce(book, draft -> {
     DraftObjects.show(draft, BookProps.AUTHOR_IDS);
 });
@@ -315,30 +316,30 @@ Book newBook = BookDraft.$.produce(book, draft -> {
 
 ```kotlin
 val newBook = new(Book::class).by(book) {
-    show(draft, Book::authorIds)
+    show(draft, Book::authorIds) 
 }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
 ### hide
 
-作用：隐藏某属性
+-   Purpose: Hide a property
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 Book newBook = BookDraft.$.produce(book, draft -> {
-    DraftObjects.hide(draft, BookProps.AUTHOR_IDS);
+    DraftObjects.hide(draft, BookProps.AUTHOR_IDS); 
 });
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val newBook = new(Book::class).by(book) {
     hide(draft, Book::authorIds)
 }
@@ -346,3 +347,4 @@ val newBook = new(Book::class).by(book) {
 
 </TabItem>
 </Tabs>
+```
