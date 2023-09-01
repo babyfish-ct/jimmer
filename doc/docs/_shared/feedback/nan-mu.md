@@ -20,7 +20,7 @@ So is there a way to combine the strong typing of JPA and the flexibility of MyB
 
 ## Naming issues
 
-As the project evolves, various `POJO: VO, DTO, BO...` (for ease of expression, they are collectively referred to as `VO` below) will be filled with the entire project. Most of these `VOs` are different combinations of attributes of the same type of object, and different names need to be given to these `VOs`!
+As the project evolves, various `POJO: VO, DTO, BO...` (for ease of expression, they are collectively referred to as `VO` below) will be filled with the entire project. Most of these `VOs` are different combinations of properties of the same type of object, and different names need to be given to these `VOs`!
 
 However, suitable names are not so easy to come up with, otherwise there would not be various naming conventions. Let's look at a very common example:
 
@@ -48,7 +48,7 @@ public class UserVo {
     private Gender gender;
 }
 ```
-Then there is another requirement: Query all `User` lists, and sort by creation time. For security reasons, the `password` attribute should not be exposed to the front end. So you need to create another `UserVo2` as follows:
+Then there is another requirement: Query all `User` lists, and sort by creation time. For security reasons, the `password` property should not be exposed to the front end. So you need to create another `UserVo2` as follows:
 ```java 
 @Data
 public class UserVo2 {
@@ -60,7 +60,7 @@ public class UserVo2 {
     private LocalDateTime updateTime;
 }
 ```
-Another requirement: The `Gender` gender attribute should not use the default `male, female, unknown`, but translate it to `handsome guy, beauty, secret`. At this time, `UserVo3` needs to be created again:
+Another requirement: The `Gender` gender property should not use the default `male, female, unknown`, but translate it to `handsome guy, beauty, secret`. At this time, `UserVo3` needs to be created again:
 ```java
 @Data
 public class UserVo {
@@ -69,7 +69,7 @@ public class UserVo {
     private String gender; 
 }
 ```
-What if there are other requirements? The attributes that need to be queried for each requirement are partially similar but somewhat different. You need to create a `VO` for each such requirement. In the long run, the project will be filled with a large number of similar but different objects of the same type. As these objects explode, naming becomes a big problem.
+What if there are other requirements? The properties that need to be queried for each requirement are partially similar but somewhat different. You need to create a `VO` for each such requirement. In the long run, the project will be filled with a large number of similar but different objects of the same type. As these objects explode, naming becomes a big problem.
 
 Here is a list of `VOs` in my actual project:
 ```
@@ -127,9 +127,9 @@ And it brings another problem: the increase of maintenance costs!
 
 The increase in maintenance costs is mainly reflected in the following points:
 1. People taking over this project will not be proficient in all VOs. When implementing new requirements, they will inadvertently increase a `VO`, further increasing the number of `VOs`.
-2. The same attribute has different names in different places. For example, a `UserVo3` object changes `name` to `username`, while another `UserVo4` changes `name` to `nickname`. It will be very confusing which name to use when interfacing with other services.
+2. The same property has different names in different places. For example, a `UserVo3` object changes `name` to `username`, while another `UserVo4` changes `name` to `nickname`. It will be very confusing which name to use when interfacing with other services.
 3. As business evolves, some `VOs` are no longer used, but maintenance personnel dare not delete these `VOs` at will. After all, "the code can run" (sneer).
-4. Boring and repetitive manual work. Most `VOs` have mostly the same attributes, with only a few different attributes. Maintenance personnel inevitably have to copy existing attributes and then manually type the remaining different attributes. This process is purely boring and repetitive manual work.
+4. Boring and repetitive manual work. Most `VOs` have mostly the same properties, with only a few different properties. Maintenance personnel inevitably have to copy existing properties and then manually type the remaining different properties. This process is purely boring and repetitive manual work.
 
 ## Solving the naming problem caused by VO explosion
 
@@ -153,7 +153,7 @@ The json returned to the front end is:
 }
 ```
 
-Requirement 2: Query all `User` lists, remove `password` attribute
+Requirement 2: Query all `User` lists, remove `password` property
 ```java 
 // In real cases it should be returned from dao query, here for convenience manually create an object
 User user = UserDraft.$.produce(draft -> draft.setId(1).setName("Zhang San").setAge(20).setGender(Gender.MAN).setCreateTime(LocalDateTime.now()).setUpdateTime(LocalDateTime.now()));
@@ -169,7 +169,7 @@ The json returned to the front end is:
     "updateTime": "2023-04-12T18:12:46.273"
 }
 ```
-It can be seen that the dynamic object provided by the Jimmer framework has infinite expressive power. No matter how the attributes of `User` are combined, it always belongs to the category of `User`, then only this one `User` type can be used, instead of creating infinitely many `VOs`, which solves the management problem and naming problem caused by VO explosion!
+It can be seen that the dynamic object provided by the Jimmer framework has infinite expressive power. No matter how the properties of `User` are combined, it always belongs to the category of `User`, then only this one `User` type can be used, instead of creating infinitely many `VOs`, which solves the management problem and naming problem caused by VO explosion!
 
 In projects using Jimmer, there will no longer be an explosive number of `VOs`. I no longer have to worry about `VOs`, and can devote my energy and brainpower to writing business code more focused! This feature is the most appealing to me and the main reason I decided to try Jimmer!
 
@@ -182,7 +182,7 @@ Jimmer adopts pre-compilation technology similar to QueryDSL and Jooq to generat
 Take the two requirements above as examples, the dao layer code is as follows:
 
 ```java
-// Once again feel that not having to write corresponding `VO` for different attribute combinations is really cool!
+// Once again feel that not having to write corresponding `VO` for different property combinations is really cool!
 // These two methods both return User, not specific UserVo1, UserVo2  
 public User findUserById(int id){
     UserTable user = UserTable.$;
