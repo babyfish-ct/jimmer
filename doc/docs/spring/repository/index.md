@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Spring Data style
+title: Spring Data
 ---
 
 Jimmer provides Spring Data Repository style APIs, so you can:

@@ -1,12 +1,12 @@
 ---
 sidebar_position: 1
-title: Embedded Fields
+title: Embedded Properties
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Embedded fields merge multiple columns in the database into an integral whole, map them to a non-entity custom type, and then use this custom property to declare a property for the entity.
+Embedded properties *(Composite properites)* merge multiple columns in the database into an integral whole, map them to a non-entity custom type, and then use this custom property to declare a property for the entity.
 
 ## As Ordinary Field
 
@@ -104,7 +104,7 @@ create table author(
 
 ### Override Column Names
 
-`org.babyfish.jimmer.sql.PropOverride` can be used to override column names of composite type fields:
+`org.babyfish.jimmer.sql.PropOverride` can be used to override column names of composite type properties:
 
 - Define composite type `Point`:
 

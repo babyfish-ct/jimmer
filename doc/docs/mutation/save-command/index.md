@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3  
-title: Save Commands
+title: Save Command
 ---
 
 Save commands are a very powerful capability of Jimmer that can greatly simplify the development difficulty of persisting complex data structures.

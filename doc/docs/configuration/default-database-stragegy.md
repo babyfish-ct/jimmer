@@ -1,6 +1,6 @@
 ---
 sidebar_position: 6
-title: Default Database Naming Strategy
+title: Default Naming Strategy
 ---
 
 This configuration is explained in [Mapping Section/Base Mapping/Naming Strategy](../mapping/base/naming-strategy#override-the-strategy).

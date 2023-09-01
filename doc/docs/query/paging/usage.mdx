@@ -385,7 +385,7 @@ To simplify the discussion, this pseudocode does not consider [reverse sorting o
     - `withoutSortingAndPaging()`: The `count-query` does not need the sorting clause `order by` nor the paging clause *(such as H2's `limit ? offset ?`)*
     
     :::tip
-    Not only can Jimmer automatically generate `count-query`, it can also automatically optimize `count-query`, please refer to [Join Optimization](./unnecessary-join).
+    Not only can Jimmer automatically generate `count-query`, it can also automatically optimize `count-query`, please refer to [Join Optimization](./unncessary-join).
     :::
   
 -   ❸ `limit(limit, offset)`: Based on the original template query without modification, generate the real `data-query` with pagination limits.

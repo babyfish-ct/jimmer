@@ -1,6 +1,6 @@
 ---
 sidebar_position: 11
-title: Id-Only Target Checking  
+title: Associated Id Checking  
 ---
 
 This configuration is explained in [Mutation Section/Save Command/Enum Mapping/Id-Only Target Checking](../mutation/save-command/id-checking).
