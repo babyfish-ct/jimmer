@@ -151,10 +151,10 @@ This means:
 :::info
 Compared with Output DTO:
 
--   The id attribute in the input DTO is nullable if the id attribute of the entity is configured with auto growth strategy.
+-   The id property in the input DTO is nullable if the id property of the entity is configured with auto growth strategy.
 
--   The input DTO can only define attributes that can be saved, such as simple attributes, ordinary ORM association attributes and view attributes.
-    Attributes that cannot be saved, such as transient attributes, formula attributes, calculated attributes, and remote associations, cannot be defined, otherwise compilation errors will occur. 
+-   The input DTO can only define properties that can be saved, such as simple properties, ordinary ORM association properties and view properties.
+    Properties that cannot be saved, such as transient properties, formula properties, calculated properties, and remote associations, cannot be defined, otherwise compilation errors will occur. 
 :::
 
 Whether it is an output shape or an input shape, the generated Java/Kotlin type has the following capabilities:
@@ -214,7 +214,7 @@ inputOnly BookUpdateInfo {
 
 The purpose of the `input-only`/`inputOnly` modifier is described in [7. Nullability](#7-nullability)
 
-## 4. Simple Attributes  
+## 4. Simple Properties  
 
 ```sh title="Book.dto"
 BookView {
@@ -224,7 +224,7 @@ BookView {
 }
 ```
 
-This means that the DTO only maps the three attributes `id`, `name` and `editon` of the entity, as follows:
+This means that the DTO only maps the three properties `id`, `name` and `editon` of the entity, as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -275,7 +275,7 @@ data class BookView(
 
 ## 5. allScalars
 
-The DTO language supports a special macro attribute, `#allScalars`, which means mapping all scalar attributes in the entity.
+The DTO language supports a special macro property, `#allScalars`, which means mapping all scalar properties in the entity.
 
 ```sh title="Book.dto" 
 BookView {
@@ -285,19 +285,19 @@ BookView {
 
 Same as the official example `Book` type definition:
 
--   `Book` itself has scalar attributes `id`, `name`, `edition` and `price`
+-   `Book` itself has scalar properties `id`, `name`, `edition` and `price`
 
--   `Book` inherits `TenantAware`, `TenantAware` interface defines attribute `tenant`  
+-   `Book` inherits `TenantAware`, `TenantAware` interface defines property `tenant`  
 
--   `Book` also inherits `CommonEntity` *(multiple inheritance)*, `CommonEntity` interface defines attributes `createdTime` and `modifiedTime`
+-   `Book` also inherits `CommonEntity` *(multiple inheritance)*, `CommonEntity` interface defines properties `createdTime` and `modifiedTime`
 
-`#allScalars` means automatically mapping all scalar attributes of the entity, including inherited ones.  
+`#allScalars` means automatically mapping all scalar properties of the entity, including inherited ones.  
 
-If this is not the behavior you want, then you can use `allScalars(Book)` to mean mapping only all scalar attributes defined by the `Book` type itself, not including inherited attributes.
+If this is not the behavior you want, then you can use `allScalars(Book)` to mean mapping only all scalar properties defined by the `Book` type itself, not including inherited properties.
 
 In fact, `#allScalars` supports multiple parameters, for example:
 
-|Macro Expression|Automatically Mapped Attributes|
+|Macro Expression|Automatically Mapped Properties|
 |---|---|
 |#allScalars|createdTime, modifiedTime, tenant, id, name, edition, price|
 |#allScalars(Book)|id, name, edition, price|
@@ -309,14 +309,14 @@ In fact, `#allScalars` supports multiple parameters, for example:
 |#allScalars(Book, TenantAware, CommonEntity)|createdTime, modifiedTime, tenant, id, name, edition, price|
 
 :::info
--   If using the `#allScalars` macro, it must be defined as the first attribute, otherwise a compilation error will occur.
+-   If using the `#allScalars` macro, it must be defined as the first property, otherwise a compilation error will occur.
 
 -   If parameters are specified for the `#allScalars` macro, each parameter must be the current entity or its base type, otherwise a compilation error will occur. 
 :::
 
-## 6. Negative Attributes  
+## 6. Negative Properties  
 
-The `#allScalars` macro and inheritance discussed later will batch map multiple attributes. Negative attributes can remove some attributes:
+The `#allScalars` macro and inheritance discussed later will batch map multiple properties. Negative properties can remove some properties:
 
 ```sh title="Book.dto"
 BookView {
@@ -328,12 +328,12 @@ BookView {
 
 Same as before, if we understand according to the inheritance relationship of `Book` type in the official example:  
 
-- `#allScalars` will add attributes `createdTime`, `modifiedTime`, `tenant`, `id`, `name`, `edition` and `price`.
+- `#allScalars` will add properties `createdTime`, `modifiedTime`, `tenant`, `id`, `name`, `edition` and `price`.
 
-- `-tenant` removes the `tenant` attribute from it, finally adding attributes `createdTime`, `modifiedTime`, `id`, `name`, `edition` and `price`.
+- `-tenant` removes the `tenant` property from it, finally adding properties `createdTime`, `modifiedTime`, `id`, `name`, `edition` and `price`.
 
 :::info
-The negative attribute specifies the actual name of the DTO attribute, not the entity attribute name. Here the two are the same, so there is no difference.
+The negative property specifies the actual name of the DTO property, not the entity property name. Here the two are the same, so there is no difference.
 
 The difference between the two will be revealed in the later section [Renaming](#8-renaming).
 :::
@@ -349,11 +349,11 @@ BookView {
 
 ## 7. Nullability
 
-By default, the nullability of DTO attributes is the same as that of the original attributes. But we can use `?` or `!` to modify the nullability of DTO attributes.
+By default, the nullability of DTO properties is the same as that of the original properties. But we can use `?` or `!` to modify the nullability of DTO properties.
 
 ### 7.1 `?` 
 
-We can use `?` to make the DTO attribute nullable.
+We can use `?` to make the DTO property nullable.
 
 ```sh title="Book.dto"
 input UpdateBookInput {  
@@ -362,13 +362,13 @@ input UpdateBookInput {
     price?
 }
 ```
-In the entity `Book.price` cannot be null, while the corresponding DTO attribute `UpdateBookInput.price` can be null. This seems contradictory, but Jimmer can handle such contradictions *(without discussing whether it is appropriate to use this feature in specific scenarios)*.
+In the entity `Book.price` cannot be null, while the corresponding DTO property `UpdateBookInput.price` can be null. This seems contradictory, but Jimmer can handle such contradictions *(without discussing whether it is appropriate to use this feature in specific scenarios)*.
 
-- When converting an entity to a DTO, if `Book.price` is not loaded *(although the attribute cannot be null, dynamic objects can have unloaded attributes)*, then `UpdateBookInput.price` in the converted DTO is null.
+- When converting an entity to a DTO, if `Book.price` is not loaded *(although the property cannot be null, dynamic objects can have unloaded properties)*, then `UpdateBookInput.price` in the converted DTO is null.
 
-- When converting a DTO to an entity, if `UpdateBookInput.price` is null, then `Book.price` in the converted entity is in an unloaded state, that is, this attribute of the dynamic object is not assigned at all.
+- When converting a DTO to an entity, if `UpdateBookInput.price` is null, then `Book.price` in the converted entity is in an unloaded state, that is, this property of the dynamic object is not assigned at all.
 
-You can even use `?` for `allScalars` to make all automatically mapped non-associated attributes nullable:
+You can even use `?` for `allScalars` to make all automatically mapped non-associated properties nullable:
 
 ```sh title="Book.dto"
 input UpdateBookInput {
@@ -380,9 +380,9 @@ input UpdateBookInput {
 :::caution
 However, this feature needs to be used with caution. The meaning of static types should be fixed and clear, not as flexible and changeable as dynamic types.
 
-For entity attributes that can be null in the first place, there are three states: non-null, null and unloaded *(unknown)*; while static DTO attributes only have two states: non-null and null. That is, introducing static DTO types itself has already led to loss of information.
+For entity properties that can be null in the first place, there are three states: non-null, null and unloaded *(unknown)*; while static DTO properties only have two states: non-null and null. That is, introducing static DTO types itself has already led to loss of information.
 
-Therefore, for entity attributes that can be null in the first place, no matter how the corresponding DTO attribute is set, after DTO conversion, the nullable attribute of the dynamic entity object must be assigned *(may be null)*, but the unloaded state cannot appear. If passed to [save command](../../mutation/save-command), null will definitely cause the corresponding field in the table to be updated, rather than not updated like non-null attributes that have not been assigned.
+Therefore, for entity properties that can be null in the first place, no matter how the corresponding DTO property is set, after DTO conversion, the nullable property of the dynamic entity object must be assigned *(may be null)*, but the unloaded state cannot appear. If passed to [save command](../../mutation/save-command), null will definitely cause the corresponding field in the table to be updated, rather than not updated like non-null properties that have not been assigned.
 
 In fact, in addition to DTO types with direct Input/Output semantics, complex dynamic queries often involve a kind of query specification parameter, such as [AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto) in the example.
 
@@ -393,13 +393,13 @@ However, for other DTO types with `Input`/`Output` semantics, this feature is no
 
 ### 7.2 `!`
 
-We can use `!` to modify the DTO attribute to be non-null. But its usage is limited and can only be used in the following two cases:
+We can use `!` to modify the DTO property to be non-null. But its usage is limited and can only be used in the following two cases:
 
-- Modify the id attribute in `input`/`input-only` types
+- Modify the id property in `input`/`input-only` types
 
-    As mentioned earlier, if the id attribute is configured with auto growth strategy, the corresponding input DTO type will set the id attribute to nullable.
+    As mentioned earlier, if the id property is configured with auto growth strategy, the corresponding input DTO type will set the id property to nullable.
 
-    However, this behavior does not always match the user's expectations. `!` can be used in `input`/`input-only` types to modify the id attribute to make it non-null, for example:
+    However, this behavior does not always match the user's expectations. `!` can be used in `input`/`input-only` types to modify the id property to make it non-null, for example:
 
     ```sh title="Book.dto"
     input BookUpdateInfo {
@@ -409,7 +409,7 @@ We can use `!` to modify the DTO attribute to be non-null. But its usage is limi
     }
     ```
 
-- In `input-only`, convert a nullable entity attribute to non-null, for example:
+- In `input-only`, convert a nullable entity property to non-null, for example:
 
     ```sh title="Book.dto"  
     input-only BookUpdateInfo {
@@ -421,7 +421,7 @@ We can use `!` to modify the DTO attribute to be non-null. But its usage is limi
     }
     ```
     :::info
-    The attribute in the entity can be null, but the corresponding attribute in the DTO is non-null, so it is impossible to support converting entity objects to DTO objects, only converting DTO objects to entity objects.
+    The property in the entity can be null, but the corresponding property in the DTO is non-null, so it is impossible to support converting entity objects to DTO objects, only converting DTO objects to entity objects.
 
     This is also the meaning of the `input-only` or `inputOnly` keywords.
     :::
@@ -429,11 +429,11 @@ We can use `!` to modify the DTO attribute to be non-null. But its usage is limi
 
 ## 8. Renaming
 
-The `as` keyword can be used to set an alias for the attribute, so that the entity attribute name and DTO attribute name can be different.
+The `as` keyword can be used to set an alias for the property, so that the entity property name and DTO property name can be different.
 
-`as` has two usage, it can set alias for one attribute precisely, it can also set aliases for multiple attributes vaguely.
+`as` has two usage, it can set alias for one property precisely, it can also set aliases for multiple properties vaguely.
 
-### 8.1. Rename Single Attribute
+### 8.1. Rename Single Property
 
 ```sh title="Book.dto"
 BookView {
@@ -441,7 +441,7 @@ BookView {
 }
 ```
 
-### 8.2. Rename Multiple Attributes
+### 8.2. Rename Multiple Properties
 
 Assume there is an entity type called `Robot`
 
@@ -503,7 +503,7 @@ data class RobotView(
 </TabItem>
 </Tabs>
 
-Most attributes can be defined in the `as() {...}` block, including `#allScalars`, for example: 
+Most properties can be defined in the `as() {...}` block, including `#allScalars`, for example: 
 
 ```sh title="Robot.dto" 
 RobotView {
@@ -529,12 +529,12 @@ The following list all usages of `as() {...}` block:
 |as(infix -> newInfix)|Replace any position content|
 
 :::caution
-`^` and `$` cannot appear at the same time, because it means renaming a single attribute precisely, which duplicates existing functionality
+`^` and `$` cannot appear at the same time, because it means renaming a single property precisely, which duplicates existing functionality
 :::
 
-## 9. Association Attributes  
+## 9. Association Properties  
 
-Handling association attributes is a very powerful feature of the DTO language. There are three usages:
+Handling association properties is a very powerful feature of the DTO language. There are three usages:
 
 - Use directly
 - Recursive association
@@ -659,7 +659,7 @@ Handling association attributes is a very powerful feature of the DTO language. 
 
 - Renaming
 
-    If you want to rename association attributes, the `as` clause should be before association definition block, for example:
+    If you want to rename association properties, the `as` clause should be before association definition block, for example:
 
     ```sh title="Book.dto"
     input CompositeBookInput {
@@ -674,7 +674,7 @@ Handling association attributes is a very powerful feature of the DTO language. 
 
 ### 9.2 Recursive Association
 
-For recursively associated attributes like `TreeNode.parent` or `TreeNode.childNodes` in the attached example, the asterisk `*` can be used to mark the corresponding associated attribute of the DTO as a recursive attribute.
+For recursively associated properties like `TreeNode.parent` or `TreeNode.childNodes` in the attached example, the asterisk `*` can be used to mark the corresponding associated property of the DTO as a recursive property.
 
 ```sh title="TreeNode.dto"
 TreeNodeView {
@@ -760,7 +760,7 @@ BookView {
 :::tip  
 However, we cannot always rely on entity types to always declare [@IdView](../../mapping/advanced/view/id-view) properties. A better approach should not have this assumption.
 
-Therefore, the DTO language supports calling the `id` function on associated attributes to achieve the same purpose. 
+Therefore, the DTO language supports calling the `id` function on associated properties to achieve the same purpose. 
 :::
 
 ```sh title="Book.dto"  
@@ -780,7 +780,7 @@ The functionality of this code is exactly the same as the previous example, but 
 
 ### 9.4. flat Function  
 
-The `flat` function can only be used for associations *(one-to-one or many-to-one)*, not collection associations *(one-to-many or many-to-many)*. It is used to lift the attributes of the associated DTO to the current DTO type to obtain a flat object without associations.
+The `flat` function can only be used for associations *(one-to-one or many-to-one)*, not collection associations *(one-to-many or many-to-many)*. It is used to lift the properties of the associated DTO to the current DTO type to obtain a flat object without associations.
 
 Take the `TreeNode` entity in the official example as an example *(in fact, this example is wrong, we will discuss this issue later)*:
 
@@ -796,9 +796,9 @@ FlatTreeNodeView {
 }
 ```
 
-As mentioned earlier, this example is wrong, because the aggregate root and associated object both have the attributes `id` and `name`. Unconditionally extracting the attributes of the associated object to the aggregate root must inevitably lead to name conflicts, eventually causing the DTO language to report compilation errors.
+As mentioned earlier, this example is wrong, because the aggregate root and associated object both have the properties `id` and `name`. Unconditionally extracting the properties of the associated object to the aggregate root must inevitably lead to name conflicts, eventually causing the DTO language to report compilation errors.
 
-The correct approach is to combine it with the `as(...) {}` block that renames multiple user attributes vaguely. Let's look at a new example:
+The correct approach is to combine it with the `as(...) {}` block that renames multiple user properties vaguely. Let's look at a new example:
 
 ```sh title="TreeNode.dto"
 FlatTreeNodeView {
@@ -816,7 +816,7 @@ FlatTreeNodeView {
 } 
 ```
 
-This way, we get a flat DTO type with 4 attributes: `id`, `name`, `parentId` and `parentName`. 
+This way, we get a flat DTO type with 4 properties: `id`, `name`, `parentId` and `parentName`. 
 
 You can even nest the `flat` function to flatten multi-level associations into flat objects:
 
@@ -841,7 +841,7 @@ FlatTreeNodeView {
 }
 ```
 
-This way, we get a flat DTO type with 6 attributes: `id`, `name`, `parentId`, `parentName`, `grandParentId`, `grandParentName`.
+This way, we get a flat DTO type with 6 properties: `id`, `name`, `parentId`, `parentName`, `grandParentId`, `grandParentName`.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -943,7 +943,7 @@ For the generated Java/Kotlin type `DefaultRobotView` class, there is no Java/Ko
 
 - Classes are generated rather than interfaces, multiple inheritance cannot be achieved
 
-- Due to the existence of negative attribute features, derived DTO type definitions may have fewer attributes than base DTO type definitions
+- Due to the existence of negative property features, derived DTO type definitions may have fewer properties than base DTO type definitions
 
 This is the fundamental reason why "Inheritance between DTO type definitions is inheritance only at the configuration level".
 
@@ -972,9 +972,9 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 
 ### 11.1 Getting Started with Custom Fields
 
-In the examples we have discussed so far, all DTO attributes are mapped from entity attributes and become mapping attributes.
+In the examples we have discussed so far, all DTO properties are mapped from entity properties and become mapping properties.
 
-In addition to mapping attributes, DTO types also support custom attributes:
+In addition to mapping properties, DTO types also support custom properties:
 
 ```sh title="Author.dto"
 import java.util.LocaleDateTime ❶
@@ -988,18 +988,18 @@ AuthorSpecification {
 }
 ```
 
-- ❶ Import types to simplify subsequent custom attribute definitions
+- ❶ Import types to simplify subsequent custom property definitions
 
-- ❷ ❸ Define custom attribute definitions
+- ❷ ❸ Define custom property definitions
 
-    Custom attributes use syntax similar to Kotlin, `?` can be used to explicitly make the attribute nullable, otherwise it cannot be null.
+    Custom properties use syntax similar to Kotlin, `?` can be used to explicitly make the property nullable, otherwise it cannot be null.
 
     - For Kotlin projects, types that match exactly are generated
 
     - For Java projects, in addition to the top level type `?` being used to generate `@org.jetbrains.annotations.Nullable` annotations on the target Java field, the `?` in the internal generics will be ignored
 
     :::caution
-    The custom attributes here allow null. To define non-null attributes *(i.e. remove `?`)*, the `input-only`/`inputOnly` modifier must be used
+    The custom properties here allow null. To define non-null properties *(i.e. remove `?`)*, the `input-only`/`inputOnly` modifier must be used
     :::
 
 Here, `AuthorSpecification` does not have direct Input/Output semantics, it is used as a query specification parameter for complex dynamic queries, for example:
@@ -1076,13 +1076,13 @@ interface AuthorRepository : KRepository<Author, Long> {
 
 For other non-associated fields, the query condition is a single value query condition like `eq` and `ilike`, so simply using `#allScalars` mapping is sufficient.
 
-However, the query conditions corresponding to `createdTime` are relatively complex, which is a range query, and cannot simply map the `createdTime` attribute in the mapped entity, but needs two boundary attributes: `minCreatedTime` and `maxCreatedTimeExclusive`.
+However, the query conditions corresponding to `createdTime` are relatively complex, which is a range query, and cannot simply map the `createdTime` property in the mapped entity, but needs two boundary properties: `minCreatedTime` and `maxCreatedTimeExclusive`.
 
-It can be seen that for query specification parameters like `AuthorSpecification`, custom attributes can bring great convenience, mapping attributes that can be mapped, and customizing attributes that cannot be mapped.
+It can be seen that for query specification parameters like `AuthorSpecification`, custom properties can bring great convenience, mapping properties that can be mapped, and customizing properties that cannot be mapped.
 
 Therefore, the following is recommended:
 
-- Specificiation DTO: Encouraged to use, custom attributes are designed for this type.
+- Specificiation DTO: Encouraged to use, custom properties are designed for this type.
 
 - Input DTO: A small number can be used, allowing a small amount of control information to be mixed in the Input DTO.
 
@@ -1092,12 +1092,12 @@ Therefore, the following is recommended:
 
     - First, Output DTOs themselves are not required. Letting query methods return dynamic objects directly, supplemented by @FetchBy annotations(../../spring/client/api#declare-fetchby), is already a very powerful solution.
 
-    - Second, even if Output DTOs are used, Output DTO objects will only have the attributes of entity objects, unless you are willing to manually populate custom attributes.
+    - Second, even if Output DTOs are used, Output DTO objects will only have the properties of entity objects, unless you are willing to manually populate custom properties.
 
     :::tip
-    For output types, custom attributes are entity-level things *(so Output DTOs are not required)*.
+    For output types, custom properties are entity-level things *(so Output DTOs are not required)*.
     
-    Please refer to *[View Attributes](../../mapping/advanced/view)、[Simple Calculated Properties](../../mapping/advanced/calculated/formula)、or [Complex Calculated Properties](../../mapping/advanced/calculated/transient)*
+    Please refer to *[View Properties](../../mapping/advanced/view)、[Simple Calculated Properties](../../mapping/advanced/calculated/formula)、or [Complex Calculated Properties](../../mapping/advanced/calculated/transient)*
     :::
 
 ### 11.2 Built-in Types  
@@ -1223,7 +1223,7 @@ The DTO language supports multiple styles of import statements, for example:
 
 ### 12.1 Basic Usage
 
-You can use annotations to modify DTO types, mapping attributes and custom attributes in DTO language:
+You can use annotations to modify DTO types, mapping properties and custom properties in DTO language:
 
 ```sh title="Author.dto"
 import org.babyfish.jimmer.client.Doc
@@ -1254,9 +1254,9 @@ Where:
 
 - ❶ Modify type  
 
-- ❷ ❸ Modify mapping attributes
+- ❷ ❸ Modify mapping properties
 
-- ❹ ❺ ❻ ❼ Modify custom attributes
+- ❹ ❺ ❻ ❼ Modify custom properties
 
 :::tip
 There is a detail to note
@@ -1265,11 +1265,11 @@ There is a detail to note
 
 BookView {
 
-    ...omit other attributes...
+    ...omit other properties...
 
     # highlight-next-line
     @A authors @B {
-        ...omit association object attributes... 
+        ...omit association object properties... 
     }
 
     ...omit other DTO types...
@@ -1277,7 +1277,7 @@ BookView {
 ```
 Where:
 
-- `@A` modifies the `authors` attribute  
+- `@A` modifies the `authors` property  
 
 - `@B` modifies the anonymous association type
 :::
@@ -1286,7 +1286,7 @@ Where:
 
 - As mentioned earlier, DTO language supports annotations to directly control the annotations of the generated DTO types
 
-- If a DTO attribute is not modified by any annotation, the annotations on the corresponding attribute of the original entity will be copied *(if the DTO attribute is mapped, not custom)*.
+- If a DTO property is not modified by any annotation, the annotations on the corresponding property of the original entity will be copied *(if the DTO property is mapped, not custom)*.
     Where any **non**-jimmer annotations other than those in the `org.babyfish.jimmer.client` package will be copied to the generated DTO type
 
 ### 12.3 value Parameter  
@@ -1303,7 +1303,7 @@ Can be abbreviated to:
 @UserAnnotation("a", value2 = "b", value3 = "c")
 ```
 
-Unlike Java, no matter how many parameters the annotation has, the `value` parameter can be abbreviated, as long as the abbreviated attribute is configured first.
+Unlike Java, no matter how many parameters the annotation has, the `value` parameter can be abbreviated, as long as the abbreviated property is configured first.
 
 ### 12.4 Mix Java and Kotlin Syntax
 

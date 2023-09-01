@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: View Attributes
+title: View Properites
 ---
 
 View attributes do not maintain their own data, they are just another representation of another attribute *(called original attribute)* of their owning entity type.

@@ -408,11 +408,11 @@ The following examples demonstrate `MySQL + Maxwell` and `Postgres + Debezium` r
     
     We find some difficulties here, not all data can be directly recognized and converted by Jimmer's BinLog mapping mechanism:
     
-    -   Attributes of `BigDecimal` type *(`NUMERIC(M[, D])` in Postgres)* like `Book.price` are displayed as Base64 encoded *(`H0A=` in this example)*.
+    -   Properties of `BigDecimal` type *(`NUMERIC(M[, D])` in Postgres)* like `Book.price` are displayed as Base64 encoded *(`H0A=` in this example)*.
 
         This Base64 string is the info processed by [org.apache.kafka.connect.data.Decimal](https://kafka.apache.org/0100/javadoc/org/apache/kafka/connect/data/Decimal.html)
 
-    -   Attributes of `LocalDateTime` type *(TIMESTAMP in Postgres)* are displayed as numbers
+    -   Properties of `LocalDateTime` type *(TIMESTAMP in Postgres)* are displayed as numbers
 
     :::info
     Debezium's documentation will explain in detail how its various connectors process certain special data, such as [how pg-connector handles decimal](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-decimal-types).
@@ -513,11 +513,11 @@ The following examples demonstrate `MySQL + Maxwell` and `Postgres + Debezium` r
     </TabItem>
     </Tabs>
 
-    `setBinLogPropReader` allows developers to customize how to parse attributes in the message that cannot be directly recognized, with two usages:
+    `setBinLogPropReader` allows developers to customize how to parse properties in the message that cannot be directly recognized, with two usages:
 
-    -   ❶ Given the return type, specify how a type of attributes should be parsed
+    -   ❶ Given the return type, specify how a type of properties should be parsed
 
-    -   ❷ Precisely define how a certain attribute should be parsed
+    -   ❷ Precisely define how a certain property should be parsed
 
     After solving these problems, the message listening code is easy to implement:
 

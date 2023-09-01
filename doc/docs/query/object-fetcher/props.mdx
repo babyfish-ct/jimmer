@@ -249,11 +249,11 @@ Fetching associative properties will be covered in [the next document](./associa
 :::
 
 
-### Negative Attributes (Exclude Unneeded Properties) 
+### Negative Properties (Exclude Unneeded Properties) 
 
-The previously discussed attributes are positive attributes that incrementally add fields to query. But in some cases, we only need to exclude some specific fields, while querying all other fields.
+The previously discussed properties are positive properties that incrementally add fields to query. But in some cases, we only need to exclude some specific fields, while querying all other fields.
 
-This is when negative attributes can be used to exclude unneeded fields.
+This is when negative properties can be used to exclude unneeded fields.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -295,17 +295,17 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-`edition(false)` uses false as a parameter, making it a negative attribute.
+`edition(false)` uses false as a parameter, making it a negative property.
 
--   The attributes of `allScalarFields()` are `id + name + edition + price`
+-   The properties of `allScalarFields()` are `id + name + edition + price`
 
 -   `edition(false)` means `-edition`
 
-So in combination, the finally fetched attributes are `id + name + price`
+So in combination, the finally fetched properties are `id + name + price`
 
 :::info
-- For positive attributes, `edition()` and `edition(true)` are equivalent
-- When most attributes need to be fetched and only a few excluded, using `allScalarFields` with negative attributes can be very useful
+- For positive properties, `edition()` and `edition(true)` are equivalent
+- When most properties need to be fetched and only a few excluded, using `allScalarFields` with negative properties can be very useful
 :::
 
 The generated SQL is:

@@ -24,7 +24,7 @@ There are two types of `ScalarProvider`:
 
 -   Global
 
-    Define the mapping rules between Java/Kotlin types and database types globally and uniformly. Any entity definition that contains attributes of this type will be uniformly handled by the global `ScalarProvider`.
+    Define the mapping rules between Java/Kotlin types and database types globally and uniformly. Any entity definition that contains properties of this type will be uniformly handled by the global `ScalarProvider`.
 
     :::note
     Global `ScalarProvider` can only handle non-collection types, such as: classes, interfaces, enums, etc. It cannot handle collection types like: `Array`, `Collection`, `Map`, etc.
@@ -32,16 +32,16 @@ There are two types of `ScalarProvider`:
 
 -   Property level
 
-    For a specific entity attribute, define the mapping rules between Java/Kotlin types and database types.
+    For a specific entity property, define the mapping rules between Java/Kotlin types and database types.
 
     :::note
-    -   Attribute `ScalarProvider` can handle any non-built-in types of Jimmer, including collection types such as: `Array`, `Collection`, `Map`.
+    -   Property-level `ScalarProvider` can handle any non-built-in types of Jimmer, including collection types such as: `Array`, `Collection`, `Map`.
 
-    -   If the mapped attribute type is a collection type, the attribute needs to be annotated with `@org.babyfish.jimmer.Scalar`.
+    -   If the mapped property type is a collection type, the property needs to be annotated with `@org.babyfish.jimmer.Scalar`.
     :::
 
 :::tip
-The `@Serialized` annotation discussed in [JSON Mapping](../mapping/advanced/json) can annotate both the return type of attributes and entity attributes. 
+The `@Serialized` annotation discussed in [JSON Mapping](../mapping/advanced/json) can annotate both the return type of properties and entity properties. 
 
 This is because the more low-level `ScalarProvider` has two types.
 :::
@@ -91,7 +91,7 @@ public abstract class ScalarProvider<T ❶, S ❷> {
 
 -   ❻ Method `toSql`: Convert non-null Java data to data acceptable to the database; 
 
--   ❼ If you want to define an attribute `ScalarProvider`, one option *(there are other options)* is to override the `getHandledProps` method in the derived class;
+-   ❼ If you want to define an property-level `ScalarProvider`, one option *(there are other options)* is to override the `getHandledProps` method in the derived class;
 
 ## Global ScalarProvider
 
@@ -232,9 +232,9 @@ There are two ways for Jimmer to register `ScalarProvider`:
 
 ## Property level ScalarProvider
 
-The only difference between attribute `ScalarProvider` and global `ScalarProvider` is that it only applies to specific attributes, not all attributes.
+The only difference between property-level `ScalarProvider` and global `ScalarProvider` is that it only applies to specific properties, not all properties.
 
-So the most important data conversion methods `toScalar` and `toSql` in attribute `ScalarProvider` have exactly the same user code implementation, only the registration method is different.
+So the most important data conversion methods `toScalar` and `toSql` in property-level `ScalarProvider` have exactly the same user code implementation, only the registration method is different.
 
 Therefore, here we assume there is a user-defined type `Location` and its corresponding `ScalarProvider` implementation class is `LocationScalarProvider`. Specific implementation is omitted.
 
@@ -287,13 +287,13 @@ fun sqlClient() : KSqlClient =
 </TabItem> 
 </Tabs>
 
-That is, except for the `Flight.sourceLocation` and `Flight.targetLocation` attributes, `LocationScalarProvider` does not affect any other attributes of type `Location`.
+That is, except for the `Flight.sourceLocation` and `Flight.targetLocation` properties, `LocationScalarProvider` does not affect any other properties of type `Location`.
 
 ### Spring registration
 
-The above method is intuitive, but it is manually registered. Can Spring's automatic registration method be used to register attribute `ScalarProvider`?
+The above method is intuitive, but it is manually registered. Can Spring's automatic registration method be used to register property-level `ScalarProvider`?
 
-Of course. Just override the `getHandledProps` method of `ScalarProvider`, and you can use the method of registering global `ScalarProvider` to register attribute `ScalarProvider`. For example:
+Of course. Just override the `getHandledProps` method of `ScalarProvider`, and you can use the method of registering global `ScalarProvider` to register property-level `ScalarProvider`. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
