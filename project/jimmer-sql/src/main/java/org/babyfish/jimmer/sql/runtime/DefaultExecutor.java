@@ -7,13 +7,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 import java.time.*;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class DefaultExecutor implements Executor {
 
     public static final DefaultExecutor INSTANCE = new DefaultExecutor();
+
+    private static final Map<Class<?>, Integer> SQL_TYPE_MAP;
 
     DefaultExecutor() {}
 
@@ -51,59 +51,9 @@ public class DefaultExecutor implements Executor {
     }
 
     private int toJdbcType(Class<?> type, Dialect dialect) {
-        if (type == String.class) {
-            return Types.VARCHAR;
-        }
-        if (type == boolean.class || type == Boolean.class) {
-            return Types.BOOLEAN;
-        }
-        if (type == char.class || type == Character.class) {
-            return Types.CHAR;
-        }
-        if (type == byte.class || type == Byte.class) {
-            return Types.TINYINT;
-        }
-        if (type == short.class || type == Short.class) {
-            return Types.SMALLINT;
-        }
-        if (type == int.class || type == Integer.class) {
-            return Types.INTEGER;
-        }
-        if (type == long.class || type == Long.class) {
-            return Types.BIGINT;
-        }
-        if (type == float.class || type == Float.class) {
-            return Types.FLOAT;
-        }
-        if (type == double.class || type == Double.class) {
-            return Types.DOUBLE;
-        }
-        if (type == BigInteger.class) {
-            return Types.BIGINT;
-        }
-        if (type == BigDecimal.class) {
-            return Types.DECIMAL;
-        }
-        if (type == UUID.class) {
-            return Types.VARCHAR;
-        }
-        if (type == Date.class || type == java.sql.Date.class) {
-            return Types.DATE;
-        }
-        if (type == Timestamp.class) {
-            return Types.TIMESTAMP;
-        }
-        if (type == LocalDate.class) {
-            return Types.DATE;
-        }
-        if (type == LocalTime.class) {
-            return Types.TIME;
-        }
-        if (type == LocalDateTime.class || type == ZonedDateTime.class) {
-            return Types.TIMESTAMP;
-        }
-        if (type == byte[].class) {
-            return Types.BINARY;
+        Integer sqlType = SQL_TYPE_MAP.get(type);
+        if (sqlType != null) {
+            return sqlType;
         }
         int jdbcType = dialect.resolveUnknownJdbcType(type);
         if (jdbcType != Types.OTHER) {
@@ -116,5 +66,39 @@ public class DefaultExecutor implements Executor {
                         dialect.getClass().getName() +
                         "\""
         );
+    }
+
+    static {
+        Map<Class<?>, Integer> map = new HashMap<>();
+        map.put(String.class, Types.VARCHAR);
+        map.put(boolean.class, Types.TINYINT);
+        map.put(Boolean.class, Types.TINYINT);
+        map.put(char.class, Types.CHAR);
+        map.put(Character.class, Types.CHAR);
+        map.put(byte.class, Types.TINYINT);
+        map.put(Byte.class, Types.TINYINT);
+        map.put(short.class, Types.SMALLINT);
+        map.put(Short.class, Types.SMALLINT);
+        map.put(int.class, Types.INTEGER);
+        map.put(Integer.class, Types.INTEGER);
+        map.put(long.class, Types.BIGINT);
+        map.put(Long.class, Types.BIGINT);
+        map.put(float.class, Types.FLOAT);
+        map.put(Float.class, Types.FLOAT);
+        map.put(double.class, Types.DOUBLE);
+        map.put(Double.class, Types.DOUBLE);
+        map.put(BigInteger.class, Types.DECIMAL);
+        map.put(BigDecimal.class, Types.DECIMAL);
+        map.put(UUID.class, Types.VARCHAR);
+        map.put(java.sql.Date.class, Types.DATE);
+        map.put(java.sql.Time.class, Types.TIME);
+        map.put(java.util.Date.class, Types.TIMESTAMP);
+        map.put(LocalDate.class, Types.DATE);
+        map.put(LocalTime.class, Types.TIME);
+        map.put(LocalDateTime.class, Types.TIMESTAMP);
+        map.put(OffsetDateTime.class, Types.TIMESTAMP_WITH_TIMEZONE);
+        map.put(ZonedDateTime.class, Types.TIMESTAMP_WITH_TIMEZONE);
+        map.put(byte[].class, Types.BINARY);
+        SQL_TYPE_MAP = map;
     }
 }
