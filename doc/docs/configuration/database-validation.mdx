@@ -1,46 +1,47 @@
 ---
-sidebar_position: 8
-title: Database validation
+sidebar_position: 8  
+title: Database Validation
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 功能介绍
+## Function Introduction
 
-诚然，Jimmer的强类型SQL DSL能在编译时尽可能暴露问题，大部分错误能够在测试之前就被杜绝。但，这是不够的。
+Admittedly, Jimmer's strongly typed SQL DSL can expose problems as much as possible at compile time, and most errors can be prevented before testing. But this is not enough.
 
-强类型SQL DSL仅仅能提高`实体模型->业务代码`环节的可靠性，但无法保证`数据库结构->实体模型`环节的可靠性。
+The strongly typed SQL DSL can only improve the reliability of the `entity model -> business code` link, but cannot guarantee the reliability of the `database structure -> entity model` link.
 
-还有一个衍生问题，如果开发人员在测试环境中得到可靠的应用，那么，如何保证应用被移植到生产环境中后仍然可靠？
+There is also a derived problem. If developers get reliable applications in the test environment, how to ensure that the application remains reliable after being transplanted to the production environment?
 
-数据库验证是一个非常重要的功能，它用于验证数据库结构和实体模型定义之间的一致性。
+Database validation is a very important feature that is used to verify the consistency between the database structure and the entity model definition.
 
-:::info
-**验证规则**
--   验证表名、列名、序列名是否和实体模型中的定义一致。
+:::info 
+**Validation Rules**
 
--   验证列的nullity是否和实体模型中属性的定义一致。
+-   Verify that table names, column names, sequence names are consistent with definitions in the entity model.
 
--   对于实体模型中各实体的id属性，验证数据库是否有存在完全匹配的的主键约束。
+-   Verify that the nullity of columns is consistent with the definitions of attributes in the entity model. 
 
--   对于实体模型中定义的真外键 *(参见[真假外键](../mapping/base/foreignkey))* 而言，验证数据库中是否存在完全匹配的的外键约束。
+-   For the id attribute of each entity in the entity model, verify that the database has a primary key constraint that exactly matches.
+
+-   For true foreign keys defined in the entity model (see [True and False Foreign Keys](../mapping/base/foreignkey)), verify that the database has exactly matching foreign key constraints.
 :::
 
-## 开启验证
+## Enable Validation
 
-有两种方法开始验证
+There are two ways to start validation:
 
--   使用Spring Boot Starter
+-   Use Spring Boot Starter
 
-    修改`application.yml` *(或application.properties)*
+    Modify `application.yml` *(or application.properties)*
 
     ```
     jimmer:
-      database-validation-mode: ERROR
+        database-validation-mode: ERROR 
     ```
 
--   使用底层API
+-   Use underlying API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -51,7 +52,7 @@ import TabItem from '@theme/TabItem';
         .setDatabaseValidationMode(
             DatabaseValidationMode.ERROR
         )
-        ...省略其他配置...
+        ...Omit other configurations...
         .build();
     ```
 
@@ -63,67 +64,67 @@ import TabItem from '@theme/TabItem';
         setDatabaseValidationMode(
             DatabaseValidationMode.ERROR
         )
-        ...省略其他配置...
+        ...Omit other configurations...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-`DatabaseValidationMode`是枚举类型，有三个取值:
+`DatabaseValidationMode` is an enum type with three values:
 
--   `NONE`: 不验证数据库结构，这是默认行为。
+-   `NONE`: Don't validate database structure, this is the default behavior.
 
--   `WARNNING`: 验证数据库结构，如果数据库结构和实体模型定义不一致，不阻止程序运行，只是在日志中打印告警信息。
+-   `WARNNING`: Validate database structure, if the database structure is inconsistent with the entity model definition, it does not prevent the program from running, just prints warning information in the log.
 
--   `ERROR`: 验证数据库结构，如果数据库结构和实体模型定义不一致，抛出异常，阻止程序运行。
+-   `ERROR`: Validate database structure, if the database structure is inconsistent with the entity model definition, an exception will be thrown to prevent the program from running.
 
-## 解决表冲突
+## Resolve Table Conflicts
 
--   实体类型必然对应于数据库的某张表，无论是由开发人员通过`@Table`显式配置表名还是由[命名策略](../mapping/base/naming-strategy)自动决定。
+-   Entity types must correspond to a table in the database, whether the table name is explicitly configured by the developer via `@Table` or automatically determined by the [naming strategy](../mapping/base/naming-strategy). 
 
--   基于中间表的关联属性必然对应于数据库的某张表，无论是由开发人员通过`@JoinTable`显式配置表名还是由[命名策略](../mapping/base/naming-strategy)自动决定。
+-   Association properties based on intermediate tables must correspond to a table in the database, whether the table name is explicitly configured by the developer via `@JoinTable` or automatically determined by the [naming strategy](../mapping/base/naming-strategy).
 
--   自动增长策略为`SEQUENCE`的ID必然对应于数据库的某个序列，无论是由开发人员通过`@GeneratedValue`显式配置序列名还是由[命名策略](../mapping/base/naming-strategy)自动决定
+-   The ID whose auto growth strategy is `SEQUENCE` must correspond to a sequence in the database, whether the sequence name is explicitly configured by the developer via `@GeneratedValue` or automatically determined by the [naming strategy](../mapping/base/naming-strategy) .
 
-程序启动时，Jimmer需要查询数据库以验证这些表或序列是否存在。以及，如果存在，其内部结构是否正确 *(针对表)*。
+When the program starts, Jimmer needs to query the database to verify whether these tables or sequences exist. And if they exist, whether their internal structures are correct *(for tables)*.
 
-然而，由于数据库服务往往支持多个子库，子库之间还可以彼此授权，所以JDBC连接可能在不同的数据库用户看到同名的表，比如，`db1.BOOK`、`db2.BOOK`和`db3.BOOK`。这叫表冲突。
+However, since database services often support multiple sub-databases, and sub-databases can authorize each other, the JDBC connection may see tables with the same name in different database users, such as `db1.BOOK`, `db2.BOOK`, and `db3.BOOK`. This is called table conflict.
 
-当然，Jimmer会优先从JDBC连接的元数据中提取数据库名称，比如，从`jdbc:mysql://localhost:3306/db1`中可以提取到"db1"，优先在自动提取到的子库中查找表信息用于验证。
-然而，该方法并不总是有效，只要当前子库中无法查找到指定的表，就会到其他子库中查找，这就可能导致表冲突问题。
+Of course, Jimmer will first extract the database name from the JDBC connection metadata, for example, extract "db1" from `jdbc:mysql://localhost:3306/db1`, and first look for table information in the automatically extracted sub-database for verification.
+However, this method is not always valid. As long as the specified table cannot be found in the current sub-database, it will look for it in other sub-databases, which may lead to table conflict issues.
 
-要解决此问题，以下两种方法可供选择：
+To solve this problem, the following two methods are available:
 
--   明确指定严格的表名或序列名，例如：
+-   Specify strict table names or sequence names, for example:
 
-    -   将`@Table(name = "BOOK")`修改为`@Table(name = "db1.BOOK")`。
+    -   Change `@Table(name = "BOOK")` to `@Table(name = "db1.BOOK")`.
 
-    -   将`@JoinTable(name = "BOOK_AUTHOR_MAPPING")`修改为`@JoinTable(name = "db1.BOOK_AUTHOR_MAPPING")`。
+    -   Change `@JoinTable(name = "BOOK_AUTHOR_MAPPING")` to `@JoinTable(name = "db1.BOOK_AUTHOR_MAPPING")`.
 
-    -   将`@GeneratedValue(sequenceName = "BOOK_ID_SEQ")`修改为`@GeneratedValue(sequenceName = "db1.BOOK_ID_SEQ")`。
+    -   Change `@GeneratedValue(sequenceName = "BOOK_ID_SEQ")` to `@GeneratedValue(sequenceName = "db1.BOOK_ID_SEQ")`.
 
--   明确指定被用于验证的子库名，这又可分为两种方法：
+-   Explicitly specify the sub-database name used for validation, which can be divided into two methods:
 
-    有两种方法开始验证
+    There are two ways to start validation
 
-    -   使用Spring Boot Starter
+    - Use Spring Boot Starter
 
-        修改`application.yml` *(或application.properties)*
+        Modify `application.yml` *(or application.properties)*
 
         ```yaml
         jimmer:
-          database-validation: 
+        database-validation:
             mode: ERROR
-            # highlight-next-line
+            # highlight-next-line  
             catalog: db1
         ```
         :::info
-        `jimmer.database-validation-mode`和`jimmer.database-validation.mode`等价
+        `jimmer.database-validation-mode` and `jimmer.database-validation.mode` are equivalent
         :::
 
-    -   使用底层API
-    
+    -   Use underlying API
+
         <Tabs groupId="language">
         <TabItem value="java" label="Java">
 
@@ -135,7 +136,7 @@ import TabItem from '@theme/TabItem';
             )
             // highlight-next-line
             .setDatabaseValidationCatalog("db1")
-            ...省略其他配置...
+            ...Omit other configurations...
             .build();
         ```
 
@@ -149,19 +150,70 @@ import TabItem from '@theme/TabItem';
             )
             // highlight-next-line
             setDatabaseValidationCatalog("db1")
-            ...省略其他配置...
+            ...Omit other configurations...
         }
         ```
 
         </TabItem>
         </Tabs>
 
-## 暂时忽略局部验证
+Similarly, schema can also be specified, for example:
 
-有的时候，开发人员正在开发一个新功能，它还没有完成固无法验证。开发人员自然不会去运行还未完成的功能，期望未完成的部分不要数据库结构验证。
+-   Direct configuration: `@Table(name = "mydatabase.myschema.BOOK")` 
 
-对此，Jimmer提供注解`@org.babyfish.jimmer.sql.DatabaseValidationIgnore`，该注解有以下两种用法：
+-   Configure in SpringBoot's `application.yml` file
 
--   修饰实体接口，表示整个实体不用验证。
+    ```yaml    
+    jimmer:
+      database-validation:
+        mode: ERROR
+        catalog: mydatabase
+        # highlight-next-line
+        schema: myschema
+    ```
 
--   修饰实体属性，表示特定属性不用验证。
+-   Underlying API configuration
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setDatabaseValidationMode(
+            DatabaseValidationMode.ERROR
+        )
+        .setDatabaseValidationCatalog("mydatabase")
+        // highlight-next-line
+        setDatabaseValidationSchema("myschema")
+        ...Omit other configurations...
+        .build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setDatabaseValidationMode(
+            DatabaseValidationMode.ERROR
+        )
+        setDatabaseValidationCatalog("mydatabase")
+        // highlight-next-line
+        setDatabaseValidationSchema("myschema")
+        ...Omit other configurations...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## Temporarily ignore partial validation
+
+Sometimes developers are developing a new feature that is incomplete and cannot be verified. Developers will naturally not run unfinished features and expect unfinished parts not to verify the database structure.
+
+For this, Jimmer provides the annotation `@org.babyfish.jimmer.sql.DatabaseValidationIgnore`. This annotation has the following two usages:
+
+-   Annotate entity interfaces to indicate that the entire entity does not need to be verified.
+
+-   Annotate entity attributes to indicate that specific attributes do not need to be verified.

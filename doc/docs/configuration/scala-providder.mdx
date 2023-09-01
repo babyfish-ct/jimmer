@@ -6,46 +6,47 @@ title: Scala Provider
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 基本概念
+## Basic Concepts
 
-在前面的文档中，我们介绍过如何[映射枚举](../mapping/advanced/enum)，以及如何使用`@Serialized`[映射JSON](../mapping/advanced/json)。
+In previous documents, we have introduced how to [map enums](../mapping/advanced/enum), and how to use `@Serialized` to [map JSON](../mapping/advanced/json).
 
-但是，有的时候，以上两种方法都无法满足我们的要求，这时我们可以使用`ScalarProvider`。
-
-:::tip
-`ScalarProvider`是Jimmer关于自定义数据类型最底层的SPI。
-
-之前我们探讨过的[Enum映射](../mapping/advanced/enum)和[JSON映射](../mapping/advanced/json)，其实就是Jimmer对`ScalarProvider`的内置实现。
-:::
-
-可以为SqlClient注册多个`ScalarProvider`，每个`ScalarProvider`告诉Jimmer如何处理一种自定义数据类型。
-
-`ScalarProvider`分为两种：
-
--   全局级
-
-    定义Java/Kotlin类型和数据库类型的映射规则，全局统一。任何实体定义中包含该类型的属性都会被全局`ScalarProvider`统一处理。
-
-    :::note
-    全局级`ScalarProvider`只能处理非集合类型，比如：类、接口、枚举。不能处理类型为：`Array`、`Collection`、`Map`等集合类型。
-    :::
-
--   属性级
-
-    对某个特定的实体属性，定义Java/Kotlin类型和数据库类型的映射规则。
-
-    :::note
-    -   属性级`ScalarProvider`可以处理任何非Jimmer内置的类型。包括集合类型，比如：`Array`、`Collection`，`Map`。
-
-    -   如果被映射的属性类型是集合类型，该属性需要被`@org.babyfish.jimmer.Scalar`修饰。
-    :::
+However, sometimes neither of these methods can meet our requirements. In this case, we can use `ScalarProvider`.
 
 :::tip
-[JSON映射](../mapping/advanced/json)一文阐述了`@Serialized`注解，既可以修饰属性返回的类型也可以修饰实体属性，
-就是因为更底层的`ScalarProvider`有两种。
+`ScalarProvider` is the most low-level SPI of Jimmer for custom data types. 
+
+The [Enum Mapping](../mapping/advanced/enum) and [JSON Mapping](../mapping/advanced/json) we discussed before are actually Jimmer's built-in implementations of `ScalarProvider`.
 :::
 
-`ScalarProvider`是Jimmer提供的一个SPI接口，其定义如下：
+Multiple `ScalarProvider` can be registered for SqlClient. Each `ScalarProvider` tells Jimmer how to handle a custom data type.
+
+There are two types of `ScalarProvider`:
+
+-   Global
+
+    Define the mapping rules between Java/Kotlin types and database types globally and uniformly. Any entity definition that contains attributes of this type will be uniformly handled by the global `ScalarProvider`.
+
+    :::note
+    Global `ScalarProvider` can only handle non-collection types, such as: classes, interfaces, enums, etc. It cannot handle collection types like: `Array`, `Collection`, `Map`, etc.
+    :::
+
+-   Property level
+
+    For a specific entity attribute, define the mapping rules between Java/Kotlin types and database types.
+
+    :::note
+    -   Attribute `ScalarProvider` can handle any non-built-in types of Jimmer, including collection types such as: `Array`, `Collection`, `Map`.
+
+    -   If the mapped attribute type is a collection type, the attribute needs to be annotated with `@org.babyfish.jimmer.Scalar`.
+    :::
+
+:::tip
+The `@Serialized` annotation discussed in [JSON Mapping](../mapping/advanced/json) can annotate both the return type of attributes and entity attributes. 
+
+This is because the more low-level `ScalarProvider` has two types.
+:::
+
+`ScalarProvider` is an SPI interface provided by Jimmer, which is defined as follows:
 
 ```java title="ScalarProvider"
 package org.babyfish.jimmer.sql.runtime;
@@ -55,11 +56,11 @@ import java.util.function.Consumer;
 public abstract class ScalarProvider<T ❶, S ❷> {
 
     protected ScalarProvider(Class<T> scalarType, Class<S> sqlType) { ❸
-        ...省略代码...
+        ...Omitted code...
     }
 
     protected ScalarProvider() { ❹
-        ...省略代码...
+        ...Omitted code...
     }
 
     public abstract T toScalar(S sqlValue); ❺
@@ -72,34 +73,34 @@ public abstract class ScalarProvider<T ❶, S ❷> {
  }
 ```
 
--   ❶ 范型参数`T`: Java/Kotlin中数据类型；
+-   ❶ Generic parameter `T`: Data type in Java/Kotlin;
 
--   ❷ 范型参数`S`: 数据库中数据类型；
+-   ❷ Generic parameter `S`: Data type in the database; 
 
--   ❸ 明确指定`T`和`S`所代表类型的构造函数；
+-   ❸ Constructor that explicitly specifies the types represented by `T` and `S`;
 
-    这个构造函数通常用于定义通用性和可复用性较强的`ScalarProvider`。
+    This constructor is usually used to define `ScalarProvider` with higher generality and reusability.
 
--   ❹ 无需明确指定`T`和`S`所代表类型的构造函数；
+-   ❹ Constructor that does not need to explicitly specify the types represented by `T` and `S`;
 
-    要求派生类明确指定范型参数`T`和`S`，让Jimmer可以自动分析出`T`和`S`所代表类型。否则，会异常。
+    It requires derived classes to explicitly specify generic parameters `T` and `S` so that Jimmer can automatically analyze the types represented by `T` and `S`. Otherwise, an exception will occur.
 
-    这个构造函数通常用于定义特定类型所对应的`ScalarProvider`，不要求通用性和可复用性。
+    This constructor is usually used to define `ScalarProvider` corresponding to specific types without requiring generality and reusability.
 
--   ❺ 方法`toScalar`: 把数据库中读取到的非null数据转换为Java数据；
+-   ❺ Method `toScalar`: Convert non-null data read from the database to Java data;
 
--   ❻ 方法`toSql`: 把Java的非null数据转换为数据库可接受的数据；
+-   ❻ Method `toSql`: Convert non-null Java data to data acceptable to the database; 
 
--   ❼ 如果要定义属性级`ScalarProvider`，有一种选择 *(也有其他选择)* 是在派生类中覆盖方法`getHandledProps`；
+-   ❼ If you want to define an attribute `ScalarProvider`, one option *(there are other options)* is to override the `getHandledProps` method in the derived class;
 
-## 全局级ScalarProvider
+## Global ScalarProvider
 
-例如当前数据库不支持UUID类型，可以如此处理：
+For example, the current database does not support the UUID type, which can be handled as follows:
 
-### 定义ScalarProvider
+### Define ScalarProvider
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="UUIDScalarProvider.java"
 public class UUIDScalarProvider extends ScalarProvider<UUID, String> {
@@ -119,7 +120,7 @@ public class UUIDScalarProvider extends ScalarProvider<UUID, String> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="UUIDScalarProvider.kt"
+```kotlin title="UUIDScalarProvider.kt" 
 class UUIDScalarProvider : ScalarProvider<UUID, String> {
 
     override fun toScalar(sqlValue: Strng): UUID =
@@ -133,25 +134,25 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
 </TabItem>
 </Tabs>
 
-### 注册Scalar Provider
+### Register Scalar Provider
 
-有两种方法可以让Jimmer注册`ScalarProvider`：
+There are two ways for Jimmer to register `ScalarProvider`:
 
--   使用Spring Boot Starter
+-   Use Spring Boot Starter
 
-    让`ScalarProvider`的各派生类被Spring托管即可。有两种选择。
+    Just let the derived classes of `ScalarProvider` be managed by Spring. There are two options:
 
-    -   修改上面的`UUIDScalarProvider`类，用spring的`@Component`修饰
+    -   Modify the above `UUIDScalarProvider` class and annotate it with spring's `@Component`
 
         <Tabs groupId="language">
         <TabItem value="java" label="Java">
 
         ```java title="UUIDScalarProvider.java"
         // highlight-next-line
-        @Component
+        @Component 
         public class UUIDScalarProvider extends ScalarProvider<UUID, String> {
-            
-            ...省略代码...
+                
+            ...Omitted code...
         }
         ```
 
@@ -163,19 +164,19 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
         @Component
         class UUIDScalarProvider : ScalarProvider<UUID, String> {
 
-            ...省略代码...
+            ...Omitted code...
         }
         ```
 
         </TabItem>
         </Tabs>
 
-    -   用Spring的`@Bean`方法，向Spring注册UUIDScalaProvider对象
+    -   Use Spring's `@Bean` method to register the UUIDScalaProvider object to Spring
 
         <Tabs groupId="language">
         <TabItem value="java" label="Java">
 
-        ```java
+        ```java 
         // highlight-next-line
         @Bean
         public UUIDScalarProvider uuidScalarProvider() {
@@ -188,7 +189,7 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
 
         ```kotlin
         // highlight-next-line
-        @Bean
+        @Bean 
         fun uuidScalarProvider(): UUIDScalarProvider =
             UnitTestIdGenerator()
         ```
@@ -196,7 +197,7 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
         </TabItem>
         </Tabs>
 
--   使用底层API
+-   Use underlying API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -208,7 +209,7 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
             .newBuilder()
             // highlight-next-line
             .addScalarProvider(new UUIDScalarProvider())
-            ...省略其他配置...
+            ...Omit other configurations...
             .build();
     }
     ```
@@ -218,47 +219,47 @@ class UUIDScalarProvider : ScalarProvider<UUID, String> {
 
     ```kotlin
     @Bean
-    fun sqlClient() : KSqlClient = 
+    fun sqlClient() : KSqlClient =  
         newKSqlClient {
             // highlight-next-line
             addScalarProvider(UUIDScalarProvider())
-            ...省略其他配置...
+            ...Omit other configurations...
         }
     ```
 
     </TabItem>
     </Tabs>
 
-## 属性级ScalarProvider
+## Property level ScalarProvider
 
-属性级`ScalarProvider`相较于全局级`ScalarProvider`唯一区别是，它只适用于特定属性，而非所有属性。
+The only difference between attribute `ScalarProvider` and global `ScalarProvider` is that it only applies to specific attributes, not all attributes.
 
-所以，属性级`ScalarProvider`中最重要的数据转换方法`toScalar`和`toSql`的用户代码实现方法完全一样，只是注册方式不同而已。
+So the most important data conversion methods `toScalar` and `toSql` in attribute `ScalarProvider` have exactly the same user code implementation, only the registration method is different.
 
-因此，这里我们假设有一个用户自定义类型`Location`，其对应的`ScalarProvider`实现类为`LocationScalarProvider`，无需给出具体实现
+Therefore, here we assume there is a user-defined type `Location` and its corresponding `ScalarProvider` implementation class is `LocationScalarProvider`. Specific implementation is omitted.
 
-### 非Spring注册方式
+### Non-Spring registration
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 @Bean
 public JSqlClient sqlClient() {
-    return JSqlClient
-        .newBuilder()
-        .setScalarProvider(
-            // highlight-next-line
-            FlightProps.SOURCE_LOCATION
-            new LocationScalarProvider()
-        )
-        .setScalarProvider(
-            // highlight-next-line
-            FlightProps.TARGET_LOCATION
-            new LocationScalarProvider()
-        )
-        ...省略其他配置...
-        .build();
+  return JSqlClient
+      .newBuilder()
+      .setScalarProvider(
+          // highlight-next-line
+          FlightProps.SOURCE_LOCATION
+          new LocationScalarProvider() 
+      )
+      .setScalarProvider(
+          // highlight-next-line  
+          FlightProps.TARGET_LOCATION
+          new LocationScalarProvider()
+      )
+      ...Omit other configurations...
+      .build();
 }
 ```
 
@@ -267,32 +268,32 @@ public JSqlClient sqlClient() {
 
 ```kotlin
 @Bean
-fun sqlClient() : KSqlClient = 
-    newKSqlClient {
-        setScalarProvider(
-            // highlight-next-line
-            Flight::sourceLocation
-            LocationScalarProvider()
-        )
-        setScalarProvider(
-            // highlight-next-line
-            Flight::targetLocation
-            LocationScalarProvider()
-        )
-        ...省略其他配置...
-    }
+fun sqlClient() : KSqlClient =
+  newKSqlClient {
+      setScalarProvider(
+          // highlight-next-line
+          Flight::sourceLocation
+          LocationScalarProvider()
+      )
+      setScalarProvider(
+          // highlight-next-line
+          Flight::targetLocation
+          LocationScalarProvider()
+      )
+      ...Omit other configurations...
+  }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-即，除`Flight.sourceLocation`和`Flight.targetLocation`属性外，`LocationScalarProvider`不影响其他任何类型为`Location`的属性
+That is, except for the `Flight.sourceLocation` and `Flight.targetLocation` attributes, `LocationScalarProvider` does not affect any other attributes of type `Location`.
 
-### Spring注册方式
+### Spring registration
 
-上面的方式很直观，但是是手动注册的，Spring自动这册的方式可以用于注册属性级`ScalarProvider`吗？
+The above method is intuitive, but it is manually registered. Can Spring's automatic registration method be used to register attribute `ScalarProvider`?
 
-当然。只需要覆盖`ScalarProvider`的方法`getHandledProps`，就可以用注册全局级`ScalarProvider`的方法注册属性级`ScalarProvider`。例如：
+Of course. Just override the `getHandledProps` method of `ScalarProvider`, and you can use the method of registering global `ScalarProvider` to register attribute `ScalarProvider`. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -302,15 +303,15 @@ fun sqlClient() : KSqlClient =
 public class LocationScalarProvider extends ScalarProvider<Location, String> {
     
     @Override
-    // highlight-next-line
+    // highlight-next-line 
     public Collection<ImmutableProp> getHandledProps() {
         return Arrays.asList(
-            FlightProps.SOURCE_LOCATION, 
+            FlightProps.SOURCE_LOCATION,
             FlightProps.TARGET_LOCATION
         );
     }
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -318,7 +319,7 @@ public class LocationScalarProvider extends ScalarProvider<Location, String> {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="LocationScalarProvider.kt"
-@Component
+@Component 
 class LocationScalarProvider : ScalarProvider<Location, String> {
 
     // highlight-next-line
@@ -328,7 +329,7 @@ class LocationScalarProvider : ScalarProvider<Location, String> {
             Flight::targetLocation.toImmutableProp()
         )
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 

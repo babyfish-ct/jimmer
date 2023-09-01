@@ -1,4 +1,515 @@
 ---
-sidebar_position: 4
+sidebar_position: 4  
 title: Query DTO
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Jimmer provides [DTO language](../../object/view/dto-language). 
+
+:::tip
+Essentially, this language is another way to express object fetchers.
+:::
+
+Using this language, developers can quickly define multiple data structure shapes with an entity type as the aggregate root. The compiler will generate the corresponding Java/Kotlin DTO classes for each shape. Each DTO type contains the mutual conversion logic between itself and the original dynamic type, as well as an object fetcher that matches its own shape.
+
+In some cases, after the server queries data of a certain shape, it is not used as the return of an HTTP request, but is used by itself to drive subsequent complex business logic. This is an ideal scenario for using this approach.
+
+:::caution
+Note that if the data of a certain shape queried by the server is not for its own use, but to be directly returned as the HTTP request return value, it is more recommended to directly return the dynamic entity object and use the scheme in [Spring Section/Frontend-Backend Decoupling](../../spring/client) to automatically generate client code with high development experience.
+:::
+
+## Define DTO shape
+
+This article focuses on how to query static DTO types, not a systematic introduction to the DTO language. Please refer to [Object Section/DTO Mapping/DTO Language](../../object/view/dto-language) for a complete DTO language.
+
+Assume the fully qualified name of the `Book` class is `com.yourcompany.yourpoject.model.Book`, you can
+
+1.  **In the project where the entity is defined**, create a directory `src/main/dto`
+
+2.  Under `src/main/dto`, create subdirectories `com/yourcompany/yourpoject/model` according to the package path where the entity is located
+
+3.  In the directory created in the previous step, create the file `Book.dto`. The file name must be the same as the entity class name, and the extension must be `dto`
+
+4.  Edit this file and use the DTO language to define various DTO shapes of the Book entity
+
+    ```sh title="Book.dto" 
+    # highlight-next-line
+    BookDetailView {
+        
+        #allScalars
+        
+        store {
+            #allScalars
+        }
+
+        authors {
+            #allScalars
+        }
+    }
+
+    SimpleBookView { ...Omitted... }
+
+    ...Omit other DTO shape definitions...
+    ```
+
+## Automatically generate DTO types
+
+Jimmer is responsible for compiling dto files and automatically generating DTO types that conform to these shapes.
+
+:::caution
+If files other than dto files are modified in addition to dto files, directly clicking the run button in the IDE may cause the dto file to be recompiled.
+
+However, if no other Java/Kotlin files are modified except for the dto file, simply clicking the run button in the IDE will not cause the dto file to be recompiled unless explicitly rebuilding!
+:::
+
+Take `BookDetailView` in the above code as an example. After this dto file is successfully compiled by Jimmer, the following DTO type will be automatically generated:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookDetailView.java"
+package com.yourcompany.yourpoject.model.dto;
+
+import com.yourcompany.yourpoject.model.Book;
+import org.babyfish.jimmer.View;
+
+@lombok.Data
+public class BookDetailView implements Input<Book> {
+
+    private long id;
+
+    private String name;
+
+    private int edition;
+
+    private BigDecimal price;
+
+    // highlight-next-line
+    private TargetOf_store store;
+
+    // highlight-next-line
+    private List<TargetOf_authors> authors;
+
+    @lombok.Data
+    // highlight-next-line  
+    public static class TargetOf_store implements Input<BookStore> {
+
+        private long id;
+    
+        private String name;
+
+        @Nullable
+        private String website;
+
+        ...Omitted other members...
+    }
+
+    @lombok.Data
+    // highlight-next-line
+    public static class TargetOf_authors implements Input<Author> {
+
+        private long id;
+        
+        private String firstName;
+
+        private String lastName;
+
+        private Gender gender;
+
+        ...Omitted other members...
+    }
+
+    ...Omitted other members...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookDetailView.kt"
+package com.yourcompany.yourpoject.model.dto
+
+import com.yourcompany.yourpoject.model.Book 
+import org.babyfish.jimmer.View
+
+data class BookDetailView(
+    val id: Long = 0,
+    val name: String = "",
+    val edition: Int = 0,
+    val price: BigDecimal,
+
+    // highlight-next-line
+    val store: TargetOf_store? = null,
+    // highlight-next-line
+    val authors: List<TargetOf_authors> = emptyList(),
+) : Input<Book> {
+
+    // highlight-next-line
+    data class TargetOf_store(
+        val id: Long = 0,
+        val name: String = "",
+        val website: String? = null,  
+    ) : Input<BookStore> {
+        ...Omitted other members...
+    }
+
+    // highlight-next-line
+    data class TargetOf_authors(
+        val id: Long = 0,
+        public val firstName: String = "",
+        public val lastName: String = "",
+        public val gender: Gender,
+    ) : Input<Author> {
+        ...Omitted other members...
+    }
+
+    ...Omitted other members...
+}
+```
+
+</TabItem>
+</Tabs>  
+
+:::info
+-   The generated DTO classes are not in the package where the entity is located, but in its `dto` subpackage.
+
+-   For Java, it is assumed that lombok has been used. 
+:::
+
+## Query DTO types 
+
+There are several ways to query DTO types:
+
+-   Use inherited methods from `JRepository/KRepostiory`
+
+-   Define abstract methods in custom Repository
+
+-   Define default methods in custom Repository *(Which is actually the method of the underlying API to query DTO types)*
+
+### Use inherited methods from Repository
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+public static void main(String[] args) {
+    ApplicationContext ctx = SpringAppliction.run(MyApp.class, args);
+    BookRepository bookRepository = ctx.getBean(BookRepository.class);
+    Book view = bookRepository
+        // highlight-next-line
+        .viwer(BookDetailView.class)
+        .findNullable(1L);
+    System.out.println(view);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun main(args: Array<String>) {
+    val ctx = runApplication<MyApp>(*args)
+    val bookRepository = ctx.getBean(BookRepository.class.java)
+    val view = bookRepository
+        // highlight-next-line
+        .viwer(BookDetailView.class)  
+        .findNullable(1L)
+    println(view)
+}  
+```
+
+</TabItem>
+</Tabs>
+
+Where `viewer(BookDetailView.class)` indicates that the following methods are used to query DTO objects instead of dynamic entity objects.
+
+The print result is as follows *(Formatted manually for readability)*:
+
+```sh
+# highlight-next-line 
+BookDetailView(
+    id=1,
+    name=Learning GraphQL,
+    edition=1,
+    price=50.00,
+    # highlight-next-line
+    store=BookDetailView.TargetOf_store(
+        id=1,
+        name=O'REILLY,
+        website=null,
+        version=0
+    ),
+    authors=[
+        # highlight-next-line
+        BookDetailView.TargetOf_authors(
+            id=2,
+            firstName=Alex,
+            lastName=Banks,
+            gender=MALE  
+        ),
+        # highlight-next-line 
+        BookDetailView.TargetOf_authors(
+            id=1, 
+            firstName=Eve,
+            lastName=Procello,
+            gender=FEMALE
+        )
+    ]
+)
+```
+
+It is not difficult to find that although the query no longer returns dynamic entity objects, the function is exactly the same as the object fetcher. Why is this?  
+
+In fact, an object fetcher is automatically generated inside the `BookDetailView` class. Jimmer uses it to query dynamic entity objects matching the shape from the database and automatically converts them to DTO objects.
+
+:::tip
+Related details have been discussed in detail in [Object Fetcher/DTO Query](../../query/object-fetcher/dto). This article will not repeat.
+
+This is why this article says at the beginning that the DTO language is essentially another way to express object fetchers.
+:::
+
+
+### Define abstract methods in custom Repository
+
+There are two implementation plans:
+
+-   Intuitive but not recommended
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookRepository.java"
+    // Intuitive but not recommended
+    public interface BookRepository extends JRepository<Book, Long> {
+
+        // highlight-next-line
+        List<BookDetailView> findByNameLikeIgnoreCase(
+            @Nullable String name
+        );    
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin  title="BookRepository.kt"
+    // Intuitive but not recommended
+    interface BookRepository : KRepository<Book, Long> {
+
+        fun findByNameLikeIgnoreCase(
+            name: String? = null
+        // highlight-next-line
+        ) : List<BookDetailView>    
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    This approach is very simple, the abstract method no longer returns dynamic entities representing arbitrary data, just return the DTO type with fixed shape. Very easy to understand.
+
+    :::caution
+    However, this approach still has drawbacks and is not recommended.
+    :::
+
+
+-   Recommended approach
+
+    The above code is simple and intuitive, but violates one of the important values ​​that Jimmer has been trying to pursue:  
+
+    :::tip
+    Do not solidify the shape of the data structure to be queried in the data layer, but let the upper layer business decide.
+    :::
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookRepository.java"
+    public interface BookRepository extends JRepository<Book, Long> {
+
+        <V extends View<Book>> List<V> findByNameLikeIgnoreCase(
+            @Nullable String name,
+            // highlight-next-line
+            Class<V> viewType
+        );    
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin  title="BookRepository.kt" 
+    interface BookRepository : KRepository<Book, Long> {
+
+        fun <V: View<Book>> findByNameLikeIgnoreCase(
+            name: String? = null
+            // highlight-next-line
+            viewType: KClass<V>
+        ) : List<V>    
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    You can see:
+
+    1.  First, define a method-level generic parameter `V`, which generic parameter must extend `org.babyfish.jimmer.View<Book>` *(this is very important, otherwise Jimmer will remind developers to do so via exceptions)*.
+
+    2.  Then, use `V` to declare the parameter `viewType` of type `Class<V>` or `KClass<V>`, and hand over the decision-making power of the data structure shape to the caller.
+
+    3.  Finally, return results carrying the `V` type, such as `V`, `List<V>` or `Page<V>`.
+
+    In this way, we can use it to query data structures of various shapes. Take Java as an example:
+
+    -   bookRepository.findByNameLikeIgnoreCase(null, BookDetailView.class)
+
+    -   bookRepository.findByNameLikeIgnoreCase(null, SimpleBookView.class)
+
+    -   bookRepository.findByNameLikeIgnoreCase(null, DefaultBookView.class)
+
+    Let's recall how we used object fetchers directly to achieve the same functionality before introducing the DTO type:
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookRepository.java"
+    public interface BookRepository extends JRepository<Book, Long> {
+
+        List<Book> findByNameLikeIgnoreCase(
+            @Nullable String name,
+            // highlight-next-line
+            fetcher<Book> fetcher
+        );    
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin  title="BookRepository.kt"
+    interface BookRepository : KRepository<Book, Long> {
+
+        fun findByNameLikeIgnoreCase(
+            name: String? = null
+            // highlight-next-line
+            viewType: Fetcher<Book>
+        ) : List<Book>    
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::tip
+    Comparing the code using DTO with the code using object fetcher directly, it is not difficult to find that the two are doing the same thing in different ways.
+
+    This confirms again what is said at the beginning of this article that the DTO language is essentially another way to express object fetchers.
+    :::
+
+
+### Define default methods in custom Repository
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">  
+
+```java title="BookRepository.java"
+public interface BookRepository extends JRepository<Book, Long> {
+
+    BookTable table = BookTable.$;
+
+    default <V extends View<Book>> List<V> find(
+        @Nullable String name, 
+        @Nullable String storeName,
+        @Nullalbe String authorName,
+        // highlight-next-line  
+        Class<V> viewType
+    ) {
+        return sql()
+            .createQuery(table)
+            whereIf(
+                StringUtils.hasText(name),
+                table.name().ilike(name)
+            )
+            .whereIf(
+                StringUtils.hasText(storeName),
+                table.store().name().ilike(storeName)  
+            )
+            .whereIf(
+                StringUtils.hasText(authorName),
+                table.id().in(
+                    sql()
+                        .createSubQuery(author)
+                        .where(
+                            Predicate.or(
+                                author.firstName().ilike(authorName),
+                                author.lastName().ilike(authorName)
+                            )
+                        )
+                        .select(
+                            author.books().id()
+                        )    
+                )
+            )
+            .orderBy(table.name())
+            .orderBy(table.edition().desc())
+            // highlight-next-line
+            .select(table.fetch(viewType))
+            .execute();
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin  title="BookRepository.kt"
+interface BookRepository : KRepository<Book, Long> {
+
+    fun <V: View<Book>> findByNameLikeIgnoreCase(
+        name: String? = null
+        // highlight-next-line
+        viewType: KClass<V>
+    ) : List<V> =
+        sql
+            .createQuery(Book::class) {
+                name?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.name ilike it)
+                }
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    table.store.name ilike it
+                }
+                authorName?.takeIf { it.isNotEmpty() }?.let {
+                    where(
+                        table.id valueIn subQuery(Author::class) {
+                            where(
+                                or(
+                                    table.firstName ilike it,
+                                    table.lastName ilike it
+                                )
+                            )
+                            select(table.books.id)
+                        }
+                    )
+                }
+                orderBy(table.name)
+                orderBy(table.edition.desc())
+                // highlight-next-line
+                select(table.fetch(viewType))
+            }
+            .execute()    
+}
+```
+
+</TabItem>
+</Tabs>
+
+Here we see `table.fetch(fetcher)` is replaced with `table.fetch(viewType)`.
+
+In fact, `viewType` can also replace `fetcher` in other underlying query APIs. For example, `sqlClient.findById(fetcher, 1L)` can be replaced with `sqlClient.find(viewType, 1L)`.  
+
+:::tip
+All underlying query APIs can replace `fetcher` with `viewType`, which confirms again that the DTO language is essentially another way to express object fetchers, as stated at the beginning of this article.
+:::

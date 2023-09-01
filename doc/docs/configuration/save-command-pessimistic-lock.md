@@ -1,8 +1,10 @@
+Here is the English translation of the save-command-pessimistic-lock.md file:
+
 ---
 sidebar_position: 12
-title: Pessimistic lock of save command
+title: Save Command Pessimistic Lock
 ---
 
-该配置在[修改篇/保存指令/Enum映射/短关联id检查](../mutation/save-command/id-checking)中被阐述。
+This configuration is explained in [Mutation Section/Save Command/Pessimistic Lock](../mutation/save-command/lock#pessimistic-lock). 
 
-因此，本文不做重复阐述，只做链接收录。
+Therefore, this article will not repeat the explanation, it just serves as a link reference.
