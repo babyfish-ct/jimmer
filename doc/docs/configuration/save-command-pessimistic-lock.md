@@ -1,5 +1,3 @@
-Here is the English translation of the save-command-pessimistic-lock.md file:
-
 ---
 sidebar_position: 12
 title: Save Command Pessimistic Lock

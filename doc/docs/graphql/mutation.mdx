@@ -1,18 +1,18 @@
 ---
 sidebar_position: 3
-title: Mutation
+title: Mutation  
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## GraphQL Input介绍
+## Introduction to GraphQL Input
 
-在GraphQL中，查询返回的GraphQLObject，即任意形状的动态对象；然而，如果修改操作接受对象参数，必须是GraphQLInput，即固定形状的静态对象。
+In GraphQL, GraphQLObjects returned by queries are dynamic objects of arbitrary shapes. However, if mutation operations accept object parameters, they must be GraphQLInputs, which are static objects of fixed shapes. 
 
-可参考[GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/)以了解更多。
+See [GraphQLInput](https://graphql.org/graphql-js/mutations-and-input-types/) to learn more.
 
-以附带例子中的GraphQL声明文件为例[schema.graphqls](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql-graphql/src/main/resources/graphql/schema.graphqls)
+Take the GraphQL declaration file in the example [schema.graphqls](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql-graphql/src/main/resources/graphql/schema.graphqls) as an example:
 
 ```
 type Book implements CommonEntity { ❶
@@ -36,33 +36,33 @@ input BookInput { ❷
     authorIds: [Long!]!
 }
 
-...省略其他代码...
+...other code omitted...
 ```
 
--   ❶ `type`关键字声明的类型是表达任意形状数据结构的动态类型，用作GraphQL的输出类型
+-   ❶ Types declared with the `type` keyword are dynamic types used to express arbitrary data structures, used as GraphQL output types
 
--   ❷ `input`关键字声明的类型是表达固定形状数据结构的静态类型，用作GraphQL的输入类型
+-   ❷ Types declared with the `input` keyword are static types used to express fixed data structures, used as GraphQL input types
 
-## 定义Jimmer Input DTO
+## Define Jimmer Input DTO
 
-Jimmer的Input DTO在[保存指令/InputDTO](../mutation/save-command/input-dto)中有非常详细的介绍，本文不做赘述。
+Jimmer Input DTOs are introduced in great detail in [Save Command/Input DTO](../mutation/save-command/input-dto), which will not be repeated here.
 
-Jimmer提供了两种定义Input DTO的方式
+Jimmer provides two ways to define Input DTOs:
 
--   [利用DTO语言自动生成Input DTO](../object/view/dto-language)
--   [基于MapStruct手动定义Input DTO](../object/view/mapstruct)
+-   [Automatically generate Input DTOs using the DTO language](../object/view/dto-language) 
+-   [Manually define Input DTOs based on MapStruct](../object/view/mapstruct)
 
-采用DTO语言可以非常高效地达到我们的目标，所以本文采用这种方式。
+Using the DTO language can achieve our goal very efficiently, so this article adopts this approach.
 
-1.  **在实体定义所在项目中**，建立目录`src/main/dto`
+1.  **In the project where the entity is defined**, create the directory `src/main/dto`
 
-2.  在`src/main/dto`下，按实体类型所处的包路径建立子目录`com/yourcompany/yourpoject/model`
+2.  Under `src/main/dto`, create subdirectories `com/yourcompany/yourpoject/model` according to the package path where the entities are located
 
-3.  在上一步建立的目录下，建立文件`Book.dto`，文件必须和实体类同名，扩展名必须为`dto`
+3.  Under the directory created in the previous step, create the file `Book.dto`. The file must have the same name as the entity class and the extension must be `dto`
 
-4.  编辑此文件，利用DTO语言，定义Book实体的各种DTO形状
+4.  Edit this file and use the DTO language to define various DTO shapes for the Book entity
 
-    ```sh title="Book.dto"
+    ```sh title="Book.dto" 
     input BookInput {
         
         #allScalars(Book)
@@ -72,10 +72,10 @@ Jimmer提供了两种定义Input DTO的方式
         id(authors) as authorIds
     }
 
-    ...省略其他DTO定义...
+    ...other DTO definitions omitted...
     ```
 
-编译完成后，将会自动生成如下Input DTO
+After compilation, the following Input DTO will be generated automatically:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -100,41 +100,41 @@ public class BookInput implements Input<Book> { ❶
 
     @Override
     public Book toEntity() { ❷
-        ...略...
+        ...omitted...
     }
 
-    ...省略其他成员...
+    ...other members omitted...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookInput.kt"
+```kotlin title="BookInput.kt" 
 data class BookInput(
     val id: Long? = null,
     val name: String = "",
     val edition: Int = 0,
     val price: BigDecimal,
     val storeId: Long? = null,
-    val authorIds: List<Long> = emptyList()
+    val authorIds: List<Long> = emptyList()  
 ): Input<Book> { ❶
 
     override fun toEntity(): Book = ❷
-        ...略...
+        ...omitted...
     
-    ...省略其他成员...
+    ...other members omitted...
 }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
--   ❶ `BookInput`类实现了接口`org.babyfish.jimmer.Input`，该接口支持`toEntity`方法，可以将当前Input DTO对象转化为Jimmer动态实体对象。
+-   ❶ The `BookInput` class implements the interface `org.babyfish.jimmer.Input`, which supports the `toEntity` method to convert the current Input DTO object to a Jimmer dynamic entity object.
 
--   ❷ 实现`Input.toEntity`方法
+-   ❷ Implements the `Input.toEntity` method
 
-### 实现GraphQL mutation
+## Implement GraphQL mutation
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -147,7 +147,7 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.stereotype.Controller;
 
-...省略其他导入...
+...other imports omitted...
 
 @Controller
 public class BookStoreService {
@@ -161,9 +161,9 @@ public class BookStoreService {
     @MutationMapping ❶
     @Transactional
     public Book saveBook(
-        @Argument BookInput input ❷
+        @Argument BookInput input ❷ 
     ) {
-        // `save(input)`是`save(input.toEntity())`的简写方式
+        // `save(input)` is shorthand for `save(input.toEntity())`
         return bookRepository.save(input); ❸
     }
 }
@@ -176,11 +176,11 @@ public class BookStoreService {
 package com.example.business
 
 import org.springframework.graphql.data.method.annotation.Argument
-// highlight-next-line
+// highlight-next-line  
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.stereotype.Controller
 
-...省略其他导入...
+...other imports omitted...
 
 @Controller
 class BookStoreService(
@@ -192,7 +192,7 @@ class BookStoreService(
     fun saveBook(
         @Argument input: BookInput ❷
     ): Book =
-        // `save(input)`是`save(input.toEntity())`的简写方式
+        // `save(input)` is shorthand for `save(input.toEntity())`
         bookRepository.save(input) ❸
 }
 ```
@@ -200,14 +200,15 @@ class BookStoreService(
 </TabItem>
 </Tabs>
 
--   ❶ 使用注解`@org.springframework.graphql.data.method.annotation.MutationMapping`
+-   ❶ Use annotation `@org.springframework.graphql.data.method.annotation.MutationMapping`
 
--   ❷ 使用静态Input DTO类型`BookInput`，让用户只能传递规定形状的数据结构，以符合(https://graphql.org/graphql-js/mutations-and-input-types/)的规范
+-   ❷ Use the static Input DTO type `BookInput` to allow users to pass only data structures of specified shapes to conform to (https://graphql.org/graphql-js/mutations-and-input-types/)
 
--   ❸ [保存指令](../mutation/save-command)，一句话保存任意形状的数据结构
+-   ❸ [Save command](../mutation/save-command) to save arbitrary data structures in one line
 
-    这里的`bookRepository.save(input)`，其实是`bookRepository.save(input.toEntity())`的简写。
+    Here `bookRepository.save(input)` is actually shorthand for `bookRepository.save(input.toEntity())`.
 
     :::tip
-    无论`BookInput`类型所定义数据结构简单还是相对复杂，都可以一句话保存。这是[保存指令](../mutation/save-command)这个功能的核心价值。
+    No matter how simple or relatively complex the data structure defined by the `BookInput` type, it can be saved in one line. This is the core value of the [save command](../mutation/save-command) feature.
     :::
+```

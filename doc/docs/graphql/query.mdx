@@ -6,48 +6,48 @@ title: Query
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 功能描述
+## Feature Description
 
-假如没有Jimmer的支持，实现GraphQL查询需要做两类工作
+Without Jimmer's support, implementing GraphQL queries requires two types of work:
 
--   查询聚合根对象
+-   Query aggregate roots
 
-    这是开发任何数据服务都需要做的工作，无论是GraphQL服务，REST服务，甚至其他自定义协议的服务。
-
-    开发人员只需查询并返回孤单的聚合根对象即可，无需考虑这些对象的关联属性。所以，这是相对简单的开发任务。
+    This is work that needs to be done when developing any data service, whether it's a GraphQL service, REST service, or even a service using other custom protocols.
     
-    对[Spring GraphQL](https://spring.io/projects/spring-graphql)而言，为控制器类的的查询方法添加注解`@QueryMapping`即可。
+    Developers only need to query and return standalone aggregate root objects without considering their association properties. So this is a relatively simple development task.
 
--   查询关联属性和计算属性
+    For [Spring GraphQL](https://spring.io/projects/spring-graphql), just add the `@QueryMapping` annotation to the query methods in controller classes.
 
-    这是实现GraphQL查询的主要工作量，需要考虑当前对象的所有关联，以及实施批量加载。存在一定的工作量。
+-   Query association properties and calculated properties
 
-    其实，也可以换一种说法，正是应为服务端承担了这些责任，客户端使用起来才会感觉到自由、便捷和强大。
+    This is the bulk of the work required to implement GraphQL queries, requiring consideration of all current object associations and batch loading. There is some workload involved.
 
-    对[Spring GraphQL](https://spring.io/projects/spring-graphql)而言，提供了一些用于查询关联属性的方案，比如
+    In other words, it is precisely because the server undertakes these responsibilities that using GraphQL feels free, convenient and powerful on the client side.
+
+    For [Spring GraphQL](https://spring.io/projects/spring-graphql), some schemes are provided for querying association properties, such as
 
     -   [@SchemaMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers.schema-mapping)
-    -   [Batch Loading](https://docs.spring.io/spring-graphql/docs/current/reference/html/#execution.batching)
+    -   [Batch Loading](https://docs.spring.io/spring-graphql/docs/current/reference/html/#execution.batching) 
     -   [@BatchMapping](https://docs.spring.io/spring-graphql/docs/current/reference/html/#controllers.batch-mapping)
 
-用Jimer实现GraphQL查询时，开发人员只需关注于聚合根对象的查询，只需要保证这些聚合根对象具备简单标量字段即可。这是因为
+When using Jimmer to implement GraphQL queries, developers only need to focus on querying aggregate roots, just ensuring that these aggregate roots have simple scalar fields. This is because
 
 :::tip
-实体对象的所有关联属性和计算属性都会被Jimmer自动映射为GraphQL字段，无需任何开发
-:::
+All association properties and calculated properties of entity objects are automatically mapped to GraphQL fields by Jimmer without any development.
+:::  
 
 :::caution
-截止到目前为止，GraphQL协议并不支持自关联属性的递归查询。
+So far, the GraphQL protocol does not support recursive queries for self-referential properties.
 
-因此，无法通过GraphQL暴露类似于[对象抓取器的递归查询](../query/object-fetcher/recursive)的功能，这是目前使用GraphQL必须接受的功能牺牲。
+Therefore, it is not possible to expose functionality like [recursive queries in object fetchers](../query/object-fetcher/recursive) through GraphQL. This is a functionality sacrifice that must currently be accepted when using GraphQL. 
 :::
 
-## 例子代码
+## Example Code 
 
-Jimmer自动把实体对象关联属性和计算属性映射为GraphQL字段，所以开发人员只需实现聚合根的查询即可，代码非常简单，如下
+Jimmer automatically maps entity object association properties and calculated properties to GraphQL fields, so developers only need to implement queries for aggregate roots. The code is very simple, as follows:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="BookStoreService.java"
 package com.example.business;
@@ -57,7 +57,7 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
-...省略其他导入...
+...other imports omitted...
 
 @Controller
 public class BookStoreService {
@@ -81,7 +81,7 @@ public class BookStoreService {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreService.kt"
+```kotlin title="BookStoreService.kt" 
 package com.example.business
 
 import org.springframework.graphql.data.method.annotation.Argument
@@ -89,7 +89,7 @@ import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
 
-...省略其他导入...
+...other imports omitted...
 
 @Controller
 class BookStoreService(
@@ -109,12 +109,12 @@ class BookStoreService(
 </TabItem>
 </Tabs>
 
-其中，`BookRepsitory`定义如下
+Where `BookStoreRepository` is defined as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStoreRepository.java"
+```java title="BookStoreRepository.java"  
 public interface BookStoreRepository extends JRepository<BookStore, Long> {
 
     List<BookStore> findByNameLikeOrderByName(@Nullable String name);
@@ -134,31 +134,31 @@ interface BookStoreRepository : KRepository<BookStore, Long> {
 </TabItem>
 </Tabs>
 
-和之前的REST服务不同，这个例子并**未**使用[对象抓取器](../query/object-fetcher)，返回最简单的孤单对象即可。孤单对象既不包含关联属性也不包含计算属性。
+Unlike previous REST services, this example does **not** use [object fetchers](../query/object-fetcher) and simply returns the simplest standalone objects, which contain neither association properties nor calculated properties.
 
-这里，`BookStoreRepository.findByNameLikeOrderByName`是抽象方法。如果用使用这种声明式查询的话，请使用最简单的`select(table)`，而非`select(table.fetch(...))`。
+Here, `BookStoreRepository.findByNameLikeOrderByName` is an abstract method. If declarative queries are used, use the simplest `select(table)` rather than `select(table.fetch(...))`. 
 
 :::tip
-用Jimmer实现GraphQL时，[对象抓取器](../query/object-fetcher)被GraphQL机制替代。
+When using Jimmer to implement GraphQL, [object fetchers](../query/object-fetcher) are replaced by GraphQL mechanisms.
 
-因此，**请勿**使用对象抓取器，直接返回简单对象即可。
+Therefore, **do NOT** use object fetchers, just return simple objects directly.
 :::
 
-## 运行效果
+## Running Effect
 
-附带的例子中, GraphQL相关的项目在这里
+In the accompanying example, the GraphQL related projects are:
 
-|Language|Example|
+|Language|Example| 
 |---|---|
 |Java|[example/java/jimmer-sql-graphql](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-sql-graphql)|
 |Kotlin|[example/kotlin/jimmer-sql-graphql-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-sql-graphql-kt)|
 
-选择任何一个项目，打开，启动。最后，使用浏览器访问http://localhost:8080/graphiql
+Select any project, open and start it. Finally, use the browser to visit http://localhost:8080/graphiql
 :::note
-小心，是/graph**i**ql, 不是/graphql
+Be careful, it's /graph**i**ql, not /graphql
 :::
 
-执行请求
+Execute the request:
 
 ```
 query {
@@ -182,13 +182,13 @@ query {
 }
 ```
 
--   ❶ 查询计算属性`BookStore.avgPrice`
+-   ❶ Query calculated property `BookStore.avgPrice`
 
--   ❷ 查询关联属性`BookStore.books`
+-   ❷ Query association property `BookStore.books` 
 
--   ❸ 查询关联属性`Book.authors`
+-   ❸ Query association property `Book.authors`
 
-返回结果为
+The return result is:
 
 ```json
 {
@@ -218,11 +218,11 @@ query {
                     },
                     {
                         "id":11,
-                        ...略...
+                        ...omitted...  
                     },
                     {
                         "id":12,
-                        ...略...
+                        ...omitted...
                     }
                 ]
             },
@@ -250,11 +250,11 @@ query {
                     },
                     {
                         "id":5,
-                        ...略...
+                        ...omitted...
                     },
                     {
                         "id":6,
-                        ...略...
+                        ...omitted...
                     },
                     {
                         "id":1,
@@ -365,8 +365,8 @@ query {
 }
 ```
 
-不难发现，GraphQL的执行效果和[对象抓取器](../query/object-fetcher)的执行效果非常类似。这也是前面说过的"对象抓取器被GraphQL取代，请勿使用对象抓取器"的原因。
+It is easy to see that the execution effect of GraphQL is very similar to that of [object fetchers](../query/object-fetcher). This is also the reason for the earlier statement "object fetchers are replaced by GraphQL, do not use object fetchers".
 
 :::tip
-其实，非GraphQL模式下非常有用的[对象抓取器](../query/object-fetcher)本身就是ORM框架GraphQL化的结果。
+In fact, [object fetchers](../query/object-fetcher), which are very useful in non-GraphQL modes, are themselves the result of GraphQLization of ORM frameworks.
 :::

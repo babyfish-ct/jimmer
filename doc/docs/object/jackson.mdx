@@ -1,60 +1,60 @@
 ---
-sidebar_position: 4
-title: Work with Jackson
+sidebar_position: 4  
+title: Working with Jackson
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer对象是动态的，并不是对象的所有属性都需要初始化，它允许缺少一些属性。
+Jimmer objects are dynamic and not all properties of an object need to be initialized. It allows missing some properties.  
 
-- 未指定的属性在直接被代码访问时会导致异常
+-   Accessing an unspecified property directly in code will cause an exception.
 
-- 未指定的属性在JSON序列化中自动忽略，不会异常
+-   Unspecified properties are automatically ignored in JSON serialization without exceptions.
 
-这里提到了JSON序列化，指[jackson](https://github.com/FasterXML/jackson)。
+JSON serialization is mentioned here, referring to [jackson](https://github.com/FasterXML/jackson).
 
-jimmer-core定义了一个jackson模块：`org.babyfish.jimmer.jackson.ImmutableModule`，利用该模块可以为jackson增加序列化/反序列化jimmer不可变对象的能力。
+jimmer-core defines a jackson module: `org.babyfish.jimmer.jackson.ImmutableModule` which can add the ability of serialize/deserialize jimmer immutable objects for jackson.
 
-分两种情况
+There are two cases:
 
--   使用Spring Boot Starter
+-   Using Spring Boot Starter
 
-    在这种情况下，Jimmer已经注为Spring这册了ImmutableModule，如下
+    In this case, Jimmer has already registered ImmutableModule to Spring as below:
 
     ```java
-    // Jimmer内部代码，非用户代码
-    @ConditionalOnMissingBean(ImmutableModule.class)
+    // Internal Jimmer code, not user code
+    @ConditionalOnMissingBean(ImmutableModule.class) 
     @Bean
     public ImmutableModule immutableModule() {
         return new ImmutableModule();
     }
     ```
 
-    因此，Spring默认的`ObjectMapper`已经可以序列化/反序列化Jimmer动态对象，而绝大部分对象的序列化/序列化工作都是在HTTP交互时由Spring自动完成的，所以无需任何开发。
+    Therefore, the default `ObjectMapper` of Spring can already serialize/deserialize Jimmer dynamic objects, and most serialization/deserialization work is done automatically by Spring during HTTP interaction, so no extra development is required.
 
     :::caution
-    Spring默认的Json处理库就是[jackson](https://github.com/FasterXML/jackson)，勿替换。
+    The default JSON handling library in Spring is [jackson](https://github.com/FasterXML/jackson). Don't replace it.
     :::
 
--   使用底层API
+-   Using low level API
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     ObjectMapper mapper = new ObjectMapper()
         // highlight-next-line
         .registerModule(new ImmutableModule());
-
+    
     TreeNode treeNode = TreeNodeDraft.$.produce(
         draft -> draft.setName("Root Node")
     );
 
-    // 系列化
+    // Serialize    
     String json = mapper.writeValueAsString(treeNode);
 
-    // 反序列化
+    // Deserialize
     TreeNode deserializedTreeNode = 
         mapper.readValue(json, TreeNode.class);
     ```
@@ -67,21 +67,21 @@ jimmer-core定义了一个jackson模块：`org.babyfish.jimmer.jackson.Immutable
         // highlight-next-line
         .registerModule(ImmutableModule())
 
-    val treeNode = new(TreeNode::class).by {
+    val treeNode = TreeNode().by {
         name = "Root Node"
     }
 
-    // 序列化
-    val json = mapper.writeValueAsString(treeNode);
+    // Serialize
+    val json = mapper.writeValueAsString(treeNode)
 
-    // 反序列化
-    TreeNode deserializedTreeNode = 
-        mapper.readValue(json, TreeNode::class.java);
+    // Deserialize
+    val deserializedTreeNode = 
+        mapper.readValue(json, TreeNode::class.java)
     ```
 
     </TabItem>
     </Tabs>
 
 :::tip
-- 对于序列化操作而言，有一个便捷方式，就是jimmer对象的`toString`方法。
+- For serialization, there is a handy way which is the `toString` method of jimmer objects.  
 :::
