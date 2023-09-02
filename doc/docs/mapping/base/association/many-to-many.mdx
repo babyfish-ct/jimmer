@@ -124,13 +124,15 @@ alter table AUTHOR_MAPPING
     add constraint PK_AUTHOR_MAPPING
         primary(BOOK_ID, AUTHOR_ID);
 
-// If foreign key pointing to current entity is real, create foreign key constraint  
+// If foreign key pointing to current entity is real, 
+// create foreign key constraint  
 alter table BOOK_AUTHOR_MAPPING
     add constraint FK_BOOK_AUTHOR_MAPPING__BOOK
         foreign key(BOOK_ID)
             references BOOK(ID);
 
-// If foreign key pointing to associated entity is real, create foreign key constraint
+// If foreign key pointing to associated entity is real, 
+// create foreign key constraint
 alter table BOOK_AUTHOR_MAPPING
     add constraint FK_BOOK_AUTHOR_MAPPING__AUTHOR
         foreign key(AUTHOR_ID)

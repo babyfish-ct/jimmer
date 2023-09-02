@@ -530,11 +530,11 @@ alter table learning_link
 
     当前属性`Student.courses`可以分两步获取
 
-    1.  `prop = "learningLinks"`
+    -   ❶ `prop = "learningLinks"`
         
         首先，通过当前实体的另一个属性`Student.lerningLinks`③ 获得所有的`LearningLink`对象
 
-    2.  `deeperProp = "course"`
+    -   ❷ `deeperProp = "course"`
 
         对于上一步得到的每一个`LearningLink`对象，可以进一步通过属性`LearningLink.course`② 得到`Course`
 
@@ -593,11 +593,11 @@ alter table learning_link
 
     当前属性`Course.students`可以分两步获取
 
-    1.  `prop = "learningLinks"`
+    -   ❶ `prop = "learningLinks"`
         
         首先，通过当前实体的另一个属性`Course.lerningLinks`④ 获得所有的`LearningLink`对象
 
-    2.  `deeperProp = "student"`
+    -   ❷ `deeperProp = "student"`
 
         对于上一步得到的每一个`LearningLink`对象，可以进一步通过属性`LearningLink.student`① 得到`Student`
 

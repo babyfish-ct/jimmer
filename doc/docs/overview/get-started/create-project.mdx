@@ -142,6 +142,7 @@ Here are a few basic configurations that work for both Java and Kotlin:
 |-|-|-|-| 
 |jimmer.dialect|string|org.babyfish.jimmer.sql.dialect.DefaultDialect|Database dialect class name|
 |jimmer.show-sql|boolean|false|Print executed SQL if true|
+|jimmer.pretty-sql|boolean|false|Ensure that the printed SQL is well-formatted *(compact by default)*|
 |jimmer.database-validation-mode|NONE&#124;WARNING&#124;ERROR|NONE|Validate consistency between database schema and entity types. WARNING logs inconsistencies, ERROR throws errors.|
 
 See [Spring/Appendix](../../spring/appendix) for complete documentation on configurations.
@@ -152,6 +153,7 @@ See [Spring/Appendix](../../spring/appendix) for complete documentation on confi
 ```
 jimmer.dialect = org.babyfish.jimmer.sql.dialect.MySqlDialect  
 jimmer.show-sql = true
+jimmer.pretty-sql = true
 jimmer.database-validation-mode = ERROR
 ...other configurations omitted...
 ```
@@ -164,6 +166,7 @@ jimmer.database-validation-mode = ERROR
 jimmer:
   dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect
   show-sql: true
+  pretty-sql: true
   database-validation-mode: ERROR
   ...other configurations omitted...  
 ```

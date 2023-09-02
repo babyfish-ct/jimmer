@@ -14,7 +14,7 @@ Two ways to use Jimmer
 
 ##  Use Spring Data Repository
 
-###     Define Repository interface
+###  Define Repository interface
 
 Jimmer integrates Spring Data and provides a base repository interface for Java and Kotlin respectively.
 
@@ -138,7 +138,7 @@ fun main(args: Array<String>) {
     [Object fetcher](../../query/object-fetcher) is not required. Developers can call simpler overloaded versions, such as `findNullable(3L)`
     :::
 
--    ❷ For the aggregate root type `Book`, query all non-associative properties of the object *(id, name, edition, price)*  
+-   ❷ For the aggregate root type `Book`, query all non-associative properties of the object *(id, name, edition, price)*  
 
 -   ❸ Fetch the many-to-many associative property `Book.authors` of the object
 

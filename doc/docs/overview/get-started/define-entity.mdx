@@ -457,7 +457,7 @@ interface BookStore {
 
     The side with `mappedBy` is called the mirror side.
     
--   Mirroring is optional, bidirectional is not required.
+-   Mirroring is optional, bidirectional association is not required.
 
 -   Unlike JPA/Hibernate, `@OneToMany` in Jimmer can only mirror `@ManyToOne`, always implying bidirection.
 
@@ -528,7 +528,7 @@ interface Book {
     -   inverseJoinColumnName: FK to target entity (Author)
 
     :::note
-    Here `@JoinTable` uses all default values, so it can be omitted for readability.
+    Here `@JoinTable` uses all default values, so it can be omitted.
     :::
 
 ## Many-to-Many Association `Author.books`
@@ -621,7 +621,7 @@ public interface Book {
 </div>
 </div>
 
-Mirroring many-to-many is optional, bidirection is optional. But if bidirectional, one side must be owner and one mirror.
+Mirroring many-to-many is optional, bidirection association is optional. But if bidirectional, one side must be owner and the other one must be mirror.
 
 :::tip
 Unlike JPA/Hibernate, owner vs mirror does not affect save behavior in Jimmer. You can choose freely.  
@@ -696,25 +696,17 @@ We've seen entities declared as interfaces, not classes. Why?
     
     - Serializing with Jackson omits unset properties
 
-    See **TODO** for details on dynamicity.
+    See [Dynamic](../../object/dynamic) for details on dynamicity.
 
     - Benefits of dynamicity
 
-        - Easily express arbitrary complex data structures. Entities can be partial, complete, or aggregate root of complex tree.
+        - Easily express arbitrary complex data structures. Entities can be partial object, complete object, or aggregate root of complex tree.
 
-        - Since data structure is flexible, ORM can load, save, query entire object graph in one go instead of individual entities. 
+        - Since data structure is flexible, ORM can query and save entire object graph in one go instead of individual entities. 
 
         - For querying, dynamic entity graphs can directly return from HTTP services without needing DTOs.
 
-            :::tip
-            Server utilizes dynamicity to simplify development.
-
-            But Jimmer can restore static typing on client by auto-generating TypeScript DTOs for all use cases.
-
-            See [Dynamic](../../object/dynamic) for more.
-            :::
-
-    - Compared to dynamic language ORMs
+    -   Compared to dynamic language ORMs
 
         As discussed, Jimmer exploits dynamicity for flexibility unmatched by static language ORMs.
 
@@ -734,11 +726,10 @@ We've seen entities declared as interfaces, not classes. Why?
 
     We've seen entities only have getters, meaning they are immutable.
 
-    Mutable shared data can lead to inadvertent changes and inconsistencies. Immutable data avoids this risk.
+    Mutable object allows `circular references` which the most headache problem of business system, Immutable data avoids this risk.
 
-    Enjoying immutable objects while suppressing downsides is hard, especially for complex object graphs like in ORM. 
-
-    Here is an English translation of the Chinese text:
+    However, enjoying and leveraging the advantages of immutable objects while suppressing their disadvantages is not an easy thing, 
+    especially for scenarios like ORM where the object hierarchy is very deep.
 
     Luckily, in the JavaScript/TypeScript domain, there is a framework called [immer](https://github.com/immerjs/immer) 
     that provides a perfect way to handle deep immutability. Jimmer ports [immer](https://github.com/immerjs/immer) 

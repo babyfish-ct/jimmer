@@ -450,7 +450,7 @@ IdView properties and original association properties are linked. Setting one ne
 :::tip
 This shows that view properties and original properties are highly unified. Jimmer is still a ORM framework that is core-associated-object-oriented. View properties are just syntactic sugar.
 
-Except for the impact on object fetchers to be explained below, view properties do not affect ORM and core logic at all.
+Except for the impact on [ObjectFetcher](../../../query/object-fetcher) to be explained below, view properties do not affect ORM and core logic at all.
 :::  
 
 ## Fetching IdView Properties  
@@ -511,7 +511,7 @@ For Jimmer dynamic entities, original association properties and view properties
 
 Whether choosing to fetch the original association property or choosing to fetch the IdView view property does not affect the underlying execution logic of Jimmer, including the ultimately generated SQL. 
 
-The only difference brought by different choices is that the Jackson visibility flags of original association properties and view properties are different.
+The only difference brought by different choices is that the Jackson [visibility flag](../../../object/visibility) of original association properties and view properties are different.
 
 That is, properties fetched directly will be serialized by Jackson, while properties not fetched directly will be ignored.
 :::

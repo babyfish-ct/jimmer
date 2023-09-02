@@ -87,7 +87,8 @@ interface Book {
 The foreign key can be real or fake. Fake foreign keys are discussed in subsequent documents. Here we assume the foreign key is real, so the corresponding constraint in the database is:
 
 ```sql
-// If foreign key pointing to associated entity is real, create foreign key constraint
+// If foreign key pointing to associated entity is real, 
+// create foreign key constraint
 alter table BOOK  
     add constraint FK_BOOK__BOOK_STORE
         /* highlight-next-line */
@@ -196,20 +197,23 @@ alter table BOOK_STORE_MAPPING
     add constraint PK_BOOK_STORE_MAPPING
         primary(BOOK_ID, STORE_ID);
 
-// If foreign key pointing to current entity is real, create foreign key constraint
+// If foreign key pointing to current entity is real, 
+// create foreign key constraint
 alter table BOOK_BOOK_STORE_MAPPING  
     add constraint FK_BOOK_BOOK_STORE_MAPPING__BOOK
         foreign key(BOOK_ID)
             references BOOK(ID);
 
-// If foreign key pointing to associated entity is real, create foreign key constraint 
+// If foreign key pointing to associated entity is real, 
+// create foreign key constraint 
 alter table BOOK_BOOK_STORE_MAPPING
     add constraint FK_BOOK_BOOK_STORE_MAPPING__STORE
         foreign key(STORE_ID)
             references BOOK_STORE(ID);
 
 // This constraint is very important.
-// Otherwise this join table expresses a many-to-many association rather than a many-to-one association
+// Otherwise this join table expresses a many-to-many association 
+// rather than a many-to-one association
 alter table BOOK_BOOK_STORE_MAPPING
     add constraint UQ_BOOK_BOOK_STORE_MAPPING__BOOK_ID
         unique(BOOK_ID);

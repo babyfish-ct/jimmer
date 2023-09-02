@@ -169,8 +169,7 @@ After this configuration, running Maven or Gradle will generate additional sourc
 :::caution
 The above only applies to simple projects without separation. 
 
-For real projects with separate entity definition, generation must be configured there.
-To keep it simple, entities should only depend on `jimmer-core`. 
+For real projects with separate entity definition, generator *(annotation processor/ksp)* must be configured in the project that defines entity types.
 
 Jimmer data types require one of:
 
@@ -179,9 +178,9 @@ Jimmer data types require one of:
 - `@MappedSuperclass`
 - `@Embeddable`
 
-So far we only used `@Entity`. The others come later. The first is ORM-agnostic, the others are ORM-related.
+The first is ORM-agnostic, the others are ORM-related.
 
-If entities use the ORM annotations, code generation requires `jimmer-sql` while entity code only needs `jimmer-core`:
+If entities use the ORM annotations *(eg: @Entity)*, the generated code requires `jimmer-sql` while entity code ifself only needs `jimmer-core`:
 
 <Tabs groupId="buildTool">
 
@@ -300,7 +299,7 @@ Generated code includes:
   <tr>
     <td>XXXDraft.java</td>
     <td>XXXDraft.kt</td>
-    <td>Immutable object implementation, creation methods</td>
+    <td>Mutable proxy interface for immutable object, object implementation, and methods to create and "modify" objects</td>
   </tr>
   <tr>
     <td>XXXProps.java</td> 

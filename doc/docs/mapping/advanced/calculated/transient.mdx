@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Calculation
+title: Complex Calculation
 ---
 
 import Tabs from '@theme/Tabs';
@@ -50,12 +50,12 @@ interface BookStore {
 Here, no parameters are specified for the `@Tranisent` annotation, so the current data is just custom user data unrelated to any ORM behavior.
 
 :::caution
-Only when parameters are specified for the `@Transient` annotation will the current property be a complex formula property.
+Only when parameters are specified for the `@Transient` annotation will the current property be a complex calculation property.
 :::
 
 So what are the parameters of the `@Transient` annotation?
 
-Jimmer provides an interface for complex formula properties:
+Jimmer provides an interface for complex calculation properties:
 
 -   Java: `org.babyfish.jimmer.sql.TransientResolver<ID, V>`
 -   Kotlin: `org.babyfish.jimmer.sql.kt.KTransientResolver<ID, V>`
@@ -72,15 +72,15 @@ How to implement this class will be explained in detail later, but for the purpo
 
     Where the string "customerDataResolver" represents the name of this object in the Spring context.
 
-## Scalar Formula: `BookStore.avgPrice` 
+## Scalar Calculation: `BookStore.avgPrice` 
 
-In this section, we will add a formula property `BookStore.avgPrice` to `BookStore` with the type `java.math.BigDecimal`.
+In this section, we will add a calculation property `BookStore.avgPrice` to `BookStore` with the type `java.math.BigDecimal`.
 
 ### Define Resolver for `avgPrice`
 
-Each complex formula property corresponds to a `TransientResolver` implementation class.
+Each complex calculation property corresponds to a `TransientResolver` implementation class.
 
-Before defining the formula property `BookStore.avgPrice`, let's first define `BookStoreAvgPriceResolver`:
+Before defining the calculation property `BookStore.avgPrice`, let's first define `BookStoreAvgPriceResolver`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -134,11 +134,11 @@ class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
 
 - The base interface `TransientResolver/KTransientResolver` has two generic parameters:
 
-    -   The 1st generic parameter: The type of the id property of the entity to which the formula property belongs. 
+    -   The 1st generic parameter: The type of the id property of the entity to which the calculation property belongs. 
 
         In this example, `BookStore.avgPrice` to be defined belongs to the `BookStore` entity whose id type is `long`, so the generic parameter here is `Long`.
 
-    -   The 2nd generic parameter: The return data type of the formula property.  
+    -   The 2nd generic parameter: The return data type of the calculation property.  
 
         In this example, the type of `BookStore.avgPrice` to be defined is `BigDecimal`, so the generic parameter here is `BigDecimal`.
         
@@ -149,7 +149,7 @@ class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
 
     This is very important. It means that `BookStore.avgPrice` is not calculated one by one against `BookStore.id`, but is calculated in batches against multiple `BookStore.id` at a time.
     
-    This is designed to prevent the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) caused by formula properties.
+    This is designed to prevent the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) caused by calculation properties.
 
     This design is almost the same as [MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html) in the GraphQL field, which is the standard programming model for all similar domains.
     :::
@@ -158,10 +158,10 @@ class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
 
     For the `resolve` method, if the length of the returned Map is less than the length of the `ids` parameter collection passed in, it means some data does not have calculation results. The calculation value corresponding to each such data is considered null.
     
-    However, if the formula property (`BookStore.avgPrice` in this example) is non-null, it will cause problems. Users can override `getDefaultValue()` to return a non-null default value to resolve this issue.
+    However, if the calculation property (`BookStore.avgPrice` in this example) is non-null, it will cause problems. Users can override `getDefaultValue()` to return a non-null default value to resolve this issue.
 
     :::caution
-    For `TransientResolver` implementations of formula properties that do not allow null:
+    For calculation properties that do not allow null, `TransientResolver` must:
     
     - Either ensure the keySet of the Map returned by the `resolve` method contains all parameters
     - Or override `getDefaultValue` to return a non-null default value
@@ -252,35 +252,19 @@ class BookStoreAvgPriceResolver(
 
 -   ❸ Calculate the average of book prices within each group.
 
-    -   `.asTableEx()`:
-
-        By default, top-level queries do not allow JOIN through collection associations (one-to-many or many-to-many).
-        
-        This `asTableEx()` indicates that the developer is aware of what they are doing and needs such JOIN.  
-
-        :::info
-        Please refer to [Pagination Safety](../../../query/dynamic-join/table-ex) for more details.
-        :::
-
-    -   `.books()`:  
+    `avg`: Calculate the average of `Book.price` within the group.
     
-        From the current object `BookStore` as the starting point, associate to `Book` objects through the one-to-many associative property `BookStore.books`.
-
-    -   `avg`: 
-
-        Calculate the average of `Book.price` within the group.
-        
-        :::note
-        In the Kotlin code there is an `asNonNull()`.
-        
-        According to SQL standards, if the aggregate function `avg` is not used with group, its return value can be null without original data. So in Kotlin `avg` is defined to return a nullable type. 
-        
-        However, when the aggregate function `avg` is used with group, it cannot return null. So `asNonNull()` is called to get a non-null expression.
-        :::
+    :::note
+    In the Kotlin code there is an `asNonNull()`.
+    
+    According to SQL standards, if the aggregate function `avg` is not used with group, its return value can be null without original data. So in Kotlin `avg` is defined to return a nullable type. 
+    
+    However, when the aggregate function `avg` is used with group, it cannot return null. So `asNonNull()` is called to get a non-null expression.
+    :::
         
 ### Define `avgPrice`
 
-Now that the `BookStoreAvgPriceResolver` class is complete, we can add the formula property `avgPrice` to the `BookStore` entity:
+Now that the `BookStoreAvgPriceResolver` class is complete, we can add the calculation property `avgPrice` to the `BookStore` entity:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -325,7 +309,7 @@ interface BookStore {
 
 1.  If it is a single project, the `BookStoreAvgPriceResolver` class can be referenced here.
 
-2.  Define the formula property `BookStore.avgPrice`, and specify the class introduced at ❶ for its `@Transient` annotation to tell Jimmer the calculation rule for the formula property.
+2.  Define the calculation property `BookStore.avgPrice`, and specify the class introduced at ❶ for its `@Transient` annotation to tell Jimmer the calculation rule for the calculation property.
 
     :::caution
     If it is a multi-project where the code structure has been split, the import statement at ❶ is invalid. In this case, ❷ must be `@Transient(ref = "bookStoreAvgPriceResolver")`. 
@@ -406,15 +390,15 @@ group by
     tb_1_.STORE_ID
 ```
 
-## Associative Formula: `BookStore.newestBooks`
+## Associative Calculation: `BookStore.newestBooks`
 
 ### Clarify Requirements
 
-In the previous section we demonstrated the formula property `BookStore.avgPrice`, which is obviously a non-associative property.
+In the previous section we demonstrated the calculation property `BookStore.avgPrice`, which is obviously a non-associative property.
 
-In this section, we will add a formula property `BookStore.newestBooks` to `BookStore` with the type `java.util.List<Book>`, which is clearly an associative property.
+In this section, we will add a calculation property `BookStore.newestBooks` to `BookStore` with the type `java.util.List<Book>`, which is clearly an associative property.
 
-To explain why this example needs to add a formula property `BookStore.newestBooks`, let's first look at the characteristics of the original associative property `BookStore.books`:
+To explain why this example needs to add a calculation property `BookStore.newestBooks`, let's first look at the characteristics of the original associative property `BookStore.books`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -511,15 +495,15 @@ The query result is:
 
 We can see that in the original `BookStore.books` association, there are many books with the same name in the bookstore. 
 
-For example, there are a total of three books named "Effective TypeScript", with only different `edition` values: 3, 2, 1.
+For example, there are a total of three books named "Effective TypeScript", with different `edition` values: 3, 2, 1.
 
-Now we want to create a new formula property `BookStore.newestBooks` through calculation. It ensures that the returned book collection has no duplicate name problem. For each unique book name, only the book with the highest `edition`, i.e. the maximum `edition`, is taken.
+Now we want to create a new calculation property `BookStore.newestBooks` through calculation. It ensures that the returned book collection has no duplicate name problem. For each unique book name, only the book with the highest `edition`, i.e. the maximum `edition`, is taken.
 
 ### Define Resolver for `newestBooks` 
 
-Each complex formula property corresponds to a `TransientResolver` implementation class.
+Each complex calculation property corresponds to a `TransientResolver` implementation class.
 
-Before defining the formula property `BookStore.newestBooks`, let's first define `BookStoreNewestBooksResolver`:
+Before defining the calculation property `BookStore.newestBooks`, let's first define `BookStoreNewestBooksResolver`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -570,11 +554,11 @@ class BookStoreNewestBooksResolver : KTransientResolver<Long, List<Long>> { ❶
 
 -   ❶ The base interface `TransientResolver/KTransientResolver` has two generic parameters:
 
-    -   The 1st generic parameter: The type of the id property of the entity to which the formula property belongs.  
+    -   The 1st generic parameter: The type of the id property of the entity to which the calculation property belongs.  
 
         In this example, `BookStore.newestBooks` to be defined belongs to the `BookStore` entity whose id type is `long`, so the generic parameter here is `Long`.
 
-    -   The 2nd generic parameter: The return data type of the formula property. 
+    -   The 2nd generic parameter: The return data type of the calculation property. 
 
         In this example, the type of `BookStore.newestBooks` to be defined is `List<Book>`.
 
@@ -591,7 +575,7 @@ class BookStoreNewestBooksResolver : KTransientResolver<Long, List<Long>> { ❶
 
     This is very important. It means that `BookStore.newestBooks` is not calculated one by one against `BookStore.id`, but is calculated in batches against multiple `BookStore.id` at a time.
     
-    This is designed to prevent the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) caused by formula properties.
+    This is designed to prevent the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) caused by calculation properties.
 
     This design is almost the same as [MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html) in the GraphQL field, which is the standard programming model for all similar domains.
     :::
@@ -600,10 +584,10 @@ class BookStoreNewestBooksResolver : KTransientResolver<Long, List<Long>> { ❶
 
     For the `resolve` method, if the length of the returned Map is less than the length of the `ids` parameter collection passed in, it means some data does not have calculation results. The calculation value corresponding to each such data is considered null.
     
-    However, if the formula property (`BookStore.newestBooks` in this example) is non-null, it will cause problems. Users can override `getDefaultValue()` to return a non-null default value to resolve this issue.
+    However, if the calculation property (`BookStore.newestBooks` in this example) is non-null, it will cause problems. Users can override `getDefaultValue()` to return a non-null default value to resolve this issue.
 
     :::caution
-    If formula properties do not allow null, for their `TransientResolver` implementations:
+    If calculation properties do not allow null, for their `TransientResolver` implementations:
     
     -   Either ensure the keySet of the Map returned by the `resolve` method contains all parameters
     -   Or override `getDefaultValue` to return a non-null default value
@@ -726,7 +710,7 @@ class BookStoreNewestBooksResolver(
 
 ### Define `newestBooks`
 
-Now that the `BookStoreNewestBooksResolver` class is complete, we can add the formula property `newestBooks` to the `BookStore` entity:
+Now that the `BookStoreNewestBooksResolver` class is complete, we can add the calculation property `newestBooks` to the `BookStore` entity:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -771,7 +755,7 @@ interface BookStore {
 
 1.  If it is a single project, the `BookStoreNewestBooksResolver` class can be referenced here.
 
-2.  Define the formula property `BookStore.newestBooks`, and specify the class introduced at ❶ for its `@Transient` annotation to tell Jimmer the calculation rule for the formula property.
+2.  Define the calculation property `BookStore.newestBooks`, and specify the class introduced at ❶ for its `@Transient` annotation to tell Jimmer the calculation rule for the calculation property.
 
     :::caution
     If it is a multi-project where the code structure has been split, the import statement at ❶ is invalid. In this case, ❷ must be `@Transient(ref = "bookStoreNewestBooksResolver")`.
@@ -825,9 +809,9 @@ println(stores)
 </TabItem>
 </Tabs>
 
-1.  Fetch the formula property `BookStore.newestBooks`
+1.  Fetch the calculation property `BookStore.newestBooks`
 
-2.  The formula property itself is also an associative property, so the shape of its associated objects can be controlled by a deeper child fetcher.
+2.  The calculation property itself is also an associative property, so the shape of its associated objects can be controlled by a deeper child fetcher.
 
 The printed result is:
 
@@ -960,19 +944,19 @@ where
 ``` 
 
 :::tip
-This example shows that when the formula property itself is also an associative property, the shape of its associated objects can be controlled by a deeper child fetcher.
+This example shows that when the calculation property itself is also an associative property, the shape of its associated objects can be controlled by a deeper child fetcher.
 
-Since there is a deeper child fetcher, of course both native ORM associative properties and other formula associative properties can be included.
+Since there is a deeper child fetcher, of course both native ORM associative properties and other calculation associative properties can be included.
 
-That is, in the process of querying complex data structures by object fetchers, the fetching tasks of native ORM associative properties and formula associative properties can be arbitrarily mixed.
+That is, in the process of querying complex data structures by object fetchers, the fetching tasks of ORM associative properties and calculation associative properties can be arbitrarily mixed.
 
--   The fetching task of native ORM properties is actually SQL operations.
+-   The fetching task of ORM association properties is actually SQL operations.
 
-    (At least before we introduce caching, it can be considered so)
+    (At least before we introduce cache, it can be considered so)
   
--   As mentioned earlier, Jimmer does not impose any restrictions on the calculation methods of formula properties. You can even use any technology other than SQL, such as OLAP technologies, to implement the calculation process (this documentation focuses on Jimmer itself, so examples also use Jimmer to implement the calculation process).
+-   As mentioned earlier, Jimmer does not impose any restrictions on the calculation methods of calculation properties. You can even use any technology other than SQL, such as OLAP technologies, to implement the calculation process (this documentation focuses on Jimmer itself, so examples also use Jimmer to implement the calculation process).
 
-    That is, the fetching task of formula properties is not necessarily SQL operations.
+    That is, the fetching task of calculation properties is not necessarily SQL operations.
   
 Therefore, the functionality provided by object fetchers is actually an arbitrary mix of SQL and non-SQL operations.
 :::

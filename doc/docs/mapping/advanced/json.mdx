@@ -6,7 +6,8 @@ title: JSON Mapping
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer supports JSON properties. In Java/Kotlin entity types, such properties can be declared as any non-Object JVM type. In the database, the information stored in the corresponding column is JSON.
+Jimmer supports JSON properties. In Java/Kotlin entity types, such properties can be declared as any type other than `java.lang.Object` and `kotlin.Any`. 
+In the database, the information stored in the corresponding column is JSON.
 
 :::info
 -   JSON properties are simple properties, not association properties.
@@ -18,13 +19,13 @@ Jimmer provides `org.babyfish.jimmer.sql.Serialized`. There are two ways to use 
 
 -   Global JSON mapping
 
-    If the property type is a custom class rather than an array, collection, or Map, decorate this class with `@Serialized`. This way, not only the current property, but any properties of the same type in all entities will become JSON properties.
+    If the property type is a custom class rather than an array, collection, or Map, decorate this class with `@Serialized`. This way, any properties of the this type in all entities will become JSON properties.
     
 -   Property-level JSON mapping
 
-    No matter what the property type is, the current property can be decorated with `@Serialized`. 
-    
-    In general, properties of array, collection or Map types should be decorated, because using global JSON mapping is better for properties whose types are custom classes.
+    The current property can be decorated with `@Serialized`. 
+
+Properties of array, collection, or map types must use property-level mapping; however, global mapping is better for custom types.
 
 ## Global JSON Mapping  
 

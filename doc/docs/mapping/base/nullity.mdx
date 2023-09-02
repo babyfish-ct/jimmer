@@ -54,7 +54,9 @@ Here is just a simple list of precautions. Please ignore these terms for now. Th
 
 -   One-to-many and many-to-many properties must be non-null. 
 
--   One-to-one and many-to-one properties must be nullable in the following cases:
+    One-to-many and many-to-many properties are represented by collections of length 0 instead of null when there is no data.
+
+-   One-to-one and many-to-one properties must be nullable when any of the following conditions is met:
 
     -   Mapping based on join table, rather than foreign key
 
@@ -68,5 +70,5 @@ Here is just a simple list of precautions. Please ignore these terms for now. Th
 
     -   As the mirror side of @OneToOne association
 
-    -   The target object is imposed with a global filter
+    -   The associated object is imposed with a [global filter](../../query/global-filter)
  

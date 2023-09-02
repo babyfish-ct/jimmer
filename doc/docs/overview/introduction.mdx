@@ -50,13 +50,13 @@ As mentioned earlier, completing basic CRUD access to databases is only the most
     Especially for mobile applications, due to the limitation of screen size leading to severe UI fragmentation, even for the same data type (aggregate root), different UI screens will have different emphases, further exacerbating this situation.
     :::
 
-    The large number of highly redundant DTO types is cumbersome and difficult to maintain just by defining these types. At the business code implementation level, it also makes traditional solutions (whether ORM or non-ORM) very inconvenient to handle, for example:
+    The large number of highly redundant DTO types is cumbersome and difficult to maintain. At the business code implementation level, it also makes traditional solutions (whether ORM or non-ORM) very inconvenient to handle, for example:
 
     -   Traditional ORM solutions
 
         Although they have good convenience, they lack flexibility.
      
-        Even considering JPA 2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), the flexibility is ultimately limited, especially when business scenarios only need part of the properites of some entity objects.
+        Even considering JPA 2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), the flexibility is ultimately limited, especially when business scenarios only need part of the properites of entity objects.
      
         Finally, in order to cope with ever-changing flexibility, especially the flexibility of only needing part of an object's properites, developers often choose to query only part of an object's properites and manually convert them to DTO types. This goes against the purpose of ORM to pursue convenience and fails to reflect the value of ORM.
 
@@ -98,17 +98,22 @@ As mentioned earlier, completing basic CRUD access to databases is only the most
 
     -   The cache should not only have simple object caching, but also <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>.
 
-    -   Global filtering capabilities represented by permission systems often allow different users to see different data. Therefore, different caches should also be <ViewMore buttonText="visible to different users" variant="text"><MultiViewCache/></ViewMore>
+    -   Global filtering capabilities represented by permission systems often allow different users to see different data, therefore, different users to see different cache. <ViewMore buttonText="visible to different users" variant="text"><MultiViewCache/></ViewMore>
    
     -   Cache consistency maintenance, the most headache problem, <ViewMore buttonText="should be solved by the underlying solution" title="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore> as much as possible, rather than penetrating into business code for developers to solve.
    
-4.  Automatic client integration
+4.  Dynamic Table Joins
+
+    Traditional database access technologies only focus on dynamic `where` conditions and do not focus on dynamic table `joins`, 
+    This leads to <ViewMore buttonText="difficulties" title="Problems with Missing Dynamic Table Joins" variant="outlined"><DynamicJoinProblemPanel/></ViewMore> in writing complex dynamic queries.
+    
+5.  Automatic client integration
 
     -   The server should automatically generate client code (such as TypeScript) for clients (such as web frontends).
    
     -   The server is the producer. Developers want to see simplified APIs and programming models, because it means less work to be done. The client is the consumer. Developers want to see complete APIs and programming models, because it means it’s comfortable to use. The traditional approach of making server and client APIs and programming models completely consistent needs to be changed.
    
-5.  Microservice data stitching
+6.  Microservice data stitching
 
     In microservice architectures, the database is fragmented. Querying different parts of the data from different microservices first, and then stitching them together as a whole to return is cumbersome and frequent, so it should be hidden and automated by the underlying solution.
    
@@ -120,7 +125,7 @@ To solve these pain points, Jimmer provides many disruptive features.
 
 The flexibility that GraphQL can only obtain through remote HTTP access has become ubiquitous local code behavior that can be considered GraphQLization of ORM. 
 
-This feature also solves a flaw in GraphQL: inability to recursively query self-referential fields.
+This feature also solves a flaw in GraphQL: inability to recursively query self-associated properties.
 
 <ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small" variant="outlined">Learn More</Button>
 
@@ -157,7 +162,7 @@ This caching mechanism supports the following important concepts:
 Jimmer's DSL is not a mechanical translation of SQL. Its original `dynamic table join` fills the industry gap, allowing even the most complex dynamic queries to be easily written.
 
 :::note
-The lack of `dynamic table join` is an industry gap, and also the catalyst for the Jimmer project to be launched. 
+The lack of `dynamic table join` is an industry gap, and also the fuse for the Jimmer project to be launched. 
 :::
 
 <ViewMore buttonText="Brief Understanding" title="Problems Without Dynamic Table Join" variant="outlined"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">Learn More</Button>
@@ -241,7 +246,7 @@ The features that can be analogous to other similar technical systems include:
 
 -   Unlike GraphQL which is only used as a protocol for exposing HTTP interfaces, Jimmer extends this capability to ORM APIs, that is, ubiquitous local code invocations. *(Of course, you can also choose to quickly expose GraphQL using Jimmer's capabilities)*
 
--   Jimmer can recursively query self-referential fields
+-   Jimmer can recursively query self-associated properties
 
 </td>
 </tr>

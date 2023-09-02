@@ -223,20 +223,23 @@ alter table ADDRESS_MAPPING
     add constraint PK_ADDRESS_MAPPING
         primary(CUSTOMER_ID, ADDRESS_ID);
 
-// If foreign key pointing to current entity is real, create foreign key constraint
+// If foreign key pointing to current entity is real, 
+// create foreign key constraint
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint FK_CUSTOMER_ADDRESS_MAPPING__CUSTOMER
         foreign key(CUSTOMER_ID)
             references CUSTOMER(ID); 
 
-// If foreign key pointing to associated entity is real, create foreign key constraint  
+// If foreign key pointing to associated entity is real, 
+// create foreign key constraint  
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint FK_CUSTOMER_ADDRESS_MAPPING__ADDRESS
         foreign key(ADDRESS_ID)
             references ADDRESS(ID);
 
 // These two constraints are very important.
-// Otherwise this join table expresses a many-to-many association rather than a one-to-one association
+// Otherwise this join table expresses a many-to-many association 
+// rather than a one-to-one association
 alter table CUSTOMER_ADDRESS_MAPPING
     add constraint UQ_CUSTOMER_ADDRESS_MAPPING__CUSTOMER_ID
         unique(CUSTOMER_ID);

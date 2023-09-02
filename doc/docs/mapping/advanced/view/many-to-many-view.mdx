@@ -163,14 +163,14 @@ alter table order_item
 ;
 ```
 
-This is a classic `order - order detail - product` association.
+This is a classic `order - order item - product` association.
 
 Among them, `order-item` looks a bit like the intermediate table of many-to-many, because it has two foreign keys: `order_id` pointing to the `order_` table and `product_id` pointing to the `product` table.
 
 However, `order-item` is not an intermediate table, because it has other business fields, `quantity` representing quantity of goods, and `unit_price` representing a snapshot of the price of goods at the time of order.
 
-Fortunately, for the classic `order - order detail - product` association, it is more intuitive to think of `order_item` as an independent entity, with two many-to-one associations pointing to `order_` and `product` respectively;
-Rather than viewing `order-item` as an intermediate table and thinking there is a many-to-many relationship between `order_` and `product`.
+Fortunately, for the classic `order - order item - product` association, it is more intuitive to think of `order_item` as an independent entity, with two many-to-one associations pointing to `order_` and `product` respectively;
+Rather than viewing `order-item` as a join table and thinking there is a many-to-many relationship between `order_` and `product`.
 
 It is precisely because `order_item` is regarded as an independent entity that `order_item` uses an independent primary key.
 
@@ -496,7 +496,8 @@ For the discussed scenario 3 above, Jimmer gave a two-step solution.
         // highlight-next-line
         List<Course> courses();
 
-        // The one-to-many association `learningLinks` has been declared in step 1
+        // The one-to-many association `learningLinks` 
+        // has been declared in step 1
         @OneToMany(mappedBy = "student")
         List<LearningLink> learningLinks(); ③
 
@@ -518,7 +519,8 @@ For the discussed scenario 3 above, Jimmer gave a two-step solution.
         // highlight-next-line
         val courses: List<Course>
 
-        // The one-to-many association `learningLinks` has been declared in step 1
+        // The one-to-many association `learningLinks` 
+        // has been declared in step 1
         @OneToMany(mappedBy = "student")
         val learningLinks: List<LearningLink> ③
 
@@ -531,11 +533,11 @@ For the discussed scenario 3 above, Jimmer gave a two-step solution.
 
     The current property `Student.courses` can be obtained in two steps:
 
-    1.  `prop = "learningLinks"`
+    -   ❶ `prop = "learningLinks"`
        
         First, get all `LearningLink` objects through another property of the current entity `Student.learningLinks` ③
 
-    2.  `deeperProp = "course"`
+    -   ❷ `deeperProp = "course"`
 
         For each `LearningLink` object obtained in the previous step, `Course` can be further obtained through the `LearningLink.course` property ②
        
@@ -592,19 +594,19 @@ For the discussed scenario 3 above, Jimmer gave a two-step solution.
     </TabItem>
     </Tabs>
 
-The current property `Course.students` can be obtained in two steps:
+    The current property `Course.students` can be obtained in two steps:
 
-1.  `prop = "learningLinks"`
-   
-    First, get all `LearningLink` objects through another property of the current entity `Course.learningLinks` ④
-   
-2.  `deeperProp = "student"`
+    -   ❶ `prop = "learningLinks"`
+    
+        First, get all `LearningLink` objects through another property of the current entity `Course.learningLinks` ④
+    
+    -   ❷ `deeperProp = "student"`
 
-    For each `LearningLink` object obtained in the previous step, `Student` can be further obtained through the `LearningLink.student` property ①
-   
-    :::tip
-    Since the `LearningLink` entity has only one many-to-one association pointing to the `Student` entity, there is no ambiguity, so `deeperProp = "student"` can be omitted here
-    :::
+        For each `LearningLink` object obtained in the previous step, `Student` can be further obtained through the `LearningLink.student` property ①
+    
+        :::tip
+        Since the `LearningLink` entity has only one many-to-one association pointing to the `Student` entity, there is no ambiguity, so `deeperProp = "student"` can be omitted here
+        :::
 
 ## The essence of @ManyToManyView 
 
