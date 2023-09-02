@@ -216,126 +216,194 @@ Jimmer会根据每个实体接口，生成对应的Fetcher类，这些Fetcher就
 
 对象抓取器会根据抓取的属性，自动封装成对象，免去了手动映射以及编写额外DTO类的烦恼。
 
-### 抓取指定属性
-
 :::note
 Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
 :::
 
-上方示例中的查询，以对象抓取器的形式可以写成：
+-   例1: 
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+    上方示例中的查询，以对象抓取器的形式可以写成：
 
-```java
-BookTable table = BookTable.$;
-List<Book> books = sqlClient.createQuery(table)
-        .where(table.edition().eq(3))
-        .select(
-            // highlight-next-line
-            table.fetch(
-                BookFetcher.$
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable table = BookTable.$;
+    List<Book> books = sqlClient.createQuery(table)
+            .where(table.edition().eq(3))
+            .select(
+                // highlight-next-line
+                table.fetch(
+                    BookFetcher.$
+                        // id是隐含的、强制的
+                        .name()
+                        .edition()
+                )
+            )
+            .execute();
+    System.out.println(books);
+    ```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(table.edition.eq(3))
+            select(
+                // highlight-next-line
+                table.fetchBy {
                     // id是隐含的、强制的
-                    .name()
-                    .edition()
+                    name
+                    edition
+                }
             )
-        )
-        .execute();
-System.out.println(books);
-```
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+        }
+        .execute()
+    println(books)
+    ```
+    </TabItem>
+    </Tabs>
 
-```kotlin
-val books = sqlClient
-    .createQuery(Book::class) {
-        where(table.edition.eq(3))
-        select(
-            // highlight-next-line
-            table.fetchBy {
-                // id是隐含的、强制的
-                name
-                edition
-            }
-        )
-    }
-    .execute()
-println(books)
-```
-</TabItem>
-</Tabs>
+    可以看到得到的返回值就是`Book`类型，不需要再进行映射，这为日常编码节省了很多时间。
 
-可以看到得到的返回值就是`Book`类型，不需要再进行映射，这为日常编码节省了很多时间。
+    输出结果如下：
+    ```
+    [
+        {
+            "id" : 3,
+            "name" : "Learning GraphQL",
+            "edition" : 3
+        },
+        ...省略其他对象...
+    ]
+    ```
 
-输出结果如下：
-```
-[
-    {
-        "id" : 3,
-        "name" : "Learning GraphQL",
-        "edition" : 3
-    }
-    ...省略其他对象
-]
-```
+-   例2
 
-在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
+    我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
 
-例如，我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-BookTable table = BookTable.$;
-List<Book> books = sqlClient.createQuery(table)
-        .where(table.edition().eq(3))
-        .select(
-            // highlight-next-line
-            table.fetch(
-                BookFetcher.$
-                    .name()
-                    .price()
+    ```java
+    BookTable table = BookTable.$;
+    List<Book> books = sqlClient.createQuery(table)
+            .where(table.edition().eq(3))
+            .select(
+                // highlight-next-line
+                table.fetch(
+                    BookFetcher.$
+                        .name()
+                        .price()
+                )
             )
-        )
-        .execute();
-System.out.println(books);
-```
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+            .execute();
+    System.out.println(books);
+    ```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
-val books = sqlClient
-    .createQuery(Book::class) {
-        where(table.edition.eq(3))
-        select(
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(table.edition.eq(3))
+            select(
+                // highlight-next-line
+                table.fetchBy {
+                    name
+                    price
+                }
+            )
+        }
+        .execute()
+    println(books)
+    ```
+    </TabItem>
+    </Tabs>
+
+    此时输出的JSON为：
+
+    ```json
+    [
+        {
+            "id" : 3,
+            "name" : "Learning GraphQL",
+            "price" : 51.00
+        },
+        ...省略其他对象...
+    ]
+    ```
+
+-   例3
+
+    你甚至可以查询关联对象
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable table = BookTable.$;
+    List<Book> books = sqlClient.createQuery(table)
+            .where(table.edition().eq(3))
+            .select(
+                table.fetch(
+                    BookFetcher.$
+                        .name()  
+                        // highlight-next-line
+                        .authors(
+                            AuthorFetcher.$
+                                .firstName()
+                        )
+                )
+            )
+            .execute();
+    System.out.println(books);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin  
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(table.edition.eq(3))
+            select(
+                table.fetchBy {
+                    name
+                    // highlight-next-line
+                    authors {
+                        firstName
+                    }
+                }
+            )
+        }
+        .execute()
+    println(books)
+    ```
+
+    </TabItem> 
+    </Tabs>
+
+    此时输出的JSON为：
+
+    ```json
+    [
+        {
+            "id" : 3,
+            "name" : "Learning GraphQL",
             // highlight-next-line
-            table.fetchBy {
-                name
-                price
-            }
-        )
-    }
-    .execute()
-println(books)
-```
-</TabItem>
-</Tabs>
-
-此时输出的JSON为：
-
-```json
-[
-    {
-        "id" : 3,
-        "name" : "Learning GraphQL",
-        "price" : 51.00
-    }
-]
-```
+            "authors": [
+                { "id": 1, "Eve" },
+                { "id": 2, "Alex" },
+            ]
+        },
+        ...省略其他对象...
+    ]
+    ```
 
 :::tip
-借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO并进行映射，只需要改变对象抓取器的属性即可。
+借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO，即可实现多样化的查询业务，只需要改变对象抓取器的形状即可。
 
 对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
 :::
