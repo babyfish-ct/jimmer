@@ -19,7 +19,8 @@ select
     b.id, 
     b.name, 
     b.edition 
-    // 不需要`b.price`和`b.store_id`
+    /* highlight-next-line */
+    /* 不需要`b.price`和`b.store_id` */
 from book b 
 where b.edition = 3;
 ```
@@ -148,6 +149,7 @@ List<BookDTO> bookDTOs = sqlClient
         dto.setId(tuple.get_1());
         dto.setName(tuple.get_2());
         dto.setEdition(tuple.get_3());
+        return dto;
     });
 System.out.println(bookDTOs);
 ```
@@ -192,7 +194,7 @@ println(tuples)
 
 -   JPA默认返回对象的所有属性，想要自定义返回属性的话，
 
-    -   要么使用HQL，要么使用接口
+    -   要么使用HQL: `select new BookDTO(...) from ...`
 
     -   或者使用`query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
 
@@ -201,8 +203,11 @@ println(tuples)
 但是不论是JPA还是MyBatis亦或是MyBatis-Plus都避免不了需要额外再写一个DTO类，接下来我们使用对象抓取器来简化这一流程。
 
 :::info
-不幸的是，查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
+不幸的是
+-   查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
 最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>
+
+-   这样的自定义映射机制破坏了ORM原本的功能，无法控制关联属性，只能返回简单对象而非层次化的数据结构
 :::
 
 ## 使用对象抓取器
@@ -334,32 +339,6 @@ println(books)
 
 对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
 :::
-
-### 抓取所有属性
-
-上面的写法存在一个问题，如果需要查询的属性很多，每一个都手动抓取会非常繁琐。
-
-:::info
-这也是[GraphQL](https://graphql.org/)的问题之一。
-:::
-
-为解决这个问题，Jimmer也提供了如下两个API用于快速抓取大量属性。
-
-由于这些特性会在后续文档中详细讲述，这里只给出链接即可。这两个API是：
-
--   `allScalarFields`
-    
-    抓取所有标量属性，不包含关联属性、计算属性和视图属性。
-
-    请查看[抓取所有标量属性](./props#抓取所有标量属性)以了解更多。
-
--   `allTableFields`
-
-    抓取表定义中的所有属性，包含所有标量属性、基于外键的一对一/多对一属性，但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
-
-    请查看[抓取所有表定义的属性](./association#抓取所有表定义属性)以了解更多。
-
-也可以参考[二者的区别](association#allscalarfields与alltablefields的区别)
 
 ## 和JPA的差别
 

@@ -19,6 +19,7 @@ select
     b.id,
     b.name,
     b.edition
+    /* highlight-next-line */
     /* Don't need `b.price` and `b.store_id` */
 from book b
 where b.edition = 3; 
@@ -148,6 +149,7 @@ List<BookDTO> bookDTOs = sqlClient
         dto.setId(tuple.get_1());
         dto.setName(tuple.get_2());
         dto.setEdition(tuple.get_3());
+        return dto;
     }); 
 System.out.println(bookDTOs);
 ```
@@ -192,7 +194,7 @@ Although JPA and MyBatis have their own sets of mapping methods, both have limit
 
 -   For JPA, it returns all object properties by default. To customize returned properties:
   
-    -   Use HQL or interfaces
+    -   Use HQL: `select new BookDTO(...) from ....`
     
     -   Or use `query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
     
@@ -201,9 +203,12 @@ Although JPA and MyBatis have their own sets of mapping methods, both have limit
 However, neither JPA nor MyBatis nor MyBatis-Plus can avoid having to write an extra DTO class. Next we'll use object fetchers to simplify this process.
   
 :::info
-Unfortunately, query requirements are often diverse. Formats diversification inevitably leads to more DTO types *(as the aggregate root type, format diversification is likely; as associated types of other DTOs, diversification is even more likely)*.
+Unfortunately
 
-This ultimately results in <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore>  
+-   query requirements are often diverse. Formats diversification inevitably leads to more DTO types *(as the aggregate root type, format diversification is likely; as associated types of other DTOs, diversification is even more likely)*.
+    This ultimately results in <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore>  
+
+-   Such custom mapping mechanisms break the original functionality of ORM, unable to control associated properties, and can only return simple objects rather than hierarchical data structures.
 :::
   
 ## Using Object Fetchers
@@ -340,32 +345,6 @@ With Jimmer entity [dynamics](../../object/dynamic), extra DTOs and mappings are
   
 For query output, eliminating <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore> can greatly improve server-side productivity.
 :::
-  
-### Fetch All Properties
-  
-The above approach has a problem. If many properties need to be queried, fetching each manually can be very tedious.
-  
-:::info  
-This is also one problem with [GraphQL](https://graphql.org/).
-:::
-  
-To solve this, Jimmer also provides the following two APIs for quickly fetching many properties.
-  
-Since these will be explained in detail in subsequent docs, only the links are provided here. The two APIs are:
-  
--   `allScalarFields`
-    
-    Fetch all scalar properties, excluding associative, computed, and view properties.
-    
-    See [Fetch All Scalar Properties](./props#fetch-all-scalar-properties) for details.
-    
--   `allTableFields`
-
-    Fetch all properties defined in the table, including all scalar properties and one-to-one/many-to-one properties based on foreign keys, but excluding one-to-many, many-to-many, one-to-one/many-to-one associations based on join tables, computed properties, and view properties.
-    
-    See [Fetch All Table-defined Properties](./association#fetch-all-table-defined-properties) for details.
-    
-See also [Differences between the two](./association#differences-between-allscalarfields-and-alltablefields).
   
 ## Differences from JPA
   

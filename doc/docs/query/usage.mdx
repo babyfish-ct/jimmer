@@ -81,7 +81,7 @@ Now let's explain the code:
 
 -   ❸ Call `execute` to execute the query and return data.  
 
-    No execution happens before this step no matter how the DSL is adjusted to shape the SQL.
+    Before this step, no matter how the DSL is operated and tuned, no SQL operations will be executed.
 
     Besides `execute`, there are other methods to execute queries:
 
@@ -99,6 +99,8 @@ Now let's explain the code:
 
     -   `forEach`: If returning too much data to avoid materializing a large collection, `forEach` can be called with a callback to traverse all data.
 
+        This is what people often refer to as cursor queries.
+
     -   `count`: Based on the original data query written by users, automatically generate the count aggregate query needed for paging, execute and get total rows before paging.  
 
         :::info
@@ -108,7 +110,7 @@ Now let's explain the code:
     :::tip
     All the methods above to execute queries have two overloaded versions:
 
-    -   Parameterless version *(as shown in the code)* utilizes Jimmer's connection management *(usually integrating with Spring transaction management)* to get JDBC connection and execute.
+    -   Parameterless version *(as shown in the example)* utilizes Jimmer's connection management *(usually integrating with Spring transaction management)* to get JDBC connection and execute.
 
     -   Version with a parameter accepting a JDBC connection. In special cases developers can discard Jimmer's connection management *(usually integrating with Spring transaction management)* and execute on a specified JDBC connection.
     :::
@@ -142,5 +144,5 @@ create new queries without modifying current one)
             |
            \|/
      Execution Result
-(Type specified by ❷ select)
+(Result type is specified by ❷ select)
 ```

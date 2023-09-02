@@ -1,6 +1,6 @@
-读者可以先忽略`过滤器`这个概念，它只是让本文保持高度严谨的声明，而不是这里要讨论的内容。
+Readers can first ignore the concept of `filters`, it is just to keep this article highly rigorous, not the content to be discussed here. 
 
-如果想要了解，它包含两个部分：
+If you want to understand, it contains two parts:
 
--   [本文最后一章：属性过滤器](#属性过滤器)
--   [全局过滤器](../global-filter)
+-   [The last section of this article: Property Filters](#property-level-filters)
+-   [Global Filters](../global-filter)
