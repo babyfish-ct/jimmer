@@ -251,7 +251,7 @@ println(books)
 
     The above code will return a series of aggregate root objects. If using the official sample data in the database, it will return 6 aggregate root objects.
 
-    The object fetcher in the code contains the many-to-one association `Book.store` and expects to query non-id attributes of the associated object *(information that cannot be expressed by the foreign key of the current table)*, so Jimmer will query the associated object for all aggregate root objects.
+    The object fetcher in the code contains the many-to-one association `Book.store` and expects to query non-id properties of the associated object *(information that cannot be expressed by the foreign key of the current table)*, so Jimmer will query the associated object for all aggregate root objects.
 
     Fortunately, the associated attribute `Book.store` is based on a real foreign key. The foreign key itself represents the id of the parent object. There is no need to obtain the associated object id through additional queries or [association caching](./association).
 
@@ -329,7 +329,7 @@ println(books)
     </TabItem>
     </Tabs>
 
-    In caching mode, even if the object fetcher does not need all non-associative attributes of the associated object, all non-associative attributes of the associated object will still be queried from the database.
+    In caching mode, even if the object fetcher does not need all non-associative properties of the associated object, all non-associative properties of the associated object will still be queried from the database.
 
     **Only in this way can the cached objects have reusable value for any business scenario.**
 

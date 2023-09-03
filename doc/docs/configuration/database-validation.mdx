@@ -21,7 +21,7 @@ Database validation is a very important feature that is used to verify the consi
 
 -   Verify that table names, column names, sequence names are consistent with definitions in the entity model.
 
--   Verify that the nullity of columns is consistent with the definitions of attributes in the entity model. 
+-   Verify that the nullity of columns is consistent with the definitions of properties in the entity model. 
 
 -   For the id attribute of each entity in the entity model, verify that the database has a primary key constraint that exactly matches.
 
@@ -216,4 +216,4 @@ For this, Jimmer provides the annotation `@org.babyfish.jimmer.sql.DatabaseValid
 
 -   Annotate entity interfaces to indicate that the entire entity does not need to be verified.
 
--   Annotate entity attributes to indicate that specific attributes do not need to be verified.
+-   Annotate entity properties to indicate that specific properties do not need to be verified.

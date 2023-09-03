@@ -995,11 +995,11 @@ BookStoreTable store = BookStoreTable.$;
 List<String> results = sqlClient
     .createQuery(store) 
     .select(
-        store.website() // 1
+        store.website() ❶
             // highlight-next-line
             .coalesceBuilder()
-            .or(store.name()) // 2
-            .or("Default Value") // 3
+            .or(store.name()) ❷
+            .or("Default Value") ❸
             .build()
     )
     .execute();
@@ -1014,8 +1014,8 @@ var results = sqlClient
         select(
             table.website
                 // highlight-next-line
-                .coalesce() // 1
-                .or(table.name) // 2
+                .coalesce() ❶
+                .or(table.name) ❷
                 .end()
         )
     }
@@ -1026,11 +1026,11 @@ var results = sqlClient
 
 :::tip
 
-In this example, the Kotlin code is different from the Java code. In Kotlin there is no expression "3".  
+In this example, the Kotlin code is different from the Java code. In Kotlin there is no expression ❸.  
 
 The Kotlin API introduces null-safety for SQL, `table.name` is a non-null field, so Kotlin forces us to write `end()` to complete the expression.  
 
-This means the expression "3" in Java code will not be used.
+This means the expression ❸ in Java code will not be used.
 
 :::
 

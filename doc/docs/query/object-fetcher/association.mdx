@@ -25,7 +25,7 @@ ORM has two types of association properties:
     :::info
     This article uses the many-to-many association property `Book.authors` as an example.
     :::
-    
+
 ## Fetch associated objects with only id
 
 When fetching associated objects without any parameters, only the `id` property of the associated objects is returned. 
@@ -410,7 +410,7 @@ This example shows:
    
 -   Jimmer queries the associated objects via separate SQL instead of using LEFT JOIN in the main query SQL.
 
-    This avoids duplicate results when joining collection associations.
+    This is designed to avoid duplicate results when joining collection associations, which can be devastating for paged queries on aggregate roots.
 
 The printed result is (formatted for readability):
 
@@ -445,7 +445,7 @@ The printed result is (formatted for readability):
 
 In some cases, all fields defined in the table are needed. `allTableFields` can be used for this.
 
-`allTableFields` fetches all attributes defined in the table, including all scalar attributes (same as `allScalarFields`), one-to-one/one-to-many associations based on foreign keys. It does not include one-to-many, many-to-many, one-to-one/one-to-many associations based on middle tables, computed properties or view properties. 
+`allTableFields` fetches all properties defined in the table, including all scalar properties (same as `allScalarFields`), one-to-one/one-to-many associations based on foreign keys. It does not include one-to-many, many-to-many, one-to-one/one-to-many associations based on middle tables, computed properties or view properties. 
 
 :::info
 `allTableFields` includes all one-to-one/one-to-many associations based on foreign keys, in addition to `allScalarFields`. But the fetched associated objects only have the `id` property.

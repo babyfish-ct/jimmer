@@ -12,7 +12,7 @@ For output, the `flat` mode is a controversial topic. The author disagrees with 
 
 The deeper reason: Data structures with native associations are normalized data, while flattened objects processed by `flat` are non-associated data.
 
-However, you may be in a work situation like this: the frontend team you work with requires all query APIs to return flattened objects across the board, requires any attribute other than collection attributes to be processed by `flat`, and is very insistent.
+However, you may be in a work situation like this: the frontend team you work with requires all query APIs to return flattened objects across the board, requires any attribute other than collection properties to be processed by `flat`, and is very insistent.
 
 Now let's explain why some frontend teams have this insistence. UI projects can be considered in two categories:
 

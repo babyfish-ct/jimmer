@@ -12,9 +12,9 @@ Let's take a look at a real example
 
 <Shape/>
 
-In the figure, we list three business perspectives as examples. For any business perspective, it can freely decide whether each business perspective cares about certain entities, associations, or even attributes.
+In the figure, we list three business perspectives as examples. For any business perspective, it can freely decide whether each business perspective cares about certain entities, associations, or even properties.
 
-To achieve this kind of data structure shape tailoring that is accurate to attributes, the only way is to make entity objects support dynamism. 
+To achieve this kind of data structure shape tailoring that is accurate to properties, the only way is to make entity objects support dynamism. 
 
 :::info
 The dynamism of Jimmer entities is not the kind of dynamism that gives up spell checking and type safety like dynamic languages. It is just that [the `fetch = FetchType.LAZY` of the @Basic annotation in Hibernate](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement) is extended to any attribute. 

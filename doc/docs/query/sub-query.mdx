@@ -558,13 +558,14 @@ AuthorTableEx author = AuthorTableEx.$;
 List<Book> books = sqlClient
     .createQuery(book)
     .where(sqlClient
+        // highlight-next-line
         .createSubQuery(author)
         .where(
             author.books().eq(book),
             author.firstName().eq("Alex")
         )
         // No select here  
-    .exists()
+        .exists()
     )
     .select(book)
     .execute();

@@ -509,8 +509,8 @@ List<TreeNode> treeNodes = sqlClient
             .childNodes(
                 TreeNodeFetcher.$.name(),
                 it -> it.recursive(args ->
-                // highlight-next-line
-                !args.getEntity().name().equals("Clothing")
+                    // highlight-next-line
+                    !args.getEntity().name().equals("Clothing")
                 )
             )
         )

@@ -986,11 +986,11 @@ BookStoreTable store = BookStoreTable.$;
 List<String> results = sqlClient
     .createQuery(store)
     .select(
-        store.website() // 1
+        store.website() ❶
             // highlight-next-line
             .coalesceBuilder()
-            .or(store.name()) // 2
-            .or("Default Value") // 3
+            .or(store.name()) ❷
+            .or("Default Value") ❸
             .build()
     )
     .execute();
@@ -1005,8 +1005,8 @@ var results = sqlClient
         select(
             table.website
                 // highlight-next-line
-                .coalesce() // 1
-                .or(table.name) // 2
+                .coalesce() ❶
+                .or(table.name) ❷
                 .end()
         )
     }
@@ -1017,11 +1017,11 @@ var results = sqlClient
 
 :::tip
 
-在这个例子中，kotlin 代码和 java 代码是不同的。 kotlin 代码中没有表达式“3”。
+在这个例子中，kotlin 代码和 java 代码是不同的。 kotlin 代码中没有表达式❸。
 
 Kotlin-API 引入了 kotlin 对 SQL 的 null-safety，`table.name` 是一个非 null 字段，所以 kotlin 强制我们编写 `end()` 来完成这个表达式。
 
-这意味着java代码中的表达式 `3`不会被使用。
+这意味着java代码中的表达式❸不会被使用。
 :::
 
 最终生成的SQL如下

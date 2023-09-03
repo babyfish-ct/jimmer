@@ -124,9 +124,12 @@ fun findBooks(orderMode: OrderMode): List<Book> =
 
 Often, the UI allows users to dynamically sort by interacting with table components. That is, the client decides the ordering and the server passively accepts parameters to query according to the sorting requirements from client.
 
-The client can specify dynamic ordering by passing string parameters, which can be converted to `List<Order>` needed by Jimmer using the static method `Order.makeOrders`.
+The client can specify dynamic ordering by passing string parameters, which can be converted to `List<Order>` needed by Jimmer using the method `makeOrders`.
 
-`Order.makeOrders` is defined as:
+`makeOrders` is defined as:
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java
 public class Order {
@@ -139,35 +142,85 @@ public class Order {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+fun KProps<*>.makeOrders(vararg codes: String): List<Order> =
+    ...implementation omitted...
+```
+
+</TabItem> 
+</Tabs>
+
 Where the first parameter `table` is the root table in the SQL DSL.  
 
-`Order.makeOrders` is very flexible to use, for example:
+`makeOrders` is very flexible to use, for example:
 
 -   Sort by multiple columns:
+
+       <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
     ```java
     Order.makeOrders(table, "name", "edition desc")
     ```
 
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    table.makeOrders("name", "edition desc")
+    ```
+
+    </TabItem> 
+    </Tabs>
+
 -   Merge multiple parameters into one separated by `,` or `;`: 
+
+       <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
     ```java
     Order.makeOrders(table, "name, edition desc")
     ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    table.makeOrders("name, edition desc")
+    ```
+
+    </TabItem> 
+    </Tabs>
     
     :::info
     In real projects, most cases would use the single parameter form since it's the simplest.
     :::
 
--   Even supports sorting by associations *(one-to-one, many-to-one)*:
+-   Even supports sorting by reference associations *(one-to-one, many-to-one)*:
+
+       <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
     ```java
-    Order.makeOrders(table, "store.city.name; store.name; name") 
+    Order.makeOrders(table, "store.city.name; store.name; name")
     ```
 
-    :::info
-    All [dynamic join](./dynamic-join) features are valid for these implicit joins. 
-    :::
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    table.makeOrders("store.city.name; store.name; name")
+    ```
+
+    </TabItem> 
+    </Tabs>
+
+:::info
+All [dynamic join](./dynamic-join) features are valid for these implicit joins.  
+:::
 
 `Order.makeOrders` can be used like:
 
@@ -196,7 +249,7 @@ fun findBooks(sort: String): List<Book> =
     sqlClient
         .createQuery(Book::class) {
             // highlight-next-line
-            .orderBy(Order.makeOrders(table, sort))
+            orderBy(table.makeOrders(sort))
             select(table)
         }
         .execute() 

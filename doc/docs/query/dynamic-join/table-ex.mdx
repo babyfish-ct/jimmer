@@ -116,7 +116,7 @@ In this example:
 
 If we call the entity object corresponding to the first table being queried the aggregate root object, reference associations and collection associations differ in:
 
--   Querying one object and joining tables via a reference association does not produce duplicate records of the current main object in the SQL query result. For example:
+-   Joining tables via a reference association does not produce duplicate records of the current main object in the SQL query result. For example:
 
     ```sql
     select 
@@ -135,7 +135,7 @@ If we call the entity object corresponding to the first table being queried the 
     |---|---|---|---|
     |1|Learning GraphQL|1|O'REILLY|
 
--   Querying one object and joining tables via a collection association produces duplicate records of the current main object in the SQL query result:
+-   Joining tables via a collection association produces duplicate records of the current main object in the SQL query result:
 
     ```sql
     select
@@ -173,7 +173,7 @@ Table joins based on collection associations lead to duplicate data, which cause
 
    Paginating table join results at the SQL level is often not what people want. More often, people want pagination applied on aggregate root objects.
 
-   Take Hibernate for example. In this case, Hibernate has to abandon SQL-level pagination and use memory-level pagination instead. This performs very poorly that Hibernate logs a warning to alert developers. If you have experience with Hibernate, I believe the log below would give you a headache:
+   Take Hibernate for example. In this case, Hibernate has to abandon SQL-level pagination and use memory-level pagination instead. This performs very poorly that Hibernate logs a warning to alert developers. If you have experience with Hibernate, the log below would give you a headache:
 
    [firstResult/maxResults specified with collection fetch; applying in memory](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html)
 
@@ -395,8 +395,8 @@ List<Book> books = sqlClient
             .eq("Store Name")
     )
     /*
-     * However, cannot use "table.authors()" because authors()  
-     * is defined in BookTableEx instead of BookTable.
+     * However, cannot use "table.authors()" because `authors()`
+     * is defined in `BookTableEx` instead of `BookTable`.
      *  
      * That is, joining collection associations is prohibited  
      * at compile time in top-level queries.
@@ -420,13 +420,13 @@ val books = sqlClient
         where(
             table
                 // highlight-next-line
-                .store // Can also join reference association store
+                .store // Can also join reference association `store`
                 .name
                 eq "Store Name"
         )
         /*
-         * However, cannot use "table.authors" because the extension property authors  
-         * is defined on TableEx<Book> instead of Table<Book>.
+         * However, cannot use "table.authors" because the extension property `authors`
+         * is defined on `TableEx<Book>` instead of `Table<Book>`.
          *  
          * That is, joining collection associations is prohibited 
          * at compile time in top-level queries.
@@ -440,9 +440,9 @@ val books = sqlClient
 </Tabs>
 
 :::info
-- Java: `createQuery` takes parameter specified by user, can only be `Table` type. `TableEx` would error.
+-   Java: `createQuery` takes parameter specified by user, can only be `Table` type. `TableEx` would error.
 
-- Kotlin: `createQuery` creates table object automatically. The automatic variable `table` in lambda is inferred to `Table` instead of `TableEx`.
+-   Kotlin: `createQuery` creates table object automatically. The automatic variable `table` in lambda is inferred to `Table` instead of `TableEx`.
 :::
 
 The final generated SQL:
@@ -512,7 +512,8 @@ val books = sqlClient
                 // highlight-next-line
                 wildSubQuery(Author::class) {
 
-                    // In subquery, `table` is TableEx<Author>
+                    // Subquery's `table` overrides parent's `table`,
+                    // and the Subquery's `table` is `TableEx<Author>`
                     
                     where(
                         table
@@ -615,9 +616,9 @@ val bookIds = sqlClient
 </Tabs>
 
 :::info
-1. The developer informs Jimmer that they know what they are doing, asking Jimmer to allow joining collection associations.
+-   ❶ The developer informs Jimmer that they know what they are doing, asking Jimmer to allow joining collection associations.
 
-2. The developer takes responsibility for their own actions. If there are additional operations here, it should be `distinct` rather than pagination related.
+-   ❷ The developer takes responsibility for their own actions. If there are additional operations here, it should be `distinct` rather than pagination related.
 :::
 
 The final generated SQL:

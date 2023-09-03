@@ -310,7 +310,7 @@ data class BookInput(
 The `@Nullable` annotation is used in the Java POJO code only to improve readability and has no functional effect
 :::
 
-Three attributes of this POJO need to be explained:
+Three properties of this POJO need to be explained:
 
 -   `BookInput.id`
 
@@ -345,7 +345,7 @@ Three attributes of this POJO need to be explained:
     :::
 
 
-The other attributes are exactly the same as the original entity definition and need no explanation.
+The other properties are exactly the same as the original entity definition and need no explanation.
 
 ## Define Mapper
 
@@ -380,7 +380,7 @@ interface BookInputMapper {
 
 This Mapper provides a `toBook` method to convert a `BookInput` object to a `Book` object. 
 
-`BookInput.id`, `BookInput.id`, `BookInput.name` and `BookInput.price` are all non-associated attributes that mapstruct can handle well.
+`BookInput.id`, `BookInput.id`, `BookInput.name` and `BookInput.price` are all non-associated properties that mapstruct can handle well.
 
 :::note
 The issue that `BookInput.id` can be null while `Book.id` cannot be null has been discussed before, so it won't be repeated here.

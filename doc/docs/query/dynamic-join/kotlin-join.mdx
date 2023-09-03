@@ -14,9 +14,9 @@ However, outer joins are the only exception. For this detail, the behaviors of J
 
 -   Kotlin DSL
 
-    -   Properties with the same name as entity attributes represent inner joins
+    -   Properties with the same name as entity properties represent inner joins
     
-    -   Properties with a `?` after the entity attribute name represent left joins
+    -   Properties with a `?` after the entity properties name represent left joins
 
     That is, Kotlin DSL does not support `RIGHT` and `FULL`. This sacrifice is a careful trade-off, in exchange for a more important feature for Kotlin: perfectly combining Kotlin's null safety and SQL DSL.
 

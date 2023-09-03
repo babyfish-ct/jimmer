@@ -10,7 +10,7 @@ A common requirement is to handle self-associated property.
 
 From a database perspective, self-assoiated property means a table's foreign key references itself. From an object model perspective, it represents a tree.
 
-The difficulty of self-associated properites is that the object depth is uncontrollable, theoretically infinite. Jimmer-sql provides great support for this.
+The difficulty of self-associated properites is that the object depth is uncontrollable, theoretically infinite. Jimmer provides great support for this.
 
 ## Model and Data Preparation
 
@@ -514,8 +514,8 @@ List<TreeNode> treeNodes = sqlClient
             .childNodes(
                 TreeNodeFetcher.$.name(),
                 it -> it.recursive(args ->
-                // highlight-next-line
-                !args.getEntity().name().equals("Clothing")
+                    // highlight-next-line
+                    !args.getEntity().name().equals("Clothing")
                 )
             )
         )

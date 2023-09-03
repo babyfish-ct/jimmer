@@ -115,10 +115,10 @@ fun findBooks(limit: Int, offset: Int): List<Book> =
         optimize_.PRICE,
         optimize_.STORE_ID
     from (
-    select
-        tb_1_.ID optimize_core_id_
-        from BOOK tb_1_
-    limit ? /* 10 */ offset ? /* 1000 */
+        select
+            tb_1_.ID optimize_core_id_
+            from BOOK tb_1_
+        limit ? /* 10 */ offset ? /* 1000 */
     ) optimize_core_ inner join BOOK optimize_
         on optimize_.ID = optimize_core_.optimize_core_id_
     ```
