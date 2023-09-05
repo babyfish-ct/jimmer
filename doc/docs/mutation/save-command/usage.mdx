@@ -442,7 +442,7 @@ Why do all associated objects other than the aggregate root default to full repl
 
 INSERT, UPDATE, and DELETE statements in relational databases are incremental operations themselves. Even using the simplest SQL scheme with just basic CRUD capabilities, incrementally modifying the database is never the real difficulty in application development.
 
-The truly complex problem is to save an entire complex data structure in one go. If Jimmer does not provide such capabilities, developers have to write complex code to compare new and old data to find differences and determine what needs to change. This makes modifying complex data very difficult.
+The truly complex problem is to save an entire complex data structure in one go. If Jimmer does not provide such capabilities, developers have to write complex code to compare new and old data to find differences and determine what needs to change. This makes saving complex data structure very difficult.
 
 There is another benefit - ensuring idempotency. 
 

@@ -350,7 +350,7 @@ Because the `BookStore` object has a one-to-many association `BookStore.books`, 
 
 The one-to-many association `BookStore.books` is not a mapping based on a middle table, but a mapping based on a foreign key. How will Jimmer discard those `Book` objects?
 
-Unlike JPA, Jimmer does not allow direct use of `@OneToOne` and `@OneToMany` for association mapping. `@OneToOne` and `@OneToMany` must use the `mappedBy` attribute. See [@OneToMany](../mapping/base/association/one-to-many) to learn more.  
+Unlike JPA, Jimmer does not allow direct use of `@OneToMany` for association mapping. `@OneToMany` must use the `mappedBy` property. See [@OneToMany](../mapping/base/association/one-to-many) to learn more.  
 
 This means that through the one-to-many association `BookStore.books` we can certainly find the corresponding many-to-one association `Book.store`.
 
@@ -376,7 +376,7 @@ Next, Jimmer will refer to the [@OnDissociate](../mapping/advanced/on-dissociate
 
     - Otherwise, throw an exception.
     
-The above discussed situations all require the developer to use the [@OnDissociate](../mapping/advanced/on-dissociate) annotation on the `Book.store` attribute. 
+The above discussed situations all require the developer to use the [@OnDissociate](../mapping/advanced/on-dissociate) annotation on the `Book.store` property. 
 
 However, you can also choose not to use the [@OnDissociate](../mapping/advanced/on-dissociate) annotation, but dynamically specify the dissociateAction configuration for the delete command.
 
@@ -417,10 +417,10 @@ val result = sqlClient
 </TabItem>
 </Tabs>
 
-Here, calling the command's `setDissociateAction` method dynamically has the same effect as using the [@OnDissociate](../mapping/advanced/on-dissociate) annotation statically on the `Book.store` attribute and specifying cascade delete.
+Here, calling the command's `setDissociateAction` method dynamically has the same effect as using the [@OnDissociate](../mapping/advanced/on-dissociate) annotation statically on the `Book.store` property and specifying cascade delete.
 
 :::info
-1.  If the last parameter of the `setDissociateAction` method is `DissociateAction.SET_NULL`, the associated attribute being set must be nullable, otherwise it will cause an exception.
+1.  If the last parameter of the `setDissociateAction` method is `DissociateAction.SET_NULL`, the associated property being set must be nullable, otherwise it will cause an exception.
 
 2.  If dissociation rules are configured dynamically for the save command and also configured statically in the entity interface through the [@OnDissociate](../mapping/advanced/on-dissociate) annotation, the dynamic configuration takes precedence. 
 :::

@@ -16,13 +16,13 @@ The various scenarios discussed in this article and their respective generated S
 
 ## Overview
 
-First, the junction table is hidden by the object model, with no direct corresponding entity type. This problem has been explained in [Query Junction Table](../query/associations), so I won't repeat it here.
+First, the association table is hidden by the object model, with no direct corresponding entity type. This problem has been explained in [Query Association Table](../query/associations), so I won't repeat it here.
 
-In addition, in the [Save Command](./save-command) section, we introduced the save command. It can compare the existing data in the database with the new data the user wants to save. If a relation attribute based on the junction table has changed, the junction table will be modified.
+In addition, in the [Save Command](./save-command) section, we introduced the save command. It can compare the existing data in the database with the new data the user wants to save. If a relation property based on the association table has changed, the association table will be modified.
 
-Admittedly, the Save Command feature is very powerful, and modifying the junction table is just a very small part of its capabilities. However, sometimes we just need a simple way to insert or delete data directly from the junction table, we don't need the full capabilities of the Save Command.  
+Admittedly, the Save Command feature is very powerful, and modifying the association table is just a very small part of its capabilities. However, sometimes we just need a simple way to insert or delete data directly from the association table, we don't need the full capabilities of the Save Command.  
 
-Jimmer allows developers to directly insert and delete data from the junction table in a simpler way.
+Jimmer allows developers to directly insert and delete data from the association table in a simpler way.
 
 ## Insert Association
 
@@ -61,7 +61,7 @@ insert into
     values (?, ?)
 ```
 
-This example shows how to use the association property `Book.authors` to operate the junction table.
+This example shows how to use the association property `Book.authors` to operate the association table.
 
 Similarly, we can achieve the same goal through the association property `Authors.books`:
 
@@ -198,7 +198,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-Here there are 3 books, two authors, and 6 total combination ways. The `batchSave` method inserts all 6 combinations into the junction table, generating the following SQL:
+Here there are 3 books, two authors, and 6 total combination ways. The `batchSave` method inserts all 6 combinations into the association table, generating the following SQL:
 
 ```sql  
 insert into BOOK_AUTHOR_MAPPING(
@@ -254,11 +254,11 @@ sqlClient
 </TabItem>  
 </Tabs>
 
-The above `batchSave` method takes two collection parameters and inserts the cartesian product of the two collections into the junction table, so its functionality is the same as the previous example.
+The above `batchSave` method takes two collection parameters and inserts the cartesian product of the two collections into the association table, so its functionality is the same as the previous example.
 
 ## Check Existence
 
-Inserting id tuples that already exist into the junction table will cause errors, as it violates uniqueness constraints.
+Inserting id tuples that already exist into the association table will cause errors, as it violates uniqueness constraints.
 
 To solve this problem, existence checks can be performed.
 
@@ -466,7 +466,7 @@ where
 ## Notes  
 
 :::caution
-Please do not abuse this feature. This feature is only suitable for simple insertion and deletion of junction tables. It is recommended to only use it when facing the simplest incremental operations.  
+Please do not abuse this feature. This feature is only suitable for simple insertion and deletion of association tables. It is recommended to only use it when facing the simplest incremental operations.  
 :::
 
 Let's look at an example. If comparison with existing data in the database is needed, this feature is obviously not the optimal choice, and the code will be very cumbersome, as follows:

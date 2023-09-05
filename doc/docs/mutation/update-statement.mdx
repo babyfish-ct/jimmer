@@ -116,11 +116,10 @@ println("Affected row count: $affectedRowCount")
 </TabItem>
 </Tabs>
 
-The exception is:
-
-:::caution
+The exception message is:
+```
 Table joins for update statement is forbidden by the current dialect, but there is a join `'Author.books'`.
-:::
+```
 
 When using MySQL or Postgres, update statements can use JOIN clauses.
 

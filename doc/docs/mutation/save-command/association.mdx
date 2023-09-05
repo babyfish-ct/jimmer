@@ -137,17 +137,20 @@ Two examples are shown below:
         draft.setEdition(1);
         draft.setPrice(new BigDecimal("39.9"));
         draft.applyStore(store -> {
-            // Associated object has only key property, i.e. `BookStore.name`
+            // Associated object has only key property, 
+            // i.e. `BookStore.name`
             // highlight-next-line
             store.setName("MANNING");
         });
         draft.addIntoAuthors(author -> {
-            // Associated object has only key properties, i.e. `Author.firstName` and `Author.lastName` 
+            // Associated object has only key properties, 
+            // i.e. `Author.firstName` and `Author.lastName` 
             // highlight-next-line
             author.setFirstName("Boris").setLastName("Cherny");
         });
         draft.addIntoAuthors(author -> {
-            // Associated object has only key properties, i.e. `Author.firstName` and `Author.lastName`
+            // Associated object has only key properties, 
+            // i.e. `Author.firstName` and `Author.lastName`
             // highlight-next-line
             author.setFirstName("Samer").setLastName("Buna");
         });

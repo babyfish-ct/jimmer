@@ -88,7 +88,7 @@ Jimmer supports optimistic locking via the `@org.babyfish.jimmer.sql.Version` an
 
 Characteristics of optimistic locking:
 
-- When inserting objects *(whether explicitly doing INSERT, or UPSERT determined to be INSERT)*, the `version` of the object will be inserted into the database.
+-   When inserting objects *(whether explicitly doing INSERT, or UPSERT determined to be INSERT)*, the `version` of the object will be inserted into the database.
 
     For example:
 
@@ -192,7 +192,7 @@ Characteristics of optimistic locking:
     Of course, if the user specifies `version` for these objects, the specified values rather than 0 will be inserted.
     :::
 
-- When modifying objects *(whether explicitly doing UPDATE, or UPSERT determined to be UPDATE)*, Jimmer will compare the `version` passed by the user and the existing `version` in the database for each object. If they differ, an exception will be thrown.
+-   When modifying objects *(whether explicitly doing UPDATE, or UPSERT determined to be UPDATE)*, Jimmer will compare the `version` passed by the user and the existing `version` in the database for each object. If they differ, an exception will be thrown.
 
     Let's modify the code a bit and execute again:
 
@@ -384,9 +384,9 @@ Unlike optimistic locking, pessimistic locks are very short-lived, only valid wi
 
 Normally, Jimmer generates some query SQL to aid save command execution, such as:
 
-- Determining whether a `UPSERT` should ultimately be `INSERT` or `UPDATE` 
+-   Determining whether a `UPSERT` should ultimately be `INSERT` or `UPDATE` 
 
-- Determining which associated objects need to be [dissociated](./dissociation)
+-   Determining which associated objects need to be [dissociated](./dissociation)
 
 Next, we compare the differences in these query SQL between using and not using pessimistic locking. 
 
@@ -445,7 +445,7 @@ sqlClient.save(
 
 This generates 6 SQL statements:
 
-1. Check if the book store exists
+1.  Check if the book store exists
 
     ```sql
     select
@@ -456,11 +456,11 @@ This generates 6 SQL statements:
         tb_1_.NAME = ? /* TURING */ 
     ```
 
-2. Determine `INSERT` or `UPDATE` based on previous query
+2.  Determine `INSERT` or `UPDATE` based on previous query
 
     insert or update, omitted
 
-3. Check if the 1st book exists 
+3.  Check if the 1st book exists 
     
     ```sql
     select
@@ -474,11 +474,11 @@ This generates 6 SQL statements:
             tb_1_.EDITION = ? /* 3 */
     ```
     
-4. Determine `INSERT` or `UPDATE` based on previous query
+4.  Determine `INSERT` or `UPDATE` based on previous query
 
     insert or update, omitted
     
-5. Check if the 2nd book exists
+5.  Check if the 2nd book exists
 
     ```sql
     select
@@ -492,7 +492,7 @@ This generates 6 SQL statements:
             tb_1_.EDITION = ? /* 2 */
     ```
 
-6. Determine `INSERT` or `UPDATE` based on previous query
+6.  Determine `INSERT` or `UPDATE` based on previous query
 
     insert or update, omitted
 
@@ -508,7 +508,7 @@ To avoid such concurrency issues, pessimistic locking can be enabled. Next we di
 
 There are two ways to enable pessimistic locking:
 
-- Global configuration
+-   Global configuration
 
     There are two ways to enable pessimistic locking globally:
 
@@ -548,7 +548,7 @@ There are two ways to enable pessimistic locking:
         </TabItem>
         </Tabs>
 
-- Command-level configuration
+-   Command-level configuration
 
     Unlike global configuration affecting all save commands, command-level configuration only affects the current save command.
 
@@ -613,7 +613,7 @@ There are two ways to enable pessimistic locking:
     
 Once pessimistic locking is enabled, the generated query statements will change significantly:
 
-1. Check if the book store exists
+1.  Check if the book store exists
 
     ```sql
     select
@@ -626,11 +626,11 @@ Once pessimistic locking is enabled, the generated query statements will change 
     for update
     ```
 
-2. Determine `INSERT` or `UPDATE` based on previous query
+2.  Determine `INSERT` or `UPDATE` based on previous query
 
     insert or update, omitted
 
-3. Check if the 1st book exists
+3.  Check if the 1st book exists
     
     ```sql
     select
@@ -643,6 +643,7 @@ Once pessimistic locking is enabled, the generated query statements will change 
         and
             tb_1_.EDITION = ? /* 3 */
     /* highlight-next-line */
+    for update
 
 4.  Determine `INSERT` or `UPDATE` based on previous query
 

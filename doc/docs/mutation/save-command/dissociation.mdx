@@ -63,7 +63,7 @@ Consider the following example:
 
 Dissociation applies to two types of data:
 
--   Junction table data
+-   Join table data
 
 -   Child table data
 
@@ -72,14 +72,14 @@ Next, we discuss these two dissociation operations.
 :::info
 To simplify the generated SQL as much as possible, let us focus on the association itself and dissociation operations in this article:
 
--   All saved objects specify only the id attribute
+-   All saved objects specify only the id property
 
 -   The save mode of the aggregated root object is explicitly specified as UPDATE_ONLY *(using the update method)*
 :::
 
-## Dissociating Junction Table Data
+## Dissociating Join Table Data
 
-There is a many-to-many association between the `BOOK` table and the `AUTHOR` table, with junction table `BOOK_AUTHOR_MAPPING`.
+There is a many-to-many association between the `BOOK` table and the `AUTHOR` table, with join table `BOOK_AUTHOR_MAPPING`.
 
 The `Book.authors` and `Author.books` properties both map this many-to-many association and are mirrors of each other. Using either can demonstrate the effect. Here we choose `Book.authors`.
 
@@ -417,7 +417,7 @@ This means:
 
 -   `BookStore-2` needs to dissociate `Book-11` and `Book-12`.
 
-    But the specific SQL operations are unknown, determined by the dissociation mode configuration of `Book.store` attribute.
+    But the specific SQL operations are unknown, determined by the dissociation mode configuration of `Book.store` property.
 
 Different dissociation mode configurations will lead to different execution logic. Next, we discuss the three cases of `NONE`, `SET_NULL` and `DELETE`.
 
@@ -534,9 +534,9 @@ This article simplifies the examples a lot, such as:
 
 -   All associated objects are short associated objects with only id. In fact, you can arbitrarily change the format of associated objects, for example:
 
-    -   Do not specify `id` attribute, but specify `key` attribute *(<ViewMore buttonText="Short Association" variant="text"><ShortAssociation/></ViewMore> expressed in another way)*
+    -   Do not specify `id` property, but specify `key` property *(<ViewMore buttonText="Short Association" variant="text"><ShortAssociation/></ViewMore> expressed in another way)*
 
-    -   Specify `key` attribute and some properties that are neither `id` nor `key` *(<ViewMore buttonText="Long Association" variant="text"><LongAssociation/></ViewMore>)* 
+    -   Specify `key` property and some properties that are neither `id` nor `key` *(<ViewMore buttonText="Long Association" variant="text"><LongAssociation/></ViewMore>)* 
 
     :::note
     The concepts of short association and long association have been discussed before. If you forget, please review [Save Association](./association#association-types).

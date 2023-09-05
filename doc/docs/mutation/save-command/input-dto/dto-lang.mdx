@@ -169,7 +169,7 @@ data class BookInput(
     
     -   For Input DTOs, static POJO types do not have the concept of missing properties. `null` represents missing `id`.
 
-    This seems contradictory, but can be handled simply: If Input DTO's `id` is `null`, the converted entity object will not have an `id` *(although `id` cannot be assigned `null`, dynamic objects can omit assigning properties)*.
+    This seems contradictory, but can be handled simply: If Input DTO's `id` is `null`, the converted entity object will not have an `id` *(although `id` cannot be assigned `null`, dynamic objects always ingore unassinged properties)*.
     :::
 
 -   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using a <ViewMore buttonText="short association" variant="text"><ShortAssociation/></ViewMore>. 
