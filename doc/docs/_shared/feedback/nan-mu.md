@@ -262,7 +262,7 @@ public class CacheConfig {
                 );
             }
 
-            // Id -> computed value, for transient properties with resolver
+            // Id -> calculated value, for transient properties with resolver
             @Override
             public Cache<?, ?> createResolverCache(ImmutableProp prop) {
                 return createPropCache(

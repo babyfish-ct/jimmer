@@ -10,27 +10,27 @@ import TabItem from '@theme/TabItem';
 
 According to the previous documentation, using multi-view caches is relatively strict and the following two conditions must be met at the same time:
 
-1.  The properties that need multi-view caching must be explicitly specified.
+1.  The properties that need multi-view cache must be explicitly specified.
 
     Caching is multi-layered. Multiple `Binder` objects must be specified for the `ChainCacheBuilder<K, V>` used to build the cache instance, i.e. `LoadingBinder/KLoadingBinder` or `SimpleBinder/KSimpleBinder`.
     
-    For multi-view caches, all `Binder` objects must implement the `LoadingBinder.Parameterized<K, V>/KLoadingBinder.Parameterized<K, V>` or `SimpleBinder.Parameterized<K, V>/KSimpleBinder.Parameterized<K, V>` interface. Otherwise, the final cache created by `ChainCacheBuilder<K, V>` is a single-view cache.
+    For multi-view caches, **all** `Binder` objects must implement the `LoadingBinder.Parameterized<K, V>/KLoadingBinder.Parameterized<K, V>` or `SimpleBinder.Parameterized<K, V>/KSimpleBinder.Parameterized<K, V>` interface. Otherwise, the final cache created by `ChainCacheBuilder<K, V>` is a single-view cache.
 
-2.  The filtering rules for associative properties and the calculation rules for computed properties must be cache friendly.
+2.  The filtering rules for association properties and the calculation rules for calculated properties must be cache friendly.
 
-    -   For associative properties, **all** global filters that affect their associated objects must be cache friendly filters. If any one filter is not cache friendly, it may cause the property to be unable to use caching.
+    -   For association properties, **all** global filters that affect their associated objects must be cache friendly filters. If any one filter is not cache friendly, it may cause the property to be unable to use cache.
 
         - For user-defined cache filters, the `CacheableFilter<E>/KCacheableFilter<E>` interface must be implemented.
 
         - For the `@LogicalDeleted` soft deletion annotation, its `useMultiViewCache` property must be configured as `true` *(this will cause its built-in global filter to implement the `CacheableFilter<E>/KCacheableFilter<E>` interface)*.
 
-    -   For computed properties, the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` must not return null.
+    -   For calculated properties, the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` must not return null.
     
 3.  The property uses attribute-level filters in [object fetchers](../../query/object-fetcher).
 
-If these prerequisite conditions are not fully met, even if caching is specified for associative or computed properties, Jimmer will abandon them. Although the reasons have been explained in detail in previous documents, troubleshooting such issues during actual development is inconvenient. 
+If these prerequisite conditions are not fully met, even if cache is specified for association or calculated properties, Jimmer will abandon them. Although the reasons have been explained in detail in previous documents, troubleshooting such issues during actual development is inconvenient. 
 
-To quickly inform developers of the fact that property-level caching did not take effect and the reason, Jimmer defines a callback interface as follows:
+To quickly inform developers of the fact that property-level cache did not take effect and the reason, Jimmer defines a callback interface as follows:
 
 ```java
 package org.babyfish.jimmer.sql.cache;
@@ -52,15 +52,15 @@ public interface CacheAbandonedCallback {
 }
 ```
 
-This callback interface tells developers that although caching is specified for a property, it is not adopted by Jimmer, and the reason. Its `abandoned` method has two parameters:
+This callback interface tells developers that although cache is specified for a property, it is not adopted by Jimmer, and the reason. Its `abandoned` method has two parameters:
 
--   `prop`: Which property does not adopt the caching configured by the user. 
+-   `prop`: Which property does not adopt the cache configured by the user. 
 
--   `reason`: The reason why the caching of this property is not adopted. There are three possible values:
+-   `reason`: The reason why the cache of this property is not adopted. There are three possible values:
 
     -   CACHEABLE_FILTER_REQUIRED: The associated objects are affected by some global filters, but not all filters implement the `CacheableFilter<E>/KCacheableFilter<E>` interface.
 
-    -   PARAMETERIZED_CACHE_REQUIRED: The `getParameters` method of some `CacheableFilter<E>/KCacheableFilter<E>` objects affecting the associative properties or the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` implementing the computed properties returns a Map of non-zero length, but the caching configured for that property by the developer is not a multi-view cache.
+    -   PARAMETERIZED_CACHE_REQUIRED: The `getParameters` method of some `CacheableFilter<E>/KCacheableFilter<E>` objects affecting the association properties or the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` implementing the calculated properties returns a Map of non-zero length, but the cache configured for that property by the developer is not a multi-view cache.
 
     -   FIELD_FILTER_USED: The developer uses attribute-level filters for the property in [object fetchers](../../query/object-fetcher).
 

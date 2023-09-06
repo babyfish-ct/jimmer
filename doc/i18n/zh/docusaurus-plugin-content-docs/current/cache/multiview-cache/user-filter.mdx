@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 title: 支持自定义过滤器
 ---
 
@@ -92,16 +92,6 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
     
     `{"logicalDeleted":false,"tenant":"a"}`
 :::
-
-### 再论逻辑删除
-
-在上一篇文章[支持内置过滤器](./builtin-filter)中，我们谈到`@LogicalDeleted`注解有一个参数`useMultiViewCache`，默认为`false`。如果要让所有对此内置过滤器敏感的属性都支持多视图缓存，一定要将`useMultiViewCache`配置为true，这点非常重要。
-
-现在，我们可以对此给予解释。
-
--   如果`@LogicalDeleted`注解的`useMultiViewCache`为false，则对应的内置过滤器仅实现`Filter/KFilter`接口，对缓存不友好。
-
--   如果`@LogicalDeleted`注解的`useMultiViewCache`为true，则对应的内置过滤器仅实现`CacheableFilter/KCacheableFilter`接口，对缓存友好。
 
 ### 定义缓存友好过滤器
 
@@ -236,9 +226,386 @@ class TenantFilter(
 
 ## 启用多视图缓存
 
-我们需要在`CacheFactory/KCacheFactory`中对关联缓存和计算缓存启用多视图缓存。
+### 普通的写法
 
-这部分内容和上一篇文档[查询篇/自定义过滤器]中论述完全一样，本文没必要重复，略过。
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    return new CacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...省略代码...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            ...省略代码...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.BOOKS.unwrap() || 
+                    prop == AuthorProps.BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.AVG_PRICE.unwrap() || 
+                    prop == BookStoreProps.NEWEST_BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofHours(1)
+            );
+        }
+
+        private <K, V> Cache<K, V> createPropCache(
+            // highlight-next-line
+            boolean isMultiviewCache,
+            ImmutableProp prop, 
+            Duration duration
+        ) {
+            // highlight-next-line
+            if (isMultiView) {
+                // highlight-next-line
+                return new ChainCacheBuilder<K, V>()
+                        .add(
+                            // highlight-next-line
+                            new RedisHashBinder<>(
+                                redisTemplate, 
+                                objectMapper, 
+                                prop, 
+                                redisDuration
+                            )
+                        )
+                        .build();
+            }
+
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build();
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...省略代码...
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...省略代码...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(
+                /* highlight-start */
+                prop === BookStore::books.toImmutableProp() ||
+                    prop === Author::books.toImmutableProp(), 
+                /* highlight-end */
+                prop,
+                Duration.ofHours(1)
+            )
+
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            createPropCache(
+                /* highlight-start */
+                prop === BookStore::avgPrice.toImmutableProp() ||
+                    prop === BookStore::newestBooks.toImmutableProp(), 
+                /* highlight-end */
+                prop,
+                Duration.ofHours(1)
+            )
+
+        private fun <K, V> createPropCache(
+            // highlight-next-line
+            isMultiView: Boolean,
+            prop: ImmutableProp, 
+            duration: Duration
+        ): Cache<K, V> {
+            // highlight-next-line
+            if (isMultiView) {
+                return ChainCacheBuilder<K, V>()
+                        .add(
+                            // highlight-next-line
+                            RedisHashBinder<>(
+                                redisTemplate, 
+                                objectMapper, 
+                                prop, 
+                                redisDuration
+                            )
+                        )
+                        .build();
+            }
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build()
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+上面的代码中`RedisHashBinder`是非常重要的实现类，利用redis支持多视图缓存，其背后存储结构对应[Redis Hashes](https://redis.io/docs/data-types/hashes/)，即，嵌套的Hash结构。
+
+<table>
+    <thead>
+        <tr>
+            <th>缓存技术风格</th>
+            <th>多视图</th>
+            <th>抽象接口❶</th>
+            <th>内置实现❷</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="2">
+                支持自Loading的缓存
+                <div><i>(通常是一级缓存技术：比如Guava, Caffine)</i></div>
+            </td>
+            <td>
+                否
+            </td>
+            <td>
+                LoadingBinder&lt;K, V&gt;
+            </td>
+            <td>
+                CaffeineBinder&lt;K, V&gt;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                是
+            </td>
+            <td>
+                LoadingBinder.Parameterized&lt;K, V&gt;
+            </td>
+            <td>
+                无
+            </td>
+        </tr>
+        <tr>
+            <td rowspan="2">
+                不支持自Loading的缓存
+                <div><i>(通常是二级缓存技术：比如Redis)</i></div>
+            </td>
+            <td>
+                否
+            </td>
+            <td>
+                SimpleBinder&lt;K, V&gt;
+            </td>
+            <td>
+                RedisValueBinder&lt;K, V&gt;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                是
+            </td>
+            <td>
+                SimpleBinder.Parameterized&lt;K, V&gt;
+            </td>
+            <td>
+                <b>RedisHashBinder&lt;K, V&gt;</b>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+-   ❶ 抽象接口：所在项目为`jimmer-sql`，所在的包为`org.babyfish.jimmer.sql.cache.chain`
+
+-   ❷ 内置实现：所在项目为`jimmer-spring-boot-starter`，所在的包为`org.babyfish.jimmer.spring.cache`
+
+:::caution
+目前，暂时没有`Caffeine`的多视图缓存实现。所以，上述代码中，多视图缓存仅针对Redis。即，多视图模式下，缓存只有一级，而非两级。
+:::
+
+### 更好的写法
+
+在上面的代码中，`createAssociatedIdListCache`方法内部对参数`prop`进行判断，以决定究竟应该构建多视图缓存还是单视图缓存。然而
+
+:::tip
+就关联属性而言，是否需要构建多视图缓存的唯一判断依据是目标实体是否被施加了过滤器，Jimmer为此提供了更好的支持。
+
+开发人员只需要把超接口`CacheFactory/KCacheFactory`替换为超类`AbstractCacheFactory/AbstractKCacheFactory`，
+即可继承的一个叫做`getFilterState/filterState`的成员，它可以帮助我们判断是否应该构建多视图缓存。
+:::
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    // highlight-next-line
+    return new AbstractCacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...省略代码...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                // highlight-next-line
+                getFilterState().isAffectedBy(prop.getTargetType()),
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                // highlight-next-line
+                getFilterState().isAffectedBy(prop.getTargetType()),
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.AVG_PRICE.unwrap() || 
+                    prop == BookStoreProps.NEWEST_BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofHours(1)
+            );
+        }
+
+        private <K, V> Cache<K, V> createPropCache(
+            // highlight-next-line
+            boolean isMultiviewCache,
+            ImmutableProp prop, 
+            Duration duration
+        ) {
+            ...省略代码...
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    // highlight-next-line
+    return object: AbstractKCacheFactory() {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...省略代码...
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...省略代码...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
+
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
+
+        private fun <K, V> createPropCache(
+            // highlight-next-line
+            isMultiView: Boolean,
+            prop: ImmutableProp, 
+            duration: Duration
+        ): Cache<K, V> {
+            ...省略代码...
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+:::caution
+很遗憾，这种方法仅能用于简化关联缓存构建，即，简化`createAssociatedIdCache`和`createAssociatedIdListCache`方法。
+
+对于计算属性而言，由于框架对用户自定义计算属性的内部逻辑一无所知，无法简化，用户需根据自己业务特点自行决定是否需要构建多视图缓存。
+:::
 
 ## 计算属性的SubKey
 
@@ -292,7 +659,7 @@ class BookStoreAvgPriceResolver(
 
 很明显，计算属性`BookStore.avgPrice`其实是由关联属性`BookStore.books`决定的，随后者的变化而变化。
 
-因此，在当前调用上下文中，`BookStore.books`为多视图缓存系统指定什么`SubKey`，`BookStore.avgPrice`就指定什么。
+因此，在当前调用上下文中，`BookStore.books`为多视图缓存系统指定什么`SubKey`，`BookStore.avgPrice`就指定什么`SubKey`。
 
 :::note
 `BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。

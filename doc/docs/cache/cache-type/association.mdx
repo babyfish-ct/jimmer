@@ -10,22 +10,22 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import {AssociationCache} from '@site/src/components/Image';
 
-Association caching refers to mapping the current object id to the associated object id or collection.
+Association cache refers to mapping the current object id to the associated object id or collection.
 
 <AssociationCache/>
 
 Where:
--   `BookStore.books-*`: One-to-many association caching  
--   `Book.store-*`: Many-to-one association caching
--   `Book.authors-*`: Many-to-many association caching
--   `Author.books-*`: Many-to-many association caching  
+-   `BookStore.books-*`: One-to-many association cache  
+-   `Book.store-*`: Many-to-one association cache
+-   `Book.authors-*`: Many-to-many association cache
+-   `Author.books-*`: Many-to-many association cache  
 
 :::caution
-Unlike other association caches, there is one scenario that does not require using one-to-one or many-to-one association caching.
+Unlike other association caches, there is one scenario that does not require using one-to-one or many-to-one association cache.
 
-If a one-to-one or many-to-one association is based on a real foreign key with a corresponding foreign key constraint in the database, then the foreign key itself is the associated object id, and association caching is not required.
+If a one-to-one or many-to-one association is based on a real foreign key with a corresponding foreign key constraint in the database, then the foreign key itself is the associated object id, and association cache is not required.
 
-In other cases, Jimmer will use one-to-one or many-to-one association caching. These cases include:
+In other cases, Jimmer will use one-to-one or many-to-one association cache. These cases include:
 
 -   The referenced association property is reverse mapped
 
@@ -35,7 +35,7 @@ In other cases, Jimmer will use one-to-one or many-to-one association caching. T
 
     A pseudo foreign key means that it is conceptually a foreign key in the developer's mind, but there is no corresponding foreign key constraint in the database.
 
-    The pseudo foreign key field may contain illegal values. Being non-null does not mean the associated object exists, so association caching is required to filter out valid associated objects.
+    The pseudo foreign key field may contain illegal values. Being non-null does not mean the associated object exists, so association cache is required to filter out valid associated objects.
     
 -   The referenced association property is based on a join table rather than a foreign key. 
 
@@ -48,7 +48,7 @@ In the official sample code included, the many-to-one association `Book.store` i
 
 Therefore, the examples in this article are based on the one-to-many association `BookStore.books` and the many-to-many association `Book.authors`.
 
-## Enabling Association Caching
+## Enabling Association Cache
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -82,7 +82,7 @@ public CacheFactory cacheFactory(
         // Applies to one-to-many and many-to-many associations
         @Override
         // highlight-next-line
-        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        public Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
             return createPropCache(prop, Duration.ofMinutes(5));
         }
 
@@ -162,9 +162,9 @@ fun cacheFactory(
 ## Sorting Collection Associations  
 
 :::caution
-For collection type associations, if we use the field filter of [object fetchers](../../query/object-fetcher) to implement association-level sorting, it will cause Jimmer to ignore association caching.
+For collection type associations, if we use the field filter of [object fetchers](../../query/object-fetcher) to implement association-level sorting, it will cause Jimmer to ignore association cache.
 
-To make full use of association caching while keeping the sorting of the associated object collection returned by the [object fetcher](../../query/object-fetcher) query controllable, you can specify the default sorting statically on the entity.
+To make full use of association cache while keeping the sorting of the associated object collection returned by the [object fetcher](../../query/object-fetcher) query controllable, you can specify the default sorting statically on the entity.
 :::
 
 -   `BookStore.books`
@@ -327,7 +327,7 @@ println(stores)
     :::caution
     Jimmer does not cache aggregate objects returned by user queries, because the consistency of such query results cannot be guaranteed.
 
-    Even if caching them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
+    Even if cache them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
     :::
 
 -   Step 2: Convert current object id to associated object id via association cache
@@ -382,10 +382,10 @@ println(stores)
 
 -   Step 3: Convert associated object id to associated object via object cache
 
-    Such operations have been discussed in detail in [Object Caching](./object), so they are not repeated here. This article focuses on association caching.
+    Such operations have been discussed in detail in [Object Cache](./object), so they are not repeated here. This article focuses on association cache.
 
     :::caution
-    In the caching configuration, if association caching is enabled for an association property but object caching is not enabled for its associated object type, an exception will be thrown.
+    In the cache configuration, if association cache is enabled for an association property but object cache is not enabled for its associated object type, an exception will be thrown.
     :::
 
 Finally, Jimmer concatenates the results of the two steps as the final data returned to the user:
@@ -464,17 +464,17 @@ Finally, Jimmer concatenates the results of the two steps as the final data retu
 ```  
 
 :::info
-The generated SQL would differ if caching is not enabled:
+The generated SQL would differ if cache is not enabled:
 
-<ViewMore buttonText="Difference without Caching">
+<ViewMore buttonText="Difference without Cache">
 
-<Divider><Chip label="Caching Mode"/></Divider>
+<Divider><Chip label="Cache Mode"/></Divider>
 
-In caching mode, this example has three execution steps:
+In cache mode, this example has three execution steps:
 
 1.  Query aggregate root from database
 
-    Regardless of whether caching is enabled, this step is the same, no need to discuss.
+    Regardless of whether cache is enabled, this step is the same, no need to discuss.
 
 2.  Based on the `BookStore.books` association cache, map the aggregate root object id to the associated object id
 
@@ -507,9 +507,9 @@ In caching mode, this example has three execution steps:
         )
     ```
 
-<Divider><Chip label="No Caching Mode"/></Divider>
+<Divider><Chip label="No Cache Mode"/></Divider>
 
-If caching is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
+If cache is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
 
 ```sql
 select
@@ -526,9 +526,9 @@ order by
 
 <Divider><Chip label="Difference and Summary"/></Divider>
 
-No caching mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
+No cache mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
 
-Caching mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the caching system, the overall performance is optimal.
+Cache mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the cache system, the overall performance is optimal.
 
 </ViewMore>  
 :::
@@ -602,7 +602,7 @@ println(books)
     :::caution
     Jimmer does not cache aggregate objects returned by user queries, because the consistency of such query results cannot be guaranteed.
 
-    Even if caching them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
+    Even if cache them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
     :::
 
 -   Step 2: Convert current object id to associated object ids via association cache
@@ -669,10 +669,10 @@ println(books)
 
 -   Step 3: Convert associated object id to associated object via object cache
 
-    Such operations have been discussed in detail in [Object Caching](./object), so they are not repeated here. This article focuses on association caching.
+    Such operations have been discussed in detail in [Object Cache](./object), so they are not repeated here. This article focuses on association cache.
 
     :::caution
-    In the caching configuration, if association caching is enabled for an association property but object caching is not enabled for its associated object type, an exception will be thrown.
+    In the cache configuration, if association cache is enabled for an association property but object cache is not enabled for its associated object type, an exception will be thrown.
     :::
 
 Finally, Jimmer concatenates the 3 steps results as the final data returned to the user:
@@ -728,17 +728,17 @@ Finally, Jimmer concatenates the 3 steps results as the final data returned to t
 ```
 
 :::info
-The generated SQL would differ if caching is not enabled:
+The generated SQL would differ if cache is not enabled:
 
-<ViewMore buttonText="Difference without Caching">
+<ViewMore buttonText="Difference without Cache">
 
-<Divider><Chip label="Caching Mode"/></Divider>
+<Divider><Chip label="Cache Mode"/></Divider>
 
-In caching mode, this example has three execution steps:
+In cache mode, this example has three execution steps:
 
 1.  Query aggregate root from database
 
-    Regardless of whether caching is enabled, this step is the same, no need to discuss.
+    Regardless of whether cache is enabled, this step is the same, no need to discuss.
 
 2.  Based on the `Book.authors` association cache, map the aggregate root object id to the associated object ids
 
@@ -777,9 +777,9 @@ In caching mode, this example has three execution steps:
         )
     ```
 
-<Divider><Chip label="No Caching Mode"/></Divider>
+<Divider><Chip label="No Cache Mode"/></Divider>
 
-If caching is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
+If cache is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
 
 ```sql
 select
@@ -802,9 +802,9 @@ order by
 
 <Divider><Chip label="Difference and Summary"/></Divider> 
 
-No caching mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
+No cache mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
 
-Caching mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the caching system, the overall performance is optimal.
+Cache mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the cache system, the overall performance is optimal.
 
 </ViewMore>
 :::
@@ -874,10 +874,10 @@ Delete data from redis: [BookStore.books-2] ❸
 
 ### Many-to-Many: Book.authors
 
-Inserting data into the intermediate table `BOOK_AUTHOR_MAPPING` automatically deletes the many-to-many association caches `Book.authors` and `Author.books`.
+Inserting data into the join table `BOOK_AUTHOR_MAPPING` automatically deletes the many-to-many association caches `Book.authors` and `Author.books`.
 
 :::note 
-Deleting data from the intermediate table can achieve the same effect. Here insertion is used to demonstrate the effect.
+Deleting data from the join table can achieve the same effect. Here insertion is used to demonstrate the effect.
 :::
 
 -   If BinLog trigger is enabled, modifying the database by any means can lead to Jimmer's cache consistency intervention. For example, directly execute the following SQL in the SQL IDE:

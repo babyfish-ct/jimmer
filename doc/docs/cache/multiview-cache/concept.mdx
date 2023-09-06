@@ -20,20 +20,20 @@ Multi-view cache solves this problem very well by allowing different clients to 
 <MultiViewCache/>
 
 :::caution
-Unlike previous discussions where cache can be categorized into [object cache](../cache-type/object), [association cache](../cache-type/association) and [computed cache](../cache-type/calculation), 
+Unlike previous discussions where cache can be categorized into [object cache](../cache-type/object), [association cache](../cache-type/association) and [calculated cache](../cache-type/calculation), 
 multi-view cache is not adding a new category to the existing taxonomy, but rather another dimension of characteristics.
 :::
 
-Except for [object cache](../cache-type/object), both [association cache](../cache-type/association) and [computed cache](../cache-type/calculation) can be combined with multi-view cache.
+Except for [object cache](../cache-type/object), both [association cache](../cache-type/association) and [calculated cache](../cache-type/calculation) can be combined with multi-view cache.
 
 ||Single-view Cache|Multi-view Cache|
 |-|-|-|
 |Object Cache|Object Cache|NA|
 |Association Cache|Single-view Association Cache|Multi-view Association Cache|
-|Computed Cache|Single-view Computed Cache|Multi-view Computed Cache|
+|Calculated Cache|Single-view Calculated Cache|Multi-view Calculated Cache|
 
 :::info
-We can refer to association cache and computed cache together as property cache.
+We can refer to association cache and calculated cache together as property cache.
 :::
 
 Therefore, this table can also be interpreted as property cache can be multi-viewed.
@@ -42,20 +42,20 @@ Therefore, this table can also be interpreted as property cache can be multi-vie
 
 Multi-view cache is caused by [global filters](../../query/global-filter).
 
-As long as an entity is applied with a [global filter](../../query/global-filter), all association caches targeting it and computed caches relying on these association caches need to be multi-viewed.
+As long as an entity is applied with a [global filter](../../query/global-filter), all association caches targeting it and calculated caches relying on these association caches need to be multi-viewed.
 
 For example, if a global filter is added to `Book`, then properties like:
 
 -   Association properties targeting `Book`, such as `BookStore.books`, `Author.books`
 
--   Computed properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks` 
+-   Calculated properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks` 
 
     will be sensitive to the filter, that is, different filtering conditions will result in different data seen by different clients.
 
 :::caution
-These filter-sensitive properties either do not support caching or support multi-view caching. Configuring single-view cache for them will be considered invalid and the cache configuration will be ignored.
+These filter-sensitive properties either do not support cache or support multi-view cache. Configuring single-view cache for them will be considered invalid and the cache configuration will be ignored.
 
-Don't worry. Jimmer will tell developers [why caching is disabled](./abandoned-callback).
+Don't worry. Jimmer will tell developers [why cache is disabled](./abandoned-callback).
 :::
 
 The [global filters](../../query/global-filter) discussed here include not only user-defined filters, but also the built-in filters implied by [logical delete](../../mapping/advanced/logical-deleted).
@@ -78,7 +78,7 @@ Let's first take a look at the structure of single-view cache
 |Book.authors-1|[1,2]| 
 |BookStore.avgPrice-2|80.333333|
 
-Here we list examples of [object cache](../cache-type/object), [association cache](../cache-type/association) and [computed cache](../cache-type/calculation).
+Here we list examples of [object cache](../cache-type/object), [association cache](../cache-type/association) and [calculated cache](../cache-type/calculation).
 Although the cache types are different, the cache structures are unified simple KV structures.
 
 Now let's take a look at an example of multi-view cache:
@@ -181,7 +181,7 @@ Obviously, compared to single-view cache, multi-view cache splits the data into 
 
 -   Key
 
-    The Key in multi-view cache is no different from the Key in single-view cache, representing a specific object or a specific object property, decided by Jimmer.
+    The Key in multi-view cache is no different from the Key in single-view cache, representing a specific object property, decided by Jimmer.
 
 -   SubKey
 
@@ -196,7 +196,7 @@ Obviously, compared to single-view cache, multi-view cache splits the data into 
     This ensures there is no redundant information internally in multi-view cache.
     :::
 
-Multi-view cache is only for property cache, i.e. association cache and computed cache. So association properties and complex computed properties must specify SubKey for their multi-view caches.
+Multi-view cache is only for property cache, i.e. association cache and calculated cache. So association properties and complex calculated properties must specify SubKey for their multi-view caches.
 
 ### SubKey of Association Properties
 
@@ -242,9 +242,9 @@ Users need to implement the `getParameters()` method to contribute part of the i
 When multiple `CacheableFilter/KCachableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the SubKey.
 :::
 
-### SubKey of Complex Computed Properties
+### SubKey of Complex Calculated Properties
 
-Implementing [complex computed properties](../../mapping/advanced/calculated/transient) requires implementing the `TransientResolver/KTransientResolver` interface.
+Implementing [complex calculated properties](../../mapping/advanced/calculated/transient) requires implementing the `TransientResolver/KTransientResolver` interface.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -289,13 +289,13 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
 
 This method returns the `Ref` wrapper of `SortedMap`.  
 
--   If `Ref` itself is null, it means getting SubKey is difficult and multi-view cache cannot be applied to the computed property.
+-   If `Ref` itself is null, it means getting SubKey is difficult and multi-view cache cannot be applied to the calculated property.
 
     :::info
-    In this case, Jimmer will tell developers [why caching is disabled](./abandoned-callback).
+    In this case, Jimmer will tell developers [why cache is disabled](./abandoned-callback).
     :::
 
--   Otherwise, the internal value of `Ref` represents the SubKey of the current computed property. 
+-   Otherwise, the internal value of `Ref` represents the SubKey of the current calculated property. 
 
 :::info 
 When maintaining cache consistency, Jimmer will automatically delete invalid cached data.

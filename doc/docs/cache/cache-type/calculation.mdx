@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: Computed Cache
+title: Calculated Cache
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,29 +8,29 @@ import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
 import {CalculatedCache} from '@site/src/components/Image';
 
-Computed caching refers to mapping the current object id to the computed value of the user-defined [complex computed property](../../mapping/advanced/calculated/transient).
+Calculated cache refers to mapping the current object id to the calculated value of the user-defined [complex calculated property](../../mapping/advanced/calculated/transient).
 
 <CalculatedCache/>
 
-## Computed Property Recap
+## Calculated Property Recap
 
-In the [Complex Computed Properties](../../mapping/advanced/calculated/transient) article, we discussed complex computed properties in detail.
+In the [Complex Calculated Properties](../../mapping/advanced/calculated/transient) article, we discussed complex calculated properties in detail.
 
 :::caution
-This article focuses on computed caching and does not repeat the introduction to [complex computed properties](../../mapping/advanced/calculated/transient). Please read [complex computed properties](../../mapping/advanced/calculated/transient) before reading this article.
+This article focuses on calculated cache and does not repeat the introduction to [complex calculated properties](../../mapping/advanced/calculated/transient). Please read [complex calculated properties](../../mapping/advanced/calculated/transient) before reading this article.
 :::
 
-In this article, we will add cache support for the computed property `BookStore.avgPrice` defined in [complex computed properties](../../mapping/advanced/calculated/transient).
+In this article, we will add cache support for the calculated property `BookStore.avgPrice` defined in [complex calculated properties](../../mapping/advanced/calculated/transient).
 
 :::info
-To simplify the documentation, this article only discusses `BookStore.avgPrice` and does not discuss the other association-based computed property `BookStore.newestBooks`. Readers can read and run the following official examples:
+To simplify the documentation, this article only discusses `BookStore.avgPrice` and does not discuss the other association-based calculated property `BookStore.newestBooks`. Readers can read and run the following official examples:
 -   example/java/jimmer-sql
 -   example/java/jimmer-sql-graphql 
 -   example/kotlin/jimmer-sql-kt
 -   example/kotlin/jimmer-sql-graphql-kt
 :::
 
-## Enabling Computed Caching
+## Enable Calculated Cache
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -58,7 +58,7 @@ public CacheFactory cacheFactory(
         }
 
         @Override
-        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+        public Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
             ...omit code...
         }
 
@@ -194,14 +194,14 @@ println(stores)
     :::caution
     Jimmer does not cache aggregate objects returned by user queries, because the consistency of such query results cannot be guaranteed.
 
-    Even if caching them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
+    Even if cache them at the cost of sacrificing consistency is required, it is a business need of the user rather than the framework.
     :::
 
--   Step 2: Convert current object id to computed value via computed cache
+-   Step 2: Convert current object id to calculated value via calculated cache
 
     The above code will return a series of aggregate root objects. If using the official sample data in the database, it will return two aggregate root objects.
 
-    The object fetcher in the code contains the computed property `BookStore.avgPrice`
+    The object fetcher in the code contains the calculated property `BookStore.avgPrice`
 
     The primary keys `ID` of these 2 BOOK_STOREs are 1 and 2.
     
@@ -213,7 +213,7 @@ println(stores)
     (empty array)
     ```
 
-    So the following SQL is executed to compute the computed property:
+    So the following SQL is executed to compute the calculated property:
     ```sql
     select
         tb_1_.ID,
@@ -241,9 +241,9 @@ println(stores)
     127.0.0.1:6379>
     ```
 
-    Thus, the two `BookStore` objects can obtain the average price of their respective books through their computed property `BookStore.avgPrice`.
+    Thus, the two `BookStore` objects can obtain the average price of their respective books through their calculated property `BookStore.avgPrice`.
 
-    Undoubtedly, before the data in Redis expires, executing the Java/Kotlin code above again will directly return the associated data from Redis without generating the second SQL statement.
+    Undoubtedly, before the data in Redis expires, executing the Java/Kotlin code above again will directly return the caculated data from Redis without generating the second SQL statement.
 
 Finally, Jimmer concatenates the results of the 3 steps as the final data returned to the user:
 
@@ -271,18 +271,18 @@ Finally, Jimmer concatenates the results of the 3 steps as the final data return
 ### Responding to Triggers
 
 :::caution
-Unlike the fully automatic cache consistency of object caching and association caching, maintaining the consistency of computed caching requires user assistance.
+Unlike the fully automatic cache consistency of object cache and association cache, maintaining the consistency of calculated cache requires user assistance.
 
-This is because computed properties introduce custom computing rules that the ORM framework cannot understand.
+This is because calculated properties introduce custom calculation rules that the ORM framework cannot understand.
 :::
 
-For the computed property `BookStore.avgPrice`, the following two cases will both invalidate the computed cache:
+For the calculated property `BookStore.avgPrice`, the following two cases will both invalidate the calculated cache:
 
 -   Modifying the `STORE_ID` foreign key field of the `BOOK` record will affect the `avgPrice` cache data of the two bookstores corresponding to the old and new values.
 
 -   Modifying the `PRICE` field of the `BOOK` record will invalidate the `avgPrice` cache data of the bookstore it belongs to.
 
-In the [Complex Computed Properties](../../mapping/advanced/calculated/transient) article, a class `BookStoreAvgPriceResolver` is defined to support the computed property `BookStore.avgPrice`. The code is as follows:
+In the [Complex Calculated Properties](../../mapping/advanced/calculated/transient) article, a class `BookStoreAvgPriceResolver` is defined to support the calculated property `BookStore.avgPrice`. The code is as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -558,7 +558,7 @@ fun onAssociationChange(e: AssociationEvent) {
     2nd time: `e.connection` is null, indicating this is a notification sent by the BinLog trigger.
     :::
 
-    However, the computed cache consistency maintenance work only needs to be done once, no need to do it twice.
+    However, the calculated cache consistency maintenance work only needs to be done once, no need to do it twice.
 
     `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
 
@@ -568,9 +568,9 @@ fun onAssociationChange(e: AssociationEvent) {
 
 -   ❷ If the one-to-many association `BookStore.books` is modified.
 
--   ❸ Get the computed cache corresponding to the computed property `BookStore.avgPrice`. 
+-   ❸ Get the calculated cache corresponding to the calculated property `BookStore.avgPrice`. 
 
--   ❹ Delete the computed cache according to the id of the current `BookStore` object.
+-   ❹ Delete the calculated cache according to the id of the current `BookStore` object.
 
 Now let's verify the effect of modifying `Book.store`:
 
@@ -625,9 +625,9 @@ Delete data from redis: [BookStore.avgPrice-2] ❷
 Delete data from redis: [BookStore.books-2]
 ```
 
--   ❶ The computed cache `BookStore.avgPrice-1` of the parent object referenced by the old value `1` of the foreign key is deleted.
+-   ❶ The calculated cache `BookStore.avgPrice-1` of the parent object referenced by the old value `1` of the foreign key is deleted.
 
--   ❷ The computed cache `BookStore.avgPrice-2` of the parent object referenced by the new value `2` of the foreign key is deleted.
+-   ❷ The calculated cache `BookStore.avgPrice-2` of the parent object referenced by the new value `2` of the foreign key is deleted.
 
 ### Modifying BOOK.PRICE
 
@@ -685,7 +685,7 @@ fun onEntityChange(e: EntityEvent<*>) {
     2nd time: `e.connection` is null, indicating this is a notification sent by the BinLog trigger.
     :::
 
-    However, the computed cache consistency maintenance work only needs to be done once, no need to do it twice.
+    However, the calculated cache consistency maintenance work only needs to be done once, no need to do it twice.
 
     `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
 
@@ -699,7 +699,7 @@ fun onEntityChange(e: EntityEvent<*>) {
 
     - The modified entity property is `Book.price`.
 
-    When the above conditions are met, we need to clean up the computed cache of `BookStore.avgPrice` of its bookstore.
+    When the above conditions are met, we need to clean up the calculated cache of `BookStore.avgPrice` of its bookstore.
 
 -   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)` means that if the foreign key-based `Book.store` has not been modified, return a `Ref` wrapper object containing the unmodified associated object. If the dynamic object is non-null, it only has the id property.
 
@@ -715,9 +715,9 @@ fun onEntityChange(e: EntityEvent<*>) {
     The case where the foreign key field is modified does not need to be considered here, because the `onAssociationChange` discussed above will handle this case properly.
     :::
     
--   ❺ Get the computed cache corresponding to the computed property `BookStore.avgPrice`.
+-   ❺ Get the calculated cache corresponding to the calculated property `BookStore.avgPrice`.
 
--   ❻ Delete the computed cache according to the id of the parent object.
+-   ❻ Delete the calculated cache according to the id of the parent object.
 
 Now let's verify the effect of modifying `Book.price`: 
 
@@ -765,4 +765,4 @@ Delete data from redis: [BookStore.avgPrice-1] ❶
 Delete data from redis: [Book-7] 
 ```
 
-- ❶ The computed cache `BookStore.avgPrice-1` of the parent object referenced by the foreign key is deleted.
+- ❶ The calculated cache `BookStore.avgPrice-1` of the parent object referenced by the foreign key is deleted.

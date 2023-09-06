@@ -445,7 +445,7 @@ The printed result is (formatted for readability):
 
 In some cases, all fields defined in the table are needed. `allTableFields` can be used for this.
 
-`allTableFields` fetches all properties defined in the table, including all scalar properties (same as `allScalarFields`), one-to-one/one-to-many associations based on foreign keys. It does not include one-to-many, many-to-many, one-to-one/one-to-many associations based on middle tables, computed properties or view properties. 
+`allTableFields` fetches all properties defined in the table, including all scalar properties (same as `allScalarFields`), one-to-one/one-to-many associations based on foreign keys. It does not include one-to-many, many-to-many, one-to-one/one-to-many associations based on middle tables, calculated properties or view properties. 
 
 :::info
 `allTableFields` includes all one-to-one/one-to-many associations based on foreign keys, in addition to `allScalarFields`. But the fetched associated objects only have the `id` property.

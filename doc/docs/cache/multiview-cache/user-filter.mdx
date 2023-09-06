@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 title: Custom Filters
 ---
 
@@ -18,7 +18,7 @@ Taking the `Book` entity as an example, if a cache-unfriendly global filter is s
 
 -   Association properties targeting `Book`, such as `BookStore.books`, `Author.books`
 
--   Computed properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks`
+-   Calculated properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks`
 
 to become uncacheable.
 
@@ -92,16 +92,6 @@ An entity type allows being processed by multiple global filters. If there are m
     
     `{"logicalDeleted":false,"tenant":"a"}`
 :::
-
-### Logical Delete Revisited
-
-In the previous article [Support Built-in Filters](./builtin-filter), we talked about the `useMultiViewCache` parameter of `@LogicalDeleted` annotation. The default value is `false`. To make all filter-sensitive properties cacheable, `useMultiViewCache` must be configured as `true`. This is very important.
-
-Now we can explain this.
-
--   If `useMultiViewCache` of `@LogicalDeleted` is `false`, the corresponding built-in filter only implements the `Filter/KFilter` interface and is cache-unfriendly.
-
--   If `useMultiViewCache` of `@LogicalDeleted` is `true`, the corresponding built-in filter only implements the `CacheableFilter/KCacheableFilter` interface and is cache-friendly.
 
 ### Define Cache-friendly Filters 
 
@@ -236,15 +226,391 @@ class TenantFilter(
 
 ## Enable Multi-view Cache
 
-We need to enable multi-view cache for association cache and computed cache in `CacheFactory/KCacheFactory`.
+### Normal Approach
 
-This part of the content is exactly the same as discussed in the previous article [Support Built-in Filters](./builtin-filter). It is unnecessary to repeat here.
+<Tabs groupId="language">
+<TabItem value="java" label="Java">  
 
-## SubKey of Computed Properties
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    return new CacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...code omitted...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            ...code omitted...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.BOOKS.unwrap() || 
+                    prop == AuthorProps.BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.AVG_PRICE.unwrap() || 
+                    prop == BookStoreProps.NEWEST_BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofHours(1)
+            );
+        }
+
+        private <K, V> Cache<K, V> createPropCache(
+            // highlight-next-line
+            boolean isMultiviewCache,
+            ImmutableProp prop, 
+            Duration duration
+        ) {
+            // highlight-next-line
+            if (isMultiView) {
+                // highlight-next-line
+                return new ChainCacheBuilder<K, V>()
+                        .add(
+                            // highlight-next-line
+                            new RedisHashBinder<>(
+                                redisTemplate, 
+                                objectMapper, 
+                                prop, 
+                                redisDuration
+                            )
+                        )
+                        .build();
+            }
+
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build();
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean  
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...code omitted...
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...code omitted...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(
+                /* highlight-start */
+                prop === BookStore::books.toImmutableProp() ||
+                    prop === Author::books.toImmutableProp(),
+                /* highlight-end */ 
+                prop,
+                Duration.ofHours(1)
+            )
+
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            createPropCache(
+                /* highlight-start */
+                prop === BookStore::avgPrice.toImmutableProp() ||
+                    prop === BookStore::newestBooks.toImmutableProp(),
+                /* highlight-end */
+                prop,
+                Duration.ofHours(1)
+            )
+
+        private fun <K, V> createPropCache(
+            // highlight-next-line
+            isMultiView: Boolean,
+            prop: ImmutableProp, 
+            duration: Duration
+        ): Cache<K, V> {
+            // highlight-next-line
+            if (isMultiView) {
+                return ChainCacheBuilder<K, V>()
+                        .add(
+                            // highlight-next-line
+                            RedisHashBinder<>(
+                                redisTemplate, 
+                                objectMapper, 
+                                prop, 
+                                redisDuration
+                            )
+                        )
+                        .build();
+            }
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build()
+        }
+    }
+}
+```
+
+</TabItem> 
+</Tabs>
+
+The `RedisHashBinder` class in the above code is a very important implementation that utilizes Redis' support for multi-view cache. The underlying storage structure corresponds to [Redis Hashes](https://redis.io/docs/data-types/hashes/), i.e. nested Hash structures.
+
+<table>
+    <thead>
+        <tr>
+            <th>Cache Style</th>
+            <th>Multi-view</th>  
+            <th>Abstract API❶</th>
+            <th>Built-in Impl❷</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="2">
+                Cache with self-loading
+                <div><i>(usually first-level cache technologies like Guava, Caffine)</i></div>
+            </td>
+            <td>
+                No
+            </td>
+            <td>
+                LoadingBinder&lt;K, V&gt;
+            </td>
+            <td>
+                CaffeineBinder&lt;K, V&gt;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Yes
+            </td>
+            <td>
+                LoadingBinder.Parameterized&lt;K, V&gt;
+            </td>
+            <td>
+                None
+            </td>
+        </tr>
+        <tr>
+            <td rowspan="2">
+                Cache without self-loading
+                <div><i>(usually second-level cache technologies like Redis)</i></div>
+            </td>
+            <td>
+                No
+            </td>
+            <td>
+                SimpleBinder&lt;K, V&gt;
+            </td>
+            <td>
+                RedisValueBinder&lt;K, V&gt;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Yes
+            </td>
+            <td>
+                SimpleBinder.Parameterized&lt;K, V&gt;
+            </td>
+            <td>
+                <b>RedisHashBinder&lt;K, V&gt;</b>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+-   ❶ Abstract API: located in project `jimmer-sql`, package `org.babyfish.jimmer.sql.cache.chain`
+
+-   ❷ Built-in implementations: located in project `jimmer-spring-boot-starter`, package `org.babyfish.jimmer.spring.cache`  
+
+:::caution
+Unfortunately, there is currently no multi-view cache implementation for `Caffeine`. So in the above code, multi-view cache only applies to Redis. That is, in multi-view mode, there is only one cache level instead of two.
+:::
+
+### Better Approach  
+
+In the above code, the `createAssociatedIdListCache` method judges the `prop` parameter to decide whether to build multi-view cache or single-view cache. However,
+
+:::tip
+For association properties, whether multi-view cache needs to be built can be determined solely by whether the target entity is filtered. Jimmer provides better support for this.
+
+Developers only need to replace the super interface `CacheFactory`/`KCacheFactory` with the super class `AbstractCacheFactory`/`AbstractKCacheFactory` to inherit a member called `getFilterState`/`filterState` which can help us determine whether to build multi-view cache.
+:::
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java 
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper  
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    // highlight-next-line  
+    return new AbstractCacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...code omitted...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                // highlight-next-line
+                getFilterState().isAffectedBy(prop.getTargetType()),
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                // highlight-next-line
+                getFilterState().isAffectedBy(prop.getTargetType()),
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */   
+                prop == BookStoreProps.AVG_PRICE.unwrap() ||
+                    prop == BookStoreProps.NEWEST_BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofHours(1)
+            );
+        }
+
+        private <K, V> Cache<K, V> createPropCache(
+            // highlight-next-line
+            boolean isMultiviewCache,
+            ImmutableProp prop, 
+            Duration duration
+        ) {
+            ...code omitted...
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(  
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    // highlight-next-line
+    return object: AbstractKCacheFactory() {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...code omitted...    
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...code omitted...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
+
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
+
+        private fun <K, V> createPropCache(
+            // highlight-next-line
+            isMultiView: Boolean,
+            prop: ImmutableProp, 
+            duration: Duration
+        ): Cache<K, V> {
+            ...code omitted...
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs> 
+
+:::caution
+Unfortunately, this method can only simplify the construction of association caches, i.e. simplify the `createAssociatedIdCache` and `createAssociatedIdListCache` methods.
+
+For calculated properties, since the framework is unaware of the internal logic used by user-defined calculated properties, it cannot simplify them. Users need to decide whether to build multi-view caches based on their own business characteristics.
+:::
+
+## SubKey of Calculated Properties
 
 We have defined the `getParameters` method in `TenantFilter`. All affected association properties will automatically specify `SubKey` for their association caches. 
 
-However, unfortunately, due to the introduction of user-defined computation rules that the framework cannot understand, developers must manually specify `SubKey` for the `Resolver` implementation of computed properties.
+However, unfortunately, due to the introduction of user-defined computation rules that the framework cannot understand, developers must manually specify `SubKey` for the `Resolver` implementation of calculated properties.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -290,9 +656,9 @@ class BookStoreAvgPriceResolver(
 </TabItem>
 </Tabs>
 
-Obviously, the computed property `BookStore.avgPrice` is actually determined by the association property `BookStore.books` and changes with it.
+Obviously, the calculated property `BookStore.avgPrice` is actually determined by the association property `BookStore.books` and changes with it.
 
-Therefore, whatever `SubKey` the association property `BookStore.books` specifies for the multi-view cache system in the current invocation context, the computed property `BookStore.avgPrice` should specify the same one.  
+Therefore, whatever `SubKey` the association property `BookStore.books` specifies for the multi-view cache system in the current invocation context, the calculated property `BookStore.avgPrice` should specify the same one.  
 
 :::note
 `BookStore.avgPrice` is also affected by `Book.price`. It changes when `Book.price` changes.
@@ -302,7 +668,7 @@ However, `Book.price` is a non-association property of the object, so it must be
 
 ## Usage
 
-Now that we have made the association property `BookStore.books` and the computed property `BookStore.avgPrice` support multi-view caching, let's use object fetchers to query them:
+Now that we have made the association property `BookStore.books` and the calculated property `BookStore.avgPrice` support multi-view caching, let's use object fetchers to query them:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -674,9 +1040,9 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
 
     According to existing database data, the affected `BookStore` object id is 1   
 
--   ❹ The computed cache `BookStore.avgPrice` of `BookStore` object with id 1 is also affected. This is the most amazing characteristic.
+-   ❹ The calculated cache `BookStore.avgPrice` of `BookStore` object with id 1 is also affected. This is the most amazing characteristic.
 
-    Although the framework is unaware of the computation rule used by users in computed properties, in the [Computed Cache](../cache-type/calculation) documentation, we discussed the following code in the `BookStoreAvgPriceResolver` class:
+    Although the framework is unaware of the computation rule used by users in calculated properties, in the [Calculated Cache](../cache-type/calculation) documentation, we discussed the following code in the `BookStoreAvgPriceResolver` class:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -711,7 +1077,7 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
     </TabItem>
     </Tabs>
 
-    If you have forgotten the specific logic of this code, you can review the [Computed Cache](../cache-type/calculation) documentation. Just focus on the highlighted line. Here, this computed property cares about changes to the association property `BookStore.books`.
+    If you have forgotten the specific logic of this code, you can review the [Calculated Cache](../cache-type/calculation) documentation. Just focus on the highlighted line. Here, this calculated property cares about changes to the association property `BookStore.books`.
 
     :::tip
     Modifying the association field between tables is not the only way to trigger association change events. Modifying the filtered field in associated objects that affects global filters, *like `TENANT` here*, can also trigger association change events.
@@ -719,4 +1085,4 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
     This is a very important characteristic of Jimmer's trigger mechanism!
     :::
 
-    It is obvious that ❸ has already sensed the change of association property `BookStore.books`, so it will further lead to the invalidation of the computed cache here.
+    It is obvious that ❸ has already sensed the change of association property `BookStore.books`, so it will further lead to the invalidation of the calculated cache here.
