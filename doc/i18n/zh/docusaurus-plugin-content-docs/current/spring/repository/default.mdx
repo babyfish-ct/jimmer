@@ -460,7 +460,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
         这里，子查询基于`AuthorTableEx.$`，而非`AuthorTable.$`，是为了`select(table.books.id)`能通过编译。
 
-        请阅读**TODO**以了解更多。
+        请阅读[分页安全性](../../query/dynamic-join/table-ex)以了解更多。
 
     -   Kotlin: `subQuery`接受一个lambda表达式，`this`被重新定义，内部可以直接使用`table`变量，但是注意:
 
@@ -470,7 +470,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
 -   ❷ 创建子查询
 
-毫无疑问，如果`authorName`参数没有指定，最终SQL不会包含JOIN，没必要演示。
+毫无疑问，如果`authorName`参数没有指定，最终SQL不会包含子查询，没必要演示。
 
 所以，我们演示`authorName`参数被指定了情况。
 
@@ -1423,7 +1423,7 @@ where tb_2_.BOOK_ID in (
 :::tip
 无论是本文讨论的复杂查询，还是上一篇文档讨论过的[简单查询](./abstract)，
 只要查询返回实体对象或其集合，而非简单的列元祖，
-都建议最后添加一个`Fetcher`参数，让所有对象查询具备如同`GraphQL`一样的强大数据结构形状控制能力。
+都建议添加一个`Fetcher`参数，让所有对象查询具备如同`GraphQL`一样的强大数据结构形状控制能力。
 
 这会为上层业务开发带来巨大的便利。
 :::

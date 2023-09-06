@@ -978,12 +978,14 @@ val page = bookRepository
             allScalarFields()
             // highlight-next-line
             store {
-                // associated object only queries id (implicit+mandatory) and name
+                // associated object only queries id 
+                // (implicit+mandatory) and name
                 name()
             }
             // highlight-next-line
             authors {
-                // associated object only queries id (implicit+mandatory), firstName and lastName
+                // associated object only queries 
+                // id (implicit+mandatory), firstName and lastName
                 firstName()
                 lastName()
             }
@@ -1185,7 +1187,7 @@ where tb_2_.BOOK_ID in (
 ```
 
 :::tip
-Whether it is simple queries discussed in this article, or complex queries to be discussed in [next article](./default), as long as the query returns entity objects or their collections instead of simple column tuples, it is highly recommended to add a `Fetcher` parameter last to make all object queries as powerful in data structure shaping as `GraphQL`.
+Whether it is simple queries discussed in this article, or complex queries to be discussed in [next article](./default), as long as the query returns entity objects or their collections instead of simple column tuples, it is highly recommended to add a `Fetcher` parameter to make all object queries as powerful in data structure shaping as `GraphQL`.
 
 This brings great convenience to higher level business code.  
 :::

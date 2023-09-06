@@ -18,15 +18,15 @@ We need to define special Java/Kotlin business exceptions that can be directly t
 
 How do we define this special type of business exception? There are two extreme choices:
 
-- Share one business exception class across the entire application, with built-in error codes that the client can immediately understand
+-   Share one business exception class across the entire application, with built-in error codes that the client can immediately understand
 
-- Define a business exception class for each business error
+-   Define a business exception class for each business error
 
 Obviously, both of the above solutions are unsuitable. The first option is too coarse-grained, with globally maintained error codes that are difficult to maintain. The second option is too fine-grained, requiring the definition of too many exception classes. 
 
-So, Jimmer chooses a compromise: dividing business exceptions into multiple clusters, with each cluster using one set of Error Codes.
+So, Jimmer chooses a compromise: dividing business exceptions into multiple families, with each family using one set of Error Codes.
 
-Jimmer uses enums to define exception clusters, where the enum also serves as the error code for that cluster, e.g.
+Jimmer uses enums to define exception families, where the enum also serves as the error code for that family, e.g.
 
 ### Define Exception Clusters
 
@@ -67,7 +67,7 @@ enum class UserInfoErrorCode {
 </TabItem>
 </Tabs>
 
-The `@org.babyfish.jimmer.error.ErrorFamily` annotation indicates that this enum represents a cluster of business exceptions, and the enum itself serves as the error code for this cluster. 
+The `@org.babyfish.jimmer.error.ErrorFamily` annotation indicates that this enum represents a family of business exceptions, and the enum itself serves as the error code for this family. 
 
 The `@ErrorFamily` annotation will be processed by Jimmer's precompiler
 
@@ -80,7 +80,7 @@ This part of the code has been discussed in [Overview/Get Started/Generate Code]
 The precompiler will generate the following exception class based on this enum:
 
 :::info
-For enums used to declare exception clusters, you can choose to use `ErrorCode` or `Error` as a special suffix. 
+For enums used to declare exception families, you can choose to use `ErrorCode` or `Error` as a special suffix. 
 
 - If there is such a special suffix, the exception class name = enum name without the suffix + `Exception`
 
@@ -290,7 +290,7 @@ public abstract class UserInfoException private constructor(
 
 - ❶ Exceptions based on enum error codes must inherit from `org.babyfish.jimmer.error.CodeBasedException`
 
-- ❷ The error code type for this cluster of exceptions is `UserInfoErrorCode` 
+- ❷ The error code type for this family of exceptions is `UserInfoErrorCode` 
 
 - ❸❹ Static method to construct exception with error code `ILLEGAL_USER_NAME`
 
@@ -492,12 +492,12 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 </Tabs>
 
 :::info
-The `@org.babyfish.jimmer.client.ThrowsAll` annotation allows the REST API to throw all exceptions in the cluster.
+The `@org.babyfish.jimmer.client.ThrowsAll` annotation allows the REST API to throw all exceptions in the family.
 :::
 
 ### Allow Some Exceptions in Cluster
 
-Let's locate another business exception cluster:
+Let's locate another business exception family:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -526,7 +526,7 @@ enum class PlatformErrorCode {
 </TabItem>  
 </Tabs>
 
-To be able to declare that a REST API can only throw some of the exceptions in this cluster, define the following annotation:
+To be able to declare that a REST API can only throw some of the exceptions in this family, define the following annotation:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -1000,7 +1000,7 @@ export type ApiErrors = { ❺
     For example, in the Java/Kotlin code above, we defined the error codes `PlatformError.PERMISSION_DENIED` and `PlatformErrorCode.DATA_IS_FROZEN`, but they have not yet been declared as throwable by any REST API using `@ThrowsAll` or custom `@ThrowsPlatformError`. So they will not be defined in `AllErrors`.
     :::
 
-- ❷ The enum name decorated with `@ErrorFamily` is the `family` field in client code, used to identify which cluster the error belongs to
+- ❷ The enum name decorated with `@ErrorFamily` is the `family` field in client code, used to identify which family the error belongs to
 
 - ❸ The enum variable name is the `code` field in client code, used to identify which specific error it is
 

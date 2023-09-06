@@ -335,9 +335,9 @@ Unfortunately, if you try to emulate the previous example's `table.store.name` b
 
 This is because `Book.authors` is a collection association (collective term for one-to-many and many-to-many associations). Blindly connecting other objects via collection associations will lead to duplicate data in the query results. More importantly, this duplication is fatal for pagination queries to be shown later. 
 
-For more details, please refer to **TODO**.
+For more details, please refer to [Pagination Safety](../../query/dynamic-join/table-ex).
 
-If you read **TODO**, you'll know you can force connecting via collection associations using `table.asTableEx().authors`. However, this capability is not suitable for use here.
+If you read [Pagination Safety](../../query/dynamic-join/table-ex), you'll know you can force connecting via collection associations using `table.asTableEx().authors`. However, this capability is not suitable for use here.
 
 In short, Jimmer's API will subtly hint that this should be implemented using subqueries rather than JOIN. 
 :::
@@ -464,7 +464,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
         Here, the subquery is based on `AuthorTableEx.$` rather than `AuthorTable.$` so that `select(table.books.id)` can compile.
 
-        Please read **TODO** for more details.
+        Please read [query/Pagination Safety](../../query/dynamic-join/table-ex) for more details.
         
     -   Kotlin: `subQuery` accepts a lambda expression where `this` is redefined, so `table` variable can be used directly inside, but note:
 
@@ -474,7 +474,7 @@ interface BookRepository : KRepository<BookStore, Long> {
         
 -   ❷  Create subquery
 
-Obviously, if the `authorName` parameter is not specified, the final SQL will not contain JOIN, no need to demonstrate.
+Obviously, if the `authorName` parameter is not specified, the final SQL will not contain sub query, no need to demonstrate.
 
 So let's demonstrate the case where `authorName` is specified.
 
@@ -1220,12 +1220,14 @@ val page = bookRepository
             allScalarFields()
             // highlight-next-line
             store {
-                // associated object only queries id (implicit+mandatory) and name
+                // associated object only queries 
+                // id (implicit+mandatory) and name
                 name()
             }
             // highlight-next-line
             authors {
-                // associated object only queries id (implicit+mandatory), firstName and lastName
+                // associated object only queries 
+                // id (implicit+mandatory), firstName and lastName
                 firstName()
                 lastName()
             }
@@ -1428,7 +1430,7 @@ where tb_2_.BOOK_ID in (
 ```
 
 :::tip
-Whether it is complex queries discussed in this article, or simple queries discussed in [previous article](./abstract), as long as the query returns entity objects or their collections rather than simple column tuples, it is highly recommended to add a `Fetcher` parameter last to make all object queries as powerful in data structure shaping as `GraphQL`.
+Whether it is complex queries discussed in this article, or simple queries discussed in [previous article](./abstract), as long as the query returns entity objects or their collections rather than simple column tuples, it is highly recommended to add a `Fetcher` parameter to make all object queries as powerful in data structure shaping as `GraphQL`.
 
 This brings great convenience to higher level business code.
 :::
