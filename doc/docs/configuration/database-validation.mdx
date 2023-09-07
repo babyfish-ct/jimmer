@@ -23,7 +23,7 @@ Database validation is a very important feature that is used to verify the consi
 
 -   Verify that the nullity of columns is consistent with the definitions of properties in the entity model. 
 
--   For the id attribute of each entity in the entity model, verify that the database has a primary key constraint that exactly matches.
+-   For the id property of each entity in the entity model, verify that the database has a primary key constraint that exactly matches.
 
 -   For true foreign keys defined in the entity model (see [True and False Foreign Keys](../mapping/base/foreignkey)), verify that the database has exactly matching foreign key constraints.
 :::
@@ -83,15 +83,15 @@ There are two ways to start validation:
 
 -   Entity types must correspond to a table in the database, whether the table name is explicitly configured by the developer via `@Table` or automatically determined by the [naming strategy](../mapping/base/naming-strategy). 
 
--   Association properties based on intermediate tables must correspond to a table in the database, whether the table name is explicitly configured by the developer via `@JoinTable` or automatically determined by the [naming strategy](../mapping/base/naming-strategy).
+-   Association properties based on join tables must correspond to a real join table in the database, whether the table name is explicitly configured by the developer via `@JoinTable` or automatically determined by the [naming strategy](../mapping/base/naming-strategy).
 
 -   The ID whose auto growth strategy is `SEQUENCE` must correspond to a sequence in the database, whether the sequence name is explicitly configured by the developer via `@GeneratedValue` or automatically determined by the [naming strategy](../mapping/base/naming-strategy) .
 
-When the program starts, Jimmer needs to query the database to verify whether these tables or sequences exist. And if they exist, whether their internal structures are correct *(for tables)*.
+When the program starts, Jimmer needs to query the database metadata to verify whether these tables or sequences exist. And if they exist, whether their internal structures are correct *(for tables)*.
 
-However, since database services often support multiple sub-databases, and sub-databases can authorize each other, the JDBC connection may see tables with the same name in different database users, such as `db1.BOOK`, `db2.BOOK`, and `db3.BOOK`. This is called table conflict.
+However, since database often support multiple sub-databases, and sub-databases can authorize each other, the JDBC connection may see tables with the same name in different database users, such as `db1.BOOK`, `db2.BOOK`, and `db3.BOOK`. This is called table conflict.
 
-Of course, Jimmer will first extract the database name from the JDBC connection metadata, for example, extract "db1" from `jdbc:mysql://localhost:3306/db1`, and first look for table information in the automatically extracted sub-database for verification.
+Of course, Jimmer can extract the database name from the JDBC connection metadata, for example, extract "db1" from `jdbc:mysql://localhost:3306/db1`, and first look for table information in the automatically extracted sub-database for verification.
 However, this method is not always valid. As long as the specified table cannot be found in the current sub-database, it will look for it in other sub-databases, which may lead to table conflict issues.
 
 To solve this problem, the following two methods are available:
@@ -108,7 +108,7 @@ To solve this problem, the following two methods are available:
 
     There are two ways to start validation
 
-    - Use Spring Boot Starter
+    -   Use Spring Boot Starter
 
         Modify `application.yml` *(or application.properties)*
 
@@ -119,6 +119,7 @@ To solve this problem, the following two methods are available:
             # highlight-next-line  
             catalog: db1
         ```
+
         :::info
         `jimmer.database-validation-mode` and `jimmer.database-validation.mode` are equivalent
         :::

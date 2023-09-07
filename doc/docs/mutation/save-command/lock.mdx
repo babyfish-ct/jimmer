@@ -6,11 +6,11 @@ title: Optimistic/Pessimistic Lock
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Save commands support both optimistic locking and pessimistic locking.
+Save commands support both optimistic lock and pessimistic lock.
 
-## Optimistic Locking
+## Optimistic Lock
 
-Jimmer supports optimistic locking via the `@org.babyfish.jimmer.sql.Version` annotation. 
+Jimmer supports optimistic lock via the `@org.babyfish.jimmer.sql.Version` annotation. 
 
 ### Modify Entity Types
 
@@ -86,7 +86,7 @@ Jimmer supports optimistic locking via the `@org.babyfish.jimmer.sql.Version` an
 
 ### Demo
 
-Characteristics of optimistic locking:
+Characteristics of optimistic lock:
 
 -   When inserting objects *(whether explicitly doing INSERT, or UPSERT determined to be INSERT)*, the `version` of the object will be inserted into the database.
 
@@ -375,12 +375,12 @@ Characteristics of optimistic locking:
     :::info
     As you can see, the version is incremented by 1 automatically after data modification.
 
-    In real projects, the version number of optimistic locking is often a hidden field in the form. If the form does not automatically redirect after saving, but keeps the UI unchanged to support multiple submissions, the hidden field should be updated with such return info after each successful save.
+    In real projects, the version number of optimistic lock is often a hidden field in the form. If the form does not automatically redirect after saving, but keeps the UI unchanged to support multiple submissions, the hidden field should be updated with such return info after each successful save.
     :::
 
-## Pessimistic Locking
+## Pessimistic Lock
 
-Unlike optimistic locking, pessimistic locks are very short-lived, only valid within a single jdbc transaction.
+Unlike optimistic lock, pessimistic locks are very short-lived, only valid within a single jdbc transaction.
 
 Normally, Jimmer generates some query SQL to aid save command execution, such as:
 
@@ -388,15 +388,15 @@ Normally, Jimmer generates some query SQL to aid save command execution, such as
 
 -   Determining which associated objects need to be [dissociated](./dissociation)
 
-Next, we compare the differences in these query SQL between using and not using pessimistic locking. 
+Next, we compare the differences in these query SQL between using and not using pessimistic lock. 
 
 :::info
-In the previous examples, to demonstrate optimistic locking, we assumed the `BookStore` and `Book` types both defined a `version` property.
+In the previous examples, to demonstrate optimistic lock, we assumed the `BookStore` and `Book` types both defined a `version` property.
 
-In the following examples to demonstrate pessimistic locking, we no longer make that assumption.
+In the following examples to demonstrate pessimistic lock, we no longer make that assumption.
 :::  
 
-### Without Pessimistic Locking
+### Without Pessimistic Lock
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -499,18 +499,18 @@ This generates 6 SQL statements:
 :::info  
 These query statements are used to make conditional judgments to determine how to generate subsequent SQL. 
 
-However, without pessimistic locking, the conditions and assumptions made via these queries can potentially be invalidated by concurrent operations, leading to exceptions when executing subsequent SQL.
+However, without pessimistic lock, the conditions and assumptions made via these queries can potentially be invalidated by concurrent operations, leading to exceptions when executing subsequent SQL.
 
-To avoid such concurrency issues, pessimistic locking can be enabled. Next we discuss how to implement pessimistic locking.
+To avoid such concurrency issues, pessimistic lock can be enabled. Next we discuss how to implement pessimistic lock.
 :::
 
-### Enabling Pessimistic Locking 
+### Enabling Pessimistic Lock 
 
-There are two ways to enable pessimistic locking:
+There are two ways to enable pessimistic lock:
 
 -   Global configuration
 
-    There are two ways to enable pessimistic locking globally:
+    There are two ways to enable pessimistic lock globally:
 
     - Via Spring Boot Starter configuration
 
@@ -553,10 +553,10 @@ There are two ways to enable pessimistic locking:
     Unlike global configuration affecting all save commands, command-level configuration only affects the current save command.
 
     :::info
-    If pessimistic locking is already enabled globally, no need for command-level configuration.
+    If pessimistic lock is already enabled globally, no need for command-level configuration.
     :::
 
-    Calling `setPessimisticLock()` on the save command enables pessimistic locking:
+    Calling `setPessimisticLock()` on the save command enables pessimistic lock:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -611,7 +611,7 @@ There are two ways to enable pessimistic locking:
     </TabItem>
     </Tabs>
     
-Once pessimistic locking is enabled, the generated query statements will change significantly:
+Once pessimistic lock is enabled, the generated query statements will change significantly:
 
 1.  Check if the book store exists
 

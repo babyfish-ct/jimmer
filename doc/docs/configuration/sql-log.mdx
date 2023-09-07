@@ -78,21 +78,11 @@ There are two ways to enable SQL logs:
 The actual printed logs are as follows:
 
 ```
-jimmer> sql: select tb_1_.ID, tb_1_.CREATED_TIME,  
-tb_1_.MODIFIED_TIME, tb_1_.NAME, tb_1_.EDITION,  
-tb_1_.PRICE, tb_1_.STORE_ID
-from BOOK tb_1_  
-where lower(tb_1_.NAME) like ?  
-order by tb_1_.NAME asc, tb_1_.EDITION desc
-limit ?, ?,
-variables: [%graphql%, 0, 10],
-purpose: QUERY
+jimmer> sql: select tb_1_.ID, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK tb_1_  where lower(tb_1_.NAME) like ?  order by tb_1_.NAME asc, tb_1_.EDITION desc limit ?, ?, variables: [%graphql%, 0, 10], purpose: QUERY
 ```
 
 :::caution
 If only the SQL log is turned on, the above log will not wrap.
-
-To improve the readability of this document, the above log is manually wrapped, which is not the actual situation.
 :::
 
 The log has three parts:
@@ -117,9 +107,9 @@ The log has three parts:
 
     -   `EVICT`: In some cases, the cache that should be cleared cannot be determined solely based on the event information of Jimmer triggers. Jimmer will automatically execute some queries to accurately determine which caches should be cleared.
 
-## Format SQL  
+## Pretty SQL  
 
-In the previous example, the SQL log is printed in one line, *(To improve the readability of this document, the log in the previous example is manually wrapped, which is not the actual situation.)*, which is poorly readable.
+In the previous example, the SQL log is printed in one line, which is poorly readable.
 
 Therefore, the SQL needs to be formatted. There are two implementation methods:
 

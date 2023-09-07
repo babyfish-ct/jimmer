@@ -78,6 +78,10 @@ interface KExecutable<R> {
     </TabItem>
     </Tabs>
 
+    :::info
+    For this usage, no special configuration of SqlClient is required.
+    :::
+
 -   `execute()` or `execute(null)`: Determined by Jimmer to execute on a JDBC connection.
 
     Take query as an example:
@@ -110,13 +114,11 @@ interface KExecutable<R> {
     </TabItem>
     </Tabs>
 
-:::info
-To use the 1st behavior, no special configuration is required for SqlClient.
+    :::info
+    For this usage, `ConnectionManager` must be configured for SqlClient. Otherwise it will cause exceptions.
 
-To use the 2nd behavior, `ConnectionManager` must be configured for SqlClient. Otherwise it will cause exceptions.
-
-Undoubtedly, the 2nd approach is more in line with the requirements of business system development, so it is recommended. So it is strongly recommended to configure `ConnectionManager` for SqlClient.
-:::
+    Undoubtedly, the 2nd approach is more in line with the requirements of business system development, so it is recommended. So it is strongly recommended to configure `ConnectionManager` for SqlClient.
+    :::
 
 ## Simple ConnectionManager
 
