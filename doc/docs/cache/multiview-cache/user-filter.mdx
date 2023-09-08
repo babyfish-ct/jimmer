@@ -1,28 +1,28 @@
 ---
-sidebar_position: 3
-title: Support user defined filters
+sidebar_position: 2
+title: Custom Filters
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 缓存友好过滤器
+## Cache-friendly Filters
 
-### 基本概念
+### Basic Concepts
 
-在[全局过滤器](../../query/global-filter/user-filter)一文中，我们介绍了自定义全局过滤器需要实现`Filter/KFilter`接口。
+In the [User-defined Filters](../../query/global-filter/user-filter) documentation, we introduced that custom global filters need to implement the `Filter/KFilter` interface.
 
-然而，使用该接口定义的普通过滤器并不是缓存友好的。
+However, ordinary filters defined using this interface are not cache-friendly. 
 
-以`Book`实体为例，如果为其设置缓存不友好的全局过滤器，将会导致以下所有对过滤器敏感的属性
+Taking the `Book` entity as an example, if a cache-unfriendly global filter is set for it, it will cause all the following filter-sensitive properties
 
--   以`Book`作为目标类型的关联属性。比如，`BookStore.books`、`Author.books`
+-   Association properties targeting `Book`, such as `BookStore.books`, `Author.books`
 
--   依赖于上述关联属性的计算属性。比如，`BookStore.avgPrice`、`BookStore.newestBooks`*(文档没提及`newestBook`，可参见例子)*
+-   Calculated properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks`
 
-都无法支持缓存。
+to become uncacheable.
 
-Jimmer采用`CachableFilter/KCacheableFitler接口`如下接口定义缓存友好的过滤器
+Jimmer uses the `CacheableFilter/KCacheableFilter` interface to define cache-friendly filters:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -63,49 +63,39 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 </TabItem>
 </Tabs>
 
-该接口从`Filter/KFilter`接口继承，在其基础上，添加了两个新方法：
+This interface inherits from `Filter/KFilter` and adds two new methods:
 
--   `getParameters`: 该过滤器的为多视图缓存贡献的`SubKey`片段。
+-   `getParameters`: The SubKey fragment contributed by this filter for multi-view cache. 
 
--   `isAffectedBy`: 接受一个被过滤实体被修改的事件，判断当前过滤器所依赖的过滤字段是否被修改。
+-   `isAffectedBy`: Accepts an event that the filtered entity is modified, and judges whether the filtering fields depended on by the current filter are changed.
 
 :::info
-一个实体类型允许被多个全局过滤器处理，如果出现了多个全局过滤器
+An entity type allows being processed by multiple global filters. If there are multiple global filters:
 
--   任何一个全局过滤器对缓存不友好，都会导致对此过滤器敏感的其他属性都无法支持缓存
+-   If any one of them is cache-unfriendly, it will cause other filter-sensitive properties to become uncacheable.
 
-    因此，这些全局过滤器，要么都是缓存不友好的`Filter/KFilter`，要么都是缓存友好的`CacheableFilter/KCacheableFilter`；二者混用没有意义。
+    Therefore, these global filters must either all be cache-unfriendly `Filter/KFilter`, or all be cache-friendly `CacheableFilter/KCacheableFilter`. Mixing them together makes no sense.
 
-    如果不小心导致这种无意义的混用，Jimmer会告诉[为什么缓存未生效](./abandoned-callback)。
+    If such meaningless mixing occurs accidentally, Jimmer will tell [why caching is disabled](./abandoned-callback). 
 
--   当所有全局过滤器都缓存友好时，所有`CacheableFilter/KCacheableFilter`对象的`getParameters()`方法返回的数据合并在一起，作为多视图缓存的`SubKey`
+-   When all global filters are cache-friendly, the data returned by the `getParameters()` method of all `CacheableFilter/KCacheableFilter` objects is merged together as the `SubKey` of the multi-view cache.
 
-    例如，实体同时被两个全局过滤器处理。一个是[逻辑删除](../../query/global-filter/logical-deleted)所隐含的过滤器，记为`a`；另外一个是用户自定义过滤器，记为`b`。
+    For example, if an entity is processed by two global filters at the same time. One is the filter implied by [logical delete](../../query/global-filter/logical-deleted), denoted as `a`; the other one is a user-defined filter, denoted as `b`. 
 
-    假如
+    Assume 
 
-    -   `a`的`getParameters()`返回`{"logicalDeleted":false}`
+    - `a`'s `getParameters()` returns `{"logicalDeleted":false}`
 
-    -   `b`的`getParameters()`返回`{"tenant":"a"}`，
+    - `b`'s `getParameters()` returns `{"tenant":"a"}`
     
-    那么最终多视图缓存中的`SubKey`为
+    Then the final `SubKey` in multi-view cache will be 
     
     `{"logicalDeleted":false,"tenant":"a"}`
 :::
 
-### 再论逻辑删除
+### Define Cache-friendly Filters 
 
-在上一篇文章[支持内置过滤器](./builtin-filter)中，我们谈到`@LogicalDeleted`注解有一个参数`useMultiViewCache`，默认为`false`。如果要让所有对此内置过滤器敏感的属性都支持多视图缓存，一定要将`useMultiViewCache`配置为true，这点非常重要。
-
-现在，我们可以对此给予解释。
-
--   如果`@LogicalDeleted`注解的`useMultiViewCache`为false，则对应的内置过滤器仅实现`Filter/KFilter`接口，对缓存不友好。
-
--   如果`@LogicalDeleted`注解的`useMultiViewCache`为true，则对应的内置过滤器仅实现`CacheableFilter/KCacheableFilter`接口，对缓存友好。
-
-### 定义缓存友好过滤器
-
-在[查询篇/自定义过滤器]一文中，我们为实体定义了一个超类型`TenantAware`，让我们再次回顾其代码，如下
+In the [User-defined Filters](../../query/global-filter/user-filter) documentation, we defined a super type `TenantAware` for entities. Let's review its code again:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -132,7 +122,7 @@ interface TenantAware {
 </TabItem>
 </Tabs>
 
-任何需要支持多租户的实体类型都可以继承`TenantAware`，例如`Book`
+Any entity type that needs to support multiple tenants can inherit `TenantAware`, such as `Book`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -141,25 +131,25 @@ interface TenantAware {
 @Entity
 public interface Book extends TenantAware {
 
-    ...省略代码...
+    ...code omitted...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Book.kt"
+```kotlin title="Book.kt" 
 @Entity
 interface Book : TenantAware {
     
-    ...省略代码...
+    ...code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-假设Spring上下文中有一个类型为`TenantProvider`的对象，其Java方法`get()`和kotlin属性`tenant`用于从当前操作者身份信息中提取所属租户。定义如下过滤器
+Assume there is an object of type `TenantProvider` in the Spring context. Its Java method `get()` and Kotlin property `tenant` are used to extract the tenant from the identity information of the current operator. Define the following filter:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -194,21 +184,21 @@ public class TenantFilter implements CacheableFilter<TenantAwareProps> {
         return map;
     }
 
-    @Override 
-    // highlight-next-line
+    @Override
+    // highlight-next-line  
     public boolean isAffectedBy(EntityEvent<?> e) {
         return e.isChanged(TenantAwareProps.TENANT)
     }
 }
 ```
 
-</TabItem>
+</TabItem>  
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 @Component
 class TenantFilter(
-    private val tenantProvider: TenantProvider
+    private val tenantProvider: TenantProvider  
 ) : KCacheableFilter<TenantAware> {
 
     override fun filter(args: KFilterArgs<TenantAware>) {
@@ -234,20 +224,396 @@ class TenantFilter(
 </TabItem>
 </Tabs>
 
-## 启用多视图缓存
+## Enable Multi-view Cache
 
-我们需要在`CacheFactory/KCacheFactory`中对关联缓存和计算缓存启用多视图缓存。
+### Normal Approach
 
-这部分内容和上一篇文档[查询篇/自定义过滤器]中论述完全一样，本文没必要重复，略过。
+<Tabs groupId="language">
+<TabItem value="java" label="Java">  
 
-## 计算属性的SubKey
+```java
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper
+) {
 
-我们在`TenantFilter`中定义了`getParameters`方法，所有受影响的关联属性都会自动为其关联缓存指定`SubKey`。
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
 
-然而，不幸的是，由于计算属性引入了框架无法理解的用户自定义计算规则，开发人员必须手动为计算属性的`Resolver`实现指定`SubKey`
+    return new CacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...code omitted...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            ...code omitted...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.BOOKS.unwrap() || 
+                    prop == AuthorProps.BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */
+                prop == BookStoreProps.AVG_PRICE.unwrap() || 
+                    prop == BookStoreProps.NEWEST_BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofHours(1)
+            );
+        }
+
+        private <K, V> Cache<K, V> createPropCache(
+            // highlight-next-line
+            boolean isMultiviewCache,
+            ImmutableProp prop, 
+            Duration duration
+        ) {
+            // highlight-next-line
+            if (isMultiView) {
+                // highlight-next-line
+                return new ChainCacheBuilder<K, V>()
+                        .add(
+                            // highlight-next-line
+                            new RedisHashBinder<>(
+                                redisTemplate, 
+                                objectMapper, 
+                                prop, 
+                                redisDuration
+                            )
+                        )
+                        .build();
+            }
+
+            return new ChainCacheBuilder<>()
+                .add(
+                    new CaffeineBinder<>(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    new RedisValueBinder<>(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build();
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean  
+fun cacheFactory(
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    return object: KCacheFactory {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...code omitted...
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...code omitted...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(
+                /* highlight-start */
+                prop === BookStore::books.toImmutableProp() ||
+                    prop === Author::books.toImmutableProp(),
+                /* highlight-end */ 
+                prop,
+                Duration.ofHours(1)
+            )
+
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            createPropCache(
+                /* highlight-start */
+                prop === BookStore::avgPrice.toImmutableProp() ||
+                    prop === BookStore::newestBooks.toImmutableProp(),
+                /* highlight-end */
+                prop,
+                Duration.ofHours(1)
+            )
+
+        private fun <K, V> createPropCache(
+            // highlight-next-line
+            isMultiView: Boolean,
+            prop: ImmutableProp, 
+            duration: Duration
+        ): Cache<K, V> {
+            // highlight-next-line
+            if (isMultiView) {
+                return ChainCacheBuilder<K, V>()
+                        .add(
+                            // highlight-next-line
+                            RedisHashBinder<>(
+                                redisTemplate, 
+                                objectMapper, 
+                                prop, 
+                                redisDuration
+                            )
+                        )
+                        .build();
+            }
+            ChainCacheBuilder<Any, Any>()
+                .add(
+                    CaffeineBinder(512, Duration.ofSeconds(1))
+                )
+                .add(
+                    RedisValueBinder(
+                        redisTemplate, 
+                        objectMapper, 
+                        prop, 
+                        duration
+                    )
+                )
+                .build()
+        }
+    }
+}
+```
+
+</TabItem> 
+</Tabs>
+
+The `RedisHashBinder` class in the above code is a very important implementation that utilizes Redis' support for multi-view cache. The underlying storage structure corresponds to [Redis Hashes](https://redis.io/docs/data-types/hashes/), i.e. nested Hash structures.
+
+<table>
+    <thead>
+        <tr>
+            <th>Cache Style</th>
+            <th>Multi-view</th>  
+            <th>Abstract API❶</th>
+            <th>Built-in Impl❷</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="2">
+                Cache with self-loading
+                <div><i>(usually first-level cache technologies like Guava, Caffine)</i></div>
+            </td>
+            <td>
+                No
+            </td>
+            <td>
+                LoadingBinder&lt;K, V&gt;
+            </td>
+            <td>
+                CaffeineBinder&lt;K, V&gt;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Yes
+            </td>
+            <td>
+                LoadingBinder.Parameterized&lt;K, V&gt;
+            </td>
+            <td>
+                None
+            </td>
+        </tr>
+        <tr>
+            <td rowspan="2">
+                Cache without self-loading
+                <div><i>(usually second-level cache technologies like Redis)</i></div>
+            </td>
+            <td>
+                No
+            </td>
+            <td>
+                SimpleBinder&lt;K, V&gt;
+            </td>
+            <td>
+                RedisValueBinder&lt;K, V&gt;
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Yes
+            </td>
+            <td>
+                SimpleBinder.Parameterized&lt;K, V&gt;
+            </td>
+            <td>
+                <b>RedisHashBinder&lt;K, V&gt;</b>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+-   ❶ Abstract API: located in project `jimmer-sql`, package `org.babyfish.jimmer.sql.cache.chain`
+
+-   ❷ Built-in implementations: located in project `jimmer-spring-boot-starter`, package `org.babyfish.jimmer.spring.cache`  
+
+:::caution
+Unfortunately, there is currently no multi-view cache implementation for `Caffeine`. So in the above code, multi-view cache only applies to Redis. That is, in multi-view mode, there is only one cache level instead of two.
+:::
+
+### Better Approach  
+
+In the above code, the `createAssociatedIdListCache` method judges the `prop` parameter to decide whether to build multi-view cache or single-view cache. However,
+
+:::tip
+For association properties, whether multi-view cache needs to be built can be determined solely by whether the target entity is filtered. Jimmer provides better support for this.
+
+Developers only need to replace the super interface `CacheFactory`/`KCacheFactory` with the super class `AbstractCacheFactory`/`AbstractKCacheFactory` to inherit a member called `getFilterState`/`filterState` which can help us determine whether to build multi-view cache.
+:::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
+
+```java 
+@Bean
+public CacheFactory cacheFactory(
+    RedisConnectionFactory connectionFactory,
+    ObjectMapper objectMapper  
+) {
+
+    RedisTemplate<String, byte[]> redisTemplate = 
+        RedisCaches.cacheRedisTemplate(connectionFactory);
+
+    // highlight-next-line  
+    return new AbstractCacheFactory() {
+
+        @Override
+        public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {
+            ...code omitted...
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                // highlight-next-line
+                getFilterState().isAffectedBy(prop.getTargetType()),
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
+            return createPropCache(
+                // highlight-next-line
+                getFilterState().isAffectedBy(prop.getTargetType()),
+                prop, 
+                Duration.ofMinutes(5)
+            );
+        }
+
+        @Override
+        public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            return createPropCache(
+                /* highlight-start */   
+                prop == BookStoreProps.AVG_PRICE.unwrap() ||
+                    prop == BookStoreProps.NEWEST_BOOKS.unwrap()
+                /* highlight-end */
+                prop, 
+                Duration.ofHours(1)
+            );
+        }
+
+        private <K, V> Cache<K, V> createPropCache(
+            // highlight-next-line
+            boolean isMultiviewCache,
+            ImmutableProp prop, 
+            Duration duration
+        ) {
+            ...code omitted...
+        }
+    };
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@Bean
+fun cacheFactory(  
+    connectionFactory: RedisConnectionFactory,
+    objectMapper: ObjectMapper
+): KCacheFactory {
+
+    val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
+
+    // highlight-next-line
+    return object: AbstractKCacheFactory() {
+
+        override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            ...code omitted...    
+
+        override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            ...code omitted...
+
+        override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
+
+        override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
+
+        private fun <K, V> createPropCache(
+            // highlight-next-line
+            isMultiView: Boolean,
+            prop: ImmutableProp, 
+            duration: Duration
+        ): Cache<K, V> {
+            ...code omitted...
+        }
+    }
+}
+```
+
+</TabItem>
+</Tabs> 
+
+:::caution
+Unfortunately, this method can only simplify the construction of association caches, i.e. simplify the `createAssociatedIdCache` and `createAssociatedIdListCache` methods.
+
+For calculated properties, since the framework is unaware of the internal logic used by user-defined calculated properties, it cannot simplify them. Users need to decide whether to build multi-view caches based on their own business characteristics.
+:::
+
+## SubKey of Calculated Properties
+
+We have defined the `getParameters` method in `TenantFilter`. All affected association properties will automatically specify `SubKey` for their association caches. 
+
+However, unfortunately, due to the introduction of user-defined computation rules that the framework cannot understand, developers must manually specify `SubKey` for the `Resolver` implementation of calculated properties.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">  
 
 ```java title="BookStoreAvgPriceResolver.java"
 @Component
@@ -255,7 +621,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     
     private final JSqlClient sqlClient;
 
-    @Override
+    @Override  
     public Ref<SortedMap<String, Object>> getParameterMapRef() {
         return sqlClient
             .getFilters()
@@ -263,7 +629,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
             .getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 
-    ...省略其他代码...
+    ...code omitted...
 }
 ```
 
@@ -271,7 +637,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="BookStoreAvgPriceResolver.kt"
-@Compoent
+@Compoent 
 class BookStoreAvgPriceResolver(
     private val sqlClient: KSqlClient
 ) : KTransientResolver<Long, BigDecimal> {
@@ -283,26 +649,26 @@ class BookStoreAvgPriceResolver(
             .getTargetParameterMapRef(BookStore::books)
     }
 
-    ...省略其他代码...
+    ...code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-很明显，计算属性`BookStore.avgPrice`其实是由关联属性`BookStore.books`决定的，随后者的变化而变化。
+Obviously, the calculated property `BookStore.avgPrice` is actually determined by the association property `BookStore.books` and changes with it.
 
-因此，在当前调用上下文中，`BookStore.books`为多视图缓存系统指定什么`SubKey`，`BookStore.avgPrice`就指定什么。
+Therefore, whatever `SubKey` the association property `BookStore.books` specifies for the multi-view cache system in the current invocation context, the calculated property `BookStore.avgPrice` should specify the same one.  
 
 :::note
-`BookStore.avgPrice`也受`Book.price`的影响，随后者的变化而变化。
+`BookStore.avgPrice` is also affected by `Book.price`. It changes when `Book.price` changes.
 
-然而，`Book.price`是对象的非关联属性，而非关联属性，因此一定和多视图缓存系统无关，这里实现`getParameterMapRef`方法时无需考虑。
+However, `Book.price` is a non-association property of the object, so it must be irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here. 
 :::
 
-## 使用
+## Usage
 
-现在，我们已经让关联属性`BookStore.books`和计算属性`BookStore.avgPrice`都支持了多视角缓存，让我们使用对象抓取器来查询它们
+Now that we have made the association property `BookStore.books` and the calculated property `BookStore.avgPrice` support multi-view caching, let's use object fetchers to query them:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -329,7 +695,7 @@ System.out.println(stores);
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val stores = sqlClient
     .createQuery(BookStore::class) {
         select(
@@ -350,29 +716,29 @@ println(stores)
 </Tabs>
 
 :::caution
-有了前面文档的大量基础，本文打算简化讨论，只展示Redis中的数据和最终返回给用户的JSON。不再逐步跟踪SQL。
+With the large amount of basics in previous documents, this article intends to simplify the discussion by only showing the data in Redis and the final JSON returned to the user. The SQL generation process is no longer tracked step by step.
 :::
 
-前文假设Spring上下文中有一个类型为`TenantProvider`的对象，其Java方法`get()`和kotlin属性`tenant`用于从当前操作者身份信息中提取所属租户。
+The previous article assumed there is an object of type `TenantProvider` in the Spring context. Its Java method `get()` and Kotlin property `tenant` are used to extract the tenant from the identity information of the current operator.
 
-我们可以把上述代码执行3次，每一次都让`TenantProvider`返回不同信息以模拟三种不同的用户身份。
+We can execute the above code 3 times, making `TenantProvider` return different information each time to simulate 3 different user identities. 
 
-三次调用中，让`TenantProvider`分别返回null、"a"和"b"。
+In the 3 calls, make `TenantProvider` return null, "a" and "b" respectively.
 
 :::info
-对于官方附带例子而言，`TenantProvider`基于HTTP请求头实现，并附有swagger界面的支持，用三种不同的用户身份执行三次很容易。
+For the official sample, `TenantProvider` is implemented based on HTTP headers with swagger UI support. It is easy to execute with 3 different user identities.
 :::
 
-打开redis-cli，我们可以验证Redis中的数据
+Open redis-cli. We can verify the data in Redis:
 
 ```sh
 127.0.0.1:6379> keys BookStore.books-*
-1) "BookStore.books-2"
+1) "BookStore.books-2"  
 2) "BookStore.books-1"
 
 127.0.0.1:6379> hgetall BookStore.books-1
 1) "{\"tenant\":\"b\"}"
-2) "[6,4,2,8]"
+2) "[6,4,2,8]"  
 3) "{\"tenant\":\"a\"}"
 4) "[5,3,1,9,7]"
 5) "{}"
@@ -381,12 +747,12 @@ println(stores)
 127.0.0.1:6379> hgetall BookStore.books-2
 1) "{\"tenant\":\"b\"}"
 2) "[12,10]"
-3) "{\"tenant\":\"a\"}"
+3) "{\"tenant\":\"a\"}"  
 4) "[11]"
 5) "{}"
 6) "[12,11,10]"
 
-127.0.0.1:6379> keys BookStore.avgPrice-*
+127.0.0.1:6379> keys BookStore.avgPrice-* 
 1) "BookStore.avgPrice-2"
 2) "BookStore.avgPrice-1"
 
@@ -394,33 +760,33 @@ println(stores)
 1) "{\"tenant\":\"b\"}"
 2) "65.25"
 3) "{\"tenant\":\"a\"}"
-4) "53.1"
+4) "53.1" 
 5) "{}"
 6) "58.500000"
 
 127.0.0.1:6379> hgetall BookStore.avgPrice-2
-1) "{\"tenant\":\"b\"}"
+1) "{\"tenant\":\"b\"}"  
 2) "80"
 3) "{\"tenant\":\"a\"}"
 4) "81"
 5) "{}"
-6) "80.333333"
+6) "80.333333" 
 ```
 
 :::tip
-读者可以仔细看看这些`redis-cli`命令，很容易发现，Subey`{"tenant":"a"}`的数据和SubKey`{"tenant":"b"}`的数据合并起来刚好就是SubKey`{}`的数据。
+Readers can take a close look at these `redis-cli` commands and easily find that the data of SubKey `{"tenant":"a"}` merged with the data of SubKey `{"tenant":"b"}` is exactly the data of SubKey `{}`. 
 :::
 
-这三次调用返回给用户的数据为
+The data returned to the user in the 3 calls is: 
 
 <Tabs groupId="language">
-<TabItem value="tenant_null" label="filter.tenent=null">
+<TabItem value="tenant_null" label="filter.tenent=null">  
 
 ```json
 [
     {
         "id":2,
-        "name":"MANNING",
+        "name":"MANNING",  
         "website":null,
         // highlight-next-line
         "books":[
@@ -432,14 +798,14 @@ println(stores)
             },
             {
                 "id":11,
-                ...略...
+                ...omitted...
             },
             {
                 "id":10,
-                ...略...
+                ...omitted...
             }
         ],
-        // highlight-next-line
+        // highlight-next-line 
         "avgPrice":80.333333
     },
     {
@@ -456,11 +822,11 @@ println(stores)
             },
             {
                 "id":5,
-                ...略...
+                ...omitted...
             },
             {
-                "id":4,
-                ...略...
+                "id":4, 
+                ...omitted...
             },
             {
                 "id":3,
@@ -470,11 +836,11 @@ println(stores)
             },
             {
                 "id":2,
-                ...略...
+                ...omitted...
             },
             {
                 "id":1,
-                ...略...
+                ...omitted...
             },
             {
                 "id":9,
@@ -484,12 +850,12 @@ println(stores)
             },
             {
                 "id":8,
-                ...略...
+                ...omitted...
             },
             {
                 "id":7,
-                ...略...
-            }
+                ...omitted...
+            } 
         ],
         // highlight-next-line
         "avgPrice":58.5
@@ -500,7 +866,7 @@ println(stores)
 </TabItem>
 <TabItem value="tenant_a" label="filter.tenent=a">
 
-```json
+```json 
 [
     {
         "id":2,
@@ -532,22 +898,22 @@ println(stores)
             },
             {
                 "id":3,
-                ...略...
+                ...omitted...
             },
             {
                 "id":1,
-                ...略...
+                ...omitted...
             },
             {
                 "id":9,
-                ...略...
+                ...omitted...
             },
             {
                 "id":7,
-                ...略...
+                ...omitted...
             }
         ],
-        // highlight-next-line
+        // highlight-next-line 
         "avgPrice":53.1
     }
 ]
@@ -572,7 +938,7 @@ println(stores)
             },
             {
                 "id":10,
-                ...略...
+                ...omitted...
             }
         ],
         // highlight-next-line
@@ -592,15 +958,15 @@ println(stores)
             },
             {
                 "id":4,
-                ...略...
+                ...omitted...
             },
             {
                 "id":2,
-                ...略...
+                ...omitted...
             },
             {
                 "id":8,
-                ...略...
+                ...omitted...
             }
         ],
         // highlight-next-line
@@ -612,20 +978,21 @@ println(stores)
 </TabItem>
 </Tabs>
 
-## 一致性
+## Consistency  
 
-现在，让我们来修改id为6的`Book`对象的`tenant`属性, 从"b"改为"a"。
+Now let's modify the `tenant` property of the `Book` object with id 6 from "b" to "a".
 
-由于`Book-6`隶属于`BookStore-1`，所以可以预见的是，属性`BookStore.books-1`和`BookStore.avgPrice-1`所对应的多视角缓存必然失效。
+Since `Book-6` belongs to `BookStore-1`, it is foreseeable that the multi-view caches corresponding to the properties `BookStore.books-1` and `BookStore.avgPrice-1` will definitely be invalidated.
 
--   假如启用了BinLog触发器，用任何手段修改数据库都可以导致Jimmer缓存一致性的介入。比如直接在SQL IDE中执行如下SQL
+-   If BinLog trigger is enabled, modifying the database in any way can lead to Jimmer's cache consistency involvement. For example, directly executing the following SQL in SQL IDE:
+
     ```sql
     update BOOK
-    set TENANT = 'a' 
-    where ID = 6;
+    set TENANT = 'a'
+    where ID = 6; 
     ```
 
--   假如只启用了Transaction触发器，则必须用Jimmer的API修改数据库
+-   If only Transaction trigger is enabled, the database must be modified using Jimmer's API:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -646,7 +1013,7 @@ println(stores)
     sqlClient.save(
         new(Book::class).by {
             id = 6L
-            tenant = "a"
+            tenant = "a" 
         }
     )
     ```
@@ -654,28 +1021,28 @@ println(stores)
     </TabItem>
     </Tabs>
 
-无论通过上述何种方式修改数据，你都会在看到如下日志输出
+No matter which way above is used to modify the data, you will see the following log output:  
 
 ```
 Delete data from redis: [Book-6] ❶
-Delete data from redis: [Author.books-3] ❷
+Delete data from redis: [Author.books-3] ❷  
 Delete data from redis: [BookStore.books-1] ❸
 Delete data from redis: [BookStore.avgPrice-1] ❹
 ```
 
--   ❶ 更新被修改实体的对象缓存
+-   ❶ Update object cache of modified entity
 
--   ❷ 所有目标类型为`Book`的关联属性必然被影响，当然包括`Author.books`
+-   ❷ Any association property targeting `Book` must be affected, of course including `Author.books`
 
-    按数据库现有数据，受影响的`Author`对象的id为3
+    According to existing database data, the affected `Author` object id is 3
 
--   ❸ 所有目标类型为`Book`的关联属性必然被影响，当然包括`BookStore.books`
+-   ❸ Any association property targeting `Book` must be affected, of course including `BookStore.books`
 
-    按数据库现有数据，受影响的`BookStore`对象的id为1
+    According to existing database data, the affected `BookStore` object id is 1   
 
--   ❹ id为1的`BookStore`对象的计算缓存`BookStore.avgPrice`也被影响了，这是最奇妙的特征。
+-   ❹ The calculated cache `BookStore.avgPrice` of `BookStore` object with id 1 is also affected. This is the most amazing characteristic.
 
-    虽然框架并不知道用户在计算属性中使用何种计算方法，但是在[计算缓存](../cache-type/calculation)一文中，我们在`BookStoreAvgPriceResolver`类中讨论过如下代码
+    Although the framework is unaware of the computation rule used by users in calculated properties, in the [Calculated Cache](../cache-type/calculation) documentation, we discussed the following code in the `BookStoreAvgPriceResolver` class:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -683,11 +1050,11 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
     ```java
     @EventListener
     public void onAssociationChange(AssociationEvent e) {
-        if (sqlClient.getCaches().isAffectedBy(e) && 
+        if (sqlClient.getCaches().isAffectedBy(e) &&
             // highlight-next-line
-            e.isChanged(BookStoreProps.BOOKS) 
+            e.isChanged(BookStoreProps.BOOKS)
         ) {
-            ...省略...
+            ...code omitted...
         }
     }
     ```
@@ -702,7 +1069,7 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
             // highlight-next-line
             e.isChanged(BookStore::books)
         ) {
-            ...省略...
+            ...code omitted...
         }
     }
     ```
@@ -710,12 +1077,12 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
     </TabItem>
     </Tabs>
 
-    如果忘记了这段代码的具体逻辑，可以回顾[计算缓存](../cache-type/calculation)一文，这里关注高量的那行代码即可。这里，当前计算属性对`BookStore.books`关联的变化感兴趣。
+    If you have forgotten the specific logic of this code, you can review the [Calculated Cache](../cache-type/calculation) documentation. Just focus on the highlighted line. Here, this calculated property cares about changes to the association property `BookStore.books`.
 
     :::tip
-    修改表之间关联字段并非触发关联属性变更事件的唯一方法，修改关联对象中能影响全局过滤器的被过滤字段，*比如这里的`TENANT`*，也可以触发关联属性变更事件。
+    Modifying the association field between tables is not the only way to trigger association change events. Modifying the filtered field in associated objects that affects global filters, *like `TENANT` here*, can also trigger association change events.
 
-    这是Jimmer触发器机制中一个非常重要的特性！
+    This is a very important characteristic of Jimmer's trigger mechanism!
     :::
 
-    很明显，❸处已经感知到了`BookStore.books`关联属性发生了变更，因此，会进一步导致此处计算属性也会受影响。
+    It is obvious that ❸ has already sensed the change of association property `BookStore.books`, so it will further lead to the invalidation of the calculated cache here.

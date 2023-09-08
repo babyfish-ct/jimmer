@@ -1,23 +1,23 @@
--   多线程安全性，这点很好理解，不用解释。
+-   Multi-thread safety, which is easy to understand and needs no explanation.
 
--   对于Set、Map这类依赖hashCode的集合容器而言，迫切需要对象的不可变性。
+-   For collection containers that rely on hashCode, such as Set and Map, object immutability is desperately needed.
 
-    一旦Set或Map *(作为Key)* 这样的hashCode敏感集合容器持有了可变对象，开发人员就必须小心翼翼地确保不去修改被这些容器共享的数据。如果不慎犯了错误，通常需要debug跟踪来发现问题，这往往会浪费时间影响效率。*(其实，hashCode敏感集合容器持有可变对象是一种常见的行为，也可以说大部分Java代码都是不严密的，只是开发人员避开了此问题而已)*
+    Once mutable objects are held by hashCode sensitive collection containers like Set or Map *(as Key)*, developers must be very careful to ensure that the data shared by these containers is not modified. If a mistake is accidentally made, it usually takes debug tracking to find the problem, which often wastes time and affects efficiency. *(In fact, hashCode sensitive collection containers holding mutable objects is a common behavior, and it can also be said that most Java code is not strict, developers just avoid this problem.)*
+  
+-   In actual development, there are some other situations where objects are held for a long time. Although not dependent on hashCode, problems can also arise from holding objects for a long time, such as:
 
--   实际开发中还有一些长期持有对象的场合场合，虽然不依赖hashCode，但也会因长期持有对象而导致问题，比如：
+    - Using data persisted in WebSession for a long time
+    
+    - Using first-level cache, that is, using process-local cache in JVM memory to persist some data for a long time
 
-    -   利用WebSession中长期持有某些数据
+    Careful developers certainly do not want references in WebSession or Cache that persist data for a long time to share data structures with references leaked to user code, which would lead to uncontrollable mutual interference.
 
-    -   利用一级缓存，即，使用JVM内存的进程内缓存，长期持有某些数据
+    Therefore, when performing read/write operations on data structures persisted in WebSession or JVM internal Cache, careful developers will copy mutable data structures once before saving or returning them. Among them, copying when writing is still acceptable, but copying every time when reading is expensive. It can be seen that
 
-    细心的开发人员肯定不希望WebSession或Cache中被长期持有数据的引用和泄漏到用户代码中的引用共享数据结构，进而导致不可控的彼此干扰。
-
-    因此，对WebSession或JVM内部Cache这类长期持有数据的结构进行读写操作时，细心的开发人员会将可变数据结构复制一次再进行保存或返回。其中，写入时复制尚可接受，但每次读取都复制一次显得昂贵。可见
-
-    -   使用可变对象，是否需要复制对象以保证必要安全性，依赖于开发人员的风险预知能力，这需要开发人员有一定经验并生性谨慎。然而，即便预知了风险，解决之道也没有客观标准，过于严格会导致过多不必要复制，形成浪费，过于宽松会导致复制不足，出现BUG *(团队人数越多，越容易出错)*。而且，对于有一定体量的数据而言，团队内部对这种保护机制的严格程度也常有争论，具备很强的主观性。
-
-    -   使用可不变对象，只有数据结构被“修改” *(这里的修改是伪修改，并非真正的修改当前数据，后续文档会详细讨论之)* 时才复制部分数据 *(Jimmer/Immer内部对此有优化，被修改的对象会被复制，从其上级对象开始到根节点为止的所有祖先节点也会被复制，然而，其余所有未变的分支仍然共享重用)* 得到新的聚合根引用，其余情况一律简单共享原始引用即可。具备非常严格的无可争议的客观性。
+    -   Using mutable objects, whether it is necessary to copy objects to ensure necessary security depends on the developer's ability to foresee risks. This requires developers to have some experience and be cautious by nature. However, even if the risks are foreseen, there is no objective standard for the solution. Being too strict will lead to too many unnecessary copies and waste, and being too loose will lead to insufficient copying and bugs *(the more team members, the easier to make mistakes)*. Moreover, for data of a certain volume, there are often disputes within the team about the strictness of this protection mechanism, which is highly subjective.
+    
+    -   Using immutable objects, the data structure is only copied in part when it is "modified" *(Here the "modified" is pseudo-modification, not real modification of the current data, which will be discussed in detail in subsequent documents. Jimmer/Immer internally optimizes this: the modified object will be copied, and from its parent object to the root node, all ancestor nodes will also be copied, while all other unchanged branches still share and reuse the original)* to get a new aggregate root reference, and simply share the original reference in all other cases. It has a very strict, indisputable objectivity.
 
     :::tip
-    毫无疑问，基于客观规律进行开发，必然优于基于主观感觉进行开发，这非常重要。
+    Undoubtedly, development based on objective laws is bound to be superior to development based on subjective feelings, which is very important.
     :::

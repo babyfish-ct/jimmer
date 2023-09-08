@@ -1,24 +1,24 @@
 ---
-sidebar_position: 5
-title: Calculated properties
+sidebar_position: 5  
+title: Calculated Properties
 ---
 
-在这里，你会了解到Jimmer的计算属性，以及注解：
+In this article, you will learn about Jimmer's calculated properties and annotations:
 
--   org.babyfish.jimmer.sql.Formula
+- org.babyfish.jimmer.sql.Formula
 
-    简单计算属性，可以是Java/Kotlin表达式，也可以是SQL表达式
+    Simple calculated properties, can be Java/Kotlin expressions or SQL expressions
 
--   org.babyfish.jimmer.sql.Transient
+- org.babyfish.jimmer.sql.Transient
 
-    复杂计算属性，具备如下特征
+    Complex calculated properties, with the following features:
 
-    -   不仅可以是计算简单值，还可以是关联计算值。即，计算属性可以是关联属性
+    - Not only can simple values be calculated, but associated calculated values can also be calculated. That is, calculated properties can be associated properties
 
-    -   可以使用任意复杂的计算规则，例如，利用和当前关系型数据库无关的OLAP系统进行计算
+    - Any complex calculation rules can be used, for example, using OLAP systems unrelated to the current relational database for calculation
 
 :::caution
-只有当一个计算指标隶属于某个实体，才定义计算属性。
+Calculated properties should only be defined when a calculated metric belongs to an entity. 
 
-如果计算指标不隶属于任何实体，则应该设计成全局的Service API。
+If a calculated metric does not belong to any entity, it should be designed as a global Service API.
 :::

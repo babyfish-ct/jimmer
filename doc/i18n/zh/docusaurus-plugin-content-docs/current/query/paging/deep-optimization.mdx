@@ -115,15 +115,15 @@ fun findBooks(limit: Int, offset: Int): List<Book> =
         optimize_.PRICE,
         optimize_.STORE_ID
     from (
-    select
-        tb_1_.ID optimize_core_id_
-        from BOOK tb_1_
-    limit ? /* 10 */ offset ? /* 1000 */
+        select
+            tb_1_.ID optimize_core_id_
+            from BOOK tb_1_
+        limit ? /* 10 */ offset ? /* 1000 */
     ) optimize_core_ inner join BOOK optimize_
         on optimize_.ID = optimize_core_.optimize_core_id_
     ```
 
-由此可见，当offset过大时，Jimmer会先对id列进行分页查询，再把分页后的id集合转化为对象集合。当表的数据量很大时，这何用。
+由此可见，当offset过大时，Jimmer会先对id列进行分页查询，再把分页后的id集合转化为对象集合。当表的数据量很大时，很有用。
 
 ## 设置为0
 

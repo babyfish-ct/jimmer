@@ -6,13 +6,13 @@ title: Connection Manager
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer中一切可执行的语句和指令都支持两种执行模式：
+In Jimmer, all executable statements and instructions support two execution modes:
 
--   基于用户指定的JDBC连接执行
+-   Execute based on the JDBC connection specified by the user  
 
--   由Jimmer自动决定基于某个JDBC连接执行
+-   Executed by Jimmer automatically determining based on a JDBC connection
 
-这里，以`Executable`(Java)或`KExecutable`(kotlin)接口为例
+Here, take `Executable` (Java) or `KExecutable` (Kotlin) interface as an example
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -33,22 +33,23 @@ public interface Executable<R> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="KExecutable.kt"
+```kotlin title="KExecutable.kt" 
 package org.babyfish.jimmer.sql.kt
 
-import java.sql.Connection
+import java.sql.Connection  
 
 interface KExecutable<R> {
-    fun execute(con: Connection? = null): R
+  fun execute(con: Connection? = null): R
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   `execute(Connection)`：在用户指定的JDBC连接上执行。
+-   `execute(Connection)`: Execute on the JDBC connection specified by the user.
 
-    以查询为例：
+    Take query as an example:
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -64,7 +65,7 @@ interface KExecutable<R> {
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
-    
+
     ```kotlin
     val books = sqlClient
         .createQuery(Book::class) {
@@ -73,13 +74,18 @@ interface KExecutable<R> {
         // highlight-next-line
         .execute(con)
     ```
-    
+
     </TabItem>
     </Tabs>
 
--   `execute()`或`execute(null)`：由Jimmer自主决定在某个JDBC连接上执行。
+    :::info
+    For this usage, no special configuration of SqlClient is required.
+    :::
 
-    以查询为例：
+-   `execute()` or `execute(null)`: Determined by Jimmer to execute on a JDBC connection.
+
+    Take query as an example:
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -89,34 +95,32 @@ interface KExecutable<R> {
     List<Book> books = sqlClient
         .createQuery(book)
         .select(book)
-        // highlight-next-line
+        // highlight-next-line  
         .execute();
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
-    
+
     ```kotlin
     val books = sqlClient
         .createQuery(Book::class) {
             select(table)
         }
         // highlight-next-line
-        .execute()    
+        .execute()
     ```
-    
+
     </TabItem>
     </Tabs>
 
-:::info
-要使用第1种行为，无需对SqlClient做出特别配置。
+    :::info
+    For this usage, `ConnectionManager` must be configured for SqlClient. Otherwise it will cause exceptions.
 
-要使用第2种行为，必须为SqlClient配置`ConnectionManager`。否则将会导致异常。
+    Undoubtedly, the 2nd approach is more in line with the requirements of business system development, so it is recommended. So it is strongly recommended to configure `ConnectionManager` for SqlClient.
+    :::
 
-毫无疑问，第2种方式更符合业务系统开发要求，推荐使用。所以强烈建议为SqlClient配置`ConnectionManager`。
-:::
-
-## 简单的ConnectionManager
+## Simple ConnectionManager
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -128,25 +132,25 @@ JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setConnectionManager(
         ConnectionManager
-            // highlight-next-line
-            .simpleConnectionManager(dataSource)
+        // highlight-next-line
+        .simpleConnectionManager(dataSource)
     )
-    .builde();
+    .builde(); 
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-javax.sql.DataSource dataSource = ...;
+val dataSource: javax.sql.DataSource = ...
 
-var sqlClient = newKSqlClient {
+val sqlClient = newKSqlClient {
     setConnectionManager {
         ConnectionManager
-            dataSoruce.connection.use {
-                // highlight-next-line
-                proceed(it)
-            }
+        dataSoruce.connection.use {
+            // highlight-next-line
+            proceed(it)
+        }
     }
 }
 ```
@@ -155,15 +159,15 @@ var sqlClient = newKSqlClient {
 </Tabs>
 
 :::danger
-这种方式仅负责从DataSource获取连接，并没有事务管理机制。
+This way is only responsible for getting connections from DataSource and has no transaction management mechanism.
 
-但是，实际项目中，事务非常重要，因此，除学习和尝试外，不建议在实际项目使用这种方式。
+However, transactions are very important in actual projects. Therefore, except for learning and trying, it is not recommended to use this approach in actual projects.
 :::
 
-## 受Spring事务管理的ConnectionManager
+## ConnectionManager managed by Spring transaction  
 
-这个话题在[Spring篇/整合Spring事务](../spring/transaction)中详细讨论过，本文不做重复阐述。
+This topic has been discussed in detail in [Spring Section/Integrate Spring Transaction](../spring/transaction). This article will not repeat the explanation.
 
 :::tip
-让Jimmer受到Spring事务的管理，是推荐用法。
+Letting Jimmer be managed by Spring transaction is the recommended usage.
 :::

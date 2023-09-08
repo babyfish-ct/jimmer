@@ -65,7 +65,7 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
--   明确使用`update` *(或`save(book, SaveMode.UPDATE_ONLY)`)* 明确表示这是一个更新操作，避免`UPSERT`模型带来的试探性查询，简化讨论。
+-   明确使用`update` *(或`save(book, SaveMode.UPDATE_ONLY)`)* 明确表示这是一个更新操作，避免`UPSERT`模式带来的试探性查询，简化讨论。
 
 -   **凭空捏造**一个Book对象，只对其`id`属性和`store`属性赋值，而其他所有属性都处于未知状态。
 

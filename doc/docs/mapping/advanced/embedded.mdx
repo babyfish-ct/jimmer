@@ -1,24 +1,24 @@
 ---
 sidebar_position: 1
-title: Embedded properties
+title: Embedded Properties
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-复合字段将来数据库的多个列合并为一个整体，将其映射为一个非实体的自定义类型，然后利用此自定义属性为实体声明一个属性。
+Embedded properties *(Composite properites)* merge multiple columns in the database into an integral whole, map them to a non-entity custom type, and then use this custom property to declare a property for the entity.
 
-## 作为普通字段
+## As Ordinary Field
 
-### 简单使用
+### Basic Usage
 
-首先，定义一个复合类型
+First, define a composite type:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="FullName.java"
-// highlight-next-line
+// highlight-next-line  
 @Embeddable
 public interface FullName {
 
@@ -29,11 +29,11 @@ public interface FullName {
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin title="FullName.kt"
 // highlight-next-line
-@Embeddable
+@Embeddable 
 interface FullName {
 
     val firstName: String
@@ -46,10 +46,10 @@ interface FullName {
 </Tabs>
 
 :::caution
-@Embeddable所定义的类型不是实体类型，其中不得声明id属性和关联属性。否则，会导致编译错误。
+Types defined by @Embeddable are not entity types. They must not declare id properties or association properties, otherwise compilation errors will occur.
 :::
 
-接下来我们就可以在另外一个实体中使用它
+Then we can use it in another entity:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -58,7 +58,7 @@ interface FullName {
 @Entity
 public interface Author {
 
-    @Id
+    @Id  
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
@@ -70,7 +70,7 @@ public interface Author {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Author.kt"
+```kotlin title="Author.kt" 
 @Entity
 interface Author {
 
@@ -84,30 +84,30 @@ interface Author {
 ```
 
 </TabItem>
-</Tabs>
+</Tabs>  
 
 :::info
-和JPA/Hibernate不同，在实体中使用复合类型时无需使用`@Embedded`。事实上，Jimmer也不提供`@Embedded`注解。
+Unlike JPA/Hibernate, when using composite types in entities, `@Embedded` is not required. In fact, Jimmer does not provide the `@Embedded` annotation at all. 
 :::
 
-`Author`对应的表结构如下
+The table structure corresponding to `Author` is: 
 
 ```sql
 create table author(
     id bigint unsigned not null auto_increment primary key,
     /* highlight-next-line */
     first_name varchar(20) not null,
-    /* highlight-next-line */
+    /* highlight-next-line */  
     last_name varchar(20) not null
 ) engine=innodb;
 ```
 
-### 覆盖列名
+### Override Column Names
 
-可以使用`org.babyfish.jimmer.sql.PropOverride`覆盖复合类型字段的列名
+`org.babyfish.jimmer.sql.PropOverride` can be used to override column names of composite type properties:
 
--   定义复合类型`Point`
-    
+- Define composite type `Point`:
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -137,8 +137,8 @@ create table author(
     </TabItem>
     </Tabs>
 
--   定义复合类型`Rect`，覆盖`Point`类型的列名
-    
+- Define composite type `Rect` and override column names of `Point` type:
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -147,7 +147,7 @@ create table author(
     public interface Rect {
 
         // highlight-next-line
-        @PropOverride(prop = "x", columnName = "`LEFT`")
+        @PropOverride(prop = "x", columnName = "`LEFT`") 
         // highlight-next-line
         @PropOverride(prop = "y", columnName = "`TOP`")
         Point leftTop();
@@ -169,12 +169,12 @@ create table author(
 
         // highlight-next-line
         @PropOverride(prop = "x", columnName = "`LEFT`")
-        // highlight-next-line
+        // highlight-next-line  
         @PropOverride(prop = "y", columnName = "`TOP`")
         val leftTop: Point
 
         // highlight-next-line
-        @PropOverride(prop = "x", columnName = "`RIGHT`")
+        @PropOverride(prop = "x", columnName = "`RIGHT`") 
         // highlight-next-line
         @PropOverride(prop = "y", columnName = "BOTTOM")
         val rightBottom: Point
@@ -184,7 +184,7 @@ create table author(
     </TabItem>
     </Tabs>
 
--   定义实体类型`Transition`，覆盖`Rect`类型的列名
+- Define entity type `Transition` and override column names of `Rect` type:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -237,14 +237,14 @@ create table author(
     </TabItem>
     </Tabs>
 
-`Transition`对应的表结构如下
+The table structure corresponding to `Transition` is:
 
 ```sql
 create table transition(
     id bigint unsigned not null auto_increment primary key,
     millis int not null,
     `LEFT` int not null,
-    `TOP` int not null,
+    `TOP` int not null, 
     `RIGHT` int not null,
     bottom int not null,
     target_left int not null,
@@ -254,18 +254,18 @@ create table transition(
 ) engine=innodb;
 ```
 
-## 作为主外键
+## As Primary/Foreign Keys 
 
 :::warning
-用复合类型作为主外键，即，主键和外键都由多个列组合而成，除了让系统变得复杂外，没有什么好处。
+Using composite types as primary/foreign keys, that is, primary keys and foreign keys are composed of multiple columns, makes the system more complex without much benefit.
 
-因此，除非必须兼容遗留系统中已有的数据库设计，系统应该避免如此使用，保证主外键的简单性。
+Therefore, unless compatibility with legacy database design is required, the system should avoid such usage to keep primary/foreign keys simple.
 :::
 
-让我们先定义一个复合类型
+Let's first define a composite type:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="UniqueId.java"
 // highlight-next-line
@@ -275,7 +275,7 @@ public interface UniqueId {
     @columnName("UNIQUE_ID_DAY_NO")
     int dayNo();
 
-    @columnName("UNIQUE_ID_SEQ_NO")
+    @columnName("UNIQUE_ID_SEQ_NO")  
     int sequenceNo();
 }
 ```
@@ -292,26 +292,26 @@ interface UniqueId {
     val dayNo: Int
     
     @columnName("UNIQUE_ID_SEQ_NO")
-    val sequenceNo: Int
+    val sequenceNo: Int  
 }
 ```
 
 </TabItem>
 </Tabs>
 
-### 作为主键
+### As Primary Key
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="Book.java"
-@Entity
+@Entity 
 public interface Book {
 
     @Id
     UniqueId id();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -325,48 +325,48 @@ interface Book {
     @Id
     val id: UniqueId
 
-    ...省略其他代码...
+    ...Omit other code... 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-由于`Book.id`未使用`@PropOverride`对`UniqueId`类型中列名配置进行覆盖，所以采用`UniqueId`中配置的列名，对应的DDL为
+Since `Book.id` does not override column names of `UniqueId` type using `@PropOverride`, the column names configured in `UniqueId` are used. The corresponding DDL is:
 
 ```sql
 create table book(
     unique_id_day_no int not null,
     unique_id_seq_no int not null,
-    ...省略其他字段...
+    ...Omit other columns...   
 ) engine=innodb;
 
 alter table book
     add constraint pk_book
-        primary key(unique_id_day_no, unique_id_seq_no);
+        primary key(unique_id_day_no, unique_id_seq_no); 
 ```
 
-### 被@JoinColumn引用
+### Referenced by @JoinColumn  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Chapter.java"
+```java title="Chapter.java"  
 @Entity
 public interface Chapter {
 
     @ManyToOne
     @JoinColumn(
-        name = "BOOK_ID_DAY_NO", 
-        referencedColumnName = "UNIQUE_ID_DAY_NO"
+        name = "BOOK_ID_DAY_NO",
+        referencedColumnName = "UNIQUE_ID_DAY_NO" 
     )
     @JoinColumn(
-        name = "BOOK_ID_SEQ_NO", 
+        name = "BOOK_ID_SEQ_NO",
         referencedColumnName = "UNIQUE_ID_SEQ_NO"
     )
     Book book();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -379,16 +379,16 @@ interface Chapter {
 
     @ManyToOne
     @JoinColumn(
-        name = "BOOK_ID_DAY_NO", 
+        name = "BOOK_ID_DAY_NO",
         referencedColumnName = "UNIQUE_ID_DAY_NO"
     )
     @JoinColumn(
-        name = "BOOK_ID_SEQ_NO", 
-        referencedColumnName = "UNIQUE_ID_SEQ_NO"
+        name = "BOOK_ID_SEQ_NO",
+        referencedColumnName = "UNIQUE_ID_SEQ_NO" 
     )
     val book: Book
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -396,12 +396,12 @@ interface Chapter {
 </Tabs>
 
 :::caution
-和我们之前讲解过的所有例子不同，这里@JoinColumn注解的`referencedColumnName`被指定了。
+Different from all the examples we have covered before, here the `referencedColumnName` of the @JoinColumn annotation is specified.  
 
-当外键由多列构成时，就需要使用多个`@JoinColumn`注解，其中，每个`@JoinColumn`必须指定`referencedColumnName`。
+When the foreign key consists of multiple columns, multiple `@JoinColumn` annotations must be used, where each `@JoinColumn` must specify `referencedColumnName`.
 :::
 
-如果外键是真的，对应的约束为
+If the foreign key is real, the corresponding constraint is:  
 
 ```sql
 alter table chapter
@@ -415,12 +415,12 @@ alter table chapter
         );
 ```
 
-### 被@JoinTable引用
+### Referenced by @JoinTable
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java"  
 @Entity
 public interface Book {
 
@@ -431,11 +431,11 @@ public interface Book {
     @JoinTable(
         joinColumns = {
             @JoinColumn(
-                name = "BOOK_ID_DAY_NO", 
+                name = "BOOK_ID_DAY_NO",
                 referencedColumnName = "UNIQUE_ID_DAY_NO"
             )
             @JoinColumn(
-                name = "BOOK_ID_SEQ_NO", 
+                name = "BOOK_ID_SEQ_NO",
                 referencedColumnName = "UNIQUE_ID_SEQ_NO"
             )
         }
@@ -443,7 +443,7 @@ public interface Book {
     // highlight-next-line
     List<Author> authors();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -451,7 +451,7 @@ public interface Book {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="Book.kt"
-@Entity
+@Entity  
 interface Book {
 
     @Id
@@ -461,7 +461,7 @@ interface Book {
     @JoinTable(
         joinColumns = {
             @JoinColumn(
-                name = "BOOK_ID_DAY_NO", 
+                name = "BOOK_ID_DAY_NO",
                 referencedColumnName = "UNIQUE_ID_DAY_NO"
             )
             @JoinColumn(
@@ -473,14 +473,14 @@ interface Book {
     // highlight-next-line
     val authors: List<Author>
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-如果外键是真的，中间表的DDL如下
+If the foreign key is real, the DDL of the join table is:
 
 ```sql
 create table book_author_mapping(
@@ -492,11 +492,11 @@ create table book_author_mapping(
 alter table book_author_mapping
     add constraint pk_book_author_mapping
         primary key(
-            book_id_day_no, 
-            book_id_seq_id, 
+            book_id_day_no,
+            book_id_seq_id,
             author_id
         );
-
+        
 alter table book_author_mapping
     add constraint fk_book_author_mapping__book
         foreign key(
@@ -506,7 +506,7 @@ alter table book_author_mapping
             unique_id_day_no,
             unique_id_seq_no
         );
-
+        
 alter table book_author_mapping
     add constraint fk_book_author_mapping__author
         foreign key(author_id)

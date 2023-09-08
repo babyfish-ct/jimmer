@@ -1,45 +1,45 @@
 ---
 sidebar_position: 4
-title: Spring Cloud & Remote associations
+title: Remote Associations
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import {Cloud} from  '@site/src/components/Image';
 
-远程关联是Jimmer对微服务架构的首次思考。
+Remote associations are Jimmer's first thoughts on microservice architecture.
 
-通过垂直切分，实体类型可以被划分到不同的微服务，也可以说被划分到不同的数据库中。隶属于不同的微服务实体类型之间关联 *(包括一对一、多对一、一对多和多对多)* 就是远程关联。
+Through vertical splitting, entity types can be divided into different microservices, or in other words, divided into different databases. The associations *(including one-to-one, many-to-one, one-to-many and many-to-many)* between entity types belonging to different microservices are remote associations.
 
 :::tip
-Jimmer自动实现远程关联数据的自动查询。
+Jimmer automatically implements automatic query of remote associated data. 
 
-即，如果[对象抓取器](../query/object-fetcher)中包含任意深度的远程关联属性，就会跨越多个微服务查询数据的不同部分，最后将不同部分的查询结果合并成对象抓取器所期望的数据结构作为一个整体返回。无需开发人员自己实现远程查询和数据拼接。
+That is, if the [object fetcher](../query/object-fetcher) contains remote associated properties of any depth, it will query different parts of the data across multiple microservices, and finally merge the query results of different parts into the data structure expected by the object fetcher as a whole return. No need for developers to implement remote queries and data splicing themselves.
 :::
 
-## 数据库
+## Databases
 
-在本文中，各实体如此划分
+In this article, each entity is divided as follows:
 
 <Cloud/>
 
 :::info
--   `BOOK_AUTHOR_MAPPING`作为多对多关联中间表，既可以划分给`book-service`服务，也可以划分给`author-service`服务。本例将之划分给`book-service`服务，原因会在后问阐述。
+-   `BOOK_AUTHOR_MAPPING` as the many-to-many association intermediate table, can be divided into either the `book-service` service or the `author-service` service. In this example, it is divided into the `book-service` service, the reason will be explained later.
 
--   实线箭头表示同一个数据库中的外键引用，真伪可以由开发人员自由选择。
+-   Solid arrows indicate foreign key references within the same database, whose validity can be freely chosen by developers. 
 
--   虚线箭头表示跨越数据库边界的外键引用，只能是伪外键。
+-   Dashed arrows indicate foreign key references across database boundaries, which must be pseudo foreign keys.
 :::
 
-为了简化讨论，三个服务的数据库初始化脚本如下
+To simplify the discussion, the database initialization scripts for the three services are as follows:
 
 <table>
     <thead>
         <tr>
-            <th>语言</th>
-            <th>例子</th>
-            <th>服务(子项目)</th>
-            <th>数据库初始化SQL</th>
+            <th>Language</th>
+            <th>Example</th>
+            <th>Service (Subproject)</th>
+            <th>Database Initialization SQL</th>
         </tr>
     </thead>
     <tbody>
@@ -107,33 +107,32 @@ Jimmer自动实现远程关联数据的自动查询。
 </table>
 
 :::info
-附带的例子[example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud)
-或[example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt)
-使用H2，各服务启动后会自动初始化各自的数据库。
+The accompanying examples [example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud) 
+or [example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt)
+use H2, each service will automatically initialize its own database after startup.
 :::
 
-## 实体定义
+## Entity Definition 
 
-在一个独立的子项目中 *(附带例子为
-[example/java/jimmer-cloud/model](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-cloud/model)或
-[example/kotin/jimmer-cloud-kt/model](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt/model)
-)*，定义所有实体类型。
+In a separate subproject *(the accompanying examples are
+[example/java/jimmer-cloud/model](https://github.com/babyfish-ct/jimmer/tree/main/example/java/jimmer-cloud/model) or
+[example/kotin/jimmer-cloud-kt/model](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/jimmer-cloud-kt/model))*, define all entity types.
 
-这些实体类型构成了全局模型，实体类型隶属于不同的微服务。隶属于不同微服务中的实体之间构成了远程关联，其实可以理解成定义在不同微服务之间的实体彼此交互契约。
+These entity types constitute the global model. Entity types belong to different microservices. Entities between different microservices constitute remote associations, which can actually be understood as the interaction contracts between entities belonging to different microservices.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStore.java"
+```java title="BookStore.java"  
 // highlight-next-line
 @Entity(microServiceName = "store-service")
 public interface BookStore {
 
-    // highlight-next-line
+    // highlight-next-line 
     @OneToMany(mappedBy = "store")
-    List<Book> books();
+    List<Book> books();  
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
@@ -142,14 +141,14 @@ public interface BookStore {
 
 ```kotlin title="BookStore.kt"
 // highlight-next-line
-@Entity(microServiceName = "store-service")
+@Entity(microServiceName = "store-service") 
 interface BookStore {
 
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     val books: List<Book>
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
@@ -157,30 +156,30 @@ interface BookStore {
 </Tabs>
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="Book.java"
-// highlight-next-line
+// highlight-next-line 
 @Entity(microServiceName = "book-service")
 public interface Book {
 
     @Nullable
     // highlight-next-line
-    @ManyToOne
+    @ManyToOne  
     BookStore store();
 
     // highlight-next-line
     @ManyToMany
     List<Author> authors();
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Book.kt"
+```kotlin title="Book.kt" 
 // highlight-next-line
 @Entity(microServiceName = "book-service")
 interface Book {
@@ -193,7 +192,7 @@ interface Book {
     @ManyToMany
     val authors: List<Author>
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
@@ -205,14 +204,14 @@ interface Book {
 
 ```java title="Author.java"
 // highlight-next-line
-@Entity(microServiceName = "author-service")
+@Entity(microServiceName = "author-service")  
 public interface Book {
 
     // highlight-next-line
     @ManyToMany(mappedBy = "authors")
     List<Book> books();
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
@@ -225,65 +224,65 @@ public interface Book {
 interface Author {
 
     // highlight-next-line
-    @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors") 
     val books: List<Book>
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   实体类的`@Entity`注解的`microServiceName`被指定，这样，说明每个实体属于那个微服务，即属于那个数据库。
+-   The `microServiceName` of the `@Entity` annotation of the entity class is specified, so that it is clear which microservice each entity belongs to, i.e. which database.
 
-    在本例中，实体类型`BookStore`、`Book`和`Author`分别隶属于为服务`store-service`、`book-service`和`author-service`。
+    In this example, the entity types `BookStore`, `Book` and `Author` belong to the services `store-service`, `book-service` and `author-service` respectively.
 
-    这里的微服务，就是注册中心中每个服务的名称，对于spring-cloud而言，就是全局配置`sping.application.name`。
+    Here the microservice is the name of each service in the registry center, for spring-cloud it is the global configuration `sping.application.name`.
 
--   隶属于不同微服务中的实体之间的关联，就是远程关联。
+-   The associations between entities belonging to different microservices are remote associations.
 
-    -   `BookStore.books`和`Book.store`: `BookStore`隶属于`store-service`，而`Book`隶属于`book-service`
+    -   `BookStore.books` and `Book.store`: `BookStore` belongs to `store-service`, while `Book` belongs to `book-service`
 
-    -   `Book.authors`和`Author.books`: `Book`隶属于`book-service`，而`Author`隶属于`author-service`
+    -   `Book.authors` and `Author.books`: `Book` belongs to `book-service`, while `Author` belongs to `author-service`
 
--   多对一关联`Book.store`必须可`null`，因为远程关联表示其外键必然引用另外一个数据库中的数据，也就是说必然为伪外键。而Jimmer中伪外键所对应的字段必须可`null`。
+-   The many-to-one association `Book.store` must be nullable, because the remote association means its foreign key must reference data in another database, that is, it must be a pseudo foreign key. And in Jimmer, the field corresponding to a pseudo foreign key must be nullable.
 
-    请参考[真假外键](../mapping/base/foreignkey)
+    Please refer to [Real and Pseudo Foreign Keys](../mapping/base/foreignkey).
 
--   对于书籍和作者之间的双向多对多关联而言，`Book.authors`是主动方，而`Author.books`是从动方 *(`@ManyToMany`的`mappedBy`被配置)*。
+-   For the bidirectional many-to-many association between books and authors, `Book.authors` is the owning side, while `Author.books` is the inverse side *(`mappedBy` of `@ManyToMany` is configured)*.
 
     :::info
-    Jimmer规定远程关联的中间表必须隶属于主动方实体所属的微服务。
+    Jimmer stipulates that the intermediate table of remote associations must belong to the microservice where the owning side entity belongs.
     :::
 
-    这里回答了前文留下的问题，为何在本例中中间表`BOOK_AUTOHOR_MAPPING`定义在微服务`book-service`的数据库中，而不定义在`author-service`的数据库中。
+    Here the question left in the previous section is answered, why in this example the intermediate table `BOOK_AUTOHOR_MAPPING` is defined in the `book-service` database instead of the `author-service` database.
 
-## 注册中心
+## Registry Center
 
-微服务应用需要一个注册中心，这是微服务架构的基本特征，本文无需做任何阐述。
+Microservice applications need a registry center, which is a basic feature of microservice architecture, no explanation is needed in this article.
 
-附带例子中，为[example/java/jimmer-cloud/registry-center](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud/registry-center)
-或[example/kotlin/jimmer-cloud-kt/registry-center](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt/registry-center)
+In the accompanying examples, it is [example/java/jimmer-cloud/registry-center](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud/registry-center)
+or [example/kotlin/jimmer-cloud-kt/registry-center](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt/registry-center)
 
-## 实现各服务
+## Implementing Services 
 
-由于微服务`store-service`、`book-service`和`author-service`的实现方式高度雷同，所以本文档仅讲解如何实现`store-service`。
+Since the implementations of the microservices `store-service`, `book-service` and `author-service` are highly similar, this document only explains how to implement `store-service`.
 
 :::note
-虽然本文只讲解`store-service`，但要运行起来体验远程关联的效果，需要把三个服务都实现完。
+Although this document only explains `store-service`, to experience the effect of remote associations, all three services need to be fully implemented.
 
-完整的代码可参见附带的例子[example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud)
-或[example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt)。
+Complete code can be found in the accompanying examples [example/java/jimmer-cloud](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-cloud)
+or [example/kotlin/jimmer-cloud-kt](https://github.com/babyfish-ct/jimmer/blob/main/example/kotlin/jimmer-cloud-kt). 
 :::
 
-### 让Jimmer支持微服务
+### Enable Microservice Support in Jimmer
 
-任何一个微服务，都必须让Jimmer支持微服务。有两种做法：
+Any microservice must enable Jimmer's microservice support. There are two ways:
 
--   使用Spring Boot Starter
+-   Use Spring Boot Starter
 
-    修改spring配置文件`application.yml` *(或`application.properties`)*
+    Modify spring configuration file `application.yml` *(or `application.properties`)*
 
     ```sh
     spring:
@@ -294,7 +293,7 @@ interface Author {
     jimmer:
     # highlight-next-line
         micro-service-name: ${spring.application.name}
-    ...省略其他配置...
+    ...other configurations omitted...
 
     eureka:
         client:
@@ -302,9 +301,9 @@ interface Author {
             defaultZone: http://localhost:7000/eureka/
     ```
 
-    这里，"store-service"既作为当前服务在spring-clound注册中心的名称，又作为Jimmer的微服务配置。
-
--   使用底层API时
+    Here, "store-service" is used both as the name of the current service in spring-cloud registry center and as the microservice configuration in Jimmer.
+  
+-   When using low-level APIs
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -313,7 +312,7 @@ interface Author {
     JSqlClient sqlClient = JSqlClient
         .newBuilder()
         .setMicroServiceName("...")
-        ...省略其他配置...
+        ...other configurations omitted...
         .build();
     ```
 
@@ -323,24 +322,24 @@ interface Author {
     ```kotlin
     val sqlClient = newKSqlClient {
         setMicroServiceName("...")
-        ...省略其他配置...
+        ...other configurations omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-一旦配置了`jimmer.micro-service-name`, Jimmer就明白了哪些实体类型隶属于当前服务 *(这里是`BookStore`)*。
+Once `jimmer.micro-service-name` is configured, Jimmer knows which entity types belong to the current service *(here is `BookStore`)*. 
 
--   使用Jimmer的ORM API操作当前微服务的实体类型，将会正确执行，如同之前所有文档所讲那样。
+-   Using Jimmer's ORM APIs to operate on the entity types belonging to the current microservice will execute correctly, just like everything explained in previous documents.
 
--   使用Jimmer的ORM API操作其他微服务的实体类型，将会抛出异常。
+-   Using Jimmer's ORM APIs to operate on entity types belonging to other microservices will throw exceptions.
 
 :::tip
-只要每个服务都保证`spring.application.name`和`jimmer.micro-service-name`相同，Jimmer就会自动实现远程关联数据的自动查询，无需开发人员编写任何代码。
+As long as each service ensures `spring.application.name` and `jimmer.micro-service-name` are the same, Jimmer will automatically implement automatic query of remote associated data without requiring developers to write any code.
 :::
 
-### 实现业务的查询
+### Implement Business Query Logic
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -350,7 +349,7 @@ interface Author {
 public @FetchBy("COMPLEX_FETCHER") BookStore findStoreDetail(
         @PathVariable("id") long id
 ) {
-    return storeRepository.findNullable(id, COMPLEX_FETCHER);
+    return storeRepository.findNullable(id, COMPLEX_FETCHER); 
 }
 
 public static final Fetcher<BookStore> COMPLEX_FETCHER =
@@ -372,13 +371,13 @@ public static final Fetcher<BookStore> COMPLEX_FETCHER =
 ```kotlin title="BookStoreService.kt"
 @GetMapping("/store/{id}/detail")
 fun findStoreDetail(
-    @PathVariable("id") id: Long
+    @PathVariable("id") id: Long  
 ): @FetchBy("COMPLEX_FETCHER") BookStore? =
     storeRepository.findNullable(id, COMPLEX_FETCHER)
 
 companion object {
 
-    val COMPLEX_FETCHER = 
+    val COMPLEX_FETCHER =  
         newFetcher(BookStore::class).by { ❶
             allScalarFields()
             books { ❷
@@ -394,25 +393,25 @@ companion object {
 </TabItem>
 </Tabs>
 
--   ❶ 聚合根查询，从当前服务`store-service`所属数据库中直接查询
+-   ❶ Query root aggregate, queried directly from the database belonging to the current service `store-service`
 
--   ❷ 通过远程关联属性`BookStore.books`查询关联对象
+-   ❷ Query associated objects through remote association property `BookStore.books`
 
-    通过HTTP协议访问远程微服务`book-service`间接获取数据
+    Access remote microservice `book-service` indirectly to get data via HTTP protocol
 
--   ❸ 通过远程关联属性`Book.authors`查询关联对象
+-   ❸ Query associated objects through remote association property `Book.authors`
 
-    通过HTTP协议访问远程微服务`author-service`间接获取数据
-
+    Access remote microservice `author-service` indirectly to get data via HTTP protocol
+  
 :::tip
-用户只需要实现聚合根对象的查询，关联属性 *(包括远程关联)* 的查询由Jimmer全自动化。
+Users only need to implement queries for root aggregate objects, queries for associated properties *(including remote associations)* are fully automated by Jimmer.
 
-因此，即使不为另外两个微服务`book-service`和`author-service`编写任何Java/Kotlin代码，只要修改它们的配置文件支持了微服务，本服务的此方法也可以正确运行。
+Therefore, even without writing any Java/Kotlin code for the other two microservices `book-service` and `author-service`, as long as their configuration files are modified to support microservices, this method can still run correctly.
 :::
 
-### 运行效果
+### Run Effects
 
-假如`store-service`在本机被启动且端口为7001，访问`http://localhost:7001/store/1/detail`，得到的结果为
+Assuming `store-service` is started on localhost with port 7001, accessing `http://localhost:7001/store/1/detail` will get the result:
 
 ```json
 {
@@ -444,11 +443,11 @@ companion object {
         },
         {
             "id":2,
-            ...略...
+            ...omitted...
         },
         {
             "id":3,
-            ...略...
+            ...omitted...
         },
         {
             "id":4,
@@ -467,11 +466,11 @@ companion object {
         },
         {
             "id":5,
-            ...略...
+            ...omitted...
         },
         {
             "id":6,
-            ...略...
+            ...omitted...
         },
         {
             "id":7,
@@ -490,11 +489,11 @@ companion object {
         },
         {
             "id":8,
-            ...略...
+            ...omitted...
         },
         {
             "id":9,
-            ...略...
+            ...omitted...
         }
     ]
 }

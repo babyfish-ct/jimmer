@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 5  
 title: Cache
 ---
 
@@ -8,16 +8,16 @@ import { CacheConsistencyPanel } from '@site/src/components/HomepageFeatures/Cac
 import { DtoExplosion, ObjectCache, AssociationCache, MultiViewCache, CalculatedCache } from "@site/src/components/Image";
 
 
-Jimmer提供了强大的缓存支持能力。
+Jimmer provides powerful cache support capabilities.
 
--   是否使用缓存，对开发人员完全透明
+-   Whether to use cache is completely transparent to developers
 
--   使用哪些缓存技术，由开发人员决定
+-   Which caching technologies to use is decided by developers
 
--   不仅支持简单的<ViewMore buttonText="对象缓存" variant="text"><ObjectCache/></ViewMore>，
-    还支持属性级缓存，包括<ViewMore buttonText="关联缓存" variant="text"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><CalculatedCache/></ViewMore>。
-    最终提供任意形状的数据结构的缓存能力，而非简单对象的缓存能力
+-   Not only does it support simple <ViewMore buttonText="object cache" variant="text"><ObjectCache/></ViewMore>, 
+    but also property-level cache, including <ViewMore buttonText="association cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="calculated cache" variant="text"><CalculatedCache/></ViewMore>.
+    Ultimately it provides the ability to cache arbitrary data structures, not just simple object caching.
 
--   以权限系统为代表的功能会让不同用户看到不同的数据，因此，Jimmer通过<ViewMore buttonText="多视图缓存" variant="text"><MultiViewCache/></ViewMore>来让不同用户看到不同的缓存。
+-   Features represented by permission systems allow different users to see different data. Therefore, Jimmer uses <ViewMore buttonText="multi-view caching" variant="text"><MultiViewCache/></ViewMore> to allow different users to see different caches.
 
--   强大的缓存一致性支持，开发人员专注于修改数据库即可，Jimmer自动<ViewMore buttonText="保证数据库和缓存的一致性" variant="text"><CacheConsistencyPanel/></ViewMore>
+-   Powerful cache consistency support. Developers can focus on modifying the database and Jimmer will automatically <ViewMore buttonText="invalidate cache" variant="text"><CacheConsistencyPanel/></ViewMore>.

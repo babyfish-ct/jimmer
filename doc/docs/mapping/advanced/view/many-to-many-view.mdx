@@ -6,23 +6,23 @@ title: ManyToManyView
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 经典ORM关联的不足
+## Limitations of classic ORM associations  
 
-在[基础映射/关联映射](../../base/association)中，我们学习了ORM中经典的关联映射，包括一对一、多对一、一对多和多对多。
+In [Basic Mapping/Associative Mapping](../../base/association), we learned about the classic associative mappings in ORM, including one-to-one, many-to-one, one-to-many and many-to-many.
 
-然而，有一种场景，映射模式的选择让人很纠结。为了展示这种场景，从熟悉的场景开始。
+However, there is one scenario that makes the choice of mapping mode very tangled. To show this scenario, let's start with a familiar scenario.
 
-### 无争议的多对多关联
+### Undisputed many-to-many association
 
-让我们来看一段DDL
+Let's look at a piece of DDL
 
-```sql 
+```sql
 create table book(
-    ...略...
+    ...omit...
 )engine=innodb;;
 
 create table author(
-    ...略...
+    ...omit...  
 ) engine=innodb;
 
 /* highlight-next-line */
@@ -48,49 +48,50 @@ alter table book_author_mapping
 ;
 ```
 
-这段DDL中，`book_author_mapping`表很特殊，只有两个外键，一个指向`book`表，一个指向`author`表。这种只有两个外键的子表用于表达两个父表之间的多对多关联。
+In this piece of DDL, `book_author_mapping` table is very special, it only has two foreign keys, one pointing to `book` table, and one pointing to `author` table. This kind of subtable with only two foreign keys is used to express the many-to-many association between two parent tables. 
 
-ORM的多对多映射会隐藏中间表，即，中间表没有对应的Java/Kotlin实体类型。因此，中间表并不需要独立主键，而是直接使用两个外键作为联合主键。
+ORM's many-to-many mapping will hide the intermediate table, that is, the intermediate table does not correspond to a Java/Kotlin entity type. Therefore, the intermediate table does not need an independent primary key, but directly uses the two foreign keys as a combined primary key.
 
 :::info
-除了两个关联外键外，中间表不得具备其他任何字段，这是ORM中多对多关联的限制
+In addition to the two associative foreign keys, the intermediate table must not have any other fields, which is a limitation of many-to-many associations in ORM.
 :::
 
-ORM中对应的多对多关联如下：
+The corresponding many-to-many association in ORM is as follows:
 
--   主动方：`Book.authors`
+-   Owning side: `Book.authors`
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java title="Book.java"
+    ```java title="Book.java" 
     @Entity
     public interface Book {
 
         @ManyToMany
         List<Author> authors();
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Book.kt"
+    ```kotlin title="Book.kt"
     @Entity
     interface Book {
 
         @ManyToMany
         val authors: List<Author>
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   从动方 *(可选)*: `Author.books`
+-   Inverse side *(optional)*: `Author.books`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -102,7 +103,7 @@ ORM中对应的多对多关联如下：
         @ManyToMany(mappedBy = "authors")
         List<Book> books();
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
@@ -116,34 +117,34 @@ ORM中对应的多对多关联如下：
         @ManyToMany(mappedBy = "authors")
         val books: List<Book>
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-### 无争议的双重多对一关联
+### Undisputed double many-to-one association
 
-让我们再来看第二个场景，首先，还是看一段DDL
+Let's look at the second scenario, first, look at a piece of DDL
 
-```sql 
+```sql
 create table order_(
-    ...略...
+    ...omit...
 ) engine=innodb;
 
 create table product(
-    ...略...
+    ...omit...
 ) engine=innodb;
 
 /* highlight-next-line */
 create table order_item(
-    id bigint unsigned not null auto_increment primary key,
+    id bigint unsigned not null auto_increment primary key, 
     order_id bigint unsigned not null,
     product_id bigint unsigned not null,
     /* highlight-next-line */
     quantity int not null,
-    /* highlight-next-line */
+    /* highlight-next-line */  
     unit_price numeric(10, 2) not null
 ) engine=innodb;
 alter table order_item
@@ -162,20 +163,20 @@ alter table order_item
 ;
 ```
 
-这是一个经典的`订单-订单明细-产品`关联。
+This is a classic `order - order item - product` association.
 
-其中，`order-item`看起来有点像多对多的中间表，因为它存在两个外键：指向`order_`表的`order_id`和指向`product`表的`product_id`。
+Among them, `order-item` looks a bit like the intermediate table of many-to-many, because it has two foreign keys: `order_id` pointing to the `order_` table and `product_id` pointing to the `product` table.
 
-然而，`order-item`并不是中间表，因为它具备其他业务字段，表示商品数量的`quantity`，以及表示下单这一刻商品的价格快照的`unit_price`。
+However, `order-item` is not an intermediate table, because it has other business fields, `quantity` representing quantity of goods, and `unit_price` representing a snapshot of the price of goods at the time of order.
 
-幸运的是，对于经典的`订单-订单明细-产品`关联，更适合人们直觉的思维方式是认为`order_item`是一个独立的实体，持有分别指向`oroder_`和`product`的两个多对一关联；
-而不是将`order-item`视为中间表，认为`order_`和`product`之间存在多对多关系。
+Fortunately, for the classic `order - order item - product` association, it is more intuitive to think of `order_item` as an independent entity, with two many-to-one associations pointing to `order_` and `product` respectively;
+Rather than viewing `order-item` as a join table and thinking there is a many-to-many relationship between `order_` and `product`.
 
-正是因为把`order_item`作为一个独立的实体来看待，所以`order_item`采用了独立主键。
+It is precisely because `order_item` is regarded as an independent entity that `order_item` uses an independent primary key.
 
-我们可以在ORM中两个多对一关联来映射这三张表
+We can map these three tables in ORM using two many-to-one associations
 
--   `OrderItem.order`和`OrderItem.product`
+-   `OrderItem.order` and `OrderItem.product`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -196,14 +197,14 @@ alter table order_item
 
         BigDecimal unitPrice();
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="OrderItem.kt"
+    ```kotlin title="OrderItem.kt"
     @Entity
     interface OrderItem {
 
@@ -219,7 +220,7 @@ alter table order_item
 
         val unitPrice: BigDecimal
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
@@ -228,7 +229,7 @@ alter table order_item
 
 -   `Order.items`
 
-    这类系统中，人们常常需要根据订单获取其明细列表，所以我们定义一个一对多属性`Order.items`，作为`OrderItem.order`的镜像。
+    In such systems, it is often necessary to get the detail list according to the order, so we define a one-to-many property `Order.items` as a mirror of `OrderItem.order`.
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -241,14 +242,14 @@ alter table order_item
         @OneToMany(mappedBy = "order")
         List<OrderItem> items();
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Order.kt"
+    ```kotlin title="Order.kt"
     @Entity
     @Table(name = "ORDER_")
     interface Order {
@@ -256,37 +257,37 @@ alter table order_item
         @OneToMany(mappedBy = "order")
         val items: List<OrderItem>
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   不提供`Product.items`
+-   Do not provide `Product.items`
 
-    这类系统中，人们基本不会需要根据产品获取其明细列表 *（如果从产品端开始分析，一般都是复杂的查询，而非简单的关联）*，所以并不提供`Product.items`，一个单向的`OrderItem.product`关联足够。
+    In such systems, it is rarely necessary to get the detail list based on the product *(if starting the analysis from the product side, it is usually a complex query rather than a simple association)*, so a one-way `OrderItem.product` association is sufficient.
 
-    因此，不必展示`Product`实体的代码。
+    So there is no need to show the code for the `Product` entity.
 
-### 有争议的、让人纠结的场景
+### The controversial, tangled scenario
 
-前文中，我们展示了两个业务场景
+In the previous text, we showed two business scenarios
 
--   场景1：中间表`book_author_mapping`很干净，只有两个外键字段，顺理成章地被映射成了多对多关联
+-   Scenario 1: The intermediate table `book_author_mapping` is very clean, with only two foreign key fields, and is naturally mapped to a many-to-many association
 
--   场景2：`order_item`看起来像中间表但并不是中间表，因为它除了两个外键外还要有其他业务字段。
-    幸运的是，人们会选择把OrderItem视为独立实体，并用两个多对一关联来把三个实体类型串到一起。
+-   Scenario 2: `order_item` looks like an intermediate table but is not an intermediate table, because in addition to the two foreign keys it also needs to have other business fields.
+    Fortunately, people will choose to treat OrderItem as an independent entity and use two many-to-one associations to string the three entity types together.
 
-接下来，我们来看看场景3，先看DDL
+Next, let's look at scenario 3, first look at the DDL:
 
 ```sql
 create table student(
-    ...略...
+    ...omit...
 )engine=innodb;;
 
 create table course(
-    ...略...
+    ...omit...
 ) engine=innodb;
 
 /* highlight-next-line */
@@ -295,7 +296,7 @@ create table learning_link (
     student_id bigint unsigned not null,
     course_id bigint unsigned not null,
     /* highlight-next-line */
-    scroe int
+    score int
 ) engine=innodb;
 alter table learning_link
     add constraint pk_student_course_mapping
@@ -315,46 +316,46 @@ alter table learning_link
 ;
 ```
 
-这段DDL表示学校的选修课系统，学生和选修课之间存在多对多关系。
+This piece of DDL represents the elective course system in schools. There is a many-to-many relationship between students and elective courses.
 
--   对学生而言，知道自己选修了那些课程自然非常重要
+-   For students, it is of course very important to know which courses they have chosen
 
--   对学校而言，知道每一门课程被哪些学生选修也非常重要，因为需要根据这些信息安排师资力量和教学场所
+-   For schools, it is also very important to know which students have chosen each course, because teacher resources and teaching venues need to be arranged based on this information
 
-即，对于学生实体和课程实体而言，彼此关联对方和查询对方是重要且高频的操作。因此，在`student`和`course`之间抽象出双向多对多关联是一个很好的选择。
+That is, for the student entity and the course entity, associating with each other and querying each other is an important and high frequency operation. Therefore, abstracting bidirectional many-to-many associations between `student` and `course` is a very good choice.
 
-不幸的是，选修关系表`learning_link`中有一个可以为null的`score`字段，null表示还未考试，非null表示考试后的成绩。
+Unfortunately, the elective relationship table `learning_link` has a `score` field that can be null, null indicating that the exam has not yet taken place, non-null indicating the score after the exam. 
 
--   因为这个字段的存在，中间表不再干净，无法简单地映射为经典的ORM多对多关联。即，这并非简单的场景1
+-   Because of the existence of this field, the intermediate table is no longer clean, and cannot be simply mapped to the classic ORM many-to-many association. That is, this is not a simple scenario 1.
 
--   当然，我们用场景2的方法来处理这个问题，把`learning_link`视为一个独立实体，用两个多对一关联把三个实体类型串起来。
+-   Of course, we can handle this problem using the method of scenario 2, treating `learning_link` as an independent entity, and using two many-to-one associations to string the three entity types together.
 
-    然而，对于很大一部分上层业务而言，其实只关心`student`和`course`之间的彼此关联，并不关心`learning_link`表的`score`字段
-    *(即，中间表的非外键业务字段`learnning_link`.`score`远没场景2中的相关字段重要)*。
-    在这种情况下，场景2的解决方式会带来较高的心智负担，很显然，场景1那种思维方式更简单。
+    However, for a large part of the upper layer business, what they really care about is only the mutual association between `student` and `course`, and they don't care about the `score` field of the `learning_link` table. 
+    *(That is, the non-foreign key business field `learning_link`.`score` of the intermediate table is far less important than the relevant fields in scenario 2)*.
+    In this case, scenario 2's solution will bring a higher cognitive burden, and scenario 1's way of thinking is obviously simpler.
+  
+:::info  
+This scenario is actually the most tangled scenario in classic ORM, which cannot be simply mapped to many-to-many associations, while hoping that some upper layer business can adopt the many-to-many mentality to simplify the problem.
 
-:::info
-这个场景其实是经典ORM中最让人纠结的场景，既无法简单地映射为多对多关联，又期望部分上层业务可以采用多对多的思维方式简化问题。
-
-`@ManyToManyView`就是为这类场景设计的强力工具。
+`@ManyToManyView` is a powerful tool designed for such scenarios.
 :::
 
-## 初识ManyToManyView
+## Getting Started with ManyToManyView
 
-针对前面讨论过的场景3，Jimmer给出了两步解决方案。
+For the discussed scenario 3 above, Jimmer gave a two-step solution.
 
-1.  基础关联映射：
-    
-    先按照场景2的办法，把`learning_link`视为一个独立实体，提供两个分别指向`student`和`course`的多对一关联；
-    反过来，`student`和`course`也使用一对多关联引用`learning_link`。即，用两个双向一对多关联把三个实体类型串在一起。
+1.  Basic association mapping:
 
-2.  使用`@ManyToManyView`：
+    First, treat `learning_link` as an independent entity according to scenario 2, and provide two many-to-one associations pointing to `student` and `course` respectively;
+    Conversely, `student` and `course` also use one-to-many associations to reference `learning_link`. That is, use two bidirectional one-to-many associations to string the three entity types together.
 
-    然后，在第一步的基础上，采用`@ManyToManyView`快速模拟出场景1的效果。
+2.  Use `@ManyToManyView`:
 
-### 基础关系映射
+    Then, on the basis of the first step, use `@ManyToManyView` to quickly simulate the effect of scenario 1.
+   
+### Basic relationship mapping
 
--   `LearningLink.student`和`LearningLink.course`
+-   `LearningLink.student` and `LearningLink.course`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -368,19 +369,19 @@ alter table learning_link
         Student student(); ①
 
         @ManyToOne
-        // highlight-next-line
+        // highlight-next-line  
         Course course(); ②
 
         Integer score();
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="LearningLink.kt"
+    ```kotlin title="LearningLink.kt"
     @Entity
     interface LearningLink {
 
@@ -388,20 +389,20 @@ alter table learning_link
         // highlight-next-line
         val student: Student ①
 
-        @ManyToOne
+        @ManyToOne 
         // highlight-next-line
         val course: Course ②
 
         val score: Int?
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    其中，①和②会被后续代码引用
+    Where ① and ② will be referenced by subsequent code
 
 -   `Student.learningLinks`
 
@@ -416,14 +417,14 @@ alter table learning_link
         // highlight-next-line
         List<LearningLink> learningLinks(); ③
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Student.kt"
+    ```kotlin title="Student.kt"
     @Entity
     interface Student {
 
@@ -431,15 +432,15 @@ alter table learning_link
         // highlight-next-line
         val learningLinks: List<LearningLink> ③
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    其中，③会被后续代码引用
-
+    Where ③ will be referenced by subsequent code
+    
 -   `Course.learningLinks`
 
     <Tabs groupId="language">
@@ -453,14 +454,14 @@ alter table learning_link
         // highlight-next-line
         List<LearningLink> learningLinks(); ④
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Course.kt"
+    ```kotlin title="Course.kt"
     @Entity
     interface Course {
 
@@ -468,18 +469,18 @@ alter table learning_link
         // highlight-next-line
         val learningLinks: List<LearningLink> ④
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    其中，④会被后续代码引用
+    Where ④ will be referenced by subsequent code
 
-### 使用@ManyToManyView
+### Using @ManyToManyView
 
--   模拟多对多关联：`Student.courses`
+-   Simulate many-to-many association: `Student.courses`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -490,23 +491,24 @@ alter table learning_link
 
         @ManyToManyView(
             prop = "learningLinks", ❶ -> ③
-            deeperProp = "course" ❷ -> ②
+            deeperProp = "course" ❷ -> ② 
         )
         // highlight-next-line
         List<Course> courses();
 
-        // 第一步中，已经声明了一对多关联`learningLinks`
+        // The one-to-many association `learningLinks` 
+        // has been declared in step 1
         @OneToMany(mappedBy = "student")
         List<LearningLink> learningLinks(); ③
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Student.kt"
+    ```kotlin title="Student.kt"
     @Entity
     interface Student {
 
@@ -517,32 +519,33 @@ alter table learning_link
         // highlight-next-line
         val courses: List<Course>
 
-        // 第一步中，已经声明了一对多关联`learningLinks`
+        // The one-to-many association `learningLinks` 
+        // has been declared in step 1
         @OneToMany(mappedBy = "student")
         val learningLinks: List<LearningLink> ③
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    当前属性`Student.courses`可以分两步获取
+    The current property `Student.courses` can be obtained in two steps:
 
-    1.  `prop = "learningLinks"`
-        
-        首先，通过当前实体的另一个属性`Student.lerningLinks`③ 获得所有的`LearningLink`对象
+    -   ❶ `prop = "learningLinks"`
+       
+        First, get all `LearningLink` objects through another property of the current entity `Student.learningLinks` ③
 
-    2.  `deeperProp = "course"`
+    -   ❷ `deeperProp = "course"`
 
-        对于上一步得到的每一个`LearningLink`对象，可以进一步通过属性`LearningLink.course`② 得到`Course`
-
+        For each `LearningLink` object obtained in the previous step, `Course` can be further obtained through the `LearningLink.course` property ②
+       
         :::tip
-        由于`LearningLink`实体只有一个指向`Course`实体的多对一关联，没有二义性，因此这里的`deeperProp = "course"`可以省略
+        Since the `LearningLink` entity has only one many-to-one association pointing to the `Course` entity, there is no ambiguity, so `deeperProp = "course"` can be omitted here
         :::
 
--   模拟多对多关联：`Course.students`
+-   Simulate many-to-many association: `Course.students`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -553,23 +556,23 @@ alter table learning_link
 
         @ManyToManyView(
             prop = "learningLinks", ❶ -> ④
-            deeperProp = "student" ❷ -> ①
+            deeperProp = "student" ❷ -> ①  
         )
         // highlight-next-line
         List<Student> students();
 
-        // 第一步中已经声明了一对多关联`learningLinks`
+        // The one-to-many association `learningLinks` has been declared in step 1
         @OneToMany(mappedBy = "course")
         List<LearningLink> learningLinks(); ④
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Course.kt"
+    ```kotlin title="Course.kt"
     @Entity
     interface Course {
 
@@ -580,59 +583,59 @@ alter table learning_link
         // highlight-next-line
         val students: List<Student>
 
-        // 第一步中已经声明了一对多关联`learningLinks`
+        // The one-to-many association `learningLinks` has been declared in step 1  
         @OneToMany(mappedBy = "course")
         val learningLinks: List<LearningLink> ④
 
-        ...省略其他代码，...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-    当前属性`Course.students`可以分两步获取
+    The current property `Course.students` can be obtained in two steps:
 
-    1.  `prop = "learningLinks"`
-        
-        首先，通过当前实体的另一个属性`Course.lerningLinks`④ 获得所有的`LearningLink`对象
+    -   ❶ `prop = "learningLinks"`
+    
+        First, get all `LearningLink` objects through another property of the current entity `Course.learningLinks` ④
+    
+    -   ❷ `deeperProp = "student"`
 
-    2.  `deeperProp = "student"`
-
-        对于上一步得到的每一个`LearningLink`对象，可以进一步通过属性`LearningLink.student`① 得到`Student`
-
+        For each `LearningLink` object obtained in the previous step, `Student` can be further obtained through the `LearningLink.student` property ①
+    
         :::tip
-        由于`LearningLink`实体只有一个指向`Student`实体的多对一关联，没有二义性，因此这里的`deeperProp = "student"`可以省略
+        Since the `LearningLink` entity has only one many-to-one association pointing to the `Student` entity, there is no ambiguity, so `deeperProp = "student"` can be omitted here
         :::
 
-## @ManyToManyView的本质
+## The essence of @ManyToManyView 
 
--   `@ManyToManyView`声明的属性并没有维护自己的数据，它只是原始属性的视图，将原始属性返回的集合进行一层代理包装而已。
+-   The property declared by `@ManyToManyView` does not maintain its own data, it is only a view of the original property, which proxies and wraps the collection returned by the original property.
 
-    以本文Java例子中`Student`端为例 *（Course端一样）*。
+    Take the Java example in this article `Student` side as an example (the `Course` side is the same).
 
-    -   原始关联属性：List&lt;LearningLink&gt; learningLinks();
+    -   Original association property: List&lt;LearningLink&gt; learningLinks();
 
-    -   视图关联属性：List&lt;Course&gt; courses();
+    -   View association property: List&lt;Course&gt; courses();
 
-    你可以这段伪码来理解ManyToManyView视图属性
+    You can understand the ManyToManyView view property with this pseudocode:
 
     ```java
-    @Override
+    @Override  
     public List<Course> courses() {
         return new ListProxy<>(
-            this.learningLinks(),
+            this.learningLinks(),  
             LearningLink::course
         );
     }
     ```
 
-    视图关联属性返回了一个的代理集合，代理集合包装了原始属性的集合，并对原始集合元素进行了转换。
+    The view association property returns a proxy collection that wraps the collection of the original property and transforms the elements of the original collection.
 
-    很明显，二者本质一样，共享相同的数据。
+    It is obvious that the two are essentially the same and share the same data.
 
--   构建实体对象时，只能设置原始属性，不能设置视图属性。
+-   When constructing entity objects, only the original property can be set, not the view property.
 
-    这和[@IdView](./id-view)不同，对于[@IdView](./id-view)而言，原始属性和试图属性都可以设置
+    This is different from [@IdView](./id-view). For [@IdView](./id-view), both the original property and the view property can be set.
 
--   无论原始属性，还是试图属性，预编译器都会生成与之配套的代码，所以二者都可以在[对象抓取器](../../../query/object-fetcher)和强类型SQL DSL中使用
+-   Whether it is the original property or the view property, the preprocessor will generate code to match them, so both can be used in [object fetchers](../../../query/object-fetcher) and strongly typed SQL DSL.

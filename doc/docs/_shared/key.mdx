@@ -1,49 +1,50 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-最初，人们直接用业务字段作为表的主键。这是最直接最容易使用的方式，但存在以下问题。
+Initially, people used business fields directly as the primary key of tables. This is the most straightforward and easy to use approach, but it has the following problems:
 
--   主键不稳定
+-   Unstable primary key
 
-    由于主键本身是业务字段，所以会被修改，这就导致主键不稳定。
+    Since the primary key itself is a business field, it can be modified, which leads to an unstable primary key.
 
-    虽然数据库中引用它的外键可以使用`on update cascade`来保持一致，
-    但是对于数据库外的系统，比如缓存，主键不稳定会导致很多问题。
+    Although the foreign keys that reference it in the database can use `on update cascade` to keep consistency, 
+    an unstable primary key will cause many problems for systems outside the database, such as caches.
 
-    即使从技术层面能抽象出主键不稳定问题的统一解决办法，也不推荐，因为这样系统难以理解。
+    Even if a unified solution to the primary key instability problem can be abstracted at the technical level, it is not recommended, because it makes the system difficult to understand.
 
--   多表连接成本高
+-   High cost of multi-table joins
 
-    由于主键本身是业务字段，主键的类型很可能不是数字类型，而是相对较长的字符串类型，
-    而且还可能是多个列组合而成的联合主键，这会导致多表链接成本高。
+    Since the primary key itself is a business field, its type is likely to be a relatively long string type rather than a numeric type,
+    and it may even be a composite primary key composed of multiple columns, which leads to high cost of multi-table joins.
 
-为了解决以上问题，人们学会使用没有业务意义的数据作为主键，比如
 
--   数据库自动编号
--   数据库序列值
+To solve the above problems, people learned to use data without business meaning as the primary key, such as
+
+-   Auto numbering by database
+-   Sequence value by database
 -   UUID
--   雪花ID
+-   Snowflake ID
 
-为了让保存指令支持幂等性保存，Jimmer引入了两个概念：Id和Key
+To enable idempotent saves for save commands, Jimmer introduces two concepts: Id and Key
 
--   @Id: 主键
+-   @Id: Primary key
 
--   @Key: 业务性主键
+-   @Key: Business primary key
 
-    -   如果Id本身就是业务属性（不推荐），无需指定Key，因为Id本身已经表示了业务层面的唯一约束。
+    -   If Id itself is a business attribute (not recommended), no need to specify Key, because Id itself already represents the uniqueness constraint at the business level.
 
-    -   如果Id没有业务意义（推荐），那么Key表示业务层面的唯一约束是什么。
+    -   If Id has no business meaning (recommended), then Key represents what the uniqueness constraint is at the business level.
 
-请看下的例子
+See the following example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-@Entity
+@Entity  
 public interface TreeNode {
 
-    @Id
+    @Id  
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
@@ -51,8 +52,8 @@ public interface TreeNode {
     @Key
     String name();
 
-    // highlight-next-line
-    @Key
+    // highlight-next-line 
+    @Key  
     @ManyToOne
     @Nullable
     TreeNode parent();
@@ -70,7 +71,7 @@ public interface TreeNode {
 interface TreeNode {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     val id: Long
 
     // highlight-next-line
@@ -78,7 +79,7 @@ interface TreeNode {
     val name: String
 
     // highlight-next-line
-    @Key
+    @Key   
     @ManyToOne
     val parent: TreeNode?
 
@@ -90,10 +91,10 @@ interface TreeNode {
 </TabItem>
 </Tabs>
 
-这里，`TreeNode`实体的Id采用自动编号，并没有业务意义。所以，为了更好地配合保存指令，
-这里指定了`key`，由两个属性构成：`name`和`parent`。
+Here, the Id of the `TreeNode` entity uses auto numbering and has no business meaning. Therefore, to better match save commands, 
+`key` is specified here, consisting of two properties: `name` and `parent`.
 
-对应的DDL是
+The corresponding DDL is:
 
 ```sql
 create table TREE_NODE(
@@ -105,26 +106,27 @@ create table TREE_NODE(
 alter table TREE_NODE
     add constraint PK_TREE_NODE
         primary key(ID);
-
+        
 alter table TREE_NODE
     add constraint UQ_TREE_NODE
         /* highlight-next-line */
-        unique(NAME, PARENT_ID);
+        unique(NAME, PARENT_ID); 
 ```
 
-实体类型的属性`name`和`parent`被@Key修饰，对应于数据库中`NAME`和`PARENT_ID`列组成的UNIQUE约束 *（或UNIQUE INDEX）*。
+The `name` and `parent` properties of the entity type decorated with @Key correspond to the UNIQUE constraint *(or UNIQUE INDEX)* composed of the `NAME` and `PARENT_ID` columns in the database.
 
-这个唯一性约束可以用计算机文件系统做为类比。文件系统允许同名目录或文件，但如果限定父目录，则不允许同名。
+This uniqueness constraint can be analogized to file systems. File systems allow directories or files with the same name, but do not allow the same name if the parent directory is specified.
 
 :::info
-通过这个例子，我们看到
+Through this example, we see:
 
--   Key可以由多个属性组成
+-   Key can consist of multiple properties
 
--   外键可以作为Key的一部分
+-   Foreign keys can be part of Key
 :::
 
-让我们再来看另外一个例子，在这个例子中，组成Key的属性全部是基于外键的属性
+
+Let's take another look at another example where the properties that make up Key are all properties based on foreign keys:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -134,11 +136,11 @@ alter table TREE_NODE
 public interface OrderItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  
     long id();
 
     // highlight-next-line
-    @Key
+    @Key   
     @ManyToOne
     Order order();
 
@@ -150,7 +152,7 @@ public interface OrderItem {
     int quantity();
 
     // Snapshot of `product.price`
-    BigDecimal unitPrice();
+    BigDecimal unitPrice(); 
 }
 ```
 
@@ -171,7 +173,7 @@ interface OrderItem {
     val order: Order
 
     // highlight-next-line
-    @Key
+    @Key 
     @ManyToOne
     val product: Product
 

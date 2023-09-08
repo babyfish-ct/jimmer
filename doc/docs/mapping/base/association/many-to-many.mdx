@@ -1,32 +1,32 @@
 ---
 sidebar_position: 4
-title: ManyToMany
+title: Many To Many
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-本通过介绍如何使用`@org.babyfish.jimmer.sql.ManyToMany`注解可以声明多对多关联属性
+This chapter introduces how to use the `@org.babyfish.jimmer.sql.ManyToMany` annotation to declare many-to-many association properties.
 
-多对多可支持双向关联，对于双向关联而言，其中一方必须主动方，另外一方为从动方。
+Many-to-many supports bidirectional association. For bidirectional associations, one side must be the owning side, and the other side must be the inverse side.
 
--   主动方(必须)：真正的数据库和关联属性之间映射，实现单向多对多关联。
+-   Owning side (required): The actual mapping between the database and association properties to implement unidirectional many-to-many association.
 
--   从动方(可选)：如果已经存在一个单向关联，可以为此配置从动方，作为主动方的镜像，形成双向关联。
+-   Inverse side (optional): If a unidirectional association already exists, the inverse side can be configured as a mirror of the owning side to form a bidirectional association.
 
-我们假设存在书籍Book和作者Author两种实体类型，并在它们之间建立双向多对多关联。
+Let's assume there are two entity types Book and Author, and establish a bidirectional many-to-many association between them.
 
 :::info
-和JPA/Hibernate不同，主动方和从动方可以随意抉择，二者都可以用于保存关联。
+Different from JPA/Hibernate, the owning side and inverse side can be chosen arbitrarily. Both can be used to persist associations.
 
-本文例子抉择如下：
+The example in this article chooses:
 
--   主动方(必须)：`Book.authors`
+-   Owning side (required): `Book.authors` 
 
--   从动方(可选)：`Author.books`
+-   Inverse side (optional): `Author.books`
 :::
 
-## 主动方
+## Owning Side
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -35,41 +35,41 @@ import TabItem from '@theme/TabItem';
 @Entity
 public interface Book {
 
-    @ManyToMany
+    @ManyToMany  
     List<Author> authors();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java title="Book.kt"
+```kotlin title="Book.kt" 
 @Entity
 interface Book {
 
     @ManyToMany
     val authors: List<Author>
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-多对多关联必须基于中间表实现，即便上述代码中并未使用`@JoinTable`注解，其实也等同于使用了该注解。
+Many-to-many associations must be implemented based on a join table, even if the `@JoinTable` annotation is not used in the above code, it is actually equivalent to using the annotation.
 
-如果并没有为`@JoinTable`指定任何属性，甚至连`@JoinTable`本身也被忽略（就像前面的代码一样），Jimmer会根据[命名策略](../naming-strategy)推导`authors`属性对应的列名。
+If no properties are specified for `@JoinTable`, and even `@JoinTable` itself is omitted (like the previous code), Jimmer will deduce the column names corresponding to the `authors` property based on the [naming strategy](../naming-strategy).
 
-如果默认的[命名策略](../naming-strategy)未被用户覆盖，推导出的中间表信息为:
+If the default [naming strategy](../naming-strategy) is not overridden by the user, the deduced join table information is:
 
--   中间表表名: BOOK_AUTHOR_MAPPING
--   中间表指向当前实体的外键的列名: BOOK_ID
--   中间表指向关联实体的外键的列名: AUTHOR_ID
+-   Join table name: BOOK_AUTHOR_MAPPING
+-   Join table foreign key column pointing to current entity: BOOK_ID 
+-   Join table foreign key column pointing to associated entity: AUTHOR_ID
 
-所以，之前的代码和这里的代码等价：
+So the previous code is equivalent to:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -81,12 +81,12 @@ public interface Book {
     @ManyToMany
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
-        joinColumnName = "BOOK_ID",
+        joinColumnName = "BOOK_ID", 
         inverseJoinColumnName = "AUTHOR_ID"
     )
     List<Author> authors();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -105,14 +105,14 @@ interface Book {
     )
     val authors: List<Author>
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-中间表`BOOK_AUTHOR_MAPPING`定义如下
+The join table `BOOK_AUTHOR_MAPPING` is defined as:
 
 ```sql
 create table BOOK_AUTHOR_MAPPING(
@@ -124,40 +124,42 @@ alter table AUTHOR_MAPPING
     add constraint PK_AUTHOR_MAPPING
         primary(BOOK_ID, AUTHOR_ID);
 
-// 如果指向当前对象的外键是真的，建立外键约束
+// If foreign key pointing to current entity is real, 
+// create foreign key constraint  
 alter table BOOK_AUTHOR_MAPPING
     add constraint FK_BOOK_AUTHOR_MAPPING__BOOK
         foreign key(BOOK_ID)
             references BOOK(ID);
 
-// 如果指向关联对象的外键是真的，建立外键约束
+// If foreign key pointing to associated entity is real, 
+// create foreign key constraint
 alter table BOOK_AUTHOR_MAPPING
     add constraint FK_BOOK_AUTHOR_MAPPING__AUTHOR
         foreign key(AUTHOR_ID)
             references AUTHOR(ID);
 ```
 
--   中间表的只有两个外键，而且都非null。中间表靠插入数据和删除数据维护关联，本身从不存储null数据
+-   The join table has only two foreign keys, both non-null. The join table maintains the association by inserting and deleting data, never storing null data itself.
 
--   中间表没有对应的ORM实体，无需独立主键，两个外键联合作为主键即可
+-   The join table has no corresponding ORM entity and does not need an independent primary key. The two foreign keys combined can serve as the primary key.
 
 :::caution
-注意
+Note
 
-`@ManyToMany`关联属性必须非null，如果某种对象并要求抓取其多对多关联属性，那么对于没有对应关联对象的当前对象而言，该属性的值是一个长度为0的集合，而非null
+The `@ManyToMany` association property must be non-null. If an object requires fetching its many-to-many association properties, then for the current object that has no corresponding associated object, the value of this property is a collection of length 0 rather than null.
 :::
 
-## 从动方
+## Inverse Side  
 
-从动方的配置非常简单，指定`Author.books`属性是`Book.authors`属性的镜像即可。
+The configuration of the inverse side is very simple, just specify that `Author.books` is the mirror of `Book.authors`.
 
-在下面的代码中
+In the following code:
 
--   左侧：上一节中讨论过的主动方
+-   Left: The owning side discussed in the previous section
 
--   右侧：本节要介绍从动方关联`Author.books`，它是`Book.authors`的镜像
+-   Right: The inverse side association `Author.books` introduced in this section, which is the mirror of `Book.authors`
 
-这里，`@ManyToMany(mappedBy = "store")`，指当前属性`BookStore.books`是`Book.store`的镜像。
+Here, `@ManyToMany(mappedBy = "store")` indicates that the current property `BookStore.books` is the mirror of `Book.store`.
 
 <div style={{display: 'flex', alignItems: 'start'}}>
 <div>
@@ -165,7 +167,7 @@ alter table BOOK_AUTHOR_MAPPING
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java"  
 @Entity
 public interface Book {
 
@@ -173,11 +175,11 @@ public interface Book {
     @JoinTable(
         name = "BOOK_AUTHOR_MAPPING",
         joinColumnName = "BOOK_ID",
-        inverseJoinColumnName = "AUTHOR_ID"
+        inverseJoinColumnName = "AUTHOR_ID" 
     )
     List<Author> authors();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -196,7 +198,7 @@ interface Book {
     )
     val authors: List<Author>
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -214,17 +216,17 @@ interface Book {
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Author.java"
+```java title="Author.java"  
 @Entity
 public interface Author {
 
-    // `mappedBy`表示`Author.books`
-    // 是`Book.authors`的镜像
+    // `mappedBy` indicates `Author.books`
+    // is the mirror of `Book.authors`
     // highlight-next-line
-    @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors") 
     List<Book> books();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -235,13 +237,13 @@ public interface Author {
 @Entity
 interface Author {
 
-    // `mappedBy`表示`Author.books`
-    // 是`Book.authors`的镜像
+    // `mappedBy` indicates `Author.books` 
+    // is the mirror of `Book.authors`
     // highlight-next-line
     @ManyToMany(mappedBy = "authors")
     val books: List<Book>
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -252,15 +254,16 @@ interface Author {
 </div>
 
 :::caution
-注意
+Note:
 
--   一旦指定`@ManyToMany`的`mappedBy`属性，就不得使用`@JoinTable`
+-   Once the `mappedBy` property of `@ManyToMany` is specified, `@JoinTable` must not be used.
 
--   和主动方的`@ManyToMany`关联属性一样，从动方的`@ManyToMany`关联必须非null。原因相同
-:::
+-   Like the `@ManyToMany` association property on the owning side, the `@ManyToMany` association on the inverse side must also be non-null for the same reason.
+:::  
 
-## 如果想为中间表加入业务字段
+## If business fields need to be added to the join table
 
-对于本文所讨论的多对多关联而言，除了两个外键外，中间表不得定义其他业务字段。
+For the many-to-many association discussed in this article, no business fields other than the two foreign keys can be defined on the join table.
 
-如果想在多对多关联中间表中定义更多的其他业务字段，请参见[ManyToManyView](../../advanced/view/many-to-many-view)
+If you want to define more other business fields in the join table of the many-to-many association, please refer to [ManyToManyView](../../advanced/view/many-to-many-view).
+```

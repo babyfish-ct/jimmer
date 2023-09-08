@@ -1,35 +1,35 @@
 ---
 sidebar_position: 4
-title: Recursive query
+title: Recursive Query
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-有一种常见的需求: 自关联。
+A common requirement is to handle self-associated property. 
 
-从数据库角度讲，自关联表示一张表的外键引用其自身；从对象模型角度讲，自关联表示一颗树。
+From a database perspective, self-assoiated property means a table's foreign key references itself. From an object model perspective, it represents a tree.
 
-自关联的难点在于，对象深度无法控制，理论上讲，可以无限深。对此，jimmer-sql提供了良好的的支持。
+The difficulty of self-associated properites is that the object depth is uncontrollable, theoretically infinite. Jimmer provides great support for this.
 
-## 模型和数据准备
+## Model and Data Preparation
 
-定义实体接口
+Define the entity interface:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 @Entity
 public interface TreeNode {
 
-    @Id
+    @Id  
     @Column(name = "NODE_ID")
     long id();
 
     String name();
 
-    @Null
+    @Null  
     @ManyToOne
     TreeNode parent();
 
@@ -46,7 +46,7 @@ public interface TreeNode {
 interface TreeNode {
 
     @Id
-    @Column(name = "NODE_ID")
+    @Column(name = "NODE_ID") 
     val id: Long
 
     val name: String
@@ -55,26 +55,30 @@ interface TreeNode {
     val parent: TreeNode?
 
     @OneToMany(mappedBy = "parent")
-    val childNodes: List<TreeNode>
+    val childNodes: List<TreeNode> 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-准备数据库
+Prepare the database:
+
 ```sql
 create table tree_node(
     node_id bigint not null,
     name varchar(20) not null,
     parent_id bigint
 );
+
 alter table tree_node
     add constraint pk_tree_node
         primary key(node_id);
+        
 alter table tree_node
     add constraint uq_tree_node
         unique(parent_id, name);
+        
 alter table tree_node
     add constraint fk_tree_node__parent
         foreign key(parent_id)
@@ -110,9 +114,9 @@ insert into tree_node(
 ;
 ```
 
-## 有限深度
+## Limited Depth
 
-自顶向下，抓取两层
+Top-down, fetch two layers:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -129,7 +133,7 @@ List<TreeNode> treeNodes = sqlClient
                 .name()
                 .childNodes(
                     TreeNodeFetcher.$.name(),
-                    // highlight-next-line
+                    // highlight-next-line  
                     it -> it.depth(2)
             )
         )
@@ -137,7 +141,7 @@ List<TreeNode> treeNodes = sqlClient
     .execute();
 ```
 
-</TabItem>
+</TabItem>  
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -162,76 +166,77 @@ val treeNodes = sqlClient
 </TabItem>
 </Tabs>
 
-生成3条SQL
+3 SQLs are generated:
 
-1. 主查询获取根节点（第0层）
+1.  Main query to fetch root nodes (layer 0)
 
-```sql
-select
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID is null
-```
+    ```sql
+    select
+        tb_1_.NODE_ID, 
+        tb_1_.NAME
+    from TREE_NODE as tb_1_ 
+    where
+    tb_1_.PARENT_ID is null
+    ```
 
-2. 抓取第1层
+2.  Fetch layer 1  
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID, 
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where  
+    tb_1_.PARENT_ID in (?)
+    ```
 
-3. 抓取第2层
+3.  Fetch layer 2
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME 
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?) 
+    ```
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
-```json
-{
-    "id":1,
-    "name":"Home",
-    "childNodes":[
+    The printed result is (original compact, formatted for readability):
+
+    ```json
     {
-        "id":9,
-        "name":"Clothing",
+        "id":1,
+        "name":"Home",
         "childNodes":[
-            {"id":18,"name":"Man"},
-            {"id":10,"name":"Woman"}
-        ]
-    },{
-        "id":2,
-        "name":"Food",
-        "childNodes":[
-            {"id":6,"name":"Bread"},
-            {"id":3,"name":"Drinks"}
-        ]
+        {
+            "id":9,
+            "name":"Clothing",
+            "childNodes":[
+                {"id":18,"name":"Man"},
+                {"id":10,"name":"Woman"}
+            ]
+        },{
+            "id":2,
+            "name":"Food",
+            "childNodes":[
+                {"id":6,"name":"Bread"},
+                {"id":3,"name":"Drinks"}
+            ]
+        }  
+    ]
     }
-]
-}
-```
+    ```
 
-## 无限递归
+## Unlimited Recursion 
 
-自顶向下，抓取无穷层
+Top-down, fetch unlimited layers:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 TreeNodeTable node = TreeNodeTable.$;
 
 List<TreeNode> treeNodes = sqlClient
@@ -242,7 +247,7 @@ List<TreeNode> treeNodes = sqlClient
             TreeNodeFetcher.$
                 .name()
                 .childNodes(
-                    TreeNodeFetcher.$.name(),
+                    TreeNodeFetcher.$.name(), 
                     // highlight-next-line
                     it -> it.recursive()
                 )
@@ -277,82 +282,83 @@ val treeNodes = sqlClient
 </Tabs>
 
 :::note
-上述代码中`it.recursive()`也可以写作`it.depth(Integer.MAX_VALUE)`，二者完全等价
+In the code above, `it.recursive()` can also be written as `it.depth(Integer.MAX_VALUE)`, they are equivalent. 
 :::
 
-生成6条SQL
+6 SQLs are generated:
 
-1. 查询根节点
+1.  Query root nodes
 
-```sql
-select
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID is null
-```
+    ```sql
+    select
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_ 
+    where
+    tb_1_.PARENT_ID is null
+    ```
 
-2. 抓取第1层
+2.  Fetch layer 1
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?)
-```
+    ```sql 
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where 
+    tb_1_.PARENT_ID in (?)
+    ```
 
-3. 抓取第2层
+3.  Fetch layer 2  
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID, 
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_ 
+    where
+    tb_1_.PARENT_ID in (?, ?)
+    ```
 
-4. 抓取第3层
+4.  Fetch layer 3
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where  
+    tb_1_.PARENT_ID in (?, ?, ?, ?) 
+    ```
 
-5. 抓取第4层
+5.  Fetch layer 4  
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)  
+    ```
 
-6. 抓取第5层
+6.  Fetch layer 5
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
-```
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+    ```sql
+    select
+        tb_1_.PARENT_ID, 
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_ 
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ```
+
+The printed result is (original compact, formatted for readability):  
 
 ```json
 {
@@ -369,7 +375,7 @@ tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     "childNodes": [
                         {
                             "id": 19,
-                            "name": "Casual wear",
+                            "name": "Casual wear", 
                             "childNodes": [
                                 {
                                     "id": 20,
@@ -421,7 +427,7 @@ tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 },
                                 {
                                     "id": 13,
-                                    "name": "Miniskirt",
+                                    "name": "Miniskirt", 
                                     "childNodes": []
                                 }
                             ]
@@ -488,12 +494,12 @@ tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
 }
 ```
 
-## 开发人员控制每个节点是否递归
+## Developer Controls Recursion Per Node
 
-自顶向下，抓取无穷层。但是，对名称为“Clothing”的节点，放弃递归
+Top-down, fetch unlimited layers. But for the node named "Clothing", stop recursion.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 TreeNodeTable node = TreeNodeTable.$;
@@ -508,19 +514,19 @@ List<TreeNode> treeNodes = sqlClient
             .childNodes(
                 TreeNodeFetcher.$.name(),
                 it -> it.recursive(args ->
-                // highlight-next-line
-                !args.getEntity().name().equals("Clothing")
+                    // highlight-next-line
+                    !args.getEntity().name().equals("Clothing")
                 )
             )
         )
     )
-    .execute();
+    .execute(); 
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val treeNodes = sqlClient
     .createQuery(TreeNode::class) {
         where(table.parent.isNull())
@@ -544,76 +550,78 @@ val treeNodes = sqlClient
 </TabItem>
 </Tabs>
 
-上述代码中，`it.recursive(args)`的参数是一个lambda表达式，其参数`args`是一个对象，提供两个属性
+In the above code, the parameter `args` of `it.recursive(args)` is an object providing two properties:  
 
-1. `args.getEntity()`：当前节点对象。
-2. `args.getDepth()`：当前节点深度。对于通过主查询直接得到的节点而言是0，随着递归的深入不断增大。
-3. 用户决定的返回值：一个boolean变量，决定当前是否对当前节点进行递归抓取。
+1.  `args.getEntity()`: The current node object.
+2.  `args.getDepth()`: The current node depth. 0 for nodes obtained directly from the main query, incrementally increases with recursion depth.  
+3.  The return value decided by the user: A boolean variable that decides whether to recursively fetch for the current node.
 
-上述代码的含义是，除了`Clothing`节点外，其余节都会被递归抓取。
+The above code means all nodes will be recursively fetched except the `Clothing` node.
 
-生成了5条SQL
+4 SQLs are generated:  
 
-1. 查询根对象
+1.  Query root objects
 
-```sql
-select
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where tb_1_.PARENT_ID is null
-```
+    ```sql
+    select
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_ 
+    where tb_1_.PARENT_ID is null
+    ```
 
-2. 抓取第1层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?)
-```
+2.  Fetch layer 1
+    ```sql  
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?)
+    ```
 
-3. 抓取第2层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-/*
-* Home node has two child nodes:
-*      "Food" and "Clothing",
-*
-* However, "Clothing is excluded by user,
-* so `in(?)` is used here, not `in(?, ?)`
-*/
-tb_1_.PARENT_ID in (?)
-```
-4. 抓取第3层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?)
-```
-5. 抓取第4层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?)
-```
+3.  Fetch layer 2
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    /*
+    * Home node has two child nodes: 
+    *      "Food" and "Clothing",
+    *
+    * However, "Clothing is excluded by user,  
+    * so `in(?)` is used here, not `in(?, ?)`  
+    */
+    tb_1_.PARENT_ID in (?) 
+    ```
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+4.  Fetch layer 3
+
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?)
+    ``` 
+    5. Fetch layer 4
+    ```sql 
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_ 
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?)
+    ```
+
+The printed result is (original compact, formatted for readability):
 
 ```json
 {

@@ -242,7 +242,7 @@ println(stores)
 
     这样，两个`BookStore`对象可以通过其计算属性`BookStore.avgPrice`得到各自书籍的平均价格。
 
-    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，第二条SQL不会被生成。
+    毫无疑问，在Redis中的数据因超时而被清除之前，再次执行上述Java/Kotlin代码，将直接从Redis中返回计算数据，第二条SQL不会被生成。
 
 最终，Jimmer把3个步骤的结果拼接在一起，作为最终返回给用户的数据
 

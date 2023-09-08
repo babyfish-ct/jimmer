@@ -1,72 +1,72 @@
 ---
 sidebar_position: 2
-title: Drop unnecessary joins
+title: Table Join Optimization
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-在上一篇文章中，我们提及，Jimmer不仅能根据`data-query`自动生成`count-query`，还能自动优化`count-query`。
+In the previous article, we mentioned that Jimmer can not only auto-generate `count-query` from `data-query`, but also auto-optimize the `count-query`.
 
-由于`count-query`只关心数据的总行数，不在乎数据的顺序和格式。所以，原`data-query`中的某些table join可能不需要复制到`count-query`中。
+Since `count-query` only cares about total row count regardless of order and format, some table joins in the original `data-query` may not need to be copied over to `count-query`.  
 
-Jimmer会自动优化`count-query`，让其从原data-query中复制尽可能少的table join。
+Jimmer will auto-optimize `count-query` to copy over as few table joins as possible from the original data-query.
 
-## 优化规则
+## Optimization Rules
 
-1. 被where子句使用的表连接，不能被优化。
+1.  Table joins used by the where clause cannot be optimized.
+
+    That is, **only** table joins used solely by the `select` or `order by` clause of the top-level query in the original data-query can be optimized.
+   
+2.  Table joins based on collection associations (one-to-many, many-to-many) cannot be optimized.
+
+    Collection associations lead to duplicate data, thus affecting row count. So these table joins must be copied to `count-query` and cannot be optimized.
+   
+3.  Table joins based on reference associations (one-to-one, many-to-one) may be optimized, if any of the following conditions is met:
+
+    - Join type is left outer join
     
-    即，**仅**被原data-query的顶级查询的`select`或`order by`子句所使用的表连接，才可被优化。
-
-2. 基于集合关联(一对多、多对多)的表连接，不能被优化。
+    - Although join type is inner join, the association is based on non-null foreign key.
     
-    集合关联会导致重复数据，进而影响数据行数，因此这些表连接必需复制到`count-query`，无法优化。
-
-3.  基于引用关联(一对一、多对一)的表连接，有可能被优化，需满足以下任何一个条件：
-
-    -   连接类型为左外连接
-
-    -   虽然连接类型是内连接，但关联基于非null真实外键。
-
-        所谓真实外键，指数据库中存在外键约束，请参见[真假外键](../../mapping/base/foreignkey)
-
-综上描述，要判断原data-query中某个表连接是否可以在count-query中被自动删除，需采用如下优化规则：
+        So-called real foreign key means there is a foreign key constraint in the database. See [Real vs Fake Foreign Keys](../../mapping/base/foreignkey).
+     
+In summary, to determine whether a table join in the original data-query can be automatically removed in the count-query, use the following optimization rules: 
 
 <table>
     <tr>
         <td rowspan="4">
-            与
+            AND
         </td>
         <td colspan="2">
-            是否基于引用关联，即多对一或一对一
+            Is based on reference association, i.e. many-to-one or one-to-one
         </td>
     </tr>
     <tr>
         <td colspan="2">
-            是否 <b>仅</b> 被原data-query的顶级查询的select或orderBy子句所用
+            Is used <b>solely</b> by select or orderBy clause of top-level query in original data-query
         </td>
     </tr>
     <tr>
         <td rowspan="2">
-            或
+            OR
         </td>
         <td>
-            是否是左外连接
+            Is left outer join
         </td>
     </tr>
     <tr>
         <td>
-            关联非空，且数据库中存在外键约束
+            Association is non-null and foreign key constraint exists in database 
         </td>
     </tr>
 </table>
 
-## 无法优化的场景示范
+## Non-Optimizable Scenario
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java"> 
 
-```java title=""
+```java
 BookTable book = BookTable.$;
 AuthorTableEx author = AuthorTableEx.$;
 
@@ -74,34 +74,34 @@ ConfigurableRootQuery<BookTable, Book> query = sqlClient
     .createQuery(book)
     .where(
         book.price().between(
-            new BigDecimal(20),
+            new BigDecimal(20), 
             new BigDecimal(30)
         )
     )
     // highlight-next-line
-    .orderBy(book.store().name())
+    .orderBy(book.store().name())  
     .orderBy(book.name())
     .select(book);
 
-int rowCount = query.count();
+int rowCount = query.count(); 
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title=""
+```kotlin
 val query = sqlClient.createQuery(Book::class) {
     where(
         table.price.between(
             BigDecimal(20),
-            BigDecimal(30)
+            BigDecimal(30)  
         )
     )
-    // highlight-next-line
+    // highlight-next-line 
     orderBy(table.store.name) // α
     orderBy(table.name)
     select(table)
-}
+}  
 
 val rowCount = query.count()
 ```
@@ -109,38 +109,38 @@ val rowCount = query.count()
 </TabItem>
 </Tabs>
 
-注释α处
+Note α:
 
-虽然`table.store()`仅被orderBy子句使用，没有被where子句使用，但是
-- `table.store()`是内连接
-- `Book.store`关联可空
+Although `table.store()` is only used by orderBy clause without being used by where clause,
+-   `table.store()` is inner join
+-   `Book.store` association is nullable
 
-所以，优化规则并不能生效，count-query仍然需要保留`table.store()`，并最终在SQL中生成JOIN子句
+So the optimization rules do not apply. The count-query still needs to retain `table.store()` and ultimately generates JOIN clause in SQL:
 
-```sql
-select 
-    count(tb_1_.ID) 
-from BOOK as tb_1_ 
-/* highlight-start */
-inner join BOOK_STORE as tb_2_ 
-    on tb_1_.STORE_ID = tb_2_.ID
-/* highlight-end */ 
+```sql 
+select
+    count(tb_1_.ID)
+from BOOK as tb_1_
+/* highlight-start */  
+inner join BOOK_STORE as tb_2_
+    on tb_1_.STORE_ID = tb_2_.ID 
+/* highlight-end */
 where tb_1_.PRICE between ? and ?
 ```
 
-## 可优化的场景示范
+## Optimizable Scenario  
 
-针对上文所讨论的无法被优化的这种情况，采用以下任何一种修改，都可以让优化生效
+For the unoptimizable case discussed above, any of the following modifications will enable optimization:
 
-1. 把`Book.store`关联修改为非空
-2. 采用左外连接
+1.  Change `Book.store` association to non-null
+2.  Use left outer join
 
-在这里，我们选用第二种方案，左外连接
+Here we choose the second approach, left outer join:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title=""
+```java
 BookTable book = BookTable.$;
 AuthorTableEx author = AuthorTableEx.$;
 
@@ -154,16 +154,16 @@ ConfigurableRootQuery<BookTable, Book> query = sqlClient
     )
     // highlight-next-line
     .orderBy(book.store(JoinType.LEFT).name())
-    .orderBy(book.name())
+    .orderBy(book.name()) 
     .select(book);
 
 int rowCount = query.count();
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
-```kotlin title=""
+```kotlin 
 val query = sqlClient.createQuery(Book::class) {
     where(
         table.price.between(
@@ -172,21 +172,22 @@ val query = sqlClient.createQuery(Book::class) {
         )
     )
     // highlight-next-line
-    orderBy(table.`store?`.name) // α
+    orderBy(table.`store?`.name) // α  
     orderBy(table.name)
     select(table)
 }
 
-val rowCount = query.count()
+val rowCount = query.count() 
 ```
 
 </TabItem>
 </Tabs>
 
-现在，优化可以生效，最终count-query生成SQL如下
+Now optimization can take effect. The final count-query generates SQL:
+
 ```sql
-select 
-    count(tb_1_.ID) 
-from BOOK as tb_1_ 
+select
+    count(tb_1_.ID)  
+from BOOK as tb_1_
 where tb_1_.PRICE between ? and ?
 ```

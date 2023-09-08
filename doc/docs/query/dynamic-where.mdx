@@ -1,16 +1,16 @@
 ---
 sidebar_position: 3
-title: Dynamic predicates
+title: Dynamic Filtering
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 基本用法
+## Basic Usage
 
--   Java API使用链式方式构建DSL，为了不打断链式代码书写，使用`whereIf`方法按条件添加where条件。
+-   Java API uses fluent style to build DSL, `whereIf` is provided to add conditional where clauses without breaking the fluent chaining.
 
--   Kotin API使用lambda构建DSL，动态查询无需专用API支持。
+-   Kotlin API uses lambdas to build DSL, no special API is needed to support dynamic queries.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -53,7 +53,7 @@ fun findBooks(name: String?): List<Book> =
 </TabItem>
 </Tabs>
 
--   调用`findBooks(null)`，生成的SQL为
+-   Calling `findBooks(null)` generates:
 
     ```sql
     select
@@ -68,7 +68,7 @@ fun findBooks(name: String?): List<Book> =
         tb_1_.EDITION desc
     ```
 
--   调用`findBooks("SQL in Action")`，生成的SQL为
+-   Calling `findBooks("SQL in Action")` generates:
 
     ```sql
     select
@@ -85,42 +85,42 @@ fun findBooks(name: String?): List<Book> =
         tb_1_.EDITION desc
     ```
 
-## Java开发人员注意事项
+## Notes for Java Developers
 
-Java开发人员请注意，上面的的代码
+Java developers please note that in the code:
 
 ```java
 .whereIf(
     name != null && !name.isEmpty(),
-    table.name().eq(name)
+    table.name().eq(name) 
 )
 ```
 
-即便name为null，whereIf的条件并不成立，第二个参数`table.name().eq(name)`也会被执行，这是几乎所有编程语言的特性。
+Even if `name` is null, the second parameter `table.name().eq(name)` would still be evaluated. This is the behavior of most programming languages.
 
-对于这里`eq` *(或`ne`)*而言，参数为null不会导致问题。因为`eq(null)`会被自动改成`isNull()`, `ne(null)`会被自动改成`isNotNull()`。
+For `eq` *(or `ne`)*, passing in null does not cause problems. `eq(null)` would be automatically changed to `isNull()`, and `ne(null)` would become `isNotNull()`.
 
-但是，对于其他大部分条件表达式而言，用null构建会导致异常。
+However, for most other conditional expressions, using null would cause exceptions.
 
 :::tip
-不用担心，如果你不小心犯了错误，异常信息非常完善，足够引导你采用即将介绍的正确的编程方式。
+Don't worry, if you accidentally make mistakes, the exception messages are very informative to guide you to use the correct approach introduced below.
 :::
 
-以大于或等于操作而言`ge`，可以如此添加动态查询条件
+For greater than or equals `ge`, dynamic query conditions can be added like:
 
-```java
+```java 
 .whereIf(
-    minPrice != null,
+    minPrice != null, 
     // highlight-next-line
     () -> table.price().ge(minPrice)
 )
 ```
 
-这里，使用labmda表达式延迟表达式的构建时机即可。只有当条件满足时，才会构建表达式。
+Here, a lambda expression is used to delay the expression construction until the condition is met.
 
-对于kotlin而言，不存在这个问题，无任何注意事项。
+For Kotlin there are no such issues, no precautions needed.
 
-让我们来看一个更完整的例子
+Let's look at a more complete example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -154,7 +154,7 @@ public List<Book> findBooks(
         .orderBy(table.name().asc(), table.edition().desc())
         .select(table)
         .execute();
-}
+} 
 ```
 
 </TabItem>
@@ -189,16 +189,22 @@ fun findBooks(
 </TabItem>
 </Tabs>
 
-## 多表操作
+## Multi-table Operations  
 
-到目前为止，动态查询是基于单表的。
+So far, the dynamic queries are based on a single table.
 
-考虑一种更复杂的场景，如果某些动态查询条件针对其他表而非当前表 *(即，需要先join到其他表，再对join得到的表添加动态where条件)*，该如何实现呢？
+Consider a more complex scenario where some dynamic conditions are on other tables instead of the current table *(that is, those tables need to be joined first before dynamic where conditions can be added)*. How can this be achieved?
 
-这个问题没有被任何SQL访问的上层方案优雅解决，属于领域空白，而Jimmer完美解决了这个难题*（Jimmer立项的根本原因）*
+No other higher level SQL access solutions have elegantly solved this problem, it had been a blank in the domain. Jimmer perfectly solves this difficult problem *(which is the very reason Jimmer was created)*.
 
-在[下一篇文档](./dynamic-join)中，我们将会系统性讨论这个问题。
+We will systematically discuss this in [next doc](./dynamic-join). 
 
 :::tip
-在[下一篇文档](./dynamic-join)中，你会发现Jimmer SQL DSL的独到之处，获得一个其他任何方案 *(无论s(x)ql方案还是DSL方案)* 都没有支持的强大能力。
+In [next doc](./dynamic-join) you will see the uniqueness of Jimmer SQL DSL, gaining a powerful capability no other solution in the industry supports.
 :::
+
+## QBE
+
+This doc introduces fully functional dynamic queries.
+
+However, for very simple dynamic queries, you can also choose to use QBE queries, see [QBE Queries](./qbe).

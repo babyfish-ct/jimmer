@@ -1,6 +1,6 @@
 ---
 sidebar_position: 5
-title: Paging security
+title: Pagination Safety
 ---
 
 import { ViewMore } from '@site/src/components/ViewMore';
@@ -8,20 +8,21 @@ import { ViewMore } from '@site/src/components/ViewMore';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-分页安全性是为分页设计的功能，但是表连接功能为其提供底层支持。
+Pagination safety is a feature designed for pagination, but table join functionality provides underlying support.
 
-## 集合关联的问题
+## Problems with Collection Associations  
 
-这里，我们先介绍两种关联属性，引用关联和集合关联。
+Here, we first introduce two types of associations: reference associations and collection associations.
 
--   被`@OneToOne`或`@ManyToOne`修饰的关联属性，称为引用关联
--   被`@OneToMany`或`@ManyToMany`修饰的关联属性，称为集合关联
+-   Associations decorated with `@OneToOne` or `@ManyToOne` are called reference associations.
 
-请参考例子, 
+-   Associations decorated with `@OneToMany` or `@ManyToMany` are called collection associations.
 
-<ViewMore buttonText="关联分类的例子">
+Please refer to the example:
 
-让我们来看这个实体定义
+<ViewMore buttonText="Association example">
+
+Let's look at this entity definition:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -67,7 +68,7 @@ public interface Book {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java title="Book.java"
+```kotlin title="Book.kt"
 
 package org.babyfish.jimmer.sql.example.model
 
@@ -105,121 +106,123 @@ interface Book {
 </TabItem>
 </Tabs>
 
-这个例子中
-- `Book.store`被`@ManyToOne`修饰，是一个引用关联
-- `Book.authors`被`@ManyToMany修饰`，是一个集合关联
+In this example:
+-   `Book.store` decorated with `@ManyToOne` is a reference association. 
+-   `Book.authors` decorated with `@ManyToMany` is a collection association.
 
 </ViewMore>
 
-### 集合JOIN导致重复查询结果
+### Collection JOIN Causes Duplicate Results 
 
-如果我们把当前被查询的第一张表所对应的实体对象称为聚合根对象，引用关联和集合关联之间有如下差异：
+If we call the entity object corresponding to the first table being queried the aggregate root object, reference associations and collection associations differ in:
 
--   查询一个对象，通过引用关联进行table join，在SQL查询结果中，当前主对象不会出现重复记录。例如：
+-   Joining tables via a reference association does not produce duplicate records of the current main object in the SQL query result. For example:
 
     ```sql
     select 
         b.id as root_id,
         b.name as root_name,
         s.id as associated_id,
-        s.name as associated_name 
+        s.name as associated_name
     from book b
     inner join book_store s
         on b.store_id = s.id
     where b.id = 1;
-    ```
-    查询结果如下，聚合根对象没有出现重复
+    ```  
+    The query result has no duplicate aggregate root objects:
     
     |root_id|root_name|associated_id|associated_name|
     |---|---|---|---|
     |1|Learning GraphQL|1|O'REILLY|
 
--   查询一个对象，通过集合关联进行table join，在SQL查询结果中，当前主对象会出现重复记录：
+-   Joining tables via a collection association produces duplicate records of the current main object in the SQL query result:
 
     ```sql
-    select 
-        b.id as root_id,
+    select
+        b.id as root_id, 
         b.name as root_name,
         a.id as associated_id,
         a.first_name as associated_first_name,
-        a.last_name as associated_last_name 
+        a.last_name as associated_last_name
     from book b
     inner join book_author_mapping m
-        on b.id = m.book_id
+        on b.id = m.book_id 
     inner join author a
         on m.author_id = a.id
     where b.id = 1;
     ```
 
-    查询结果如下，聚合根对象有可能出现重复：
+    Query result may have duplicate aggregate root objects:
 
     |root_id|root_name|associated_id|associated_first_name|associated_last_name|
-    |---|---|---|---|
+    |---|---|---|---|---|
     |1|Learning GraphQL|1|Eve|Procello|
     |1|Learning GaphhQL|2|Alex|Banks|
 
-### 查询结果重复的危害
+### Harms of Duplicate Results
 
-基于集合关联的table join会导致重复数据，进而引发以下问题：
+Table joins based on collection associations lead to duplicate data, which causes the following problems:
 
-1.  如果开发者忘记去重，就会引入bug。
+1.  Bugs if the developer forgets deduplication.
 
-2.  即便开发者没有忘记去重，在客户端使用`java.util.LinkedHashSet`进行去重，也并非一个好的选择。
-    因为事后的去重操作也不能改变数据库返回的原始结果包含重复数据既定事实，且会消耗额外的网络传输和JVM处理数据的成本。
+2.  Even if the developer does not forget deduplication, using `java.util.LinkedHashSet` for deduplication post factum is not ideal.
 
-3.  **最重要的一点，对分页查询不友好**。
+    Because the fact that the original database result contains duplicates cannot be altered, and extra network transfer and JVM data processing costs are incurred.
+   
+3.  **Most importantly, unfriendly to pagination queries**.
 
-    在SQL层面对table join连接结果进行分页，往往不是人们所需；更多的场景下，人们希望分页操作被应用在聚合根对象上。
+   Paginating table join results at the SQL level is often not what people want. More often, people want pagination applied on aggregate root objects.
 
-    以Hibernate为例，在这种情况下，Hibernate不得不放弃SQL层面的分页策略，而采用内存层面的分页策略。这样做性能非常低下，为了引起开发人员的重视，Hibernate会在日志中进行告警。如果读者你有Hibernate使用经验，相信下面这条日志会让你感到非常头疼。
+   Take Hibernate for example. In this case, Hibernate has to abandon SQL-level pagination and use memory-level pagination instead. This performs very poorly that Hibernate logs a warning to alert developers. If you have experience with Hibernate, the log below would give you a headache:
 
-    [firstResult/maxResults specified with collection fetch; applying in memory](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html)
+   [firstResult/maxResults specified with collection fetch; applying in memory](https://tech.asimio.net/2021/05/19/Fixing-Hibernate-HHH000104-firstResult-maxResults-warning-using-Spring-Data-JPA.html)
 
-    :::tip
-    注意，Jimmer的另外一个功能[对象抓取器](../object-fetcher)，并不是基于table join来实现对集合关联属性进行fetch的，故而无此问题，请放心使用。
-    :::
+   :::tip
+   Note that Jimmer's other feature [Object Fetcher](../object-fetcher) does not use table join to fetch collection associations, so it does not have this problem. Feel free to use it.
+   :::
+   
+In summary, using collection joins in top-level queries has obvious drawbacks, but it remains valuable to use collection joins in subqueries.
 
-由于SQL支持子查询，我们把最外层的查询称为顶层查询。综上，在顶级查询中使用集合连接的缺点非常明显，但不可否认，在子查询中使用集合连接仍然有客观的价值。
-
-所以，Jimmer的SQL DSL有这样的特色
+Therefore, Jimmer SQL DSL has the following characteristics:
 
 :::info
-1. 基于集合关联的table join，在**顶级**查询中需要被禁止。
-2. 基于集合关联的table join，在子查询、update语句和delete语句中仍然可用。
+1.  Table joins based on collection associations are **prohibited** in **top-level** queries.
+2.  Table joins based on collection associations remain allowed in subqueries, update statements and delete statements. 
 :::
 
-## Table和TableEx
+## Table and TableEx
 
-在Jimmer的SQL DSL中，存在两种表对象，`Table<E>`和`TableEx<E>`。
+There are two kinds of table objects in Jimmer SQL DSL, `Table<E>` and `TableEx<E>`.
 
 -   Table
 
-    特点：只能通过引用关联进行join，无法通过集合关联属性进行join
+    Features: Can only join via reference associations, cannot join via collection associations.
 
-    Java类型：org.babyfish.jimmer.sql.ast.table.Table&lt;E&gt;
+    Java type: org.babyfish.jimmer.sql.ast.table.Table&lt;E&gt;
 
-    Kotlin类型：org.babyfish.jimmer.sql.kt.ast.table.KTable&lt;E&gt;
+    Kotlin type: org.babyfish.jimmer.sql.kt.ast.table.KTable&lt;E&gt;
+
 
 -   TableEx
 
-    特点：可以通过任何关联属性进行join
+    Features: Can join via any associations.
 
-    Java类型：org.babyfish.jimmer.sql.ast.table.TableEx&lt;E&gt;
+    Java type: org.babyfish.jimmer.sql.ast.table.TableEx&lt;E&gt;
 
-    Kotlin类型：org.babyfish.jimmer.sql.kt.ast.table.KTableEx&lt;E&gt;
+    Kotlin type: org.babyfish.jimmer.sql.kt.ast.table.KTableEx&lt;E&gt;
 
-### 生成的代码
+### Generated Code
 
-为了实现强类型的SQL DSL，Jimmer使用Annotation processor(Java)或KSP(kotlin)，根据用户定义的实体接口生成SQL DSL相关的源代码。
+To implement strongly typed SQL DSL, Jimmer uses Annotation Processor (Java) or KSP (Kotlin) to generate SQL DSL related source code based on user-defined entity interfaces.
 
-还是以文章开头的Book实体接口为例，如下两个类型会被自动生成
+Take the Book entity interface at the beginning of this article as an example. The following two types would be generated automatically:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Generated java code"
-/* 
- * BookTable.java
+```java title="Generated Java Code" 
+/*
+ * BookTable.java 
  */
 package org.babyfish.jimmer.sql.example.model;
 
@@ -261,9 +264,9 @@ public class BookTable extends AbstractTableWrapper<Book> {
     }
 }
 
-/* 
+/*
  * BookTableEx.java
- */
+ */ 
 package org.babyfish.jimmer.sql.example.model;
 
 import javax.persistence.criteria.JoinType;
@@ -287,7 +290,7 @@ public class BookTableEx extends BookTable implements TableEx<Book> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Generated kotlin code"
+```kotlin title="Generated Kotlin Code"
 package org.babyfish.jimmer.example.kt.sql.model
 
 import java.math.BigDecimal
@@ -301,8 +304,8 @@ import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
 
-/* 
- * Extension for Table<Book>
+/*
+ * Extension for Table<Book>  
  */
 public val KTable<Book>.id: KNullablePropExpression<Long>
     get() = get("id")
@@ -337,7 +340,7 @@ public val KNonNullTable<Book>.store: KNonNullTable<BookStore>
 public val KTable<Book>.`store?`: KNullableTable<BookStore>
     get() = outerJoin("store")
 
-/* 
+/*
  * Extension for TableEx<Book>
  */
 
@@ -351,24 +354,24 @@ public val KTableEx<Book>.`authors?`: KNullableTableEx<Author>
     get() = outerJoin("authors")
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-观察这两个自动生成的类型，不难看出
+Observing the two auto-generated types, we can see:
 
-- `BookTableEx`继承了`BookTable`。
-- `BookTable`不支持集合关联，但支持普通字段和引用关联(本例中为`store`)。
-- `BookTableEx`增加了对集合关联的支持（本例中为`authors`）。
+-   `BookTableEx` inherits `BookTable`.
+-   `BookTable` does not support collection associations, but supports regular fields and reference associations (which is `store` in this example).  
+-   `BookTableEx` adds support for collection associations (which is `authors` in this example).
 
-因此jimmer-sql的API遵循如下的模式
-- 顶级查询只能基于`Table`创建。
-- 子查询、update语句和delete语句既可基于`Table`创建，也可基于`TableEx`创建。
+Therefore, jimmer-sql API follows this pattern:
+-   Top-level queries can only be created based on `Table`.  
+-   Subqueries, update statements and delete statements can be created based on either `Table` or `TableEx`.
 
-接下来，以顶层查询和子查询为例，做对比性示范。
+Next, we demonstrate the contrast between top-level queries and subqueries with examples.
 
-### 只能基于Table创建的顶层查询
+### Top-Level Queries Must Be Based on Table
 
-所以，你的代码看起来如此
+So your code looks like:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -381,22 +384,23 @@ List<Book> books = sqlClient
     .where(
         table
             // highlight-next-line
-            .name() // 可以访问普通字段name
+            .name() // Can access regular field name  
             .eq("Book Name")
     )
     .where(
         table
-            // highlight-next-line
-            .store() // 也可以对引用关联store进行join
+            // highlight-next-line 
+            .store() // Can also join reference association store
             .name()
             .eq("Store Name")
     )
-    /* 
-     * 然而，无法使用"table.authors()"，因为authors()
-     * 方法被定义在了BookTableEx中，而非BookTable中。
-     * 
-     * 即，编译时禁止了用户在顶级查询中对集合关联进行join
-     */
+    /*
+     * However, cannot use "table.authors()" because `authors()`
+     * is defined in `BookTableEx` instead of `BookTable`.
+     *  
+     * That is, joining collection associations is prohibited  
+     * at compile time in top-level queries.
+     */ 
     .select(table)
     .execute();
 ```
@@ -410,21 +414,22 @@ val books = sqlClient
         where(
             table
                 // highlight-next-line
-                .name // 可以访问普通字段name
-                eq "Book Name"
+                .name // Can access regular field name
+                eq "Book Name" 
         )
         where(
             table
                 // highlight-next-line
-                .store // 也可以对引用关联store进行join
+                .store // Can also join reference association `store`
                 .name
                 eq "Store Name"
         )
-        /* 
-         * 然而，无法使用"table.authors"，因为扩展属性authors
-         * 被定义为TableEx<Book>定义，而非Table<Book>。
-         * 
-         * 即，编译时禁止了用户在顶级查询中对集合关联进行join
+        /*
+         * However, cannot use "table.authors" because the extension property `authors`
+         * is defined on `TableEx<Book>` instead of `Table<Book>`.
+         *  
+         * That is, joining collection associations is prohibited 
+         * at compile time in top-level queries.
          */
         select(table)
     }
@@ -435,32 +440,33 @@ val books = sqlClient
 </Tabs>
 
 :::info
--   Java: `createQuery`的参数由用户指定，只能指定为`Table`类型，如果指定为`TableEx`类型，报错
+-   Java: `createQuery` takes parameter specified by user, can only be `Table` type. `TableEx` would error.
 
--   Kotlin: `createQuery`自动创建表对象，lamba中的自动变量`table`的类型被自动识别为`Table`而非`TableEx`
+-   Kotlin: `createQuery` creates table object automatically. The automatic variable `table` in lambda is inferred to `Table` instead of `TableEx`.
 :::
 
-最终生成的SQL如下
+The final generated SQL:
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
-inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID 
-where 
-    tb_1_.NAME = ? 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_
+inner join BOOK_STORE as tb_2_ on tb_1_.STORE_ID = tb_2_.ID
+where
+    tb_1_.NAME = ?
 and 
-    tb_2_.NAME = ?
+    tb_2_.NAME = ? 
 ```
-### 允许基于TableEx创建子查询
 
-和顶级查询不同，子查询、update语句和delete语句允许使用TableEx。
+### TableEx Allowed for Subqueries
 
-下面例子中的`Author.books`和上面讨论的`Book.authors`一样，也是一个多对多关联。
+Unlike top-level queries, subqueries, update statements and delete statements allow TableEx. 
+
+In the example below, `Author.books` is the same as `Book.authors` discussed above, which is also a many-to-many association.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -468,7 +474,7 @@ and
 ```java
 BookTable table = BookTable.$;
 
-// `author`为子查询所用，采用TableEx
+// `author` used in subquery, use TableEx
 AuthorTableEx author = AuthorTableEx.$;
 
 List<Book> books = sqlClient
@@ -478,8 +484,8 @@ List<Book> books = sqlClient
         .createSubQuery(author)
         .where(
             author
-                // `author`是TableEx，
-                // 所以集合关联`books`是允许的
+                // `author` is TableEx, 
+                // so collection association `books` is allowed
                 // highlight-next-line
                 .books()
                 .eq(table),
@@ -499,19 +505,20 @@ List<Book> books = sqlClient
 val books = sqlClient
     .createQuery(Book::class) {
 
-        // 在父查询中`table`表示`Table<Book>`
+        // In parent query `table` is Table<Book>
         
         where(
             exists(
                 // highlight-next-line
                 wildSubQuery(Author::class) {
 
-                    // 在子查询中，`table`表示TableEx<Author>
+                    // Subquery's `table` overrides parent's `table`,
+                    // and the Subquery's `table` is `TableEx<Author>`
                     
                     where(
                         table
-                            // 子查询的`table`是TableEx，
-                            // 所以集合关联`books`是允许的
+                            // Subquery's `table` is TableEx,
+                            // so collection association `books` is allowed
                             // highlight-next-line
                             .books eq
                             parentTable,
@@ -530,42 +537,42 @@ val books = sqlClient
 </Tabs>
 
 :::info
--   Java: `createSubQuery`的参数由用户指定，不强制但建议指定为`TableEx`类型
+-   Java: `createSubQuery` takes parameter specified by user, not enforced but suggested to be `TableEx` type.
 
--   Kotlin: `wildSubQuery` *(或`subQuery`)* 自动创建表对象，lamba中的自动变量`table`的类型被自动识别为`TableEx`而非`Table`
+-   Kotlin: `wildSubQuery` *(or `subQuery`)* creates table object automatically. The automatic variable `table` in lambda is inferred to `TableEx` instead of `Table`.  
 :::
 
-最终生成的SQL如下
+The final generated SQL:
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID 
-from BOOK as tb_1_ 
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK as tb_1_
 where exists(
-    select 1 
-    from AUTHOR as tb_2_ 
+    select 1
+    from AUTHOR as tb_2_
     // highlight-start
-    inner join BOOK_AUTHOR_MAPPING as tb_3_ 
-        on tb_2_.ID = tb_3_.AUTHOR_ID 
+    inner join BOOK_AUTHOR_MAPPING as tb_3_
+        on tb_2_.ID = tb_3_.AUTHOR_ID
     // highlight-end
-    where 
-        tb_3_.BOOK_ID = tb_1_.ID 
-    and 
+    where
+        tb_3_.BOOK_ID = tb_1_.ID
+    and
         tb_2_.FIRST_NAME = ?
-)
+)  
 ```
 
 ## asTableEx
 
-禁止在顶级查询中使用集合关联，绝大部分情况下都是合理的，但并非所有情况都合理。
+Prohibiting collection associations in top-level queries is reasonable in most cases, but not all cases.
 
-比如，用户并不查询整个对象，而且查询个别字段，并使用SQL关键字`distinct`来抵消对集合关联join所带来的副作用。这种场景是完全合理的。
+For example, the user does not query entire objects, but individual fields, and uses the SQL keyword `distinct` to offset the side effects of joining collection associations. This scenario is perfectly reasonable.
 
-所以，禁止在顶级查询中使用集合关联是一个软性限制，而非刚性限制。可以轻松突破。
+Therefore, prohibiting collection associations in top-level queries is a soft constraint rather than a hard constraint. It can be easily overridden.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -582,7 +589,7 @@ List<Long> bookIds = sqlClient
             .firstName()
             .ilike("A%")
     )
-    .select(book.id())
+    .select(book.id()) 
     .distinct() ❷
     .execute();
 ```
@@ -605,26 +612,26 @@ val bookIds = sqlClient
     .execute()
 ```
 
-</TabItem>
+</TabItem>  
 </Tabs>
 
 :::info
-1.  开发人员向Jimmer表示TA清楚自己在干什么，请求Jimmer允许TA基于集合关联进行表连接
+-   ❶ The developer informs Jimmer that they know what they are doing, asking Jimmer to allow joining collection associations.
 
-2.  开发人员对自己的行为负责，如果此处有额外的操作，则应该是distinct而不应该是分页相关的操作
+-   ❷ The developer takes responsibility for their own actions. If there are additional operations here, it should be `distinct` rather than pagination related.
 :::
 
-最终生成的SQL如下
+The final generated SQL:
 
-```sql
-select 
-    distinct tb_1_.ID 
-from BOOK as tb_1_ 
-/* highlight-start */
-inner join BOOK_AUTHOR_MAPPING as tb_2_ 
-    on tb_1_.ID = tb_2_.BOOK_ID 
-inner join AUTHOR as tb_3_ 
-    on tb_2_.AUTHOR_ID = tb_3_.ID 
+```sql 
+select
+    distinct tb_1_.ID
+from BOOK as tb_1_
+/* highlight-start */  
+inner join BOOK_AUTHOR_MAPPING as tb_2_
+    on tb_1_.ID = tb_2_.BOOK_ID
+inner join AUTHOR as tb_3_
+    on tb_2_.AUTHOR_ID = tb_3_.ID
 /* highlight-end */
 where lower(tb_3_.FIRST_NAME) like ?
 ```

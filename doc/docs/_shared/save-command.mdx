@@ -4,33 +4,32 @@ import {Save} from '@site/src/components/Image';
 
 <Save/>
 
--   功能简介
+-   Function introduction
 
-    -   左上角为数据库现有的数据结构
+    -   The upper left corner is the existing data structure in the database
 
-    -   左上角为用户期望保存的数据结构
+    -   The upper right corner is the data structure the user wants to save 
+    
+    -   The operations executed by Jimmer are below.  
 
-    -   下方为Jimmer执行的操作。
-
-        Jimmer在用户要保存的数据结构的形状**所波及范围内**，对比新旧数据结构，对其中有变化部分执行<span style={{color: 'green'}}>插入</span>、<span style={{color: 'orange'}}>修改</span>甚至<span style={{color: 'red'}}>删除</span>。
+        Within the scope **affected by** the shape of the data structure the user wants to save, Jimmer compares the new and old data structures, and performs <span style={{color: 'green'}}>insert</span>, <span style={{color: 'orange'}}>update</span> or even <span style={{color: 'red'}}>delete</span> on the changed parts.
 
         :::tip
-        如果你理解[react](https://react.dev/)或[vue](https://vuejs.org/)，不难看出这个功能很像`Virtual DOM diff`。
+        If you understand [react](https://react.dev/) or [vue](https://vuejs.org/), it is easy to see that this feature is very similar to `Virtual DOM diff`.
         :::
 
--   和JPA的差异
+-   Differences from JPA
 
-    -   在JPA中，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和
-        [Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
-        关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、
-        [ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、
-        [OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)或
-        [ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。
-        但无论如何开发人员如何配置，可保存的数据结构的形状是固定的。
-        
-        而在Jimmer中，根本不存在类似的配置，ORM的行为完全取决于用户想保存的动态对象的形状，存在几乎无穷的可能性。
+    -   In JPA, whether ordinary properties of objects need to be saved is controlled by [Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--) and
+        [Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--),
+        and whether associative properties need to be saved is controlled by [OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--), 
+        [ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--),
+        [OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--) or
+        [ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--).
+        No matter how developers configure them, the shape of the data structure that can be saved is fixed.
+            
+        While in Jimmer, there are no such configurations at all. The behavior of ORM depends entirely on the shape of the dynamic objects the user wants to save, with almost infinite possibilities.
 
-    -   在JPA中，如果一个关联是双向的，那么只有主动方才可用于保存数据，从动方 *(带`mappedBy`)* 不能用于修改数据；在Jimmer中，双向关联的双方平等，任何一方都可用于修改数据。
+    -   In JPA, if an association is bidirectional, only the owning side can be used to save data, while the inverse side *(with `mappedBy`)* cannot be used to modify data. In Jimmer, both sides of a bidirectional association are equal, and either side can be used to modify data.
 
-        因此，如果Jimmer的某个双向关联允许用户选择某一方作为从动方 *(带`mappedBy`)*，则可以相当随意地选择。
-
+        Therefore, if a certain bidirectional association in Jimmer allows the user to choose one side as the inverse side *(with `mappedBy`)*, the choice can be quite arbitrary.

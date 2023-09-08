@@ -206,10 +206,10 @@ public void saveBook(
 ```kotlin
 @PutMapping("/book")
 fun saveBook(
-    // `save(input)`等价于`save(input.toEntity())`
     // highlight-next-line
     @RequestBody input: BookInput
 ) {
+    // `save(input)`等价于`save(input.toEntity())`
     // highlight-next-line
     bookRepository.save(input)
 }

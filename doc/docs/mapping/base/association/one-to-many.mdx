@@ -1,21 +1,24 @@
 ---
-sidebar_position: 3
-title: OneToMany
+sidebar_position: 3  
+title: One To Many
 ---
 
-和JPA不同，Jimmer不支持单向一对多关联，一对多关联只能作为多对一关联镜像。也就是说，一对多关联必然意味着双向关联。
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-在下面的代码中
+Unlike JPA, Jimmer does not support unidirectional one-to-many associations. One-to-many associations can only exist as mirrors of many-to-one associations. That is, one-to-many associations necessarily imply bidirectional associations.
 
--   左侧：在[多对一](./many-to-one)一文中我们讨论过的`Book.store`
+In the following code:
 
--   右侧：本文要讨论的一对多关联`BookStore.books`，它是`Book.store`的镜像
+-   Left: `Book.store` discussed in [Many To One](./many-to-one) 
+
+-   Right: `BookStore.books` to be discussed in this article, which is the mirror of `Book.store`
 
 <div style={{display: 'flex', alignItems: 'start'}}>
 <div>
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java"> 
 
 ```java title="Book.java"
 @Entity
@@ -23,24 +26,24 @@ public interface Book {
 
     @ManyToOne
     @JoinColumn(name = "STORE_ID")
-    BookStore books();
+    BookStore store();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Book.kt"
+```kotlin title="Book.kt" 
 @Entity
 interface Book {
 
     @ManyToOne
     @JoinColumn(name = "STORE_ID")
-    val books: BookStore
+    val store: BookStore
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -58,18 +61,18 @@ interface Book {
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStore.java"
+```java title="BookStore.java" 
 @Entity
 public interface BookStore {
 
-    // `mappedBy`表示`BookStore.customer`
-    // 是`Book.books`的镜像
+    // `mappedBy` indicates `BookStore.books`
+    // is the mirror of `Book.store`
     // highlight-next-line
-    @OneToMany(mappedBy = "books")
+    @OneToMany(mappedBy = "store")
     @Nullable
-    Book customer();
+    List<Book> books();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -80,27 +83,24 @@ public interface BookStore {
 @Entity
 interface BookStore {
 
-    // `mappedBy`表示`BookStore.customer`
-    // 是`Book.books`的镜像
+    // `mappedBy` indicates `BookStore.books`
+    // is the mirror of `Book.store` 
     // highlight-next-line
-    @OneToMany(mappedBy = "books")
-    val customer: Book?
+    @OneToMany(mappedBy = "store")
+    val books: List<Book>?
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
-</Tabs>
+</Tabs>  
 
 </div>
 </div>
 
 :::caution
-注意
+-   `@OneToMany` associations are merely mirrors of `@ManyToOne` associations. `@JoinColumn` and `@JoinTable` must not be used.
 
--   `@OneToMany`关联仅仅是`@ManyToOne`关联的镜像，不得使用`@JoinColumn`和`@JoinTable`
-
--   `@OneToMany`关联属性必须非null，如果查询父对象并要求抓取其一对多关联属性，那么对于没有对应子对象的父对象而言，该属性的值是一个长度为0的集合，而非null
-
+-   The `@OneToMany` association property must be non-null. If the parent object is queried and its one-to-many association property needs to be fetched, then for the parent object that has no corresponding child objects, the value of this property is a collection of length 0 rather than null.
 :::

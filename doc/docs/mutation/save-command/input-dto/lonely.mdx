@@ -2,3 +2,72 @@
 sidebar_position: 2
 title: Lonely Form
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::caution
+This is a very crude solution, only for learning or very simple projects.
+:::
+
+Limitation: Can only save single table data, cannot persist complex data structures.
+
+Functionality: Resolves security issue *(this issue is discussed in [previous doc](./problem))*. 
+
+Advantage: No need to define Input DTOs.
+
+Disadvantage: Does not resolve API ambiguity issue *(this issue is discussed in [previous doc](./problem))*.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@PutMapping("/book")
+public void saveBook(
+    @RequestBody Book book  
+) {
+    // highlight-next-line
+    if (!ImmutableObjects.isLonely(book)) {
+        throw new IllegalArguemntException("The input object is too complex");
+    }
+    bookRepository.save(book);
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+@PutMapping("/book")
+fun saveBook(
+    // highlight-next-line 
+    @RequestBody book: Book
+) {
+    // highlight-next-line
+    if (!isLonely(book)) {
+        throw IllegalArguemntException("The input object is too complex")
+    }
+    bookRepository.save(input)
+} 
+```
+
+</TabItem>
+</Tabs>
+
+This example directly uses the Jimmer dynamic object as the parameter, without restricting the complexity of the passed data structure. But we added a validation to throw an exception if the parameter is not a lonely object, to ensure security.
+
+`isLonely` is used to determine if a dynamic object is just a lonely object. A lonely object can only have two kinds of properties:
+
+-   Scalar properties
+
+-   Association properties based on foreign keys, but can only be assigned `null` or associated objects with just the `id` property.
+
+It is easy to see that the validation in the above code ensures all `insert` or `update` operations can only apply to one table.
+
+If the developer thinks:
+
+-   Restricting functionality to only modifying one table achieves the security limit needed
+
+-   The other API ambiguity issue is acceptable
+
+Then this is indeed a very crude but usable solution.

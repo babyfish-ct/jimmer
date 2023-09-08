@@ -10,6 +10,26 @@ Jimmer动态对象和静态POJO完全不同，是一套完整的新技术体系�
 
 然而，有时我们需要在Jimmer动态和普通静态POJO之间相互转化。比如Jimmer自身就为了API的安全性推荐了Input DTO *(无论REST还是GraphQL)*。
 
+:::caution
+对于Kotlin而言，不推荐在此方案, [DTO语言](./dto-language)更值得推荐。
+
+-   和Kotlin配合的问题
+
+    -   此方案基于[mapstruct框架](https://mapstruct.org/)，mapstruct框架基于`apt`
+
+    -   Kotlin已经废弃了[kapt](https://kotlinlang.org/docs/kapt.html)，而主张使用[ksp](https://kotlinlang.org/docs/ksp-overview.html)
+
+    因此，随着Kotlin的演化，未来使用`kapt`可能会遇到越来越多的问题。
+
+-   DTO语言自动生成的DTO类型具备内置的[对象抓取器](../../query/object-fetcher)，因此
+
+    -   可以被底层API查询，请参见[对象抓取器/DTO查询](../../query/object-fetcher/dto)
+
+    -   可以被Spring Data风格用户代码查询，请参见[Spring Data/查询DTO](../../spring/repository/dto)
+
+    然而，手动定义并采用MapStruct映射的DTO没有这些功能，它只支持和动态实体相互转化。
+:::
+
 ## 依赖和预编译器
 
 :::info

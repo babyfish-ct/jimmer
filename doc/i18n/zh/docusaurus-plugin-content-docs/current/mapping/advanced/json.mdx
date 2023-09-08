@@ -6,7 +6,7 @@ title: JSON映射
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer支持JSON属性。在Java/Kotin实体类型中，这种属性可以被声明为任何非Object的JVM类型，在数据库中，对应列的存储的信息是JSON。
+Jimmer支持JSON属性。在Java/Kotin实体类型中，这种属性可以被声明为除了`java.lang.Object`和`kotlin.Any`外的任何类型，在数据库中，对应列的存储的信息是JSON。
 
 :::info
 -   JSON属性是简单属性，而非关联属性。
@@ -18,13 +18,13 @@ Jimmer提供`org.babyfish.jimmer.sql.Serialized`，有两种使用JSON映射的�
 
 -   全局JSON映射
 
-    如果属性的类型是自定义类，而非数组、集合或Map。可以用`@Serialized`修饰这个类。这样，不仅仅是当前属性，任何实体中相同类型的属性都会成为JSON属性。
+    如果属性的类型是自定义类，而非数组、集合或Map。可以用`@Serialized`修饰这个类。这样，任何实体中相同类型的属性都会成为JSON属性。
 
 -   属性级JSON映射
 
     无论属性是什么类型，都可以使用`@Serialized`修饰当前属性。
     
-    一般而言，应该修饰类型为数组、集合或Map类型的属性，因为类型为自定义类的属性采用全局JSON映射更好。
+数组、集合或Map类型的属性必须使用属性级映射；然而，对于自定义的类型而言，使用全局配置映射。
 
 ## 全局JSON映射
 

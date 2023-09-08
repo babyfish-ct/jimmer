@@ -164,40 +164,40 @@ val treeNodes = sqlClient
 
 生成3条SQL
 
-1. 主查询获取根节点（第0层）
+1.  主查询获取根节点（第0层）
 
-```sql
-select
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID is null
-```
+    ```sql
+    select
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID is null
+    ```
 
-2. 抓取第1层
+2.  抓取第1层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?)
+    ```
 
-3. 抓取第2层
+3.  抓取第2层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?)
+    ```
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 ```json
@@ -282,76 +282,77 @@ val treeNodes = sqlClient
 
 生成6条SQL
 
-1. 查询根节点
+1.  查询根节点
 
-```sql
-select
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID is null
-```
+    ```sql
+    select
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID is null
+    ```
 
-2. 抓取第1层
+2.  抓取第1层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?)
+    ```
 
-3. 抓取第2层
+3.  抓取第2层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?)
+    ```
 
-4. 抓取第3层
+4.  抓取第3层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?)
+    ```
 
-5. 抓取第4层
+5.  抓取第4层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)
+    ```
 
-6. 抓取第5层
+6.  抓取第5层
 
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
-```
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ```
+
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 
 ```json
@@ -508,8 +509,8 @@ List<TreeNode> treeNodes = sqlClient
             .childNodes(
                 TreeNodeFetcher.$.name(),
                 it -> it.recursive(args ->
-                // highlight-next-line
-                !args.getEntity().name().equals("Clothing")
+                    // highlight-next-line
+                    !args.getEntity().name().equals("Clothing")
                 )
             )
         )
@@ -546,72 +547,76 @@ val treeNodes = sqlClient
 
 上述代码中，`it.recursive(args)`的参数是一个lambda表达式，其参数`args`是一个对象，提供两个属性
 
-1. `args.getEntity()`：当前节点对象。
-2. `args.getDepth()`：当前节点深度。对于通过主查询直接得到的节点而言是0，随着递归的深入不断增大。
-3. 用户决定的返回值：一个boolean变量，决定当前是否对当前节点进行递归抓取。
+1.  `args.getEntity()`：当前节点对象。
+2.  `args.getDepth()`：当前节点深度。对于通过主查询直接得到的节点而言是0，随着递归的深入不断增大。
+3.  用户决定的返回值：一个boolean变量，决定当前是否对当前节点进行递归抓取。
 
 上述代码的含义是，除了`Clothing`节点外，其余节都会被递归抓取。
 
 生成了5条SQL
 
-1. 查询根对象
+1.  查询根对象
 
-```sql
-select
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where tb_1_.PARENT_ID is null
-```
+    ```sql
+    select
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where tb_1_.PARENT_ID is null
+    ```
 
-2. 抓取第1层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?)
-```
+2.  抓取第1层
+
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?)
+    ```
 
 3. 抓取第2层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-/*
-* Home node has two child nodes:
-*      "Food" and "Clothing",
-*
-* However, "Clothing is excluded by user,
-* so `in(?)` is used here, not `in(?, ?)`
-*/
-tb_1_.PARENT_ID in (?)
-```
-4. 抓取第3层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?)
-```
-5. 抓取第4层
-```sql
-select
-    tb_1_.PARENT_ID,
-    tb_1_.NODE_ID,
-    tb_1_.NAME
-from TREE_NODE as tb_1_
-where
-tb_1_.PARENT_ID in (?, ?, ?, ?)
-```
+
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    /*
+    * Home node has two child nodes:
+    *      "Food" and "Clothing",
+    *
+    * However, "Clothing is excluded by user,
+    * so `in(?)` is used here, not `in(?, ?)`
+    */
+    tb_1_.PARENT_ID in (?)
+    ```
+
+4.  抓取第3层
+
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?)
+    ```
+    5. 抓取第4层
+    ```sql
+    select
+        tb_1_.PARENT_ID,
+        tb_1_.NODE_ID,
+        tb_1_.NAME
+    from TREE_NODE as tb_1_
+    where
+    tb_1_.PARENT_ID in (?, ?, ?, ?)
+    ```
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 

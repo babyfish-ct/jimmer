@@ -1,47 +1,47 @@
 ---
 sidebar_position: 3
-title: Logical deletion
+title: Logical Deletion
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-逻辑删除也称软删除，表示并不真正从数据库中删除数据，而是通过隐藏数据来达到数据被删除的假象。这可以为误操作留下一次恢复的机会。
+Logical deletion, also known as soft deletion, does not actually delete data from the database. Instead, it creates the illusion that data has been deleted by hiding it. This leaves room for recovery in case of misoperation.
 
-想让实体支持逻辑删除，需要添加一个被`org.babyfish.jimmer.sql.LogicalDeleted`的标志属性，以表示该数据是正常的还是已经被删除。
+To enable logical deletion for entities, a flag property decorated with `org.babyfish.jimmer.sql.LogicalDeleted` needs to be added to indicate whether the data is normal or deleted.
 
-一旦为实体配置了逻辑删除属性
+Once a logical deletion property is configured for an entity:
 
--   默认情况下，开发人员调用API删除某个实体对象时，Jimmer并不会用SQL的`delete`语句真正删除数据，而是使用`update`语句把该实体的逻辑删除属性设置为“已经被删除“
+-   By default, when developers call the API to delete an entity object, Jimmer does not actually delete the data with SQL `delete` statement. Instead, it uses `update` statement to set the logical deletion property of the entity to "deleted".
 
-    其他情况：即便实体具备逻辑删除属性，Jimmer也提供API让开发人员通过额外的参数强行真正删除对象。
+    Exception: Even if an entity has logical deletion property, Jimmer also provides APIs for developers to forcibly truly delete objects by passing additional parameters.
+    
+-   By default, all SQL queries against the entity will be automatically appended with `where soft_delete_flag <> deleted` condition to create the illusion that some data has been deleted.
 
--   默认情况下，所有针对实体的SQL查询都会被自动加上`where 软删除标志 <> 已经被删除`的条件，从而营造出某些数据已经被删除的假象。
+    Exceptions:
+    
+    - Jimmer provides some convenience APIs that query entities *(or entity id sets)* by id *(or id sets)* without requiring users to create queries. This set of APIs ignores the soft deletion rules.
 
-    其他情况：
-
-    -   Jimmer提供了一些便捷性API，无需用户创建查询，提供根据id *(或id集合)* 查询实体*(或id集合)* 的能力。这一簇API较为特殊，无视软删除规则。
-
-    -   Jimmer可以忽略逻辑删除过滤规则 *(不添加过滤条件)*；甚至反转逻辑删除过滤规则 *(添加相反的过滤条件，专查已经被删除的数据)*
-
+    - Jimmer can ignore logical deletion filtering rules *(not add filtering conditions)*; or even reverse logical deletion filtering rules *(add opposite filtering conditions to find deleted data only)*.
+    
 :::info
-逻辑删除是一个相对固定的功能，在自动加入查询过滤条件这方面，更通用的的功能是[全局过滤器](../../query/global-filter)。
+Logical deletion itself is a relatively fixed feature. In terms of automatically adding query filtering conditions, [Global Filters](../../query/global-filter) is a more general feature.
 
-事实上，逻辑删除本身也是[全局过滤器](../../query/global-filter)，是Jimmer内置提供的，无需开发人员实现。
+In fact, logical deletion itself is a built-in [Global Filter](../../query/global-filter) provided by Jimmer without requiring implementation by developers.
 :::
 
-## 用法
+## Usage
 
-逻辑删除标志属性可以是如下类型之一
+The logical deletion flag property can be one of the following types:
 
--   boolean：必须非null
--   int：必须非null
--   枚举：必须非null
--   日期：必须可null
+- boolean: must be non-null
+- int: must be non-null 
+- enum: must be non-null
+- date: must be nullable
 
-### boolean类型
+### boolean Type  
 
--   用true表示被删除
+-   Use true to indicate deleted
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -51,10 +51,10 @@ import TabItem from '@theme/TabItem';
     public interface Book {
 
         // highlight-next-line
-        @LogicalDeleted("true")
+        @LogicalDeleted("true")  
         boolean isDeleted();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -69,14 +69,14 @@ import TabItem from '@theme/TabItem';
         @LogicalDeleted("true")
         val isDeleted: Boolean
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   用false表示被删除
+-   Use false to indicate deleted
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -89,14 +89,14 @@ import TabItem from '@theme/TabItem';
         @LogicalDeleted("false")
         boolean isEnabled();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin title="Book.kt"
+    ```kotlin title="Book.kt" 
     @Entity
     interface Book {
 
@@ -104,45 +104,45 @@ import TabItem from '@theme/TabItem';
         @LogicalDeleted("false")
         val isEnabled: Boolean
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
+    
+Here, in addition to the `value` parameter we configured for `@LogicalDeleted`, the annotation also has another parameter `restoredValue`:
 
-这里，我们配置`@LogicalDeleted`的`value`参数，其实，该注解还有另外一个参数`restoredValue`
+-   `value`: The value of the field when the object is deleted.
 
--   `value`: 对象处于被删除状态时，该字段的取值
+-   `restoredValue`: The value of the field when the object is not deleted.
 
--   `restoredValue`: 对象处于未被删除状态时，该字段的取值
-
-很明显，`value`和`restoredValue`不能相等。
+Obviously, `value` and `restoredValue` cannot be equal. 
 
 :::tip
-当此属性只有两种取值可能时 *(boolean或只有两个选项的枚举类型)*，`restoredValue`可以省略
+When this property has only two possible values *(boolean or enum with only two options)*, `restoredValue` can be omitted.
 :::
 
-因此，上面代码中示范的注解，其实是省略了`restoredValue`参数的写法
+Therefore, the annotations demonstrated in the above code are actually omissions of the `restoredValue` parameter:
 
--   `@LogicalDeleted("true")`其实是`@LogicalDeleted(value = "true", restoredValue = "false")`的简写
+-   `@LogicalDeleted("true")` is actually a shorthand for `@LogicalDeleted(value = "true", restoredValue = "false")`.
 
--   `@LogicalDeleted("false")`其实是`@LogicalDeleted(value = "false", restoredValue = "true")`的简写
+-   `@LogicalDeleted("false")` is actually a shorthand for `@LogicalDeleted(value = "false", restoredValue = "true")`.
 
-:::info
-无论被省略，还是被开发人员明确指定，`restoredValue`参数有两个作用
+:::info  
+Whether omitted or explicitly specified by the developer, the `restoredValue` parameter has two roles:
 
--   对象首次被保存时，该属性的默认值
+-   The default value of this property when the object is first saved.
 
--   处于已删除状态的的数据被再次保存时，其状态需要恢复成正常状态，此时，该属性被自动复位的值
+-   When data in deleted state is saved again and its state needs to be restored to normal, the value to which this property is automatically reset.
 :::
 
-### int类型
+### int Type  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java" 
 @Entity
 public interface Book {
 
@@ -150,7 +150,7 @@ public interface Book {
     @LogicalDeleted(value = "1", restoredValue = "0")
     int state();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -165,23 +165,23 @@ interface Book {
     @LogicalDeleted(value = "1", restoredValue = "0")
     val state: Int
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-### 枚举类型
+### Enum Type
 
-首先，定义枚举类型，表示数据的状态
+First, define the enum type to represent data status:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="BookState.java"
 public enum BookState {
-    INTIALIZED,
+    INTIALIZED,  
     FROZEN,
     PUBLISHED,
     DELETED
@@ -206,18 +206,18 @@ enum class BookState {
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java" 
 @Entity
 public interface Book {
 
     // highlight-next-line
     @LogicalDeleted(
-        value = "DELETED", 
-        restoredValue = "INTIALIZED"
+        value = "DELETED",
+        restoredValue = "INTIALIZED"  
     )
     BookState state();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -230,12 +230,12 @@ interface Book {
 
     // highlight-next-line
     @LogicalDeleted(
-        value = "DELETED", 
+        value = "DELETED",
         restoredValue = "INTIALIZED"
     )
     val state: BookState
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -243,16 +243,16 @@ interface Book {
 </Tabs>
 
 :::tip
-如果枚举只有两个选项，可以省略`restoredValue`
-:::
+If the enum has only two options, `restoredValue` can be omitted.
+::: 
 
 :::info
-至于Jimmer保存枚举属性的相关配置，请参见[Enum映射](./enum)
+For Jimmer's configuration related to saving enum properties, please refer to [Enum Mapping](./enum).
 :::
 
-### 日期
+### Date
 
--   用非null表示已删除，null表示未删除
+-   Use non-null to indicate deleted, null to indicate not deleted
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -262,11 +262,11 @@ interface Book {
     public interface Book {
 
         // highlight-next-line
-        @LogicalDeleted(value = "now", restoredValue = "null")
+        @LogicalDeleted(value = "now", restoredValue = "null") 
         @Nullable
         LocalDateTime deletedTime();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -281,14 +281,14 @@ interface Book {
         @LogicalDeleted(value = "now", restoredValue = "null")
         val deletedTime: LocalDateTime?
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   用null表示已删除，非null表示未删除
+-   Use null to indicate deleted, non-null to indicate not deleted
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -302,7 +302,7 @@ interface Book {
         @Nullable
         LocalDateTime createdTime();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -317,40 +317,40 @@ interface Book {
         @LogicalDeleted(value = "null", restoredValue = "now")
         val createdTime: LocalDateTime?
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
+    
+Where `now` is a special value defined by `@LogicalDeleted` that represents current time.
 
-其中，`now`是`@LogicalDeleted`规定的特殊取值，表示当前时间。
-
-## 多视角缓存支持
+## Multi-View Cache Support  
 
 :::caution
-逻辑删除本身是一个很简单的功能，如果仅仅在SQL操作的层面使用它，它就仅仅是一个简单的查询条件添加功能。
+Logical deletion itself is a very simple feature. If it is only used at the SQL operation level, it is merely a simple query condition adding feature.
 
-然而，如果和Jimmer的缓存能力一起使用，由于逻辑删除本身是一种内置的[全局过滤器](../../query/global-filter)，这会涉及到[多视角缓存](../../cache/multiview-cache)问题，这点需要开发人员知悉。
+However, when used together with Jimmer's caching capabilities, since logical deletion itself is a built-in [Global Filter](../../query/global-filter), this will involve [Multi-View Cache](../../cache/multiview-cache) issues that developers need to be aware of.
 :::
 
-本文不会讨论[多视角缓存](../../cache/multiview-cache)企图解决什么问题以及如何解决问题，这部分内容请参考[多视角缓存](../../cache/multiview-cache)相关文档。本文简单介绍如何为逻辑删除属性开启多视角缓存
+This article will not discuss what problems [Multi-View Cache](../../cache/multiview-cache) tries to solve and how to solve them. Please refer to related documents on [Multi-View Cache](../../cache/multiview-cache). This article briefly introduces how to enable multi-view cache for logical deletion properties:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="Book.java"
-@Entity
+@Entity 
 public interface Book {
 
     @LogicalDeleted(
         value = "true",
         // highlight-next-line
-        useMultiViewCache = true
+        useMultiViewCache = true  
     )
     boolean isDeleted();
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
@@ -368,7 +368,7 @@ interface Book {
     )
     val isDeleted: Boolean
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 

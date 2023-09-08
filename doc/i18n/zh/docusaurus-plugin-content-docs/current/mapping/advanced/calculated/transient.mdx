@@ -251,31 +251,15 @@ class BookStoreAvgPriceResolver(
 
 -   ❸ 把每组内部的书籍的价格求平均
 
-    -   `.asTableEx()`: 
-        
-        默认情况下，顶级查询不允许通过集合关联（一对多或多对多）进行JOIN；
-    
-        这个`asTableEx()`是开发人员在表明明白自己在干什么，需要这种JOIN。
+    `avg`: 对分组内的`Book.price`求平均
 
-        :::info
-        请参考[分页安全性](../../../query/dynamic-join/table-ex)以了解更多
-        :::
+    :::note
+    kotlin代码中，有一个`asNonNull()`。
 
-    -   `.books()`: 
-    
-        当前对象`BookStore`为起点，通过一对多关联属性`BookStore.books`，关联到`Book`对象
+    按照SQL标准，如果聚合函数`avg`不和分组配套使用，在没有原始数据的前提下，其返回值允许为null。所以，kotlin中`avg`被定义成了返回可空类型。
 
-    -   `avg`: 
-    
-        对分组内的`Book.price`求平均
-
-        :::note
-        kotlin代码中，有一个`asNonNull()`。
-
-        按照SQL标准，如果聚合函数`avg`不和分组配套使用，在没有原始数据的前提下，其返回值允许为null。所以，kotlin中`avg`被定义成了返回可空类型。
-
-        然而，当聚合函数`avg`和分组集合使用时，聚合函数不可能返回null，所以调用`asNonNull`得到非null的表达式。ß
-        :::
+    然而，当聚合函数`avg`和分组集合使用时，聚合函数不可能返回null，所以调用`asNonNull`得到非null的表达式。
+    :::
 
 ### 定义`avgPrice`
 

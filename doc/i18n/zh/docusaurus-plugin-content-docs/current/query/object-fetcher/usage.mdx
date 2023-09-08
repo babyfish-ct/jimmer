@@ -19,7 +19,8 @@ select
     b.id, 
     b.name, 
     b.edition 
-    // 不需要`b.price`和`b.store_id`
+    /* highlight-next-line */
+    /* 不需要`b.price`和`b.store_id` */
 from book b 
 where b.edition = 3;
 ```
@@ -148,6 +149,7 @@ List<BookDTO> bookDTOs = sqlClient
         dto.setId(tuple.get_1());
         dto.setName(tuple.get_2());
         dto.setEdition(tuple.get_3());
+        return dto;
     });
 System.out.println(bookDTOs);
 ```
@@ -192,7 +194,7 @@ println(tuples)
 
 -   JPA默认返回对象的所有属性，想要自定义返回属性的话，
 
-    -   要么使用HQL，要么使用接口
+    -   要么使用HQL: `select new BookDTO(...) from ...`
 
     -   或者使用`query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
 
@@ -201,8 +203,11 @@ println(tuples)
 但是不论是JPA还是MyBatis亦或是MyBatis-Plus都避免不了需要额外再写一个DTO类，接下来我们使用对象抓取器来简化这一流程。
 
 :::info
-不幸的是，查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
+不幸的是
+-   查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
 最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>
+
+-   这样的自定义映射机制破坏了ORM原本的功能，无法控制关联属性，只能返回简单对象而非层次化的数据结构
 :::
 
 ## 使用对象抓取器
@@ -211,155 +216,197 @@ Jimmer会根据每个实体接口，生成对应的Fetcher类，这些Fetcher就
 
 对象抓取器会根据抓取的属性，自动封装成对象，免去了手动映射以及编写额外DTO类的烦恼。
 
-### 抓取指定属性
-
 :::note
 Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
 :::
 
-上方示例中的查询，以对象抓取器的形式可以写成：
+-   例1: 
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+    上方示例中的查询，以对象抓取器的形式可以写成：
 
-```java
-BookTable table = BookTable.$;
-List<Book> books = sqlClient.createQuery(table)
-        .where(table.edition().eq(3))
-        .select(
-            // highlight-next-line
-            table.fetch(
-                BookFetcher.$
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable table = BookTable.$;
+    List<Book> books = sqlClient.createQuery(table)
+            .where(table.edition().eq(3))
+            .select(
+                // highlight-next-line
+                table.fetch(
+                    BookFetcher.$
+                        // id是隐含的、强制的
+                        .name()
+                        .edition()
+                )
+            )
+            .execute();
+    System.out.println(books);
+    ```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(table.edition.eq(3))
+            select(
+                // highlight-next-line
+                table.fetchBy {
                     // id是隐含的、强制的
-                    .name()
-                    .edition()
+                    name
+                    edition
+                }
             )
-        )
-        .execute();
-System.out.println(books);
-```
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+        }
+        .execute()
+    println(books)
+    ```
+    </TabItem>
+    </Tabs>
 
-```kotlin
-val books = sqlClient
-    .createQuery(Book::class) {
-        where(table.edition.eq(3))
-        select(
-            // highlight-next-line
-            table.fetchBy {
-                // id是隐含的、强制的
-                name
-                edition
-            }
-        )
-    }
-    .execute()
-println(books)
-```
-</TabItem>
-</Tabs>
+    可以看到得到的返回值就是`Book`类型，不需要再进行映射，这为日常编码节省了很多时间。
 
-可以看到得到的返回值就是`Book`类型，不需要再进行映射，这为日常编码节省了很多时间。
+    输出结果如下：
+    ```
+    [
+        {
+            "id" : 3,
+            "name" : "Learning GraphQL",
+            "edition" : 3
+        },
+        ...省略其他对象...
+    ]
+    ```
 
-输出结果如下：
-```
-[
-    {
-        "id" : 3,
-        "name" : "Learning GraphQL",
-        "edition" : 3
-    }
-    ...省略其他对象
-]
-```
+-   例2
 
-在Jimmer中，对查询的输出格式而言，完全没有<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>，配合Jimmer实体的动态性，可以轻易的表达一个任意形状的对象。
+    我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
 
-例如，我们可以修改一下代码，不抓取书籍版本，而抓取书籍价格：
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-BookTable table = BookTable.$;
-List<Book> books = sqlClient.createQuery(table)
-        .where(table.edition().eq(3))
-        .select(
-            // highlight-next-line
-            table.fetch(
-                BookFetcher.$
-                    .name()
-                    .price()
+    ```java
+    BookTable table = BookTable.$;
+    List<Book> books = sqlClient.createQuery(table)
+            .where(table.edition().eq(3))
+            .select(
+                // highlight-next-line
+                table.fetch(
+                    BookFetcher.$
+                        .name()
+                        .price()
+                )
             )
-        )
-        .execute();
-System.out.println(books);
-```
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+            .execute();
+    System.out.println(books);
+    ```
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
-val books = sqlClient
-    .createQuery(Book::class) {
-        where(table.edition.eq(3))
-        select(
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(table.edition.eq(3))
+            select(
+                // highlight-next-line
+                table.fetchBy {
+                    name
+                    price
+                }
+            )
+        }
+        .execute()
+    println(books)
+    ```
+    </TabItem>
+    </Tabs>
+
+    此时输出的JSON为：
+
+    ```json
+    [
+        {
+            "id" : 3,
+            "name" : "Learning GraphQL",
+            "price" : 51.00
+        },
+        ...省略其他对象...
+    ]
+    ```
+
+-   例3
+
+    你甚至可以查询关联对象
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable table = BookTable.$;
+    List<Book> books = sqlClient.createQuery(table)
+            .where(table.edition().eq(3))
+            .select(
+                table.fetch(
+                    BookFetcher.$
+                        .name()  
+                        // highlight-next-line
+                        .authors(
+                            AuthorFetcher.$
+                                .firstName()
+                        )
+                )
+            )
+            .execute();
+    System.out.println(books);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin  
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(table.edition.eq(3))
+            select(
+                table.fetchBy {
+                    name
+                    // highlight-next-line
+                    authors {
+                        firstName
+                    }
+                }
+            )
+        }
+        .execute()
+    println(books)
+    ```
+
+    </TabItem> 
+    </Tabs>
+
+    此时输出的JSON为：
+
+    ```json
+    [
+        {
+            "id" : 3,
+            "name" : "Learning GraphQL",
             // highlight-next-line
-            table.fetchBy {
-                name
-                price
-            }
-        )
-    }
-    .execute()
-println(books)
-```
-</TabItem>
-</Tabs>
-
-此时输出的JSON为：
-
-```json
-[
-    {
-        "id" : 3,
-        "name" : "Learning GraphQL",
-        "price" : 51.00
-    }
-]
-```
+            "authors": [
+                { "id": 1, "Eve" },
+                { "id": 2, "Alex" },
+            ]
+        },
+        ...省略其他对象...
+    ]
+    ```
 
 :::tip
-借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO并进行映射，只需要改变对象抓取器的属性即可。
+借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO，即可实现多样化的查询业务，只需要改变对象抓取器的形状即可。
 
 对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
 :::
-
-### 抓取所有属性
-
-上面的写法存在一个问题，如果需要查询的属性很多，每一个都手动抓取会非常繁琐。
-
-:::info
-这也是[GraphQL](https://graphql.org/)的问题之一。
-:::
-
-为解决这个问题，Jimmer也提供了如下两个API用于快速抓取大量属性。
-
-由于这些特性会在后续文档中详细讲述，这里只给出链接即可。这两个API是：
-
--   `allScalarFields`
-    
-    抓取所有标量属性，不包含关联属性、计算属性和视图属性。
-
-    请查看[抓取所有标量属性](./props#抓取所有标量属性)以了解更多。
-
--   `allTableFields`
-
-    抓取表定义中的所有属性，包含所有标量属性、基于外键的一对一/多对一属性，但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
-
-    请查看[抓取所有表定义的属性](./association#抓取所有表定义属性)以了解更多。
-
-也可以参考[二者的区别](association#allscalarfields与alltablefields的区别)
 
 ## 和JPA的差别
 

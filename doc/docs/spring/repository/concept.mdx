@@ -1,16 +1,16 @@
 ---
 sidebar_position: 1
-title: Define repository
+title: Define Repository
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Repository基接口。
+Jimmer integrates spring data and provides a base repository interface for Java and Kotlin users respectively.
 
 <table>
     <tr>
-        <td>Java</td>
+        <td>Java</td> 
         <td>org.babyfish.jimmer.spring.repository.JRepository&lt;E, ID&gt;</td>
     </tr>
     <tr>
@@ -19,24 +19,24 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </tr>
 </table>
 
-无论Java版还是Kotlin版，接口具备两个范型参数
-- E: 实体类型
-- ID: 实体ID类型
+Whether Java version or Kotlin version, the interface has two generic parameters
+-   E: Entity type 
+-   ID: Entity ID type
 
-通过继承此接口，开发人员可以快速实现各种Repository
+By inheriting this interface, developers can quickly implement various Repository
 
 -   BookStoreRepository
-    
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java title="BookStoreRepostory.java"
+    ```java title="BookStoreRepostory.java" 
     package com.example.repository;
-
+    
     import com.example.model.BookStore;
-
+    
     import org.babyfish.jimmer.spring.repository.JRepository;
-
+    
     public interface BookRepository extends JRepository<BookStore, Long> {}
     ```
 
@@ -57,7 +57,7 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </Tabs>
 
 -   BookRepository
-    
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -70,7 +70,7 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
 
     public interface BookRepository extends JRepository<Book, Long> {}
     ```
-
+    
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
@@ -88,7 +88,7 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </Tabs>
 
 -   AuthorRepository
-    
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -119,7 +119,7 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </Tabs>
 
 -   TreeNodeRepository
-    
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
@@ -150,11 +150,11 @@ Jimmer整合了spring data，为Java用户和Kotlin用户各自提供了一个Re
     </Tabs>
 
 :::note
-其他与spring-data相同，定义好接口即可，**无需**用`@org.springframework.stereotype.Repository`修饰。Jimmer会自动实现这些接口并注册到Spring中。
+The rest is the same as spring-data. Just define the interface and Jimmer will automatically implement these interfaces and register them in Spring. 
 
-但是有一个注意事项：
+However, there is one caveat:
 
-- 默认情况下，自定义Repository所属的包必须是SpringBoot主类所在包或子包。
+-   By default, the package of the custom Repository must be the same as the package of the SpringBoot main class or its subpackage.
 
-- 否则，需要用`@org.babyfish.jimmer.spring.repository.EnableJimmerRepositories`修饰SpringBoot主类或其他Spring配置类，明确指定自定义Repository接口所在的包。
+-   Otherwise, you need to use `@org.babyfish.jimmer.spring.repository.EnableJimmerRepositories` to annotate the SpringBoot main class or other Spring configuration class to explicitly specify the package where the custom Repository interface is located.
 :::

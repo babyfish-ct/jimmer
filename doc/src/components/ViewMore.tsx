@@ -9,7 +9,7 @@ export const ViewMore: FC<
         readonly title?: string,
         readonly variant?: 'text' | 'outlined' | 'contained'
     }>
-> = memo(({buttonText, fullScreen = false, title = buttonText, variant = "contained", children}) => {
+> = memo(({buttonText, fullScreen = false, title = buttonText, variant = "outlined", children}) => {
     
     const [open, setOpen] = useState(false);
 

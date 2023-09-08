@@ -1,33 +1,33 @@
 ---
 sidebar_position: 6
-title: Enum mapping
+title: Enum Mapping
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer处理枚举有两种方式：
+Jimmer handles enums in two ways:
 
--   映射为字符串：可观察性优先的选择，也是默认的选项。
+-   Map to string: A choice with better understandability and traceability, also the default option.
 
--   映射为整数：性能优先的选择。
+-   Map to integer: A choice with better performance-first.  
 
-Jimmer提供了两个用于枚举的注解
+Jimmer provides two annotations for enums:
 
--   `org.babyfish.jimmer.sql.EnumType`: 修饰枚举类型，可选
+-   `org.babyfish.jimmer.sql.EnumType`: Decorate enum types, optional
 
-    指定映射方式，映射为字符串，还是按位置映射为整数
+    Specify mapping method, map to string or ordinal position to integer
+    
+-   `org.babyfish.jimmer.sql.EnumItem`: Decorate enum items, optional
 
--   `org.babyfish.jimmer.sql.EnumItem`: 修饰枚举项，可选
+    Override the mapped string value or integer value for some enum item
 
-    覆盖某个枚举项被映射后的字符串值或整数值
-
-## 映射为字符串
+## Map to String
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Gender.java"
+```java title="Gender.java" 
 // highlight-next-line
 @EnumType(EnumType.Strategy.NAME)
 public enum Gender {
@@ -41,7 +41,7 @@ public enum Gender {
 
 ```kotlin title="Gender.kt"
 // highlight-next-line
-@EnumType(EnumType.Strategy.NAME)
+@EnumType(EnumType.Strategy.NAME)  
 enum class Gender {
     MALE,
     FEMALE
@@ -51,9 +51,9 @@ enum class Gender {
 </TabItem>
 </Tabs>
 
-这里，`@EnumType`的参数被指定为"NAME", 表示映射为字符串。默认情况下，两个枚举项映射后的字符串和它们的名字相同，即"MALE"和"FEMALE"。
+Here, the parameter of `@EnumType` is specified as "NAME", indicating mapping to string. By default, the mapped string values of the two enum items are the same as their names, i.e. "MALE" and "FEMALE". 
 
-如果你期望后的字符串和枚举项名称不同，你可以使用`@EnumItem`修饰枚举项。
+If you expect the mapped strings to be different from the enum item names, you can decorate the enum items with `@EnumItem`.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -67,7 +67,7 @@ public enum Gender {
     MALE,
 
     // highlight-next-line
-    @EnumItem(name = "F")
+    @EnumItem(name = "F") 
     FEMALE
 }
 ```
@@ -75,7 +75,7 @@ public enum Gender {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Gender.kt"
+```kotlin title="Gender.kt" 
 @EnumType(EnumType.Strategy.NAME)
 enum class Gender {
 
@@ -92,7 +92,7 @@ enum class Gender {
 </TabItem>
 </Tabs>
 
-## 映射为整数
+## Map to Integer
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -115,21 +115,21 @@ public enum Gender {
 enum class Gender {
     MALE,
     FEMALE
-}
+} 
 ```
 
 </TabItem>
 </Tabs>
 
-这里，`@EnumType`的参数被指定为"ORDINAL", 表示映射为整数。默认情况下，两个枚举项映射后的字符串和它们的`ordinal`相同，即0和1。
+Here, the parameter of `@EnumType` is specified as "ORDINAL", indicating mapping to integer. By default, the mapped integer values of the two enum items are the same as their `ordinal`, i.e. 0 and 1.
 
-如果你期望后的字符串和枚举项的`ordinal`不同，你可以使用`@EnumItem`修饰枚举项。
+If you expect the mapped integers to be different from the enum items' `ordinal`, you can decorate the enum items with `@EnumItem`.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="Gender.java"
-@EnumType(EnumType.Strategy.ORDINAL)
+@EnumType(EnumType.Strategy.ORDINAL)  
 public enum Gender {
 
     // highlight-next-line
@@ -150,7 +150,7 @@ public enum Gender {
 enum class Gender {
 
     // highlight-next-line
-    @EnumItem(ordinal = 100)
+    @EnumItem(ordinal = 100) 
     MALE,
 
     // highlight-next-line
@@ -162,33 +162,33 @@ enum class Gender {
 </TabItem>
 </Tabs>
 
-## 不明确使用@EnumType
+## Do Not Explicitly Use @EnumType  
 
-你也可以不为枚举类型指定@EnumType注解，即，不明确说明某个枚举类型应该映射成字符串还是整数。
+You can also avoid specifying the @EnumType annotation for enum types, that is, not explicitly indicate whether an enum type should be mapped to string or integer.
 
-此时，Jimmer会参考默认的全部配置。
+In this case, Jimmer will refer to the default global configuration. 
 
 :::info
-此全局配置默认为"NAME"，如果你需要"ORDINAL"，请覆盖全部配置。
+The default value of this global configuration is "NAME". If you need "ORDINAL", please override the global configuration.
 :::
 
-接下来，我们展示如何覆盖全部配置。
+Next, we show how to override the global configuration:
 
--   使用SpringBoot时
+-   When using SpringBoot
 
-    在`application.yml`或`application.properties`种添加配置项`jimmer.default-enum-strategy`，将其指定为"ORIDNAL"
+    Add configuration item `jimmer.default-enum-strategy` in `application.yml` or `application.properties` and set its value to "ORDINAL"
 
--   不使用SpringBoot时
+-   When not using SpringBoot
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     JSqlClient sqlClient = JSqlClient
         .newBuilder()
         // highlight-next-line
         .setDefaultEnumStrategy(EnumType.Strategy.ORDINAL)
-        ...省略其他配置...
+        ...Omit other configurations...
         .build();
     ```
 
@@ -199,7 +199,7 @@ enum class Gender {
     val sqlClient = newKSqlClient {
         // highlight-next-line
         setDefaultEnumStrategy(EnumType.Strategy.ORDINAL)
-        ...省略其他配置...
+        ...Omit other configurations... 
     }
     ```
 

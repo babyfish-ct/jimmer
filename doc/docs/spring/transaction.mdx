@@ -1,31 +1,31 @@
 ---
 sidebar_position: 1
-title: Integrate Spring transactions 
+title: Spring Transaction
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 整合Spring事务
+## Integrate Spring Transaction
 
-### 使用Spring Boot starter
+### Use Spring Boot starter
 
-如果使用Jimmer提供的Spring Boot Starter，则不用做任何工作，Jimmer会自动接入Spring的事务管理机制。
+If using the Spring Boot Starter provided by Jimmer, no extra work is needed. Jimmer will automatically integrate into Spring's transaction management mechanism.
 
-### 不使用Spring Boot Starter
+### Don't use Spring Boot Starter 
 
-如果仅使用Spring，并未使用Jimmer提供的Spring Boot Starter。那么需要自己编码将Jimmer接入Spring的事务管理机制。
+If using Spring only, without the Spring Boot Starter provided by Jimmer. You need to code by yourself to integrate Jimmer into Spring's transaction management mechanism.
 
-开发人员需要创建`JSqlClient/KSqlClient`，并设置其`ConnectionManager`，在`ConnectionManager`中，利用Spring的`org.springframework.jdbc.datasource.DataSourceUtils`打开和关闭连接。
+Developers need to create `JSqlClient/KSqlClient` and set its `ConnectionManager`. In `ConnectionManager`, use Spring's `org.springframework.jdbc.datasource.DataSourceUtils` to open and close connections.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="Book.java"
-@Bean
+@Bean  
 public JSqlClient sqlClient(DataSource dataSource) {
     return JSqlClient.newBuilder()
-        // highlight-next-line
+        // highlight-next-line  
         .setConnectionManager(
             new ConnectionManager() {
                 @Override
@@ -39,13 +39,13 @@ public JSqlClient sqlClient(DataSource dataSource) {
                         return block.apply(con);
                     } finally {
                         DataSourceUtils
-                            // highlight-next-line
-                            .releaseConnection(con, dataSource);
+                        // highlight-next-line
+                        .releaseConnection(con, dataSource);
                     }
                 }
             }
         )
-        ...省略其他配置...
+        ...Omit other configurations...
         .build();
 }
 ```
@@ -55,7 +55,7 @@ public JSqlClient sqlClient(DataSource dataSource) {
 
 ```kotlin title="Book.kt"
 @Bean
-fun sqlClient(dataSource: DataSource): KSqlClient =
+fun sqlClient(dataSource: DataSource): KSqlClient = 
     newKSqlClient {
         // highlight-next-line
         setConnectionManager {
@@ -63,46 +63,46 @@ fun sqlClient(dataSource: DataSource): KSqlClient =
                 // highlight-next-line
                 .getConnection(dataSource)
             try {
-                proceed(con)
+                proceed(con)  
             } finally {
                 DataSourceUtils
-                    // highlight-next-line
-                    .releaseConnection(con, dataSource)
+                // highlight-next-line
+                .releaseConnection(con, dataSource)
             }
         }
-        ...省略其他配置...
+        ...Omit other configurations...
     }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
 :::caution
-不要使用普通的方法从连接池借用和归还连接，一定要使用Spring的`org.springframework.jdbc.datasource.DataSourceUtils`
+Don't use normal methods to borrow and return connections from the connection pool. You must use Spring's `org.springframework.jdbc.datasource.DataSourceUtils`.
 :::
 
-## 和JdbcTemplate协同
+## Work with JdbcTemplate
 
-Jimmer采用极简设计，其API总入口`JSqlClient/KSqlClient`对外暴露的API一律采用无状态设计。
+Jimmer adopts minimalist design. The API entry point `JSqlClient/KSqlClient` exposes stateless APIs.
 
-很多数据库操作框架对JDBC连接提供了一个轻量级有状态包装，比如
--   JPA的[EntityManager](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html)
--   Hibernate的[Session](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/Session.html)
--   MyBatis的[SqlSession](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSession.html)。
+Many database operation frameworks provide lightweight stateful wrappers for JDBC connections, such as
+-   JPA's [EntityManager](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html)
+-   Hibernate's [Session](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/Session.html) 
+-   MyBatis's [SqlSession](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSession.html).
 
-并且对数据库事务也有有状态封装，比如
--   JPA的[EntityManager.getTransaction](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html#getTransaction--)
--   Hibernate的[Session.getTransaction](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/SharedSessionContract.html#getTransaction())
--   MyBatis的[SqlSession.commit](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSession.html#commit())
+And they also provide stateful wrappers for database transactions, such as
+-   JPA's [EntityManager.getTransaction()](https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html#getTransaction--)
+-   Hibernate's [Session.getTransaction()](https://docs.jboss.org/hibernate/orm/6.2/javadocs/org/hibernate/SharedSessionContract.html#getTransaction())
+-   MyBatis's [SqlSession.commit()](https://javadoc.io/doc/org.mybatis/mybatis/latest/org/apache/ibatis/session/SqlSession.html#commit())
 
-Jimmer没有类似的抽象，其API总入口`JSqlClient/KSqlClient`对外暴露的API一律采用无状态设计，JDBC连接是Jimmer唯一的底层依赖。
+Jimmer doesn't have similar abstractions. The API entry point `JSqlClient/KSqlClient` exposes stateless APIs. JDBC connection is the only low-level dependency of Jimmer.  
 
 :::tip
-这促成了一个重要的特性：Jimmer的事务管理和JdbcTemplate的事务管理完全相同。
+This enables an important feature: Jimmer's transaction management is exactly the same as JdbcTemplate's transaction management.
 :::
 
-Jimmer无需提供任何类似于`createNativeQuery`的API
+Jimmer doesn't need to provide any APIs like `createNativeQuery`
 
--   对于和ORM关系不大的报表查询，用户期望书写完整的Native SQL，那么直接使用Spring的JdbcTemplate即可，这是因为Jimmer的事务管理和JdbcTemplate的事务管理完全相同。
+-   For report queries that are not closely related to ORM, users expect to write complete Native SQL, then JdbcTemplate can be used directly, because Jimmer's transaction management is exactly the same as JdbcTemplate's.
 
--   对于Jimmer的ORM风格查询，在强类型SQL DSL中混入[Native SQL](../query/native-sql)表达式即可
+-   For Jimmer's ORM-style queries, inject [Native SQL](../query/native-sql) expressions in strongly typed SQL DSL.

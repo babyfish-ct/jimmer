@@ -1,37 +1,38 @@
 ---
 sidebar_position: 2
-title: Delete statement
+title: Delete Statement
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
+## Premise of This Article
 
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
+Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers.  
 
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
 
-本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
 
-## 基本用法
+## Basic Usage
 
-Delete语句用法如下
+The usage of the delete statement is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 BookTable book = BookTable.$;
 
 int affectedRowCount = sqlClient
-    .createDelete(book)
+    .createDelete(book) 
     .where(book.name().eq("Learning GraphQL"))
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -39,38 +40,40 @@ val affectedRowCount = sqlClient
     .createDelete(Book::class) {
         where(table.name eq "Learning GraphQL")
     }
-    .execute()
+    .execute() 
 println("Affected row count: $affectedRowCount")
 ```
 
 </TabItem>
 </Tabs>
 
-生成的SQL如下：
+The generated SQL is:
+
 ```sql
-delete 
-from BOOK as tb_1_ 
+delete  
+from BOOK as tb_1_
 where tb_1_.NAME = ?
 ```
 
-## 使用JOIN
+## Using JOIN
 
-Delete语句用法如下支持JOIN子句，如下
+The delete statement usage below supports JOIN clauses, as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 BookTable book = BookTable.$;
 
 int affectedRowCount = sqlClient
     .createDelete(book)
-    .where(book.store().name().eq("MANNING"))
+    .where(book.store().name().eq("MANNING")) 
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -79,38 +82,38 @@ val affectedRowCount = sqlClient
         where(table.store.name eq "MANNING")
     }
     .execute()
-println("Affected row count: $affectedRowCount")
+println("Affected row count: $affectedRowCount") 
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成了3条SQL:
+The finally generated SQL is:
 
 1. 
     ```sql
-    select 
-        distinct tb_1_.ID 
-    from BOOK as tb_1_ 
-    inner join BOOK_STORE as tb_2_ 
-        on tb_1_.STORE_ID = tb_2_.ID 
-    where 
-        tb_2_.NAME = ?
+    select
+        distinct tb_1_.ID
+    from BOOK as tb_1_
+    inner join BOOK_STORE as tb_2_
+        on tb_1_.STORE_ID = tb_2_.ID
+    where
+        tb_2_.NAME = ? 
     ```
 
-2. 
+2.  
     ```sql
-    delete from BOOK_AUTHOR_MAPPING 
-    where BOOK_ID in(?, ?, ?)
+    delete from BOOK_AUTHOR_MAPPING
+    where BOOK_ID in(?, ?, ?) 
     ```
-3. 
+3.  
     ```sql
-    delete from BOOK 
+    delete from BOOK
     where ID in(?, ?, ?)
     ```
+    
+:::note 
+If JOIN is used in a delete statement, Jimmer will translate it into `select` + `delete`. First use the `select` statement with `join` clause to query the ids of the data to be deleted, then use [Delete Command](./delete-command) to delete the data.
 
-:::note
-如果在Delete语句中使用join，Jimmer会将之翻译成`select` + `delete`。先利用带有`join`子句的`select`语句查询到需要删除的数据id，然后使用[Delete指令](./delete-command)删除数据。
-
-这个方案对任何数据库都有效。
+This scheme is valid for any database.
 :::

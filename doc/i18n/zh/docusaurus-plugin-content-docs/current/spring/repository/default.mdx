@@ -84,7 +84,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 </TabItem>
 </Tabs>
 
-1.
+-   ❶
 
     -   Java: 父查询基于表对象`BookTable.$`，为了编程方便，重命名为`table`。
 
@@ -92,23 +92,23 @@ interface BookRepository : KRepository<BookStore, Long> {
 
     -   Kotlin: `createQuery`接受一个labmda表达式，该lambda表达式切换了`this`的含义，lambda内部代码可以直接使用`table`变量。
 
-2.
+-   ❷
 
     -   Java：从`JRepository`继承的方法`sql()`，返回类型为`org.babyfish.jimmer.sql.JSqlClient`，该类型是SQL DSL的Java API的总入口。
 
     -   Kotlin：从`KRepository`继承的属性`sql`，返回类型为`org.babyfish.jimmer.sql.kt.KSqlClient`，该类型SQL DSL的Kotlin API的总入口。
 
-3.  仅当查询参数不为null且字符串长度不为0时，才添加where条件。
+-   ❸ 仅当查询参数不为null且字符串长度不为0时，才添加where条件。
 
     很明显，该查询是动态查询。
 
-4.  `select`语句都位于最后。`select`之前，查询是没有返回类型的；只有`select`之后，查询的返回类型才可以被确定的。这是select在最后出现的原因。
+-   ❹ `select`语句都位于最后。`select`之前，查询是没有返回类型的；只有`select`之后，查询的返回类型才可以被确定的。这是select在最后出现的原因。
 
     :::note
     `select`放到最后面的写法，并非Jimmer首创，此设计最初源自[C# linq](https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/)。
     :::
 
-5.  `select`之后`execute`之前
+-   ❺ `select`之后`execute`之前
     -   Java表达式的类型是`TypedRootQuery<Book>`
     -   Kotlin表达式的类型是`KTypedRootQuery<Book>`
         
@@ -333,9 +333,7 @@ order by
 
 这是因为`Book.authors`是一个集合关联（一对多关联和多对多关联的统称），盲目通过集合关联连接其他对象，会导致查询结果出现重复数据。更重要的是，这种重复对后续要展示的分页查询是致命的。
 
-更多详情，请参见**TODO**。
-
-如果你阅读了**TODO**，你会发现你可以通过`table.asTableEx().authors`强行通过集合关联连接。然而这个能力并不适合用在这里。
+更多详情，请参见[分页安全性](../../query/dynamic-join/table-ex)。你会发现你可以通过`table.asTableEx().authors`强行通过集合关联连接。然而这个能力并不适合用在这里。
 
 总之，Jimmer的API会在编译时暗示你，实现这个功能应该使用子查询，而非JOIN。
 :::
@@ -456,13 +454,13 @@ interface BookRepository : KRepository<BookStore, Long> {
 </TabItem>
 </Tabs>
 
-1.  
+-   ❶  
 
     -   Java: 子查询基于全局变量`AuthorTableEx.$`，为了便于后续开发，取一个别名`author`。
 
         这里，子查询基于`AuthorTableEx.$`，而非`AuthorTable.$`，是为了`select(table.books.id)`能通过编译。
 
-        请阅读**TODO**以了解更多。
+        请阅读[分页安全性](../../query/dynamic-join/table-ex)以了解更多。
 
     -   Kotlin: `subQuery`接受一个lambda表达式，`this`被重新定义，内部可以直接使用`table`变量，但是注意:
 
@@ -470,9 +468,9 @@ interface BookRepository : KRepository<BookStore, Long> {
         -   父亲查询labmda内部，子查询lambda外部：`table`变量表示`KNonNullTable<Book>`
         -   如果需要在子查询中引入父查询的表（本例未演示，通常用于写相关子查询）：请使用`parentTable`变量
 
-2.  创建子查询
+-   ❷ 创建子查询
 
-毫无疑问，如果`authorName`参数没有指定，最终SQL不会包含JOIN，没必要演示。
+毫无疑问，如果`authorName`参数没有指定，最终SQL不会包含子查询，没必要演示。
 
 所以，我们演示`authorName`参数被指定了情况。
 
@@ -870,11 +868,11 @@ interface BookRepository : KRepository<BookStore, Long> {
 </TabItem>
 </Tabs>
 
-❶  返回`org.springframework.data.domain.Page`，而非`java.util.List`
+-   ❶ 返回`org.springframework.data.domain.Page`，而非`java.util.List`
 
-❷  参数变为`org.springframework.data.domain.Pageable`
+-   ❷ 参数变为`org.springframework.data.domain.Pageable`
 
-❸  执行分页查询
+-   ❸ 执行分页查询
 
     -   Java
 
@@ -888,7 +886,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
         Kotlin API为`KConfigurableRootQuery<*, E>`类型提供了扩展方法`fetchPage`，调用之即实现分页查询
 
-❹  从pageable对象中取出sort对象，实施动态排序
+-   ❹ 从pageable对象中取出sort对象，实施动态排序
 
 现在，我们展示动态排序的用法，为了聚焦在分页逻辑上，除分页外的其他查询参数都指定为null。
 
@@ -1425,7 +1423,7 @@ where tb_2_.BOOK_ID in (
 :::tip
 无论是本文讨论的复杂查询，还是上一篇文档讨论过的[简单查询](./abstract)，
 只要查询返回实体对象或其集合，而非简单的列元祖，
-都建议最后添加一个`Fetcher`参数，让所有对象查询具备如同`GraphQL`一样的强大数据结构形状控制能力。
+都建议添加一个`Fetcher`参数，让所有对象查询具备如同`GraphQL`一样的强大数据结构形状控制能力。
 
 这会为上层业务开发带来巨大的便利。
 :::

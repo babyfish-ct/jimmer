@@ -78,21 +78,11 @@ import TabItem from '@theme/TabItem';
 实际打印日志如下：
 
 ```
-jimmer> sql: select tb_1_.ID, tb_1_.CREATED_TIME, 
-tb_1_.MODIFIED_TIME, tb_1_.NAME, tb_1_.EDITION, 
-tb_1_.PRICE, tb_1_.STORE_ID 
-from BOOK tb_1_ 
-where lower(tb_1_.NAME) like ? 
-order by tb_1_.NAME asc, tb_1_.EDITION desc 
-limit ?, ?, 
-variables: [%graphql%, 0, 10], 
-purpose: QUERY
+jimmer> sql: select tb_1_.ID, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK tb_1_  where lower(tb_1_.NAME) like ?  order by tb_1_.NAME asc, tb_1_.EDITION desc limit ?, ?, variables: [%graphql%, 0, 10], purpose: QUERY
 ```
 
 :::caution
 如果仅仅开启SQL日志，上面日志不会换行。
-
-为提高本文档的可读性，上述日志被人为换行，并非真实的情况。
 :::
 
 日志有三个部分：
@@ -117,9 +107,9 @@ purpose: QUERY
 
     -   `EVICT`: 某些情况下，单凭Jimmer触发器的事件信息无法判断哪些缓存应该被清理，Jimmer会自动执行一些查询用于精确判断哪些缓存应该被清理
 
-## 格式化SQL
+## 格式良好的SQL
 
-之前的例子中，SQL日志被打印为一行，*(为提高本文档的可读性，上个例子的日志被人为换行，并非真实的情况。)*，可读性不佳。
+之前的例子中，SQL日志被打印为一行，可读性不佳。
 
 因此，需要格式化SQL。有两种实现方法
 

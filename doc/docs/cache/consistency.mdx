@@ -1,62 +1,61 @@
 ---
-sidebar_position: 3
-title: Guaranteed cache coherency
+sidebar_position: 3  
+title: Cache Consistency
 ---
 
 :::caution
-之前，我们已经通过[对象缓存](./cache-type/object)、[关联缓存](./cache-type/association)和[计算缓存](./cache-type/calculation)三篇文章详细讲解了Jimmer如何在数据被修改时自动删除受影响的缓存。
+In previous articles on [object cache](./cache-type/object), [association cache](./cache-type/association), and [calculated cache](./cache-type/calculation), we have discussed in detail how Jimmer automatically deletes affected caches when data is modified.
 
-所以，这里不再重复讨论Jimmer是如何智能地删除受影响的缓存。
+So here we will not repeat the discussion of how Jimmer intelligently deletes affected caches. 
 
-本文讨论的焦点是，Jimmer如何保证已发出的缓存数据删除行为最终一定能成功。
+The focus of this article is how Jimmer ensures cache deletion operations issued can definitely succeed.
 :::
 
-无论是[对象缓存](./cache-type/object)和[关联缓存](./cache-type/association)那种全自动的一致性，还是[计算缓存](./cache-type/calculation)那种需要用户辅助的一致性，Jimmer的缓存一致性都是由[触发器](../mutation/trigger)驱动的。
+Whether it is the fully automatic consistency of [object cache](./cache-type/object) and [association cache](./cache-type/association), or the user assisted consistency of [calculated cache](./cache-type/calculation), the cache consistency of Jimmer is driven by [triggers](../mutation/trigger).
 
-Jimmer的触发器分为BinLog触发器和Transaction触发器。
+Jimmer triggers are divided into BinLog triggers and Transaction triggers.
 
-针对不同的情况，Jimmer采用不同的策略来保证缓存一致性，即，保证缓存清理操作必然成功。
+For different situations, Jimmer adopts different strategies to ensure cache consistency, that is, to ensure that cache cleanup operations must succeed.
 
 
-## BinLog触发器的一致性(推荐)
+## Consistency of BinLog Trigger (Recommended)
 
-当`trigger-type`为`BINLOG_ONLY`或`BOTH`时，Jimmer使用BinLog触发器删除失效缓存。
+When `trigger-type` is `BINLOG_ONLY` or `BOTH`, Jimmer uses the BinLog trigger to delete invalid caches.
 
-在这种情况下，开发人员响应消息队列的通知，简单处理后调用Jimmer的`BinLog` API *（这段用户代码很简单，其复杂度可以忽略不计）*。用户调用`BinLog` API会发起所有触发器回调，包括缓存删除。
+In this case, developers respond to messaging queue notifications, process them simply and then call Jimmer's `BinLog` API *(this user code is very simple, and its complexity can be ignored)*. Calling the `BinLog` API initiates all trigger callbacks, including cache deletion.
 
-以Kafka为例，只要保证调用`BinLog`API成功后再提交消费进度，则可以保证缓存清理最终成功。
+Take Kafka as an example. As long as the `BinLog` API call succeeds before committing the consumption progress, cache cleanup can be guaranteed to eventually succeed.
 
-## Transaction触发器的一致性
+## Consistency of Transaction Trigger 
 
-当`trigger-type`为`TRANSACTION_ONLY`时，Jimmer会**被迫**使用Transaction触发器删除失效缓存。
+When `trigger-type` is `TRANSACTION_ONLY`, Jimmer will be **forced** to use the Transaction trigger to delete invalid caches.
 
-对于Transaction触发器而言：
+For Transaction triggers:
 
--   只有用户在当前App内调用Jimmer API导致的修改才做才会发起触发器回调，包括缓存删除。
+-   Caches will only be deleted when modifications caused by calling Jimmer APIs within the current App triggers callbacks, including cache deletion.
 
--   所有触发器回调都在事务提交前完成，包括缓存删除。
+-   All trigger callbacks complete before the transaction is committed, including cache deletion.
 
-假如采用直接删除缓存的简单实现，只要缓存删除发生异常，就会导致事务被回滚。很明显，这种实现并不合理。
+If a simple implementation of direct cache deletion is adopted, any exception during cache deletion will cause the transaction to be rolled back. Obviously, this implementation is not reasonable.
 
-因此，当`trigger-type`为`TRANSACTION_ONLY`时，用户认知中的缓存删除操作都会被延迟执行。缓存删除操作先不执行，而是被存入`JIMMER_TRANS_CACHE_OPERATOR`表。
+Therefore, when `trigger-type` is `TRANSACTION_ONLY`, the cache deletion operations perceived by the user will be delayed. Cache deletion operations are not executed first, but are stored in the `JIMMER_TRANS_CACHE_OPERATOR` table. 
 
-:::caution
-Jimmer会自动创建``JIMMER_TRANS_CACHE_OPERATOR`表。
+:::caution  
+Jimmer will automatically create the `JIMMER_TRANS_CACHE_OPERATOR` table.
 
-然而，默认的`org.babyfish.jimmer.sql.dialect.DefaultDialect`不支持此操作，会抛出异常。
+However, the default `org.babyfish.jimmer.sql.dialect.DefaultDialect` does not support this operation and will throw an exception.
 
-因此，不要使用默认的`DefaultDialect`，要明确指定数据库方言。
+So do not use the default `DefaultDialect`, be sure to specify the database dialect explicitly.  
 :::
 
-`JIMMER_TRANS_CACHE_OPERATOR`表的修改和业务表的修改属于同一个数据库本地事务，二者要么都成功，要么都失败。
+Modifications to the `JIMMER_TRANS_CACHE_OPERATOR` table and business tables belong to the same database local transaction, either both succeed or both fail.
 
-事务提交成功后，Jimmer会马上执行一次`Flush`操作。
+After the transaction commits successfully, Jimmer will immediately execute a `Flush` operation.
 
-所谓`Flush`操作，就是从`JIMMER_TRANS_CACHE_OPERATOR`表中获取尚未执行的用户认知中的缓存删除操作，执行真正的缓存删除操作，如果成功，删除相关记录。
+The so-called `Flush` operation is to obtain cache deletion operations that have not yet been executed from the `JIMMER_TRANS_CACHE_OPERATOR` table as perceived by the user, execute the actual cache deletion operation, and delete related records if successful.
 
-对于事务提交后立即执行的`Flush`操作而言：
+For the `Flush` operation executed immediately after transaction commit:
 
--   如果成功自然最好，这时拥有良好的实时性。大部分情况下也应该如此。
+-   If successful, it's best to have good real-time performance. This should be the case most of the time.
 
--   即使没有成功也不要紧。因为Jimmer会周期性执行`Flush`操作保证相关缓存操作最终会成功，`Flush`操作的间隔受全局SpringBoot配置项`jimmer.transaction-cache-operator-fixed-delay`控制，该配置以毫秒为单位，默认5000
-    
+-   Even if it fails, it doesn't matter. Because Jimmer will periodically execute `Flush` operations to ensure related cache operations eventually succeed. The interval of `Flush` operations is controlled by the global SpringBoot configuration item `jimmer.transaction-cache-operator-fixed-delay`, which is specified in milliseconds and defaults to 5000.

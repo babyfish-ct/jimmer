@@ -3,6 +3,6 @@ sidebar_position: 9
 title: Input DTO
 ---
 
-虽然底层的保持指令非常强大，但这离最终对外提供数据保存API还有一段距离。
+Although the underlying persistence commands are very powerful, there is still some way to go before exposing data persistence APIs externally.  
 
-本目录的文档讨论如何对外暴露数据保存API。
+The documents in this section discuss how to expose data persistence APIs externally.

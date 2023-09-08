@@ -1,71 +1,71 @@
 ---
-sidebar_position: 1
-title: Basic usage
+sidebar_position: 1  
+title: Usage
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Jimmer分页的特色
+## Features of Jimmer Pagination  
 
-分页查询是Jimmer一个很有特色的功能，能大幅提升开发效率。
+Pagination query is a very characteristic function of Jimmer, which can greatly improve development efficiency.
 
-分页需要执行两条SQL查询
+Pagination requires executing two SQL queries:
 
--   查询满足条件的数据总行数，其结果可以计算一共有多少页，用户的页码是否越界。
-
-    :::info
-    为了便于讨论，Jimmer称这条SQL为`count-query`
-    :::
-
--   查询当前页内的所有数据，返回的数据条数不超过页面大小，并跳过之前页的所有数据。
+-   Query the total number of rows that meet the criteria, the result of which can calculate how many pages there are in total, and whether the user's page number is out of bounds.
 
     :::info
-    为了便于讨论，Jimmer称这条SQL为`data-query`
+    For discussion purposes, Jimmer refers to this SQL as `count-query`.
     :::
 
+-   Query all data within the current page, the number of returned data rows does not exceed the page size, and skip all data from previous pages.
+
+    :::info  
+    For discussion purposes, Jimmer refers to this SQL as `data-query`.
+    :::
+    
 :::tip
-Jimer分页的特色：开发人员只需编写`data-query`，框架自动生成`count-query`。
+Jimmer's feature: The developer only needs to write the `data-query`, and the framework automatically generates the `count-query`.  
 :::
 
-另外，`count-query`其实是可以优化的。
+In addition, the `count-query` can actually be optimized. 
 
-让我们来看一个可以优化的场景，在data-query中有存在一个JOIN，如果它同时满足如下条件：
+Let's look at a scenario that can be optimized. In the data-query there is a JOIN that satisfies the following conditions:
 
--   此JOIN操作得到的表，并没有被`where`条件使用，而是在其他不会影响记录行数的地方被使用，比如`orderBy`
+-   This JOIN operation results in a table that is not used by any `where` conditions, but is used elsewhere in ways that do not affect the number of rows, such as `orderBy`.
 
--   此JOIN的方向是从子表指向父表 *(即多对一和一对一关联)*，连接结果不会出现数据重复。也就是说，此JOIN不会导致数据变多
+-   The direction of this JOIN is from the child table to the parent table *(i.e. one-to-one and many-to-one associations)*, so the join result does not produce duplicate data. That is, this JOIN does not cause the data to grow.
 
--   此JOIN的外键是真的 *(即存在外键约束，请参见[真假外键](../../mapping/base/foreignkey))* 且非null。那么此JOIN不会导致数据变少
+-   This JOIN has a true foreign key *(i.e. there is a foreign key constraint, see [Real and Fake Foreign Keys](../../mapping/base/foreignkey))*, and it is non-null. So this JOIN does not cause the data to shrink.
 
-则可以安全地从count-query中剔除它，达到优化目的
+Then it can be safely removed from the count-query to achieve optimization. 
 
 :::tip
-Jimmer不但可以自动生成`count-query`，还可以做到优化`count-query`
+Not only can Jimmer automatically generate `count-query`, it can also optimize `count-query`.
 :::
 
-## 配合SpringBoot使用时
+## When Used with Spring Boot  
 
-配合SpringBoot使用时，开发人员从`JRepository/KRepository`派生自定义的Repository接口，为自定义接口添加查询方法有两种选择：
+When used with Spring Boot, developers derive custom Repository interfaces from `JRepository/KRepository`, and there are two options for adding query methods to the custom interfaces:
 
--   按照一定的约定声明抽象方法，交由Jimmer自动实现
+-   Declare abstract methods according to certain conventions, and let Jimmer automatically implement them.
 
     :::caution
-    这种用法过于简单，隐藏了所有细节，不适在此讲述分页查询。
+    This usage is too simple, hiding all details, and is not suitable for discussing pagination here. 
     
-    你可以查看[Spring篇/SpringData风格/抽象方法](../../spring/repository/abstract)以了解如何通过这种方式实现分页查询
+    You can check [Spring Section/Spring Data Style/Abstract Methods](../../spring/repository/abstract) to learn how to implement pagination queries in this way.
     :::
-
--   直接在自定义接口中定义default方法，自己实现查询逻辑
+    
+-   Directly define default methods in the custom interface and implement the query logic yourself.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="BookRepository.java"
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-...省略其他导入...
+...other imports omitted...  
 
 public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
 
@@ -89,19 +89,20 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
                 )
                 .orderBy(SpringOrders.toOrders(table, pageable.getSort())) ❷
                 .select(table)
-                ❸
+        ❸
         );
     }
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="BookRepository.kt"
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-...省略其他导入...
+import org.springframework.data.domain.Pageable  
+...other imports omitted...
 
 interface BookRepository<Book, Long> : KRepository<Book, Long> {
 
@@ -118,10 +119,10 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
                 storeName?.takeIf { it.isNotEmpty() }?.let {
                     where(table.store.name eq it)
                 }
-                orderBy(pageable.sort) ①
+                orderBy(pageable.sort) ❶
                 select(table)
             }
-            .fetchPage( ②
+            .fetchPage( ❷
                 pageable.pageNumber, 
                 pageable.pageSize
             )
@@ -131,30 +132,30 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
 </TabItem>
 </Tabs>
 
--   ❶或② 
+-   ❶ or ❷
 
-    -   ❶ Java: 
+    - ❶ Java:
     
-        调用超接口的`pager`方法创建一个辅助对象，并调用该对象的方法`execute`实现分页查询。
+        Call the `pager` method of the super interface to create a helper object, and call the `execute` method of that object to implement paged query.
+        
+        The parameter of `execute` is an unexecuted query, which serves as the template for the `data-query`:
+        
+    - ❷ Kotlin:
+        
+        Kotlin API extends `fetchPage` function for `KConfigurableRootQuery<*, E>` type, calling it implements paged query.
+        
+-   ❷ or ❶ Since Spring Data's `Pageable` contains dynamic sorting, dynamic sorting needs to be applied.  
 
-        `execute`的参数是一个未执行的查询，该查询作为`data-query`的模板：
-    
-    -   ② Kotlin:
+-   ❸ After `select`, the query itself is not executed, indicating this is an unexecuted query.
 
-        Kotlin API为`KConfigurableRootQuery<*, E>`类型扩展了`fetchPage`函数，调用之实现分页查询。
-
--   ❷或① 由于Spring Data的`Pageabe`包含了动态排序，所以需要应用动态排序。
-
--   ❸ `select`之后并没有调用查询本身的`execute`，说明这是一个未执行的查询。
-
-如果我们执行
+If we execute:  
 
 ```java
-Page<Boo> page = bookRepository.findBooks(
+Page<Book> page = bookRepository.findBooks(
     PageRequest.of(
-        1, 
-        5, 
-        SortUtils.toSort("name asc, edition desc")
+        1,
+        5,
+        SortUtils.toSort("name asc, edition desc") 
     ),
     null,
     null
@@ -162,51 +163,51 @@ Page<Boo> page = bookRepository.findBooks(
 ```
 
 :::caution
-SpringData中`Pageabe`的页码从0开始，而非从1开始，所以，这里查询的是第二页
+In SpringData, the page number of `Pageable` starts from 0 instead of 1, so this queries the second page.
 :::
 
-会生成两条SQL
+It will generate two SQL statements:
 
 -   count-query
 
     ```sql
     select
-        count(tb_1_.ID)
+        count(tb_1_.ID) 
     from BOOK tb_1_
     ```
 
--   data-query *（假设数据库是H2）*
+-   data-query *(assuming the database is H2)*  
 
     ```sql
     select
         tb_1_.ID,
-        tb_1_.CREATED_TIME,
+        tb_1_.CREATED_TIME, 
         tb_1_.MODIFIED_TIME,
         tb_1_.NAME,
         tb_1_.EDITION,
         tb_1_.PRICE,
         tb_1_.STORE_ID
-    from BOOK tb_1_
+    from BOOK tb_1_ 
     order by
         tb_1_.NAME asc,
         tb_1_.EDITION desc
-    limit ? /* 5 */ offset ? /* 5 */
+    limit ? /* 5 */, ? /* 5 */ 
     ```
 
-这个例子可以让我们明白Jimmer分页功能，但是，Jimmer的Spring API隐藏了一些细节。因此，接下来，我们绕开Spring Boot，从更底层的角度更清晰地阐述。
+This example allows us to understand Jimmer's pagination functionality, but Jimmer's Spring API hides some details. Therefore, next we bypass Spring Boot and explain more clearly from a lower level perspective.
 
-## 不配合SpringBoot使用时
+## When Not Using Spring Boot  
 
-### 定义自己的Page类
+### Define Your Own Page Class  
 
-在不使用SpringBoot时，我们需要定义一点通用代码。
+When not using SpringBoot, we need to define some common code.
 
-既然不使用SpringBoot，那么自然无法使用`org.springframework.data.domain.Page`。
+Obviously when not using SpringBoot, we cannot use `org.springframework.data.domain.Page`.
 
-因此，根据项目要求，定义自己的可重用类`Page`，如下
+So according to project requirements, define your own reusable `Page` class as follows:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="Page.java"
 @lombok.Data
@@ -218,9 +219,10 @@ public class Page<E> {
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Page.kt"
+```kotlin title="Page.kt" 
 data class Page<E>(
     val totalRowCount: Int,
     val totalPage: Int,
@@ -231,45 +233,46 @@ data class Page<E>(
 </TabItem>
 </Tabs>
 
-### 实现业务代码
+### Implement Business Logic  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Page.java"
+```java
 public Page<Book> findBooks(
     int pageIndex,
     int pageSize,
     @Nullable String name,
-    @Nullable String storeName
+    @Nullable String storeName  
 ) {
-    // highlight-next-line
-    return PagingQueries.execute(
-        sqlClient
-            .createQuery(table)
-            .whereIf(
-                name != null && !name.isEmpty(),
-                table.name().eq(name)
-            )
-            .whereIf(
-                storeName != null && !storeName.isEmpty(),
-                table.store().name().eq(storeName)
-            )
-            .orderBy(table.name().asc(), table.edition().desc)
-            .select(table),
-        pageIndex,
-        pageSize,
-        (entities, totalCount, queryImplementor) ->
-            new Page<>(
-                    totalCount,
-                    (totalCount + pageSize - 1) / pageSize,
-                    entities,
-            )
-    );
+  // highlight-next-line
+  return PagingQueries.execute(
+    sqlClient
+        .createQuery(table)
+        .whereIf(
+            name != null && !name.isEmpty(),
+            table.name().eq(name)  
+        )
+        .whereIf(
+            storeName != null && !storeName.isEmpty(),  
+            table.store().name().eq(storeName)
+        )
+        .orderBy(table.name().asc(), table.edition().desc())
+        .select(table),
+    pageIndex,
+    pageSize, 
+    (entities, totalCount, queryImplementor) ->
+        new Page<>(
+            totalCount,
+            (totalCount + pageSize - 1) / pageSize,
+            entities,
+        )
+  );
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -277,159 +280,159 @@ fun findBooks(
     pageIndex: Int,
     pageSize: Int,
     name: String? = null,
-    storeName: String? = null
+    storeName: String? = null  
 ): Page<Book> =
-    sql
-        .createQuery(Book::class) {
-            name?.takeIf { it.isNotEmpty() }?.let {
-                where(table.name eq it)
-            }
-            storeName?.takeIf { it.isNotEmpty() }?.let {
-                where(table.store.name eq it)
-            }
-            orderBy(table.name.asc(), table.edition.desc())
-            select(table)
+  sql
+    .createQuery(Book::class) {
+        name?.takeIf { it.isNotEmpty() }?.let {
+            where(table.name eq it)
         }
-        // highlight-next-line
-        .fetchPage(
-            pageIndex,
-            pageSize
-        ) { entities, totalCount, _ ->
-            Page(
-                totalCount,
-                (totalCount + pageSize - 1) / pageSize,
-                entities,
-            )
+        storeName?.takeIf { it.isNotEmpty() }?.let {
+            where(table.store.name eq it)  
         }
+        orderBy(table.name.asc(), table.edition.desc())
+        select(table)
+    }
+    // highlight-next-line  
+    .fetchPage(
+        pageIndex,
+        pageSize
+    ) { entities, totalCount, _ ->
+        Page(
+            totalCount,
+            (totalCount + pageSize - 1) / pageSize,
+            entities,
+        )
+    }
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-最终生成的SQL和前面讨论过的那个给予SpringBoot的例子相同，这里不再赘述。
+The finally generated SQL is the same as the example discussed earlier with SpringBoot, so I won't repeat it here.
 
-## 内部机制
+## Internal Mechanism  
 
-在上面的例子中，我们讨论了Java和Kotlin的语言差异，以及是否使用SpringBoot的各种情况。这些情况下的分页查询代码如下：
+In the above examples, we discussed language differences between Java and Kotlin, as well as using or not using SpringBoot. The paged query code in these situations is as follows:
 
-||使用SpringBoot|不使用SpringBoot|
+||Using SpringBoot|Not Using SpringBoot|
 |---|---|---|
-|Java|pager(`page-args`).execute(`query`)|PagingQueries.execute(`query`, `page-args`, `page-creator`)|
+|Java|pager(`page-args`).execute(`query`)|PagingQueries.execute(`query`, `page-args`, `page-creator`)|  
 |Kotlin|`query`.fetchPage(`page-args`)|`query`.fetchPage(`page-args`) { `page-creator` }|
 
-这些行为的底层逻辑是一样的，仅以Java为例
+The underlying logic of these behaviors is the same, taking Java as an example:
 
 ```java
 BookTable table = BookTable.$;
 
 ConfigurableRootQuery<Book> query = ❶
-    sqlClient
-        .createQuery(table)
-        .whereIf(
-            name != null && !name.isEmpty(),
-            table.name().eq(name)
-        )
-        .whereIf(
-            storeName != null && !storeName.isEmpty(),
-            table.store().name().eq(storeName)
-        )
-        .orderBy(table.name().asc(), table.edition().desc)
+  sqlClient
+    .createQuery(table)
+    .whereIf(
+        name != null && !name.isEmpty(),
+        table.name().eq(name)
+    )  
+    .whereIf(
+        storeName != null && !storeName.isEmpty(),
+        table.store().name().eq(storeName)
+    )
+    .orderBy(table.name().asc(), table.edition().desc())
 
 int totalCount = query.count(); ❷
 int totalPage = (totalCount + pageSize - 1) / pageSize;
 if (pageIndex >= totalPage) {
-    return new Page<Book>(totalCount, totalPage, Collections.emtptyList());
+    return new Page<Book>(totalCount, totalPage, Collections.emptyList()); 
 }
 List<Book> entities = query
-    .limit(pageSize, pageIndex * pageSize) ❸
+    .limit(pageSize, pageIndex * pageSize) ❸ 
     .execute(); ❹
-return new Page( ❺
+return new Page<>( ❺
     totalCount,
     totalPage,
     entities
 )
 ```
 
-:::caution
-为了简化讨论，这段伪码并未考虑[反排序优化](./reverse-sorting)
+:::caution  
+To simplify the discussion, this pseudocode does not consider [reverse sorting optimization](./reverse-sorting).
 :::
 
--   ❶ 创建查询，但并不执行。我可以称其为样板查询
+-   ❶ Create the query, but do not execute it yet. I can call it the template query.
 
--   ❷ 在不修改原样板查询的基础上，生成`count-query`，再执行`count-query`得到分页前所有数据的行数
+-   ❷ Based on the original template query without modification, generate the `count-query`, then execute the `count-query` to get the total number of rows before pagination.
 
-    这里的`count`方法是快捷API，其底层逻辑为
+    Here the `count` method is a shortcut API, and its underlying logic is:
 
     ```java
     public interface ConfigurableRootQuery<T extends Table<?>, R> extends ... {
 
         default int count() {
-            return count(null);
+        return count(null);
         }
-
+        
         default int count(Connection con) {
-            return reselect((q, t) -> q.select(t.count()))
-                .withoutSortingAndPaging()
-                .execute(con)
-                .get(0)
-                .intValue();
+        return reselect((q, t) -> q.select(t.count()))
+            .withoutSortingAndPaging()
+            .execute(con)
+            .get(0)
+            .intValue();
         }
     }
     ```
 
-    -   `reselect((q, t) -> q.select(t.count()))`: `count-query`并不查询数据，而是查询COUNT
+    - `reselect((q, t) -> q.select(t.count()))`: The `count-query` does not query data, but queries COUNT
 
-    -   `withoutSortingAndPaging()`: `count-query`无需排序子句`order by`和分页子句 *(比如H2的`limit ? offset ?`)*
-
+    - `withoutSortingAndPaging()`: The `count-query` does not need the sorting clause `order by` nor the paging clause *(such as H2's `limit ? offset ?`)*
+    
     :::tip
-    Jimmer不但能自动生成`count-query`，还能自动优化`count-query`，请参见[表连接优化](./unncessary-join)
+    Not only can Jimmer automatically generate `count-query`, it can also automatically optimize `count-query`, please refer to [Join Optimization](./unncessary-join).
     :::
+  
+-   ❸ `limit(limit, offset)`: Based on the original template query without modification, generate the real `data-query` with pagination limits.
 
--   ❸ `limit(limit, offset)`: 在不修改原样板查询的基础上，生成真正的`data-query`，带上分页限制。
+-   ❹ Execute the `data-query` generated in ❸ to get the data within one page. 
 
--   ❹ 执行❸生成的`data-query`，得到一页内的数据
+-   ❺ Combine the data obtained in ❷ and ❹ into the page object and return it.
 
--   ❺ 将❷和❹取得的数据组合成page对象并返回
+## Dialects  
 
-## 方言
+This section discusses the SQL implementation of `data-query` with pagination limits under different databases.
 
-本节讨论不同数据库下带分页范围限制的`data-query`的SQL实现
-
-考虑如下单页内数据查询
+Consider the following single page data query:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 List<Book> books = query
-    // highlight-next-line
-    .limit(/*limit*/ 10, /*offset*/ 90)
-    .execute();
+  // highlight-next-line 
+  .limit(/*limit*/ 10, /*offset*/ 90)
+  .execute();
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 val books = query
-    // highlight-next-line
-    .limit(limit = 10, offset = 90)
-    .execute()
+  // highlight-next-line
+  .limit(limit = 10, offset = 90)
+  .execute()  
 ```
 
 </TabItem>
 </Tabs>
 
-这里`limit(limit, offset)`设置分页区间。
+Here `limit(limit, offset)` sets the pagination range. 
 
-不同的数据库对分页查询的支持大相径庭。所以，在创建SqlClient时需要指定方言
+Different databases have vastly different support for pagination queries. So when creating SqlClient, the dialect needs to be specified.
 
--   SpingBoot的配置方法
+-   Spring Boot configuration method:  
 
-    在`application.properties`或`application.yml`中添加一个配置，
-    名为`jimmer.dialect`，值为Jimmer提供的方言类的类名，比如`org.babyfish.jimmer.sql.dialect.H2Dialect`。
+    Add a configuration in `application.properties` or `application.yml` called `jimmer.dialect` with value as the class name of the dialect class provided by Jimmer, such as `org.babyfish.jimmer.sql.dialect.H2Dialect`.
 
--   非SpringBoot的配置方法
+-   Non-Spring Boot configuration method:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -437,121 +440,118 @@ val books = query
     ```java
     JSqlClient sqlClient = JSqlClient
         .newBuilder()
-        // highlight-next-line
+        // highlight-next-line  
         .setDialect(new H2Dialect())
-        ...省略其他代码...
+        ...other code omitted...
         .build();
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
     val sqlClient = newKSqlClient {
         // highlight-next-line
         setDialect(H2Dialect())
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
     </Tabs>
 
-不同的方言，会用不同的SQL实现`limit`查询
+Different dialects will use different SQL to implement the `limit` query:
 
-### 默认行为
+### Default Behavior  
 
 :::info
-默认行为包含含DefaultDialect、H2Dialect和PostgresDialect
+Default behavior includes DefaultDialect, H2Dialect and PostgresDialect.
 :::
 
 ```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID
-from BOOK as tb_1_ 
-left join BOOK_STORE as tb_2_ 
-    on tb_1_.STORE_ID = tb_2_.ID 
-where tb_1_.PRICE between ? and ? 
-order by tb_2_.NAME asc, tb_1_.NAME asc 
-/* highlight-next-line */
+select
+  tb_1_.ID,
+  tb_1_.NAME,
+  tb_1_.EDITION,
+  tb_1_.PRICE,
+  tb_1_.STORE_ID
+from BOOK as tb_1_
+left join BOOK_STORE as tb_2_
+  on tb_1_.STORE_ID = tb_2_.ID
+where tb_1_.PRICE between ? and ?
+order by tb_2_.NAME asc, tb_1_.NAME asc
+/* highlight-next-line */  
 limit ? offset ?
 ```
 
 ### MySqlDialect
 
-```sql
-select 
-    tb_1_.ID, 
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE, 
-    tb_1_.STORE_ID
-from BOOK as tb_1_ 
-left join BOOK_STORE as tb_2_ 
-    on tb_1_.STORE_ID = tb_2_.ID 
-where tb_1_.PRICE between ? and ? 
-order by tb_2_.NAME asc, tb_1_.NAME asc 
+```sql  
+select
+  tb_1_.ID,
+  tb_1_.NAME,
+  tb_1_.EDITION,
+  tb_1_.PRICE,
+  tb_1_.STORE_ID 
+from BOOK as tb_1_
+left join BOOK_STORE as tb_2_
+  on tb_1_.STORE_ID = tb_2_.ID
+where tb_1_.PRICE between ? and ?
+order by tb_2_.NAME asc, tb_1_.NAME asc
 /* highlight-next-line */
-limit ?, ?
+limit ?, ?  
 ```
 
-### OracleDialect
+### OracleDialect  
 
-1. 当offset不为0时
+1.  When offset is not 0:
 
     ```sql
     select * from (
-        select core__.*, rownum rn__ 
-        from (
-            select 
-                tb_1_.ID, 
-                tb_1_.NAME, 
-                tb_1_.EDITION, 
-                tb_1_.PRICE, 
-                tb_1_.STORE_ID
-            from BOOK as tb_1_ 
-            left join BOOK_STORE as tb_2_ 
-                on tb_1_.STORE_ID = tb_2_.ID 
-            where tb_1_.PRICE between ? and ? 
-            order by tb_2_.NAME asc, tb_1_.NAME asc 
-        ) core__ where rownum <= ? ❶
+      select core__.*, rownum rn__
+      from (
+        select
+          tb_1_.ID,
+          tb_1_.NAME,
+          tb_1_.EDITION,
+          tb_1_.PRICE,
+          tb_1_.STORE_ID
+        from BOOK as tb_1_
+        left join BOOK_STORE as tb_2_
+          on tb_1_.STORE_ID = tb_2_.ID
+        where tb_1_.PRICE between ? and ?
+        order by tb_2_.NAME asc, tb_1_.NAME asc  
+      ) core__ where rownum <= ? ❶
     ) limited__ where rn__ > ? ❷
     ```
+    
+    Where the variable at `❶` is `limit + offset`, and at `❷` is `offset`.
+    
+2.  When offset is 0:
 
-    其中，`❶`处变量为`limit + offset`，`❷`处变量为`offset`
-
-2. 当offset为0时
-
-    ```sql
+    ```sql  
     select core__.* from (
-        select 
-            tb_1_.ID, 
-            tb_1_.NAME, 
-            tb_1_.EDITION, 
-            tb_1_.PRICE, 
-            tb_1_.STORE_ID
-        from BOOK as tb_1_ 
-        left join BOOK_STORE as tb_2_ 
-            on tb_1_.STORE_ID = tb_2_.ID 
-        where tb_1_.PRICE between ? and ? 
-        order by tb_2_.NAME asc, tb_1_.NAME asc 
-    ) core__ where rownum <= ? ❶
-    ```
-    其中，❶处变量为`limit`
+      select
+        tb_1_.ID,
+        tb_1_.NAME, 
+        tb_1_.EDITION,
+        tb_1_.PRICE,
+        tb_1_.STORE_ID  
+      from BOOK as tb_1_
+      left join BOOK_STORE as tb_2_
+        on tb_1_.STORE_ID = tb_2_.ID
+      where tb_
 
-## 和对象抓取器配合
+## Used with Object Fetcher
 
-对象抓取器中定义被查询对象的形状，让被查询对象可以附带更多关联对象。此功能可以和分页一起使用。
+The object fetcher defines the shape of the queried object, allowing the queried object to carry more associated objects. This feature can be used together with pagination.
 
 :::info
-Jimmer在分页查询完成后启动对其他关联度对象的查询，只针对单页之内的对象。
+After the paged query is completed, Jimmer launches queries for other association objects, only for objects within a single page.
 :::
 
-以SpringBoot模式为例，现在，让我们修改之前讨论过的`BookRepository`，让其支持对象抓取器
+Take the Spring Boot mode as an example. Now, let's modify the `BookRepository` we discussed earlier to support object fetchers:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -560,7 +560,7 @@ Jimmer在分页查询完成后启动对其他关联度对象的查询，只针�
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-...省略其他导入...
+...other imports omitted...
 
 public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
 
@@ -568,7 +568,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
 
     default Page<Book> findBooks(
         Pageable pageable,
-        // highlight-next-line
+        // highlight-next-line 
         @Nullable Fetch<Book> fetcher,
         @Nullable String name,
         @Nullable String storeName
@@ -593,12 +593,13 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="BookRepository.kt"
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-...省略其他导入...
+import org.springframework.data.domain.Pageable  
+...other imports omitted...
 
 interface BookRepository<Book, Long> : KRepository<Book, Long> {
 
@@ -632,7 +633,7 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
 </TabItem>
 </Tabs>
 
-如果按如下代码调用它
+If called as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -654,12 +655,13 @@ Page<Book> page = bookRepository.findBooks(
             AuthorFetcher.$
                 .allScalarFields()
         ),
-    null,
+    null, 
     null
 );
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="Page.kt"
@@ -684,17 +686,17 @@ val page = bookRepository.findBooks(
 </TabItem>
 </Tabs>
 
-会生成如下4条SQL
+It will generate the following 4 SQL statements:
 
 -   count-query
 
     ```sql
     select
         count(tb_1_.ID)
-    from BOOK tb_1_
+    from BOOK tb_1_ 
     ```
 
--   data-query *（假设数据库是H2）*
+-   data-query *(assuming the database is H2)*
 
     ```sql
     select
@@ -706,13 +708,13 @@ val page = bookRepository.findBooks(
         tb_1_.PRICE,
         tb_1_.STORE_ID
     from BOOK tb_1_
-    order by
+    order by 
         tb_1_.NAME asc,
         tb_1_.EDITION desc
     limit ? /* 5 */, ? /* 5 */
     ```
-
--   为分页后的5个对象查询多对一关联`Book.store`
+    
+-   Query the one-to-many association `Book.store` for the 5 paged objects
 
     ```sql
     select
@@ -721,14 +723,15 @@ val page = bookRepository.findBooks(
     from BOOK_STORE tb_1_
     where
         tb_1_.ID in (
-            ? /* 2 */, ? /* 1 */
+            ? /* 2 */, ? /* 1 */  
         )
     ```
+    
     :::info
-    虽然分页后的对象有5个，但是它们的外键`STORE_ID`只有两个取值
+    Although there are 5 paged objects, their foreign key `STORE_ID` only has two values.
     :::
-
--   为分页后的5个对象查询多对多关联`Book.authors`
+    
+-   Query the many-to-many association `Book.authors` for the 5 paged objects
 
     ```sql
     select
@@ -741,7 +744,7 @@ val page = bookRepository.findBooks(
         on tb_1_.ID = tb_2_.AUTHOR_ID
     where
         tb_2_.BOOK_ID in (
-            ? /* 10 */, ? /* 3 */, ? /* 2 */, 
+            ? /* 10 */, ? /* 3 */, ? /* 2 */,  
             ? /* 1 */, ? /* 9 */
         )
     ```

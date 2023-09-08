@@ -1,6 +1,6 @@
 ---
 sidebar_position: 5
-title: Dissociation
+title: Dissociation Operations
 ---
 
 import Tabs from '@theme/Tabs';
@@ -9,32 +9,32 @@ import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-在保存关联对象时，会涉及一个重要的概念：脱勾操作。
+An important concept is involved when saving associated objects: dissociation operations.
 
-## 概念
+## Concept
 
-现看一个例子
+Consider the following example:
 
 <table>
 <thead>
 <tr>
-<th>数据库已有数据结构</th>
-<th>用户期望保存的数据结构</th>
+<th>Existing data structure in database</th>
+<th>Data structure user wants to save</th> 
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>
 
-```sh
+```sh 
 +-Food
 |
 |
 |
 # highlight-next-line
-+-----Meat(忽略子节点)
++-----Meat(Ignore child nodes)
 |
-\-----Bread(忽略子节点)
+\-----Bread(Ignore child nodes)
 ```
 
 </td>
@@ -43,11 +43,11 @@ import { ViewMore } from '@site/src/components/ViewMore';
 ```sh
 +-Food
 |
-+-----Drinks(忽略子节点)
++-----Drinks(Ignore child nodes)
 |
 |
 |
-\-----Bread(忽略子节点)
+\-----Bread(Ignore child nodes)
 ```
 
 </td>
@@ -55,55 +55,55 @@ import { ViewMore } from '@site/src/components/ViewMore';
 </tbody>
 </table>
 
--   对于`Bread`而言，在新旧数据结构中都存在，对应update操作
+-   For `Bread`, it exists in both old and new data structures, corresponding to update operation
 
--   对于`Drinks`而言，在旧数据结构中不存在，但在新数据中存在，对应INSERT操作
+-   For `Drinks`, it does not exist in the old data structure, but exists in the new data, corresponding to INSERT operation
 
--   对于`Meat`而言，在旧数据结构中存在，但在新数据中不存在，对应的操作叫做脱勾操作。
+-   For `Meat`, it exists in the old data structure, but does not exist in the new data, the corresponding operation is called dissociation operation.
 
-脱勾针对两种数据
+Dissociation applies to two types of data:
 
--   中间表数据
+-   Join table data
 
--   子表数据
+-   Child table data
 
-接下来，我们讨论这两种脱勾操作。
+Next, we discuss these two dissociation operations.
 
 :::info
-在本文中，为了尽可能简化生成的SQL，让我们聚焦于关联本身和脱勾操作
+To simplify the generated SQL as much as possible, let us focus on the association itself and dissociation operations in this article:
 
--   所有被保存对象一律只指定id属性
+-   All saved objects specify only the id property
 
--   聚合根对象的保存模式一律明确指定为UPDATE_ONLY *(本采用调用update方法的写法)*
+-   The save mode of the aggregated root object is explicitly specified as UPDATE_ONLY *(using the update method)*
 :::
 
-## 脱勾中间表数据
+## Dissociating Join Table Data
 
-`BOOK`表和`AUTHOR`表之间存在多对过关联，中间表是`BOOK_AUTHOR_MAPPING`。
+There is a many-to-many association between the `BOOK` table and the `AUTHOR` table, with join table `BOOK_AUTHOR_MAPPING`.
 
-`Book.authors`和`Author.books`属性都映射了这个多对多关联，且互为镜像。使用其中任何一个都可以达到演示效果，这里我们选取`Book.authors`
+The `Book.authors` and `Author.books` properties both map this many-to-many association and are mirrors of each other. Using either can demonstrate the effect. Here we choose `Book.authors`.
 
-首先查询数据库，看id为3的`Book`对应了哪些`Author`对象：
+First query the database to see which `Author` objects id=3 `Book` corresponds to: 
 
 ```sql
-select * 
+select *  
 from book_author_mapping
 where book_id = 3;
 ```
 
-得到如下查询结果：
+The query result is:
 
 |book_id|author_id|
-|---|---|
+|-|-|
 |3|1|
 |3|2|
 
-现在，更新此`Book`对象
+Now update this `Book` object:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 sqlClient.update(
     BookDraft.$.produce(draft -> {
         draft.setId(3L);
@@ -114,13 +114,14 @@ sqlClient.update(
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 sqlClient.update(
     new(Book::class).by {
         id = 3L
-        authors().addBy { id = 2L }
+        authors().addBy { id = 2L } 
         authors().addBy { id = 3L }
     }
 )
@@ -129,22 +130,22 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
-新旧数据结构对比如下：
+The comparison of old and new data structures is:
 
 <table>
 <thead>
 <tr>
-<th>数据库已有数据结构</th>
-<th>用户期望保存的数据结构</th>
-</tr>
+<th>Existing data structure in database</th>
+<th>Data structure user wants to save</th>
+</tr>  
 </thead>
 <tbody>
-<tr>
+<tr> 
 <td>
 
-```sh
+```sh  
 +-Book(id=3)
-|
+| 
 # highlight-next-line
 +-----Author(id=1)
 |
@@ -163,7 +164,7 @@ sqlClient.update(
 |
 +-----Author(id=2)
 |
-\-----Author(id=5)
+\-----Author(id=5) 
 ```
 
 </td>
@@ -171,163 +172,165 @@ sqlClient.update(
 </tbody>
 </table>
 
-这表示
+This means:
 
--   `Book-3`和`Author-2`之间的关联不变
+-   The association between `Book-3` and `Author-2` remains unchanged
 
--   `Book-3`和`Author-5`之间需要新建关联
+-   The association between `Book-3` and `Author-5` needs to be created
 
--   `Book-3`和`Author-1`之间的关联需要被删除，这就是脱勾操作
+-   The association between `Book-3` and `Author-1` needs to be deleted, which is the dissociation operation
 
-最终生成三条SQL
+Finally 3 SQL statements are generated:
 
-1.  查询`Book-3`对应了哪些`Author`对象
+1.  Query which `Author` objects `Book-3` corresponds to
 
     ```sql
-    select
-        AUTHOR_ID
-    from BOOK_AUTHOR_MAPPING
+    select 
+        AUTHOR_ID  
+    from BOOK_AUTHOR_MAPPING 
     where
         BOOK_ID = ? /* 3 */
     ```
 
-2.  **脱勾操作，切断`Book-3`和`Author-1`之间的关联**
+2.  **Dissociation operation, detach association between `Book-3` and `Author-1`**  
 
     ```sql
     /* highlight-next-line */
-    delete from BOOK_AUTHOR_MAPPING
+    delete from BOOK_AUTHOR_MAPPING  
     where
         (BOOK_ID, AUTHOR_ID) in (
             (? /* 3 */, ? /* 1 */)
         )
     ```
-
-3.  新建`Book-3`和`Author-5`之间的关联
+    
+3.  Create association between `Book-3` and `Author-5`
 
     ```sql
     insert into BOOK_AUTHOR_MAPPING(
-        BOOK_ID, AUTHOR_ID
+        BOOK_ID, AUTHOR_ID 
     )
     values
         (? /* 3 */, ? /* 5 */)
     ```
 
-## 脱勾子表数据
+## Dissociating Child Table Data  
 
-此操作针对直接给予外键的一对多关联。
+This operation is for one-to-many associations directly based on foreign keys.
 
-`BOOK`表有一个指向`BOOK_STORE`表的外键字段`STORE_ID`，形成多对一关系。这个多对一关联被映射成了属性`Book.store`，反过来的一对多关联被映射成了属性`BookStore.books`。
+The `BOOK` table has a foreign key field `STORE_ID` pointing to the `BOOK_STORE` table, forming a many-to-one relationship. This many-to-one association is mapped to the `Book.store` property, and the reverse one-to-many association is mapped to the `BookStore.books` property.
 
-如果数据库中某个父对象 *(本例的`BookStore`)* 持有某些子对象 *(本例的`Book`)*，但是用户期望覆盖的父对象不再继续持有某些子对象，将会导致这些子对象被脱勾。
+If a parent object in the database *(`BookStore` in this example)* holds some child objects *(`Book` in this example)*, but the overwritten parent object is no longer expected to continue holding some child objects, it will cause those child objects to be dissociated.
 
-### 脱勾模式
+### Dissociation Modes
 
-子对象脱勾操作有三种模式
+Child object dissociation operations have three modes:
 
--   NONE *(默认)*: 不支持脱勾操作，通过抛出异常阻止操作
+-   NONE *(default)*: Dissociation is not supported, operation is prevented by throwing exception 
 
--   SET_NULL: 把被脱勾的子对象的外键设置为null。前提是子对象的多对一关联属性是nullable的；否则尝试此配置将会导致异常
+-   SET_NULL: Set foreign key of dissociated child object to null. Precondition is child object's many-to-one association property is nullable; otherwise attempt to configure this will cause exception
 
--   DELETE: 将被脱勾的子对象删除
+-   DELETE: Delete the dissociated child objects
 
 :::tip
-虽然子对象脱勾是由于一对多关联导致的 *(即，父对象遗弃某些子对象，本例的一对多关联为`BookStore.books`)*，但是脱勾模式的配置针对逆向的多对一关联 *(本例为`Book.store`)*，这样设计的目的是为了保持和数据库DDL外键的级联特性配置的相似性。
+Although child object dissociation is caused by a one-to-many association *(i.e. parent object abandoning some child objects, the one-to-many association is `BookStore.books` in this example)*, the dissociation mode is configured for the reverse many-to-one association *(`Book.store` in this example)*. The purpose of this design is to maintain similarity with configuring cascade behaviors of foreign keys in database DDL. 
 
-对于Jimmr而言，一对多关联一定是双向关联，知道某个一对多关联，一定知道与其互为镜像的多对一关联。所以，此设计没有任何问题。
+For Jimmer, a one-to-many association must be bidirectional, so once a one-to-many association is known, its mirroring many-to-one association must also be known. So there is no problem with this design.  
 :::
 
-配置脱勾模式有两种方法
+There are two ways to configure the dissociation mode:
 
--   在实体上用注解静态配置，静态配置是全局的。
+-   Static configuration on entity with annotation, static configuration is global.
 
--   在代码中代码动态配置，但动态配置只影响当前保存指令。动态配置可以覆盖静态配置。
+-   Dynamic configuration in code, but dynamic configuration only affects the current save command. Dynamic configuration can override static configuration.
 
-以`SET_NULL`为例
+Take `SET_NULL` as an example:
 
--   静态配置 *(默认配置，供绝大部分业务使用)*
+-   Static configuration *(default configuration, for the vast majority of business uses)*:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java title="Book.java"
+    ```java title="Book.java" 
     @Entity
     public interface Book {
 
-        //highlight-next-line
-        @OnDissociate(DissociateAction.SET_NULL)
+        //highlight-next-line 
+        @OnDissociate(DissociateAction.SET_NULL)  
         @Nullable
         @ManyToOne
         BookStore store();
 
-        ...省略其他代码...
+        ...other code omitted...
     }
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin  title="Book.kt"
+    ```kotlin title="Book.kt"
     @Entity
     interface Book {
 
         //highlight-next-line
         @OnDissociate(DissociateAction.SET_NULL)
-        @ManyToOne
+        @ManyToOne  
         val store: BookStore?
 
-        ...省略其他代码...        
+        ...other code omitted...       
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   运行时覆盖 *(仅针对单条保存指令，极少数有特殊需求的业务使用)*
+-   Runtime override *(only for a single save command, used by very few business cases with special needs)*:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     sqlClient
         .getEntities()
-        .saveCommand(book)
+        .saveCommand(book) 
         // highlight-next-line
         .setDissociateAction(BookProps.STORE, DissociateAction.SET_NULL)
         .execute();
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
     sqlClient.save(book) {
         // highlight-next-line
-        .setDissociateAction(Book::store, DissociateAction.SET_NULL)
+        .setDissociateAction(Book::store, DissociateAction.SET_NULL) 
     }
     ```
 
     </TabItem>
     </Tabs>
 
-### 示范
+### Example  
 
-首先，查询数据库，查看id为2的`BookStore`持有哪些`Book`对象
+First, query the database to see which `Book` objects id=2 `BookStore` holds:
 
-```sql
-select * 
-from BOOK 
+```sql 
+select *
+from BOOK  
 where STORE_ID = 2
 ```
 
-得到的查询结果为：
+The query result is:
 
 |ID|NAME|EDITION|PRICE|STORE_ID|
-|---|---|---|---|---|
+|-|-|-|-|-| 
 |12|GraphQL in Action|3|80.00|2|
 |11|GraphQL in Action|2|81.00|2|
 |10|GraphQL in Action|1|80.00|2|
 
-现在，更新此`BookStore`对象
+Now, update this `BookStore` object:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -337,15 +340,16 @@ sqlClient.update(
     BookStoreDraft.$.produce(draft -> {
         draft.setId(2L);
         draft.addIntoBooks(book -> book.setId(9L));
-        draft.addIntoBooks(book -> book.setId(10L));
+        draft.addIntoBooks(book -> book.setId(10L)); 
     })
 );
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+<TabItem value="kotlin" label="Kotlin">  
+
+```kotlin 
 sqlClient.update(
     new(BookStore::class).by {
         id = 2L
@@ -358,24 +362,24 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
-新旧数据结构对比如下：
+The comparison of old and new data structures is:
 
 <table>
 <thead>
 <tr>
-<th>数据库已有数据结构</th>
-<th>用户期望保存的数据结构</th>
+<th>Existing data structure in database</th>
+<th>Data structure user wants to save</th>
 </tr>
-</thead>
+</thead>  
 <tbody>
 <tr>
 <td>
 
 ```sh
-+-BookStore(id=2)
++-BookStore(id=2) 
 |
 +-----Book(id=10)
-|
+| 
 # highlight-next-line
 +-----Book(id=11)
 |
@@ -388,7 +392,7 @@ sqlClient.update(
 </td>
 <td>
 
-```sh
+```sh 
 +-BookStore(id=2)
 |
 +-----Book(id=10)
@@ -405,67 +409,67 @@ sqlClient.update(
 </tbody>
 </table>
 
-这表示
+This means:
 
--   `BookStore-2`和`Book-10`之间的关联不变
+-   The association between `BookStore-2` and `Book-10` remains unchanged
 
--   `BookStore-2`和`Book-9`之间需要新建关联
+-   The association between `BookStore-2` and `Book-9` needs to be created  
 
--   `BookStore-2`需要和`Book-11`、`Book-12`脱勾。
+-   `BookStore-2` needs to dissociate `Book-11` and `Book-12`.
 
-    然而，具体SQL操作未知，由`Book.store`属性的脱勾模式配置决定
+    But the specific SQL operations are unknown, determined by the dissociation mode configuration of `Book.store` property.
 
-不同的脱勾模式配置，会导致不同的执行逻辑。接下来，我们对`NONE`、`SET_NULL`和`DELETE`三种情况加以讨论。
+Different dissociation mode configurations will lead to different execution logic. Next, we discuss the three cases of `NONE`, `SET_NULL` and `DELETE`.
 
--   `NONE` *(默认)*
+-   `NONE` *(default)*:
 
-    `NONE`表示不支持脱勾操作，以抛出异常的方式阻止操作并引起事务回滚。所以，上述代码会异常。
+    `NONE` means dissociation is not supported, the operation is prevented by throwing an exception which causes transaction rollback. So the above code will throw an exception.
 
-    异常类型为`org.babyfish.jimmer.sql.runtime.SaveException`。
+    The exception type is `org.babyfish.jimmer.sql.runtime.SaveException`.
 
-    异常消息为
+    The exception message is:
 
     > Save error caused by the path: "&lt;root&gt;.books": Cannot dissociate child objects because the dissociation action of the many-to-one property "com.yourcompany.yourproject.model.Book.store" is not configured as "set null" or "cascade". There are two ways to resolve this issue: Decorate the many-to-one property "com.yourcompany.yourproject.model.Book.store" by @org.babyfish.jimmer.sql.OnDissociate whose argument is `DissociateAction.SET_NULL` or `DissociateAction.DELETE` , or use save command's runtime configuration to override it
+    
+-   `SET_NULL`:
 
--   `SET_NULL`
+    In this mode, two SQL statements are generated:
 
-    该模式下会生成两条SQL
-
-    1.  让`BookStore-2`关联`Book-9`和`Book-10`，对于`Book-10`而言，相当于没有任何变化。
+    1.  Associate `BookStore-2` with `Book-9` and `Book-10`. For `Book-10` this is effectively no change.
 
         ```sql
-        update BOOK
+        update BOOK  
         set
-            STORE_ID = ? /* 2 */
+            STORE_ID = ? /* 2 */ 
         where
             ID in (
                 ? /* 9 */, ? /* 10 */
             )
         ```
 
-    2.  将隶属`BookStore-2`且id不是9或10的所有书籍 *(本例为`Book-11`和``Book-11``)* 的外键清空。
+    2.  Set foreign key of all books belonging to `BookStore-2` whose id is not 9 or 10 *(`Book-11` and ``Book-11` in this example)* to empty. 
 
         ```sql
         update BOOK
         set
             STORE_ID = null
-        where
+        where 
             STORE_ID = ? /* 2 */
-            and
+            and 
             ID not in (
                 ? /* 9 */, ? /* 10 */
             )
         ```
-
+        
         :::note
-        请注意SQL中的`not`
+        Note the `not` in the SQL
         :::
+        
+-   `DELETE`:
 
--   `DELETE`
+    In this mode, 4 SQL statements are generated:
 
-    该模式下会生成4条SQL
-
-    1.  让`BookStore-2`关联`Book-9`和`Book-10`，对于`Book-10`而言，相当于没有任何变化。
+    1.  Associate `BookStore-2` with `Book-9` and `Book-10`. For `Book-10` this is effectively no change.
 
         ```sql
         update BOOK
@@ -473,11 +477,11 @@ sqlClient.update(
             STORE_ID = ? /* 2 */
         where
             ID in (
-                ? /* 9 */, ? /* 10 */
+                ? /* 9 */, ? /* 10 */  
             )
         ```
 
-    2.  查询所有隶属`BookStore-2`且id不是9或10的所有书籍，对于本例而言，查询结果为`Book-11`和``Book-12`。
+    2.  Query all books belonging to `BookStore-2` whose id is not 9 or 10. For this example, the query result is `Book-11` and ``Book-12`.
 
         ```sql
         select
@@ -488,14 +492,14 @@ sqlClient.update(
             and
             ID not in (
                 ? /* 9 */, ? /* 10 */
-            )
+            ) 
         ```
-
+        
         :::note
-        请注意SQL中的`not`
+        Note the `not` in the SQL
         :::
 
-    3.  在删除`Book-11`和`Book-12`之前，先清理它们和和`Author`之间的多对多关联
+    3.  Before deleting `Book-11` and `Book-12`, first clean up their many-to-many associations with `Author` 
 
         ```sql
         delete from BOOK_AUTHOR_MAPPING
@@ -506,10 +510,10 @@ sqlClient.update(
         ```
 
         :::info
-        如果`Book`类型和其他类型还存在更多的关联，Jimmer都会清理干净。无非就是这个步骤的SQL条数变多而已。
+        If `Book` type has more other associations, Jimmer will clean them all up properly. It just means more SQL statements like this step.
         :::
 
-    4.  最终，安全地删除`Book-11`和`Book-12`，完成脱钩操作
+    4.  Finally, safely delete `Book-11` and `Book-12` to complete the dissociation operation
 
         ```sql
         delete from BOOK
@@ -518,27 +522,27 @@ sqlClient.update(
                 ? /* 11 */, ? /* 12 */
             )
         ```
-
+        
     :::tip
-    事实上，步骤3和步骤4是一个整体，因后续要讨论的[删除指令](../delete-command)所致。
+    In fact, step 3 and step 4 are one entity, due to [Delete Command](../delete-command) to be discussed later. 
     :::
+    
+:::info  
+This article simplifies the examples a lot, such as:
 
-:::info
-本文对例子进行了很多简化，比如
+-   Explicitly specifying processing mode of aggregated root object as `UPDATE_ONLY` *(calling `update` instead of `save`)*
 
--   明确指定聚合根对象的处理模式为`UPDATE_ONLY` *(调用`update`而非`save`)*
+-   All associated objects are short associated objects with only id. In fact, you can arbitrarily change the format of associated objects, for example:
 
--   关联对象全部是只有id的短关联对象。事实上，你可以随意改变关联对象的格式，比如
+    -   Do not specify `id` property, but specify `key` property *(<ViewMore buttonText="Short Association" variant="text"><ShortAssociation/></ViewMore> expressed in another way)*
 
-    -   不指定`id`属性，而指定`key`属性 *(<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的另外一种表达方式)*
-
-    -   指定`key`属性以及一些既非`id`也非`key`的属性 *(<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>)*
+    -   Specify `key` property and some properties that are neither `id` nor `key` *(<ViewMore buttonText="Long Association" variant="text"><LongAssociation/></ViewMore>)* 
 
     :::note
-    短关联和长关联这两个概念已经讨论过，如果忘记，请回顾[保存关联](./association#关联类型)
+    The concepts of short association and long association have been discussed before. If you forget, please review [Save Association](./association#association-types).
     :::
+    
+The examples are so simplified in this article just to keep the SQL generated by the save command as simple as possible for readers to quickly understand the characteristics of dissociation operations.
 
-本文如此简化的例子，只是为了让保存指令生成的SQL尽可能简单，让读者能快速明白脱钩操作的特性。
-
-至于格式更复杂的关联对象，读者可以自行尝试，也可以直接参考官方例子[example/java/save-command](https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command)或[example/kotlin/save-command-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt)。但这些功能仍然存在，无外乎生成SQL语句更多，被隐藏的细节更繁琐而已。
+As for associated objects of more complex formats, readers can try it themselves, or refer directly to the official examples [example/java/save-command](https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command) and [example/kotlin/save-command-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt). But these functionalities still exist, just with more generated SQL statements and more tedious hidden details.
 :::

@@ -8,13 +8,106 @@ import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
 import FilterRef from './_filter-ref.md';
 
-## 抓取关联对象
 
 在[上一篇文档](./props)中，我们介绍了标量属性的抓取，在本文中，我们讨论关联属性的抓取。
 
-### 抓取只有id的关联对象
+ORM有两种关联属性：
+
+-   引用关联：关联到单个对象*(或null)*，属性返回类型为实体对象，用于表达一对一和多对一关联。
+
+    :::info
+    本文用多对一关联属性`Book.store`为例。
+    :::
+
+-   集合关联：关联到多个对象，属性返回类型为实体集合，用于表达一对多和多对多关联。
+
+    :::info
+    本文用多对多关联属性`Book.autors`为例。
+    :::
+    
+## 抓取只有id的关联对象
 
 不带任何参数抓取关联对象时，得到的关联对象只有`id`属性。
+
+### 多对一: Book.store
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookTable book = BookTable.$;
+List<Book> list = sqlClient.createQuery(book)
+    .where(book.edition().eq(3))
+    .select(
+        book.fetch(
+            BookFetcher.$
+                .allScalarFields()
+                // highlight-next-line
+                .store()
+        )
+    )
+    .execute();
+System.out.println(toJson(list));
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+.createQuery(Book::class) {
+    where(table.edition.eq(3))
+    select(
+        table.fetchBy {
+            allScalarFields()
+            // highlight-next-line
+            store()
+        }
+    )
+}
+.execute()
+```
+
+</TabItem>
+</Tabs>
+
+这里，`store()`表示对多对一关联进行抓取。我们并未为`store()`指定任何参数，这表示只抓取关联对象的id属性。
+
+生成如下SQL：
+
+```sql
+select
+    tb_1_.ID,
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE,
+    tb_1_.STORE_ID
+from BOOK tb_1_
+where tb_1_.EDITION = ?
+```
+
+因为多对一关联`Book.store`基于真实外键，所以当前表`BOOK`的外键`STORE_ID`就是父对象的id。
+
+由于`store()`抓取只有id属性的关联对象，所以，无需额外的SQL查询，即可根据当前数据的外键直接构建只有id属性的父对象。
+
+输出的返回值如下：
+```json
+[
+    {
+        "id": 3,
+        "name": "Learning GraphQL",
+        "edition": 3,
+        "price": 51.00,
+        // highlight-next-line
+        "store": {
+            "id": 1
+        }
+    },
+    ...省略其他对象...
+]
+```
+
+### 多对多: Book.authors
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -56,7 +149,7 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-这里，`authors`表示对多对多关联进行抓取。我们并未为`authors()`指定任何参数，这表示只抓取关联对象的id属性。
+这里，`authors()`表示对多对多关联进行抓取。我们并未为`authors()`指定任何参数，这表示只抓取关联对象的id属性。
 
 生成两条SQL:
 
@@ -72,7 +165,7 @@ val books = sqlClient
     where tb_1_.EDITION = ?
     ```
 
-2.  根据关联`Book.authors`查询仅包含id的所有`Author`对象
+2.  根据关联`Book.authors`，为上一步查询的所有根对象查询仅包含id的`Author`关联对象
 
     ```sql
     select 
@@ -82,20 +175,11 @@ val books = sqlClient
         where tb_1_.BOOK_ID in (?, ?, ?, ?)
     ```
 
-:::info
-Book对象具备两个关联属性，`Book.store`和`Book.authors`，这里选用`Book.authors`作为例子是有原因的。
-
-`Book.store`是一个直接基于外键的多对一关联，当仅抓取关联对象的id且关联对象不受<ViewMore buttonText="过滤器" variant="text"><FilterRef/></ViewMore>影响时，
-关联对象的id其实就是当前表的外键`store_id`。因此，最终结果只会有一条SQL，而非这里你所看到的两条SQL。
-
-因此，对于这个例子而言，`Book.authors`更具演示效果，而`Book.store`将会在下个例子中被示范。
-:::
-
 这个例子说明了以下问题
 
 -   当前查询仅需要关联对象的id，也没有使用过滤器（过滤器是后文将会讲解的概念）。
 
-    Jimmmer会对这种情况进行优化，仅仅查询中间表`BOOK_AUTHOR_MAPPING`，而没有查询`AUTHOR`表。
+    Jimmmer会对这种情况进行优化，仅仅查询中间表`BOOK_AUTHOR_MAPPING`，不查询`AUTHOR`表，因为中间表已经包含了关联对象的id。
 
 -   `where tb_1_.BOOK_ID in (?, ?, ?, ?)`是批量查询，这是因为第一条查询返回主对象有4个。
 
@@ -103,32 +187,34 @@ Book对象具备两个关联属性，`Book.store`和`Book.authors`，这里选�
 
     当一个批次的列表过于太长后，jimmer-sql会对进行分批切割，这会在后文的[BatchSize节](#batchsize)中讲解。
 
--   Jimmer通过额外的SQL去查询关联对象，而非在主查询的SQL中使用LEFT JOIN。
+-   Jimmer通过额外的SQL去查询关联对象，而非在主查询的SQL中使用LEFT JOIN抓取关联对象。
 
-    这样设计的目的是为了防止对集合关联进行JOIN导致查询结果重复，因为这种数据重复对分页查询有毁灭性的破坏效果。
+    这样设计的目的是为了防止对集合关联进行JOIN导致查询结果重复，因为这种数据重复对聚合根分页查询有毁灭性的破坏效果。
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 
 ```json
-{
-    "id":3,
-    "name":"Learning GraphQL",
-    "edition":3,
-    "price":51.00,
-    // highlight-next-line
-    "authors":[
-        {"id":1},
-        {"id":2}
-    ]
-}
-...省略第2个对象...,
-...省略第3个对象...,
-...省略第4个对象...
+[
+    {
+        "id":3,
+        "name":"Learning GraphQL",
+        "edition":3,
+        "price":51.00,
+        // highlight-next-line
+        "authors":[
+            {"id":1},
+            {"id":2}
+        ]
+    },
+    ...省略其他对象...
+]
 ```
 
-### 抓取完整的关联对象
+## 抓取复杂的关联对象
 
-这个例子中，我们抓取多对一关联属性`Book.store`，并为`store()`函数指定参数，明确要求查询关联对象的所有标量属性。
+在抓取关联属性时，可以指定参数以获取具备更多信息的关联对象
+
+### 多对一: Book.store
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -165,7 +251,6 @@ val books = sqlClient
             allScalarFields()
             // highlight-next-line
             store {
-
                 // highlight-next-line
                 allScalarFields()
             }
@@ -178,9 +263,11 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-生成乳香两条SQL：
+这里，`store(...)`表示对多对一关联进行抓取。我们为`store(...)`指定参数以表示想要抓取关联对象的除id以外的其他信息。
 
--   查询Book对象
+生成如下两条SQL：
+
+1.  查询Book对象
 
     ```sql
     select
@@ -192,7 +279,8 @@ val books = sqlClient
     from BOOK tb_1_
     where tb_1_.EDITION = ?
     ```
--   上一步得到所有数据的外键`STORE_ID`去重后有有两个值，查询他们对应的`BookStore`关联对象
+
+2.  根据关联`Book.store`，为上一步查询的所有根对象查询相对完整的`BookStore`关联对象
 
     ```sql
     select
@@ -202,6 +290,8 @@ val books = sqlClient
     from BOOK_STORE tb_1_
     where tb_1_.ID in (?, ?)
     ```
+
+`where tb_1_.ID in (?, ?)`是批量查询。第一条查询返回主对象有4个，但是外键属性被去重后只有两个值。
 
 输出的返回值如下：
 ```json
@@ -217,16 +307,147 @@ val books = sqlClient
             "name": "O'REILLY",
             "website": null
         }
-    }
-    ...省略其他对象
+    },
+    ...省略其他对象...
 ]
 ```
 
-### 抓取所有表定义字段
+### 多对多: Book.authors
 
-在一些场景下需要抓取表定义中的所有字段，此时使用`allTableFields`。
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
-`allTableFields`抓取表定义中的所有属性，包含所有标量属性、基于外键的一对一/多对一属性，但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
+```java
+BookTable book = BookTable.$;
+
+List<Book> books = sqlClient
+    .createQuery(book)
+    .select(
+        book.fetch(
+            BookFetcher.$.
+                .allScalarFields()
+                // highlight-next-line
+                .authors(
+                    AuthorFetcher.$
+                        // highlight-next-line
+                        .allScalarFields()
+                )
+        )
+    )
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val books = sqlClient
+    .createQuery(Book::class) {
+        where(table.edition.eq(3))
+        select(
+            table.fetchBy {
+                allScalarFields()
+                // highlight-next-line
+                authors {
+                    // highlight-next-line
+                    allScalarFields()
+                }
+            }
+        )
+    }
+    .execute()
+```
+
+</TabItem>
+</Tabs>
+
+这里，`authors(...)`表示对多对多关联进行抓取。我们为`authors(...)`指定参数以表示想要抓取关联对象的除id以外的其他信息。
+
+生成两条SQL:
+
+1.  查询`Book`对象本身
+    ```sql
+    select 
+        tb_1_.ID, 
+        tb_1_.NAME, 
+        tb_1_.EDITION, 
+        tb_1_.PRICE, 
+        tb_1_.STORE_ID 
+    from BOOK as tb_1_ 
+    where tb_1_.EDITION = ?
+    ```
+
+2.  根据关联`Book.authors`，为上一步查询的所有根对象查询相对完整的`Author`关联对象
+
+    ```sql
+    select
+        /* batch-map key */
+        tb_2_.BOOK_ID,
+
+        /* batch-map value */
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+
+    from AUTHOR tb_1_
+    inner join BOOK_AUTHOR_MAPPING tb_2_ 
+        on tb_1_.ID = tb_2_.AUTHOR_ID
+    where tb_2_.BOOK_ID in (?, ?, ?, ?)
+    ```
+
+这个例子说明了以下问题
+
+-   要求抓取关联对象的除id以外的其他信息，因此，除了中间表`BOOK_AUTHOR_MAPPING`外，`AUTHOR`表也会被查询。
+
+-   `where tb_2_.BOOK_ID in (?, ?, ?, ?)`是批量查询，这是因为第一条查询返回主对象有4个。
+
+    Jimmer使用批量查询来解决`N + 1`问题，这点和GraphQL的`DataLoader`一样。
+
+    当一个批次的列表过于太长后，jimmer-sql会对进行分批切割，这会在后文的[BatchSize节](#batchsize)中讲解。
+
+-   Jimmer通过额外的SQL去查询关联对象，而非在主查询的SQL中使用LEFT JOIN抓取关联对象。
+
+    这样设计的目的是为了防止对集合关联进行JOIN导致查询结果重复，因为这种数据重复对聚合根分页查询有毁灭性的破坏效果。
+
+打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+
+```json
+[
+    {
+        "id":3,
+        "name":"Learning GraphQL",
+        "edition":3,
+        "price":51.00,
+        // highlight-next-line
+        "authors":[
+            {
+                "id": 1,
+                "firstName": "Eve",
+                "lastName": "Procello",
+                "gender": "FEMALE"
+            },
+            {
+                "id": 2,
+                "firstName": "Alex",
+                "lastName": "Banks",
+                "gender": "MALE"
+            }
+        ]
+    },
+    ...省略其他对象...
+]
+```
+
+## 抓取单表所有字段
+
+在一些场景下需要抓取数据看表所定义中的所有字段，此时使用`allTableFields`。
+
+`allTableFields`抓取表定义中的所有属性，包含所有标量属性（这点同`allScalarFields`）、基于外键的一对一/多对一属性；但不包含一对多、多对多、基于中间表的一对一/多对一关联属性、计算属性和视图属性。
+
+:::info
+`allTableFields`在`allScalarFields`的基础上，加上了所有外键的一对一/多对一属性，但是查询出的关联对象只有id属性。
+:::
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -275,6 +496,7 @@ val bookAllTableFields = sqlClient
         "name": "Learning GraphQL",
         "edition": 3,
         "price": 51.00,
+        // highlight-next-line
         "store": {
             "id": 1
         }
@@ -284,18 +506,8 @@ val bookAllTableFields = sqlClient
 ```
 
 :::info
-虽然`allTableFields`包括基于外键的多对一/一对一关联属性，对于本例而言，
-
-`allTableFields` = `allScalarFields` + `store`
-
-然而，得到关联对象只有id属性。
-
-`allTableFields`的字面意思就是查询当前表的所有字段。在只查询一样表的情况下，对于关联对象而言只有id是已知的，因为关联对象的id就是本表的外键。
-:::
-
 某些情况下，`select(table.fetch(XxxFetcher.$.allTableFields()))`和`select(table)`等价。此时，可以认为后者是前者的简写方式。
 
-:::caution
 二者等价的前提：关联对象不受<ViewMore buttonText="过滤器" variant="text"><FilterRef/></ViewMore>影响
 :::
 
@@ -330,113 +542,6 @@ val bookAllScalarFields = sqlClient
 
 </TabItem>
 </Tabs>
-
-
-## allScalarFields与allTableFields的区别
-
-因为抓取所有标量字段与抓取所有表定义的字段，非常常见，每一个属性都写一遍太过繁琐，因此Jimmer提供了两个API来简化这一流程。
-
-需要注意的是：
--   `allScalarFields`只抓取所有标量属性，不包含任何关联属性、计算属性和视图属性。
-
--   `allTableFields`抓取表定义中的所有字段，也包含基于外键的一对一/多对一关联，但不包含一对多关联、多对多关联、基于中间表的多对一/一对一关联、计算属性、视图属性。
-
-就本文所讨论的`Book而言`，有一个多对一属性`Book.store`，它直接基于外键映射，而非基于中间表。因此
-
-`allTableFields` = `allScalarFields` + `store`
-
-以下是两个示例：
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java
-
-BookTable book = BookTable.$;
-
-List<Book> booksWithScalarFields = sqlClient.createQuery(book)
-    .where(book.edition().eq(3))
-    .select(
-        book.fetch(
-            BookFetcher.$
-                .allScalarFields() ❶
-        )
-    )
-    .execute();
-
-
-List<Book> booksWithTablesFields = sqlClient.createQuery(book)
-    .where(book.edition().eq(3))
-    .select(
-        book.fetch(
-            BookFetcher.$
-                .allTableFields() ❷
-        )
-    )
-    .execute();
-
-System.out.println(booksWithScalarFields);
-System.out.println(booksWithTablesFields);
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin
-val booksWithScalarFields = sqlClient 
-    .createQuery(Book::class) {
-        where(table.edition.eq(3))
-        select(
-            table.fetchBy {
-                allScalarFields() ❶
-            }
-        )
-    }
-    .execute()
-
-val booksWithTableFields = sqlClient
-    .createQuery(Book::class) {
-        where(table.edition.eq(3))
-        select(
-            table.fetchBy {
-                allTableFields() ❷
-            }
-        )
-    }
-    .execute()
-
-println(booksWithScalarFields)
-println(booksWithTablesFields)
-```
-
-</TabItem>
-</Tabs>
-
-输出的结果为：
-```
-[ ❶
-    {
-        "id": 3,
-        "name": "Learning GraphQL",
-        "edition": 3,
-        "price": 51.00
-    }
-    ...省略其他对象
-]
-[ ❷
-    {
-        "id": 3,
-        "name": "Learning GraphQL",
-        "edition": 3,
-        "price": 51.00,
-        "store": {
-            "id": 1
-        }
-    }
-    ...省略其他对象
-]
-```
-
-对比输出结果，`allScalarFields`只包含标量属性，不包含任何关联属性；`allTableFields`则在`allScalar的基础上`，增加了关联属性`Book.tore`。
 
 ## 关联对象的特殊配置
 
@@ -604,30 +709,30 @@ val books = sqlClient
 这样会导致`in(?, ?, ?, ?)`被切割为两个`in(?, ?)`，抓取关联对象的Sql会比分裂成两条。
 
 1.
-```sql
-select
-    tb_2_.BOOK_ID,
-    tb_1_.ID,
-    tb_1_.FIRST_NAME,
-    tb_1_.LAST_NAME,
-    tb_1_.GENDER
-from AUTHOR tb_1_
-inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
-where tb_2_.BOOK_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_2_.BOOK_ID,
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
+    where tb_2_.BOOK_ID in (?, ?)
+    ```
 
 2.
-```sql
-select
-    tb_2_.BOOK_ID,
-    tb_1_.ID,
-    tb_1_.FIRST_NAME,
-    tb_1_.LAST_NAME,
-    tb_1_.GENDER
-from AUTHOR tb_1_
-inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
-where tb_2_.BOOK_ID in (?, ?)
-```
+    ```sql
+    select
+        tb_2_.BOOK_ID,
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    inner join BOOK_AUTHOR_MAPPING tb_2_ on tb_1_.ID = tb_2_.AUTHOR_ID
+    where tb_2_.BOOK_ID in (?, ?)
+    ```
 
 实际开发中，绝大部分情况都不会这样设置batchSize，而是采用SqlClient中的全局配置。
 
@@ -729,42 +834,44 @@ val books = sqlClient
 - 因关联分页无法解决`N + 1`问题，生成的SQL比较多
 - 因不同数据库分页查询方法不同，为了简化讨论，这里假设方言使用了`H2Dialect`
 
-1. 查询当前`Book`对象
-```sql
-select
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE
-from BOOK as tb_1_
-where tb_1_.EDITION = ?
-```
+1.  查询当前`Book`对象
 
-2. 对第1个`Book`对象的`authors`集合进行分页查询
-```sql
-select
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where tb_1_.BOOK_ID = ?
-/* highlight-next-line */
-limit ? offset ?
-```
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
+    from BOOK as tb_1_
+    where tb_1_.EDITION = ?
+    ```
 
-3. 对第2个`Book`对象的`authors`集合进行分页查询
+2.  对第1个`Book`对象的`authors`集合进行分页查询
 
-同上，略
+    ```sql
+    select
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where tb_1_.BOOK_ID = ?
+    /* highlight-next-line */
+    limit ? offset ?
+    ```
 
-4. 对第3个`Book`对象的`authors`集合进行分页查询
+3.  对第2个`Book`对象的`authors`集合进行分页查询
 
-同上，略
+    同上，略
 
-5. 对第4个`Book`对象的`authors`集合进行分页查询
+4.  对第3个`Book`对象的`authors`集合进行分页查询
 
-同上，略
+    同上，略
+
+5.  对第4个`Book`对象的`authors`集合进行分页查询
+
+    同上，略
 
 ### 属性过滤器
 
@@ -852,61 +959,63 @@ val tuples: List<Tuple2<Book, Book>> = sqlClient
 
 生成三条SQL
 
-1. 查询元组需要的两个`Book`对象
+1.  查询元组需要的两个`Book`对象
 
-```sql
-select
+    ```sql
+    select
 
-/* For tuple._1 */
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE,
+    /* For tuple._1 */
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE,
 
-/* For tuple._2 */
-    tb_1_.ID,
-    tb_1_.NAME,
-    tb_1_.EDITION,
-    tb_1_.PRICE
+    /* For tuple._2 */
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.EDITION,
+        tb_1_.PRICE
 
-from BOOK as tb_1_
-where tb_1_.EDITION = ?
-```
+    from BOOK as tb_1_
+    where tb_1_.EDITION = ?
+    ```
 
-2. 为第1列的4个`Book`对象查询`authors`关联属性，使用过滤器
-```sql
-select
+2.  为第1列的4个`Book`对象查询`authors`关联属性，使用过滤器
 
-    tb_1_.BOOK_ID,
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where
-    tb_1_.BOOK_ID in (?, ?, ?, ?)
-and
-    /* Use filter here */
-    /* highlight-next-line */
-    lower(tb_3_.FIRST_NAME) like ?
-```
+    ```sql
+    select
+
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (?, ?, ?, ?)
+    and
+        /* Use filter here */
+        /* highlight-next-line */
+        lower(tb_3_.FIRST_NAME) like ?
+    ```
 
 3. 为第2列的4个`Book`对象查询`authors`关联属性，不使用过滤器
-```sql
-select
 
-    tb_1_.BOOK_ID,
-    tb_1_.AUTHOR_ID,
-    tb_3_.FIRST_NAME,
-    tb_3_.LAST_NAME,
-    tb_3_.GENDER
-from BOOK_AUTHOR_MAPPING as tb_1_
-inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
-where
-    tb_1_.BOOK_ID in (?, ?, ?, ?)
-/* No filter here */
-```
+    ```sql
+    select
+
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID,
+        tb_3_.FIRST_NAME,
+        tb_3_.LAST_NAME,
+        tb_3_.GENDER
+    from BOOK_AUTHOR_MAPPING as tb_1_
+    inner join AUTHOR as tb_3_ on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (?, ?, ?, ?)
+    /* No filter here */
+    ```
 
 打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
 ```json
@@ -959,26 +1068,23 @@ Tuple2{
 
 :::caution
 
-1.
-对于同时满足以下两个条件的关联属性
-- 多对一
-- 不为null
+1.  对于同时满足以下两个条件的关联属性
+    - 多对一
+    - 不为null
 
-施加过滤器会导致异常。
+    施加过滤器会导致异常。
 
-2.
-使用了字段级过滤器后，该字段的[关联缓存](../../cache/cache-type/association)会失效。
+2.  使用了字段级过滤器后，该字段的[关联缓存](../../cache/cache-type/association)会失效。
 
-如果不想让关联缓存失效，可以使用支持[多视角缓存](../../cache/multiview-cache)的全局过滤器。
+    如果不想让关联缓存失效，可以使用支持[多视角缓存](../../cache/multiview-cache)的全局过滤器。
 
-3.
-有一种实际开发中常见的错误（以Java为例）
+3.  有一种实际开发中常见的错误（以Java为例）
 
-`filter(it -> args.getTable().firstName().ilike "a")`。
+    `filter(it -> args.getTable().firstName().ilike "a")`。
 
-这段代码创建了条件表达式，但是并没有调用`args.where`。既不调用`args.where`也不调用`args.orderBy`的过滤器代码是没有意义的。
+    这段代码创建了条件表达式，但是并没有调用`args.where`。既不调用`args.where`也不调用`args.orderBy`的过滤器代码是没有意义的。
 
-正确的代码是
+    正确的代码是
 
-`filter(it -> args.where(args.getTable().firstName().ilike "a"))`。
-:::
+    `filter(it -> args.where(args.getTable().firstName().ilike "a"))`。
+    :::

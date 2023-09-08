@@ -1,65 +1,65 @@
 ---
 sidebar_position: 9
-title: Remote associations
+title: Remote Association
 ---
 
 import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import TabItem from '@theme/TabItem'; 
 
 :::caution
-远程关联是Jimmer和微服务技术体系相结合后的产物，会在[Spring Cloud和远程关联](../../spring/spring-cloud)中详细介绍。
+Remote association is a product of combining Jimmer with microservice architecture. It will be introduced in detail in [Spring Cloud and Remote Association](../../spring/spring-cloud).
 
-本文的目的并非系统性讲解远程关联，仅仅介绍远程关联所需映射配置。
+The purpose of this article is not to systematically explain remote associations, just to introduce the mapping configuration required for remote associations.
 :::
 
-## @Entity
+## @Entity  
 
-`@Entity`注解具备可选参数`microServiceName`，默认为""。
+The `@Entity` annotation has an optional parameter `microServiceName` whose default value is "".
 
-关联属性涉及两个实体类型，因为关联必然从源头方指向目标方 *(自关联属性比较特殊，源头方和目标方重合)*
+Association properties involve two entity types. Since associations must point from the source to the target *(self association properties are special, the source and target overlap)*:
 
--   如果关联属性的源实体和目标实体的`microServiceName`相等，则该关联为本地关联 *（本文之前所有例子中的实体都采用默认的`microServiceName`，因此都是本地关联）*
+- If the `microServiceName` of the source entity and target entity of the association property are equal, then this association is a local association *(All entities in the examples before this article use the default `microServiceName`, so they are local associations)*.
 
--   如果关联属性的源实体和目标实体的`microServiceName`不相等，则该关联为远程关联。
+- If the `microServiceName` of the source entity and target entity of the association property are not equal, then this association is a remote association.
 
-例如
+For example:
 
--   主动方 *(必需)*: `Book.authors`
+-   Owning side *(required)*: `Book.authors`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java title="Book.java"
-    // highlight-next-line
+    // highlight-next-line 
     @Entity(microServiceName = "book-service")
     public interface Book {
 
         @ManyToMany
         List<Author> authors();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="Book.kt"
+    ```kotlin title="Book.kt"
     // highlight-next-line
-    @Entity(microServiceName = "book-service")
+    @Entity(microServiceName = "book-service") 
     interface Book {
 
         @ManyToMany
         val authors: List<Author>
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
 
--   从动方 *(可选)*: `Author.authors`
+-   Inverse side *(optional)*: `Author.authors`
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -69,10 +69,10 @@ import TabItem from '@theme/TabItem';
     @Entity(microServiceName = "author-service")
     public interface Author {
 
-        @ManyToMany(mappedBy = "authors")
+        @ManyToMany(mappedBy = "authors") 
         List<Book> books();
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
@@ -87,32 +87,32 @@ import TabItem from '@theme/TabItem';
         @ManyToMany(mappedBy = "authors")
         val books: List<Book>
 
-        ...省略其他代码...
+        ...Omit other code...
     }
     ```
 
     </TabItem>
     </Tabs>
+    
+Here, the microservice name of `Book` is `book-service`, and the microservice name of `Author` is `author-service`. The two are not equal, so `Book.authors` and `Author.books` are remote associations.
 
-这里，`Book`的微服务名为`book-service`，`Author`的微服务名为`author-service`。二者不相等，因此`Book.authors`和`Author.books`都是远程关联
+## @MappedSuperclass  
 
-## @MappedSuperclass
+As a super type, `MappedSuperclass` has two usages:
 
-作为超类型的`MappedSuperclass`有两种用法
-
--   可以包含关联属性，但必需隶属于同一个微服务
+-   Can contain association properties, but must belong to the same microservice
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java title="BookServiceCommonEnity.java"
+    ```java title="BookServiceCommonEnity.java" 
     // highlight-next-line
     @MappedSuperclass(microServiceName = "book-service")
     public interface BookServiceCommonEnity {
 
         LocalDateTime createdTime();
 
-        @ManyToOne
+        @ManyToOne  
         User createdBy();
 
         LocalDateTime modifiedTime();
@@ -125,9 +125,9 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="BookServiceCommonEnity.kt"
+    ```kotlin title="BookServiceCommonEnity.kt"
     // highlight-next-line
-    @MappedSuperclass(microServiceName = "book-service")
+    @MappedSuperclass(microServiceName = "book-service") 
     interface BookServiceCommonEnity {
 
         val createdTime: LocalDateTime
@@ -145,9 +145,9 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
-    这里`BookServiceCommonEnity`具备关联属性`createdBy`和`modifiedBy`，但是只有同属于微服务"book-service"的`Entity`或其他`MappedSuperclass`才可以继承它。
-
--   跨越任何微服务，但不得包含关联属性
+    Here `BookServiceCommonEnity` contains association properties `createdBy` and `modifiedBy`, but only `Entity` or other `MappedSuperclass` belonging to the microservice "book-service" can inherit it.
+    
+-   Can span any microservices, but must not contain association properties
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -159,16 +159,16 @@ import TabItem from '@theme/TabItem';
 
         LocalDateTime createdTime();
 
-        LocalDateTime modifiedTime();
+        LocalDateTime modifiedTime(); 
     }
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```java title="CommonEnity.kt"
+    ```kotlin title="CommonEnity.kt"
     // highlight-next-line
-    @MappedSuperclass(acrossMicroServices = true)
+    @MappedSuperclass(acrossMicroServices = true)  
     interface CommonEnity {
 
         val createdTime: LocalDateTime
@@ -180,4 +180,4 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
-    这里`CommonEnity`可以跨越任何微服务，任何微服务下的`Entity`或其他`MappedSuperclass`都可以继承它，但其本身不的包含任何关联属性。
+    Here `CommonEnity` can span any microservices. Any `Entity` or other `MappedSuperclass` under any microservice can inherit it, but it itself does not contain any association properties.

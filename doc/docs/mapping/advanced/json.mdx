@@ -1,34 +1,35 @@
 ---
 sidebar_position: 7
-title: JSON mapping
+title: JSON Mapping
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Jimmer支持JSON属性。在Java/Kotin实体类型中，这种属性可以被声明为任何非Object的JVM类型，在数据库中，对应列的存储的信息是JSON。
+Jimmer supports JSON properties. In Java/Kotlin entity types, such properties can be declared as any type other than `java.lang.Object` and `kotlin.Any`. 
+In the database, the information stored in the corresponding column is JSON.
 
 :::info
--   JSON属性是简单属性，而非关联属性。
+-   JSON properties are simple properties, not association properties.
 
--   按目前实现，Postgres中对应列的类型应为`jsonb`，其他数据库中对应列的类型应为字符串。
+-   According to the current implementation, the corresponding column type in Postgres should be `jsonb`, and the corresponding column type in other databases should be string.
 :::
 
-Jimmer提供`org.babyfish.jimmer.sql.Serialized`，有两种使用JSON映射的方式
+Jimmer provides `org.babyfish.jimmer.sql.Serialized`. There are two ways to use JSON mapping:
 
--   全局JSON映射
+-   Global JSON mapping
 
-    如果属性的类型是自定义类，而非数组、集合或Map。可以用`@Serialized`修饰这个类。这样，不仅仅是当前属性，任何实体中相同类型的属性都会成为JSON属性。
-
--   属性级JSON映射
-
-    无论属性是什么类型，都可以使用`@Serialized`修饰当前属性。
+    If the property type is a custom class rather than an array, collection, or Map, decorate this class with `@Serialized`. This way, any properties of the this type in all entities will become JSON properties.
     
-    一般而言，应该修饰类型为数组、集合或Map类型的属性，因为类型为自定义类的属性采用全局JSON映射更好。
+-   Property-level JSON mapping
 
-## 全局JSON映射
+    The current property can be decorated with `@Serialized`. 
 
-首先，定义自定义类，并用`@Serialized`修饰
+Properties of array, collection, or map types must use property-level mapping; however, global mapping is better for custom types.
+
+## Global JSON Mapping  
+
+First, define a custom class and decorate it with `@Serialized`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -38,8 +39,8 @@ Jimmer提供`org.babyfish.jimmer.sql.Serialized`，有两种使用JSON映射的�
 @Serialized
 public class UserType {
 
-    ...省略成员，可包含任意信息...
-    ...只要支持Json序列化/反序列化即可...
+    ...Omit members, can contain any info...
+    ...As long as Json serialization/deserialization is supported... 
 }
 ```
 
@@ -48,30 +49,30 @@ public class UserType {
 
 ```kotlin title="UserType.kt"
 // highlight-next-line
-@Serialized
+@Serialized  
 data class UserType(
 
-    ...省略参数，可包含任何信息...
-    ...只要支持Json序列化/反序列化即可...
+    ...Omit parameters, can contain any info...
+    ...As long as Json serialization/deserialization is supported...
 )
 ```
 
 </TabItem>
 </Tabs>
 
-然后，就可以使用`UserType`类型定义任何实体属性了
+Then `UserType` can be used to define properties for any entity:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java" 
 @Entity
 public interface Book {
 
     // highlight-next-line
     UserType userData();
 
-    ...省略其他类型...
+    ...Omit other types...
 }
 ```
 
@@ -85,21 +86,21 @@ interface Book {
     // highlight-next-line
     val userData: UserType
     
-    ...省略其他类型...
+    ...Omit other types... 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-## 属性级JSON映射
+## Property-level JSON Mapping
 
-直接用`@Serialized`修饰属性即可
+Just decorate the property with `@Serialized`:
 
-<Tabs groupId="language">
+<Tabs groupId="language"> 
 <TabItem value="java" label="Java">
 
-```java title="Book.java"
+```java title="Book.java" 
 @Entity
 public interface Book {
 
@@ -111,7 +112,7 @@ public interface Book {
     @Serialized
     Map<String, List<SomeType2>> userData2();
 
-    ...省略其他类型...
+    ...Omit other types...
 }
 ```
 
@@ -126,87 +127,87 @@ interface Book {
     @Serialized
     val userData1: List<Map<String, SomeType1>>
     
-    // highlight-next-line
+    // highlight-next-line 
     @Serialized
     val userData2: Map<String, List<SomeType2>>
     
-    ...省略其他类型...
+    ...Omit other types...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-## ObjectMapper配置
+## ObjectMapper Configuration  
 
-### 使用底层API
+### Use Low-level API
 
-开发人员可以为被`@Seralized`修饰的属性配置JSON序列化/反序列化的ObjectMapper。
+Developers can configure the ObjectMapper for JSON serialization/deserialization of properties decorated with `@Seralized`.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
-ObjectMapper mapper1 = ...略...;
-ObjectMapper mapper2 = ...略...;
-ObjectMapper mapper3 = ...略...;
+ObjectMapper mapper1 = ...omitted...;
+ObjectMapper mapper2 = ...omitted...; 
+ObjectMapper mapper3 = ...omitted...;
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
     .setDefaultSerializedTypeObjectMapper(mapper1) ❶
     .setSerializedTypeObjectMapper(MetaConfig.class, mapper2) ❷
     .setSerializedTypePropMapper(TopicProps.TAGS, mapper3) ❸
-    ...省略其他配置...
+    ...Omit other configurations...
     .build();
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
-val mapper1: ObjectMapper = ...略...
-val mapper2: ObjectMapper = ...略...
-val mapper3: ObjectMapper = ...略...
+```kotlin  
+val mapper1: ObjectMapper = ...omitted...
+val mapper2: ObjectMapper = ...omitted...
+val mapper3: ObjectMapper = ...omitted...
 val sqlClient = newKSqlClient {
     setDefaultSerializedTypeObjectMapper(mapper1) ❶
     setSerializedTypeObjectMapper(MetaConfig::class, mapper2) ❷
     setSerializedTypePropMapper(Topic::tags, mapper3) ❸
-    ...省略其他配置...
+    ...Omit other configurations...
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ 将默认的ObjectMapper设置为`mapper1`
+-   ❶ Set default ObjectMapper to `mapper1`
 
-    和`setSerializedTypeObjectMapper(Object.class, mapper1)`等价
+    Equivalent to `setSerializedTypeObjectMapper(Object.class, mapper1)`
+    
+-   ❷ For any property whose return type is MetaConfig or its subclass, use `mapper2`
 
--   ❷ 任何属性，只要其返回类型为MetaConfig或其派生类型，都采用`mapper2`
+-   ❸ Explicitly set ObjectMapper for `Topic.tags` to `mapper3` 
 
--   ❸ 明确设置`Topic.tags`的ObjectMapper`mapper3`
+    If the set property is not decorated with `@Serialized`, an exception will be thrown
+    
+Configuration precedence: ❸ > ❷ > ❶
 
-    如果被设置的属性未被`@Serialized`修饰，将会抛出异常
+### Use Spring Boot Starter  
 
-配置优先级：❸ > ❷ > ❶
-
-### 使用Spring Boot Starter
-
-如果使用Spring Boot Starter，SqlClient是自动创建的，但是用户可以通过`Customizer/KCoustomizer`来改变SqlClient被创建前的配置
+If using the Spring Boot Starter, the SqlClient is created automatically, but users can change the configuration before SqlClient is created via `Customizer/KCoustomizer`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 // highlight-next-line
-@Component
+@Component 
 public class SerializationCustomizer implements Customizer {
 
-    @Override
+    @Override  
     public void customize(JSqlClient.Builder builder) {
         builder
-            .setDefaultSerializedTypeObjectMapper(...略...)
-            .setSerializedTypeObjectMapper(MetaConfig.class, ...略...)
-            .setSerializedTypePropMapper(TopicProps.TAGS, ...略...);
+            .setDefaultSerializedTypeObjectMapper(...omitted...)
+            .setSerializedTypeObjectMapper(MetaConfig.class, ...omitted...)
+            .setSerializedTypePropMapper(TopicProps.TAGS, ...omitted...); 
     }
 }
 ```
@@ -214,16 +215,16 @@ public class SerializationCustomizer implements Customizer {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 // highlight-next-line
 @Component
 class SerializationCustomizer : KCustomizer {
     
     override fun customize(dsl: KSqlClientDsl) {
         dsl
-            .setDefaultSerializedTypeObjectMapper(...略...)
-            .setSerializedTypeObjectMapper(MetaConfig::class, ...略...)
-            .setSerializedTypePropMapper(Topic::tags, ...略...);
+            .setDefaultSerializedTypeObjectMapper(...omitted...)
+            .setSerializedTypeObjectMapper(MetaConfig::class, ...omitted...)
+            .setSerializedTypePropMapper(Topic::tags, ...omitted...);
     }
 }
 ```

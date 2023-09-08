@@ -1,94 +1,94 @@
 ---
 sidebar_position: 1
-title: Base concept
+title: Basic Concepts
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import {MultiViewCache} from '@site/src/components/Image';
 
-## 概念
+## Concepts
 
-截止目前为止，我们所介绍的缓存都是单视图缓存，所有客户端都会看到相同的缓存。
+Up to now, the caches we have introduced are all single-view caches, where all clients see the same cache.
 
-然而，很多时候，不同的客户端会看到不同的数据，这往往是因为权限系统导致的。
+However, often times, different clients will see different data, which is usually caused by permission systems.
 
-既然不同的客户端会看到不同的数据，我们自然也期望不同客户端能看到不同的缓存。
+Since different clients will see different data, we naturally also expect different clients to see different caches, that is, the cache provides different views for different clients.
 
-多视图缓存很好地解决这个问题，让不同的客户端看到不同的缓存，即缓存为不同的客户端提供了不同的视图。
+Multi-view cache solves this problem very well by allowing different clients to see different caches. 
 
 <MultiViewCache/>
 
 :::caution
-和之前讨论的缓存可以分为[对象缓存](../cache-type/object)、[关联缓存](../cache-type/association)和[计算缓存](../cache-type/calculation)不同，
-多视图缓存并不是为已有的分类集合添加一种新的分类，而是另外一个维度的特性。
+Unlike previous discussions where cache can be categorized into [object cache](../cache-type/object), [association cache](../cache-type/association) and [calculated cache](../cache-type/calculation), 
+multi-view cache is not adding a new category to the existing taxonomy, but rather another dimension of characteristics.
 :::
 
-除了[对象缓存](../cache-type/object)外，[关联缓存](../cache-type/association)和[计算缓存](../cache-type/calculation)都可以和多视图缓存相结合
+Except for [object cache](../cache-type/object), both [association cache](../cache-type/association) and [calculated cache](../cache-type/calculation) can be combined with multi-view cache.
 
-||单视图缓存|多视图缓存|
-|---|---|---|
-|对象缓存|对象缓存|NA|
-|关联缓存|单视图关联缓存|多视图关联缓存|
-|计算缓存|单视图计算缓存|多视图计算缓存|
+||Single-view Cache|Multi-view Cache|
+|-|-|-|
+|Object Cache|Object Cache|NA|
+|Association Cache|Single-view Association Cache|Multi-view Association Cache|
+|Calculated Cache|Single-view Calculated Cache|Multi-view Calculated Cache|
 
 :::info
-我们可以把关联缓存和计算缓存统称为属性缓存
+We can refer to association cache and calculated cache together as property cache.
 :::
 
-因此，这个的表格也可被解释为属性缓存可以被多视图化。
+Therefore, this table can also be interpreted as property cache can be multi-viewed.
 
-## 场景
+## Scenarios
 
-多视图缓存由[全局过滤器](../../query/global-filter)导致。
+Multi-view cache is caused by [global filters](../../query/global-filter).
 
-只要某个实体被施加了[全局过滤器](../../query/global-filter)，所有以它作为目标类型的关联缓存以及依赖这些关联缓存的计算缓存都需要多视图化。
+As long as an entity is applied with a [global filter](../../query/global-filter), all association caches targeting it and calculated caches relying on these association caches need to be multi-viewed.
 
-比如，如果为`Book`添加全局过滤器，那么如下这些属性：
+For example, if a global filter is added to `Book`, then properties like:
 
--   以`Book`作为目标类型的关联属性。比如，`BookStore.books`、`Author.books`
+-   Association properties targeting `Book`, such as `BookStore.books`, `Author.books`
 
--   依赖于上述关联属性的计算属性。比如，`BookStore.avgPrice`、`BookStore.newestBooks`*(文档没提及`newestBook`，可参见例子)*
+-   Calculated properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks` 
 
-都会对过滤器敏感，即不同的过滤条件会导致不同的客户端看到不同的数据。
+    will be sensitive to the filter, that is, different filtering conditions will result in different data seen by different clients.
 
 :::caution
-这些对过滤器敏感的属性，要么不支持缓存，要么就支持多视角缓存。如果为其配置单视图缓存，将被视为无效操作，缓存配置会被忽略。
+These filter-sensitive properties either do not support cache or support multi-view cache. Configuring single-view cache for them will be considered invalid and the cache configuration will be ignored.
 
-然而，无需担心，Jimmer会告诉开发人员[为什么缓存未生效](./abandoned-callback)。
+Don't worry. Jimmer will tell developers [why cache is disabled](./abandoned-callback).
 :::
 
-这里所讨论的[全局过滤器](../../query/global-filter)，不但包含用户自定义的过滤器，还包括[逻辑删除](../../mapping/advanced/logical-deleted)所隐含的内置过滤器。
+The [global filters](../../query/global-filter) discussed here include not only user-defined filters, but also the built-in filters implied by [logical delete](../../mapping/advanced/logical-deleted).
 
-后续文档会从[逻辑删除](../../mapping/advanced/logical-deleted)和用户自定义过滤器两个方面入手，介绍多视图缓存。
+Subsequent documents will introduce multi-view cache from [logical delete](../../mapping/advanced/logical-deleted) and user-defined filters.
 
-## SubKey
+## SubKey  
 
-这一节中，我们需要介绍一个关键的术语：`SubKey`。
+In this section, we need to introduce a key term: `SubKey`.
 
 :::info
-`SubKey`是非常重要，是后续文档所需的前提概念。
+`SubKey` is very important as a prerequisite for subsequent documents.
 :::
 
-让我们先来看看单视图缓存的结构
+Let's first take a look at the structure of single-view cache  
 
 |Key|Value|
-|---|-----|
+|-|-|  
 |Book-10|{"id":10,"name":"GraphQL in Action",...}|
-|Book.authors-1|[1,2]|
+|Book.authors-1|[1,2]| 
 |BookStore.avgPrice-2|80.333333|
 
-这里，我们列举了[对象缓存](../cache-type/object)、[关联缓存](../cache-type/association)和[计算缓存](../cache-type/calculation)。
-虽然缓存类型不尽相同，但缓存结构都是统一的简单KV结构。
+Here we list examples of [object cache](../cache-type/object), [association cache](../cache-type/association) and [calculated cache](../cache-type/calculation).
+Although the cache types are different, the cache structures are unified simple KV structures.
 
-再让我们来看看多视图缓存的例子
+Now let's take a look at an example of multi-view cache:
 
 <table>
     <thead>
         <tr>
             <th>Key</th>
             <th>SubKey</th>
-            <th>Value</th>
+            <th>Value</th> 
         </tr>
     </thead>
     <tbody>
@@ -169,44 +169,44 @@ import {MultiViewCache} from '@site/src/components/Image';
     </tbody>
 </table>
 
-多视图缓存不再是简单的KV结构，而是嵌套的两级KV结构。
+Multi-view cache is no longer a simple KV structure, but a nested two-level KV structure.
 
 :::tip
-对于Redis而言，这种结构就是[Redis Hashes](https://redis.io/docs/data-types/hashes/)。
+For Redis, this structure is [Redis Hashes](https://redis.io/docs/data-types/hashes/).
 
-此时表格中的`SubKey`就是Redis中的`Hash Key`
+In this case, the `SubKey` in the table is the `Hash Key` in Redis. 
 :::
 
-很明显，相比于单视图缓存而言，多视图缓存按照SubKey对数据进行了更细的分化，让不同的客户端看到不同的数据。
+Obviously, compared to single-view cache, multi-view cache splits the data into finer granularity by SubKey, allowing different clients to see different data.
 
 -   Key
 
-    多视图缓存中的Key，和单视图缓存中的Key无异，表示特定的对象或特定的对象属性，由Jimmer自定决定
+    The Key in multi-view cache is no different from the Key in single-view cache, representing a specific object property, decided by Jimmer.
 
 -   SubKey
 
-    多视图缓存的关键特性，权限系统让不同的客户端具备不同的SubKey，最终从缓存中提取到不同的数据
+    The key characteristic of multi-view cache. The permission system allows different clients to have different SubKeys, eventually extracting different data from the cache.
     
     :::info
-    在Jimmer中，SubKey一定是`java.util.SortedMap<String, Object>`经过JSON序列化后的字符串。
+    In Jimmer, SubKey must be the JSON-serialized string of `java.util.SortedMap<String, Object>`.
 
-    此`SortedMap`必须采用默认的排序规则，不得自定义`Comparator`。
+    This `SortedMap` must use the default sorting rule without custom `Comparator`.
 
-    这点非常重要。比如，SubKey只可能是`{"logicalDeleted":false,"tenant":"a"}`，而不可能与之不同但等价的`{"tenant":"a", "logicalDeleted":false}`。
-    这样，多视图缓存保证了其内部没有冗余的信息。
+    This is very important. For example, SubKey can only be `{"logicalDeleted":false,"tenant":"a"}`, not `{tenant:"a", logicalDeleted":false}` which is different but equivalent.  
+    This ensures there is no redundant information internally in multi-view cache.
     :::
 
-多视图缓存只针对属性缓存，即关联缓存和计算缓存。所以，关联属性和复杂计算属性必须为其多视图缓存指定SubKey
+Multi-view cache is only for property cache, i.e. association cache and calculated cache. So association properties and complex calculated properties must specify SubKey for their multi-view caches.
 
-### 关联属性的SubKey
+### SubKey of Association Properties
 
-对于关联属性而言，缓存的多视图化必然是因其关联实体被[全局过滤器](../../query/global-filter)影响导致。
-支持多视图缓存的全局过滤器仅仅实现`Filter/KFilter`接口是不够的，必须实现`CacheableFilter/KCacheableFilter`接口
+For association properties, the necessity of multi-view cache must be caused by the associated entity being affected by [global filters](../../query/global-filter).
+Supporting multi-view cache by merely implementing the `Filter/KFilter` interface is not enough. The `CacheableFilter/KCacheableFilter` interface must be implemented.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="CachableFilter.java"
+```java title="CacheableFilter.java"
 package org.babyfish.jimmer.sql.filter;
 
 public interface CacheableFilter<P extends Props> extends Filter<P> {
@@ -214,14 +214,14 @@ public interface CacheableFilter<P extends Props> extends Filter<P> {
     // highlight-next-line
     SortedMap<String, Object> getParameters();
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="KCachableFilter.kt"
+```kotlin title="KCachableFilter.kt"  
 package org.babyfish.jimmer.sql.kt.filter
 
 interface KCacheableFilter<E: Any> : KFilter<E> {
@@ -229,22 +229,22 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
     // highlight-next-line
     fun getParameters(): SortedMap<String, Any>?
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-用户需要实现`getParameters()`方法，为SubKey贡献一部分信息。
+Users need to implement the `getParameters()` method to contribute part of the information to SubKey.
 
 :::info
-当关联实体受多个`CachableFilter/KCachableFilter`影响时，每个过滤器对象的`getParameters()`方法返回的数据合并在一起，作为SubKey。
+When multiple `CacheableFilter/KCachableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the SubKey.
 :::
 
-### 复杂计算属性的SubKey
+### SubKey of Complex Calculated Properties
 
-实现[复杂计算属性](../../mapping/advanced/calculated/transient)需实现`TransientResolver/KTransientResolver`接口
+Implementing [complex calculated properties](../../mapping/advanced/calculated/transient) requires implementing the `TransientResolver/KTransientResolver` interface.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -257,12 +257,12 @@ import java.util.SortedMap;
 
 public interface TransientResolver<ID, V> {
 
-    // highlight-next-line
+    // highlight-next-line 
     default Ref<SortedMap<String, Object>> getParameterMapRef() {
         return Ref.empty();
     }
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
@@ -280,25 +280,25 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
     override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? =
         Ref.empty()
 
-    ...省略其他代码...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-该方法返回`SortedMap`的`Ref`包装器
+This method returns the `Ref` wrapper of `SortedMap`.  
 
--   如果`Ref`本身为null，表示获取SubKey遇到困难，无法为计算属性应用多视图缓存
+-   If `Ref` itself is null, it means getting SubKey is difficult and multi-view cache cannot be applied to the calculated property.
 
     :::info
-    这种情况下，Jimmer会告诉开发人员[为什么缓存未生效](./abandoned-callback)
+    In this case, Jimmer will tell developers [why cache is disabled](./abandoned-callback).
     :::
 
--   否则，`Ref`内部的value就表示当前计算属性的SubKey
+-   Otherwise, the internal value of `Ref` represents the SubKey of the current calculated property. 
 
-:::info
-Jimmer在维护缓存一致性时，会自动删除失效的缓存数据。
+:::info 
+When maintaining cache consistency, Jimmer will automatically delete invalid cached data.
 
-多视图的缓存项总是按照`Key`进行整体删除，不会按照`Key` + `SubKey`进行局部删除，在最大程度上保证多视图缓存的相对简单性。
+Cached items of multi-view cache are always deleted as a whole based on `Key` rather than partially based on `Key` + `SubKey`, to maximize the relative simplicity of multi-view cache.
 :::

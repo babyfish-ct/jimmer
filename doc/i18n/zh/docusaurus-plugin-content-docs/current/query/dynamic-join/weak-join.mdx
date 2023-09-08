@@ -117,7 +117,7 @@ private class BookAuthorJoin : KWeakJoin<Book, Author> {
 </Tabs>
 
 :::caution
--   对Java而言，由于`WeakJoin`是一个接口，所以需要注意，实现类型必需是一个类，不能是lambda
+-   `WeakJoin`/`KWeakJoin`是一个接口，但是，实现类型必需是一个类，不能是lambda
 
 -   不要用匿名类实现。匿名类虽然可以运行，但是违背这里的设计初衷
 
@@ -138,7 +138,7 @@ private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> 
 
     @Override
     public Predicate on(ST source, TT target) {
-        return Prdicate.sql(
+        return Predicate.sql(
             "substr(%e, 1, 5) = substr(%e, 1, 5)",
             new Expression[] {
                 source.code(),

@@ -1,25 +1,25 @@
 ---
 sidebar_position: 1
-title: Update statement
+title: Update Statement  
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
+## Premise of This Article
 
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
+Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers.
 
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
+If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
 
-本文所讨论若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
+The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
 
-## 基本用法
+## Basic Usage
 
-Update语句用法如下
+The usage of the update statement is:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java"> 
 
 ```java
 AuthorTable author = AuthorTable.$;
@@ -28,7 +28,7 @@ int affectedRowCount = sqlClient
     .createUpdate(author)
     .set(
         author.firstName(),
-        author.firstName().concat("*")
+        author.firstName().concat("*")  
     )
     .where(author.firstName().eq("Dan"))
     .execute();
@@ -36,35 +36,36 @@ System.out.println("Affected row count: " + affectedRowCount);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val affectedRowCount = sqlClient
     .createUpdate(Author::class) {
         set(
-            table.firstName, 
+            table.firstName,
             concat(table.firstName, value("*"))
         )
         where(table.firstName eq "Dan")
     }
     .execute()
-println("Affected row count: $affectedRowCount")
+println("Affected row count: $affectedRowCount") 
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成的SQL
+The finally generated SQL is:
 
 ```sql
-update AUTHOR tb_1_ 
-set FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) 
+update AUTHOR tb_1_  
+set FIRST_NAME = concat(tb_1_.FIRST_NAME, ?)
 where tb_1_.FIRST_NAME = ?
 ```
 
-## 使用JOIN
+## Using JOIN
 
-默认情况下，update语句不支持join，这会导致异常
+By default, update statements do not support joins, which will cause exceptions:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -83,27 +84,28 @@ int affectedRowCount = sqlClient
             // highlight-next-line
             .books()
             .name()
-            .eq("Learning GraphQL")
+            .eq("Learning GraphQL") 
     )
     .execute();
 System.out.println("Affected row count: " + affectedRowCount);
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+
+<TabItem value="kotlin" label="Kotlin"> 
 
 ```kotlin
 val affectedRowCount = sqlClient
     .createUpdate(Author::class) {
         set(
-            table.firstName,
+            table.firstName, 
             concat(table.firstName, value("*"))
         )
         where(
             table
                 // highlight-next-line
                 .books
-                .name 
+                .name
                 eq "Learning GraphQL"
         )
     }
@@ -114,22 +116,22 @@ println("Affected row count: $affectedRowCount")
 </TabItem>
 </Tabs>
 
-异常信息如下
-:::caution
+The exception message is:
+```
 Table joins for update statement is forbidden by the current dialect, but there is a join `'Author.books'`.
-:::
+```
 
-当使用MySql或Postgres时，update语句可以使用JOIN语句。
+When using MySQL or Postgres, update statements can use JOIN clauses.
 
-### MySql
+### MySQL  
 
-首先，需要在创建SqlClient时，指定方言为MySqlDialect
+First, MySQLDialect needs to be specified when creating SqlClient:
 
--   SpringBoot下的配置
+-   Spring Boot configuration:
 
-    在`applicaion.yml`或`application.properties`中声明配置，其名为`jimmer.dialect`，其值为`org.babyfish.jimmer.sql.dialect.MySqlDialect`
-
--   非SpringBoot下的配置
+    Declare configuration in `application.yml` or `application.properties`, named `jimmer.dialect` with value `org.babyfish.jimmer.sql.dialect.MySqlDialect`
+    
+-   Non-Spring Boot configuration:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -145,9 +147,10 @@ Table joins for update statement is forbidden by the current dialect, but there 
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin
+    ```kotlin  
     val sqlClient = newKSqlClient {
         setDialect(org.babyfish.jimmer.sql.dialect.MySqlDialect())
     }
@@ -156,7 +159,7 @@ Table joins for update statement is forbidden by the current dialect, but there 
     </TabItem>
     </Tabs>
 
-然后，就可以在update中使用JOIN了
+Then JOIN can be used in update:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -165,14 +168,14 @@ Table joins for update statement is forbidden by the current dialect, but there 
 AuthorTableEx author = AuthorTableEx.$;
 
 int affectedRowCount = sqlClient
-    .createUpdate(author)
+    .createUpdate(author) 
     .set(
         author.firstName(),
         author.firstName().concat("*")
     )
     .set(
         author.books().name(),
-        author.books().name().concat("*")
+        author.books().name().concat("*")  
     )
     .set(
         author.books().store().name(),
@@ -186,6 +189,7 @@ System.out.println("Affected row count: " + affectedRowCount);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -193,18 +197,18 @@ val affectedRowCount = sqlClient
     .createUpdate(Author::class) {
         set(
             table.firstName,
-            concat(table.firstName, value("*"))
+            concat(table.firstName, value("*")) 
         )
         set(
             table.books.name,
             concat(table.books.name, value("*"))
         )
         set(
-            table.books.store.name,
+            table.books.store.name, 
             concat(table.books.store.name, value("*"))
         )
         where(
-            table.books.store.name eq "MANNING"
+            table.books.store.name eq "MANNING"  
         )
     }
     .execute()
@@ -214,34 +218,34 @@ println("Affected row count: $affectedRowCount")
 </TabItem>
 </Tabs>
 
-最终生成针对MySQL的SQL语句，如下：
+The finally generated SQL for MySQL is: 
 
 ```sql
-update 
-    AUTHOR tb_1_ 
-    inner join BOOK_AUTHOR_MAPPING as tb_2_ 
-        on tb_1_.ID = tb_2_.AUTHOR_ID 
-    inner join BOOK as tb_3_ 
-        on tb_2_.BOOK_ID = tb_3_.ID 
-    inner join BOOK_STORE as tb_4_ 
-        on tb_3_.STORE_ID = tb_4_.ID 
-set 
-    tb_1_.FIRST_NAME = concat(tb_1_.FIRST_NAME, ?), 
-    tb_3_.NAME = concat(tb_3_.NAME, ?), 
-    tb_4_.NAME = concat(tb_4_.NAME, ?) 
-where 
-    tb_4_.NAME = ?
+update
+    AUTHOR tb_1_
+    inner join BOOK_AUTHOR_MAPPING as tb_2_
+        on tb_1_.ID = tb_2_.AUTHOR_ID
+    inner join BOOK as tb_3_
+        on tb_2_.BOOK_ID = tb_3_.ID
+    inner join BOOK_STORE as tb_4_
+        on tb_3_.STORE_ID = tb_4_.ID
+set
+    tb_1_.FIRST_NAME = concat(tb_1_.FIRST_NAME, ?),
+    tb_3_.NAME = concat(tb_3_.NAME, ?),
+    tb_4_.NAME = concat(tb_4_.NAME, ?)
+where
+    tb_4_.NAME = ? 
 ```
 
 ### Postgres
 
-首先，需要在创建SqlClient时，指定方言为PostgresDialect
+First, PostgresDialect needs to be specified when creating SqlClient:
 
--   SpringBoot下的配置
+-   Spring Boot configuration:
 
-    在`applicaion.yml`或`application.properties`中声明配置，其名为`jimmer.dialect`，其值为`org.babyfish.jimmer.sql.dialect.PostgresDialect`
-
--   非SpringBoot下的配置
+    Declare configuration in `application.yml` or `application.properties`, named `jimmer.dialect` with value `org.babyfish.jimmer.sql.dialect.PostgresDialect`
+    
+-   Non-Spring Boot configuration:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -257,6 +261,7 @@ where
     ```
 
     </TabItem>
+
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
@@ -268,7 +273,7 @@ where
     </TabItem>
     </Tabs>
 
-然后，就可以在update中使用JOIN了
+Then JOIN can be used in update:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -281,7 +286,7 @@ int affectedRowCount = sqlClient
     .set(
         author.firstName(),
         author.firstName().concat("*")
-    )
+    ) 
     .where(
         author.books().store().name().eq("MANNING")
     )
@@ -290,6 +295,7 @@ System.out.println("Affected row count: " + affectedRowCount);
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
@@ -300,7 +306,7 @@ val affectedRowCount = sqlClient
             concat(table.firstName, value("*"))
         )
         where(
-            table.books.store.name eq "MANNING"
+            table.books.store.name eq "MANNING" 
         )
     }
     .execute()
@@ -311,43 +317,43 @@ println("Affected row count: $affectedRowCount")
 </Tabs>
 
 :::note
-和MySql不同，在Postgres中使用update语句的JOIN存在如下限制
+Unlike MySQL, using JOIN in update statements in Postgres has the following restrictions:
 
-1. 只能在`where`子句中使用表连接，不能在`set`子句中使用表连接。即Postgres还是只允许修改当前表的字段，支持连接到其它表仅仅是为了做条件过滤。
+1.  JOIN can only be used in the `where` clause, not in the `set` clause. That is, Postgres still only allows modifying fields of the current table, supporting joins to other tables only for condition filtering.
 
-2. 连接路径可以具有多级，如`author.books().store()`，其中，`books()`是第1级，`store()`是第2级。其中，第一级连接的类型必须是`inner join`。
+2.  The join path can have multiple levels, such as `author.books().store()`, where `books()` is level 1 and `store()` is level 2. The join type of the first level must be `inner join`.  
 :::
 
-最终生成针对Postgres的SQL语句，如下：
+The finally generated SQL for Postgres is:
 
 ```sql
-update 
-    AUTHOR tb_1_ 
-set 
-    FIRST_NAME = concat(tb_1_.FIRST_NAME, ?) 
-from BOOK_AUTHOR_MAPPING as tb_2_ ❶
+update
+    AUTHOR tb_1_
+set
+    FIRST_NAME = concat(tb_1_.FIRST_NAME, ?)
+from BOOK_AUTHOR_MAPPING as tb_2_ ❶ 
 inner join BOOK as tb_3_ ❷
-    on tb_2_.BOOK_ID = tb_3_.ID 
+    on tb_2_.BOOK_ID = tb_3_.ID
 inner join BOOK_STORE as tb_4_ ❸
-    on tb_3_.STORE_ID = tb_4_.ID 
-where 
-    tb_1_.ID = tb_2_.AUTHOR_ID ❹
-and 
+    on tb_3_.STORE_ID = tb_4_.ID
+where
+    tb_1_.ID = tb_2_.AUTHOR_ID ❹ 
+and
     tb_4_.NAME = ?
 ```
 
 :::note
 
-连接路径`author.books().store()`有两级，`books()`是第1级，`store()`是第2级。
+The join path `author.books().store()` has two levels, `books()` is level 1 and `store()` is level 2. 
 
-1. 第一级`books()`涉及两张表
-    - ❶ 处的`BOOK_AUTHOR_MAPPING`表，但这里缺少连接条件，连接条件在❹处补上。
-    - ❷ 处的`BOOK`表
+1.  Level 1 `books()` involves two tables:
+    - `BOOK_AUTHOR_MAPPING` table at ❶, but the join condition is missing here, supplemented at ❹.
+    - `BOOK` table at ❷.
+    
+2.  Level 2 `store()` involves one table:
+    - `BOOK_STORE` table at ❸.
+    
+As you can see, in the update statement of Postgres, table joins directly related to the main table cannot use the `join` + `on` syntax, they must be equivalently transformed into `from` + `where`.
 
-2. 第二级`store()`涉及一张表
-    - ❹ `处的`BOOK_STORE`表
-
-可见，在Postgres的update语句中，直接和主表相关的表连接不能使用`join` + `on`的写法，必须等价变换为`from` + `where`的写法。
-
-这就是Jimmer规定Postgres方言下update语句第一级连接的类型必须是`inner join`的原因。
+This is why Jimmer requires the join type of level 1 to be `inner join` for update statements in Postgres dialect. 
 :::

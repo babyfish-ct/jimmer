@@ -1,21 +1,21 @@
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 
-目前其他操作SQL的技术方案，无论ORM还是非ORM，都有存在一个空白领域：只考虑到了动态`where`，没有考虑`动态join`。
+Currently, other technologies that operate on SQL, whether ORM or non-ORM, have a blank area: they only consider dynamic `where`, and do not consider `dynamic join`.
 
-`动态JOIN`定义：如果某些动态查询条件针对其他表而非当前表。这意味着
+`Dynamic JOIN` is defined as: If some dynamic query conditions are for tables other than the current table. This means
 
--   条件满足时：先通过关联属性join到其他表，再对join得到的表添加动态where条件
+- When the condition is met: First join to other tables through associative properties, then add dynamic where conditions to the joined table
 
--   条件不满足时：不能通过关联属性join其他表
+- When the condition is not met: Cannot join other tables through associative properties
 
 <Divider>
-<Chip label="场景-1"/>
+<Chip label="Scene-1"/>
 </Divider>
 
-让我们先来看第一个场景，这里用面向原生SQL的MyBatis为例
+Let's first look at the first scene, taking MyBatis oriented to native SQL as an example
 
--   定义MyBatis Mapper接口
+-   Define MyBatis Mapper interface
 
     ```java
     @Mapper
@@ -23,18 +23,18 @@ import Divider from '@mui/material/Divider';
 
         List<Book> findBooks(
             @Nullable String name,
-            @Nullable String storeName,
+            @Nullable String storeName, 
             @Nullable String storeWebsite
         );
     }
     ```
 
-    这里，所有查询参数都可能为null，很明显，这是一个动态查询。
+    Here, all query parameters may be null, which is clearly a dynamic query.
 
-    后面两个查询参数：`storeName`和`storeWebsite`，其过滤条件并不施加在当前表`BOOK`上，而是施加在父表`BOOK_STORE上`。
-    即，当这两个参数中的任何一个非null时，都会生成对`BOOK_STORE`表的JOIN，这种由参数值动态决定是否添加的表连接，在本文中被称为`动态JOIN`。
+    The last two query parameters: `storeName` and `storeWebsite`, their filtering conditions are not applied on the current table `BOOK`, but on the parent table `BOOK_STORE`.
+    That is, when any of these two parameters is non-null, a JOIN to the `BOOK_STORE` table will be generated. This table connection dynamically determined by the parameter value is referred to as `dynamic JOIN` in this article.
 
--   定义MyBatis的SQL映射XML
+-   Define MyBatis SQL mapping XML
 
     ```xml
     <?xml version="1.0" encoding="UTF-8" ?>
@@ -63,61 +63,61 @@ import Divider from '@mui/material/Divider';
         </select>
     </mapper>
     ```
-
-    其中，❶就是动态JOIN。然而对开发人员而言，❷和❸才是目的，❶是为支持❷和❸而不得不做的工作，其判断条件是一种负担。
-
-    也许你已经注意到了，❶的判断条件使用了`or`，这也不难理解。
     
-    **然而，这仅仅是最简单的两表之间动态连接，对于更深的多表连接操作而言，动态连接的复杂度会急剧上升！**
+    Here, ❶ is the dynamic JOIN. However, for developers, ❷ and ❸ are the purpose, and ❶ is the work that has to be done to support ❷ and ❸. Its judgment condition is a burden.
+
+    You may have noticed that ❶ uses `or`. This is easy to understand.
+    
+    **However, this is only the simplest dynamic connection between two tables. For deeper multi-table connection operations, the complexity of dynamic connections will increase dramatically!**
 
 <Divider>
-<Chip label="场景-2"/>
+<Chip label="Scene-2"/> 
 </Divider>
 
-让我们再来看第二个场景，有了前面的例子作为基础，这个例子就不同任何业务耦合了。
+Let's take a look at the second scene. With the previous example as the basis, this example is decoupled from any business.
 
-```xml
+```xml 
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="somepackage.AMapper">
-    <select id="findAObjects" resultType="somepackage.A">
-        select distinct A.id
-        from A
-        <!-- highlight-start -->
-        <if test="bId != null or cId != null or dId != null or eId != null">
-            inner join B on A.ID = B.A_ID
-        </if>
-        <if test="cId != null or dId != null or eId != null">
-            inner join C on B.ID = C.B_ID
-        </if>
-        <if test="dId != null or eId != null">
-            inner join D on C.ID = D.C_ID
-        </if>
-        <if test="eId != null">
-            inner join E on D.ID = E.D_ID
-        </if>
-        <!-- highlight-end -->
-        <where>
-            <if test="aId != null">
-                and A.ID = #{aId}
-            </if>
-            <if test="bId != null">
-                and B.ID = #{bId}
-            </if>
-            <if test="cId != null">
-                and C.ID = #{cId}
-            </if>
-            <if test="dId != null">
-                and D.ID = #{dId}
-            </if>
-            <if test="eId != null">
-                and E.ID = #{eId}
-            </if>
-        </where>
-    </select>
+  <select id="findAObjects" resultType="somepackage.A">
+    select distinct A.id
+    from A
+    <!-- highlight-start -->  
+    <if test="bId != null or cId != null or dId != null or eId != null">
+      inner join B on A.ID = B.A_ID 
+    </if>
+    <if test="cId != null or dId != null or eId != null">
+      inner join C on B.ID = C.B_ID
+    </if>
+    <if test="dId != null or eId != null">
+      inner join D on C.ID = D.C_ID 
+    </if>
+    <if test="eId != null">
+      inner join E on D.ID = E.D_ID
+    </if>
+    <!-- highlight-end -->
+    <where>
+      <if test="aId != null">
+        and A.ID = #{aId}  
+      </if>
+      <if test="bId != null">
+        and B.ID = #{bId}
+      </if>
+      <if test="cId != null">
+        and C.ID = #{cId}
+      </if>
+      <if test="dId != null">
+        and D.ID = #{dId}
+      </if>
+      <if test="eId != null">
+        and E.ID = #{eId}
+      </if>
+    </where>
+  </select>
 </mapper>
 ```
 
-这个例子逻辑很简单，A、B、C、D和E这五张表形成了一个JOIN链，每张表都一个动态查询条件。然而，正如你所见，动态JOIN的复杂度已经变得不可接受了。
+The logic of this example is simple. The five tables A, B, C, D and E form a JOIN chain, and each table has a dynamic query condition. However, as you can see, the complexity of dynamic JOIN has become unacceptable.

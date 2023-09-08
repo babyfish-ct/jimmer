@@ -1,21 +1,21 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-为了解决JVM生态目前对复杂不可变对象二次"修改" *(基于另一个不可变对象创建新的不可变对象)* 不便的问题，诞生了一些不可变对象框架
+In order to solve the inconvenience of secondary "modification" *(creating a new immutable object based on another immutable object)* of complex immutable objects in the current JVM ecosystem, some immutable object frameworks were born:
 
 -   [Immutables](https://immutables.github.io/immutable.html)
--   [FreeBuilder](https://github.com/inferred/FreeBuilder)
+-   [FreeBuilder](https://github.com/inferred/FreeBuilder) 
 -   [Arrow-Kt(Kotlin)](https://arrow-kt.io/learn/immutable-data/intro/)
 -   [Kopyk(Kotlin)](https://kopyk.at/)
 -   [MuteKt(Kotlin)](https://github.com/PatilShreyas/mutekt)
 
-Jimmer是一个ORM框架，而处理深层次数据结构是ORM的核心问题，所以，Jimmer必须完成类似的工作。
+Jimmer is an ORM framework, and handling deep data structures is a core issue for ORM, so Jimmer must do similar work.
 
-Jimmer需要同时为Java和Kotlin提供优雅的双语支持，上述所有方案都无法达到这个要求，因此Jimmer并未使用它们中的任何一个，而是选择移植JavaScript/TypeScript领域的[immer](https://github.com/immerjs/immer)。
+Jimmer needs to provide elegant dual language support for both Java and Kotlin at the same time. None of the above solutions can meet this requirement, so Jimmer did not use any of them, but chose to transplant [immer](https://github.com/immerjs/immer) from the JavaScript/TypeScript field.
 
-移植[immer](https://github.com/immerjs/immer)后，二次"修改"深层次不可变数据结构的变得非常强大和优雅。
+After transplanting [immer](https://github.com/immerjs/immer), secondary "modifications" of deep immutable data structures become very powerful and elegant.
 
-## 前提假设
+## Prerequisites
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -28,8 +28,8 @@ import java.util.List;
 import org.babyfish.jimmer.Immutable;
 import org.jetbrains.annotations.Nullable;
 
-// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
-@Immutable 
+// No need for ORM @Entity to demonstrate this, non-ORM @Immutable is enough  
+@Immutable
 public interface TreeNode {
     
     String name();
@@ -44,13 +44,13 @@ public interface TreeNode {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="TreeNode.kt"
+```kotlin
 package yourpackage
 
 import org.babyfish.jimmer.Immutable
 
-// 演示此功能无需ORM的@Entity，非ORM的@Immutable足够
-@Immutable
+// No need for ORM @Entity to demonstrate this, non-ORM @Immutable is enough
+@Immutable 
 interface TreeNode {
 
     val name: String
@@ -64,13 +64,13 @@ interface TreeNode {
 </TabItem>
 </Tabs>
 
-## 使用方法
+## Usage
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
-// 第一步，从头构建全新的数据
+```java 
+// Step 1, build brand new data from scratch
 TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
     root.setName("Root").addIntoChildNodes(food -> {
         food
@@ -90,18 +90,18 @@ TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
     });
 });
 
-// 第二步，关键步骤！
-// 基于现有数据对象，做某些“变更”，创建新的数据对象。
+// Step 2, the key step!  
+// Based on existing data object, make some "changes" to create new data object
 TreeNode newTreeNode = TreeNodeDraft.$.produce(
-        // highlight-next-line
-        treeNode, // existing data
-        root -> {
-            root
-                .childNodes(false).get(0) // Food
-                .childNodes(false).get(0) // Drink
-                .childNodes(false).get(0) // Cococola
-                .setName("Cococola plus");
-        }
+    // highlight-next-line  
+    treeNode, // existing data
+    root -> {
+        root
+            .childNodes(false).get(0) // Food
+            .childNodes(false).get(0) // Drink
+            .childNodes(false).get(0) // Cococola
+            .setName("Cococola plus");
+    }
 );
 
 System.out.println("treeNode:" + treeNode);
@@ -113,25 +113,25 @@ System.out.println("newTreeNode:" + newTreeNode);
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-// 第一步，从头构建全新的数据
+// Step 1, build brand new data from scratch
 val treeNode = new(TreeNode::class).by {
     name = "Root"
     childNodes().addBy {
         name = "Food"
         childNodes().addBy {
-            name = "Drinks"
+            name = "Drinks" 
             childNodes().addBy {
                 name = "Cococola"
             }
             childNodes().addBy {
-                name = "Fanta"
+                name = "Fanta" 
             }
         }
     }
 }
 
-// 第二步，关键步骤！
-// 基于现有数据对象，做某些“变更”，创建新的数据对象。
+// Step 2, the key step!
+// Based on existing data object, make some "changes" to create new data object  
 val newTreeNode = new(TreeNode::class).by(
     // highlight-next-line
     treeNode // existing data
@@ -139,23 +139,23 @@ val newTreeNode = new(TreeNode::class).by(
     childNodes()[0] // Food
         .childNodes()[0] // Drinks
         .childNodes()[0] // Cococola
-        .name += " plus"
+        .name += " plus" 
 }
 
 println("treeNode: $treeNode")
 println("newTreeNode: $newTreeNode")
 ```
 
-</TabItem>
+</TabItem> 
 </Tabs>
 
-## 执行结果
+## Output
 
-输出结果（实际打印结果是紧凑的，但为了方便阅读，这里进行了格式化）
+The output (the actual printed output is compact, but formatted here for readability):
 
 ```javascript
 treeNode: {
-    "name":"Root",
+    "name":"Root", 
     "childNodes":[
         {
             "name":"Food",
@@ -164,7 +164,7 @@ treeNode: {
                     "name":"Drink",
                     "childNodes":[
                         // highlight-next-line
-                        {"name":"Coco Cola"},
+                        {"name":"Coco Cola"},  
                         {"name":"Fanta"}
                     ]
                 }
@@ -192,8 +192,8 @@ newTreeNode: {
 }
 ```
 
-:::info
-这个移植是对JVM生态的有力补充。
+:::info  
+This transplant is a powerful complement to the JVM ecosystem.
 
-本框架命名为Jimmer，即为致敬[immer](https://github.com/immerjs/immer)
+This framework is named Jimmer, paying tribute to [immer](https://github.com/immerjs/immer).
 :::

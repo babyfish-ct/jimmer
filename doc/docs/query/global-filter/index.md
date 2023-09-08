@@ -1,32 +1,32 @@
 ---
-sidebar_position: 11
-title: Global filter
+sidebar_position: 11  
+title: Global Filters
 ---
 
-全局过滤器用于为自动某些实体添加过滤条件，绝大部分针对这些实体类型的查询都会被自动添加相关`where`条件。
+Global filters are used to automatically add filtering conditions for certain entities. Most queries for these entity types will automatically have related `where` conditions added.
 
-该功能有如下应用场景
+This feature has the following application scenarios:
 
--   逻辑删除
+-   Logical deletion
 
-    逻辑删除是Jimmer内置的全局过滤器，无需用户定义。
+    Logical deletion is a built-in global filter in Jimmer and does not require user definition.
 
--   多视角数据，数据查询需要携带用户身份相关的查询条件，即使除用户身份以外的所有查询参数都相同，不同的用户也会看到不同的数据。
+-   Multi-perspective data. Querying data requires query conditions related to user identity, even if all query parameters except user identity are the same, different users will see different data.
 
-    多视角数据有一个典型的案例：多租户。本文档用多租户作为例子，讲解用户自定义全局过滤器。
+    Multi-perspective data has a typical case: multi-tenancy. This document uses multi-tenancy as an example to explain custom global filters defined by users.
 
 :::note
-对于有Hibernate背景知识的用户而言，全局过滤器和[org.hibernate.annotations.Where](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/Where.html)、[org.hibernate.annotations.Filter](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/Filter.html)以及[org.hibernate.annotations.FilterDef](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/FilterDef.html)类似。
+For users with Hibernate background knowledge, global filters are similar to [org.hibernate.annotations.Where](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/Where.html), [org.hibernate.annotations.Filter](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/Filter.html) and [org.hibernate.annotations.FilterDef](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/FilterDef.html). 
 
-不同点在于，Jimmer的全局过滤器具有灵活的注册方式，很容易被IOC框架 *(比如Spring)* 管理。
+The difference is that Jimmer's global filters have flexible registration methods and are very easy to be managed by IOC frameworks (such as Spring).
 
-这样，全局过滤器可以直接从IOC框架中获取参数，比如用户身份信息，所以，开发人员无需在查询前为过滤器传参。
+Thus, global filters can directly obtain parameters from the IOC framework, such as user identity information, so developers do not need to pass parameters to filters before queries.
 :::
 
 :::caution
-1.  经过反复权衡，目前全局过滤器仅仅影响主查询的主表，对join操作得到的表和子查询中的表没有影响。
+1.  After repeated consideration, currently global filters only affect the main table of the main query, and have no effect on tables obtained from join operations and tables in subqueries.
 
-    这对[对象抓取器](../object-fetcher)没有影响，因为[对象抓取器](../object-fetcher)不是Table Join操作。
+    This has no impact on [object fetchers](../object-fetcher) because [object fetchers](../object-fetcher) are not Table Join operations.
 
-2.  Jimmer提供了一些按照id *(或id集合)* 查询实体 *(或实体集合)*的简单API，这类API例外，不受全局过滤器的影响。
+2.  Jimmer provides some simple APIs to query entities (or collections of entities) by id (or collection of ids). These APIs are exceptional and are not affected by global filters.
 :::

@@ -1,14 +1,14 @@
 ---
 sidebar_position: 2
-title: Simple properties
+title: Regular Properties
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-### 抓取标量字段
+### Fetching Scalar Fields
 
-标量字段即数据库表中所有非关联字段。以抓取书籍名称为例：
+Scalar fields refer to all non-associative fields in a database table. Taking fetching the book name as an example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -52,29 +52,29 @@ val books = sqlClient
 </Tabs>
 
 :::note
-对Java而言，Annotation processor会为每一个实体接口自动生成一个Fetcher类，在这个例子中，就是`BookFetcher`
+For Java, the Annotation processor will automatically generate a Fetcher class for each entity interface, which is `BookFetcher` in this example.
 :::
 
-生成的SQL如下:
+The generated SQL is:
 
 ```sql
 select 
     tb_1_.ID, 
     /* highlight-next-line */
-    tb_1_.NAME 
-from BOOK as tb_1_ 
+    tb_1_.NAME  
+from BOOK as tb_1_
 where tb_1_.EDITION = ?
 ```
 
-:::note
-Java代码没有调用BookFetcher的`id()`方法，但是，我们看到SQL语句仍然查询了对象的id属性。
+:::note 
+The Java code does not call the `id()` method of BookFetcher, but we can see the SQL statement still queries the id property of the object.
 
-id属性被特殊对待，总是会被查询，并不受对象抓取器的控制。
+The id property is treated specially and will always be queried, not controlled by object fetchers. 
 
-事实上，自动生成BookFetcher类中也没有`id()`方法，因为不需要。
+In fact, the auto-generated BookFetcher class does not even have an `id()` method, because it is not needed.
 :::
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+The printed result is (original output is compact, formatted here for readability):
 
 ```json
 [
@@ -83,11 +83,11 @@ id属性被特殊对待，总是会被查询，并不受对象抓取器的控制
         // highlight-next-line
         "name":"Learning GraphQL"
     },
-    ...省略其他对象...
+    ...Other objects omitted...  
 ]
 ```
 
-### 抓取多个字段
+### Fetching Multiple Fields
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -131,33 +131,33 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-:::note
-对象抓取器是不可变对象，每一次链式调用都会返回一个新的对象抓取器。
+:::info
+Object fetchers are immutable objects, each method call returns a new object fetcher. 
 
-即，上述**Java**代码中
+In the **Java** code above:
 -   `BookFetcher.$`
--   `BookFetcher.$.name()`
+-   `BookFetcher.$.name()`  
 -   `BookFetcher.$.name().edition()`
 
-是三个不同的对象抓取器，每一个都是不可变的。
+are three different object fetchers, each immutable.
 
-对象抓取器是不可变对象，所以你可以借助静态变量随意共享对象抓取器。
+Object fetchers can be freely shared using static variables since they are immutable.
 :::
 
-生成的SQL如下:
+The generated SQL is: 
 
 ```sql
-select 
-    tb_1_.ID, 
-    /* highlight-next-line */
+select
+    tb_1_.ID,
+    /* highlight-next-line */  
     tb_1_.NAME,
     /* highlight-next-line */
-    tb_1_.EDITION  
-from BOOK as tb_1_ 
+    tb_1_.EDITION   
+from BOOK as tb_1_
 where tb_1_.EDITION = ?
 ```
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+The printed result is (original output is compact, formatted here for readability):
 
 ```json
 [
@@ -168,16 +168,16 @@ where tb_1_.EDITION = ?
         // highlight-next-line
         "edition":1
     },
-    ...省略其他对象...
+    ...Other objects omitted...
 ]
 ```
 
-### 抓取所有标量字段
+### Fetching All Scalar Fields
 
-在一些场景下，抓取所有非关联字段是非常常用的操作，因此提供了`allScalarFields()`用于加载所有非关联字段。
+In some scenarios, fetching all non-associative fields is a very common operation, so `allScalarFields()` is provided to load all non-associative fields.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 BookTable book = BookTable.$;
@@ -190,7 +190,7 @@ List<Book> books = sqlClient
             BookFetcher.$.allScalarFields()
         )
     )
-    .execute();
+    .execute(); 
 ```
 
 </TabItem>
@@ -214,48 +214,49 @@ val books = sqlClient
 </Tabs>
 
 
-生成的SQL如下:
+The generated SQL is:
 
-```sql
-select 
-    tb_1_.ID, 
-    // highlight-start
-    tb_1_.NAME, 
-    tb_1_.EDITION, 
-    tb_1_.PRICE
+```sql  
+select
+    tb_1_.ID,
+    // highlight-start 
+    tb_1_.NAME,
+    tb_1_.EDITION,
+    tb_1_.PRICE 
     // highlight-end
-from BOOK as tb_1_ 
+from BOOK as tb_1_
 where tb_1_.EDITION = ?
 ```
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+The printed result is (original output is compact, formatted here for readability):
+
 ```json
 {
     "id":3,
     // highlight-start
-    "name":"Learning GraphQL",
+    "name":"Learning GraphQL", 
     "edition":3,
     "price":51.00
     // highlight-end
 }
-// 省略其他对象
-```
+// Other objects omitted
+``` 
 
 :::info
-`allScalarFields()`只会加载非关联字段，示例中可以看到查询了`id`, `name`, `edition`, `price`，但是并没有查询`store`和`authors`这两个关联属性。
+`allScalarFields()` only loads non-associative fields. In the example we can see it queries `id`, `name`, `edition`, `price`, but does not query the associative properties `store` and `authors`. 
 
-抓取关联属性将在[下一篇文档](./association)中介绍。
+Fetching associative properties will be covered in [the next document](./association).
 :::
 
 
-### 负属性(排除不需要的属性)
+### Negative Properties (Exclude Unneeded Properties) 
 
-前面讲过的属性都是正属性，不断新增要查询的字段。但一些场景下，我们只需要排除一些指定字段，其他的字段则都要查询。
+The previously discussed properties are positive properties that incrementally add fields to query. But in some cases, we only need to exclude some specific fields, while querying all other fields.
 
-这时候就可以用负属性去排除不需要的字段。
+This is when negative properties can be used to exclude unneeded fields.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 BookTable book = BookTable.$;
@@ -276,7 +277,7 @@ List<Book> books = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 val books = sqlClient
     .createQuery(Book::class) {
         where(table.edition.eq(3))
@@ -294,41 +295,40 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-`edition(false)`使用参数false，这就是负属性。
+`edition(false)` uses false as a parameter, making it a negative property.
 
-- `allScalarFields()`的属性是`id + name + edition + price`
+-   The properties of `allScalarFields()` are `id + name + edition + price`
 
-- `edition(false)`表示`-edition`
+-   `edition(false)` means `-edition`
 
-所以，最终并在一起，最终被抓取的属性是`id + name + price`
+So in combination, the finally fetched properties are `id + name + price`
 
 :::info
--   对于正属性而言，`edition()`和`edition(true)`等价
--   当大部分属性需要抓取，只有少部分属性不需要抓取时，`allScalarFields`和负属性结合使用会非常有用
+- For positive properties, `edition()` and `edition(true)` are equivalent
+- When most properties need to be fetched and only a few excluded, using `allScalarFields` with negative properties can be very useful
 :::
 
-生成的SQL如下:
+The generated SQL is:
 
 ```sql
-select 
-    tb_1_.ID, 
+select
+    tb_1_.ID,
     tb_1_.NAME, 
-    tb_1_.PRICE   
-from BOOK as tb_1_ 
-where tb_1_.EDITION = ?
+    tb_1_.PRICE    
+from BOOK as tb_1_
+where tb_1_.EDITION = ? 
 ```
 
-打印的结果如下（原输出是紧凑的，为了方便阅读，这里进行了格式化）:
+The printed result is (original output is compact, formatted here for readability):
 
-```json
+```json  
 [
     {
         "id":3,
         "name":"Learning GraphQL",
         "price":51.00
-        // 这里没有`edition`
+        // `edition` is not here        
     },
-    ...省略其他对象...
+    ...Other objects omitted...
 ]
 ```
-

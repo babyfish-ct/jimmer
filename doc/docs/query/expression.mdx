@@ -1,14 +1,14 @@
 ---
 sidebar_position: 8
-title: Common expressions
+title: DSL Expressions
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 字面量表达式
+## Literal Expressions
 
-先来看个例子 *（这个查询没有实际业务意义，仅为演示）*
+Let's first look at an example *(this query has no real business logic, just for demo)*:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -56,35 +56,37 @@ val tuples = sqlClient
 </TabItem>
 </Tabs>
 
-生成的SQL如下
+The generated SQL is:
+
 ```sql
-select ?, ?, ?, ?, null from BOOK as tb_1_
+select ?, ?, ?, ?, null from BOOK as tb_1_ 
 ```
 
-除了null以外，其余各种类型的字面量都变成了JDBC参数。
+Except for null, literals of other types all become JDBC parameters.  
 
 :::caution
-这段示范中，可以看出，`value()`方法接受了很多种类型的参数。
+As can be seen from this example, the `value()` method accepts many parameter types.
 
-需要注意的是，无论`value()`方法参数类型是什么，都不能为null，否则将导致异常。
+Note that no matter what the `value()` parameter type is, it cannot be null, otherwise exceptions would be thrown.
 
-要为null创建字面量表达式，必须使用`nullValue()`方法，该方法需要指定表达式类型。
+To create literal expressions for null, the `nullValue()` method must be used which requires the expression type to be specified. 
 :::
 
 :::info
-对于Java代码，我们使用了类型引导方法：
-1. Expression.string()，针对字符串类型。
-2. Expression.numeric()，针对数字类型。
-3. Expression.comparable()，针对可比较类型，即继承自java.lang.Comparable的类型。
-4. Expression.any()，其它类型。
+For Java code, type-guided methods are used:
 
-kotlin没有这个问题，其API是统一的。
+1.  Expression.string(), for string type.
+2.  Expression.numeric(), for numeric types. 
+3.  Expression.comparable(), for comparable types, i.e. types extending java.lang.Comparable.
+4.  Expression.any(), for other types.
+
+Kotlin does not have this issue, its API is unified.
 :::
 
 :::tip
-大部分情况下，开发人员无需手动创建字面量表达式。
+In most cases, developers do not need to manually create literal expressions. 
 
-以下文即将讨论的相等判断为例，下面这种相对繁琐的写法
+Take equality check in examples below for instance, the relatively tedious syntax:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -109,33 +111,34 @@ where(
 </TabItem>
 </Tabs>
 
-可以用更便捷的写法代替
+can be replaced with a more convenient form:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 where(book.name().eq("Java in Action"));
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```kotlin
 where(table.name eq "Java in Action")
 ```
 
 </TabItem>
 </Tabs>
 
-不难发现，其它API会提供重载版本，以避免让开发人员亲自构建字面量表达式。
+It's easy to see other APIs provide overloaded versions to avoid making developers create literal expressions manually.
 
-但是，这无法100%做到。极少数情况下，仍然需要开发人员亲自构建字面量表达式。
+But this can't cover 100% cases. In very rare cases, developers still need to create literal expressions manually.
 :::
 
-## 常量表达式
+## Constant Expressions
 
-常量表达式和字面量表达式高度类似，先看例子 *（这个查询没有实际业务意义，仅为演示）*
+Constant expressions are highly similar to literal expressions, let's look at an example *(this query has no real business logic, just for demo)*:
+
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -149,7 +152,7 @@ List<Integer> constants = sqlClient
         // highlight-next-line
         Expression.constant(1)
     )
-    .execute();
+    .execute(); 
 ```
 
 </TabItem>
@@ -169,36 +172,37 @@ val constants = sqlClient
 </TabItem>
 </Tabs>
 
-生成的SQL如下
+The generated SQL is:
 
-```sql
-select 
+```sql 
+select
     /* highlight-next-line */
-    1 
+    1
 from BOOK as tb_1_
 ```
 
-不难看出，和字面量表达式总是使用JDBC参数不同，常量表达式直接把值硬编码进SQL语句。
+Unlike literal expressions that always use JDBC parameters, constant expressions directly hardcode the value into the SQL.
 
-为了杜绝注入方式攻击的问题，常量表达式只支持数字类型，这是一个硬性限制。
+To prevent SQL injection attacks, constant expressions only support numeric types, this is a hard constraint.
 
 :::info
-虽然有常量表达式只支持数字类型这个硬性限制，不用担心注入方式攻击问题，但实际项目仍需要严格限制其使用。
+Although constant expressions have this hard constraint of only supporting numeric types to prevent SQL injection, they should still be strictly limited in real projects.  
 
-常量表达式之所以存在的唯一理由：某些数据库支持函数索引，如果定义函数索引的SQL表达式内部存在数字常量，这时，为了匹配这样的函数索引，常量表达式会非常有用。
+The only reason constant expressions exist is that some databases support function-based indexes. Constant expressions can be useful if the SQL expressions defining such function indexes contain numeric constants.
 
-如果你的项目没有这种场景，请永远不要使用常量表达式，而应该全部使用字面量表达式。
+If your project does not have this scenario, never use constant expressions. Always use literal expressions.
 
-错误地使用常量表达式会带来严重的后果。错误地把善变的数字类型参数作为常量表达式植入SQL，将会破坏SQL字符串的稳定性，最终导致数据库内部执行计划缓存命中率极低，影响性能。
+Incorrect use of constant expressions can have serious consequences. Erroneously planting mutable numeric parameters as constant expressions into SQL will break the stability of the SQL string, eventually leading to extremely low hit rates of execution plan cache in the database, impacting performance.
 :::
 
-## 比较
+## Comparison
 
-1.  等于
+1.  Equals
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     where(book.name().eq("SQL in Action"));
     ```
 
@@ -212,7 +216,7 @@ from BOOK as tb_1_
     </TabItem>
     </Tabs>
 
-2. 不等
+2.  Not equals
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -231,7 +235,7 @@ from BOOK as tb_1_
     </TabItem>
     </Tabs>
 
-3. 大于
+3.  Greater than  
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -243,14 +247,14 @@ from BOOK as tb_1_
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin
+    ```kotlin 
     where(table.price gt BigDecimal(50))
     ```
 
     </TabItem>
     </Tabs>
 
-4. 大于或等于
+4.  Greater than or equals
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -269,7 +273,7 @@ from BOOK as tb_1_
     </TabItem>
     </Tabs>
 
-5. 小于
+5.  Less than
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -281,14 +285,14 @@ from BOOK as tb_1_
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
 
-    ```kotlin
+    ```kotlin 
     where(table.price lt BigDecimal(50))
     ```
 
     </TabItem>
     </Tabs>
 
-6. 小于或等于
+6.  Less than or equals
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -312,10 +316,10 @@ from BOOK as tb_1_
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
-    ```java
+    ```java 
     where(
         book.price().between(
-            new BigDecimal(40), 
+            new BigDecimal(40),
             new BigDecimal(50)
         )
     );
@@ -324,10 +328,10 @@ from BOOK as tb_1_
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```java
+    ```kotlin
     where(
         table.price.between(
-            BigDecimal(40), 
+            BigDecimal(40),
             BigDecimal(50)
         )
     )
@@ -344,8 +348,8 @@ from BOOK as tb_1_
     ```java
     where(
         book.price().notBetween(
-            new BigDecimal(40), 
-            new BigDecimal(50)
+            new BigDecimal(40),
+            new BigDecimal(50)  
         )
     );
     ```
@@ -353,10 +357,10 @@ from BOOK as tb_1_
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```java
+    ```kotlin 
     where(
         table.price.notBetween(
-            BigDecimal(40), 
+            BigDecimal(40),
             BigDecimal(50)
         )
     )
@@ -365,11 +369,11 @@ from BOOK as tb_1_
     </TabItem>
     </Tabs>
 
-## 模糊匹配
+## Fuzzy Matching
 
-### 大小写
+### Case Sensitivity
 
-1.  like: 大小写敏感
+1.  `like`: case sensitive
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -388,13 +392,13 @@ from BOOK as tb_1_
     </TabItem>
     </Tabs>
 
-    最终生成的SQL条件
+    The generated SQL condition is:
     ```sql
     where tb_1_.NAME like ?
     ```
-    相应的JDBC参数: `%Ab%`
+    The corresponding JDBC parameter is: `%Ab%`
 
-2.  ilike: 大小写不敏感
+2.  `ilike`: case insensitive
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -407,42 +411,42 @@ from BOOK as tb_1_
     <TabItem value="kotlin" label="Kotlin">
 
     ```kotlin
-    where(table.name ilike "Ab")
+    where(table.name ilike "Ab") 
     ```
 
     </TabItem>
     </Tabs>
 
-    最终生成的SQL条件
+    The generated SQL condition is:
     ```sql
-    where lower(tb_1_.NAME) like ?
+    where lower(tb_1_.NAME) like ? 
     ```
-    相应的JDBC参数: `%ab%`
+    The corresponding JDBC parameter is: `%ab%` 
 
-### 匹配模式
+### Match Modes
 
-1.  `LikeMode.ANYWHERE`（不指定时的默认行为）：出现在任何位置
+1.  `LikeMode.ANYWHERE` (default behavior without specifying): appears anywhere
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
     ```java
-    where(book.name().like("Ab", LikeMode.ANYWHERE));
+    where(book.name().like("Ab", LikeMode.ANYWHERE)); 
     ```
 
     </TabItem>
     <TabItem value="kotlin" label="Kotlin">
     
-    ```kotlin
+    ```kotlin 
     where(table.name.like("Ab", LikeMode.ANYWHERE))
     ```
 
     </TabItem>
     </Tabs>
 
-    相应的JDBC参数: `'%Ab%'`
+    The corresponding JDBC parameter is: `%Ab%`
 
-2.  `LikeMode.START`：作为开头
+2.  `LikeMode.START`: as prefix 
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -455,20 +459,20 @@ from BOOK as tb_1_
     <TabItem value="kotlin" label="Kotlin">
     
     ```kotlin
-    where(table.name.like("Ab", LikeMode.START))
+    where(table.name.like("Ab", LikeMode.START)) 
     ```
 
     </TabItem>
     </Tabs>
 
-    相应的JDBC参数: `'Ab%'`
+    The corresponding JDBC parameter is: `Ab%`
 
-3.  `LikeMode.END`：作为结尾
+3.  `LikeMode.END`: as suffix
     
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
 
-    ```java
+    ```java 
     where(book.name().like("Ab", LikeMode.END));
     ```
 
@@ -482,9 +486,9 @@ from BOOK as tb_1_
     </TabItem>
     </Tabs>
 
-    相应的JDBC参数: `'%Ab'`
-
-4. `LikeMode.EXACT`：精确匹配
+    The corresponding JDBC parameter is: `%Ab`
+    
+4.  `LikeMode.EXACT`: exact match
     
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -497,20 +501,20 @@ from BOOK as tb_1_
     <TabItem value="kotlin" label="Kotlin">
     
     ```kotlin
-    where(table.name.like("Ab", LikeMode.EXACT))
+    where(table.name.like("Ab", LikeMode.EXACT)) 
     ```
 
     </TabItem>
     </Tabs>
 
-    相应的JDBC参数: `'Ab'`
+    The corresponding JDBC parameter is: `Ab`
 
-## 空判断
+## Null Check  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java  
 where(book.store().isNull());
 ```
 
@@ -525,7 +529,7 @@ where(table.store.isNull())
 </Tabs>
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 where(book.store().isNotNull());
@@ -534,25 +538,25 @@ where(book.store().isNotNull());
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 where(table.store.isNotNull())
 ```
 
 </TabItem>
 </Tabs>
 
-## IN LIST
+## IN LIST  
 
-### 单列
+### Single Column
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 where(
     book.name().in(
         Arrays.asList(
-            "SQL in Action",
+            "SQL in Action",  
             "Java in Action"
         )
     )
@@ -566,7 +570,7 @@ where(
 where(
     table.name valueIn listOf(
         "SQL in Action",
-        "Java in Action"
+        "Java in Action" 
     )
 )
 ```
@@ -574,26 +578,27 @@ where(
 </TabItem>
 </Tabs>
 
-生成的SQL条件
+The generated SQL condition is: 
+
 ```sql
-where tb_1_.NAME in (?, ?)
+where tb_1_.NAME in (?, ?)  
 ```
 
-### 多列
+### Multiple Columns
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 where(
     Expression.tuple(
         book.name(),
-        book.edition()
+        book.edition()  
     ).in(
         Arrays.asList(
             new Tuple2<>("SQL in Action", 1),
             new Tuple2<>("SQL in Action", 2),
-            new Tuple2<>("Java in Action", 1),
+            new Tuple2<>("Java in Action", 1), 
             new Tuple2<>("Java in Action", 2)
         )
     )
@@ -603,10 +608,10 @@ where(
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 where(
     tuple(
-        table.name, 
+        table.name,
         table.edition
     ) valueIn listOf(
         Tuple2("SQL in Action", 1),
@@ -620,31 +625,32 @@ where(
 </TabItem>
 </Tabs>
 
-生成的SQL条件
-```sql
+The generated SQL condition is:
+
+```sql 
 where (tb_1_.NAME, tb_1_.EDITION) in (
-    (?, ?), (?, ?), (?, ?), (?, ?)
+    (?, ?), (?, ?), (?, ?), (?, ?) 
 )
 ```
 
 :::note
-除了和数据集合配合使用外，`in`还可以与子查询配合一起使用。
+Besides used with collections, `in` can also be used with subqueries.  
 
-这部分内容会在[子查询](../query/sub-query)相关文档中详细介绍，本文不做重复介绍。
+This will be covered in detail in docs about [subqueries](../query/sub-query).
 :::
 
-## 与、或、非
+## AND, OR, NOT 
 
-### 与
+### AND
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
-```java
+```java 
 where(
     Predicate.and(
         book.name().like("Ab"),
-        book.price().ge(new BigDecimal(40)),
+        book.price().ge(new BigDecimal(40)), 
         book.price().lt(new BigDecimal(60))
     )
 );
@@ -660,18 +666,18 @@ where(
         table.price ge BigDecimal(40),
         table.price lt BigDecimal(60)
     )
-)
+) 
 ```
 
 </TabItem>
 </Tabs>
 
 :::note
-注意，如果逻辑与表达式直接作为where方法的参数，以下两种等价写法更值得推荐.
+Note that when the logical AND expression is directly used as the where parameter, the following equivalent forms are more recommended:  
 :::
 
-1.  使用where方法的变参版本
-    
+1.  Use varargs version of where method
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
@@ -689,7 +695,7 @@ where(
     ```kotlin
     where(
         table.name like "Ab",
-        table.price ge BigDecimal(40),
+        table.price ge BigDecimal(40), 
         table.price lt BigDecimal(60)
     )
     ```
@@ -697,12 +703,12 @@ where(
     </TabItem>
     </Tabs>
 
-2.  多次调用where方法
-    
+2.  Call where multiple times
+
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
-    ```java
+    ```java 
     q.where(book.name().like("Ab"));
     q.where(book.price().ge(new BigDecimal(40)));
     q.where(book.price().lt(new BigDecimal(60)));
@@ -713,16 +719,16 @@ where(
 
     ```kotlin
     where(table.name like "Ab")
-    where(table.price ge BigDecimal(40))
+    where(table.price ge BigDecimal(40)) 
     where(table.price lt BigDecimal(60))
     ```
 
     </TabItem>
     </Tabs>
 
-所以，直接使用`and`的写法在实际项目中应该不常见。
+So directly using `and` would not be common in real projects.
 
-### 或
+### OR
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -755,14 +761,14 @@ where(
 </TabItem>
 </Tabs>
 
-### 非
+### NOT
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
 where(
-    book.name().like("Ab").not()
+    book.name().like("Ab").not()  
 );
 ```
 
@@ -778,12 +784,13 @@ where(
 </TabItem>
 </Tabs>
 
-并不总是需要调用`not()`函数。很多时候有快捷方式可用，比如：
-1. `.eq(value).not()`可以简写成`.ne(value)`
-2. `.isNull().not()`可以简写成`.isNotNull(value)`
-3. `.exists().not()`可以简写成`.notExists()` *(exists会在[子查询](../query/sub-query)中介绍，本文不会介绍)*
+It's not always necessary to call the `not()` function. Often there are shortcuts available, such as:
 
-甚至，即便开发人员明确使用了not()，最终SQL也不一定会出现not，比如
+1.  `.eq(value).not()` can be simplified to `.ne(value)`
+2.  `.isNull().not()` can be simplified to `.isNotNull(value)`  
+3.  `.exists().not()` can be simplified to `.notExists()` *(exists will be introduced in [subqueries](../query/sub-query))*
+
+Even when developers explicitly use `not()`, the final SQL may not contain `NOT`. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -797,24 +804,26 @@ where(
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```java
+```kotlin
 where(
-    not(book.price ge BigDecimal(40))
+    not(book.price ge BigDecimal(40)) 
 )
 ```
 
 </TabItem>
 </Tabs>
 
-实际生成的SQL却是
+The actual generated SQL is:
+
 ```sql
 where tb_1_1.PRICE < ?
 ```
-jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻辑和你想要的逻辑等价。
 
-## 数学运算
+Jimmer-sql tries to avoid directly using `NOT` in SQL, but the final logic is equivalent to what you want.
 
-1.  &#43;
+## Math Operations
+
+1.  +
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -833,7 +842,7 @@ jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻�
     </TabItem>
     </Tabs>
 
-2.  &#45;
+2.  -
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -852,13 +861,13 @@ jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻�
     </TabItem>
     </Tabs>
 
-3.  &#42;
+3.  *
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
     ```java
-    select(book.price().times(BigDecimal.TWO));
+    select(book.price().times(BigDecimal.TWO)); 
     ```
 
     </TabItem>
@@ -895,7 +904,7 @@ jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻�
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
     
-    ```java
+    ```java 
     select(book.price().rem(BigDecimal.TWO));
     ```
 
@@ -909,7 +918,7 @@ jimmer-sql尽量避免在SQL中直接使用not，但无论如何，最终SQL逻�
     </TabItem>
     </Tabs>
 
-## 聚合函数
+## Aggregate Functions
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -924,7 +933,7 @@ List<
         BigDecimal,
         BigDecimal,
         BigDecimal,
-        BigDecimal
+        BigDecimal  
     >
 > tuples = sqlClient
     .createQuery(book)
@@ -940,7 +949,7 @@ List<
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val tuples = sqlClient
@@ -960,37 +969,37 @@ val tuples = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The final generated SQL is:  
 
 ```sql
-select 
-    count(tb_1_.ID), 
-    count(distinct tb_1_.ID), 
-    sum(tb_1_.PRICE), 
-    min(tb_1_.PRICE), 
-    max(tb_1_.PRICE), 
-    avg(tb_1_.PRICE) 
-from BOOK as tb_1_
+select
+    count(tb_1_.ID),
+    count(distinct tb_1_.ID),
+    sum(tb_1_.PRICE),
+    min(tb_1_.PRICE),
+    max(tb_1_.PRICE),
+    avg(tb_1_.PRICE)
+from BOOK as tb_1_ 
 ```
 
 ## Coalesce
 
-Coalesce语句指定一系列表达式，返回第一个非null值。
+The Coalesce statement specifies a list of expressions and returns the first non-null value.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
-```java
+```java  
 BookStoreTable store = BookStoreTable.$;
 
 List<String> results = sqlClient
-    .createQuery(store)
+    .createQuery(store) 
     .select(
-        store.website() // 1
+        store.website() ❶
             // highlight-next-line
             .coalesceBuilder()
-            .or(store.name()) // 2
-            .or("Default Value") // 3
+            .or(store.name()) ❷
+            .or("Default Value") ❸
             .build()
     )
     .execute();
@@ -999,14 +1008,14 @@ List<String> results = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 var results = sqlClient
     .createQuery(BookStore::class) {
         select(
             table.website
                 // highlight-next-line
-                .coalesce() // 1
-                .or(table.name) // 2
+                .coalesce() ❶
+                .or(table.name) ❷
                 .end()
         )
     }
@@ -1017,49 +1026,50 @@ var results = sqlClient
 
 :::tip
 
-在这个例子中，kotlin 代码和 java 代码是不同的。 kotlin 代码中没有表达式“3”。
+In this example, the Kotlin code is different from the Java code. In Kotlin there is no expression ❸.  
 
-Kotlin-API 引入了 kotlin 对 SQL 的 null-safety，`table.name` 是一个非 null 字段，所以 kotlin 强制我们编写 `end()` 来完成这个表达式。
+The Kotlin API introduces null-safety for SQL, `table.name` is a non-null field, so Kotlin forces us to write `end()` to complete the expression.  
 
-这意味着java代码中的表达式 `3`不会被使用。
+This means the expression ❸ in Java code will not be used.
+
 :::
 
-最终生成的SQL如下
+The generated SQL is: 
 
 <Tabs groupId="language">
-<TabItem value="java" label="SQL for java">
+<TabItem value="java" label="SQL for Java">  
 
 ```sql
-select 
+select
     /* highlight-next-line */
     coalesce(
-        tb_1_.WEBSITE, 
-        tb_1_.NAME, 
-        ?
-    ) 
-from BOOK_STORE as tb_1_
+        tb_1_.WEBSITE,
+        tb_1_.NAME,
+        ?  
+    )
+from BOOK_STORE as tb_1_ 
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="SQL for kotlin">
+<TabItem value="kotlin" label="SQL for Kotlin">
 
-```sql
-select 
+```sql  
+select
     /* highlight-next-line */
     coalesce(
-        tb_1_.WEBSITE, 
-        tb_1_.NAME
-    ) 
+        tb_1_.WEBSITE,
+        tb_1_.NAME 
+    )
 from BOOK_STORE as tb_1_
 ```
 
 </TabItem>
 </Tabs>
 
-特别地，如果SQL的coalesce函数只有两个参数，即上述Java代码中`or()`方法只会被调用一次时，有一个快捷写法：
+Specifically, if the SQL coalesce function has only two parameters, i.e. `or()` is called only once in the Java code above, there is a shortcut:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 BookStoreTable store = BookStoreTable.$;
@@ -1068,7 +1078,7 @@ List<String> results = sqlClient
     .createQuery(store)
     .select(
         // highlight-next-line
-        store.website().coalesce(store.name())
+        store.website().coalesce(store.name()) 
     )
     .execute();
 ```
@@ -1076,7 +1086,7 @@ List<String> results = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin  
 var results = sqlClient
     .createQuery(BookStore::class) {
         select(
@@ -1084,34 +1094,33 @@ var results = sqlClient
             table.website.coalesce(table.name)
         )
     }
-    .execute()
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
 ```sql
-select 
+select
     /* highlight-next-line */
-    coalesce(tb_1_.WEBSITE, tb_1_.NAME) 
-from BOOK_STORE as tb_1_
+    coalesce(tb_1_.WEBSITE, tb_1_.NAME)
+from BOOK_STORE as tb_1_ 
 ```
 
-其实，这种写法才是最常见的。
+This form is actually the most common.
 
 ## Concat
 
-Contact表达式用于字符串拼接。
+The Contact expression concatenates strings. 
 
-这个例子以空格作为连接符，把作者的firstName和lastName拼起来
+This example concatenates firstName and lastName of authors with a space as separator:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-AuthorTable author = AuthorTable.$;
+AuthorTable author = AuthorTable.$;  
 
 List<String> results = sqlClient
     .createQuery(author)
@@ -1120,7 +1129,7 @@ List<String> results = sqlClient
             .firstName()
             // highlight-next-line
             .concat(
-                Expression.string().value(" "),
+                Expression.string().value(" "), 
                 author.lastName()
             )
     )
@@ -1130,7 +1139,7 @@ List<String> results = sqlClient
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin
+```kotlin 
 var fullNames = sqlClient
     .createQuery(Author::class) {
         select(
@@ -1148,31 +1157,31 @@ var fullNames = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL
+The generated SQL is:
 
 ```sql
-select 
+select
     /* highlight-next-line */
     concat(
-        tb_1_.FIRST_NAME, 
-        ?, 
-        tb_1_.LAST_NAME
-    ) 
+        tb_1_.FIRST_NAME,
+        ?,
+        tb_1_.LAST_NAME  
+    )
 from AUTHOR as tb_1_
 ```
 
-## Case
+## Case 
 
-case表达式分为两种，简单的case和普通的case
+There are two types of case expressions, simple case and searched case.
 
-### 简单的case
+### Simple Case
 
-简单的case语句，需要在语句开头处指定一个表达式，后续每一个判断分支指定一个期望值，检查指定的表达式是否和某个期望值匹配。
+For simple case, an expression is specified at the beginning. Each WHEN branch specifies an expected value to check if the expression matches that value.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 BookTable book = BookTable.$;
 
 List<String> results = sqlClient
@@ -1189,7 +1198,7 @@ List<String> results = sqlClient
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin"> 
 
 ```kotlin
 val results = sqlClient
@@ -1208,25 +1217,25 @@ val results = sqlClient
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is:
 
-```sql
-select 
+```sql  
+select
     /* highlight-next-line */
-    case tb_1_.NAME 
-        when ? then ? 
-        when ? then ? 
-        else ? 
-    end 
-from BOOK as tb_1_
+    case tb_1_.NAME
+        when ? then ?
+        when ? then ?
+        else ?
+    end
+from BOOK as tb_1_ 
 ```
 
-### 普通的case
+### Searched Case
 
-普通的case语句，语句开头处不需要指定任何参数，但后续每一个判断分支都可以指定一个任意复杂度的逻辑判断表达式，检查是否有分支的逻辑判断成立。
+For searched case, no expression is specified at the beginning. Each WHEN branch can specify an arbitrary complex conditional expression to check if any branch logic evaluates to true.
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java
 BookTable book = BookTable.$;
@@ -1235,15 +1244,15 @@ List<String> results = sqlClient
     .createQuery(book)
     .select(
         Expression.string()
-            // highlight-next-line
+            // highlight-next-line 
             .caseBuilder()
             .when(
-                book.price().lt(new BigDecimal(30)),
+                book.price().lt(new BigDecimal(30)), 
                 "Cheap"
             )
             .when(
                 book.price().gt(new BigDecimal(70)),
-                "Expensive"
+                "Expensive"  
             )
             .otherwise("Appropriate")
     )
@@ -1264,20 +1273,21 @@ val results = sqlClient
                 .otherwise("Appropriate")
         )
     }
-    .execute()
+    .execute() 
 ```
 
 </TabItem>
 </Tabs>
 
-最终生成的SQL如下
+The generated SQL is: 
+
 ```sql
-select 
+select
     /* highlight-next-line */
-    case 
-        when tb_1_.PRICE < ? then ? 
-        when tb_1_.PRICE > ? then ? 
-        else ? 
-    end 
+    case
+        when tb_1_.PRICE < ? then ?
+        when tb_1_.PRICE > ? then ?
+        else ?
+    end
 from BOOK as tb_1_
 ```

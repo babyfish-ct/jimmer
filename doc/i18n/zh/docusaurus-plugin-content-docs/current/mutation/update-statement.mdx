@@ -115,9 +115,9 @@ println("Affected row count: $affectedRowCount")
 </Tabs>
 
 异常信息如下
-:::caution
+```
 Table joins for update statement is forbidden by the current dialect, but there is a join `'Author.books'`.
-:::
+```
 
 当使用MySql或Postgres时，update语句可以使用JOIN语句。
 
@@ -340,11 +340,11 @@ and
 
 连接路径`author.books().store()`有两级，`books()`是第1级，`store()`是第2级。
 
-1. 第一级`books()`涉及两张表
+1.  第一级`books()`涉及两张表
     - ❶ 处的`BOOK_AUTHOR_MAPPING`表，但这里缺少连接条件，连接条件在❹处补上。
     - ❷ 处的`BOOK`表
 
-2. 第二级`store()`涉及一张表
+2.  第二级`store()`涉及一张表
     - ❹ `处的`BOOK_STORE`表
 
 可见，在Postgres的update语句中，直接和主表相关的表连接不能使用`join` + `on`的写法，必须等价变换为`from` + `where`的写法。

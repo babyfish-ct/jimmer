@@ -1,26 +1,26 @@
 ---
 sidebar_position: 1
-title: Complex calculation
+title: Complex Calculation
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## @Transient注解
+## @Transient Annotation
 
-Jimmer实体可以用`@org.babyfish.jimmer.sql.Transient`定义一种和数据库表结构无关的属性。
+Jimmer entities can use `@org.babyfish.jimmer.sql.Transient` to define a property unrelated to the database table structure.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStore.java"
+```java title="BookStore.java" 
 package com.example.model;
 
 import org.babyfish.jimmer.sql.*;
 
 public interface BookStore {
     
-    ...省略其他属性...
+    ...Omit other properties...
 
     @Transient
     Object customData();
@@ -37,7 +37,7 @@ import org.babyfish.jimmer.sql.*
 
 interface BookStore {
 
-    ...省略其他属性...
+    ...Omit other properties...
 
     @Transient
     val customData: Any?
@@ -47,40 +47,40 @@ interface BookStore {
 </TabItem>
 </Tabs>
 
-这里，`@Tranisent`注解本身没有任何参数被指定，则当前数据只是一个用户自定义数据，和ORM的任何行为都没关系。
+Here, no parameters are specified for the `@Tranisent` annotation, so the current data is just custom user data unrelated to any ORM behavior.
 
 :::caution
-只有当`@Transient`注解的参数被指定时，当前属性才是复杂计算属性。
+Only when parameters are specified for the `@Transient` annotation will the current property be a complex calculation property.
 :::
 
-那么，`@Transient`注解的参数是什么？
+So what are the parameters of the `@Transient` annotation?
 
-Jimmer为复杂计算属性提供了接口:
+Jimmer provides an interface for complex calculation properties:
 
 -   Java: `org.babyfish.jimmer.sql.TransientResolver<ID, V>`
 -   Kotlin: `org.babyfish.jimmer.sql.kt.KTransientResolver<ID, V>`
 
-该接口让用户自定义数据计算过程。
+This interface allows users to customize the data calculation process.
 
-用户开发一个类实现此接口，并让让此类受到Spring托管。
+Users develop a class that implements this interface and have it managed by Spring.
 
-该类如何实现会在后文详细讲解，但这里为了便于表达，先假设用户实现此接口的类的是`CustomerDataResolver`，`@Transient`注解的参数应该如此书写
+How to implement this class will be explained in detail later, but for the purpose of expression here, let's assume the user class that implements this interface is `CustomerDataResolver`. The `@Transient` annotation parameters should be written as:
 
--   如果项目是单工程的，实体类能引用到这个类，那么`@Transient(CustomerDataResolver.class)`或`@Transient(CustomerDataResolver::class)`
+-   If the project is a single project where entity classes can reference this class, then `@Transient(CustomerDataResolver.class)` or `@Transient(CustomerDataResolver::class)`.
 
--   如果项目是多工程的，实体类不能引用到这个类，那么`@Transient(ref = "customerDataResolver")`。
+-   If the project has multiple subprojects where entity classes cannot reference this class, then `@Transient(ref = "customerDataResolver")`.
 
-    其中，字符串"customerDataResolver"表示Spring上下文中该类对象的名称。
+    Where the string "customerDataResolver" represents the name of this object in the Spring context.
 
-## 标量计算：`BookStore.avgPrice`
+## Scalar Calculation: `BookStore.avgPrice` 
 
-本小节中，我们会为`BookStore`添加一个计算属性`BookStore.avgPrice`，其类型为`java.math.BigDecimal`。
+In this section, we will add a calculation property `BookStore.avgPrice` to `BookStore` with the type `java.math.BigDecimal`.
 
-### 定义`avgPrice`的Resolver
+### Define Resolver for `avgPrice`
 
-每一个复杂计算属性，都对应一个`TransientResolver`实现类。
+Each complex calculation property corresponds to a `TransientResolver` implementation class.
 
-在定义计算属性`BookStore.avgPrice`之前，我们先定义`BookStoreAvgPriceResolver`
+Before defining the calculation property `BookStore.avgPrice`, let's first define `BookStoreAvgPriceResolver`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -92,17 +92,17 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component 
 public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
     
     @Override
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
-        稍后实现
+        To be implemented later
     }
 
     @Override
     public BigDecimal getDefaultValue() {
-        return BigDecimal.ZERO;
+        return BigDecimal.ZERO; 
     }
 }
 ```
@@ -110,7 +110,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreAvgPriceResolver.kt"
+```kotlin title="BookStoreAvgPriceResolver.kt" 
 package com.example.business.resolver
 
 import org.babyfish.jimmer.sql.*
@@ -121,10 +121,10 @@ import org.springframework.stereotype.Component
 class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
 
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> {
-        稍后实现
+        To be implemented later
     }
 
-    override fun getDefaultValue(): BigDecimal =
+    override fun getDefaultValue(): BigDecimal = 
         BigDecimal.ZERO
 }
 ```
@@ -132,45 +132,45 @@ class BookStoreAvgPriceResolver : KTransientResolver<Long, BigDecimal> {
 </TabItem>
 </Tabs>
 
--   基接口`TransientResolver/KTransientResolver`有两个范型参数
+- The base interface `TransientResolver/KTransientResolver` has two generic parameters:
 
-    -   第1个范型参数：计算属性所属实体的id属性的类型
+    -   The 1st generic parameter: The type of the id property of the entity to which the calculation property belongs. 
 
-        本例中，即将被定义的`BookStore.avgPrice`所属于实体为`BookStore`，其id类型为`long`，所以这里范型参数为`Long`
+        In this example, `BookStore.avgPrice` to be defined belongs to the `BookStore` entity whose id type is `long`, so the generic parameter here is `Long`.
 
-    -   第2个范型参数：计算属性所属返回数据的类型
+    -   The 2nd generic parameter: The return data type of the calculation property.  
 
-        本例中，即将被定义的`BookStore.avgPrice`的类型为`BigDecmial`，所以这里范型参数为`BigDecimal`
-
--   `resolve`是基接口的一个必须实现的方法，用户靠此方法完成计算。
+        In this example, the type of `BookStore.avgPrice` to be defined is `BigDecimal`, so the generic parameter here is `BigDecimal`.
+        
+-   `resolve` is a method of the base interface that must be implemented for users to complete calculation through it.
 
     :::info
-    `resolve`方法的参数类型为`Collection<Long>`，而非`Long`；其返回类型为`Map<Long, BigDecimal>`。
+    The parameter type of the `resolve` method is `Collection<Long>` instead of `Long`; its return type is `Map<Long, BigDecimal>`.
 
-    这非常重要，这表示`BookStore.avgPrice`并非针对`BookStore.id`一个一个计算，而是针对多个`BookStore.id`做一次性批量化计算。
+    This is very important. It means that `BookStore.avgPrice` is not calculated one by one against `BookStore.id`, but is calculated in batches against multiple `BookStore.id` at a time.
     
-    这样设计的目的是为了防止因计算属性导致[`N + 1`](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)查询问题。
+    This is designed to prevent the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) caused by calculation properties.
 
-    这个设计和GraphQL领域的[MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html)几乎一样，这是所有类似领域标准的编程模型。
+    This design is almost the same as [MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html) in the GraphQL field, which is the standard programming model for all similar domains.
     :::
+    
+-   `getDefaultValue` is an optional method of the base interface to implement.
 
--   `getDefaultValue`是基接口的一个可选实现的方法。
-
-    对于`resolve`方法而言，如果返回的Map的长度小于`ids`参数传入的集合长度，表示部分数据没有计算结果，其中每一个数据对应的计算值将会被视为null。
-
-    但是，如果计算属性（本例子中的`BookStore.avgPrice`）非null，就会导致问题，用户可以通过覆盖`getDefaultValue()`返回非null的默认值解决此问题。
+    For the `resolve` method, if the length of the returned Map is less than the length of the `ids` parameter collection passed in, it means some data does not have calculation results. The calculation value corresponding to each such data is considered null.
+    
+    However, if the calculation property (`BookStore.avgPrice` in this example) is non-null, it will cause problems. Users can override `getDefaultValue()` to return a non-null default value to resolve this issue.
 
     :::caution
-    如果计算属性不允许为空，对其`TransientResolver`实现类而言
+    For calculation properties that do not allow null, `TransientResolver` must:
     
-    - 要么保证`resolve`方法返回的Map的keySet包含所有参数
-    - 要么覆盖`getDefaultValue`并返回非null的默认值
+    - Either ensure the keySet of the Map returned by the `resolve` method contains all parameters
+    - Or override `getDefaultValue` to return a non-null default value
     :::
 
-### 实现`avgPrice`的Resolver
+### Implement Resolver for `avgPrice`  
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="BookStoreAvgPriceResolver.java"
 package com.example.business.resolver;
@@ -184,27 +184,27 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     private final JSqlClient sqlClient;
 
-    // 构造注入
+    // Constructor injection
     public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
-        this.sqlClient = bookStoreRepository;
+        this.sqlClient = bookStoreRepository; 
     }
     
-    @Override
+    @Override  
     public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
         return Tuple2.toMap(
             sqlClient
-                .createQuery(table)
+                .createQuery(table) 
                 .where(table.store().id().in(storeIds)) ❶
                 .groupBy(table.store().id()) ❷
                 .select(
-                    table.store().id(),
+                    table.store().id(),  
                     table.price().avg() ❸
                 )
                 .execute()
         );
     }
 
-    ...省略其他方法...
+    ...Omit other methods...
 }
 ```
 
@@ -214,13 +214,14 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 ```kotlin title="BookStoreAvgPriceResolver.kt"
 package com.example.business.resolver
 
+import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.kt.*
 import org.springframework.stereotype.Component
 
 @Component
 class BookStoreAvgPriceResolver(
-    // 构造注入
-    private val sqlClient: KSqlClient
+    // Constructor injection
+    private val sqlClient: KSqlClient  
 ) : KTransientResolver<Long, BigDecimal> {
 
     override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
@@ -229,8 +230,8 @@ class BookStoreAvgPriceResolver(
                 where(table.store.id valueIn storeIds) ❶
                 groupBy(table.store.id) ❷
                 select(
-                    table.store.id, 
-                    avg(table.price).asNonNull() ❸
+                    table.store.id,
+                    avg(table.price).asNonNull() ❸ 
                 )
             }
             .execute()
@@ -238,53 +239,37 @@ class BookStoreAvgPriceResolver(
                 it._2
             }
 
-    ...省略其他函数...
+    ...Omit other functions...
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ 过滤`BOOK`表的外键`STORE_ID`，限定查询范围，仅对当前需要计算的书店计算其下书籍的平均价格，而非数据库中所有书店
+-   ❶ Filter the foreign key `STORE_ID` in the `BOOK` table to limit the query scope. Only calculate the average price of books under the bookstores that need calculation at the moment, not all bookstores in the database.
 
--   ❷ 按照`BOOK`表的外键`STORE_ID`分组
+-   ❷ Group by the foreign key `STORE_ID` in the `BOOK` table.
 
--   ❸ 把每组内部的书籍的价格求平均
+-   ❸ Calculate the average of book prices within each group.
 
-    -   `.asTableEx()`: 
+    `avg`: Calculate the average of `Book.price` within the group.
+    
+    :::note
+    In the Kotlin code there is an `asNonNull()`.
+    
+    According to SQL standards, if the aggregate function `avg` is not used with group, its return value can be null without original data. So in Kotlin `avg` is defined to return a nullable type. 
+    
+    However, when the aggregate function `avg` is used with group, it cannot return null. So `asNonNull()` is called to get a non-null expression.
+    :::
         
-        默认情况下，顶级查询不允许通过集合关联（一对多或多对多）进行JOIN；
-    
-        这个`asTableEx()`是开发人员在表明明白自己在干什么，需要这种JOIN。
+### Define `avgPrice`
 
-        :::info
-        请参考[分页安全性](../../../query/dynamic-join/table-ex)以了解更多
-        :::
-
-    -   `.books()`: 
-    
-        当前对象`BookStore`为起点，通过一对多关联属性`BookStore.books`，关联到`Book`对象
-
-    -   `avg`: 
-    
-        对分组内的`Book.price`求平均
-
-        :::note
-        kotlin代码中，有一个`asNonNull()`。
-
-        按照SQL标准，如果聚合函数`avg`不和分组配套使用，在没有原始数据的前提下，其返回值允许为null。所以，kotlin中`avg`被定义成了返回可空类型。
-
-        然而，当聚合函数`avg`和分组集合使用时，聚合函数不可能返回null，所以调用`asNonNull`得到非null的表达式。ß
-        :::
-
-### 定义`avgPrice`
-
-现在，`BookStoreAvgPriceResolver`类已经完善，我们可以为`BookStore`实体添加计算属性`avgPrice`了。
+Now that the `BookStoreAvgPriceResolver` class is complete, we can add the calculation property `avgPrice` to the `BookStore` entity:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStore.java"
+```java title="BookStore.java"  
 package com.example.model;
 
 import com.example.business.resolver.BookStoreAvgPriceResolver; ❶
@@ -293,7 +278,7 @@ import org.babyfish.jimmer.sql.*;
 
 public interface BookStore {
     
-    ...省略其他属性...
+    ...Omit other properties...
 
     @Transient(BookStoreAvgPriceResolver.class) ❷
     BigDecimal avgPrice();
@@ -312,7 +297,7 @@ import org.babyfish.jimmer.sql.*
 
 interface BookStore {
 
-    ...省略其他属性...
+    ...Omit other properties...
 
     @Transient(BookStoreAvgPriceResolver::class) ❷
     val avgPrice: BigDecimal
@@ -322,22 +307,22 @@ interface BookStore {
 </TabItem>
 </Tabs>
 
-1.  如果项目是单工程，这里可以引用`BookStoreAvgPriceResolver`类。
+1.  If it is a single project, the `BookStoreAvgPriceResolver` class can be referenced here.
 
-2.  定义计算属性`BookStore.avgPrice`，并为其注解`@Transient`指定❶处引入的类，告诉Jimmer计算属性的计算规则。
+2.  Define the calculation property `BookStore.avgPrice`, and specify the class introduced at ❶ for its `@Transient` annotation to tell Jimmer the calculation rule for the calculation property.
 
     :::caution
-    如果项目是多工程，代码结构进行了分割，❶处的import语句无效，这时❷处必须写`@Transient(ref = "bookStoreAvgPriceResolver")`。
+    If it is a multi-project where the code structure has been split, the import statement at ❶ is invalid. In this case, ❷ must be `@Transient(ref = "bookStoreAvgPriceResolver")`. 
     
-    即，使用spring上下文中该对象的名称。
+    That is, use the name of this object in the Spring context.
     :::
 
-### 抓取`avgPrice`
+### Fetch `avgPrice`
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 List<BookStore> stores = bookStoreRepository.findAll(
     BookStoreFetcher.$
         .name()
@@ -348,7 +333,7 @@ System.out.println(stores);
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val stores = bookStoreRepository.findAll(
@@ -364,7 +349,7 @@ println(stores)
 </TabItem>
 </Tabs>
 
-打印结果:
+Printed result:
 
 ```json
 [
@@ -383,44 +368,44 @@ println(stores)
 ]
 ```
 
-执行的SQL
+Executed SQL:
 
-```sql
-/* 第一步：查询聚合根对象：即BookStore */
+```sql 
+/* Step 1: Query aggregate root objects, i.e. BookStore */  
 select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_
 
-/* 第二步：为id为1和2的BookStore对象计算`avgPrice`属性 */
+/* Step 2: Calculate `avgPrice` property for BookStore objects with id 1 and 2 */
 select
-    tb_1_.STORE_ID,
+    tb_1_.STORE_ID, 
     /* highlight-next-line */
     avg(tb_1_.PRICE)
-from BOOK tb_1_
+from BOOK tb_1_ 
 where
     /* highlight-next-line */
     tb_1_.STORE_ID in (
-        ? /* 2 */, ? /* 1 */
+        ? /* 2 */, ? /* 1 */  
     )
 group by
-    /* highlight-next-line */
+    /* highlight-next-line */  
     tb_1_.STORE_ID
 ```
 
-## 关联计算：`BookStore.newestBooks`
+## Associative Calculation: `BookStore.newestBooks`
 
-### 明确需求
+### Clarify Requirements
 
-上小节中我们展示了计算属性`BookStore.avgPrice`，很明显，该计算属性是非关联属性。
+In the previous section we demonstrated the calculation property `BookStore.avgPrice`, which is obviously a non-associative property.
 
-本小节中，我们会为`BookStore`添加一个计算属性`BookStore.newestBooks`，其类型为`java.uitl.List<Book>`，很明显这是一个关联属性。
+In this section, we will add a calculation property `BookStore.newestBooks` to `BookStore` with the type `java.util.List<Book>`, which is clearly an associative property.
 
-为了说明这个例子为什么要添加一个计算属性`BookStore.newestBooks`，先看一下原始的关联属性`BookStore.books`的特点。
+To explain why this example needs to add a calculation property `BookStore.newestBooks`, let's first look at the characteristics of the original associative property `BookStore.books`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java
+```java 
 Book store = bookStoreRepository.findNullable(
-    1L,
+    1L,  
     BookStoreFetcher.$
         .name()
         .books(
@@ -445,19 +430,19 @@ val store = bookStoreRepository.findNullable(
             edition()
         }
     }
-)
+)  
 println(store)
 ```
 
 </TabItem>
 </Tabs>
 
-查询结果如下
+The query result is:
 
-```json
+```json 
 {
     "id":1,
-    "name":"O'REILLY",
+    "name":"O'REILLY", 
     "books":[
         {
             "id":6,
@@ -477,7 +462,7 @@ println(store)
         {
             "id":3,
             "name":"Learning GraphQL",
-            "edition":3
+            "edition":3  
         },
         {
             "id":2,
@@ -490,7 +475,7 @@ println(store)
             "edition":1
         },
         {
-            "id":9,
+            "id":9, 
             "name":"Programming TypeScript",
             "edition":3
         },
@@ -508,22 +493,22 @@ println(store)
 }
 ```
 
-我们看到，在原始的`BookStore.books`关联中，书店的书籍中有很多同名的。
+We can see that in the original `BookStore.books` association, there are many books with the same name in the bookstore. 
 
-例如，一共有三本书籍名称为"Effective TypeScript"，只是发行版本`edition`不同而已：3、2、1。
+For example, there are a total of three books named "Effective TypeScript", with different `edition` values: 3, 2, 1.
 
-现在我们期望新建一个靠计算而得的`BookStore.newestBooks`关联属性，它保证返回的书籍集合没有同名问题，每个名称对一的书籍中，只取最高的发行版的，即`edition`最大的。
+Now we want to create a new calculation property `BookStore.newestBooks` through calculation. It ensures that the returned book collection has no duplicate name problem. For each unique book name, only the book with the highest `edition`, i.e. the maximum `edition`, is taken.
 
-### 定义`newestBooks`的Resolver
+### Define Resolver for `newestBooks` 
 
-每一个复杂计算属性，都对应一个`TransientResolver`实现类。
+Each complex calculation property corresponds to a `TransientResolver` implementation class.
 
-在定义计算属性`BookStore.newestBooks`之前，我们先定义`BookStoreNewestBooksResolver`
+Before defining the calculation property `BookStore.newestBooks`, let's first define `BookStoreNewestBooksResolver`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStoreNewestBooksResolver.java"
+```java title="BookStoreNewestBooksResolver.java"  
 package com.example.business.resolver;
 
 import org.babyfish.jimmer.sql.*;
@@ -534,20 +519,19 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     
     @Override
     public Map<Long, List<Long>> resolve(Collection<Long> ids) { ❷
-        稍后实现
+        ...To be implemented later...
     }
 
     @Override
-    public List<Long> getDefaultValue() {
-        Collections.emptyList();
+    public BigDecimal getDefaultValue() {
+        Collections.emptyList(); 
     }
-}
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreNewestBooksResolver.kt"
+```kotlin
 package com.example.business.resolver
 
 import org.babyfish.jimmer.sql.kt.*
@@ -557,10 +541,10 @@ import org.springframework.stereotype.Component
 class BookStoreNewestBooksResolver : KTransientResolver<Long, List<Long>> { ❶
 
     override fun resolve(ids: Collection<Long>): Map<Long, List<Long>> { ❷
-        稍后实现
+        ...To be implemented later...
     }
 
-    override fun getDefaultValue(): List<Long> =
+    override fun getDefaultValue(): BigDecimal =
         emptyList()
 }
 ```
@@ -568,53 +552,53 @@ class BookStoreNewestBooksResolver : KTransientResolver<Long, List<Long>> { ❶
 </TabItem>
 </Tabs>
 
--   ❶ 基接口`TransientResolver/KTransientResolver`有两个范型参数
+-   ❶ The base interface `TransientResolver/KTransientResolver` has two generic parameters:
 
-    -   第1个范型参数：计算属性所属实体的id属性的类型
+    -   The 1st generic parameter: The type of the id property of the entity to which the calculation property belongs.  
 
-        本例中，即将被定义的`BookStore.newestBooks`所属于实体为`BookStore`，其id类型为`long`，所以这里范型参数为`Long`
+        In this example, `BookStore.newestBooks` to be defined belongs to the `BookStore` entity whose id type is `long`, so the generic parameter here is `Long`.
 
-    -   第2个范型参数：计算属性所属返回数据的类型
+    -   The 2nd generic parameter: The return data type of the calculation property. 
 
-        本例中，即将被定义的`BookStore.newestBooks`的类型为`List<Book>`
+        In this example, the type of `BookStore.newestBooks` to be defined is `List<Book>`.
 
-        -   由于`List<Book>`是集合类型，所以这里范型参数包含`List`
+        -   Since it is a collection type, the generic parameter contains `List` here.
 
-        -   `Book`是实体类型，Jimmer约定这里需要将实体类型替换为其id的类型，而`Book.id`是`long`类型
-
-        综上，第2个范型参数为`List<Long>`
-
--   ❷ `resolve`是基接口的一个必须实现的方法，用户靠此方法完成计算。
+        -   `Book` is an entity type. Jimmer stipulates that the entity type here needs to be replaced with its id type, and `Book.id` is of type `long`.
+        
+        In summary, the 2nd generic parameter is `List<Long>`.
+        
+-   ❷ `resolve` is a method of the base interface that must be implemented for users to complete calculation through it.
 
     :::info
-    `resolve`方法的参数类型为`Collection<Long>`，而非`Long`；其返回类型为`Map<Long, List<Long>>`。
+    The parameter type of the `resolve` method is `Collection<Long>` instead of `Long`; its return type is `Map<Long, List<Long>>`.
 
-    这非常重要，这表示`BookStore.newestBooks`并非针对`BookStore.id`一个一个计算，而是针对多个`BookStore.id`做一次性批量化计算。
+    This is very important. It means that `BookStore.newestBooks` is not calculated one by one against `BookStore.id`, but is calculated in batches against multiple `BookStore.id` at a time.
     
-    这样设计的目的是为了防止因计算属性导致[`N + 1`](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping)查询问题。
+    This is designed to prevent the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping) caused by calculation properties.
 
-    这个设计和GraphQL领域的[MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html)几乎一样，这是所有类似领域标准的编程模型。
+    This design is almost the same as [MappedBatchLoader](https://javadoc.io/doc/com.graphql-java/java-dataloader/2.2.3/org/dataloader/MappedBatchLoader.html) in the GraphQL field, which is the standard programming model for all similar domains.
     :::
+    
+-   ❸ `getDefaultValue` is an optional method of the base interface to implement.
 
--   ❸ `getDefaultValue`是基接口的一个可选实现的方法。
-
-    对于`resolve`方法而言，如果返回的Map的长度小于`ids`参数传入的集合长度，表示部分数据没有计算结果，其中每一个数据对应的计算值将会被视为null。
-
-    但是，如果计算属性（本例子中的`BookStore.newestBooks`）非null，就会导致问题，用户可以通过覆盖`getDefaultValue()`返回非null的默认值解决此问题。
+    For the `resolve` method, if the length of the returned Map is less than the length of the `ids` parameter collection passed in, it means some data does not have calculation results. The calculation value corresponding to each such data is considered null.
+    
+    However, if the calculation property (`BookStore.newestBooks` in this example) is non-null, it will cause problems. Users can override `getDefaultValue()` to return a non-null default value to resolve this issue.
 
     :::caution
-    如果计算属性不允许为空，对其`TransientResolver`实现类而言
+    If calculation properties do not allow null, for their `TransientResolver` implementations:
     
-    - 要么保证`resolve`方法返回的Map的keySet包含所有参数
-    - 要么覆盖`getDefaultValue`并返回非null的默认值
+    -   Either ensure the keySet of the Map returned by the `resolve` method contains all parameters
+    -   Or override `getDefaultValue` to return a non-null default value
     :::
 
-### 实现`newestBooks`的Resolver
+### Implement Resolver for `newestBooks`
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
-```java title="BookStoreNewestBooksResolver.java"
+```java
 package com.example.business.resolver;
 
 import java.util.Collections;
@@ -624,13 +608,12 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BookStoreNewestBooksResolver 
-implements TransientResolver<Long, List<Long>> {
+public class BookStoreNewestBooksResolver implements TransientResolver<Long, List<Long>> {
 
     private final JSqlClient sqlClient;
 
-    // 构造注入
-    public BookStoreNewestBooksResolver(JSqlClient sqlClient) {
+    // Constructor injection
+    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
         this.sqlClient = sqlClient;
     }
     
@@ -641,15 +624,15 @@ implements TransientResolver<Long, List<Long>> {
                 .createQuery(table)
                 .where(
                     Expression.tuple( ❶
-                        table.name(), 
+                        table.name(),  
                         table.edition()
                     ).in(
                         sqlClient.createSubQuery(table) ❷
                             .where(table.store().id().in(ids)) ❸
-                            .groupBy(table.name())  ❹
+                            .groupBy(table.name()) ❹
                             .select(
                                 table.name(),
-                                table.edition().max() ❺
+                                table.edition().max() ❺  
                             )
                     )
                 )
@@ -661,14 +644,14 @@ implements TransientResolver<Long, List<Long>> {
         );
     }
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStoreNewestBooksResolver.kt"
+```kotlin
 package com.example.business.resolver
 
 import org.babyfish.jimmer.sql.kt.*
@@ -676,7 +659,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class BookStoreNewestBooksResolver(
-    // 构造注入
+    // Constructor injection
     private val sqlClient: KSqlClient
 ) : KTransientResolver<Long, List<Long>> {
 
@@ -685,8 +668,8 @@ class BookStoreNewestBooksResolver(
             .createQuery(Book::class) {
                 where(
                     tuple( ❶
-                        table.name, 
-                        table.edition
+                        table.name,
+                        table.edition  
                     ) valueIn subQuery(Book::class) { ❷
                         where(table.store.id valueIn storeIds) ❸
                         groupBy(table.name) ❹
@@ -706,33 +689,33 @@ class BookStoreNewestBooksResolver(
                 it._2
             }
 
-    ...省略其他代码...
+    ...Omit other code...
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ `Book.name`和`Book.edition`两列组成一个SQL元组。
+-   ❶ `Book.name` and `Book.edition` form an SQL tuple.
 
--   ❷ 元组有两列，类型为String和int；子查询也有两列，类型也是String和int。二者完全匹配，可以使用in操作符。
+-   ❷ The tuple has two columns of type String and int. The subquery also has two columns of type String and int. The two match perfectly and can use the in operator.
 
--   ❸ 限定查询范围，仅针对当前需要查询最新版本书籍的，而非数据库中所有书店。
+-   ❸ Limit the query scope to only calculate the latest version of books that need to be queried at the moment, not all bookstores in the database.
 
-    在子查询上施加计算范围限定条件，性能优于在父查询上施加。
+    Imposing calculation scope limiting conditions on the subquery performs better than imposing them on the parent query.
+    
+-   ❹ Group by book name, so books of the same name must belong to the same group.  
 
--   ❹ 按照书籍名称分组，同名书籍必然属于同一组。
+-   ❺ For each group of books with the same name, find the maximum `edition`.
 
--   ❺ 对每一组内部的同名书籍，查找`edition`的最大值。
+### Define `newestBooks`
 
-### 定义`newestBooks`
-
-现在，`BookStoreNewestBooksResolver`类已经完善，我们可以为`BookStore`实体添加计算属性`newestBooks`了。
+Now that the `BookStoreNewestBooksResolver` class is complete, we can add the calculation property `newestBooks` to the `BookStore` entity:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStore.java"
+```java
 package com.example.model;
 
 import com.example.business.resolver.BookStoreNewestBooksResolver; ❶
@@ -741,7 +724,7 @@ import org.babyfish.jimmer.sql.*;
 
 public interface BookStore {
     
-    ...省略其他属性...
+    ...Omit other properties...
 
     @Transient(BookStoreNewestBooksResolver.class) ❷
     List<Book> newestBooks();
@@ -751,7 +734,7 @@ public interface BookStore {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookStore.kt"
+```kotlin 
 package com.example.model
 
 import com.example.business.resolver.BookStoreNewestBooksResolver ❶
@@ -760,27 +743,27 @@ import org.babyfish.jimmer.sql.*
 
 interface BookStore {
 
-    ...省略其他属性...
+    ...Omit other properties...
 
     @Transient(BookStoreNewestBooksResolver::class) ❷
-    val newestBooks: List<Book>
+    val newestBooks: List<Book> 
 }
 ```
 
 </TabItem>
 </Tabs>
 
-1.  如果项目是单工程，这里可以引用`BookStoreNewestBooksResolver`类。
+1.  If it is a single project, the `BookStoreNewestBooksResolver` class can be referenced here.
 
-2.  定义计算属性`BookStore.newestBooks`，并为其注解`@Transient`指定❶处引入的类，告诉Jimmer计算属性的计算规则。
+2.  Define the calculation property `BookStore.newestBooks`, and specify the class introduced at ❶ for its `@Transient` annotation to tell Jimmer the calculation rule for the calculation property.
 
     :::caution
-    如果项目是多工程，代码结构进行了分割，❶处的import语句无效，这时❷处必须写`@Transient(ref = "bookStoreNewestBooksResolver")`。
+    If it is a multi-project where the code structure has been split, the import statement at ❶ is invalid. In this case, ❷ must be `@Transient(ref = "bookStoreNewestBooksResolver")`.
     
-    即，使用spring上下文中该对象的名称。
+    That is, use the name of this object in the Spring context.
     :::
 
-### 抓取`newestBooks`
+### Fetch `newestBooks`  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -793,18 +776,18 @@ List<BookStore> stores = bookStoreRepository.findAll(
 
             ❷
             BookFetcher.$
-                allScalarFields() 
+                allScalarFields()
                 .authors(
                     AuthorFetcher.$
                         .allScalarFields()
                 )
         )
 );
-System.out.println(stores);
+System.out.println(stores); 
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">
+<TabItem value="kotlin" label="Kotlin">  
 
 ```kotlin
 val stores = bookStoreRepository.findAll(
@@ -813,7 +796,7 @@ val stores = bookStoreRepository.findAll(
         newestBooks { ❶
 
             ❷
-            allScalarFields() 
+            allScalarFields()
             authors {
                 allScalarFields()
             }
@@ -826,11 +809,11 @@ println(stores)
 </TabItem>
 </Tabs>
 
-1.  抓取计算属性`BookStore.newestBooks`
+1.  Fetch the calculation property `BookStore.newestBooks`
 
-2.  计算属性本身也是关联属性，所以，其关联对象的形状可以被更深的子抓取器控制
+2.  The calculation property itself is also an associative property, so the shape of its associated objects can be controlled by a deeper child fetcher.
 
-打印结果如下
+The printed result is:
 
 ```json
 [
@@ -843,7 +826,7 @@ println(stores)
                 "id":12,
                 "name":"GraphQL in Action",
                 /* highlight-next-line */
-                "edition":3, // 此edition最大，没有同名书籍
+                "edition":3, // This edition is max, no duplicate names
                 "price":80,
                 "authors":[
                     {
@@ -859,13 +842,13 @@ println(stores)
     {
         "id":1,
         "name":"O'REILLY",
-        /* highlight-next-line */
+        /* highlight-next-line */ 
         "newestBooks":[
             {
                 "id":3,
                 "name":"Learning GraphQL",
                 /* highlight-next-line */
-                "edition":3, // 此edition最大，没有同名书籍
+                "edition":3, // This edition is max, no duplicate names
                 "price":51,
                 "authors":[
                     {
@@ -886,7 +869,7 @@ println(stores)
                 "id":6,
                 "name":"Effective TypeScript",
                 /* highlight-next-line */
-                "edition":3, // 此edition最大，没有同名书籍
+                "edition":3, // This edition is max, no duplicate names
                 "price":88,
                 "authors":[
                     {
@@ -901,7 +884,7 @@ println(stores)
                 "id":9,
                 "name":"Programming TypeScript",
                 /* highlight-next-line */
-                "edition":3, // 此edition最大，没有同名书籍
+                "edition":3, // This edition is max, no duplicate names
                 "price":48,
                 "authors":[
                     {
@@ -917,14 +900,13 @@ println(stores)
 ]
 ```
 
-生成的SQL如下
+The generated SQL is: 
 
 ```sql
-/* 第一步：查询聚合根对象：即BookStore */
-select tb_1_.ID, tb_1_.NAME 
-from BOOK_STORE as tb_1_
+/* Step 1: Query aggregate root objects, i.e. BookStore */
+select tb_1_.ID, tb_1_.NAME from BOOK_STORE as tb_1_
 
-/* 第二步：为id为1和2的BookStore计算`newestBooks`能够关联到的所有Book的id集合 */
+/* Step 2: For BookStore objects with id 1 and 2, calculate id sets of all Books that `newestBooks` can associate to */ 
 /* highlight-start */
 select
     tb_1_.STORE_ID,
@@ -933,48 +915,48 @@ from BOOK tb_1_
 where
     (tb_1_.NAME, tb_1_.EDITION) in (
         select
-            tb_3_.NAME,
+            tb_3_.NAME, 
             max(tb_3_.EDITION)
         from BOOK tb_3_
         where
             tb_3_.STORE_ID in (
-                ? /* 2 */, ? /* 1 */
+                ? /* 2 */, ? /* 1 */  
             )
         group by
             tb_3_.NAME
     )
 /* highlight-end */
 
-/* 第三步：对关联到的所有Book的id，进一步查询非关联字段 */
-select 
-    tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE 
-from BOOK as tb_1_ 
-where tb_1_.ID in (?, ?, ?, ?)
+/* Step 3: For associated Book ids, query non-associative fields */
+select
+    tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE
+from BOOK as tb_1_
+where tb_1_.ID in (?, ?, ?, ?)  
 
-/* 第四步：对关联到的所有Book，进一步查询能关联到的作者 */
-select 
-    tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER 
-from AUTHOR as tb_1_ 
-inner join BOOK_AUTHOR_MAPPING as tb_2_ 
-    on tb_1_.ID = tb_2_.AUTHOR_ID 
-where 
-    tb_2_.BOOK_ID in (?, ?, ?, ?)
-```
+/* Step 4: For associated Books, query associable Authors */  
+select
+    tb_2_.BOOK_ID, tb_1_.ID, tb_1_.FIRST_NAME, tb_1_.LAST_NAME, tb_1_.GENDER
+from AUTHOR as tb_1_
+inner join BOOK_AUTHOR_MAPPING as tb_2_
+    on tb_1_.ID = tb_2_.AUTHOR_ID
+where
+    tb_2_.BOOK_ID in (?, ?, ?, ?) 
+``` 
 
 :::tip
-这个例子展示了，当计算属性本身也是关联属性时，其关联对象的形状可以被更深的子抓取器控制。
+This example shows that when the calculation property itself is also an associative property, the shape of its associated objects can be controlled by a deeper child fetcher.
 
-既然存在更深的子抓取器，当然既可以包含ORM原生关联属性，也可以包含其他计算关联属性。
+Since there is a deeper child fetcher, of course both native ORM associative properties and other calculation associative properties can be included.
 
-即，在对象抓取器查询复杂数据结构的过程中，ORM原生关联属性的抓取任务，和计算关联属性的抓取任务，可以随意混合。
+That is, in the process of querying complex data structures by object fetchers, the fetching tasks of ORM associative properties and calculation associative properties can be arbitrarily mixed.
 
--   ORM原生属性抓取任务，其实是SQL操作
+-   The fetching task of ORM association properties is actually SQL operations.
 
-    （至少在我们介绍缓存之前，可以如此认为）
+    (At least before we introduce cache, it can be considered so)
+  
+-   As mentioned earlier, Jimmer does not impose any restrictions on the calculation methods of calculation properties. You can even use any technology other than SQL, such as OLAP technologies, to implement the calculation process (this documentation focuses on Jimmer itself, so examples also use Jimmer to implement the calculation process).
 
--   前文提到，Jimmer对计算属性的计算方法不加任何限制，你甚至可以使用SQL以外的任何技术，比如OLAP领域的技术，来实现计算过程（本文档聚焦于Jimmer本身，所以例子中计算过程也用Jimmer来实现）。
-
-    即，计算属性抓取任务，不一定是SQL操作。
-
-所以，对象抓取器提供的功能，其实是SQL操作和非SQL操作的任意混合。
+    That is, the fetching task of calculation properties is not necessarily SQL operations.
+  
+Therefore, the functionality provided by object fetchers is actually an arbitrary mix of SQL and non-SQL operations.
 :::
