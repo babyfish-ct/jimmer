@@ -79,14 +79,14 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<?> sourceIds, Collection<?> targetIds) {
+    public AssociationSaveCommand saveAllCommand(Collection<?> sourceIds, Collection<?> targetIds) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(cartesianProduct(sourceIds, targetIds))
         );
     }
 
     @Override
-    public AssociationSaveCommand batchSaveCommand(Collection<Tuple2<?, ?>> idTuples) {
+    public AssociationSaveCommand saveAllCommand(Collection<Tuple2<?, ?>> idTuples) {
         return new AssociationSaveCommandImpl(
                 saveExecutable(idTuples)
         );
@@ -103,12 +103,12 @@ public class AssociationsImpl implements Associations {
     }
 
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<?> sourceIds, Collection<?> targetIds) {
+    public Executable<Integer> deleteAllCommand(Collection<?> sourceIds, Collection<?> targetIds) {
         return deleteExecutable(cartesianProduct(sourceIds, targetIds));
     }
     
     @Override
-    public Executable<Integer> batchDeleteCommand(Collection<Tuple2<?, ?>> idTuples) {
+    public Executable<Integer> deleteAllCommand(Collection<Tuple2<?, ?>> idTuples) {
         return deleteExecutable(idTuples);
     }
 

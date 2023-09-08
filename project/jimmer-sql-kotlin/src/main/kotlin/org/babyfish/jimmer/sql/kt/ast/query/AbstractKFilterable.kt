@@ -28,3 +28,30 @@ interface AbstractKFilterable<E: Any, P: KProps<E>> {
 
     val wildSubQueries: KWildSubQueries<E>
 }
+
+fun <X> AbstractKFilterable<*, *>.whereIfNotNull(
+    value: X?,
+    block: (X) -> KNonNullExpression<Boolean>?
+) {
+    if (value !== null) {
+        where(block(value))
+    }
+}
+
+fun AbstractKFilterable<*, *>. whereIfNotEmpty(
+    value: String?,
+    block: (String) -> KNonNullExpression<Boolean>?
+) {
+    value?.takeIf { it.isNotEmpty() }?.let {
+        where(block(it))
+    }
+}
+
+fun AbstractKFilterable<*, *>.whereIfNotBlank(
+    value: String?,
+    block: (String) -> KNonNullExpression<Boolean>?
+) {
+    value?.takeIf { it.isNotBlank() }?.let {
+        where(block(it))
+    }
+}

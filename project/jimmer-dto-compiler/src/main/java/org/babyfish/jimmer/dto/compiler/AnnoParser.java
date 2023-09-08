@@ -42,6 +42,7 @@ class AnnoParser {
 
     private String parse(DtoParser.QualifiedNameContext ctx) {
         String last = ctx.stop.getText();
+        String typeName = this.ctx.resolve(ctx);
         switch (last) {
             case "Nullable":
                 throw this.ctx.exception(
@@ -50,17 +51,25 @@ class AnnoParser {
                                 "is forbidden by DTO language"
                 );
             case "Null":
-                throw this.ctx.exception(
-                        ctx.stop.getLine(),
-                        "Annotation whose simple name is \"Null\" " +
-                                "is forbidden by DTO language"
-                );
+                if (!typeName.equals("javax.validation.constraints.Null")) {
+                    throw this.ctx.exception(
+                            ctx.stop.getLine(),
+                            "Annotation whose simple name is \"Null\" " +
+                                    "but qualified name is not \"javax.validation.constraints.Null\" " +
+                                    "is forbidden by DTO language"
+                    );
+                }
+                break;
             case "NotNull":
-                throw this.ctx.exception(
-                        ctx.stop.getLine(),
-                        "Annotation whose simple name is \"NotNull\" " +
-                                "is forbidden by DTO language"
-                );
+                if (!typeName.equals("javax.validation.constraints.NotNull")) {
+                    throw this.ctx.exception(
+                            ctx.stop.getLine(),
+                            "Annotation whose simple name is \"NotNull\" " +
+                                    "but qualified name is not \"javax.validation.constraints.NotNull\" " +
+                                    "is forbidden by DTO language"
+                    );
+                }
+                break;
             case "NonNull":
                 throw this.ctx.exception(
                         ctx.stop.getLine(),
@@ -68,7 +77,6 @@ class AnnoParser {
                                 "is forbidden by DTO language"
                 );
         }
-        String typeName = this.ctx.resolve(ctx);
         if (typeName.startsWith("org.babyfish.jimmer.")) {
             throw this.ctx.exception(
                     ctx.stop.getLine(),

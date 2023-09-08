@@ -159,6 +159,9 @@ class Importing {
         if (imported != null) {
             return imported;
         }
+        if (Character.isLowerCase(qualifiedName.charAt(0))) {
+            return qualifiedName;
+        }
         String pkg = this.ctx.getBaseType().getPackageName();
         if (pkg.isEmpty()) {
             return qualifiedName;

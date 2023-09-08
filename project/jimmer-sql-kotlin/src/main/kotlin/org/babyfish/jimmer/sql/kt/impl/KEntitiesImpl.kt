@@ -197,7 +197,7 @@ internal class KEntitiesImpl(
     ): KSimpleSaveResult<E> =
         save(input.toEntity(), con, block)
 
-    override fun <E : Any> batchSave(
+    override fun <E : Any> saveAll(
         entities: Collection<E>,
         con: Connection?,
         block: (KSaveCommandDsl.() -> Unit)?
@@ -236,7 +236,7 @@ internal class KEntitiesImpl(
             .execute(con)
             .let { KDeleteResultImpl(it) }
 
-    override fun batchDelete(
+    override fun deleteAll(
         type: KClass<*>,
         ids: Collection<*>,
         con: Connection?,

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.generator
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSType
@@ -185,15 +186,24 @@ class DtoGenerator private constructor(
         )
 
         val isInputOnly = dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)
-        if (!isInputOnly) {
-            addMetadata()
-        }
         addPrimaryConstructor()
         if (!isInputOnly) {
             addConverterConstructor()
         }
 
         addToEntity()
+
+        typeBuilder.addType(
+            TypeSpec
+                .companionObjectBuilder()
+                .apply {
+                    if (!isInputOnly) {
+                        addMetadata()
+                    }
+                    addCreate()
+                }
+                .build()
+        )
 
         for (prop in dtoType.dtoProps) {
             val targetType = prop.targetType
@@ -209,56 +219,49 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun addMetadata() {
-        typeBuilder.addType(
-            TypeSpec
-                .companionObjectBuilder()
-                .apply {
-                    addProperty(
-                        PropertySpec
-                            .builder(
-                                "METADATA",
-                                VIEW_METADATA_CLASS_NAME.parameterizedBy(
-                                    dtoType.baseType.className,
-                                    getDtoClassName()
-                                )
-                            )
-                            .addAnnotation(JVM_STATIC_CLASS_NAME)
-                            .initializer(
-                                CodeBlock
-                                    .builder()
-                                    .apply {
-                                        add("\n")
-                                        indent()
-                                        add(
-                                            "%T<%T, %T>(\n",
-                                            VIEW_METADATA_CLASS_NAME,
-                                            dtoType.baseType.className, getDtoClassName()
-                                        )
-                                        indent()
-                                        add("%M(%T::class).by", NEW_FETCHER, dtoType.baseType.className)
-                                        beginControlFlow("")
-                                        for (prop in dtoType.dtoProps) {
-                                            if (prop.nextProp === null) {
-                                                addFetcherField(prop)
-                                            }
-                                        }
-                                        for (hiddenFlatProp in dtoType.hiddenFlatProps) {
-                                            addHiddenFetcherField(hiddenFlatProp)
-                                        }
-                                        endControlFlow()
-                                        unindent()
-                                        add(")")
-                                        beginControlFlow("")
-                                        addStatement("%T(it)", getDtoClassName())
-                                        endControlFlow()
-                                        unindent()
-                                    }
-                                    .build()
-                            )
-                            .build()
+    private fun TypeSpec.Builder.addMetadata() {
+        addProperty(
+            PropertySpec
+                .builder(
+                    "METADATA",
+                    VIEW_METADATA_CLASS_NAME.parameterizedBy(
+                        dtoType.baseType.className,
+                        getDtoClassName()
                     )
-                }
+                )
+                .addAnnotation(JVM_STATIC_CLASS_NAME)
+                .initializer(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            add("\n")
+                            indent()
+                            add(
+                                "%T<%T, %T>(\n",
+                                VIEW_METADATA_CLASS_NAME,
+                                dtoType.baseType.className, getDtoClassName()
+                            )
+                            indent()
+                            add("%M(%T::class).by", NEW_FETCHER, dtoType.baseType.className)
+                            beginControlFlow("")
+                            for (prop in dtoType.dtoProps) {
+                                if (prop.nextProp === null) {
+                                    addFetcherField(prop)
+                                }
+                            }
+                            for (hiddenFlatProp in dtoType.hiddenFlatProps) {
+                                addHiddenFetcherField(hiddenFlatProp)
+                            }
+                            endControlFlow()
+                            unindent()
+                            add(")")
+                            beginControlFlow("")
+                            addStatement("%T(it)", getDtoClassName())
+                            endControlFlow()
+                            unindent()
+                        }
+                        .build()
+                )
                 .build()
         )
     }
@@ -301,40 +304,7 @@ class DtoGenerator private constructor(
 
     private fun addPrimaryConstructor() {
         val builder = FunSpec.constructorBuilder()
-        for (prop in dtoType.dtoProps) {
-            builder.addParameter(
-                ParameterSpec
-                    .builder(prop.name, propTypeName(prop))
-                    .apply {
-                        when {
-                            prop.isNullable -> defaultValue("null")
-                            prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
-                            prop.toTailProp().baseProp.isPrimitive -> defaultValue(
-                                when (prop.baseProp.typeName()) {
-                                    BOOLEAN -> "false"
-                                    CHAR -> "'\\0'"
-                                    else -> "0"
-                                }
-                            )
-                            prop.toTailProp().baseProp.typeName() == STRING ->
-                                defaultValue("\"\"")
-                        }
-                    }
-                    .build()
-            )
-        }
-        for (userProp in dtoType.userProps) {
-            builder.addParameter(
-                ParameterSpec
-                    .builder(userProp.alias, typeName(userProp.typeRef))
-                    .apply {
-                        defaultValue(userProp.typeRef)?.let {
-                            defaultValue(it)
-                        }
-                    }
-                    .build()
-            )
-        }
+        builder.addPrimaryParameters(false)
         typeBuilder.primaryConstructor(builder.build())
 
         for (prop in dtoType.dtoProps) {
@@ -346,11 +316,16 @@ class DtoGenerator private constructor(
                     .apply {
                         if (prop.annotations.isEmpty()) {
                             for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
-                                addAnnotation(anno.toAnnotationSpec())
+                                addAnnotation(
+                                    object : KSAnnotation by anno {
+                                        override val useSiteTarget: AnnotationUseSiteTarget?
+                                            get() = AnnotationUseSiteTarget.FIELD
+                                    }.toAnnotationSpec()
+                                )
                             }
                         } else {
                             for (anno in prop.annotations) {
-                                addAnnotation(annotationOf(anno))
+                                addAnnotation(annotationOf(anno, AnnotationSpec.UseSiteTarget.FIELD))
                             }
                         }
                     }
@@ -366,6 +341,62 @@ class DtoGenerator private constructor(
                     .apply {
                         for (anno in prop.annotations) {
                             addAnnotation(annotationOf(anno))
+                        }
+                    }
+                    .build()
+            )
+        }
+    }
+
+    private fun FunSpec.Builder.addPrimaryParameters(creator: Boolean) {
+        for (prop in dtoType.dtoProps) {
+            addParameter(
+                ParameterSpec
+                    .builder(prop.name, propTypeName(prop))
+                    .apply {
+                        if (creator) {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_PROPERTY_CLASS_NAME)
+                                    .addMember("%S", prop.name)
+                                    .build()
+                            )
+                        } else {
+                            when {
+                                prop.isNullable -> defaultValue("null")
+                                prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
+                                prop.toTailProp().baseProp.isPrimitive -> defaultValue(
+                                    when (prop.baseProp.typeName()) {
+                                        BOOLEAN -> "false"
+                                        CHAR -> "'\\0'"
+                                        else -> "0"
+                                    }
+                                )
+
+                                prop.toTailProp().baseProp.typeName() == STRING ->
+                                    defaultValue("\"\"")
+                            }
+                        }
+                    }
+                    .build()
+            )
+        }
+        for (userProp in dtoType.userProps) {
+            addParameter(
+                ParameterSpec
+                    .builder(userProp.alias, typeName(userProp.typeRef))
+                    .apply {
+                        if (creator) {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_PROPERTY_CLASS_NAME)
+                                    .addMember("%S", userProp.alias)
+                                    .build()
+                            )
+                        } else {
+                            defaultValue(userProp.typeRef)?.let {
+                                defaultValue(it)
+                            }
                         }
                     }
                     .build()
@@ -789,6 +820,38 @@ class DtoGenerator private constructor(
         }
     }
 
+    private fun TypeSpec.Builder.addCreate() {
+        val names = mutableListOf<String>()
+        collectNames(names)
+        val className = ClassName(root.packageName(), names[0], *names.subList(1, names.size).toTypedArray())
+        addFunction(
+            FunSpec
+                .builder("create")
+                .returns(className)
+                .apply {
+                    addPrimaryParameters(true)
+                    addAnnotation(JVM_STATIC_CLASS_NAME)
+                    addAnnotation(JSON_CREATOR_CLASS_NAME)
+                    addCode(
+                        CodeBlock
+                            .builder()
+                            .add("return %T(", className)
+                            .apply {
+                                for (dtoProp in dtoType.dtoProps) {
+                                    add(dtoProp.name).add(", ")
+                                }
+                                for (userProp in dtoType.userProps) {
+                                    add(userProp.alias).add(", ")
+                                }
+                            }
+                            .add(")\n")
+                            .build()
+                    )
+                }
+                .build()
+        )
+    }
+
     companion object {
         @JvmStatic
         private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
@@ -808,20 +871,17 @@ class DtoGenerator private constructor(
             if (target !== null) {
                 val accept = target
                     .get<List<KSType>>("allowedTargets")
-                    ?.any { it.toString().endsWith("FIELD") || it.toString().endsWith("METHOD") } == true
+                    ?.any { it.toString().endsWith("FIELD") } == true
                 if (accept) {
                     val qualifiedName = declaration.qualifiedName!!.asString()
-                    return qualifiedName != NotNull::class.java.name &&
-                        qualifiedName != Nullable::class.java.name && (
-                            !qualifiedName.startsWith("org.babyfish.jimmer.") ||
-                                qualifiedName.startsWith("org.babyfish.jimmer.client.")
-                        )
+                    return !qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                        qualifiedName.startsWith("org.babyfish.jimmer.client.")
                 }
             }
             return false
         }
 
-        private fun annotationOf(anno: Anno): AnnotationSpec =
+        private fun annotationOf(anno: Anno, target: AnnotationSpec.UseSiteTarget? = null): AnnotationSpec =
             AnnotationSpec
                 .builder(ClassName.bestGuess(anno.qualifiedName))
                 .apply {
@@ -836,6 +896,9 @@ class DtoGenerator private constructor(
                                 }
                                 .build()
                         )
+                    }
+                    target?.let {
+                        useSiteTarget(it)
                     }
                 }
                 .build()

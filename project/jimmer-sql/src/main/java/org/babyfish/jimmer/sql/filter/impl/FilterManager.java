@@ -268,6 +268,29 @@ public class FilterManager implements Filters {
         return false;
     }
 
+    public boolean isNullableRequired(ImmutableProp prop) {
+        if (!prop.isReference(TargetLevel.ENTITY)) {
+            return false;
+        }
+        if (prop.getDeclaringType() == prop.getTargetType()) {
+            return false;
+        }
+        Set<Filter<Props>> declaredFilters = new HashSet<>();
+        for (ImmutableType t : prop.getDeclaringType().getAllTypes()) {
+            List<Filter<Props>> filters = filterMap.get(t.toString());
+            if (filters != null) {
+                declaredFilters.addAll(filters);
+            }
+        }
+        for (ImmutableType t : prop.getTargetType().getAllTypes()) {
+            List<Filter<Props>> filters = filterMap.get(t.toString());
+            if (filters != null && !declaredFilters.containsAll(filters)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Filter<Props> create(ImmutableType type) {
         return create(type, false);
     }

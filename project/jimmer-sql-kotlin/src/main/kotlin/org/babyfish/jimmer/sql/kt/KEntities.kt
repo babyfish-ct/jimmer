@@ -69,11 +69,22 @@ interface KEntities {
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KSimpleSaveResult<E>
 
-    fun <E: Any> batchSave(
+    fun <E: Any> saveAll(
         entities: Collection<E>,
         con: Connection? = null,
         block: (KSaveCommandDsl.() -> Unit)? = null
     ): KBatchSaveResult<E>
+
+    @Deprecated(
+        "Will be deleted in 1.0, please use saveAll",
+        replaceWith = ReplaceWith("saveAll")
+    )
+    fun <E: Any> batchSave(
+        entities: Collection<E>,
+        con: Connection? = null,
+        block: (KSaveCommandDsl.() -> Unit)? = null
+    ): KBatchSaveResult<E> =
+        saveAll(entities, con, block)
 
     fun delete(
         type: KClass<*>,
@@ -82,10 +93,22 @@ interface KEntities {
         block: (KDeleteCommandDsl.() -> Unit)? = null
     ): KDeleteResult
 
-    fun batchDelete(
+    fun deleteAll(
         type: KClass<*>,
         ids: Collection<*>,
         con: Connection? = null,
         block: (KDeleteCommandDsl.() -> Unit)? = null
     ): KDeleteResult
+
+    @Deprecated(
+        "Will be deleted in 1.0, please use deleteAll",
+        replaceWith = ReplaceWith("deleteAll")
+    )
+    fun batchDelete(
+        type: KClass<*>,
+        ids: Collection<*>,
+        con: Connection? = null,
+        block: (KDeleteCommandDsl.() -> Unit)? = null
+    ): KDeleteResult =
+        deleteAll(type, ids, con, block)
 }

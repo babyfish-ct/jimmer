@@ -113,22 +113,22 @@ infix fun <E: Any> KTable<E>.eq(right: KTable<E>): KNonNullExpression<Boolean> {
 /**
  * QBE
  */
-infix fun <E: Any> KTable<E>.eq(right: E): KNonNullExpression<Boolean> =
+infix fun <E: Any> KTable<E>.eq(right: E): KNonNullExpression<Boolean>? =
     eq(example(right))
 
 /**
  * QBE
  */
-infix fun <E: Any> KTable<E>.eq(right: View<E>): KNonNullExpression<Boolean> =
+infix fun <E: Any> KTable<E>.eq(right: View<E>): KNonNullExpression<Boolean>? =
     eq(viewExample(right))
 
 /**
  * QBE
  */
-infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean> =
-    JavaPredicateWrapper(
-        right.toPredicate((this as KTableImplementor<*>).javaTable) as PredicateImplementor
-    )
+infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean>? =
+    right.toPredicate((this as KTableImplementor<*>).javaTable)?.let {
+        JavaPredicateWrapper(it as PredicateImplementor)
+    }
 
 infix fun <T: Any> KExpression<T>.eq(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Eq(this, right)

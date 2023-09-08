@@ -1015,7 +1015,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testBatchSave() {
+    public void testSaveAll() {
         UUID storeId = UUID.fromString("6057bec2-df8d-48f1-b31e-fdd36861cccb");
         UUID bookId1 = UUID.fromString("e1d34561-17df-4c08-9959-1c6cb33cdafb");
         UUID bookId2 = UUID.fromString("3d1d7676-5258-41c0-8e21-02110af07e90");
@@ -1041,7 +1041,7 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 })
         );
         executeAndExpectResult(
-                getSqlClient().getEntities().batchSaveCommand(books),
+                getSqlClient().getEntities().saveAllCommand(books),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

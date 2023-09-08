@@ -59,6 +59,10 @@ input-only BookSpecification {
 
 input-only BookInput {
     #allScalars
+
+    @javax.validation.constraints.NotNull
+    id
+
     id(store)!
     id(authors) as authorIds
 }

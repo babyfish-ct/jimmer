@@ -263,22 +263,27 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
-        if (!typeName.isPrimitive()) {
-            if (prop.isNullable()) {
-                builder.addAnnotation(Nullable.class);
-            } else {
-                builder.addAnnotation(NotNull.class);
-            }
-        }
+        boolean hasNullity = false;
         if (prop.getAnnotations().isEmpty()) {
             for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
                 if (isCopyableAnnotation(annotationMirror, false)) {
                     builder.addAnnotation(AnnotationSpec.get(annotationMirror));
+                    hasNullity |= isNullityAnnotation(
+                        annotationMirror.getAnnotationType().asElement().getSimpleName().toString()
+                    );
                 }
             }
         } else {
             for (Anno anno : prop.getAnnotations()) {
                 builder.addAnnotation(annotationOf(anno));
+                hasNullity |= isNullityAnnotation(anno.getQualifiedName());
+            }
+        }
+        if (!hasNullity && !typeName.isPrimitive()) {
+            if (prop.isNullable()) {
+                builder.addAnnotation(Nullable.class);
+            } else {
+                builder.addAnnotation(NotNull.class);
             }
         }
         typeBuilder.addField(builder.build());
@@ -828,19 +833,29 @@ public class DtoGenerator {
         Target target = annotationMirror.getAnnotationType().asElement().getAnnotation(Target.class);
         if (target != null) {
             boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.FIELD);
-            boolean acceptMethod = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.METHOD);
-            if (forMethod ? acceptMethod && !acceptField : acceptField) {
+            if (acceptField) {
                 String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
-                return !qualifiedName.equals(NotNull.class.getName()) &&
-                        !qualifiedName.equals(javax.validation.constraints.NotNull.class.getName()) &&
-                        !qualifiedName.equals(Nullable.class.getName()) &&
-                        !qualifiedName.equals(javax.validation.constraints.Null.class.getName()) && (
-                                !qualifiedName.startsWith("org.babyfish.jimmer.") ||
-                                qualifiedName.startsWith("org.babyfish.jimmer.client.")
-                        );
+                return !qualifiedName.startsWith("org.babyfish.jimmer.") ||
+                        qualifiedName.startsWith("org.babyfish.jimmer.client.");
             }
         }
         return false;
+    }
+
+    private static boolean isNullityAnnotation(String qualifiedName) {
+        int lastDotIndex = qualifiedName.lastIndexOf('.');
+        if (lastDotIndex != -1) {
+            qualifiedName = qualifiedName.substring(lastDotIndex + 1);
+        }
+        switch (qualifiedName) {
+            case "Null":
+            case "Nullable":
+            case "NotNull":
+            case "NonNull":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static AnnotationSpec annotationOf(Anno anno) {

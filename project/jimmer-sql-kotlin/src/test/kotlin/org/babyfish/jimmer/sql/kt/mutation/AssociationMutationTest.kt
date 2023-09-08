@@ -30,7 +30,7 @@ class AssociationMutationTest : AbstractMutationTest() {
         executeAndExpectRowCount({ con ->
             sqlClient
                 .getAssociations(Book::authors)
-                .batchSave(
+                .saveAll(
                     listOf(4L, 5L, 6L),
                     listOf(5L),
                     true,

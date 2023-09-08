@@ -41,7 +41,7 @@ internal class KAssociationsImpl(
             .checkExistence(checkExistence)
             .execute(con)
 
-    override fun batchSave(
+    override fun saveAll(
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
         checkExistence: Boolean?,
@@ -52,7 +52,7 @@ internal class KAssociationsImpl(
             .checkExistence(checkExistence)
             .execute(con)
 
-    override fun batchSave(
+    override fun saveAll(
         idTuples: Collection<Tuple2<*, *>>,
         checkExistence: Boolean?,
         con: Connection?
@@ -71,7 +71,7 @@ internal class KAssociationsImpl(
             .deleteCommand(sourceId, targetId)
             .execute(con)
 
-    override fun batchDelete(
+    override fun deleteAll(
         sourceIds: Collection<*>,
         targetIds: Collection<*>,
         con: Connection?
@@ -80,7 +80,7 @@ internal class KAssociationsImpl(
             .batchDeleteCommand(sourceIds, targetIds)
             .execute(con)
 
-    override fun batchDelete(
+    override fun deleteAll(
         idTuples: Collection<Tuple2<*, *>>,
         con: Connection?
     ): Int =

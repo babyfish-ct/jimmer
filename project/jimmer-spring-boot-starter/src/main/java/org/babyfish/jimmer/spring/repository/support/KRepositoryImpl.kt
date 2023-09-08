@@ -138,7 +138,7 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         sql.entities.save(entity, block = block)
 
     override fun <S : E> saveAll(entities: Iterable<S>, block: KSaveCommandDsl.() -> Unit): KBatchSaveResult<S> =
-        sql.entities.batchSave(Utils.toCollection(entities), block = block)
+        sql.entities.saveAll(Utils.toCollection(entities), block = block)
 
     override fun delete(entity: E, mode: DeleteMode): Int =
         sql.entities.delete(
@@ -154,14 +154,14 @@ open class KRepositoryImpl<E: Any, ID: Any> (
         }.affectedRowCount(entityType)
 
     override fun deleteByIds(ids: Iterable<ID>, mode: DeleteMode): Int =
-        sql.entities.batchDelete(entityType, Utils.toCollection(ids)) {
+        sql.entities.deleteAll(entityType, Utils.toCollection(ids)) {
             setMode(mode)
         }.affectedRowCount(entityType)
 
     override fun deleteAll(entities: Iterable<E>, mode: DeleteMode): Int =
         sql
             .entities
-            .batchDelete(
+            .deleteAll(
                 entityType,
                 entities.map {
                     ImmutableObjects.get(it, type.idProp)

@@ -628,7 +628,7 @@ public class EntitiesImpl implements Entities {
     }
 
     @Override
-    public <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
+    public <E> BatchEntitySaveCommand<E> saveAllCommand(Collection<E> entities) {
         for (E e : entities) {
             if (e instanceof Input<?>) {
                 throw new IllegalArgumentException(
@@ -656,7 +656,7 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     @Override
-    public DeleteCommand batchDeleteCommand(
+    public DeleteCommand deleteAllCommand(
             Class<?> type,
             Collection<?> ids
     ) {

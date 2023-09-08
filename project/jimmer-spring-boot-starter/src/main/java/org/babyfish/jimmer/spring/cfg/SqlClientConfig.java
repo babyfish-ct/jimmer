@@ -258,7 +258,11 @@ public class SqlClientConfig {
         if (sqlFormatter != null) {
             builder.setSqlFormatter(sqlFormatter);
         } else if (properties.isPrettySql()) {
-            builder.setSqlFormatter(SqlFormatter.PRETTY);
+            if (properties.isInlineSqlVariables()) {
+                builder.setSqlFormatter(SqlFormatter.INLINE_PRETTY);
+            } else {
+                builder.setSqlFormatter(SqlFormatter.PRETTY);
+            }
         }
         builder
                 .setDatabaseValidationMode(properties.getDatabaseValidation().getMode())
@@ -293,14 +297,6 @@ public class SqlClientConfig {
             JSqlClientImplementor sqlClient,
             ApplicationEventPublisher publisher
     ) {
-        if (!(sqlClient.getConnectionManager() instanceof SpringConnectionManager)) {
-            throw new IllegalStateException(
-                    "The connection manager of sqlClient must be \"" +
-                            SpringConnectionManager.class.getName() +
-                            "\""
-            );
-        }
-
         if (sqlClient.getSlaveConnectionManager(false) != null &&
                 !(sqlClient.getSlaveConnectionManager(false) instanceof SpringConnectionManager)) {
             throw new IllegalStateException(

@@ -55,10 +55,8 @@ public abstract class ScalarProvider<T, S> {
         return sqlType;
     }
 
-    @NotNull
     public abstract T toScalar(@NotNull S sqlValue) throws Exception;
 
-    @NotNull
     public abstract S toSql(@NotNull T scalarValue) throws Exception;
 
     /**

@@ -1294,10 +1294,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
                 if (type.isEntity()) {
                     for (ImmutableProp prop : type.getProps().values()) {
-                        if (!prop.isNullable() &&
-                                prop.isReference(TargetLevel.ENTITY) &&
-                                filterManager.contains(prop.getTargetType())
-                        ) {
+                        if (!prop.isNullable() && filterManager.isNullableRequired(prop)) {
                             throw new ModelException(
                                     "Illegal reference association property \"" +
                                             prop +

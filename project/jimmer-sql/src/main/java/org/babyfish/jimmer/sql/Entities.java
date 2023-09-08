@@ -58,11 +58,17 @@ public interface Entities {
     
     <E> SimpleEntitySaveCommand<E> saveCommand(E entity);
 
-    default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
-        return batchSaveCommand(entities).execute();
+    default <E> BatchSaveResult<E> saveAll(Collection<E> entities) {
+        return saveAllCommand(entities).execute();
     }
 
-    <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities);
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #saveAll(Collection)}
+     */
+    default <E> BatchSaveResult<E> batchSave(Collection<E> entities) {
+        return saveAll(entities);
+    }
 
     default <E> SimpleSaveResult<E> save(Input<E> input) {
         return save(input.toEntity());
@@ -70,6 +76,17 @@ public interface Entities {
 
     default <E> SimpleEntitySaveCommand<E> saveCommand(Input<E> input) {
         return saveCommand(input.toEntity());
+    }
+
+    <E> BatchEntitySaveCommand<E> saveAllCommand(Collection<E> entities);
+
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #saveAllCommand(Collection)}
+     */
+    @Deprecated
+    default <E> BatchEntitySaveCommand<E> batchSaveCommand(Collection<E> entities) {
+        return saveAllCommand(entities);
     }
 
     default DeleteResult delete(Class<?> type, Object id) {
@@ -82,13 +99,40 @@ public interface Entities {
 
     DeleteCommand deleteCommand(Class<?> type, Object id);
 
+    default DeleteResult deleteAll(Class<?> type, Collection<?> ids) {
+        return deleteAllCommand(type, ids).execute();
+    }
+
+    default DeleteResult deleteAll(Class<?> type, Collection<?> ids, DeleteMode mode) {
+        return deleteAllCommand(type, ids).setMode(mode).execute();
+    }
+
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #saveAllCommand(Collection)}
+     */
+    @Deprecated
     default DeleteResult batchDelete(Class<?> type, Collection<?> ids) {
         return batchDeleteCommand(type, ids).execute();
     }
 
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #deleteAll(Class, Collection, DeleteMode)}
+     */
+    @Deprecated
     default DeleteResult batchDelete(Class<?> type, Collection<?> ids, DeleteMode mode) {
         return batchDeleteCommand(type, ids).setMode(mode).execute();
     }
 
-    DeleteCommand batchDeleteCommand(Class<?> type, Collection<?> ids);
+    DeleteCommand deleteAllCommand(Class<?> type, Collection<?> ids);
+
+    /**
+     * This method will be deleted in 1.0,
+     * please use {@link #deleteAllCommand(Class, Collection)}
+     */
+    @Deprecated
+    default DeleteCommand batchDeleteCommand(Class<?> type, Collection<?> ids) {
+        return deleteAllCommand(type, ids);
+    }
 }

@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.ksp.generator
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
@@ -34,6 +36,8 @@ internal const val FETCHER_DSL = "FetcherDsl"
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
+internal val JSON_CREATOR_CLASS_NAME = JsonCreator::class.asClassName()
+internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()

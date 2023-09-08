@@ -139,7 +139,7 @@ public class DatabaseValidators {
                 Column column = table.columnMap.get(
                         DatabaseIdentifiers.comparableIdentifier(((SingleColumn)storage).getName())
                 );
-                if (column != null) {
+                if (column != null && (!prop.isAssociation(TargetLevel.ENTITY) || prop.isTargetForeignKeyReal(strategy))) {
                     boolean nullable = prop.isNullable() && !prop.isInputNotNull();
                     if (nullable != column.nullable) {
                         items.add(
