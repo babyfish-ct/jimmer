@@ -1,5 +1,3 @@
-Here is the English translation of the file, preserving the indentation of code blocks:
-
 :::caution  
 The content of this article is only for Output DTOs, Input DTOs can freely adopt the flat scheme.
 :::

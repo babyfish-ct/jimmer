@@ -1,5 +1,3 @@
-Here is the English translation, preserving indentation of code blocks:
-
 Dynamic object may lack any property, or in other words, dynamic object are not required to have all properties set.
 
 :::caution

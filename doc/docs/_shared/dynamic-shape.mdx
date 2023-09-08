@@ -17,9 +17,9 @@ In the figure, we list three business perspectives as examples. For any business
 To achieve this kind of data structure shape tailoring that is accurate to properties, the only way is to make entity objects support dynamism. 
 
 :::info
-The dynamism of Jimmer entities is not the kind of dynamism that gives up spell checking and type safety like dynamic languages. It is just that [the `fetch = FetchType.LAZY` of the @Basic annotation in Hibernate](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement) is extended to any attribute. 
+The dynamism of Jimmer entities is not the kind of dynamism that gives up spell checking and type safety like dynamic languages. It is just that [the `fetch = FetchType.LAZY` of the @Basic annotation in Hibernate](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement) is extended to any property. 
 
-So Jimmer entities are 100% strongly typed, with spell safety, type safety, and even null safety (limited to Kotlin). It just allows any attribute of an object to be missing.
+So Jimmer entities are 100% strongly typed, with spell safety, type safety, and even null safety (limited to Kotlin). It just allows any property of an object to be missing.
 :::
 
 Let's look at the following examples.
