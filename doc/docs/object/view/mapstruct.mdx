@@ -5,6 +5,8 @@ title: MapStruct
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ShortAssociation } from '@site/src/components/ShortAssociation';
+import { ViewMore } from '@site/src/components/ViewMore';
 
 Jimmer dynamic objects and static POJOs are completely different, they are a complete new technical system, which supports the entire Jimmer ORM.
 
@@ -167,7 +169,7 @@ dependencies {
                         <version>${mapstruct.version}</version>
                     </path>
                     <path>
-                        <groupId>org.babyfish.jimmer</groupId> a
+                        <groupId>org.babyfish.jimmer</groupId> ⓐ
                         <artifactId>jimmer-mapstruct-apt</artifactId>
                         <version>${jimmer.version}</version>
                     </path>
@@ -208,7 +210,7 @@ dependencies {
 
     ksp("org.babyfish.jimmer:jimmer-ksp:${jimmerVersion}") ➋
     kapt("org.mapstruct:mapstruct-processor:${mapstructVersion}") ➌
-	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:${jimmerVersion}") a
+	kapt("org.babyfish.jimmer:jimmer-mapstruct-apt:${jimmerVersion}") ⓐ
 
     ...omit other dependencies...
 }
@@ -258,7 +260,7 @@ In this example, we assume static POJOs are written in Java using [lombok](https
         </tr>
         <tr>
             <td rowspan="2">Kotlin only</td>
-            <td>a</td>
+            <td>ⓐ</td>
             <td>Use `jimmer-mapstruct-apt` to extend ➌</td>
         </tr>
     </tbody>
@@ -316,34 +318,27 @@ Three properties of this POJO need to be explained:
 
     - Here, `BookInput.id` is allowed to be null. This is necessary, for example, the id does not need to be specified when inserting data.
 
-    - The dynamic attribute `Book.id` of the entity object does not allow null *(Jimmer prohibits id from being null, please refer to [Mapping/Basic Mapping/@Id](../../mapping/base/basic#id))*
+    - The dynamic property `Book.id` of the entity object does not allow null *(Jimmer prohibits id from being null, please refer to [Mapping/Basic Mapping/@Id](../../mapping/base/basic#id))*
 
     The two contradict each other, so how to convert `BookInput` to `Book`?
 
     :::tip
-    Jimmer agrees that if the attribute of the POJO can be null while the corresponding attribute of the dynamic object cannot be null, the corresponding attribute of the dynamic object will not be assigned and will remain missing.
+    Jimmer agrees that if the property of the POJO can be null while the corresponding property of the dynamic object cannot be null, the corresponding property of the dynamic object will not be assigned and will remain missing.
     :::
 
--   `BookInput.storeId`
+-   `BookInput.storeId` 
 
-    It is obvious that this is the associated id, corresponding to the dynamic attribute `Book.store` of the entity object.
+    This is obviously an associated id for the dynamic entity object property `Book.store`. 
+    
+    This kind of dynamic object property is defined as an associated object, but in the POJO it is defined as an associated id, 
+    called a <ViewMore buttonText="short association"><ShortAssociation/></ViewMore>.
 
-    The dynamic object attribute is defined as an associated object, while the POJO is defined as an associated id, called short association mapping.
-
-    :::info
-    For the concept of short association, please refer to [here](../../mapping/advanced/view/id-view#基本概念短关联)
-    :::
-
--   `BookInput.authors`
-
-    It is obvious that this is a collection of associated ids, corresponding to the dynamic attribute `Book.store` of the entity object.
-
-    The dynamic object attribute is defined as a collection of associated objects, while the POJO is defined as a collection of associated ids, called short association mapping.
-
-    :::info
-    For the concept of short association, please refer to [here](../../mapping/advanced/view/id-view#基本概念短关联)
-    :::
-
+-   `BookInput.authorIds` 
+    
+    This is obviously a collection of associated ids, for the dynamic entity object property `Book.authors`. 
+    
+    This kind of dynamic object property is defined as an associated objects, but in the POJO it is defined as an associated ids, 
+    called a <ViewMore buttonText="short association"><ShortAssociation/></ViewMore>.
 
 The other properties are exactly the same as the original entity definition and need no explanation.
 

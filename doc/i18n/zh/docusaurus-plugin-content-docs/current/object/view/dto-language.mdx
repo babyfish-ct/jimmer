@@ -44,7 +44,7 @@ dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译�
 
     -   但是，如果除了dto文件外没有其他Java/Kotlin文件被修改，简单地点击IDE中运行按钮并不会导致dto文件被重新编译，除非显式地rebuild！
 
-以后，会提供更好的方案。
+如果你有好办法可解决这个问题，欢迎反馈。
 :::
 
 假设存在一个Jimmer实体类型，其完整的类型名为`com.yourcompany.yourproject.Book`，该类被`@org.babyfish.jimmer.sql.Entity`修饰 *(DTO语言只支持Entity类型)*，那么
@@ -151,7 +151,7 @@ input AnnotherBookInput {
 
 -   如果实体id属性配置了自动增长策略，那么input DTO中的id属性是nullable的。
 
--   input DTO中只能定义可以保存的属性，如简单属性、普通ORM关联属性和视图属性。
+-   input DTO中只能定义可以保存的属性，如简单属性、普通ORM关联属性和id-view属性。
     不能定义无法保存的属性，如transient属性、公式属性、计算属性和远程关联，否则会导致编译错误。
 :::
 
@@ -380,9 +380,8 @@ input UpdateBookInput {
 
 所以，对于本身就可以为null的实体属性而言，无论对应的DTO属性如何设置，经过DTO转化后的动态实体对象，其可空的属性一定为被赋值 *(可能为null)*，但不可能出现unloaded的情况。如果将其传递给[保存指令](../../mutation/save-command)，null一定会导致表中对应字段被update，而无法如同未被赋值的非null属性一样做到根本不更新。
 
-事实上，除了具备直接的Input/Output语义的DTO类型外，复杂动态查询往往设计到一种查询规格参数，例如例子中的[AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto)类型。
-
-对于查询规格参数`Specification`而言，这个功能是非常适合的，这是因为动态查询的每个查询参数都应该是可选的，除非因性能问题而不得不要求用户必须给出部分查询条件。
+对于没有直接Input/Output语义的查询规格参数`Specification`而言，比如[AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto)，
+这个功能是非常适合的，这是因为动态查询的每个查询参数都应该是可选的，除非因性能问题而不得不要求用户必须给出部分查询条件。
 
 但是，对于其他具备`Input`/`Output`语义的DTO类型而言，不推荐使用此功能。
 :::
@@ -1086,7 +1085,7 @@ interface AuthorRepository : KRepository<Author, Long> {
 
 -   Output DTO: 不鼓励使用
 
-    -   首先，Output DTO本身不是必须的，让查询方法直接返回动态对象，并辅以@FetchBy注解(../../spring/client/api#声明fetchby)，已经是足够强大的方案了。
+    -   首先，Output DTO本身不是必须的，让查询方法直接返回动态对象，并辅以[@FetchBy注解](../../spring/client/api#声明fetchby)，已经是足够强大的方案了。
 
     -   其次，即便使用了Output DTO，Output DTO对象也只会拥有实体对象的属性，除非你愿意手动填充自定义属性。
 

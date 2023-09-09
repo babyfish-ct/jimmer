@@ -5,6 +5,8 @@ title: mapstruct
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ShortAssociation } from '@site/src/components/ShortAssociation';
+import { ViewMore } from '@site/src/components/ViewMore';
 
 Jimmer动态对象和静态POJO完全不同，是一套完整的新技术体系，该体系支撑起了整个Jimmer ORM。
 
@@ -328,21 +330,13 @@ Java POJO代码中采用了`@Nullable`注解，仅为提高可读性，无实质
 
     很明显，这是关联id，对实体对象动态属性`Book.store`。
 
-    这种动态对象属性被定义为关联对象，而POJO中却定义为关联id，叫做短关联映射。
+    这种动态对象属性被定义为关联对象，而POJO中却定义为关联id，叫做<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>
 
-    :::info
-    对于短关联这个概念，请参考[这里](../../mapping/advanced/view/id-view#基本概念短关联)
-    :::
+-   `BookInput.authorIds`
 
--   `BookInput.authors`
+    很明显，这是关联id集合，对实体对象动态属性`Book.authors`。
 
-    很明显，这是关联id集合，对实体对象动态属性`Book.store`。
-
-    这种动态对象属性被定义为关联对象集合，而POJO中却定义为关联id的集合，叫做短关联映射。
-
-    :::info
-    对于短关联这个概念，请参考[这里](../../mapping/advanced/view/id-view#基本概念短关联)
-    :::
+    这种动态对象属性被定义为关联对象，而POJO中却定义为关联id，叫做<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>
 
 其他属性和原始实体的定义完全一样，无需说明
 

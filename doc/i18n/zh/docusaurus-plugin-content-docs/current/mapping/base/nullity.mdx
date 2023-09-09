@@ -70,4 +70,4 @@ Java下属性是否为null，靠以下规则制定
 
     -   作为镜像端的@OneToOne关联
 
-    -   目标对象被施加了[全局过滤器](../../query/global-filter)
+    -   任何一个被施加于关联实体的[全局过滤器](../../query/global-filter)不被包含于当前实体被施加的[全局过滤器](../../query/global-filter)的集合

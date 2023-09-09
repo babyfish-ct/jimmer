@@ -44,12 +44,12 @@ dto files are compiled by Jimmer's Annotation Processor *(Java)* or Kotlin *(Kot
 
     - However, if no Java/Kotlin files other than dto files are modified, simply clicking the run button in the IDE will not cause dto files to recompile unless rebuild is explicitly invoked!
 
-Better solutions will be provided later.
+If you have good suggestions to solve this problem, please feel free to provide feedback.
 :::
 
 Assume there is a Jimmer entity type with the fully qualified type name `com.yourcompany.yourproject.Book`, which is decorated by `@org.babyfish.jimmer.sql.Entity` *(DTO language only supports Entity types)*, then
 
-1.  Create the directory `com/yourcompany/yourproject` in `src/main/dto`, i.e. create a directory consistent with the package name
+1.  Create the directory `com/yourcompany/yourproject` in `src/main/dto`, the directory consistent with the package name
 
 2.  Create a new file `Book.dto` in the directory created in the previous step. This file must have the same name as the class and have the extension `.dto`
 
@@ -105,7 +105,7 @@ data class BookView(
 
 ## 3. input, input-only modifiers
 
-Shapes can be modified by the `input` modifier, for example:
+Shapes can be decorated by the `input` modifier, for example:
 
 ```sh title="Book.dto"
 BookView {
@@ -143,15 +143,15 @@ This means:
     Like the [AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto) type defined in the example.
 
     :::note
-    Jimmer makes no recommendation on whether this type of query rule parameter should be defined as input type. But it is recommended that this type ends with `Specification`/`Spec`.
+    Jimmer makes no recommendation on whether this type of query specification parameter should be defined as input type, but it is recommended that this type ends with `Specification`/`Spec`.
     :::  
 
 :::info
 Compared with Output DTO:
 
--   The id property in the input DTO is nullable if the id property of the entity is configured with auto growth strategy.
+-   The id property in the input DTO is nullable if the id property of the entity is configured with `@GeneratedValue`.
 
--   The input DTO can only define properties that can be saved, such as simple properties, ordinary ORM association properties and view properties.
+-   The input DTO can only define properties that can be saved, such as simple properties, ordinary ORM association properties and id-view properties.
     Properties that cannot be saved, such as transient properties, formula properties, calculated properties, and remote associations, cannot be defined, otherwise compilation errors will occur. 
 :::
 
@@ -208,7 +208,8 @@ inputOnly BookUpdateInfo {
 }
 ```
 
-`input-only`/`inputOnly` works similarly to `input` and is used to modify input types, but only provides the ability to convert from DTO objects to entity objects, not the ability to convert from entity objects to DTO objects.
+`input-only`/`inputOnly` works similarly to `input` and is used to decorate input types, 
+but only provides the ability to convert from DTO objects to entity objects, not the ability to convert from entity objects to DTO objects.
 
 The purpose of the `input-only`/`inputOnly` modifier is described in [7. Nullability](#7-nullability)
 
@@ -281,11 +282,11 @@ BookView {
 }
 ```
 
-Same as the official example `Book` type definition:
+Same as the `Book` type definition of official example:
 
 -   `Book` itself has scalar properties `id`, `name`, `edition` and `price`
 
--   `Book` inherits `TenantAware`, `TenantAware` interface defines property `tenant`  
+-   `Book` inherits `TenantAware` that defines property `tenant`  
 
 -   `Book` also inherits `CommonEntity` *(multiple inheritance)*, `CommonEntity` interface defines properties `createdTime` and `modifiedTime`
 
@@ -382,9 +383,10 @@ For entity properties that can be null in the first place, there are three state
 
 Therefore, for entity properties that can be null in the first place, no matter how the corresponding DTO property is set, after DTO conversion, the nullable property of the dynamic entity object must be assigned *(may be null)*, but the unloaded state cannot appear. If passed to [save command](../../mutation/save-command), null will definitely cause the corresponding field in the table to be updated, rather than not updated like non-null properties that have not been assigned.
 
-In fact, in addition to DTO types with direct Input/Output semantics, complex dynamic queries often involve a kind of query specification parameter, such as [AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto) in the example.
-
-For query specification parameters `Specification`, this feature is very suitable, because each query parameter of dynamic query should be optional, unless users have to be required to provide some query conditions due to performance issues.
+For query specification parameters `Specification` without with direct Input/Output semantics, 
+such as [AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto), 
+this feature is very suitable, because each query parameter of dynamic query should be optional, 
+unless users have to be required to provide some query conditions due to performance issues.
 
 However, for other DTO types with `Input`/`Output` semantics, this feature is not recommended. 
 :::
@@ -393,9 +395,9 @@ However, for other DTO types with `Input`/`Output` semantics, this feature is no
 
 We can use `!` to modify the DTO property to be non-null. But its usage is limited and can only be used in the following two cases:
 
-- Modify the id property in `input`/`input-only` types
+-   Modify the id property in `input`/`input-only` types
 
-    As mentioned earlier, if the id property is configured with auto growth strategy, the corresponding input DTO type will set the id property to nullable.
+    As mentioned earlier, if the id property is configured with `@GeneratedValue`, the corresponding input DTO type will set the id property to nullable.
 
     However, this behavior does not always match the user's expectations. `!` can be used in `input`/`input-only` types to modify the id property to make it non-null, for example:
 
@@ -407,7 +409,7 @@ We can use `!` to modify the DTO property to be non-null. But its usage is limit
     }
     ```
 
-- In `input-only`, convert a nullable entity property to non-null, for example:
+-   In `input-only` type, convert a nullable entity property to non-null, for example:
 
     ```sh title="Book.dto"  
     input-only BookUpdateInfo {
@@ -536,12 +538,12 @@ Handling association properties is a very powerful feature of the DTO language. 
 
 - Use directly
 - Recursive association
-- Use after calling id function
-- Use after calling flat function
+- Use after calling `id` function
+- Use after calling `flat` function
 
 ### 9.1. Common Association
 
-- Basic usage
+-   Basic usage
 
     ```sh title="Robot.dto" 
     input CompositeBookInput {
@@ -655,7 +657,7 @@ Handling association properties is a very powerful feature of the DTO language. 
     </TabItem>
     </Tabs>
 
-- Renaming
+-   Renaming
 
     If you want to rename association properties, the `as` clause should be before association definition block, for example:
 
@@ -688,7 +690,7 @@ TreeNodeView {
 
 ### 9.3. id Function
 
-For <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, of course we choose to define [@IdView](../../mapping/advanced/view/id-view) properties in entities, for example:
+For <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, of course we can choose to define [@IdView](../../mapping/advanced/view/id-view) properties in entities, for example:
 
 <Tabs groupId="language"> 
 <TabItem value="java" label="Java">
@@ -1088,7 +1090,7 @@ Therefore, the following is recommended:
 
 - Output DTO: Not recommended
 
-    - First, Output DTOs themselves are not required. Letting query methods return dynamic objects directly, supplemented by @FetchBy annotations(../../spring/client/api#declare-fetchby), is already a very powerful solution.
+    - First, Output DTOs themselves are not required. Letting query methods return dynamic objects directly, supplemented by [@FetchBy annotations](../../spring/client/api#declare-fetchby), is already a very powerful solution.
 
     - Second, even if Output DTOs are used, Output DTO objects will only have the properties of entity objects, unless you are willing to manually populate custom properties.
 
@@ -1181,7 +1183,8 @@ In addition to generics in built-in array and collection types, generics of othe
 
 ### 11.4 Import Statements  
 
-In addition to built-in types, other types must be written in full when referenced, or imported at the beginning of the file using import statements, otherwise they will be considered to be in the same package as the current entity.
+In addition to built-in types, other types must be written in qualified name, or imported at the beginning of the file using import statements, 
+otherwise they will be considered to be in the same package as the current entity.
 
 The DTO language supports multiple styles of import statements, for example:
 
@@ -1221,7 +1224,7 @@ The DTO language supports multiple styles of import statements, for example:
 
 ### 12.1 Basic Usage
 
-You can use annotations to modify DTO types, mapping properties and custom properties in DTO language:
+You can use annotations to decorate DTO types, mapping properties and custom properties in DTO language:
 
 ```sh title="Author.dto"
 import org.babyfish.jimmer.client.Doc
@@ -1239,22 +1242,22 @@ AuthorSpecification {
     lastName
 
     @Doc("Minimum create time, inclusive") ❹
-    @DateTimeFormat(pattern = "yyyy-MM-dd") ❺
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") ❺
     minCreatedTime: LocalDateTime?
 
     @Doc("Maximum create time, exclusive") ❻
-    @DateTimeFormat(pattern = "yyyy-MM-dd") ❼
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") ❼
     maxCreatedTimeExclusive: LocalDateTime?
 }
 ```
 
 Where:
 
-- ❶ Modify type  
+- ❶ Decorate type  
 
-- ❷ ❸ Modify mapping properties
+- ❷ ❸ Decorate mapping properties
 
-- ❹ ❺ ❻ ❼ Modify custom properties
+- ❹ ❺ ❻ ❼ Decorate custom properties
 
 :::tip
 There is a detail to note
@@ -1275,16 +1278,16 @@ BookView {
 ```
 Where:
 
-- `@A` modifies the `authors` property  
+- `@A` decorates the `authors` property  
 
-- `@B` modifies the anonymous association type
+- `@B` decorates the anonymous association type
 :::
 
 ### 12.2 Annotation Override
 
-- As mentioned earlier, DTO language supports annotations to directly control the annotations of the generated DTO types
+-   As mentioned earlier, DTO language supports annotations to directly control the annotations of the generated DTO types
 
-- If a DTO property is not modified by any annotation, the annotations on the corresponding property of the original entity will be copied *(if the DTO property is mapped, not custom)*.
+-   If a DTO property is not decorated by any annotation, the annotations on the corresponding property of the original entity will be copied *(if the DTO property is mapped, not custom)*.
     Where any **non**-jimmer annotations other than those in the `org.babyfish.jimmer.client` package will be copied to the generated DTO type
 
 ### 12.3 value Parameter  
