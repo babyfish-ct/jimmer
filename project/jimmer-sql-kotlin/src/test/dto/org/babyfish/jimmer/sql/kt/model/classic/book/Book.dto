@@ -56,13 +56,13 @@ input-only BookSpecification {
     tag14: MutableList<Any>
 }
 
-input-only BookInput {
+input BookInput {
     #allScalars
 
     @javax.validation.constraints.NotNull
     id
 
-    id(store)!
+    id(store)
     id(authors) as authorIds
 }
 

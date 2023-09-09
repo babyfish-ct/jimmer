@@ -175,12 +175,12 @@ class DtoGenerator private constructor(
         typeBuilder.addSuperinterface(
             when {
                 dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY) ->
-                    Input::class
+                    INPUT_CLASS_NAME
                 dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
-                    ViewableInput::class
+                    VIEWABLE_INPUT_CLASS_NAME
                 else ->
-                    View::class
-            }.asClassName().parameterizedBy(
+                    VIEW_CLASS_NAME
+            }.parameterizedBy(
                 dtoType.baseType.className
             )
         )
@@ -361,6 +361,10 @@ class DtoGenerator private constructor(
                                     .addMember("%S", prop.name)
                                     .build()
                             )
+                            when {
+                                prop.isNullable -> defaultValue("null")
+                                prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
+                            }
                         } else {
                             when {
                                 prop.isNullable -> defaultValue("null")
