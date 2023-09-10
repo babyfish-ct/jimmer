@@ -30,6 +30,11 @@ export const SaveCommandDialog: FC<{
         </ViewDialog>;
 });
 
+export const SaveCommandPanel: FC = memo(() => {
+    const zh = useZh();
+    return zh ? ZH : EN;
+});
+
 const ZH: ReactNode = 
     <>
         <Save/>

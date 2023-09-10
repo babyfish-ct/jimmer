@@ -10,7 +10,8 @@ Jimmer has many configurations, some of which can be configured in Spring Boot's
 | jimmer.language | java &#124; kotlin | java | Must be configured for Kotlin projects |
 | jimmer.dialect | string | Jimmer's default dialect | Jimmer dialect class name |
 | jimmer.show-sql | boolean | false | Whether to print SQL logs |
-| jimmer.pretty-sql | boolean | false | Whether to format SQL, affects both execution and logs |
+| jimmer.pretty-sql | boolean | false | Whether to format SQL |
+| jimmer.inline-sql-variables | boolean | false | Whether to inline SQL parameters(This only affects the logs. The actual SQL executed still uses JDBC parameters) |
 | jimmer.executor-context-prefixes | List&lt;String&gt; | [] | Usually multiple package names or full class names, Jimmer judges whether the current stacktrace should be appended to the SQL logs |
 | jimmer.database-validation.mode | NONE &#124; WARNING &#124; ERROR | NONE | Database validation mode |
 | jimmer.database-validation-mode | Same as above | Same as above | Same as above |

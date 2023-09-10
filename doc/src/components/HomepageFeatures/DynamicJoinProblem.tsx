@@ -3,6 +3,7 @@ import CodeBlock from '@theme/CodeBlock';
 import { ViewMore } from "../ViewMore";
 import { useZh } from "@site/src/util/use-zh";
 import { ViewDialog } from "../ViewDialog";
+import Admonition from "@theme/Admonition";
 
 export const DynamicJoinProblem: FC = memo(() => {
     const zh = useZh();
@@ -121,6 +122,9 @@ const MYBATIS_2_XML =
 
 const INDUSTRY_GRAP_ZH =
     <>
+        <Admonition type="caution">
+            本文不讨论Jimmer SQL DSL的动态表连接，而讨论如果没有这个功能就必须面临的痛点。
+        </Admonition>
 
         <p>目前其他操作SQL的技术方案，无论ORM还是非ORM，都有存在一个空白领域：只考虑到了`动态where`，没有考虑`动态join`。</p>
 
@@ -174,6 +178,9 @@ const INDUSTRY_GRAP_ZH =
 
 const INDUSTRY_GRAP_EN =
     <>
+        <Admonition type="caution">
+            This article does not discuss Jimmer SQL's dynamic table joins, but rather discusses the pain points that would have to be faced if this functionality did not exist.
+        </Admonition>
 
         <p>Currently, other technical solutions for SQL operations, whether ORM or non-ORM, have a gap: they only consider <code>dynamic where</code> but not <code>dynamic join</code>.</p>
 

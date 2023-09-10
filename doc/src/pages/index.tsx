@@ -17,7 +17,7 @@ function HomepageHeader() {
     return isZh ? "Jimmer, 针对Java和Kotlin的革命性ORM" : siteConfig.title;
   }, [isZh, siteConfig.title]);
   const tagline = useMemo(() => {
-    return isZh ? "不只是ORM，还是基于它的集成化方案(包含强大的缓存管理机制)" : siteConfig.tagline;
+    return isZh ? "不只是ORM，还是一套集成化方案" : siteConfig.tagline;
   }, [isZh, siteConfig.tagline]);
   const tutorial = useMemo(() => {
     return isZh ? "进入教程" : "Goto Tutorial";

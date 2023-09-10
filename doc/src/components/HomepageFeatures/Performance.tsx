@@ -29,6 +29,11 @@ export const PerformanceDialog: FC<{
         </ViewDialog>;
 });
 
+export const PerformancePanel: FC = memo(() => {
+    const zh = useZh();
+    return zh ? ZH : EN;
+});
+
 const ZH =
     <>
         <Benchmark type='OPS' locale='zh'/>

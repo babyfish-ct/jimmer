@@ -10,7 +10,8 @@ Jimmer有很多配置，其中 **一部分** 可以在Spring Boot的`application
 |jimmer.language|java &#124; kotlin|java|Kotlin项目必须配置|
 |jimmer.dialect|string|Jimmer的默认方言|Jimmer方言类名|
 |jimmer.show-sql|boolean|false|是否打印SQL日志|
-|jimmer.pretty-sql|boolean|false|是否格式化SQL，对执行和日志都有影响|
+|jimmer.pretty-sql|boolean|false|是否格式化SQL|
+ jimmer.inline-sql-variables | boolean | false |是否类联JDBC参数(此举仅仅影响日志，真正被执行的SQL仍然采用JDBC参数)|
 |jimmer.executor-context-prefixes|List&lt;String&gt;|[]|通常为多个包名或类的全名，Jimmer判断当前stacktrace是否应附加在SQL日志中|
 |jimmer.database-validation.mode|NONE &#124; WARNING &#124; ERROR|NONE|数据库验证方式|
 |jimmer.database-validation-mode|同上|同上|同上|
