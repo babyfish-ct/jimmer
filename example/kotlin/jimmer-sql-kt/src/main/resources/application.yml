@@ -30,6 +30,11 @@ jimmer:
   database-validation-mode: ERROR
   show-sql: true
   pretty-sql: true
+
+  # You can enable the following configuration line `inline-sql-variables: true`,
+  # restart the application and call some REST APIs again to see what happens
+  # inline-sql-variables: true
+  
   executor-context-prefixes:
     - org.babyfish.jimmer.sql.example.business
   client:
