@@ -90,9 +90,9 @@ data class BookInput(
     This seems contradictory and difficult to convert between. Don't worry, Jimmer provides automated solutions, discussed later.
     :::
 
--   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using a <ViewMore buttonText="short association" variant="text"><ShortAssociation/></ViewMore>.  
+-   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using a <ViewMore buttonText="short association"><ShortAssociation/></ViewMore>.  
 
--   ❸ Explicitly specifies this Input DTO wants to edit the entity's many-to-many association `Book.authors` using a <ViewMore buttonText="long association" variant="text"><LongAssociation/></ViewMore>.
+-   ❸ Explicitly specifies this Input DTO wants to edit the entity's many-to-many association `Book.authors` using a <ViewMore buttonText="long association"><LongAssociation/></ViewMore>.
     The type of associated objects is also fixed to the nested Input DTO type `BookInput.AuthorItem`.
 
 ## MapStruct Converter

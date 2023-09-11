@@ -24,14 +24,13 @@ import DialogTitle from '@mui/material/DialogTitle';
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { useImmer } from "use-immer";
 import { Draft } from "immer";
+import { useZh } from "../util/use-zh";
 
 export const LongAssociation: FC = memo(() => {
     
     const { i18n } = useDocusaurusContext();
 
-    const isZh = useMemo(() => {
-        return i18n.currentLocale == 'zh' || i18n.currentLocale == 'zh_cn' || i18n.currentLocale == 'zh_CN';
-    }, [i18n.currentLocale]);
+    const isZh = useZh();
 
     const users = useMemo(() => {
         return isZh ? ZH_USERS : EN_USERS
@@ -47,10 +46,8 @@ export const LongAssociation: FC = memo(() => {
     
     
     const products = useMemo(() => {
-        return i18n.currentLocale == 'zh' || i18n.currentLocale == 'zh_cn' || i18n.currentLocale == 'zh_CN' ?
-            ZH_PRODUCTS :
-            ZH_PRODUCTS
-    }, [i18n.currentLocale]);
+        return isZh ? ZH_PRODUCTS : EN_PRODUCTS
+    }, [isZh]);
 
     const productMap = useMemo<Map<number, Product>>(() => {
         const map = new Map<number, Product>();
@@ -266,7 +263,7 @@ export const LongAssociation: FC = memo(() => {
                                 <TableFooter>
                                     <TableRow>
                                         <TableCell colSpan={5}>
-                                            <Button variant="outlined" onClick={onAddClick}>
+                                            <Button onClick={onAddClick}>
                                                 <AddIcon/>{isZh ? "添加" : "Add"}
                                             </Button>
                                         </TableCell>
@@ -350,6 +347,19 @@ const EN_USERS: ReadonlyArray<User> = [
 ];
 
 const ZH_PRODUCTS: ReadonlyArray<Product> = [
+    {id: 1, name: "zippo夜光流沙打火机", price: 268},
+    {id: 2, name: "杰登(Jayden)印度塔布拉鼓", price: 9238},
+    {id: 3, name: "浪琴(Longines)机械手表", price: 13900},
+    {id: 4, name: "viney男士皮带", price: 139},
+    {id: 5, name: "雅诗兰黛绒雾哑光唇膏", price: 310},
+    {id: 6, name: "CIRCUIT男子滑雪单板", price: 2044},
+    {id: 7, name: "特仑苏脱脂牛奶", price: 47},
+    {id: 8, name: "乐高积木布加迪", price: 374},
+    {id: 9, name: "双喜燃气电磁通用压力锅", price: 137},
+    {id: 10, name: "憨憨宠猫爬架", price: 238},
+];
+
+const EN_PRODUCTS: ReadonlyArray<Product> = [
     {id: 1, name: "Timeless Vitamin C Plus E 10 Percent Ferulic Acid Serum Serum Unisex 1 oz", price: 14.69},
     {id: 2, name: "Dockers Men's Tiller Boat Shoe", price: 52.41},
     {id: 3, name: "Paxcoo 124 Skeins Embroidery Floss Cross Stitch Thread with Needles", price: 29.99},
@@ -360,10 +370,6 @@ const ZH_PRODUCTS: ReadonlyArray<Product> = [
     {id: 8, name: "Under Armour Men's Storm Liner", price: 13.03},
     {id: 9, name: "Nike Women's Pro 3\" Training Shorts", price: 35.86},
     {id: 10, name: "Olaplex No. 4 Bond Maintenance Shampoo", price: 30},
-];
-
-const EN_PRODUCTS: ReadonlyArray<Product> = [
-
 ];
 
 function normalizeOrder(order: Draft<Order>) {

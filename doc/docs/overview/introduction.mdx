@@ -28,21 +28,13 @@ Jimmer collects most of the common and cumbersome problems in business project d
 ORM is just Jimmer's entry point, not the entirety.  
 :::
 
-:::note 
-As a systematic solution, Jimmer is by no means just another simple data CRUD solution. However, through careful, creative and disruptive design, Jimmer has an extremely high `return/cost` ratio.
-
-If readers have experience using any ORM (such as JPA), getting started with Jimmer will be especially easy. 
-
-Whether you have ORM experience or not, after completing the Jimmer learning journey, you will find that the gains you have made are huge.
-:::
-
 ## Pain Points
 
 As mentioned earlier, completing basic CRUD access to databases is only the most fundamental and simple part of actual project work. Here are some common pain points that have always plagued developers:
 
 1.  DTO explosion problem
 
-    Even for the same data type (aggregate root), different business functions expect query data formats to be different, which often leads projects to define a large number of DTO types, forming a <ViewMore buttonText="DTO explosion problem" variant="text"><DtoExplosion/></ViewMore>.
+    Even for the same data type (aggregate root), different business functions expect query data formats to be different, which often leads projects to define a large number of DTO types, forming a <ViewMore buttonText="DTO explosion problem"><DtoExplosion/></ViewMore>.
 
     :::info
     The number of DTO types is huge, and although they are different from each other, they often have high redundancy with high similarity.
@@ -56,7 +48,7 @@ As mentioned earlier, completing basic CRUD access to databases is only the most
 
         Although they have good convenience, they lack flexibility.
      
-        Even considering JPA 2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), the flexibility is ultimately limited, especially when business scenarios only need part of the properites of entity objects.
+        Even considering JPA 2.1's [Entity Graph](https://www.baeldung.com/jpa-entity-graph), the flexibility is still limited, especially when business scenarios only need part of scalar properites of entity objects.
      
         Finally, in order to cope with ever-changing flexibility, especially the flexibility of only needing part of an object's properites, developers often choose to query only part of an object's properites and manually convert them to DTO types. This goes against the purpose of ORM to pursue convenience and fails to reflect the value of ORM.
 
@@ -86,7 +78,7 @@ As mentioned earlier, completing basic CRUD access to databases is only the most
    
 2.  Complex form problem
 
-    Often, the data structure that the client needs to save is not a flat object, but a <ViewMore buttonText="data structure with some complexity" variant="text"><LongAssociation/></ViewMore>. If developers have to compare the differences between the client data structure and the existing data and perform appropriate add/delete/modify operations, it would be very cumbersome.
+    Often, the data structure that the client needs to save is not a flat object, but a <ViewMore buttonText="data structure with some complexity"><LongAssociation/></ViewMore>. If developers have to compare the differences between the client data structure and the existing data and perform appropriate insert/update/delete operations, it would be very cumbersome.
    
     Also, similar to the query function, the data structure format that can be saved for the same aggregate root type by different business functions should be diversified, and should not be fixed at the ORM level through configuration.
 
@@ -96,16 +88,16 @@ As mentioned earlier, completing basic CRUD access to databases is only the most
 
     -   Whether to use cache should be completely transparent to developers. Introducing cache should not increase the complexity of business code, reduce code quality and maintainability, and should be as simple as pure SQL projects.
 
-    -   The cache should not only have simple object caching, but also <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>.
+    -   The cache should not only have simple object caching, but also <ViewMore buttonText="Association Cache"><AssociationCache/></ViewMore> and <ViewMore buttonText="Calculated Cache"><CalculatedCache/></ViewMore>.
 
-    -   Global filtering capabilities represented by permission systems often allow different users to see different data, therefore, different users to see different cache. <ViewMore buttonText="visible to different users" variant="text"><MultiViewCache/></ViewMore>
+    -   Global filtering capabilities represented by permission systems often allow different users to see different data, therefore, different users to see different cache. So <ViewMore buttonText="Multi-view cache"><MultiViewCache/></ViewMore> should be supported.
    
-    -   Cache consistency maintenance, the most headache problem, <ViewMore buttonText="should be solved by the underlying solution" title="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore> as much as possible, rather than penetrating into business code for developers to solve.
+    -   Cache consistency maintenance, the most headache problem, <ViewMore buttonText="should be solved by the underlying solution" title="Automatically Maintaining Cache Consistency"><CacheConsistencyPanel/></ViewMore> as much as possible, rather than penetrating into business code for developers to solve.
    
 4.  Dynamic Table Joins
 
-    Traditional database access technologies only focus on dynamic `where` conditions and do not focus on dynamic table `joins`, 
-    This leads to <ViewMore buttonText="difficulties" title="Problems with Missing Dynamic Table Joins" variant="outlined"><DynamicJoinProblemPanel/></ViewMore> in writing complex dynamic queries.
+    Traditional database access technologies only focus on `dynamic where` conditions and do not focus on `dynamic table joins`, 
+    This leads to <ViewMore buttonText="difficulties" title="Problems with Missing Dynamic Table Joins"><DynamicJoinProblemPanel/></ViewMore> in writing complex dynamic queries.
     
 5.  Automatic client integration
 
@@ -127,7 +119,7 @@ The flexibility that GraphQL can only obtain through remote HTTP access has beco
 
 This feature also solves a flaw in GraphQL: inability to recursively query self-associated properties.
 
-<ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small" variant="outlined">Learn More</Button>
+<ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small">Learn More</Button>
 
 ### 2. Save data structures of arbitrary shapes
 
@@ -135,27 +127,27 @@ This feature also solves a flaw in GraphQL: inability to recursively query self-
 
 -   It should be like <a href="https://react.dev/learn">React</a> or <a href="https://vuejs.org/">Vue</a> in the web area. Developers only need to provide the data structure to be covered, and the framework will automatically find the `DIFF` and execute SQL operations.
 
-<SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small" variant="outlined">Learn More</Button>
+<SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small">Learn More</Button>
 
 ### 3. Cache data structures of arbitrary shapes 
 
-This is a very important feature of Jimmer. Its caching mechanism is very powerful and completely transparent to business code.
+This is a very important feature of Jimmer. Its cache mechanism is very powerful and completely transparent to business code.
 
 :::note
-In long-term technical management experience, I have found that most development teams can keep the code clean and maintainable for pure database projects. However, once a caching system is introduced, the maintainability of the project decreases sharply.
+In long-term technical management experience, I have found that most development teams can keep the code clean and maintainable for pure database projects. However, once a cache system is introduced, the maintainability of the project decreases sharply.
 
-Therefore, Jimmer introduces this set of powerful caching management mechanisms that have 0 invasion into business code, while fully enjoying the benefits of caching mechanisms, keeping business code as simple and easy to maintain as pure database projects.
+Therefore, Jimmer introduces this set of powerful cache management mechanisms that have 0 invasion into business code, while fully enjoying the benefits of cache mechanisms, keeping business code as simple and easy to maintain as pure database projects.
 :::
 
 This caching mechanism supports the following important concepts:
 
--   <ViewMore buttonText="Object Cache" variant="text"><ObjectCache/></ViewMore>, <ViewMore buttonText="Association Cache" variant="text"><AssociationCache/></ViewMore> and <ViewMore buttonText="Computed Cache" variant="text"><CalculatedCache/></ViewMore>
+-   <ViewMore buttonText="Object Cache"><ObjectCache/></ViewMore>, <ViewMore buttonText="Association Cache"><AssociationCache/></ViewMore> and <ViewMore buttonText="Calculated Cache"><CalculatedCache/></ViewMore>
 
--   <ViewMore buttonText="Multi-view Cache" variant="text"><MultiViewCache/></ViewMore>, different caches visible to different users, often combined with permission systems
+-   <ViewMore buttonText="Multi-view Cache"><MultiViewCache/></ViewMore>, different caches visible to different users, often combined with permission systems
 
--   <ViewMore buttonText="Automatically Maintaining Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>
+-   <ViewMore buttonText="Automatically Cache Invalidation"><CacheConsistencyPanel/></ViewMore>
 
-<Button href="../cache" size="small" variant="outlined">Learn More</Button>
+<Button href="../cache" size="small">Learn More</Button>
 
 ### 4. Dynamic table join
 
@@ -165,7 +157,7 @@ Jimmer's DSL is not a mechanical translation of SQL. Its original `dynamic table
 The lack of `dynamic table join` is an industry gap, and also the fuse for the Jimmer project to be launched. 
 :::
 
-<ViewMore buttonText="Brief Understanding" title="Problems Without Dynamic Table Join" variant="outlined"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">Learn More</Button>
+<ViewMore buttonText="Brief Understanding" title="Problems Without Dynamic Table Join"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small">Learn More</Button>
 
 ### 5. Front-end integration 
 
@@ -179,7 +171,7 @@ Note that unlike other technologies that automatically generate client code, the
 
 Thus, the server side and client side both get programming models most suitable for themselves
 
-<Communication/>&nbsp;<Button href="../spring/client" size="small" variant="outlined">Learn More</Button>
+<Communication/>&nbsp;<Button href="../spring/client" size="small">Learn More</Button>
 
 ### 6. Smart Pagination
 
@@ -191,7 +183,7 @@ Thus, the server side and client side both get programming models most suitable 
 
     Jimmer will fully optimize paged queries at the SQL level
   
-<Button href="../query/paging" size="small" variant="outlined">Learn More</Button>  
+<Button href="../query/paging" size="small">Learn More</Button>  
 
 ### 7. DTO Language
 
@@ -206,15 +198,15 @@ The remaining work
 
 -   Logic to query DTOs
 
-is all automatic, completely without the pain caused by DTO explosions in traditional technical solutions.
+are all automatic, completely without the pain caused by DTO explosions in traditional technical solutions.
 
-<Button href="../object/view/dto-language" size="small" variant="outlined">Learn More</Button>
+<Button href="../object/view/dto-language" size="small">Learn More</Button>
 
 ### 8. Remote associations
 
 In microservice architectures, the database is fragmented. Querying different parts of the data from different microservices first, and then stitching them together as a whole to return is cumbersome and frequent, so it should be hidden and automated by the underlying solution.
 
-<Button href="../spring/spring-cloud" size="small" variant="outlined">Learn More</Button>
+<Button href="../spring/spring-cloud" size="small">Learn More</Button>
 
 ## All Features
 

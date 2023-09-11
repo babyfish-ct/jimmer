@@ -30,7 +30,7 @@ The accompanying examples of Jimmer are very helpful for quickly mastering Jimme
 
 The root directory of all examples: https://github.com/babyfish-ct/jimmer/tree/main/example
 
-This project provides 5 examples, each with Java and Kotlin versions, for a total of 10 examples.
+This project provides 5 examples, each with Java and Kotlin versions, for a total of 10 projects.
 
 <table>
     <thead>
@@ -58,7 +58,7 @@ This project provides 5 examples, each with Java and Kotlin versions, for a tota
                     <li>Visit swagger page: http://localhost:8080/ui</li>
                     <li>Download client TypeScript code: http://localhost:8080/ts.zip</li>
                 </ol>
-                <ViewMore buttonText="Notes" title="Notes for jimmer-sql/jimmer-sql-kt" variant="outlined">
+                <ViewMore buttonText="Notes" title="Notes for jimmer-sql/jimmer-sql-kt">
                     <p>To use the data saving functionality, the tenant must be set in the HTTP header, otherwise an exception will occur.</p>
                     <p>The tenants 'a' and 'b' already exist in the database. Of course, you can add new tenants for storage operations.</p>
                     <p>For example, in the Swagger UI, you can set it like this:</p>
@@ -76,7 +76,7 @@ This project provides 5 examples, each with Java and Kotlin versions, for a tota
                     <li>Run main method</li>
                     <li>Visit Graph<b>i</b>QL page: http://localhost:8080/graph<b>i</b>ql</li> 
                 </ol>
-                <ViewMore buttonText="Notes" title="Notes for jimmer-sql-graphql/jimmer-sql-graphql-kt" variant="outlined">
+                <ViewMore buttonText="Notes" title="Notes for jimmer-sql-graphql/jimmer-sql-graphql-kt">
                     <p>To use the data saving functionality, the tenant must be set in the HTTP header, otherwise an exception will occur.</p>  
                     <p>The tenants 'a' and 'b' already exist in the database. Of course, you can add new tenants for storage operations.</p>
                     <p>For example, in GraphiQL, you can set it like this:</p>
@@ -150,10 +150,10 @@ By default, caching is not used, and they run on embedded in-memory databases wi
 
 You can also start them in cache mode by running the program with the spring-boot profile `maxwell` or `debezium`. 
 
-These two spring profiles utilize the CDC push capabilities of [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) to achieve <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>, so external environments need to be installed.
+These two spring profiles utilize the CDC push capabilities of [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) to achieve <ViewMore buttonText="Cache Consistency"><CacheConsistencyPanel/></ViewMore>, so external environments need to be installed.
 
 :::tip
-In fact, relying on CDC push services like [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) is not the only way to achieve <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>. Even without the help of any external technology, Jimmer can also achieve this capability.
+In fact, relying on CDC push services like [maxwell](https://maxwells-daemon.io/) or [debezium](https://debezium.io/) is not the only way to achieve <ViewMore buttonText="Cache Consistency"><CacheConsistencyPanel/></ViewMore>. Even without the help of any external technology, Jimmer can also achieve this capability.
 
 - Jimmer's own capability to capture data changes is called `Transaction Trigger` 
 
@@ -163,7 +163,7 @@ Please refer to [Trigger Classification](../mutation/trigger#trigger-classificat
 
 `BinLog Trigger` has better performance and universality (even if the database is changed through other means that bypass Jimmer, such as directly modifying the data using a SQL IDE, it can also be intercepted), so it is the recommended solution.
 
-Therefore, although `Transaction Trigger` can achieve <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore> without relying on any special external environment,
+Therefore, although `Transaction Trigger` can achieve <ViewMore buttonText="Cache Consistency"><CacheConsistencyPanel/></ViewMore> without relying on any special external environment,
 the official examples still use `BinLog Trigger` to synchronize the cache, as this is the more recommended approach. 
 
 So we need to set up CDC services like maxwell or debezium to push database changes to Jimmer.
@@ -175,7 +175,7 @@ Enabling cache mode requires building an external environment.
 
 2. Install the external environment
 
-    The accompanying examples support two external environments. Feel free to choose either one to experience <ViewMore buttonText="Cache Consistency" variant="text"><CacheConsistencyPanel/></ViewMore>
+    The accompanying examples support two external environments. Feel free to choose either one to experience <ViewMore buttonText="Cache Consistency"><CacheConsistencyPanel/></ViewMore>
     
 ### Maxwell + MySQL
 

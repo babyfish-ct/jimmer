@@ -8,10 +8,10 @@ import Admonition from "@theme/Admonition";
 export const DynamicJoinProblem: FC = memo(() => {
     const zh = useZh();
     return zh ? 
-        <ViewMore buttonText='行业空白' title='Jimmer DSL弥补行业空白' variant='text'>
+        <ViewMore buttonText='行业空白' title='Jimmer DSL弥补行业空白'>
             {INDUSTRY_GRAP_ZH}
         </ViewMore> :
-        <ViewMore buttonText='industry gap' title='Jimmer DSL fills gap of industry' variant='text'>
+        <ViewMore buttonText='industry gap' title='Jimmer DSL fills gap of industry'>
             {INDUSTRY_GRAP_EN}
         </ViewMore>;
 });
@@ -187,8 +187,8 @@ const INDUSTRY_GRAP_EN =
         <p><code>Dynamic JOIN</code> is defined as follows: if certain dynamic query condition apply to other tables rather than the current table. This means that:</p>
 
         <ul>
-            <li>When the condition is matched: first join the other table through the associated property, and then add dynamic where condition to the joined table.</li>
-            <li>When the condition is not matched: cannot join other tables through the associated property.</li>
+            <li>When the condition is matched: first join the other table through the association property, and then add dynamic where condition to the joined table.</li>
+            <li>When the condition is not matched: cannot join other tables through the association property.</li>
         </ul>
 
         <h1>Scenario 1</h1>

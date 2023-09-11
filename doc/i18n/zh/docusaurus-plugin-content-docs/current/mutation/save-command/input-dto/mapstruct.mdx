@@ -90,9 +90,9 @@ data class BookInput(
     二者似乎是矛盾的，难以转化。别担心，Jimmer给出自动化的解决方案，后文论述。
     :::
 
--   ❷ 明确指定此InputDTO想以<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的方式编辑实体的多对一关联`Book.store`。其中，
+-   ❷ 明确指定此InputDTO想以<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>的方式编辑实体的多对一关联`Book.store`。其中，
 
--   ❸ 明确指定此InputDTO想以<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>的方式编辑实体的多对过关联`Book.authors`，
+-   ❸ 明确指定此InputDTO想以<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>的方式编辑实体的多对过关联`Book.authors`，
     关联对象的类型也被内嵌的InputDTO类型`BookInput.AuthorItem`固化。
 
 ## Mapstruct转化器

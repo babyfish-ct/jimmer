@@ -13,13 +13,13 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 ### 只针对短关联
 
-关联id检查是一个只针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的功能，对<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>无意义。
+关联id检查是一个只针对<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>的功能，对<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>无意义。
 
 通过之前的介绍，我们知道保存指令可以保存任意形状的数据结构，任何对象都可以进一步持有关联对象。
 
 如果某个关联对象的id被指定了，但其所代表的对象在数据库中不存在是，Jimmer如何应对呢？
 
-首先，对于<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
+首先，对于<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>而言，Jimmer会先创建不存在的关联对象，然后建立当前对象和新关联对象之间的关联。例如：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -101,13 +101,13 @@ values
 ```
 
 :::info
-可见，在保存<ViewMore buttonText="长关联" variant="text"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为1000)*，Jimmer也会按照此id创建新的关联对象。
+可见，在保存<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为1000)*，Jimmer也会按照此id创建新的关联对象。
 
 因此，长关联根本不存在`关联id检查问题`。
 
-然而，对于<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
+然而，对于<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
 
-因此，`关联id检查`是一个仅对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>有意义的话题。本文接下来的例子，所有的讨论都是针对<ViewMore buttonText="短关联" variant="text"><ShortAssociation/></ViewMore>的。
+因此，`关联id检查`是一个仅对<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>有意义的话题。本文接下来的例子，所有的讨论都是针对<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>的。
 :::
 
 ### 目标外键

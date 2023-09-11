@@ -6,10 +6,9 @@ export const ViewMore: FC<
     PropsWithChildren<{
         readonly buttonText: string,
         readonly fullScreen?: boolean,
-        readonly title?: string,
-        readonly variant?: 'text' | 'outlined' | 'contained'
+        readonly title?: string
     }>
-> = memo(({buttonText, fullScreen = false, title = buttonText, variant = "outlined", children}) => {
+> = memo(({buttonText, fullScreen = false, title = buttonText, children}) => {
     
     const [open, setOpen] = useState(false);
 
@@ -28,7 +27,7 @@ export const ViewMore: FC<
 
     return (
         <>
-            <Button data-is-view-more-button="true" onClick={onButtonClick} variant={variant} size={variant == 'outlined' ? "small" : "medium"}>{buttonText}</Button>
+            <Button data-is-view-more-button="true" onClick={onButtonClick} variant="outlined" size="small">{buttonText}</Button>
             <ViewDialog open={open} onClose={onClose} title={title} fullScreen={fullScreen}>
                 {children}
             </ViewDialog>

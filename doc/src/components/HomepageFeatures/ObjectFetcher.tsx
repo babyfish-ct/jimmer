@@ -10,13 +10,13 @@ export const ObjectFetcher : FC = memo(() => {
     const zh = useZh();
     if (zh) {
         return (
-            <ViewMore buttonText="简要了解" title="查询任意形状的对象" variant="outlined">
+            <ViewMore buttonText="简要了解" title="查询任意形状的对象">
               {ZH}
             </ViewMore>
         );
     }
     return (
-        <ViewMore buttonText="A brief introduction" title="Query data structure of any shape" variant="outlined">
+        <ViewMore buttonText="A brief introduction" title="Query data structure of any shape">
             {EN}
         </ViewMore>
     );
@@ -102,7 +102,7 @@ const EN: ReactNode =
         <Admonition type="info">
             <ul>
                 <li>GraphQL is based on HTTP services, which can only be experienced if it crosses the boundaries of HTTP services. In Jimmer, this is the underlying API for ORM, and you can use this capability in any code logic.</li>
-                <li>Until now, the GraphQL protocol does not support recursive queries on self-correlated properties with infinite depth; And Jimer supports</li>
+                <li>Until now, the GraphQL protocol does not support recursive queries on self-associated properties with infinite depth; And Jimer supports</li>
             </ul>
         </Admonition>
     </>;

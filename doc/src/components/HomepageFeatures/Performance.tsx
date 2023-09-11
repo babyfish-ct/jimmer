@@ -7,10 +7,10 @@ import { ViewDialog } from "../ViewDialog";
 export const Performance: FC = memo(() => {
     const zh = useZh();
     return zh? 
-        <ViewMore buttonText='简要了解' title='性能报告' variant='outlined'>
+        <ViewMore buttonText='简要了解' title='性能报告'>
             {ZH}
         </ViewMore> : 
-        <ViewMore buttonText='A Brief Introduction' title='Performance Report' variant='outlined'>
+        <ViewMore buttonText='A Brief Introduction' title='Performance Report'>
             {EN}
         </ViewMore>;
 });

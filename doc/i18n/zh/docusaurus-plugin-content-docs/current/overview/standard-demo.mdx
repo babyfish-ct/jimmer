@@ -58,7 +58,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
                     <li>访问swagger页面: http://localhost:8080/ui</li>
                     <li>下载客户端TypeScript代码：http://localhost:8080/ts.zip</li>
                 </ol>
-                <ViewMore buttonText="注意事项" title="jimmer-sql/jimmer-sql-kt的注意事项" variant="outlined">
+                <ViewMore buttonText="注意事项" title="jimmer-sql/jimmer-sql-kt的注意事项">
                     <p>如果需要使用保存数据的功能，需要在HTTP header中设置tenant，否则会导致异常。</p>
                     <p>目前数据库中已有的tenant为`a`和`b`。当然，对保存操作而言，你可以添加新的tenant。</p>
                     <p>以Swagger界面为例，你可以这样设置: </p>
@@ -76,7 +76,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
                     <li>运行main方法</li>
                     <li>访问Graph<b>i</b>QL界面: http://localhost:8080/graph<b>i</b>ql</li>
                 </ol>
-                <ViewMore buttonText="注意事项" title="jimmer-sql-graphql/jimmer-sql-graphql-kt的注意事项" variant="outlined">
+                <ViewMore buttonText="注意事项" title="jimmer-sql-graphql/jimmer-sql-graphql-kt的注意事项">
                     <p>如果需要使用保存数据的功能，需要在HTTP header中设置tenant，否则会导致异常。</p>
                     <p>目前数据库中已有的tenant为`a`和`b`。当然，对保存操作而言，你可以添加新的tenant。</p>
                     <p>以GraphiQL界面为例，你可以这样设置: </p>
@@ -150,10 +150,10 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 
 你也可以让它们用缓存模式启动，只需以spring-boot profile`maxwell`或`debezium`运行程序即可。
 
-这两个spring profile利用了[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)的CDC推送让能力实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，因此，需要安装外部环境。
+这两个spring profile利用了[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)的CDC推送让能力实现<ViewMore buttonText="缓存一致性"><CacheConsistencyPanel/></ViewMore>，因此，需要安装外部环境。
 
 :::tip
-事实上，借助[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)这样的CDC推送服务并非实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>的唯一途径，即使不借助于任何外部技术帮助，Jimmer也可以实现这个能力。
+事实上，借助[maxwell](https://maxwells-daemon.io/)或[debezium](https://debezium.io/)这样的CDC推送服务并非实现<ViewMore buttonText="缓存一致性"><CacheConsistencyPanel/></ViewMore>的唯一途径，即使不借助于任何外部技术帮助，Jimmer也可以实现这个能力。
 
 -   Jimmer自己捕获数据变化的功能叫`Transaction触发器`
 
@@ -163,7 +163,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 
 `BinLog触发器`既具有更好的性能，又具备更好的普适性 *(即使绕过Jimmer修改数据库的API，通过其他方式修改数据库，比如直接利用SQL IDE修改数据，也可以被拦截)*，是推荐方案。
 
-因此，虽然`Transaction触发器`可以在不依赖于任何特殊外部环境的情况下实现<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，
+因此，虽然`Transaction触发器`可以在不依赖于任何特殊外部环境的情况下实现<ViewMore buttonText="缓存一致性"><CacheConsistencyPanel/></ViewMore>，
 但是，官方附带例子仍然使用`BinLog触发器`来同步缓存，毕竟这是更值得推荐的方式。
 
 所以，我们需要搭建maxwell或debezium这样的CDC服务把数据库的变化推送给Jimmer。
@@ -175,7 +175,7 @@ Jimmer提供的配套示例，对快速掌握Jimmer非常有帮助
 
 2.  安装外部环境
 
-    附带例子支持两种外部环境，你可以随意选择一种方式体验<ViewMore buttonText="缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>
+    附带例子支持两种外部环境，你可以随意选择一种方式体验<ViewMore buttonText="缓存一致性"><CacheConsistencyPanel/></ViewMore>
 
 ### Maxwell + MySQL
 

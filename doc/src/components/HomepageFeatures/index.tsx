@@ -212,7 +212,7 @@ const FEATURE_LIST_EN: FeatureItem[] = [
           <TabItem value="association" label="Association Cache">
             <AssociationCache/>
           </TabItem>
-          <TabItem value="calculated" label="Calculation Cache">
+          <TabItem value="calculated" label="Calculated Cache">
             <CalculatedCache/>
           </TabItem>
           <TabItem value="multiview" label="Multiview Cache">

@@ -205,7 +205,7 @@ println(tuples)
 :::info
 不幸的是
 -   查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
-最终导致<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>
+最终导致<ViewMore buttonText="DTO爆炸问题"><DtoExplosion/></ViewMore>
 
 -   这样的自定义映射机制破坏了ORM原本的功能，无法控制关联属性，只能返回简单对象而非层次化的数据结构
 :::
@@ -405,7 +405,7 @@ Annotation processor会为每一个实体接口自动生成一个Fetcher类，�
 :::tip
 借助Jimmer实体的[动态性](../../object/dynamic)，不再需要编写额外的DTO，即可实现多样化的查询业务，只需要改变对象抓取器的形状即可。
 
-对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
+对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
 :::
 
 ## 和JPA的差别

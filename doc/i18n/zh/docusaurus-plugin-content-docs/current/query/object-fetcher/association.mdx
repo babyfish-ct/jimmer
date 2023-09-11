@@ -508,7 +508,7 @@ val bookAllTableFields = sqlClient
 :::info
 某些情况下，`select(table.fetch(XxxFetcher.$.allTableFields()))`和`select(table)`等价。此时，可以认为后者是前者的简写方式。
 
-二者等价的前提：关联对象不受<ViewMore buttonText="过滤器" variant="text"><FilterRef/></ViewMore>影响
+二者等价的前提：关联对象不受<ViewMore buttonText="过滤器"><FilterRef/></ViewMore>影响
 :::
 
 等价的简单写法如下

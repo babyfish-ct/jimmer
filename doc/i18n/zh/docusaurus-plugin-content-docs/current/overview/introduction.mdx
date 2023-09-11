@@ -28,21 +28,13 @@ Jimmer收集业务项目开发中大部分既常见又繁琐的难题，给予�
 ORM只是Jimmer的切入点，而非全部。
 :::
 
-:::note
-作为一个系统性大方案，Jimmer绝非又一个单纯的简单数据CRUD方案。然而，经过慎重而富有创意和颠覆性的设计，Jimmer具备极高的`收益/成本`比。
-
-如果读者具备任何一门ORM *(比如JPA)* 的使用经验，上手Jimmer的难度会特别容易。
-
-无论你是否有ORM的经验，在你完成Jimmer学习之旅后，你都会发现你获得的收益是巨大的。
-:::
-
 ## 痛点
 
 前面提到，对数据库完成CRUD访问只是实际项目中最基础最简单的一部分工作，还有其他一些痛点一直困扰着开发人员。这里列举一些常见的痛点：
 
 1.  DTO爆炸问题
 
-    即便对于同一种数据类型 *(聚合根)* 而言，不同业务功能期望查询的数据格式也不同，这往往导致项目需要定义大量的DTO类型，形成<ViewMore buttonText="DTO爆炸问题" variant="text"><DtoExplosion/></ViewMore>。
+    即便对于同一种数据类型 *(聚合根)* 而言，不同业务功能期望查询的数据格式也不同，这往往导致项目需要定义大量的DTO类型，形成<ViewMore buttonText="DTO爆炸问题"><DtoExplosion/></ViewMore>。
 
     :::info
     DTO类型数量庞大，彼此之间虽然不同但往往具备高度相似性的，冗余度很高。
@@ -56,7 +48,7 @@ ORM只是Jimmer的切入点，而非全部。
     
         这类方案虽然具备很好的便捷但缺乏灵活性。
         
-        即使考虑JPA2.1的[Entity Graph](https://www.baeldung.com/jpa-entity-graph)，灵活性也终归有限，尤其是业务场景只需要某些实体对象的部分属性时。
+        即使考虑JPA2.1的[Entity Graph](https://www.baeldung.com/jpa-entity-graph)，灵活性也终归有限，尤其是业务场景只需要某些实体对象的部分标量属性时。
         
         最后，为了应对千变万化灵活性，尤其是只需要对象的一部分属性这种灵活性，开发人员往往选择只查询对象的一部分属性并手动转化为DTO类型，这种方式会违背ORM追求便捷性的初衷，无法体现ORM的价值。
 
@@ -86,7 +78,7 @@ ORM只是Jimmer的切入点，而非全部。
 
 2.  复杂表单问题
 
-    很多时候，客户端需要保存的数据结构并非扁平对象，而是<ViewMore buttonText="有一定复杂性的数据结构" variant="text"><LongAssociation/></ViewMore>，如果要开发人员自己对比客户端数据结构和现有数据的差异并执行适当的增、删、改行为，那会非常繁琐。
+    很多时候，客户端需要保存的数据结构并非扁平对象，而是<ViewMore buttonText="有一定复杂性的数据结构"><LongAssociation/></ViewMore>，如果要开发人员自己对比客户端数据结构和现有数据的差异并执行适当的增、删、改行为，那会非常繁琐。
     
     而且，应该和查询功能类似，不同业务功能能对同一个聚合根类型保存的数据结构的格式应该多样化，不应在ORM层面通过配置固化。
 
@@ -96,15 +88,15 @@ ORM只是Jimmer的切入点，而非全部。
 
     -   是否使用缓存应该对开发人员绝对透明，缓存的引入不应该增加业务代码的复杂度、降低代码质量和可维护性，应该和纯SQL项目一样简单。
 
-    -   缓存不应该仅有最简单的对象缓存，还应有<ViewMore buttonText="关联缓存" variant="text"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><CalculatedCache/></ViewMore>。
+    -   缓存不应该仅有最简单的对象缓存，还应有<ViewMore buttonText="关联缓存"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存"><CalculatedCache/></ViewMore>。
 
-    -   以权限系统为代表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存" variant="text"><MultiViewCache/></ViewMore>
+    -   以权限系统为代表的全局过滤能力常常让不同用户看到不同的数据，因此，也应该<ViewMore buttonText="让不同用户看到不同缓存"><MultiViewCache/></ViewMore>
 
-    -   缓存的一致性维护这个最头疼的问题<ViewMore buttonText="应该被底层方案解决" title="自动维护缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
+    -   缓存的一致性维护这个最头疼的问题<ViewMore buttonText="应该被底层方案解决" title="自动维护缓存一致性"><CacheConsistencyPanel/></ViewMore>，尽可能做到全自动的，而非穿透到业务代码中由开发人员解决。
 
 4.  动态表连接
 
-    传统的数据库访问技术只关注动态where条件，不专注动态表join，这导致复杂的动态查询<ViewMore buttonText="难以书写" title="缺失动态表连接的问题" variant="outlined"><DynamicJoinProblemPanel/></ViewMore>
+    传统的数据库访问技术只关注动态where条件，不专注动态表join，这导致复杂的动态查询<ViewMore buttonText="难以书写" title="缺失动态表连接的问题"><DynamicJoinProblemPanel/></ViewMore>
 
 5.  客户端自动对接
 
@@ -126,7 +118,7 @@ GraphQL那种必须通过HTTP远程访问才能得到灵活性，变成了无所
 
 这个功能也解决GraphQL的一个缺陷：不支持自关联字段的递归查询。
 
-<ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small" variant="outlined">前往看看</Button>
+<ObjectFetcher/>&nbsp;<Button href="../query/object-fetcher" size="small">前往看看</Button>
 
 ### 2. 保存任意形状的数据结构
 
@@ -134,7 +126,7 @@ GraphQL那种必须通过HTTP远程访问才能得到灵活性，变成了无所
 
 -   应该如同Web领域的<a href="https://react.dev/learn">React</a>或<a href="https://vuejs.org/">Vue</a>一样，开发人员给出要覆盖的数据结构即可，由框架自行寻找`DIFF`并执行SQL操作。
 
-<SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small" variant="outlined">前往看看</Button>
+<SaveCommand/>&nbsp;<Button href="../mutation/save-command" size="small">前往看看</Button>
 
 ### 3. 缓存任意形状的数据结构
 
@@ -148,13 +140,13 @@ GraphQL那种必须通过HTTP远程访问才能得到灵活性，变成了无所
 
 这套缓存机制支持如下的重要概念
 
--   <ViewMore buttonText="对象缓存" variant="text"><ObjectCache/></ViewMore>、<ViewMore buttonText="关联缓存" variant="text"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存" variant="text"><CalculatedCache/></ViewMore>
+-   <ViewMore buttonText="对象缓存"><ObjectCache/></ViewMore>、<ViewMore buttonText="关联缓存"><AssociationCache/></ViewMore>和<ViewMore buttonText="计算缓存"><CalculatedCache/></ViewMore>
 
--   <ViewMore buttonText="多视图缓存" variant="text"><MultiViewCache/></ViewMore>，不同用户看到不同的缓存，往往和权限系统结合使用
+-   <ViewMore buttonText="多视图缓存"><MultiViewCache/></ViewMore>，不同用户看到不同的缓存，往往和权限系统结合使用
 
--   <ViewMore buttonText="自动维护缓存一致性" variant="text"><CacheConsistencyPanel/></ViewMore>
+-   <ViewMore buttonText="自动维护缓存一致性"><CacheConsistencyPanel/></ViewMore>
 
-<Button href="../cache" size="small" variant="outlined">前往看看</Button>
+<Button href="../cache" size="small">前往看看</Button>
 
 ### 4. 动态表连接
 
@@ -164,7 +156,7 @@ Jimmer的DSL并非是对SQL的机械翻译，其独创的`动态表连接`，填
 `动态表连接`的缺失，是行业空白，也是Jimmer项目得以立项的导火索。
 :::
 
-<ViewMore buttonText="简要了解" title="缺失动态表连接的问题" variant="outlined"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small" variant="outlined">前往看看</Button>
+<ViewMore buttonText="简要了解" title="缺失动态表连接的问题"><DynamicJoinProblemPanel/></ViewMore>&nbsp;<Button href="../query/dynamic-join" size="small">前往看看</Button>
 
 ### 5. 前后端对接
 
@@ -178,7 +170,7 @@ Jimmer的DSL并非是对SQL的机械翻译，其独创的`动态表连接`，填
 
 这样，服务端和客户端都得到最适合自己的编程模型
 
-<Communication/>&nbsp;<Button href="../spring/client" size="small" variant="outlined">前往看看</Button>
+<Communication/>&nbsp;<Button href="../spring/client" size="small">前往看看</Button>
 
 ### 6. 智能分页
 
@@ -190,7 +182,7 @@ Jimmer的DSL并非是对SQL的机械翻译，其独创的`动态表连接`，填
 
     Jimmer会在SQL层面充分优化分页查询
 
-<Button href="../query/paging" size="small" variant="outlined">前往看看</Button>
+<Button href="../query/paging" size="small">前往看看</Button>
 
 ### 7. DTO语言
 
@@ -207,13 +199,13 @@ DTO语言是Jimmer自带的一种简单语言。
 
 都是全自动的，完全感觉不到传统技术方案中因DTO爆炸带来的痛苦。
 
-<Button href="../object/view/dto-language" size="small" variant="outlined">前往看看</Button>
+<Button href="../object/view/dto-language" size="small">前往看看</Button>
 
 ### 8. 远程关联
 
 在微型服务体系中，数据库是碎片化的。先从不同的微服务中查询数据的不同部分，然后拼接起来作为一个整体返回，这个操作既繁琐又高频，应该由底层方案隐藏和自动化。
 
-<Button href="../spring/spring-cloud" size="small" variant="outlined">前往看看</Button>
+<Button href="../spring/spring-cloud" size="small">前往看看</Button>
 
 ## 所有功能点
 

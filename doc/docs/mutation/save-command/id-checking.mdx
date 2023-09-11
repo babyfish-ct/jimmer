@@ -13,13 +13,13 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 ### For Short Associations Only 
 
-Association id checking is a feature that only applies to <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, and is meaningless for <ViewMore buttonText="long associations" variant="text"><LongAssociation/></ViewMore>.
+Association id checking is a feature that only applies to <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>, and is meaningless for <ViewMore buttonText="long associations"><LongAssociation/></ViewMore>.
 
 As we learned before, save commands can persist arbitrary data shapes, and any object can further hold associated objects. 
 
 If the id of an associated object is specified, but the object it represents does not exist in the database, how does Jimmer handle this scenario?
 
-First, for <ViewMore buttonText="long associations" variant="text"><LongAssociation/></ViewMore>, Jimmer will first create the non-existing associated object, then establish the association between the current object and the new associated object. For example:
+First, for <ViewMore buttonText="long associations"><LongAssociation/></ViewMore>, Jimmer will first create the non-existing associated object, then establish the association between the current object and the new associated object. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -101,13 +101,13 @@ values
 ```
 
 :::info
-As you can see, when saving a <ViewMore buttonText="long association" variant="text"><LongAssociation/></ViewMore>, even if an illegal id is specified for the associated object *(1000 in this example)*, Jimmer will still create a new associated object using that id.
+As you can see, when saving a <ViewMore buttonText="long association"><LongAssociation/></ViewMore>, even if an illegal id is specified for the associated object *(1000 in this example)*, Jimmer will still create a new associated object using that id.
 
-Therefore, `association id checking` is not an issue at all for <ViewMore buttonText="long associations" variant="text"><LongAssociation/></ViewMore>.
+Therefore, `association id checking` is not an issue at all for <ViewMore buttonText="long associations"><LongAssociation/></ViewMore>.
 
-However, for <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>, Jimmer is only responsible for creating the association between the current object and the associated object, and will not automatically create non-existing associated objects.
+However, for <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>, Jimmer is only responsible for creating the association between the current object and the associated object, and will not automatically create non-existing associated objects.
 
-Therefore, `association id checking` is a topic that only makes sense for <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>. In the following examples of this article, all discussions are about <ViewMore buttonText="short associations" variant="text"><ShortAssociation/></ViewMore>.
+Therefore, `association id checking` is a topic that only makes sense for <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>. In the following examples of this article, all discussions are about <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>.
 :::
 
 ### Target Foreign Key

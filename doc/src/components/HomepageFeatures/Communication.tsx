@@ -10,10 +10,10 @@ import { ViewDialog } from "../ViewDialog";
 export const Communication: FC = memo(() => {
     const zh = useZh();
     return zh ? 
-        <ViewMore buttonText="简要了解" title="服务端和客户端使用不同编程模型的前后端对接" variant="outlined">
+        <ViewMore buttonText="简要了解" title="服务端和客户端使用不同编程模型的前后端对接">
             {ZH}
         </ViewMore> : 
-        <ViewMore buttonText="A Brief Introduction" title="The docking of the server and the client using different programming models" variant="outlined">
+        <ViewMore buttonText="A Brief Introduction" title="The docking of the server and the client using different programming models">
             {EN}
         </ViewMore>;
 });

@@ -8,10 +8,10 @@ import { Save } from "../Image";
 export const SaveCommand: FC = memo(() => {
     const zh = useZh();
     return zh ? 
-        <ViewMore buttonText="简要了解" title="保存任意形状的数据结构" variant="outlined">
+        <ViewMore buttonText="简要了解" title="保存任意形状的数据结构">
             {ZH}
         </ViewMore> : 
-        <ViewMore buttonText="A Brief Introduction" title="Save data structure of any shape" variant="outlined">
+        <ViewMore buttonText="A Brief Introduction" title="Save data structure of any shape">
             {EN}
         </ViewMore>;
 });
@@ -103,18 +103,18 @@ const EN =
         <ul>
             <li>
                 <p>
-                    <b>Upper right corner: </b> The user passes in a data structure of any shape, and asks Jimmer to write it into the database.
+                    <b>Upper right corner: </b> The user passes in a data structure of any shape, and asks Jimmer to save it.
                 </p>
                 <p>
                     There is an essential difference between this and the save method of other ORM frameworks.
-                    Taking JPA/Hibernate as an example, whether the scalar properties of the entity need to be saved is controlled by
+                    Taking JPA/Hibernate as an example, whether the scalar properties of the entity need to be saved is controlled by 
                     <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--">Column.insertable</a> and
-                    <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--">Column.updatable</a> control,
+                    <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--">Column.updatable</a>,
                     and whether association properties need to be saved is controlled by
                     <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--">OneToOne.cascade</a>,
                     <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--">ManyToOne.cascade</a>,
                     <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--">OenToMany.cascade</a> and
-                    <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--">ManyToOne.cascade</a> control.
+                    <a href="https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--">ManyToOne.cascade</a>.
                     However, no matter how the developer configures it, the shape of the data structure that JPA/Hibernate can save for you is fixed.
                 </p>
                 <p>

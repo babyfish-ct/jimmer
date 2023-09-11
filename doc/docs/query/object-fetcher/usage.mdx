@@ -206,7 +206,7 @@ However, neither JPA nor MyBatis nor MyBatis-Plus can avoid having to write an e
 Unfortunately
 
 -   query requirements are often diverse. Formats diversification inevitably leads to more DTO types *(as the aggregate root type, format diversification is likely; as associated types of other DTOs, diversification is even more likely)*.
-    This ultimately results in <ViewMore buttonText="DTO explosion" variant="text"><DtoExplosion/></ViewMore>  
+    This ultimately results in <ViewMore buttonText="DTO explosion"><DtoExplosion/></ViewMore>  
 
 -   Such custom mapping mechanisms break the original functionality of ORM, unable to control associated properties, and can only return simple objects rather than hierarchical data structures.
 :::
@@ -411,7 +411,7 @@ The Annotation processor will automatically generate a Fetcher class for each en
 :::tip
 With the [dynamicity](../../object/dynamic) of Jimmer entities, there is no need to write additional DTOs to achieve diversified query business, just change the shape of the object fetcher.
 
-For the output data of the query, eliminating <ViewMore buttonText="DTO explosion problem" variant="text"><DtoExplosion/></ViewMore> can greatly improve server-side productivity.
+For the output data of the query, eliminating <ViewMore buttonText="DTO explosion problem"><DtoExplosion/></ViewMore> can greatly improve server-side productivity.
 :::
   
 ## Differences from JPA
