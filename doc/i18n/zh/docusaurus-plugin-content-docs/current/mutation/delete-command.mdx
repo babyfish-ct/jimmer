@@ -45,8 +45,8 @@ Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction�
             <td>
                 完整API
                 <ul>
-                    <li>JSqlClient.getEntities().batchDelete</li>
-                    <li>JSqlClient.getEntities().batchDeleteCommand</li>
+                    <li>JSqlClient.getEntities().deleteAll</li>
+                    <li>JSqlClient.getEntities().deleteAllCommand</li>
                 </ul>
                 快捷API
                 <ul>
@@ -69,7 +69,7 @@ Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction�
             <td>
                 完整API
                 <ul>
-                    <li>KSqlClient.entities.batchDelete</li>
+                    <li>KSqlClient.entities.deleteAll</li>
                 </ul>
                 快捷API
                 <ul>
@@ -111,7 +111,7 @@ Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction�
 
 必要说明
 
--   在Java底层API中，具备两个方法以Command结尾的方法: `deleteCommand`和`batchDeleteCommand`。
+-   在Java底层API中，具备两个方法以Command结尾的方法: `deleteCommand`和`deleteAllCommand`。
 
     -   这两个方法创建指令但不立即执行，用户对指令做出更多配置后，在调用`execute`执行。
 
@@ -238,7 +238,7 @@ where ID in(?/* 1L*/)
 ```java
 DeleteResult result = sqlClient
     .getEntities()
-    .batchDelete(Book.class, Arrays.asList(1L, 2L, 3L, 4L));
+    .deleteAll(Book.class, Arrays.asList(1L, 2L, 3L, 4L));
 
 System.out.println(
     
@@ -259,7 +259,7 @@ System.out.println(
 ```kotlin
 val result = sqlClient
     .entities
-    .batchDelete(Book::class, listOf(1L, 2L, 3L, 4L))
+    .deleteAll(Book::class, listOf(1L, 2L, 3L, 4L))
 println(
     """Affected row count: 
         |${result.totalAffectedRowCount}

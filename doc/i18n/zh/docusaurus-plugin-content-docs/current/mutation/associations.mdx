@@ -158,7 +158,7 @@ val bookToAuthor2 =
 sqlClient
     .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         Arrays.asList(
             new Tuple2<>(10L, 1L),
             new Tuple2<>(11L, 1L),
@@ -179,7 +179,7 @@ sqlClient
         Book::authors
     ) 
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         listOf(
             Tuple2(10L, 1L),
             Tuple2(11L, 1L),
@@ -194,7 +194,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-这里有3本书，两个作者，共6种组合方式。`batchSave`方法把这6种组合全部插入到中间表中，生成的SQL如下
+这里有3本书，两个作者，共6种组合方式。`saveAll`方法把这6种组合全部插入到中间表中，生成的SQL如下
 
 ```sql
 insert into BOOK_AUTHOR_MAPPING(
@@ -222,7 +222,7 @@ sqlClient
     .getAssociations(BookProps.AUTHORS)
     // 保存两个id集合的笛卡尔乘积
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         Arrays.asList(
             10L, 11L, 12L
         ),
@@ -241,7 +241,7 @@ sqlClient
     )
     // 保存两个id集合的笛卡尔乘积
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L)
     )
@@ -249,7 +249,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-上面的`batchSave`方法接受两个集合参数，把这两个集合形成的笛卡尔乘积插入中间表，所以，功能和上一个例子的相同。
+上面的`saveAll`方法接受两个集合参数，把这两个集合形成的笛卡尔乘积插入中间表，所以，功能和上一个例子的相同。
 
 ## 检查存在性
 
@@ -263,7 +263,7 @@ sqlClient
 ```java
 sqlClient
     .getAssociations(BookProps.AUTHORS)
-    .batchSaveCommand(
+    .saveAllCommand(
         Arrays.asList(
             10L, 11L, 12L
         ),
@@ -284,7 +284,7 @@ sqlClient
         Book::authors
     )
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L),
         // highlight-next-line
@@ -372,7 +372,7 @@ sqlClient
     .getAssociations(
         BookTableEx.claBookProps.AUTHORS)
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         Arrays.asList(
             new Tuple2<>(10L, 1L),
             new Tuple2<>(11L, 1L),
@@ -393,7 +393,7 @@ sqlClient
         Book::authors
     ) 
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         listOf(
             Tuple2(10L, 1L),
             Tuple2(11L, 1L),
@@ -417,7 +417,7 @@ sqlClient
 sqlClient
     .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         Arrays.asList(10L, 11L, 12L),
         Arrays.asList(1L, 3L)
     );
@@ -432,7 +432,7 @@ sqlClient
         Book::authors
     ) 
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L)
     )
@@ -478,7 +478,7 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
     // Delete `oldAuthorIds - authorIds`
     List<Long> detachedAuthorIds = new ArrayList<>(oldAuthorIds);
     detachedAuthorIds.removeAll(authorIds);
-    sqlClient.getAssociations(BookProps.AUTHORS).batchDelete(
+    sqlClient.getAssociations(BookProps.AUTHORS).deleteAll(
             Collections.singleton(bookId),
             detachedAuthorIds
     );
@@ -486,7 +486,7 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
     // Insert `authorIds - oldAuthorIds`
     List<Long> attachedAuthorIds = new ArrayList<>(authorIds);
     attachedAuthorIds.removeAll(oldAuthorIds);
-    sqlClient.getAssociations(BookProps.AUTHORS).batchSave(
+    sqlClient.getAssociations(BookProps.AUTHORS).saveAll(
             Collections.singleton(bookId),
             attachedAuthorIds
     );
@@ -506,12 +506,12 @@ fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
     // Delete `oldAuthorIds - authorIds`
     sqlClient
         .getAssociations(Book::authors)
-        .batchDelete(listOf(bookId), oldAuthorIds - authorIds)
+        .deleteAll(listOf(bookId), oldAuthorIds - authorIds)
 
     // Insert `authorIds - oldAuthorIds`
     sqlClient
         .getAssociations(Book::authors)
-        .batchSave(listOf(bookId), authorIds - oldAuthorIds)
+        .saveAll(listOf(bookId), authorIds - oldAuthorIds)
 }
 ```
 </TabItem>

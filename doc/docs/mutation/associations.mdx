@@ -161,7 +161,7 @@ In this code:
 sqlClient
     .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         Arrays.asList(
             new Tuple2<>(10L, 1L),
             new Tuple2<>(11L, 1L), 
@@ -183,7 +183,7 @@ sqlClient
         Book::authors  
     )
     // highlight-next-line 
-    .batchSave(
+    .saveAll(
         listOf(
             Tuple2(10L, 1L),
             Tuple2(11L, 1L),
@@ -198,7 +198,7 @@ sqlClient
 </TabItem>
 </Tabs>
 
-Here there are 3 books, two authors, and 6 total combination ways. The `batchSave` method inserts all 6 combinations into the association table, generating the following SQL:
+Here there are 3 books, two authors, and 6 total combination ways. The `saveAll` method inserts all 6 combinations into the association table, generating the following SQL:
 
 ```sql  
 insert into BOOK_AUTHOR_MAPPING(
@@ -226,7 +226,7 @@ sqlClient
     .getAssociations(BookProps.AUTHORS)
     // Save cartesian product of two id sets  
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         Arrays.asList(
             10L, 11L, 12L
         ),
@@ -246,7 +246,7 @@ sqlClient
     )
     // Save cartesian product of two id sets
     // highlight-next-line 
-    .batchSave(
+    .saveAll(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L)
     )
@@ -254,7 +254,7 @@ sqlClient
 </TabItem>  
 </Tabs>
 
-The above `batchSave` method takes two collection parameters and inserts the cartesian product of the two collections into the association table, so its functionality is the same as the previous example.
+The above `saveAll` method takes two collection parameters and inserts the cartesian product of the two collections into the association table, so its functionality is the same as the previous example.
 
 ## Check Existence
 
@@ -268,7 +268,7 @@ To solve this problem, existence checks can be performed.
 ```java
 sqlClient
     .getAssociations(BookProps.AUTHORS)
-    .batchSaveCommand(
+    .saveAllCommand(
         Arrays.asList(
             10L, 11L, 12L
         ), 
@@ -290,7 +290,7 @@ sqlClient
         Book::authors
     )
     // highlight-next-line
-    .batchSave(
+    .saveAll(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L),
         // highlight-next-line
@@ -381,7 +381,7 @@ sqlClient
     .getAssociations(
         BookTableEx.claBookProps.AUTHORS)
     // highlight-next-line 
-    .batchDelete(
+    .deleteAll(
         Arrays.asList(
             new Tuple2<>(10L, 1L),
             new Tuple2<>(11L, 1L),
@@ -403,7 +403,7 @@ sqlClient
         Book::authors
     )
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         listOf(
             Tuple2(10L, 1L),
             Tuple2(11L, 1L),
@@ -427,7 +427,7 @@ Or:
 sqlClient
     .getAssociations(BookProps.AUTHORS)
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         Arrays.asList(10L, 11L, 12L),
         Arrays.asList(1L, 3L)
     ); 
@@ -443,7 +443,7 @@ sqlClient
         Book::authors
     )
     // highlight-next-line
-    .batchDelete(
+    .deleteAll(
         listOf(10L, 11L, 12L),
         listOf(1L, 3L) 
     )
@@ -489,7 +489,7 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
     // Delete `oldAuthorIds - authorIds`
     List<Long> detachedAuthorIds = new ArrayList<>(oldAuthorIds);
     detachedAuthorIds.removeAll(authorIds);
-    sqlClient.getAssociations(BookProps.AUTHORS).batchDelete(
+    sqlClient.getAssociations(BookProps.AUTHORS).deleteAll(
             Collections.singleton(bookId),
             detachedAuthorIds
     );
@@ -497,7 +497,7 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
     // Insert `authorIds - oldAuthorIds`
     List<Long> attachedAuthorIds = new ArrayList<>(authorIds);
     attachedAuthorIds.removeAll(oldAuthorIds);
-    sqlClient.getAssociations(BookProps.AUTHORS).batchSave(
+    sqlClient.getAssociations(BookProps.AUTHORS).saveAll(
             Collections.singleton(bookId),
             attachedAuthorIds
     );
@@ -518,12 +518,12 @@ fun setAuthors(bookId: Long, authorIds: Collection<Long>) {
     // Delete `oldAuthorIds - authorIds`
     sqlClient
         .getAssociations(Book::authors)
-        .batchDelete(listOf(bookId), oldAuthorIds - authorIds)
+        .deleteAll(listOf(bookId), oldAuthorIds - authorIds)
 
     // Insert `authorIds - oldAuthorIds` 
     sqlClient
         .getAssociations(Book::authors)
-        .batchSave(listOf(bookId), authorIds - oldAuthorIds)
+        .saveAll(listOf(bookId), authorIds - oldAuthorIds)
 }
 ```
 

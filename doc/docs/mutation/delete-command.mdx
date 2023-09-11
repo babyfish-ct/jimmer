@@ -45,8 +45,8 @@ The delete command deletes objects by id or id collection.
       <td>
         Full API
         <ul>
-          <li>JSqlClient.getEntities().batchDelete</li>
-          <li>JSqlClient.getEntities().batchDeleteCommand</li>
+          <li>JSqlClient.getEntities().deleteAll</li>
+          <li>JSqlClient.getEntities().deleteAllCommand</li>
         </ul>
         Shortcut API   
         <ul>
@@ -69,7 +69,7 @@ The delete command deletes objects by id or id collection.
       <td>
         Full API
         <ul>
-          <li>KSqlClient.entities.batchDelete</li>
+          <li>KSqlClient.entities.deleteAll</li>
         </ul>
         Shortcut API
         <ul>
@@ -111,7 +111,7 @@ The delete command deletes objects by id or id collection.
 
 Necessary Explanations:
 
--   In the Java low-level API there are two methods ending in `Command`: `deleteCommand` and `batchDeleteCommand`.
+-   In the Java low-level API there are two methods ending in `Command`: `deleteCommand` and `deleteAllCommand`.
 
     -   These two methods create commands but do not execute them immediately. After the user does more configuration on the command, calling `execute` executes it.
 
@@ -239,7 +239,7 @@ If the entity does not have a [logical delete field](../mapping/advanced/logical
 ```java
 DeleteResult result = sqlClient
     .getEntities()
-    .batchDelete(Book.class, Arrays.asList(1L, 2L, 3L, 4L));
+    .deleteAll(Book.class, Arrays.asList(1L, 2L, 3L, 4L));
 
 System.out.println(
     
@@ -261,7 +261,7 @@ System.out.println(
 ```kotlin 
 val result = sqlClient
     .entities
-    .batchDelete(Book::class, listOf(1L, 2L, 3L, 4L))
+    .deleteAll(Book::class, listOf(1L, 2L, 3L, 4L))
 println(
     """Affected row count:
         |${result.totalAffectedRowCount}
