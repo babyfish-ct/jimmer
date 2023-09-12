@@ -29,7 +29,7 @@ Since Spring removed support for OpenJPA, this benchmark test does not include `
 
 ## Implementation Principles
 
-1.  Disable caching for all frameworks
+1.  Disable cache for all frameworks
 
 2.  Turn off logs for all frameworks
    
@@ -44,7 +44,7 @@ Since Spring removed support for OpenJPA, this benchmark test does not include `
 
 5.  Do not use transactions
     
-    `Exposed` is special in that its API mandates transactions, so it is given a fake implementation.
+    `Exposed` is special in that its API can only work with transactions, so there is a fake transaction implementation for it.
 
 6.  Use embedded H2 database to compress database overhead as much as possible, highlighting the performance of the ORM itself, i.e. the performance of mapping.
 

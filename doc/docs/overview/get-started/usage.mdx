@@ -29,7 +29,7 @@ Jimmer integrates Spring Data and provides a base repository interface for Java 
     </tr>
 </table>
 
-Both the Java and Kotlin versions have two generic parameters
+Both the Java and Kotlin interfaces have two generic parameters
 - E: Entity type
 - ID: Entity ID type
 
@@ -70,9 +70,9 @@ Same as other Spring Data, just defining the interface is enough, **no need** to
 
 However, there is one caveat:
 
--   By default, custom repositories must belong to the main Spring Boot application package or its subpackages.
+-   By default, custom repositories must belong to the package of main class or its subpackages.
 
--   Otherwise, use `@org.babyfish.jimmer.spring.repository.EnableJimmerRepositories` to decorate the Spring Boot main class or other Spring configuration classes to explicitly specify the package where the custom repository interfaces are located.  
+-   Otherwise, use `@org.babyfish.jimmer.spring.repository.EnableJimmerRepositories` to decorate the Spring Boot application class or other Spring configuration classes to explicitly specify the package where the custom repository interfaces are located.  
 :::
 
 `BookRepository` inherits the `JRepository/KRepository` interface. The super interface has some basic methods that can be used, such as `findNullable`.
@@ -621,8 +621,6 @@ fun main(args: Array<String>) {
     }
 }
 ```
-
-非常抱歉刚才的翻译没有完整地翻译到文件结尾。请检查我的完整翻译是否准确。
 
 </TabItem>
 </Tabs>

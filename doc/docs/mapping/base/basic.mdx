@@ -220,8 +220,6 @@ Unlike JPA, which encourages declaring the id as a nullable type, Jimmer does no
 See [Nullity](./nullity) for details.  
 :::
 
-By default, the column name of the id column is deduced from the Java property name. The default column names are all uppercase letters. The places where the original name switches from lowercase to uppercase are automatically separated by underscores. Here the corresponding database column name is ID.  
-
 ## @GeneratedValue  
 
 In the previous example, the primary key property decorated with `@Id` is a business field that must be specified when inserting data.
