@@ -30,6 +30,9 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     @Nullable
     DtoType<T, P> getTargetType();
 
+    @Nullable
+    EnumType getEnumType();
+
     boolean isRecursive();
 
     boolean isNewTarget();

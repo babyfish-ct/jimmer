@@ -139,6 +139,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getBaseType();
     }
 
+    public List<String> getEnumConstants(P baseProp) {
+        return compiler.getEnumConstants(baseProp);
+    }
+
     public TypeRef resolve(DtoParser.TypeRefContext ctx) {
         return importing.resolve(ctx);
     }

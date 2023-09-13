@@ -26,6 +26,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final DtoType<T, P> targetType;
 
+    private final EnumType enumType;
+
     private final Mandatory mandatory;
 
     private final String funcName;
@@ -43,6 +45,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             int aliasLine,
             List<Anno> annotations,
             @Nullable DtoType<T, P> targetType,
+            @Nullable EnumType enumType,
             Mandatory mandatory,
             String funcName,
             boolean recursive
@@ -54,6 +57,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = alias;
         this.aliasLine = aliasLine;
         this.targetType = targetType;
+        this.enumType = enumType;
         this.mandatory = mandatory;
         this.funcName = funcName;
         this.recursive = recursive;
@@ -69,6 +73,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.aliasLine = next.getAliasLine();
         this.annotations = next.getAnnotations();
         this.targetType = next.getTargetType();
+        this.enumType = next.getEnumType();
         if (head.isNullable() || next.isNullable()) {
             this.mandatory = Mandatory.OPTIONAL;
         } else if (head.getMandatory() == Mandatory.REQUIRED || next.getMandatory() == Mandatory.REQUIRED) {
@@ -96,6 +101,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = baseProp.getName();
         this.aliasLine = original.getAliasLine();
         this.targetType = targetType;
+        this.enumType = null;
         this.mandatory = original.getMandatory();
         this.funcName = "flat";
         this.recursive = false;
@@ -187,6 +193,12 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Nullable
     public DtoType<T, P> getTargetType() {
         return targetType;
+    }
+
+    @Override
+    @Nullable
+    public EnumType getEnumType() {
+        return enumType;
     }
 
     @Override

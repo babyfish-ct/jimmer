@@ -29,6 +29,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final DtoTypeBuilder<T, P> targetTypeBuilder;
 
+    private final EnumType enumType;
+
     private final boolean recursive;
 
     DtoPropBuilder(
@@ -52,6 +54,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
         this.funcName = null;
         this.targetTypeBuilder = null;
+        this.enumType = null;
         this.recursive = false;
     }
 
@@ -239,10 +242,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
 
         DtoTypeBuilder<T, P> targetTypeBuilder = null;
-        if (prop.dtoBody() != null) {
+        DtoParser.DtoBodyContext dtoBody = prop.dtoBody();
+        if (dtoBody != null) {
             if (!baseProp.isAssociation(false)) {
                 throw ctx.exception(
-                        prop.dtoBody().start.getLine(),
+                        dtoBody.start.getLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
                                 "\", child body cannot be specified by it is not association"
@@ -250,7 +254,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
             if ("id".equals(funcName)) {
                 throw ctx.exception(
-                        prop.dtoBody().start.getLine(),
+                        dtoBody.start.getLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
                                 "\", child body cannot be specified by it is id view property"
@@ -258,7 +262,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
             targetTypeBuilder = new DtoTypeBuilder<>(
                     ctx.getTargetType(baseProp),
-                    prop.dtoBody(),
+                    dtoBody,
                     null,
                     prop.annotations,
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
@@ -278,6 +282,22 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             baseProp.getName() +
                             "\", the child body is required"
             );
+        }
+
+        DtoParser.EnumBodyContext enumBody = prop.enumBody();
+        if (enumBody != null) {
+            List<String> constants = ctx.getEnumConstants(baseProp);
+            if (constants == null || constants.isEmpty()) {
+                throw ctx.exception(
+                        enumBody.start.getLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", enum body cannot be specified by it is not enum property"
+                );
+            }
+            this.enumType = EnumType.of(ctx, constants, enumBody);
+        } else {
+            this.enumType = null;
         }
 
         this.baseProp = baseProp;
@@ -406,6 +426,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 aliasLine,
                 annotations,
                 targetTypeBuilder != null ? targetTypeBuilder.build() : null,
+                enumType,
                 mandatory,
                 funcName,
                 recursive

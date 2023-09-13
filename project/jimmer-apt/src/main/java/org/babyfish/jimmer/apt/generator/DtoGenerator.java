@@ -369,6 +369,12 @@ public class DtoGenerator {
                             getPropTypeName(prop),
                             prop.toTailProp().getBaseProp().getTypeName()
                     );
+                } else if (prop.getEnumType() != null) {
+                    builder.addCode("it -> ");
+                    builder.beginControlFlow("");
+                    appendEnumToValue(builder, prop, "it", false);
+                    builder.addStatement("return __$L", prop.getName());
+                    builder.endControlFlow();
                 } else {
                     builder.addCode("null\n");
                 }
@@ -528,6 +534,18 @@ public class DtoGenerator {
                         );
                     }
                 }
+            } else if (prop.getEnumType() != null) {
+                appendEnumToValue(
+                        builder,
+                        prop,
+                        "base." + prop.getBaseProp().getGetterName() + "()",
+                        true
+                );
+                builder.addStatement(
+                        "this.$L = __$L",
+                        prop.getName(),
+                        prop.getName()
+                );
             } else {
                 if (prop.isNullable()) {
                     builder.addStatement(
@@ -562,6 +580,14 @@ public class DtoGenerator {
                 "$"
         );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            if (prop.getEnumType() != null) {
+                appendValueToEnum(
+                        builder,
+                        prop,
+                        "this." + prop.getName(),
+                        true
+                );
+            }
             if (prop.getNextProp() != null) {
                 builder.addCode("$T.set(\n$>", Constants.FLAT_UTILS_CLASS_NAME);
                 builder.addCode("draft,\n");
@@ -579,10 +605,12 @@ public class DtoGenerator {
                     }
                 }
                 builder.addCode("$<},\n");
-                if (prop.getTargetType() == null) {
-                    builder.addCode("this.$L\n", prop.getName());
+                if (prop.getTargetType() != null) {
+                    builder.addCode("this.$L != null ? this.$L.toEntity() : null\n", prop.getName(), prop.getName());
+                } else if (prop.getEnumType() != null) {
+                    builder.addCode("__$L\n", prop.getName());
                 } else {
-                    builder.addCode("this.$L != null ? this.$L.toEntity() : null", prop.getName(), prop.getName());
+                    builder.addCode("this.$L\n", prop.getName());
                 }
                 builder.addCode("$<);\n");
             } else if (prop.isNullable() && (prop.getBaseProp().isAssociation(false) || !prop.getBaseProp().isNullable())) {
@@ -606,6 +634,8 @@ public class DtoGenerator {
                     }
                 }
                 builder.endControlFlow();
+            } else if (prop.getEnumType() != null) {
+                builder.addStatement("draft.$L(__$L)", prop.getBaseProp().getSetterName(), prop.getName());
             } else {
                 addAssignment(prop, builder);
             }
@@ -674,12 +704,21 @@ public class DtoGenerator {
                         prop.getName()
                 );
             }
+        } else if (prop.getEnumType() != null) {
+            // TODO:
         } else {
             builder.addStatement("draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
         }
     }
 
     public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        EnumType enumType = prop.getEnumType();
+        if (enumType != null) {
+            if (enumType.isNumeric()) {
+                return prop.isNullable() ? TypeName.INT.box() : TypeName.INT;
+            }
+            return Constants.STRING_CLASS_NAME;
+        }
         TypeName elementTypeName = getPropElementName(prop);
         return prop.toTailProp().getBaseProp().isList() ?
                 ParameterizedTypeName.get(
@@ -926,5 +965,70 @@ public class DtoGenerator {
             return "0";
         }
         return "null";
+    }
+
+    private String appendEnumToValue(
+            MethodSpec.Builder builder,
+            DtoProp<ImmutableType, ImmutableProp> prop,
+            String parameterName,
+            boolean parameterIsEnum
+    ) {
+        EnumType enumType = prop.getEnumType();
+        if (enumType == null) {
+            return null;
+        }
+        builder.addStatement("$T __$L", getPropTypeName(prop), prop.getName());
+        if (prop.isNullable()) {
+            builder.beginControlFlow("if ($L != null)", parameterName);
+        }
+        if (parameterIsEnum) {
+            builder.beginControlFlow("switch ($L)", parameterName);
+        } else {
+            builder.beginControlFlow("switch (($T)$L)", prop.toTailProp().getBaseProp().getTypeName(),  parameterName);
+        }
+        for (Map.Entry<String, String> e : enumType.getValueMap().entrySet()) {
+            builder.addStatement("case $L: __$L = $L; break", e.getKey(), prop.getName(), e.getValue());
+        }
+        builder.addStatement("default: throw new AssertionError($S)", "Internal bug");
+        builder.endControlFlow();
+        if (prop.isNullable()) {
+            builder.nextControlFlow("else");
+            builder.addStatement("__$L = null", prop.getName());
+            builder.endControlFlow();
+        }
+        return null;
+    }
+
+    private String appendValueToEnum(
+            MethodSpec.Builder builder,
+            DtoProp<ImmutableType, ImmutableProp> prop,
+            String parameterName,
+            boolean parameterIsEnum
+    ) {
+        EnumType enumType = prop.getEnumType();
+        if (enumType == null) {
+            return null;
+        }
+        builder.addStatement("$T __$L", prop.toTailProp().getBaseProp().getTypeName(), prop.getName());
+        if (prop.isNullable()) {
+            builder.beginControlFlow("if ($L != null)", parameterName);
+        }
+        TypeName enumTypeName = prop.toTailProp().getBaseProp().getTypeName();
+        builder.beginControlFlow("switch ($L)", parameterName);
+        for (Map.Entry<String, String> e : enumType.getConstantMap().entrySet()) {
+            builder.addStatement("case $L: __$L = $T.$L; break", e.getKey(), prop.getName(), enumTypeName, e.getValue());
+        }
+        builder.addStatement(
+                "default: throw new IllegalArgumentException(\"Illegal value\" + $L + \" for enum type $L\")",
+                parameterName,
+                enumTypeName.toString()
+        );
+        builder.endControlFlow();
+        if (prop.isNullable()) {
+            builder.nextControlFlow("else");
+            builder.addStatement("__$L = null", prop.getName());
+            builder.endControlFlow();
+        }
+        return null;
     }
 }

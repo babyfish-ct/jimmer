@@ -79,6 +79,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public @Nullable EnumType getEnumType() {
+        return null;
+    }
+
+    @Override
     public boolean isRecursive() {
         return true;
     }

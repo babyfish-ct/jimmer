@@ -83,6 +83,8 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract boolean isGeneratedValue(P baseProp);
 
+    protected abstract List<String> getEnumConstants(P baseProp);
+
     DtoAstException exception(int line, String message) {
         return new DtoAstException(dtoFilePath, line, message);
     }

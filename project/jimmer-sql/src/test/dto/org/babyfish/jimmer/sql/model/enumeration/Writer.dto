@@ -1,0 +1,9 @@
+WriterView {
+
+    #allScalars
+
+    gender {
+        MALE -> 100
+        FEMALE -> 200
+    }
+}

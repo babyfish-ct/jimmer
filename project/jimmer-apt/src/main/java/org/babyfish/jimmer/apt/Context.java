@@ -35,6 +35,8 @@ public class Context {
 
     private final TypeMirror comparableType;
 
+    private final TypeElement enumElement;
+
     private final Map<String, ImmutableType> immutableTypeMap = new HashMap<>();
 
     private final boolean keepIsPrefix;
@@ -59,6 +61,7 @@ public class Context {
                         .getTypeElement(Comparable.class.getName()),
                         types.getWildcardType(null, null)
                 );
+        enumElement = elements.getTypeElement(Enum.class.getName());
         this.keepIsPrefix = keepIsPrefix;
     }
 
@@ -124,6 +127,10 @@ public class Context {
     public boolean isListStrictly(TypeMirror type) {
         Element element = types.asElement(type);
         return element != null && element.toString().equals("java.util.List");
+    }
+
+    public boolean isEnum(TypeMirror type) {
+        return types.isSubtype(type, types.getDeclaredType(enumElement, type));
     }
 
     public boolean isSubType(TypeMirror type, TypeMirror superType) {

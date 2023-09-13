@@ -994,6 +994,11 @@ public class DtoCompilerTest {
             return true;
         }
 
+        @Override
+        protected List<String> getEnumConstants(BaseProp baseProp) {
+            return null;
+        }
+
         static {
             TYPE_MAP.put("Book", BOOK_TYPE);
             TYPE_MAP.put("BookStore", BOOK_STORE_TYPE);

@@ -85,7 +85,11 @@ positiveProp
     (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
     (optional = '?' | required = '!')?
     ('as' alias=Identifier)?
-    ((annotations += annotation)* dtoBody (recursive='*')?)?
+    (
+        (annotations += annotation)* dtoBody (recursive='*')?
+        |
+        enumBody
+    )?
     ;
 
 negativeProp
@@ -163,6 +167,16 @@ annotationArrayValue
 nestedAnnotation
     :
     typeName = qualifiedName '(' annotationArguments? ')'
+    ;
+
+enumBody
+    :
+    '{' (mappings += enumMapping (','|';')?)+ '}'
+    ;
+
+enumMapping
+    :
+    constant = Identifier '->' value = (StringLiteral | IntegerLiteral)
     ;
 
 // Lexer --------
