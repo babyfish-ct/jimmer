@@ -14,4 +14,7 @@ public interface Article {
 
     @ManyToOne
     Writer writer();
+
+    @ManyToOne
+    Approver approver();
 }

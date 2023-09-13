@@ -50,7 +50,7 @@ public class FlatUtils {
         if (draft == null) {
             throw new IllegalArgumentException("draft cannot be null");
         }
-        if (propIds.length == 0 || value == null) {
+        if (propIds.length == 0) {
             return;
         }
         DraftSpi spi = (DraftSpi) draft;
@@ -74,6 +74,9 @@ public class FlatUtils {
             if (props[i].getTargetType() == null && i + 1 < depth) {
                 throw notAssociation(i);
             }
+        }
+        if (value == null && !props[depth - 1].isNullable()) {
+            return;
         }
         for (int i = depth - 1; i >= 0; --i) {
             PropId propId = propIds[i];

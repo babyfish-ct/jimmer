@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropImplementor, AbstractPropBuilder {
 
@@ -40,7 +41,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             Mandatory mandatory
     ) {
         this.parent = parent;
-        this.baseProp = baseProp;
+        this.baseProp = Objects.requireNonNull(baseProp, "baseProp cannot be null");
         this.aliasLine = line;
         this.alias = parent.currentAliasGroup() != null ?
                 parent.currentAliasGroup().alias(baseProp.getName(), 0) :
@@ -312,6 +313,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.funcName = funcName;
         this.targetTypeBuilder = targetTypeBuilder;
         this.recursive = prop.recursive != null;
+    }
+
+    public DtoTypeBuilder<T, P> getParent() {
+        return parent;
     }
 
     @Override

@@ -311,7 +311,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             return getProp(id.asName());
         }
         ImmutableProp[] arr = this.getPropArr();
-        if (index < 1 || index >= arr.length) {
+        if (index < 0 || index >= arr.length) {
             throw new IllegalArgumentException(
                     "There is no property whose id is " + id + " in \"" + this + "\""
             );

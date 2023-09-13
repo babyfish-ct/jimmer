@@ -535,6 +535,15 @@ public class DtoGenerator {
                     }
                 }
             } else if (prop.getEnumType() != null) {
+                if (prop.isNullable()) {
+                    builder.beginControlFlow(
+                            "if (!spi.__isLoaded($T.$L.unwrap().getId()))",
+                            dtoType.getBaseType().getPropsClassName(),
+                            Strings.upper(prop.getBaseProp().getName())
+                    );
+                    builder.addStatement("this.$L = null", prop.getName());
+                    builder.nextControlFlow("else");
+                }
                 appendEnumToValue(
                         builder,
                         prop,
@@ -546,6 +555,9 @@ public class DtoGenerator {
                         prop.getName(),
                         prop.getName()
                 );
+                if (prop.isNullable()) {
+                    builder.endControlFlow();
+                }
             } else {
                 if (prop.isNullable()) {
                     builder.addStatement(
@@ -584,8 +596,7 @@ public class DtoGenerator {
                 appendValueToEnum(
                         builder,
                         prop,
-                        "this." + prop.getName(),
-                        true
+                        "this." + prop.getName()
                 );
             }
             if (prop.getNextProp() != null) {
@@ -705,7 +716,7 @@ public class DtoGenerator {
                 );
             }
         } else if (prop.getEnumType() != null) {
-            // TODO:
+            builder.addStatement("draft.$L(__$L)", prop.getBaseProp().getSetterName(), prop.getName());
         } else {
             builder.addStatement("draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
         }
@@ -1002,8 +1013,7 @@ public class DtoGenerator {
     private String appendValueToEnum(
             MethodSpec.Builder builder,
             DtoProp<ImmutableType, ImmutableProp> prop,
-            String parameterName,
-            boolean parameterIsEnum
+            String parameterName
     ) {
         EnumType enumType = prop.getEnumType();
         if (enumType == null) {
@@ -1019,7 +1029,11 @@ public class DtoGenerator {
             builder.addStatement("case $L: __$L = $T.$L; break", e.getKey(), prop.getName(), enumTypeName, e.getValue());
         }
         builder.addStatement(
-                "default: throw new IllegalArgumentException(\"Illegal value\" + $L + \" for enum type $L\")",
+                "default: throw new IllegalArgumentException($>" +
+                        "\"Illegal value '\" + " +
+                        "$L + " +
+                        "\"' for enum type $L\"" +
+                        "$<)",
                 parameterName,
                 enumTypeName.toString()
         );

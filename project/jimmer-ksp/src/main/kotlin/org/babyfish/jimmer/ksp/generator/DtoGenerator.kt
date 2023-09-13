@@ -9,9 +9,6 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
-import org.babyfish.jimmer.Input
-import org.babyfish.jimmer.View
-import org.babyfish.jimmer.ViewableInput
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.AnnoValue
 import org.babyfish.jimmer.dto.compiler.Anno.ArrayValue
@@ -21,8 +18,6 @@ import org.babyfish.jimmer.dto.compiler.Anno.Value
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
-import org.jetbrains.annotations.NotNull
-import org.jetbrains.annotations.Nullable
 import java.io.OutputStreamWriter
 import java.util.*
 
@@ -440,7 +435,15 @@ class DtoGenerator private constructor(
                                     val targetType = prop.targetType
                                     when {
                                         prop.nextProp !== null -> {
-                                            add("%T.get(\n", FLAT_UTILS_CLASS_NAME)
+                                            if (prop.enumType != null) {
+                                                if (prop.isNullable) {
+                                                    add("%T.get<Any?>(\n", FLAT_UTILS_CLASS_NAME)
+                                                } else {
+                                                    add("%T.get<Any>(\n", FLAT_UTILS_CLASS_NAME)
+                                                }
+                                            } else {
+                                                add("%T.get(\n", FLAT_UTILS_CLASS_NAME)
+                                            }
                                             indent()
                                             add("base,\n")
                                             add("intArrayOf(\n")
@@ -472,6 +475,9 @@ class DtoGenerator private constructor(
                                                 unindent()
                                                 add("}")
                                             }
+                                            prop.enumType?.let {
+                                                appendEnumToValue(prop, false)
+                                            }
                                             if (!prop.isNullable) {
                                                 add(
                                                     " ?: error(%S)",
@@ -482,15 +488,7 @@ class DtoGenerator private constructor(
 
                                         targetType !== null ->
                                             if (prop.isNullable) {
-                                                beginControlFlow("base.takeIf")
-                                                addStatement(
-                                                    "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-                                                    IMMUTABLE_SPI_CLASS_NAME,
-                                                    PROP_ID_CLASS_NAME,
-                                                    dtoType.baseType.draftClassName("$"),
-                                                    prop.baseProp.slotName
-                                                )
-                                                endControlFlow()
+                                                appendTakeIf(prop)
                                                 addStatement(
                                                     "?.%N?.%N { %T(it) }",
                                                     prop.baseProp.name,
@@ -507,17 +505,21 @@ class DtoGenerator private constructor(
                                                 )
                                             }
 
+                                        prop.enumType !== null -> {
+                                            add("base")
+                                            if (prop.isNullable) {
+                                                appendTakeIf(prop, "")
+                                                add("?.")
+                                            } else {
+                                                add(".")
+                                            }
+                                            add(prop.baseProp.name)
+                                            appendEnumToValue(prop, true)
+                                        }
+
                                         prop.isIdOnly ->
                                             if (prop.isNullable) {
-                                                beginControlFlow("base.takeIf")
-                                                addStatement(
-                                                    "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-                                                    IMMUTABLE_SPI_CLASS_NAME,
-                                                    PROP_ID_CLASS_NAME,
-                                                    dtoType.baseType.draftClassName("$"),
-                                                    prop.baseProp.slotName
-                                                )
-                                                endControlFlow()
+                                                appendTakeIf(prop)
                                                 addStatement(
                                                     "?.%N?.%L",
                                                     prop.baseProp.name,
@@ -542,15 +544,7 @@ class DtoGenerator private constructor(
 
                                         else ->
                                             if (prop.isNullable) {
-                                                beginControlFlow("base.takeIf")
-                                                addStatement(
-                                                    "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-                                                    IMMUTABLE_SPI_CLASS_NAME,
-                                                    PROP_ID_CLASS_NAME,
-                                                    dtoType.baseType.draftClassName("$"),
-                                                    prop.baseProp.slotName
-                                                )
-                                                endControlFlow()
+                                                appendTakeIf(prop)
                                                 addStatement("?.%N", prop.baseProp.name)
                                             } else {
                                                 add(
@@ -605,7 +599,7 @@ class DtoGenerator private constructor(
                                     }
                                     .build()
                             )
-                        } else if (prop.isNullable && !prop.baseProp.isNullable) {
+                        } else if (prop.isNullable) {
                             addStatement("val that_%L = that.%N", prop.name, prop.name)
                             beginControlFlow("if (that_%L !== null)", prop.name)
                             addAssignment(prop)
@@ -625,6 +619,10 @@ class DtoGenerator private constructor(
     }
 
     private fun CodeBlock.Builder.addFlatSetting(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        val that = (if (prop.isNullable) "that_" else "that.") + prop.name
+        if (prop.isNullable) {
+            addStatement("val that_%L = that.%N", prop.name, prop.name)
+        }
         add("%T.set(\n", FLAT_UTILS_CLASS_NAME)
         indent()
         add("this,\n")
@@ -641,12 +639,17 @@ class DtoGenerator private constructor(
         }
         unindent()
         add("),\n")
-        add("that.%N", prop.name)
+        add(that)
         if (prop.targetType !== null) {
             if (prop.isNullable) {
                 add("?")
             }
             add(".toEntity()")
+        } else if (prop.enumType != null) {
+            if (prop.isNullable) {
+                add("?")
+            }
+            appendValueToEnum(prop)
         }
         add("\n")
         unindent()
@@ -655,21 +658,19 @@ class DtoGenerator private constructor(
 
     private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
         val targetType = prop.targetType
-        val that = if (prop.isNullable && !prop.baseProp.isNullable) "that_%L" else "that.%N"
+        val that = (if (prop.isNullable) "that_" else "that.") + prop.name
         when {
             targetType !== null ->
                 if (prop.baseProp.isList) {
                     addStatement(
                         "this.%N = $that%Lmap { it.toEntity() }",
                         prop.baseProp.name,
-                        prop.name,
                         if (prop.baseProp.isNullable) "?." else "."
                     )
                 } else {
                     addStatement(
                         "this.%N = $that%LtoEntity()",
                         prop.baseProp.name,
-                        prop.name,
                         if (prop.baseProp.isNullable) "?." else "."
                     )
                 }
@@ -677,7 +678,6 @@ class DtoGenerator private constructor(
                 beginControlFlow(
                     "this.%N = $that%L%N",
                     prop.baseProp.name,
-                    prop.name,
                     if (prop.baseProp.isNullable) "?." else ".",
                     if (prop.baseProp.isList) "map" else "let"
                 )
@@ -690,12 +690,93 @@ class DtoGenerator private constructor(
                 endControlFlow()
                 endControlFlow()
             }
+            prop.enumType !== null ->
+                addCode(
+                    CodeBlock
+                        .builder()
+                        .apply {
+                            if (prop.isNullable) {
+                                beginControlFlow("if ($that !== null)")
+                            }
+                            add("this.%N = $that", prop.baseProp.name)
+                            apply {
+                                appendValueToEnum(prop)
+                            }
+                            add("\n")
+                            if (prop.isNullable) {
+                                endControlFlow()
+                            }
+                        }
+                        .build()
+                )
             else ->
-                addStatement("this.%N = $that", prop.baseProp.name, prop.name)
+                addStatement("this.%N = $that", prop.baseProp.name)
         }
     }
 
+    private fun CodeBlock.Builder.appendTakeIf(prop: DtoProp<ImmutableType, ImmutableProp>, prefix: String = "base") {
+        beginControlFlow("%L.takeIf", prefix)
+        addStatement(
+            "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
+            IMMUTABLE_SPI_CLASS_NAME,
+            PROP_ID_CLASS_NAME,
+            dtoType.baseType.draftClassName("$"),
+            prop.baseProp.slotName
+        )
+        endControlFlow()
+    }
+
+    private fun CodeBlock.Builder.appendEnumToValue(
+        prop: DtoProp<ImmutableType, ImmutableProp>,
+        parameterIsEnum: Boolean,
+        prefix: String = ""
+    ) {
+        val enumTypeName = prop.toTailProp().baseProp.typeName(overrideNullable = false)
+        add(prefix)
+        if (prop.isNullable) {
+            add("?")
+        }
+        add(".let {\n")
+        indent()
+        if (parameterIsEnum) {
+            beginControlFlow("when (it)")
+        } else {
+            beginControlFlow("when (it as %T)", enumTypeName)
+        }
+        for ((constant, value) in prop.enumType!!.valueMap) {
+            addStatement("%T.%L -> %L", enumTypeName, constant, value)
+        }
+        endControlFlow()
+        unindent()
+        add("}")
+    }
+
+    private fun CodeBlock.Builder.appendValueToEnum(
+        prop: DtoProp<ImmutableType, ImmutableProp>
+    ) {
+        val enumTypeName = prop.toTailProp().baseProp.typeName(overrideNullable = false)
+        add(".let {\n")
+        indent()
+        beginControlFlow("when (it)")
+        for ((value, constant) in prop.enumType!!.constantMap) {
+            addStatement("%L -> %T.%L", value, enumTypeName, constant)
+        }
+        add("else -> throw IllegalArgumentException(")
+        indent()
+        addStatement("\"Illegal value '\" + it + ")
+        addStatement("\"' for enum type %L\"", enumTypeName.toString())
+        unindent()
+        addStatement(")")
+        endControlFlow()
+        unindent()
+        add("}")
+    }
+
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
+        val enumType = prop.enumType
+        if (enumType !== null) {
+            return (if (enumType.isNumeric) INT else STRING).copy(nullable = prop.isNullable)
+        }
         val elementTypeName: TypeName = propElementName(prop)
         return if (prop.baseProp.isList) {
             LIST.parameterizedBy(elementTypeName)
