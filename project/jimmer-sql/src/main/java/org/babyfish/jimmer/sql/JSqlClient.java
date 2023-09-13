@@ -25,6 +25,8 @@ import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.runtime.ObjectProvider;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -229,7 +231,10 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setSqlFormatter(SqlFormatter formatter);
 
         @OldChain
-        Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);
+        Builder setUserIdGeneratorProvider(ObjectProvider<UserIdGenerator<?>> idGeneratorProvider);
+
+        @OldChain
+        Builder setTransientResolverProvider(ObjectProvider<TransientResolver<?, ?>> transientResolverProvider);
 
         @OldChain
         Builder setIdGenerator(IdGenerator idGenerator);

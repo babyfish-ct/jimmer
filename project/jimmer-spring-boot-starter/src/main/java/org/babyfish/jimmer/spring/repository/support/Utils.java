@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.spring.repository.support;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
-import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
+import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
+import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -49,7 +49,7 @@ public class Utils {
                             "\""
             );
         }
-        if (!SpringTransientResolverProvider.class.isAssignableFrom(implementor.getResolverProviderClass())) {
+        if (!(implementor.getTransientResolverProvider() instanceof SpringTransientResolverProvider)) {
             throw new IllegalArgumentException(
                     "The transient resolver provider of sql client must be instance of \"" +
                             SpringConnectionManager.class.getName() +

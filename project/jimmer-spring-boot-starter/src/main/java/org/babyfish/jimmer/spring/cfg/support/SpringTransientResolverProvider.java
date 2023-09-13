@@ -1,11 +1,11 @@
-package org.babyfish.jimmer.spring.repository;
+package org.babyfish.jimmer.spring.cfg.support;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
-import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
+import org.babyfish.jimmer.sql.runtime.DefaultTransientResolverProvider;
 import org.springframework.context.ApplicationContext;
 
-public final class SpringTransientResolverProvider implements TransientResolverProvider {
+public final class SpringTransientResolverProvider extends DefaultTransientResolverProvider {
 
     private final ApplicationContext ctx;
 
@@ -15,10 +15,14 @@ public final class SpringTransientResolverProvider implements TransientResolverP
 
     @Override
     public TransientResolver<?, ?> get(
-            Class<TransientResolver<?, ?>> resolverType,
+            Class<TransientResolver<?, ?>> type,
             JSqlClient sqlClient
     ) throws Exception {
-        return ctx.getBean(resolverType);
+        TransientResolver<?, ?> transientResolver = ctx.getBean(type);
+        if (transientResolver != null) {
+            return transientResolver;
+        }
+        return super.get(type, sqlClient);
     }
 
     @Override

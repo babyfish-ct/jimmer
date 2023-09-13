@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
+    final DtoPropBuilder<T, P> parentProp;
+
     final T baseType;
 
     final CompilerContext<T, P> ctx;
@@ -48,6 +50,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
     private Map<String, AbstractProp> declaredProps;
 
     DtoTypeBuilder(
+            DtoPropBuilder<T, P> parentProp,
             T baseType,
             DtoParser.DtoBodyContext body,
             Token name,
@@ -58,6 +61,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             String recursiveAlias,
             CompilerContext<T, P> ctx
     ) {
+        this.parentProp = parentProp;
         this.baseType = baseType;
         this.ctx = ctx;
         this.name = name;

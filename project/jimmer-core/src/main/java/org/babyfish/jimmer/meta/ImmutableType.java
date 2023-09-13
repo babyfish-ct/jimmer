@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -155,7 +156,7 @@ public interface ImmutableType {
 
     String getTableName(MetadataStrategy strategy);
 
-    IdGenerator getIdGenerator(MetadataStrategy strategy);
+    IdGenerator getIdGenerator(SqlContext sqlContext);
 
     List<ImmutableProp> getPropChain(String columnName, MetadataStrategy strategy);
 

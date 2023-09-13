@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.spring.repository;
+package org.babyfish.jimmer.spring.cfg.support;
 
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;

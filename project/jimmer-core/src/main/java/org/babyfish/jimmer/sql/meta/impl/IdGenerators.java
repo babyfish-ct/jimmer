@@ -17,7 +17,7 @@ public class IdGenerators {
 
     private IdGenerators() {}
 
-    public static IdGenerator of(ImmutableType type, DatabaseNamingStrategy databaseNamingStrategy) {
+    public static IdGenerator of(ImmutableType type, SqlContext sqlContext) {
         ImmutableProp idProp = type.getIdProp();
 
         GeneratedValue generatedValue = idProp.getAnnotation(GeneratedValue.class);
@@ -71,8 +71,7 @@ public class IdGenerators {
             );
         }
         if (strategyFromGeneratorType != GenerationType.AUTO &&
-                strategyFromSequenceName != GenerationType.AUTO &&
-                strategyFromGeneratorType != strategyFromSequenceName) {
+                strategyFromSequenceName != GenerationType.AUTO) {
             throw new ModelException(
                     "Illegal property \"" +
                             idProp +
@@ -153,13 +152,12 @@ public class IdGenerators {
                 error = "'generatorType' must be specified when 'strategy' is 'GenerationType.USER'";
             }
             try {
-                idGenerator = generatorType.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
+                idGenerator = sqlContext.getUserIdGenerator(generatorType);
+            } catch (Exception ex) {
                 error = "cannot create the instance of \"" + generatorType.getName() + "\"";
-                errorCause = ex;
-            } catch (InvocationTargetException ex) {
-                error = "cannot create the instance of \"" + generatorType.getName() + "\"";
-                errorCause = ex.getTargetException();
+                errorCause = ex instanceof InvocationTargetException ?
+                        ((InvocationTargetException)ex).getTargetException() :
+                        ex;
             }
             if (error != null) {
                 throw new ModelException(
@@ -172,7 +170,7 @@ public class IdGenerators {
         } else if (strategy == GenerationType.SEQUENCE) {
             String sequenceName = generatedValue.sequenceName();
             if (sequenceName.isEmpty()) {
-                sequenceName = databaseNamingStrategy.sequenceName(idProp.getDeclaringType());
+                sequenceName = sqlContext.getMetadataStrategy().getNamingStrategy().sequenceName(idProp.getDeclaringType());
             }
             idGenerator = new SequenceIdGenerator(sequenceName);
         }

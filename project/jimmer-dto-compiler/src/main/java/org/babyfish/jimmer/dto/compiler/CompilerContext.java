@@ -87,6 +87,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             }
         }
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(
+                null,
                 compiler.getBaseType(),
                 type.body,
                 type.name,

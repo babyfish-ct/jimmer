@@ -13,11 +13,13 @@ import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlContext;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface JSqlClientImplementor extends JSqlClient {
+public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     ConnectionManager getConnectionManager();
 
@@ -55,7 +57,9 @@ public interface JSqlClientImplementor extends JSqlClient {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
-    Class<? extends TransientResolverProvider> getResolverProviderClass();
+    ObjectProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
+
+    ObjectProvider<TransientResolver<?, ?>> getTransientResolverProvider();
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
 

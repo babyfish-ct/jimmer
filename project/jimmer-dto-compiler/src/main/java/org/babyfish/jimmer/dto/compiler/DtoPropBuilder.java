@@ -3,6 +3,7 @@ package org.babyfish.jimmer.dto.compiler;
 import org.antlr.v4.runtime.Token;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final DtoTypeBuilder<T, P> parent;
 
+    @NotNull
     private final P baseProp;
 
     private final int baseLine;
@@ -40,7 +42,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             int line,
             Mandatory mandatory
     ) {
-        this.parent = parent;
+        this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.baseProp = Objects.requireNonNull(baseProp, "baseProp cannot be null");
         this.aliasLine = line;
         this.alias = parent.currentAliasGroup() != null ?
@@ -63,7 +65,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         DtoTypeBuilder<T, P> parent,
         DtoParser.PositivePropContext prop
     ) {
-        this.parent = parent;
+        this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.baseLine = prop.prop.getLine();
         this.aliasLine = prop.alias != null ? prop.alias.getLine() : prop.prop.getLine();
 
@@ -82,6 +84,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
         CompilerContext<T, P> ctx = parent.ctx;
         P baseProp = getBaseProp(parent, prop.prop);
+        this.baseProp = baseProp;
 
         String funcName = null;
         if (prop.func != null) {
@@ -129,6 +132,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     );
             }
         }
+        this.funcName = funcName;
 
         String alias;
         if (prop.alias != null) {
@@ -175,6 +179,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         "Illegal optional modifier '?' because the base property is already nullable"
                 );
             }
+            DtoPropBuilder<T, P> nullableFlatParent = getNullableFlatParent();
+            while (nullableFlatParent != null) {
+                throw ctx.exception(
+                        prop.optional.getLine(),
+                        "Illegal optional modifier '?' because the flat parent property \"" +
+                                nullableFlatParent.baseProp +
+                                "\" is already nullable"
+                );
+            }
         }
         if (prop.required != null) {
             if ("flat".equals(funcName)) {
@@ -200,7 +213,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                     "it can only be used in input-only type"
                     );
                 }
-                if (!baseProp.isNullable()) {
+                if (!baseProp.isNullable() && getNullableFlatParent() == null) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             "Illegal required modifier '!' because the base property is already nonnull"
@@ -262,6 +275,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 );
             }
             targetTypeBuilder = new DtoTypeBuilder<>(
+                    this,
                     ctx.getTargetType(baseProp),
                     dtoBody,
                     null,
@@ -301,7 +315,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             this.enumType = null;
         }
 
-        this.baseProp = baseProp;
         this.alias = alias;
         if (prop.required != null) {
             this.mandatory = Mandatory.REQUIRED;
@@ -310,7 +323,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         } else {
             this.mandatory = Mandatory.DEFAULT;
         }
-        this.funcName = funcName;
         this.targetTypeBuilder = targetTypeBuilder;
         this.recursive = prop.recursive != null;
     }
@@ -375,7 +387,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
 
         String baseName = token.getText();
-        P baseProp = ctx.getProps(baseType).get(baseName);
+        final P baseProp = ctx.getProps(baseType).get(baseName);
         if (baseProp == null) {
             throw ctx.exception(
                     token.getLine(),
@@ -420,6 +432,17 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
         }
         return baseProp;
+    }
+
+    private DtoPropBuilder<T, P> getNullableFlatParent() {
+        DtoPropBuilder<T, P> parentProp = parent.parentProp;
+        while (parentProp != null) {
+            if (parentProp.getBaseProp().isNullable() && "flat".equals(parentProp.funcName)) {
+                return parentProp;
+            }
+            parentProp = parentProp.parent.parentProp;
+        }
+        return null;
     }
 
     @Override

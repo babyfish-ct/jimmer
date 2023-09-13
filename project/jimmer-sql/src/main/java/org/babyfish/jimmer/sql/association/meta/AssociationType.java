@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.MiddleTable;
+import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -255,7 +256,7 @@ public class AssociationType extends AbstractImmutableTypeImpl {
     }
 
     @Override
-    public IdGenerator getIdGenerator(MetadataStrategy strategy) {
+    public IdGenerator getIdGenerator(SqlContext sqlContext) {
         return null;
     }
 

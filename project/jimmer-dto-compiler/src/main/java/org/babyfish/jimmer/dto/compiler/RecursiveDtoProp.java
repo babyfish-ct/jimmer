@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
 
@@ -16,7 +17,7 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     private final DtoType<T, P> targetType;
 
     RecursiveDtoProp(P baseProp, String alias, DtoType<T, P> selfType) {
-        this.baseProp = baseProp;
+        this.baseProp = Objects.requireNonNull(baseProp, "baseProp cannot be null");
         this.alias = alias;
         this.targetType = selfType;
     }

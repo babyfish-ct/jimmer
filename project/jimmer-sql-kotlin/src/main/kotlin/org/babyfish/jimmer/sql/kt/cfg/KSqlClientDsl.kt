@@ -7,6 +7,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
+import org.babyfish.jimmer.sql.TransientResolver
 import org.babyfish.jimmer.sql.cache.*
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
@@ -19,6 +20,7 @@ import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
 import org.babyfish.jimmer.sql.meta.IdGenerator
+import org.babyfish.jimmer.sql.runtime.ObjectProvider
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
 import java.util.function.Function
@@ -95,7 +97,7 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setSqlFormatter(fFormatter)
     }
 
-    fun setTransientResolverProvider(provider: TransientResolverProvider) {
+    fun setTransientResolverProvider(provider: ObjectProvider<TransientResolver<*, *>>) {
         javaBuilder.setTransientResolverProvider(provider)
     }
 
