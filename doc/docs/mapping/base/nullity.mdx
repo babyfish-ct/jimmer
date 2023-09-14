@@ -70,6 +70,10 @@ Here is just a simple list of precautions. Please ignore these terms for now. Th
 
     -   As the mirror side of @OneToOne association
 
-    -   Any global filter applied to the associated entity is not contained in 
-        the collection of global filters applied to the current entity.
+-   If the associated entity has [global filters](../../query/global-filter) applied, then for one-to-one/many-to-one associations must be nullable even if they are directly based on foreign keys, unless all of the following conditions are met:
+
+    -   All global filters applied to the associated entity implement the `AssociationIntegrityAssuranceFilter`/`KAssociationIntegrityAssuranceFilter` interface. 
+
+    -   All global filters applied to the associated entity are also applied to the current entity.
+
  

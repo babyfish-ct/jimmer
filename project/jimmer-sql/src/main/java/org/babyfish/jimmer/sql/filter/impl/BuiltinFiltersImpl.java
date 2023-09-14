@@ -62,7 +62,7 @@ public class BuiltinFiltersImpl implements BuiltInFilters {
                 new AlreadyDeletedFilter(info);
     }
 
-    private static class NotDeletedFilter implements Filter<Props>, TypeAware {
+    private static class NotDeletedFilter implements Filter<Props>, FilterWrapper {
 
         protected final LogicalDeletedInfo info;
 
@@ -120,7 +120,7 @@ public class BuiltinFiltersImpl implements BuiltInFilters {
         }
     }
 
-    private static class AlreadyDeletedFilter implements Filter<Props>, TypeAware {
+    private static class AlreadyDeletedFilter implements Filter<Props>, FilterWrapper {
 
         protected final LogicalDeletedInfo info;
 

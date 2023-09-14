@@ -3,7 +3,10 @@ package org.babyfish.jimmer.sql.filter;
 import org.babyfish.jimmer.sql.ast.table.Props;
 
 /**
- * The user's commitment to ensure that the filtered fields of two associated objects are the same.
+ *
+ * This interface should only be used by Java, kotlin developers can use `KAssociationIntegrityAssuranceFilter&lt;E&gt;`
+ *
+ * <p>The user's commitment to ensure that the filtered fields of two associated objects are the same.</p>
  *
  * Let's look at an example with the following defined entities:
  * <pre><code>

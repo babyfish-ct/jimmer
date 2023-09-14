@@ -191,8 +191,8 @@ public class FilterManager implements Filters {
         for (Filter<?> filter : disabledFilters) {
             boolean matched = false;
             for (Class<?> expectedType : filterTypes) {
-                Class<?> actualType = filter instanceof TypeAware ?
-                        ((TypeAware) filter).getFilterType() :
+                Class<?> actualType = filter instanceof FilterWrapper ?
+                        ((FilterWrapper) filter).getFilterType() :
                         filter.getClass();
                 if (expectedType.isAssignableFrom(actualType)) {
                     matched = true;
@@ -214,8 +214,8 @@ public class FilterManager implements Filters {
         for (Filter<?> filter : allFilters) {
             boolean matched = false;
             for (Class<?> expectedType : filterTypes) {
-                Class<?> actualType = filter instanceof TypeAware ?
-                        ((TypeAware) filter).getFilterType() :
+                Class<?> actualType = filter instanceof FilterWrapper ?
+                        ((FilterWrapper) filter).getFilterType() :
                         filter.getClass();
                 if (expectedType.isAssignableFrom(actualType)) {
                     matched = true;
@@ -350,8 +350,8 @@ public class FilterManager implements Filters {
 
     public static ImmutableType getImmutableType(Filter<?> filter) {
 
-        if (filter instanceof TypeAware) {
-            return ((TypeAware)filter).getImmutableType();
+        if (filter instanceof FilterWrapper) {
+            return ((FilterWrapper)filter).getImmutableType();
         }
 
         Class<?> filterClass = filter.getClass();
@@ -464,8 +464,8 @@ public class FilterManager implements Filters {
 
     private static Filter<?> unwrap(Filter<?> filter) {
         Object o = filter;
-        while (o instanceof TypeAware) {
-            o = ((TypeAware)o).unwrap();
+        while (o instanceof FilterWrapper) {
+            o = ((FilterWrapper)o).unwrap();
             if (o instanceof Filter<?>) {
                 filter = (Filter<?>) o;
             }

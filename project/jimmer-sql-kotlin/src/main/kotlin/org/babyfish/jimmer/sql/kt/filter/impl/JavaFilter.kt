@@ -8,15 +8,15 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy
 import org.babyfish.jimmer.sql.filter.Filter
 import org.babyfish.jimmer.sql.filter.FilterArgs
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl
-import org.babyfish.jimmer.sql.filter.impl.TypeAware
+import org.babyfish.jimmer.sql.filter.impl.FilterWrapper
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 
-internal open class JavaFilter constructor(
+internal open class JavaFilter(
     protected val kFilter: KFilter<*>
-) : TypeAware, Filter<Props> {
+) : FilterWrapper, Filter<Props> {
 
     private val immutableType: ImmutableType =
-        if (kFilter is TypeAware) {
+        if (kFilter is FilterWrapper) {
             kFilter.immutableType
         } else {
             TypeUtils
@@ -56,7 +56,7 @@ internal open class JavaFilter constructor(
         immutableType
 
     override fun getFilterType(): Class<*> =
-        if (kFilter is TypeAware) {
+        if (kFilter is FilterWrapper) {
             kFilter.filterType
         } else {
             kFilter.javaClass
@@ -64,6 +64,12 @@ internal open class JavaFilter constructor(
 
     override fun unwrap(): Any =
         kFilter
+
+    override fun hashCode(): Int =
+        FilterWrapper.unwrap(kFilter).hashCode()
+
+    override fun equals(other: Any?): Boolean =
+        FilterWrapper.unwrap(kFilter) == FilterWrapper.unwrap(other)
 
     override fun toString(): String =
         "JavaFilter(ktFilter=$kFilter)"

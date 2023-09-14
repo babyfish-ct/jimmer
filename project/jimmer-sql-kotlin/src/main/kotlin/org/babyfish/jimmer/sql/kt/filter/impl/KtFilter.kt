@@ -6,13 +6,13 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter
 import org.babyfish.jimmer.sql.filter.Filter
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl
 import org.babyfish.jimmer.sql.filter.impl.FilterManager
-import org.babyfish.jimmer.sql.filter.impl.TypeAware
+import org.babyfish.jimmer.sql.filter.impl.FilterWrapper
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
 
 internal open class KtFilter<E: Any>(
     protected val javaFilter: Filter<Props>
-) : KFilter<E>, TypeAware {
+) : KFilter<E>, FilterWrapper {
 
     override fun filter(args: KFilterArgs<E>) {
         val javaQuery = (args as KFilterArgsImpl<E>).javaQuery
@@ -28,7 +28,7 @@ internal open class KtFilter<E: Any>(
         FilterManager.getImmutableType(javaFilter);
 
     override fun getFilterType(): Class<*> =
-        if (javaFilter is TypeAware) {
+        if (javaFilter is FilterWrapper) {
             javaFilter.filterType
         } else {
             javaFilter.javaClass
@@ -36,6 +36,12 @@ internal open class KtFilter<E: Any>(
 
     override fun unwrap(): Any =
         javaFilter
+
+    override fun hashCode(): Int =
+        FilterWrapper.unwrap(javaFilter).hashCode()
+
+    override fun equals(other: Any?): Boolean =
+        FilterWrapper.unwrap(javaFilter) == FilterWrapper.unwrap(other)
 
     override fun toString(): String =
         "KtFilter(javaFilter=$javaFilter)"
