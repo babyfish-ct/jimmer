@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 /*
  * see CommonEntityDraftInterceptor
  */
-@MappedSuperclass
+@MappedSuperclass // ❶
 public interface BaseEntity {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -17,3 +17,7 @@ public interface BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime modifiedTime();
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/mapped-super-class
+---------------------------------------------------*/

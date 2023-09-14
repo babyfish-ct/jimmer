@@ -38,12 +38,12 @@ public class BookService {
     }
 
     @GetMapping("/simpleList")
-    public List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks() {
+    public List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks() { // ❶
         return bookRepository.findAll(SIMPLE_FETCHER, BookProps.NAME, BookProps.EDITION.desc());
     }
 
     @GetMapping("/list")
-    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks(
+    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks( // ❷
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
             // The `sortCode` also support implicit join, like `store.name asc`
@@ -63,7 +63,7 @@ public class BookService {
 
     @GetMapping("/{id}")
     @Nullable
-    public @FetchBy("COMPLEX_FETCHER") Book findComplexBook(
+    public @FetchBy("COMPLEX_FETCHER") Book findComplexBook( // ❸
             @PathVariable("id") long id
     ) {
         return bookRepository.findNullable(id, COMPLEX_FETCHER);
@@ -101,14 +101,14 @@ public class BookService {
                     );
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode.class)
-    public Book saveBook(@RequestBody BookInput input) {
+    @ThrowsAll(SaveErrorCode.class) // ❹
+    public Book saveBook(@RequestBody BookInput input) { // ❺
         return bookRepository.save(input);
     }
 
     @PutMapping("/composite")
-    @ThrowsAll(SaveErrorCode.class)
-    public Book saveCompositeBook(@RequestBody CompositeBookInput input) {
+    @ThrowsAll(SaveErrorCode.class) // ❻
+    public Book saveCompositeBook(@RequestBody CompositeBookInput input) { // ❼
         return bookRepository.save(input);
     }
 
@@ -117,3 +117,9 @@ public class BookService {
         bookRepository.deleteById(id);
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+❹ ❻ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
+❺ ❼ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+---------------------------------------------------*/

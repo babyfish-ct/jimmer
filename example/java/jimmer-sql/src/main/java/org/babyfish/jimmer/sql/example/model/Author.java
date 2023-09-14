@@ -16,15 +16,15 @@ public interface Author extends BaseEntity {
     // It is inappropriate to use `firstName` and `lastName`
     // as keys in actual project, but this is just a small demo.
 
-    @Key
+    @Key // ❶
     String firstName();
 
-    @Key
+    @Key // ❷
     String lastName();
 
     Gender gender();
 
-    @ManyToMany(mappedBy = "authors", orderedProps = {
+    @ManyToMany(mappedBy = "authors", orderedProps = { // ❸
             @OrderedProp("name"),
             @OrderedProp(value = "edition", desc = true)
     })
@@ -39,7 +39,7 @@ public interface Author extends BaseEntity {
     // `BookStore.newestBooks`
     // -----------------------------
 
-    @Formula(dependencies = {"firstName", "lastName"})
+    @Formula(dependencies = {"firstName", "lastName"}) // ❹
     default String fullName() {
         return firstName() + ' ' + lastName();
     }
@@ -50,3 +50,9 @@ public interface Author extends BaseEntity {
     // @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     // String fullName();
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/key
+❸ https://babyfish-ct.github.io/jimmer/docs/mapping/base/association/many-to-many
+❹ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/formula
+---------------------------------------------------*/

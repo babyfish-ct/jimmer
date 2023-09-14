@@ -57,4 +57,4 @@ DissociateAction具有3个选项，对应数据库的外键行为：
 - SET_NULL: 自动清空外键。对于父对象的删除操作而言，看起来很像`on delete set null`。
 - DELETE: 自动删除子对象。对于父对象的删除操作而言，看起来很像`on delete cascade`。
 
-本文只介绍OnDissociate的配置，至于如何进一步使用，请参见[删除指令](../../mutation/delete-command)。
+本文只介绍OnDissociate的配置，至于如何进一步使用，请参见[保存指定/脱钩操作](../../mutation/save-command/dissociation)和[删除指令](../../mutation/delete-command)。

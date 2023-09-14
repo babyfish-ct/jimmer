@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAwareDraft> {
+public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAwareDraft> { //
 
     private final TenantProvider tenantProvider;
 
@@ -25,8 +25,8 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
     }
 
     @Override
-    public void beforeSave(@NotNull TenantAwareDraft draft, boolean isNew) {
-        if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) {
+    public void beforeSave(@NotNull TenantAwareDraft draft, boolean isNew) { // ❷
+        if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) { // ❸
             String tenant = tenantProvider.get();
             if (tenant == null) {
                 tenant = defaultTenant;
@@ -35,3 +35,11 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/mutation/draft-interceptor
+❷ https://babyfish-ct.github.io/jimmer/docs/object/draft
+
+❸ https://babyfish-ct.github.io/jimmer/docs/object/tool#isloaded
+  https://babyfish-ct.github.io/jimmer/docs/object/dynamic
+---------------------------------------------------*/

@@ -38,12 +38,12 @@ public class AuthorService {
     }
 
     @GetMapping("/simpleList")
-    public List<@FetchBy("SIMPLE_FETCHER") Author> findSimpleAuthors() {
+    public List<@FetchBy("SIMPLE_FETCHER") Author> findSimpleAuthors() { // ❶ ❷ ❸
         return authorRepository.findAll(SIMPLE_FETCHER, AuthorProps.FIRST_NAME, AuthorProps.LAST_NAME);
     }
 
     @GetMapping("/list")
-    public List<@FetchBy("DEFAULT_FETCHER") Author> findAuthors(
+    public List<@FetchBy("DEFAULT_FETCHER") Author> findAuthors( // ❷
             AuthorSpecification specification
             //@RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode
     ) {
@@ -56,7 +56,7 @@ public class AuthorService {
 
     @GetMapping("/{id}")
     @Nullable
-    public @FetchBy("COMPLEX_FETCHER") Author findComplexAuthor(
+    public @FetchBy("COMPLEX_FETCHER") Author findComplexAuthor( // ❸
             @PathVariable("id") long id
     ) {
         return authorRepository.findNullable(id, COMPLEX_FETCHER);
@@ -86,8 +86,8 @@ public class AuthorService {
                     );
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode.class)
-    public Author saveAuthor(AuthorInput input) {
+    @ThrowsAll(SaveErrorCode.class) // ❹
+    public Author saveAuthor(AuthorInput input) { // ❺
         return authorRepository.save(input);
     }
 
@@ -96,3 +96,9 @@ public class AuthorService {
         authorRepository.deleteById(id);
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+❹ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
+❺ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+---------------------------------------------------*/

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 @Component
-public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDraft> {
+public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDraft> { // ❶
 
     /*
      * In this simple example, `BaseEntity` has only two fields: `createdTime` and `modifiedTime`.
@@ -23,12 +23,20 @@ public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntityDr
      */
 
     @Override
-    public void beforeSave(BaseEntityDraft draft, boolean isNew) {
-        if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.MODIFIED_TIME)) {
+    public void beforeSave(BaseEntityDraft draft, boolean isNew) { // ❷
+        if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.MODIFIED_TIME)) { // ❸
             draft.setModifiedTime(LocalDateTime.now());
         }
-        if (isNew && !ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATED_TIME)) {
+        if (isNew && !ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATED_TIME)) { // ❹
             draft.setCreatedTime(LocalDateTime.now());
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/mutation/draft-interceptor
+❷ https://babyfish-ct.github.io/jimmer/docs/object/draft
+
+❸ ❹ https://babyfish-ct.github.io/jimmer/docs/object/tool#isloaded
+     https://babyfish-ct.github.io/jimmer/docs/object/dynamic
+---------------------------------------------------*/

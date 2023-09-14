@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.SortedMap;
 
 @Component
-public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
+public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> { // ❶
 
     private final BookRepository bookRepository;
 
@@ -30,12 +30,12 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     }
 
     @Override
-    public Map<Long, BigDecimal> resolve(Collection<Long> ids) {
+    public Map<Long, BigDecimal> resolve(Collection<Long> ids) { // ❷
         return bookRepository.findAvgPriceGroupByStoreId(ids);
     }
 
     @Override
-    public BigDecimal getDefaultValue() {
+    public BigDecimal getDefaultValue() { // ❸
         return BigDecimal.ZERO;
     }
 
@@ -51,7 +51,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // -----------------------------
 
     @EventListener
-    public void onAssociationChanged(AssociationEvent e) {
+    public void onAssociationChanged(AssociationEvent e) { // ❹
         // The association property `BookStore.books` is changed
         //
         // It is worth noting that
@@ -66,7 +66,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     }
 
     @EventListener
-    public void onEntityChanged(EntityEvent<?> e) {
+    public void onEntityChanged(EntityEvent<?> e) { // ❺
         // The scalar property `Book.price` is changed
         if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.PRICE)) {
             Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
@@ -81,7 +81,13 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     }
 
     @Override
-    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+    public Ref<SortedMap<String, Object>> getParameterMapRef() { //
         return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient#scalar-calculation-bookstoreavgprice
+❹ ❺ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#consistency
+❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#subkey-of-calculated-properties
+---------------------------------------------------*/

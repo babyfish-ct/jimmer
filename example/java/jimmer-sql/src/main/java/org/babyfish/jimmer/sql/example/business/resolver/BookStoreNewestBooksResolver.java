@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class BookStoreNewestBooksResolver implements TransientResolver<Long, List<Long>> {
+public class BookStoreNewestBooksResolver implements TransientResolver<Long, List<Long>> { // ❶
 
     private final BookRepository bookRepository;
 
@@ -27,12 +27,12 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     }
 
     @Override
-    public Map<Long, List<Long>> resolve(Collection<Long> ids) {
+    public Map<Long, List<Long>> resolve(Collection<Long> ids) { // ❷
         return bookRepository.findNewestIdsGroupByStoreId(ids);
     }
 
     @Override
-    public List<Long> getDefaultValue() {
+    public List<Long> getDefaultValue() { // ❸
         return Collections.emptyList();
     }
 
@@ -48,7 +48,7 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     // -----------------------------
 
     @EventListener
-    public void onAssociationChanged(AssociationEvent e) {
+    public void onAssociationChanged(AssociationEvent e) { // ❹
         // The association property `BookStore.books` is changed
         //
         // It is worth noting that
@@ -63,7 +63,7 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     }
 
     @EventListener
-    public void onEntityChanged(EntityEvent<?> e) {
+    public void onEntityChanged(EntityEvent<?> e) { // ❺
         // The scalar property `Book.edition` is changed.
         if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.EDITION)) {
             Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
@@ -79,7 +79,13 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
 
     // Contribute part of the secondary hash key to multiview-cache
     @Override
-    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+    public Ref<SortedMap<String, Object>> getParameterMapRef() { // ❻
         return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient#associative-calculation-bookstorenewestbooks
+❹ ❺ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#consistency
+❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#subkey-of-calculated-properties
+---------------------------------------------------*/

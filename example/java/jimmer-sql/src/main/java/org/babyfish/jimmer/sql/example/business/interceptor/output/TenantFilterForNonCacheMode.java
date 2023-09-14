@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  */
 @ConditionalOnMissingBean(TenantFilterForCacheMode.class)
 @Component
-public class TenantFilterForNonCacheMode implements Filter<TenantAwareProps> {
+public class TenantFilterForNonCacheMode implements Filter<TenantAwareProps> { // ❶
 
     protected final TenantProvider tenantProvider;
 
@@ -30,3 +30,7 @@ public class TenantFilterForNonCacheMode implements Filter<TenantAwareProps> {
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/query/global-filter/user-filter
+---------------------------------------------------*/

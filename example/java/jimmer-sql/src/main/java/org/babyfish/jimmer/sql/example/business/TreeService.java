@@ -52,7 +52,7 @@ public class TreeService {
     }
 
     @GetMapping("/roots/recursive")
-    public List<@FetchBy("RECURSIVE_FETCHER") TreeNode> findRootTrees(
+    public List<@FetchBy("RECURSIVE_FETCHER") TreeNode> findRootTrees( // ❶
             @RequestParam(required = false) String rootName
     ) {
         return treeNodeRepository.findByParentIsNullAndName(
@@ -63,7 +63,7 @@ public class TreeService {
 
     @PutMapping("/root/recursive")
     @ThrowsAll(SaveErrorCode.class)
-    public TreeNode saveTree(@RequestBody RecursiveTreeInput input) {
+    public TreeNode saveTree(@RequestBody RecursiveTreeInput input) { // ❷
         TreeNode rootNode = TreeNodeDraft.$.produce(
 
                 input.toEntity(),
@@ -99,3 +99,11 @@ public class TreeService {
                             RecursiveListFieldConfig::recursive
                     );
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+  https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/recursive
+
+❷ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+  https://babyfish-ct.github.io/jimmer/docs/object/view/dto-language#92-recursive-association
+---------------------------------------------------*/

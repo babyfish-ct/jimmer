@@ -34,7 +34,7 @@ public class BookStoreService {
     }
 
     @GetMapping("/simpleList")
-    public List<@FetchBy("SIMPLE_FETCHER") BookStore> findSimpleStores() {
+    public List<@FetchBy("SIMPLE_FETCHER") BookStore> findSimpleStores() { // ❶
         return bookStoreRepository.findAll(
                 SIMPLE_FETCHER,
                 BookStoreProps.NAME
@@ -42,7 +42,7 @@ public class BookStoreService {
     }
 
     @GetMapping("/list")
-    public List<@FetchBy("DEFAULT_FETCHER") BookStore> findStores() {
+    public List<@FetchBy("DEFAULT_FETCHER") BookStore> findStores() { // ❷
         return bookStoreRepository.findAll(
                 DEFAULT_FETCHER,
                 BookStoreProps.NAME
@@ -50,7 +50,7 @@ public class BookStoreService {
     }
 
     @GetMapping("/complexList")
-    public List<@FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore> findComplexStores() {
+    public List<@FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore> findComplexStores() { // ❸
         return bookStoreRepository.findAll(
                 WITH_ALL_BOOKS_FETCHER,
                 BookStoreProps.NAME
@@ -59,7 +59,7 @@ public class BookStoreService {
 
     @GetMapping("/{id}/withAllBooks")
     @Nullable
-    public @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore findComplexStoreWithAllBooks(
+    public @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore findComplexStoreWithAllBooks( // ❹
             @PathVariable("id") long id
     ) {
         return bookStoreRepository.findNullable(id, WITH_ALL_BOOKS_FETCHER);
@@ -67,7 +67,7 @@ public class BookStoreService {
 
     @GetMapping("/{id}/withNewestBooks")
     @Nullable
-    public @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore findComplexStoreWithNewestBooks(
+    public @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore findComplexStoreWithNewestBooks( // ❺
             @PathVariable("id") long id
     ) {
         return bookStoreRepository.findNullable(id, WITH_NEWEST_BOOKS_FETCHER);
@@ -108,8 +108,8 @@ public class BookStoreService {
                     );
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode.class)
-    public BookStore saveBookStore(@RequestBody BookStoreInput input) {
+    @ThrowsAll(SaveErrorCode.class) // ❻
+    public BookStore saveBookStore(@RequestBody BookStoreInput input) { // ❼
         return bookStoreRepository.save(input);
     }
 
@@ -118,3 +118,9 @@ public class BookStoreService {
         bookStoreRepository.deleteById(id);
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ ❹ ❺ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+❻ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
+❼ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+---------------------------------------------------*/
