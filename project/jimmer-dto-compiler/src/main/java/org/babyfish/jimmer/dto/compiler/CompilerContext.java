@@ -87,6 +87,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             }
         }
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(
+                null,
                 compiler.getBaseType(),
                 type.body,
                 type.name,
@@ -137,6 +138,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     public T getBaseType() {
         return compiler.getBaseType();
+    }
+
+    public List<String> getEnumConstants(P baseProp) {
+        return compiler.getEnumConstants(baseProp);
     }
 
     public TypeRef resolve(DtoParser.TypeRefContext ctx) {

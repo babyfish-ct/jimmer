@@ -53,7 +53,7 @@ public class PagingQueries {
         if (offset >= total) {
             return pageFactory.create(
                     Collections.emptyList(),
-                    0,
+                    total,
                     queryImplementor
             );
         }

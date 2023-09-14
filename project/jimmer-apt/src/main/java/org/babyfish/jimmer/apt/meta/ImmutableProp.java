@@ -817,6 +817,11 @@ public class ImmutableProp implements BaseProp {
     public ExecutableElement toElement() {
         return executableElement;
     }
+
+    public Context context() {
+        return context;
+    }
+
     @Override
     public String toString() {
         return declaringType.getTypeElement().getQualifiedName().toString() + '.' + name;

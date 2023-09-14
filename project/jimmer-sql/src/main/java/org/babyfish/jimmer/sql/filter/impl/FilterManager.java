@@ -278,9 +278,15 @@ public class FilterManager implements Filters {
         Set<Filter<Props>> declaredFilters = new HashSet<>();
         for (ImmutableType t : prop.getDeclaringType().getAllTypes()) {
             List<Filter<Props>> filters = filterMap.get(t.toString());
-            if (filters != null) {
-                declaredFilters.addAll(filters);
+            if (filters == null) {
+                continue;
             }
+            for (Filter<Props> filter : filters) {
+                if (!(filter instanceof AssociationIntegrityAssuranceFilter<?>)) {
+                    return true;
+                }
+            }
+            declaredFilters.addAll(filters);
         }
         for (ImmutableType t : prop.getTargetType().getAllTypes()) {
             List<Filter<Props>> filters = filterMap.get(t.toString());

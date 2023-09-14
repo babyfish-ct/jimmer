@@ -37,7 +37,7 @@ fun <E, P> KConfigurableRootQuery<*, E>.fetchPage(
     if (offset >= total) {
         return pageFactory(
             emptyList(),
-            0,
+            total,
             queryImplementor
         )
     }

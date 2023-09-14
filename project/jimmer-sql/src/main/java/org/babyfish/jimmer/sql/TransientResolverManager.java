@@ -9,7 +9,7 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
-import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
+import org.babyfish.jimmer.sql.runtime.ObjectProvider;
 
 import java.lang.reflect.*;
 import java.util.List;
@@ -17,14 +17,14 @@ import java.util.Map;
 
 class TransientResolverManager {
 
-    private final TransientResolverProvider provider;
+    private final ObjectProvider<TransientResolver<?, ?>> provider;
 
     private JSqlClient sqlClient;
 
     private final PropCache<TransientResolver<?, ?>> resolverCache =
             new PropCache<>(this::createResolver, true);
 
-    TransientResolverManager(TransientResolverProvider provider) {
+    TransientResolverManager(ObjectProvider<TransientResolver<?, ?>> provider) {
         this.provider = provider;
     }
 
@@ -64,8 +64,8 @@ class TransientResolverManager {
         return resolverCache.get(prop);
     }
 
-    public Class<? extends TransientResolverProvider> getProviderClass() {
-        return provider.getClass();
+    public ObjectProvider<TransientResolver<?,?>> getProvider() {
+        return provider;
     }
 
     @SuppressWarnings("unchecked")

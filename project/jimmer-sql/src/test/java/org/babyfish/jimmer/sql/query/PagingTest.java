@@ -514,7 +514,7 @@ public class PagingTest extends AbstractQueryTest {
                     );
                     ctx.rows(it -> {
                         expect(
-                                "Page{entities=[], totalRowCount=0}",
+                                "Page{entities=[], totalRowCount=6}",
                                 it.get(0)
                         );
                     });

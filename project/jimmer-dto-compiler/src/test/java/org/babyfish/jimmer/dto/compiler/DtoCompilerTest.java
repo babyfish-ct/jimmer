@@ -342,6 +342,58 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testFlat4() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "BookFlatView {\n" +
+                        "    id\n" +
+                        "    name\n" +
+                        "    flat(creator) {\n" +
+                        "        as(^ -> created) {\n" +
+                        "            #allScalars\n" +
+                        "            gender\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "    flat(editor) {\n" +
+                        "        as(^ -> modified) {\n" +
+                        "            #allScalars\n" +
+                        "            gender\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->BookFlatView {" +
+                        "--->--->id, " +
+                        "--->--->name, " +
+                        "--->--->creator.id as createdId, " +
+                        "--->--->creator.name as createdName, " +
+                        "--->--->creator.gender as createdGender, " +
+                        "--->--->editor.id as modifiedId, " +
+                        "--->--->editor.name as modifiedName, " +
+                        "--->--->editor.gender as modifiedGender" +
+                        "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+        assertContentEquals(
+                "[" +
+                        "--->flat(creator): {" +
+                        "--->--->id as createdId, " +
+                        "--->--->name as createdName, " +
+                        "--->--->gender as createdGender" +
+                        "--->}, " +
+                        "--->flat(editor): {" +
+                        "--->--->id as modifiedId, " +
+                        "--->--->name as modifiedName, " +
+                        "--->--->gender as modifiedGender" +
+                        "--->}" +
+                        "]",
+                dtoTypes.get(0).getHiddenFlatProps().toString()
+        );
+    }
+
+    @Test
     public void testUserProp() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
                 "import com.company.pkg.data.User\n" +
@@ -921,7 +973,9 @@ public class DtoCompilerTest {
                 new BasePropImpl("tenant"),
                 new BasePropImpl("store", () -> TYPE_MAP.get("BookStore"), true, false),
                 new BasePropImpl("authors", () -> TYPE_MAP.get("Author"), false, true),
-                new BasePropImpl("chapters", () -> TYPE_MAP.get("Chapter"), false, true)
+                new BasePropImpl("chapters", () -> TYPE_MAP.get("Chapter"), false, true),
+                new BasePropImpl("creator", () -> TYPE_MAP.get("User"), false, false),
+                new BasePropImpl("editor", () -> TYPE_MAP.get("User"), false, false)
         );
 
         private static final BaseTypeImpl BOOK_STORE_TYPE = new BaseTypeImpl(
@@ -955,6 +1009,13 @@ public class DtoCompilerTest {
                 new BasePropImpl("name"),
                 new BasePropImpl("childNodes", () -> TYPE_MAP.get("TreeNode"), false, true),
                 new BasePropImpl("parent", () -> TYPE_MAP.get("TreeNode"), true, false)
+        );
+
+        private static final BaseTypeImpl USER_TYPE = new BaseTypeImpl(
+                "org.babyfish.jimmer.sql.model.User",
+                new BasePropImpl("id"),
+                new BasePropImpl("name"),
+                new BasePropImpl("gender")
         );
 
         private MyDtoCompiler(BaseType baseType, String dtoFilePath) {
@@ -994,12 +1055,18 @@ public class DtoCompilerTest {
             return true;
         }
 
+        @Override
+        protected List<String> getEnumConstants(BaseProp baseProp) {
+            return null;
+        }
+
         static {
             TYPE_MAP.put("Book", BOOK_TYPE);
             TYPE_MAP.put("BookStore", BOOK_STORE_TYPE);
             TYPE_MAP.put("Author", AUTHOR_TYPE);
             TYPE_MAP.put("Chapter", CHAPTER_TYPE);
             TYPE_MAP.put("TreeNode", TREE_NODE_TYPE);
+            TYPE_MAP.put("User", USER_TYPE);
         }
     }
 }

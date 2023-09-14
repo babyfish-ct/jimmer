@@ -1,0 +1,19 @@
+WriterView {
+
+    #allScalars
+
+    gender as sex {
+        MALE -> 100
+        FEMALE -> 200
+    }
+}
+
+AnotherWriterView {
+
+    #allScalars
+
+    gender? as sex {
+        MALE -> 10
+        FEMALE -> 20
+    }
+}

@@ -1,10 +1,12 @@
 package org.babyfish.jimmer.spring.cfg;
 
 import kotlin.Unit;
-import org.babyfish.jimmer.spring.repository.SpringConnectionManager;
-import org.babyfish.jimmer.spring.repository.SpringTransientResolverProvider;
+import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
+import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
+import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
@@ -21,6 +23,7 @@ import org.babyfish.jimmer.sql.kt.cfg.KInitializerKt;
 import org.babyfish.jimmer.sql.kt.filter.KFilter;
 import org.babyfish.jimmer.sql.kt.filter.impl.JavaFiltersKt;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +54,9 @@ public class SqlClientConfig {
             ApplicationEventPublisher publisher,
             JimmerProperties properties,
             @Autowired(required = false) DataSource dataSource,
-            @Autowired(required = false) SpringConnectionManager connectionManager,
-            @Autowired(required = false) SpringTransientResolverProvider transientResolverProvider,
+            @Autowired(required = false) ConnectionManager connectionManager,
+            @Autowired(required = false) ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            @Autowired(required = false) ObjectProvider<TransientResolver<?, ?>> transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
             @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
@@ -96,6 +100,7 @@ public class SqlClientConfig {
                 properties,
                 dataSource,
                 connectionManager,
+                userIdGeneratorProvider,
                 transientResolverProvider,
                 entityManager,
                 databaseNamingStrategy,
@@ -125,8 +130,9 @@ public class SqlClientConfig {
             ApplicationEventPublisher publisher,
             JimmerProperties properties,
             @Autowired(required = false) DataSource dataSource,
-            @Autowired(required = false) SpringConnectionManager connectionManager,
-            @Autowired(required = false) SpringTransientResolverProvider transientResolverProvider,
+            @Autowired(required = false) ConnectionManager connectionManager,
+            @Autowired(required = false) ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            @Autowired(required = false) ObjectProvider<TransientResolver<?, ?>> transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
             @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
@@ -170,6 +176,7 @@ public class SqlClientConfig {
                     properties,
                     dataSource,
                     connectionManager,
+                    userIdGeneratorProvider,
                     transientResolverProvider,
                     entityManager,
                     databaseNamingStrategy,
@@ -206,8 +213,9 @@ public class SqlClientConfig {
             ApplicationContext ctx,
             JimmerProperties properties,
             DataSource dataSource,
-            SpringConnectionManager connectionManager,
-            SpringTransientResolverProvider transientResolverProvider,
+            ConnectionManager connectionManager,
+            ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            ObjectProvider<TransientResolver<?, ?>> transientResolverProvider,
             EntityManager entityManager,
             DatabaseNamingStrategy databaseNamingStrategy,
             Dialect dialect,
@@ -227,6 +235,11 @@ public class SqlClientConfig {
             builder.setConnectionManager(connectionManager);
         } else if (dataSource != null) {
             builder.setConnectionManager(new SpringConnectionManager(dataSource));
+        }
+        if (userIdGeneratorProvider != null) {
+            builder.setUserIdGeneratorProvider(userIdGeneratorProvider);
+        } else {
+            builder.setUserIdGeneratorProvider(new SpringUserIdGeneratorProvider(ctx));
         }
         if (transientResolverProvider != null) {
             builder.setTransientResolverProvider(transientResolverProvider);
@@ -297,23 +310,6 @@ public class SqlClientConfig {
             JSqlClientImplementor sqlClient,
             ApplicationEventPublisher publisher
     ) {
-        if (sqlClient.getSlaveConnectionManager(false) != null &&
-                !(sqlClient.getSlaveConnectionManager(false) instanceof SpringConnectionManager)) {
-            throw new IllegalStateException(
-                    "The slave connection manager of sqlClient must be null or \"" +
-                            SpringConnectionManager.class.getName() +
-                            "\""
-            );
-        }
-
-        if (!SpringTransientResolverProvider.class.isAssignableFrom(sqlClient.getResolverProviderClass())) {
-            throw new IllegalStateException(
-                    "The transient resolver provider of sqlClient must be \"" +
-                            SpringTransientResolverProvider.class.getName() +
-                            "\""
-            );
-        }
-
         Triggers[] triggersArr = sqlClient.getTriggerType() == TriggerType.BOTH ?
                 new Triggers[] { sqlClient.getTriggers(), sqlClient.getTriggers(true) } :
                 new Triggers[] { sqlClient.getTriggers() };

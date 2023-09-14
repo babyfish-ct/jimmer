@@ -1,0 +1,21 @@
+input ArticleInput {
+    #allScalars
+    flat(writer) {
+        as(^ -> writer) {
+            #allScalars
+            gender? {
+                MALE -> "Male"
+                FEMALE -> "Female"
+            }
+        }
+    }
+    flat(approver) {
+        as(^ -> approver) {
+            #allScalars
+            gender {
+                MALE -> "Male"
+                FEMALE -> "Female"
+            }
+        }
+    }
+}

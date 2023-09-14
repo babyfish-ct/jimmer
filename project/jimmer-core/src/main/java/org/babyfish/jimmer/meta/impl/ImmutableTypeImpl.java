@@ -10,8 +10,10 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
+import org.babyfish.jimmer.sql.meta.impl.SqlContextCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,8 +80,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
 
     private final MetaCache<String> tableNameCache = new MetaCache<>(this::getTableName0);
 
-    private final MetaCache<IdGenerator> idGeneratorCache = new MetaCache<>(it -> {
-        IdGenerator g = IdGenerators.of(this, it.getNamingStrategy());
+    private final SqlContextCache<IdGenerator> idGeneratorCache = new SqlContextCache<>(it -> {
+        IdGenerator g = IdGenerators.of(this, it);
         return g != null ? g : NIL_ID_GENERATOR;
     });
 
@@ -311,7 +313,7 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
             return getProp(id.asName());
         }
         ImmutableProp[] arr = this.getPropArr();
-        if (index < 1 || index >= arr.length) {
+        if (index < 0 || index >= arr.length) {
             throw new IllegalArgumentException(
                     "There is no property whose id is " + id + " in \"" + this + "\""
             );
@@ -475,8 +477,8 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     }
 
     @Override
-    public IdGenerator getIdGenerator(MetadataStrategy strategy) {
-        IdGenerator generator = idGeneratorCache.get(strategy);
+    public IdGenerator getIdGenerator(SqlContext sqlContext) {
+        IdGenerator generator = idGeneratorCache.get(sqlContext);
         return generator == NIL_ID_GENERATOR ? null : generator;
     }
 

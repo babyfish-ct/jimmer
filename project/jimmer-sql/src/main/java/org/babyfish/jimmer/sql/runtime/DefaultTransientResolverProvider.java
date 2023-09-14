@@ -1,11 +1,12 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.Transient;
 import org.babyfish.jimmer.sql.TransientResolver;
 
 import java.lang.reflect.Constructor;
 
-public class DefaultTransientResolverProvider implements TransientResolverProvider {
+public class DefaultTransientResolverProvider implements ObjectProvider<TransientResolver<?, ?>> {
 
     public static final DefaultTransientResolverProvider INSTANCE =
             new DefaultTransientResolverProvider();
@@ -18,13 +19,13 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
 
     @Override
     public TransientResolver<?, ?> get(
-            Class<TransientResolver<?, ?>> resolverType,
+            Class<TransientResolver<?, ?>> type,
             JSqlClient sqlClient
     ) throws Exception {
 
         Constructor<?> constructor = null;
         try {
-            constructor = resolverType.getConstructor();
+            constructor = type.getConstructor();
         } catch (NoSuchMethodException ex) {
             // Do nothing
         }
@@ -33,7 +34,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
         }
 
         try {
-            constructor = resolverType.getConstructor(JSqlClient.class);
+            constructor = type.getConstructor(JSqlClient.class);
         } catch (NoSuchMethodException ex) {
             // Do nothing
         }
@@ -43,7 +44,7 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
 
         if (K_SQL_CLIENT_CLASS != null) {
             try {
-                constructor = resolverType.getConstructor(K_SQL_CLIENT_CLASS);
+                constructor = type.getConstructor(K_SQL_CLIENT_CLASS);
             } catch (NoSuchMethodException ex) {
                 // Do nothing
             }
@@ -56,8 +57,19 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
 
         throw new IllegalArgumentException(
                 "The resolve type \"" +
-                        resolverType.getName() +
+                        type.getName() +
                         "\", it does not have no-argument constructor or constructor accepts SqlClient"
+        );
+    }
+
+    @Override
+    public TransientResolver<?, ?> get(String ref, JSqlClient sqlClient) throws Exception {
+        throw new UnsupportedOperationException(
+                "The `ref` of \"@" +
+                        Transient.class.getName() +
+                        "\" is not supported by \"" +
+                        getClass().getName() +
+                        "\""
         );
     }
 

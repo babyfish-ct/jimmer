@@ -152,12 +152,12 @@ interface KSqlClient {
         entities.delete(type, id, block = block)
 
     fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, mode: DeleteMode = DeleteMode.AUTO): KDeleteResult =
-        entities.batchDelete(type, ids) {
+        entities.deleteAll(type, ids) {
             setMode(mode)
         }
 
     fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
-        entities.batchDelete(type, ids, block = block)
+        entities.deleteAll(type, ids, block = block)
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {
