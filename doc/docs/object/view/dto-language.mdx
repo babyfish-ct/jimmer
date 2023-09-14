@@ -532,7 +532,101 @@ The following list all usages of `as() {...}` block:
 `^` and `$` cannot appear at the same time, because it means renaming a single property precisely, which duplicates existing functionality
 :::
 
-## 9. Association Properties  
+## 9. Enum Mapping
+
+By default, enum type properties of entities are mapped to DTO properties as enums. 
+
+You can map enums to numbers or strings.
+
+-   Map to numbers
+
+    ```sh
+    AuthorView {
+        #allScalars
+        gender {
+            MALE -> 100
+            FEMALE -> 101 
+        }
+    }
+    ```
+
+    This generates the following code:
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    // BookView.java
+    @lombok.Data
+    public class AuthorView implements View<AuthorView> {
+
+        private int gender;
+
+        ...other members omitted...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    // BookView.kt 
+    data class RobotView(
+        val gender: Int,
+        ...other members omitted...
+    ) : View<Robot> {
+        ...other members omitted...  
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   Map to strings
+
+    ```sh
+    AuthorView {
+        #allScalars
+        gender {
+            MALE -> "Male"
+            FEMALE -> "Female"
+        }
+    }
+    ```
+
+    This generates the following code:
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    // BookView.java
+    @lombok.Data
+    public class AuthorView implements View<AuthorView> {
+
+        private String gender;
+
+        ...other members omitted...  
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    // BookView.kt
+    data class RobotView(
+        val gender: String,
+        ...other members omitted...   
+    ) : View<Robot> {
+        ...other members omitted...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 10. Association Properties  
 
 Handling association properties is a very powerful feature of the DTO language. There are three usages:
 
@@ -541,7 +635,7 @@ Handling association properties is a very powerful feature of the DTO language. 
 - Use after calling `id` function
 - Use after calling `flat` function
 
-### 9.1. Common Association
+### 10.1. Common Association
 
 -   Basic usage
 
@@ -672,7 +766,7 @@ Handling association properties is a very powerful feature of the DTO language. 
     }
     ```
 
-### 9.2 Recursive Association
+### 10.2 Recursive Association
 
 For recursively associated properties like `TreeNode.parent` or `TreeNode.childNodes` in the attached example, the asterisk `*` can be used to mark the corresponding associated property of the DTO as a recursive property.
 
@@ -688,7 +782,7 @@ TreeNodeView {
 }
 ```
 
-### 9.3. id Function
+### 10.3. id Function
 
 For <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>, of course we can choose to define [@IdView](../../mapping/advanced/view/id-view) properties in entities, for example:
 
@@ -778,7 +872,7 @@ BookView {
 
 The functionality of this code is exactly the same as the previous example, but no longer assumes that entity types always declare [@IdView](../../mapping/advanced/view/id-view) properties, which is a better approach.
 
-### 9.4. flat Function  
+### 10.4. flat Function  
 
 The `flat` function can only be used for associations *(one-to-one or many-to-one)*, not collection associations *(one-to-many or many-to-many)*. It is used to lift the properties of the associated DTO to the current DTO type to obtain a flat object without associations.
 
@@ -909,7 +1003,7 @@ The `flat` approach also has drawbacks. For **output** DTOs, the `flat` approach
 
 Please refer to <ViewMore buttonText="Controversy over whether output DTOs should use flat mode"><FlatProblem/></ViewMore>
 
-## 10. Inheritance  
+## 11. Inheritance  
 
 Inheritance between DTO type definitions is supported, with the following features:
 
@@ -968,9 +1062,9 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 } 
 ```
 
-## 11. Custom Properties  
+## 12. Custom Properties  
 
-### 11.1 Getting Started with Custom Properties
+### 12.1 Getting Started with Custom Properties
 
 In the examples we have discussed so far, all DTO properties are mapped from entity properties and become mapping properties.
 
@@ -1082,17 +1176,17 @@ It can be seen that for query specification parameters like `AuthorSpecification
 
 Therefore, the following is recommended:
 
-- Specificiation DTO: Encouraged to use, custom properties are designed for this type.
+-   Specificiation DTO: Encouraged to use, custom properties are designed for this type.
 
-- Input DTO: A small number can be used, allowing a small amount of control information to be mixed in the Input DTO.
+-   Input DTO: A small number can be used, allowing a small amount of control information to be mixed in the Input DTO.
 
     The `toEntity` method of the DTO object will ignore this information and convert other information into a clean dynamic entity object for [save command](../../mutation/save-command) to use
 
-- Output DTO: Not recommended
+-   Output DTO: Not recommended
 
-    - First, Output DTOs themselves are not required. Letting query methods return dynamic objects directly, supplemented by [@FetchBy annotations](../../spring/client/api#declare-fetchby), is already a very powerful solution.
+    -   First, Output DTOs themselves are not required. Letting query methods return dynamic objects directly, supplemented by [@FetchBy annotations](../../spring/client/api#declare-fetchby), is already a very powerful solution.
 
-    - Second, even if Output DTOs are used, Output DTO objects will only have the properties of entity objects, unless you are willing to manually populate custom properties.
+    -   Second, even if Output DTOs are used, Output DTO objects will only have the properties of entity objects, unless you are willing to manually populate custom properties.
 
     :::tip
     For output types, custom properties are entity-level things *(so Output DTOs are not required)*.
@@ -1100,7 +1194,7 @@ Therefore, the following is recommended:
     Please refer to *[View Properties](../../mapping/advanced/view)、[Simple Calculated Properties](../../mapping/advanced/calculated/formula)、or [Complex Calculated Properties](../../mapping/advanced/calculated/transient)*
     :::
 
-### 11.2 Built-in Types  
+### 12.2 Built-in Types  
 
 So-called built-in types are types built into the DTO language that do not require import through `import`.
 
@@ -1125,14 +1219,14 @@ So-called built-in types are types built into the DTO language that do not requi
     |Double|double|Double|
     |Double?|Double|Double?|
 
-- Any and String types
+-   Any and String types
 
     |DTO Language Type|Generated Java Type|Generated Kotlin Type|
     |---|---|---|
     |Any|Object|Any|
     |String|String|String|
 
-- Array types
+-   Array types
 
     |DTO Language Type|Generated Java Type|Generated Kotlin Type|
     |---|---|---|
@@ -1156,7 +1250,7 @@ So-called built-in types are types built into the DTO language that do not requi
     |Array&lt;UserType?&gt;|UserType[]|Array&lt;UserType?&gt;|
     |Array&lt;*&gt;|Object[]|Array&lt;*&gt;|
 
-- Collection types
+-   Collection types
 
     |DTO Language Type|Generated Java Type|Generated Kotlin Type|
     |---|---|---|
@@ -1171,7 +1265,7 @@ So-called built-in types are types built into the DTO language that do not requi
     |Map&lt;K, V&gt;|Map&lt;? extends K, ? extends V&gt;|Map&lt;K, V&gt;|
     |MutableMap&lt;K, V&gt;|Map&lt;K, V&gt;|Mutable&lt;K, V&gt;|
 
-### 11.3 Generic Parameter Modifiers
+### 12.3 Generic Parameter Modifiers
 
 In addition to generics in built-in array and collection types, generics of other generic classes also support using `in` or `out` to modify generic parameters, for example:
 
@@ -1181,26 +1275,26 @@ In addition to generics in built-in array and collection types, generics of othe
 |UserType1&lt;out UserType2&gt;|UserType1&lt;? extends UserType2&gt;|UserType1&lt;out UserType2&gt;|
 |UserType1&lt;in UserType2&gt;|UserType1&lt;? super UserType2&gt;|UserType1&lt;in UserType2&gt;|
 
-### 11.4 Import Statements  
+### 12.4 Import Statements  
 
 In addition to built-in types, other types must be written in qualified name, or imported at the beginning of the file using import statements, 
 otherwise they will be considered to be in the same package as the current entity.
 
 The DTO language supports multiple styles of import statements, for example:
 
-- Single class import
+-   Single class import
 
     ```
     import java.time.LocalDateTime
     ```
 
-- Single class renamed import
+-   Single class renamed import
 
     ```
     import java.time.LocalDateTime as LDT
     ```
 
-- Multiple class import
+-   Multiple class import
 
     ```
     import java.time.{
@@ -1210,7 +1304,7 @@ The DTO language supports multiple styles of import statements, for example:
     }
     ```
 
-- Multiple class renamed import
+-   Multiple class renamed import
 
     ```
     import java.time.{
@@ -1220,9 +1314,9 @@ The DTO language supports multiple styles of import statements, for example:
     }
     ```
 
-## 12. Annotations  
+## 13. Annotations  
 
-### 12.1 Basic Usage
+### 13.1 Basic Usage
 
 You can use annotations to decorate DTO types, mapping properties and custom properties in DTO language:
 
@@ -1283,14 +1377,14 @@ Where:
 - `@B` decorates the anonymous association type
 :::
 
-### 12.2 Annotation Override
+### 13.2 Annotation Override
 
 -   As mentioned earlier, DTO language supports annotations to directly control the annotations of the generated DTO types
 
 -   If a DTO property is not decorated by any annotation, the annotations on the corresponding property of the original entity will be copied *(if the DTO property is mapped, not custom)*.
     Where any **non**-jimmer annotations other than those in the `org.babyfish.jimmer.client` package will be copied to the generated DTO type
 
-### 12.3 value Parameter  
+### 13.3 value Parameter  
 
 The `value` parameter in annotations can be abbreviated, for example:
 
@@ -1356,7 +1450,7 @@ There are some minor differences between Java and Kotlin annotation syntax. DTO 
 
 The above four styles are equivalent. You can freely choose the style you like.  
 
-## 13. Practical Applications
+## 14. Practical Applications
 
 - [As output parameters in query APIs *(optional)*](../../query/object-fetcher/dto)
 

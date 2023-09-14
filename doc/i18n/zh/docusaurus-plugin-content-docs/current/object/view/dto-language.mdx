@@ -527,7 +527,97 @@ RobotView {
 `^`和`$`不能同时出现，因为这表示精确重命名单个属性，这和已有的功能重复
 :::
 
-## 9. 关联属性
+## 9. 枚举映射
+
+默认情况下，实体的枚举类型属性被映射成DTO属性后仍然是枚举类型。
+
+你可以将枚举类型映射为数字或字符串。
+
+-   映射为数字
+
+    ```sh
+    AuthorView {
+        #allScalars
+        gender {
+            MALE -> 100
+            FEMALE -> 101
+        }
+    }
+    ```
+
+    生成如下代码
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookView.java"
+    @lombok.Data
+    public class AuthorView implements View<AuthorView> {
+
+        private int gender;
+
+        ...省略其他成员...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="BookView.kt"
+    data class RobotView(
+        val gender: Int,
+        ...省略其他成员...
+    ) : View<Robot> {
+
+        ...省略其他成员...
+    } 
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   映射为字符串
+
+    ```sh
+    AuthorView {
+        #allScalars
+        gender {
+            MALE -> "Male"
+            FEMALE -> "Female"
+        }
+    }
+    ```
+
+    生成如下代码
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java title="BookView.java"
+    @lombok.Data
+    public class AuthorView implements View<AuthorView> {
+
+        private String gender;
+
+        ...省略其他成员...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="BookView.kt"
+    data class RobotView(
+        val gender: String,
+        ...省略其他成员...
+    ) : View<Robot> {
+
+        ...省略其他成员...
+    } 
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 10. 关联属性
 
 对关联属性的处理是DTO语言一个非常强大的功能，存在三种用法
 
@@ -536,7 +626,7 @@ RobotView {
 -   调用id函数后使用
 -   调用flat函数后使用
 
-### 9.1. 普通关联
+### 10.1. 普通关联
 
 -   基本用法
 
@@ -667,7 +757,7 @@ RobotView {
     }
     ```
 
-### 9.2 递归关联
+### 10.2 递归关联
 
 对于实体中可递归的属性，比如，附带例子中的`TreeNode.parent`或`TreeNode.childNodes`，可以使用星号`*`将DTO对应的关联属性标记为递归属性。
 
@@ -683,7 +773,7 @@ TreeNodeView {
 }
 ```
 
-### 9.3. id函数
+### 10.3. id函数
 
 对于<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>而言，我们当然选择在实体中定义[@IdView](../../mapping/advanced/view/id-view)属性，例如
 
@@ -773,7 +863,7 @@ BookView {
 
 这段代码的功能和前面的例子完全一样，但不再假设实体类型总是声明了[@IdView](../../mapping/advanced/view/id-view)属性，是更好的方案。
 
-### 9.4. flat函数
+### 10.4. flat函数
 
 `flat`函数只能用于引用关联 *(一对一或多对一)*，不能用于集合关联 *(一对多或多对多)*，用于把关联DTO的属性提升到当前DTO类型，得到不含关联的平坦对象。
 
@@ -904,7 +994,7 @@ com.yourcompany.yourproject.FlatTreeNodeView(
 
 请参见<ViewMore buttonText="Output DTO是否该用flat模式的争议"><FlatProblem/></ViewMore>
 
-## 10. 继承
+## 11. 继承
 
 DTO类型定义之间支持继承，具备如下特色
 
@@ -963,9 +1053,9 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 }
 ```
 
-## 11. 自定义字段
+## 12. 自定义字段
 
-### 11.1 初识自定义字段
+### 12.1 初识自定义字段
 
 前面我们所讲的例子中，所有DTO属性都是由实体属性映射而来，成为映射属性。
 
@@ -1095,7 +1185,7 @@ interface AuthorRepository : KRepository<Author, Long> {
     请参见*[视图属性](../../mapping/advanced/view)、[简单计算属性](../../mapping/advanced/calculated/formula)、或[复杂计算属性](../../mapping/advanced/calculated/transient)
     :::
 
-### 11.2 内置类型
+### 12.2 内置类型
 
 所谓内置类型，就是DTO语言内置类型，无需采用`import`导入。
 
@@ -1166,7 +1256,7 @@ interface AuthorRepository : KRepository<Author, Long> {
     |Map&lt;K, V&gt;|Map&lt;? extends K, ? extends V&gt;|Map&lt;K, V&gt;|
     |MutableMap&lt;K, V&gt;|Map&lt;K, V&gt;|Mutable&lt;K, V&gt;|
 
-### 11.3 范型参数修饰
+### 12.3 范型参数修饰
 
 除了内置类型中的范型类 *(数组和集合)* 型外，其他范型类都支持使用`in`或`out`修饰范型参数，例如
 
@@ -1176,7 +1266,7 @@ interface AuthorRepository : KRepository<Author, Long> {
 |UserType1&lt;out UserType2&gt;|UserType1&lt;? extends UserType2&gt;|UserType1&lt;out UserType2&gt;|
 |UserType1&lt;in UserType2&gt;|UserType1&lt;? super UserType2&gt;|UserType1&lt;in UserType2&gt;|
 
-### 11.4 导入语句
+### 12.4 导入语句
 
 除了内置类型外的其他类型外，其他类型在被引用时，要么书写全名，要么在文件开头使用import语句，否则，将会认为其同当前实体属于同一包。
 
@@ -1214,9 +1304,9 @@ DTO语言支持多种风格的import语句，例如
     }
     ```
 
-## 12. 注解
+## 13. 注解
 
-### 12.1 基本用法
+### 13.1 基本用法
 
 你可以在DTO语言中使用注解修饰DTO类型、映射属性和自定义属性
 
@@ -1277,7 +1367,7 @@ BookView {
 -   `@B`修饰匿名的关联类型
 :::
 
-### 12.2 注解替换
+### 13.2 注解替换
 
 -   如前文所述，DTO语言支持注解，直接控制被生成的DTO类型的注解
 
@@ -1300,7 +1390,7 @@ BookView {
 
 和Java不同，无论注解有多少个参数，`value`参数都可以被缩写，只要保证被缩写的属性最先配置即可。
 
-### 12.4 混合Java和Kotlin的语法
+### 13.4 混合Java和Kotlin的语法
 
 Java和Kotlin的注解语法存在一些微弱的差异，DTO语言混合了二者的特征，例如
 
@@ -1350,7 +1440,7 @@ Java和Kotlin的注解语法存在一些微弱的差异，DTO语言混合了二�
 
 以上四种写法是等价的。你可以随意选择你喜欢的系法。
 
-## 13. 实际应用
+## 14. 实际应用
 
 -   [在查询API中充当输出参数 *(可选)*](../../query/object-fetcher/dto)
 
