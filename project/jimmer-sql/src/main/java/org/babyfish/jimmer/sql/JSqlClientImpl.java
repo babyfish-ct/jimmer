@@ -85,7 +85,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final BinLog binLog;
 
-    private final ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider;
+    private final StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider;
 
     private final TransientResolverManager transientResolverManager;
 
@@ -125,7 +125,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             MetadataStrategy metadataStrategy,
             BinLog binLog,
             FilterManager filterManager,
-            ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider,
             TransientResolverManager transientResolverManager,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             boolean saveCommandPessimisticLock,
@@ -237,6 +237,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
         }
         return userIdGenerator;
+    }
+
+    @Override
+    public UserIdGenerator<?> getUserIdGenerator(String ref) throws Exception {
+        return userIdGeneratorProvider.get(ref, this);
     }
 
     @Override
@@ -512,12 +517,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public ObjectProvider<UserIdGenerator<?>> getUserIdGeneratorProvider() {
+    public StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider() {
         return userIdGeneratorProvider;
     }
 
     @Override
-    public ObjectProvider<TransientResolver<?, ?>> getTransientResolverProvider() {
+    public StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider() {
         return transientResolverManager.getProvider();
     }
 
@@ -577,9 +582,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
 
-        private ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider;
+        private StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider;
 
-        private ObjectProvider<TransientResolver<?, ?>> transientResolverProvider;
+        private TransientResolverProvider transientResolverProvider;
 
         private final Map<Class<?>, ScalarProvider<?, ?>> typeScalarProviderMap = new HashMap<>();
 
@@ -706,13 +711,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setUserIdGeneratorProvider(ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider) {
+        public Builder setUserIdGeneratorProvider(StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider) {
             this.userIdGeneratorProvider = userIdGeneratorProvider;
             return this;
         }
 
         @Override
-        public JSqlClient.Builder setTransientResolverProvider(ObjectProvider<TransientResolver<?, ?>> transientResolverProvider) {
+        public JSqlClient.Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider) {
             this.transientResolverProvider = transientResolverProvider;
             return this;
         }

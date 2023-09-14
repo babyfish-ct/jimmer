@@ -9,7 +9,8 @@ import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
-import org.babyfish.jimmer.sql.runtime.ObjectProvider;
+import org.babyfish.jimmer.sql.runtime.StrategyProvider;
+import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
 
 import java.lang.reflect.*;
 import java.util.List;
@@ -17,14 +18,14 @@ import java.util.Map;
 
 class TransientResolverManager {
 
-    private final ObjectProvider<TransientResolver<?, ?>> provider;
+    private final TransientResolverProvider provider;
 
     private JSqlClient sqlClient;
 
     private final PropCache<TransientResolver<?, ?>> resolverCache =
             new PropCache<>(this::createResolver, true);
 
-    TransientResolverManager(ObjectProvider<TransientResolver<?, ?>> provider) {
+    TransientResolverManager(TransientResolverProvider provider) {
         this.provider = provider;
     }
 
@@ -33,7 +34,7 @@ class TransientResolverManager {
             throw new IllegalStateException("The current object has been initialized");
         }
         this.sqlClient = sqlClient;
-        if (provider.shouldResolversCreatedImmediately()) {
+        if (provider.shouldResolversBeCreatedImmediately()) {
             initializeForTrigger();
         }
     }
@@ -64,7 +65,7 @@ class TransientResolverManager {
         return resolverCache.get(prop);
     }
 
-    public ObjectProvider<TransientResolver<?,?>> getProvider() {
+    public StrategyProvider<TransientResolver<?,?>> getProvider() {
         return provider;
     }
 

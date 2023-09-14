@@ -26,12 +26,19 @@ public class IdGenerators {
         }
 
         Class<? extends UserIdGenerator<?>> generatorType = generatedValue.generatorType();
+        String generatorRef = generatedValue.generatorRef();
 
         GenerationType strategy = generatedValue.strategy();
         GenerationType strategyFromGeneratorType = GenerationType.AUTO;
         GenerationType strategyFromSequenceName = GenerationType.AUTO;
 
-        if (generatorType != UserIdGenerator.None.class) {
+        if (generatorType != UserIdGenerator.None.class && !generatorRef.isEmpty()) {
+            throw new ModelException(
+                    "Illegal property \"" + idProp + "\", the " +
+                            "`generatorType` and `generatorRef` cannot be specified at same time"
+            );
+        }
+        if (generatorType != UserIdGenerator.None.class || !generatorRef.isEmpty()) {
             strategyFromGeneratorType = GenerationType.USER;
         }
 
@@ -108,7 +115,7 @@ public class IdGenerators {
                                 "\", but that the type of id is not numeric"
                 );
             }
-        } else if (strategy == GenerationType.USER) {
+        } else if (generatorType != UserIdGenerator.None.class) {
             Class<?> returnType = idProp.getElementClass();
             Map<?, Type> typeArguments = TypeUtils.getTypeArguments(generatorType, UserIdGenerator.class);
             Class<?> parsedType = null;
@@ -148,16 +155,24 @@ public class IdGenerators {
         if (strategy == GenerationType.USER) {
             String error = null;
             Throwable errorCause = null;
-            if (generatorType == UserIdGenerator.None.class) {
-                error = "'generatorType' must be specified when 'strategy' is 'GenerationType.USER'";
-            }
-            try {
-                idGenerator = sqlContext.getUserIdGenerator(generatorType);
-            } catch (Exception ex) {
-                error = "cannot create the instance of \"" + generatorType.getName() + "\"";
-                errorCause = ex instanceof InvocationTargetException ?
-                        ((InvocationTargetException)ex).getTargetException() :
-                        ex;
+            if (!generatorRef.isEmpty()) {
+                try {
+                    idGenerator = sqlContext.getUserIdGenerator(generatorRef);
+                } catch (Exception ex) {
+                    error = "cannot get id generator named \"" + generatorRef + "\" from IOC framework";
+                    errorCause = ex instanceof InvocationTargetException ?
+                            ((InvocationTargetException) ex).getTargetException() :
+                            ex;
+                }
+            } else {
+                try {
+                    idGenerator = sqlContext.getUserIdGenerator(generatorType);
+                } catch (Exception ex) {
+                    error = "cannot create the instance of \"" + generatorType.getName() + "\"";
+                    errorCause = ex instanceof InvocationTargetException ?
+                            ((InvocationTargetException) ex).getTargetException() :
+                            ex;
+                }
             }
             if (error != null) {
                 throw new ModelException(

@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.Transient;
-import org.babyfish.jimmer.sql.TransientResolver;
 
 import java.lang.reflect.Constructor;
 
-public interface ObjectProvider<T> {
+public interface StrategyProvider<T> {
 
     @SuppressWarnings("unchecked")
     default T get(
@@ -23,9 +21,9 @@ public interface ObjectProvider<T> {
             return (T) constructor.newInstance();
         }
         throw new IllegalArgumentException(
-                "The type \"" +
+                "Illegal type \"" +
                         type.getName() +
-                        "\" does not support default constructor"
+                        "\", it is not manged by IOC framework but does not support default constructor"
         );
     }
 
@@ -34,11 +32,7 @@ public interface ObjectProvider<T> {
                 "The `ref` " +
                         "\" is not supported by \"" +
                         getClass().getName() +
-                        "\""
+                        "\" which is not used to support IOC framework"
         );
-    }
-
-    default boolean shouldResolversCreatedImmediately() {
-        return false;
     }
 }
