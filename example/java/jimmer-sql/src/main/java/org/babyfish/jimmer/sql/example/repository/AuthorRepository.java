@@ -21,7 +21,7 @@ public interface AuthorRepository extends JRepository<Author, Long> { // ❶
             Sort sort,
             Fetcher<Author> fetcher
     ) {
-        Example<Author> example = Example // ❶
+        Example<Author> example = Example
                 .of(specification.toEntity())
                 .ilike(AuthorProps.FIRST_NAME)
                 .ilike(AuthorProps.LAST_NAME)
