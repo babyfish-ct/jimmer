@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.TransientResolver;
 
 import java.lang.reflect.Constructor;
 
-public class DefaultTransientResolverProvider implements ObjectProvider<TransientResolver<?, ?>> {
+public class DefaultTransientResolverProvider implements TransientResolverProvider {
 
     public static final DefaultTransientResolverProvider INSTANCE =
             new DefaultTransientResolverProvider();
@@ -58,7 +58,8 @@ public class DefaultTransientResolverProvider implements ObjectProvider<Transien
         throw new IllegalArgumentException(
                 "The resolve type \"" +
                         type.getName() +
-                        "\", it does not have no-argument constructor or constructor accepts SqlClient"
+                        "\", it is not managed by IOC framework, but does not support default constructor or " +
+                        "constructor accepts SqlClient"
         );
     }
 
@@ -74,7 +75,7 @@ public class DefaultTransientResolverProvider implements ObjectProvider<Transien
     }
 
     @Override
-    public boolean shouldResolversCreatedImmediately() {
+    public boolean shouldResolversBeCreatedImmediately() {
         return true;
     }
 

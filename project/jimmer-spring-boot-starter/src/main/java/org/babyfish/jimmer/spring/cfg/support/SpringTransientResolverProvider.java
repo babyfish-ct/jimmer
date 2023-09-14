@@ -5,7 +5,9 @@ import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.runtime.DefaultTransientResolverProvider;
 import org.springframework.context.ApplicationContext;
 
-public final class SpringTransientResolverProvider extends DefaultTransientResolverProvider {
+import java.util.Map;
+
+public class SpringTransientResolverProvider extends DefaultTransientResolverProvider {
 
     private final ApplicationContext ctx;
 
@@ -18,15 +20,33 @@ public final class SpringTransientResolverProvider extends DefaultTransientResol
             Class<TransientResolver<?, ?>> type,
             JSqlClient sqlClient
     ) throws Exception {
-        TransientResolver<?, ?> transientResolver = ctx.getBean(type);
-        if (transientResolver != null) {
-            return transientResolver;
+        Map<String, TransientResolver<?, ?>> map = ctx.getBeansOfType(type);
+        if (map.isEmpty()) {
+            return super.get(type, sqlClient);
         }
-        return super.get(type, sqlClient);
+        if (map.size() > 1) {
+            throw new IllegalStateException("Two many spring beans whose type is \"" + type.getName() + "\"");
+        }
+        return map.values().iterator().next();
     }
 
     @Override
     public TransientResolver<?, ?> get(String ref, JSqlClient sqlClient) throws Exception {
-        return (TransientResolver<?, ?>) ctx.getBean(ref);
+        Object bean = ctx.getBean(ref);
+        if (!(bean instanceof TransientResolver<?, ?>)) {
+            throw new IllegalStateException(
+                    "The expected type of spring bean named \"ref\" is \"" +
+                            TransientResolver.class.getName() +
+                            "\", but the actual type is + \"" +
+                            bean.getClass().getName() +
+                            "\""
+            );
+        }
+        return (TransientResolver<?, ?>) bean;
+    }
+
+    @Override
+    public final boolean shouldResolversBeCreatedImmediately() {
+        return false;
     }
 }

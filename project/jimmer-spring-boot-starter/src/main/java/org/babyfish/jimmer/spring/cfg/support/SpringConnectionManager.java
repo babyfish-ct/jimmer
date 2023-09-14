@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.function.Function;
 
-public final class SpringConnectionManager implements ConnectionManager {
+public class SpringConnectionManager implements ConnectionManager {
 
     private final DataSource dataSource;
 

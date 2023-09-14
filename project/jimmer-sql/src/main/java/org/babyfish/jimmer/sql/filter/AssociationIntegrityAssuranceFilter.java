@@ -35,15 +35,11 @@ import org.babyfish.jimmer.sql.ast.table.Props;
  * Here both Department and Employee support multi-tenancy, with a defined filter:
  * <pre><code>
  *  &#64;Entity
- *  public interface Employee extends AssociationIntegrityAssuranceFilter&lt;TenantAwareProps&gt; {
+ *  public interface TenantAwareFilter extends AssociationIntegrityAssuranceFilter&lt;TenantAwareProps&gt; {
  *      &#64;Override
  *      public void filter(FilterArgs&lt;P&gt; args) {
- *          String tenant = ...get tenant from HTTP header...
- *          if (tenant != null && !tenant.isEmpty()) {
- *              args.where(args.getTable().tenant().eq(tenant));
- *          }
+ *          ...
  *      }
- *      ...
  *  }
  * </code></pre>
  *

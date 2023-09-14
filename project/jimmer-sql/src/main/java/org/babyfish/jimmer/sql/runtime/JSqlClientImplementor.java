@@ -57,9 +57,9 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     TransientResolver<?, ?> getResolver(ImmutableProp prop);
 
-    ObjectProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
+    StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
 
-    ObjectProvider<TransientResolver<?, ?>> getTransientResolverProvider();
+    StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider();
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
 

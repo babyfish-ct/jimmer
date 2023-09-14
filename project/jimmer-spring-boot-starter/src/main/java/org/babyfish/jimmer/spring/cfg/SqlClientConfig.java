@@ -6,7 +6,6 @@ import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
@@ -55,8 +54,8 @@ public class SqlClientConfig {
             JimmerProperties properties,
             @Autowired(required = false) DataSource dataSource,
             @Autowired(required = false) ConnectionManager connectionManager,
-            @Autowired(required = false) ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
-            @Autowired(required = false) ObjectProvider<TransientResolver<?, ?>> transientResolverProvider,
+            @Autowired(required = false) StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            @Autowired(required = false) TransientResolverProvider transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
             @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
@@ -131,8 +130,8 @@ public class SqlClientConfig {
             JimmerProperties properties,
             @Autowired(required = false) DataSource dataSource,
             @Autowired(required = false) ConnectionManager connectionManager,
-            @Autowired(required = false) ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
-            @Autowired(required = false) ObjectProvider<TransientResolver<?, ?>> transientResolverProvider,
+            @Autowired(required = false) StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            @Autowired(required = false) TransientResolverProvider transientResolverProvider,
             @Autowired(required = false) EntityManager entityManager,
             @Autowired(required = false) DatabaseNamingStrategy databaseNamingStrategy,
             @Autowired(required = false) Dialect dialect,
@@ -214,8 +213,8 @@ public class SqlClientConfig {
             JimmerProperties properties,
             DataSource dataSource,
             ConnectionManager connectionManager,
-            ObjectProvider<UserIdGenerator<?>> userIdGeneratorProvider,
-            ObjectProvider<TransientResolver<?, ?>> transientResolverProvider,
+            StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            TransientResolverProvider transientResolverProvider,
             EntityManager entityManager,
             DatabaseNamingStrategy databaseNamingStrategy,
             Dialect dialect,
