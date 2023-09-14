@@ -52,11 +52,11 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
                                                                 author.lastName().ilike(authorName)
                                                         )
                                                 )
-                                                .select(author.books().id())
+                                                .select(author.books().id()) // ❾
                                         )
                                 )
-                                .orderBy(SpringOrders.toOrders(table, pageable.getSort())) // ❾
-                                .select(table.fetch(fetcher)) // ❿
+                                .orderBy(SpringOrders.toOrders(table, pageable.getSort())) // ❿
+                                .select(table.fetch(fetcher)) // ⓫
                 );
     }
 
@@ -64,10 +64,10 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
         return Tuple2.toMap(
                 sql()
                         .createQuery(table)
-                        .where(table.store().id().in(storeIds)) // ⓫
-                        .groupBy(table.store().id()) // ⓬
+                        .where(table.store().id().in(storeIds)) // ⓬
+                        .groupBy(table.store().id()) // ⓭
                         .select(
-                                table.store().id(), // ⓭
+                                table.store().id(), // ⓮
                                 table.price().avg()
                         )
                         .execute()
@@ -80,9 +80,9 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
                         .createQuery(table)
                         .where(
                                 Expression.tuple(table.name(), table.edition()).in(
-                                        sql().createSubQuery(table) // ⓮
+                                        sql().createSubQuery(table) // ⓯
                                                 // Apply root predicate to sub query is faster here.
-                                                .where(table.store().id().in(storeIds)) // ⓯
+                                                .where(table.store().id().in(storeIds)) // ⓰
                                                 .groupBy(table.name())
                                                 .select(
                                                         table.name(),
@@ -91,7 +91,7 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
                                 )
                         )
                         .select(
-                                table.store().id(), // ⓰
+                                table.store().id(), // ⓱
                                 table.id()
                         )
                         .execute()
@@ -111,9 +111,13 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
 
 ❻ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/
 
-❽ ⓫ ⓮ https://babyfish-ct.github.io/jimmer/docs/query/sub-query
+❽ ⓯ https://babyfish-ct.github.io/jimmer/docs/query/sub-query
 
-❿ https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/
+❾ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#half-joins
 
-⓬ ⓭ ⓯ ⓰ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#ghost-joins
+❿ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-order
+
+⓫ https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/
+
+⓬ ⓭ ⓮ ⓰ ⓱ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#ghost-joins
 ---------------------------------------------------*/

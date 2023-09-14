@@ -15,15 +15,15 @@ import java.util.*
 @Component
 class BookStoreNewestBooksResolver(
     private val bookRepository: BookRepository
-) : KTransientResolver<Long, List<Long>> {
+) : KTransientResolver<Long, List<Long>> { // ❶
 
     // You can also inject it directly
     private val sqlClient = bookRepository.sql
 
-    override fun resolve(ids: Collection<Long>): Map<Long, List<Long>> =
+    override fun resolve(ids: Collection<Long>): Map<Long, List<Long>> = // ❷
         bookRepository.findNewestIdsGroupByStoreIds(ids)
 
-    override fun getDefaultValue(): List<Long> =
+    override fun getDefaultValue(): List<Long> = // ❸
         emptyList()
 
     // -----------------------------
@@ -38,7 +38,7 @@ class BookStoreNewestBooksResolver(
     // -----------------------------
 
     @EventListener
-    fun onAssociationChange(e: AssociationEvent) {
+    fun onAssociationChange(e: AssociationEvent) { // ❹
         // The association property `BookStore.books` is changed
         //
         // It is worth noting that
@@ -53,7 +53,7 @@ class BookStoreNewestBooksResolver(
     }
 
     @EventListener
-    fun onEntityChange(e: EntityEvent<*>) {
+    fun onEntityChange(e: EntityEvent<*>) { // ❺
         // The association property `Book.edition` is changed
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(Book::edition)) {
             val storeId = e.getUnchangedRef(Book::store)?.value?.id
@@ -67,7 +67,13 @@ class BookStoreNewestBooksResolver(
     }
 
     // Contribute part of the secondary hash key to multiview-cache
-    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? { // ❻
         return sqlClient.filters.getTargetParameterMapRef(BookStore::books)
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient#associative-calculation-bookstorenewestbooks
+❹ ❺ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#consistency
+❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#subkey-of-calculated-properties
+---------------------------------------------------*/

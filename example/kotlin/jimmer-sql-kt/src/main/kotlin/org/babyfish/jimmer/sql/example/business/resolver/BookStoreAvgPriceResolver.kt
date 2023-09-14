@@ -17,15 +17,15 @@ import java.util.*
 @Component
 class BookStoreAvgPriceResolver(
     private val bookRepository: BookRepository
-) : KTransientResolver<Long, BigDecimal> {
+) : KTransientResolver<Long, BigDecimal> { // ❶
 
     // You can also inject it directly
     private val sqlClient = bookRepository.sql
 
-    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> =
+    override fun resolve(ids: Collection<Long>): Map<Long, BigDecimal> = // ❷
         bookRepository.findAvgPriceGroupByStoreIds(ids)
 
-    override fun getDefaultValue(): BigDecimal =
+    override fun getDefaultValue(): BigDecimal = // ❸
         BigDecimal.ZERO
 
     // -----------------------------
@@ -40,7 +40,7 @@ class BookStoreAvgPriceResolver(
     // -----------------------------
 
     @EventListener
-    fun onAssociationChange(e: AssociationEvent) {
+    fun onAssociationChange(e: AssociationEvent) { // ❹
         // The association property `BookStore.books` is changed
         //
         // It is worth noting that
@@ -55,7 +55,7 @@ class BookStoreAvgPriceResolver(
     }
 
     @EventListener
-    fun onEntityChange(e: EntityEvent<*>) {
+    fun onEntityChange(e: EntityEvent<*>) { // ❺
         // The association property `Book.price` is changed
         if (sqlClient.caches.isAffectedBy(e) && e.isChanged(Book::price)) {
             val storeId = e.getUnchangedRef(Book::store)?.value?.id
@@ -68,7 +68,13 @@ class BookStoreAvgPriceResolver(
         }
     }
 
-    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? {
+    override fun getParameterMapRef(): Ref<SortedMap<String, Any>?>? { // ❻
         return sqlClient.filters.getTargetParameterMapRef(BookStore::books)
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient#scalar-calculation-bookstoreavgprice
+❹ ❺ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#consistency
+❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#subkey-of-calculated-properties
+---------------------------------------------------*/

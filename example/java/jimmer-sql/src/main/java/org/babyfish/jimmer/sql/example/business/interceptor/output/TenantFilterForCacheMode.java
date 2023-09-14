@@ -51,7 +51,7 @@ public class TenantFilterForCacheMode
     }
 
     @Override
-    public boolean isAffectedBy(EntityEvent<?> e) { //
+    public boolean isAffectedBy(EntityEvent<?> e) { // ❸
         return e.isChanged(TenantAwareProps.TENANT);
     }
 }
@@ -59,6 +59,7 @@ public class TenantFilterForCacheMode
 /*----------------Documentation Links----------------
 ❶ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter
 
-❷ ❸ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey
-  https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#define-cache-friendly-filters
+❷ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey
+
+❸ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#define-cache-friendly-filters
 ---------------------------------------------------*/

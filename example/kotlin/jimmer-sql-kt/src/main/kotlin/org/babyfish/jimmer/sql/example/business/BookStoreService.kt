@@ -2,14 +2,15 @@ package org.babyfish.jimmer.sql.example.business
 
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.ThrowsAll
-import org.babyfish.jimmer.sql.example.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.example.model.by
 import org.babyfish.jimmer.sql.example.model.dto.BookStoreInput
+import org.babyfish.jimmer.sql.example.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+
 
 /**
  * A real project should be a three-tier architecture consisting
@@ -28,32 +29,39 @@ class BookStoreService(
 ) {
 
     @GetMapping("/simpleList")
-    fun findSimpleStores(): List<@FetchBy("SIMPLE_FETCHER") BookStore> =
+    fun findSimpleStores(): List<@FetchBy("SIMPLE_FETCHER") BookStore> = // ❶
         bookStoreRepository.findAll(SIMPLE_FETCHER) {
             asc(BookStore::name)
         }
 
     @GetMapping("/list")
-    fun findStores(): List<@FetchBy("DEFAULT_FETCHER") BookStore> =
+    fun findStores(): List<@FetchBy("DEFAULT_FETCHER") BookStore> = // ❷
         bookStoreRepository.findAll(DEFAULT_FETCHER) {
             asc(BookStore::name)
         }
 
+    @GetMapping("/complexList")
+    fun findComplexStores(): List<BookStore> { // ❸
+        return bookStoreRepository.findAll(WITH_ALL_BOOKS_FETCHER) {
+            asc(BookStore::name)
+        }
+    }
+
     @GetMapping("/{id}/withAllBooks")
     fun findComplexStoreWithAllBooks(
         @PathVariable id: Long
-    ): @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore? =
+    ): @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore? = // ❹
         bookStoreRepository.findNullable(id, WITH_ALL_BOOKS_FETCHER)
 
     @GetMapping("/{id}/withNewestBooks")
     fun findComplexStoreWithNewestBooks(
         @PathVariable id: Long
-    ): @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore? =
+    ): @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore? = // ❺
         bookStoreRepository.findNullable(id, WITH_NEWEST_BOOKS_FETCHER)
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode::class)
-    fun saveBookStore(@RequestBody input: BookStoreInput): BookStore =
+    @ThrowsAll(SaveErrorCode::class) // ❻
+    fun saveBookStore(@RequestBody input: BookStoreInput): BookStore = // ❼
         bookStoreRepository.save(input)
 
     @DeleteMapping("{id}")
@@ -96,3 +104,9 @@ class BookStoreService(
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ ❹ ❺ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+❻ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
+❼ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+---------------------------------------------------*/
