@@ -70,4 +70,9 @@ Java下属性是否为null，靠以下规则制定
 
     -   作为镜像端的@OneToOne关联
 
-    -   任何一个被施加于关联实体的[全局过滤器](../../query/global-filter)不被包含于当前实体被施加的[全局过滤器](../../query/global-filter)的集合
+
+-   如果关联实体被施加了[全局过滤器](../../query/global-filter)，那么，对于一对多/多对一关联而言，即使直接给予外键也必须允许为null。除非以下条件全部满足：
+
+    -   被施加于关联实体的所有全局过滤器都实现了`AssociationIntegrityAssuranceFilter`/`KAssociationIntegrityAssuranceFilter`接口。
+
+    -   任何被施加于关联实体的全局过滤器也被施加于当前实体。
