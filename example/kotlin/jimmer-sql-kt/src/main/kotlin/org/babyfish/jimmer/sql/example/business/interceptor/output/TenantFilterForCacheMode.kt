@@ -32,13 +32,21 @@ import java.util.*
 @Component
 class TenantFilterForCacheMode(
     tenantProvider: TenantProvider
-) : TenantFilterForNonCacheMode(tenantProvider), KCacheableFilter<TenantAware> {
+) : TenantFilterForNonCacheMode(tenantProvider), KCacheableFilter<TenantAware> { // ❶
 
-    override fun getParameters(): SortedMap<String, Any>? =
+    override fun getParameters(): SortedMap<String, Any>? = // ❷
         tenantProvider.tenant?.let {
             sortedMapOf("tenant" to it)
         }
 
-    override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-        e.isChanged(TenantAware::tenant)
+    override fun isAffectedBy(e: EntityEvent<*>): Boolean = // ❸
+    e.isChanged(TenantAware::tenant)
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter
+
+❷ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey
+
+❸ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#define-cache-friendly-filters
+---------------------------------------------------*/

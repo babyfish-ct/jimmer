@@ -33,14 +33,14 @@ import java.util.TreeMap;
 @ConditionalOnProperty("spring.redis.host")
 public class TenantFilterForCacheMode
         extends TenantFilterForNonCacheMode
-        implements CacheableFilter<TenantAwareProps> {
+        implements CacheableFilter<TenantAwareProps> { // ❶
 
     public TenantFilterForCacheMode(TenantProvider tenantProvider) {
         super(tenantProvider);
     }
 
     @Override
-    public SortedMap<String, Object> getParameters() {
+    public SortedMap<String, Object> getParameters() { // ❷
         String tenant = tenantProvider.get();
         if (tenant == null) {
             return null;
@@ -51,7 +51,15 @@ public class TenantFilterForCacheMode
     }
 
     @Override
-    public boolean isAffectedBy(EntityEvent<?> e) {
+    public boolean isAffectedBy(EntityEvent<?> e) { // ❸
         return e.isChanged(TenantAwareProps.TENANT);
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter
+
+❷ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey
+
+❸ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#define-cache-friendly-filters
+---------------------------------------------------*/

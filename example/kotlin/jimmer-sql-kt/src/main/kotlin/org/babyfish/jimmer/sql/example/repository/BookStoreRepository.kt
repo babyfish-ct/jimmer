@@ -6,4 +6,8 @@ import org.babyfish.jimmer.sql.example.model.*
 import org.babyfish.jimmer.sql.kt.ast.expression.*
 import java.math.BigDecimal
 
-interface BookStoreRepository : KRepository<BookStore, Long>
+interface BookStoreRepository : KRepository<BookStore, Long> // ❶
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/spring/repository/concept
+---------------------------------------------------*/

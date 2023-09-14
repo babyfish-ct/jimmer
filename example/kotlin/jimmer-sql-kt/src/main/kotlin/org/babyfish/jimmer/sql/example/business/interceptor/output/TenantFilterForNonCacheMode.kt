@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component
 @Component
 class TenantFilterForNonCacheMode(
     protected val tenantProvider: TenantProvider
-) : KFilter<TenantAware> {
+) : KFilter<TenantAware> { // ❶
 
     override fun filter(args: KFilterArgs<TenantAware>) {
         tenantProvider.tenant?.let {
@@ -28,3 +28,7 @@ class TenantFilterForNonCacheMode(
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/query/global-filter/user-filter
+---------------------------------------------------*/

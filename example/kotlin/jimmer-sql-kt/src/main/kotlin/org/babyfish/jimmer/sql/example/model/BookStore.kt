@@ -13,12 +13,12 @@ interface BookStore : BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
-    @Key
+    @Key // ❶
     val name: String
     
     val website: String?
 
-    @OneToMany(mappedBy = "store")
+    @OneToMany(mappedBy = "store") // ❷
     val books: List<Book>
 
     // -----------------------------
@@ -29,7 +29,7 @@ interface BookStore : BaseEntity {
     // As for the simple calculated properties, you can view `Author.fullName`
     // -----------------------------
 
-    @Transient(BookStoreAvgPriceResolver::class)
+    @Transient(BookStoreAvgPriceResolver::class) // ❸
     val avgPrice: BigDecimal
 
     /*
@@ -43,6 +43,12 @@ interface BookStore : BaseEntity {
      * It is worth noting that if the calculated property returns entity object
      * or entity list, the shape can be controlled by the deeper child fetcher
      */
-    @Transient(BookStoreNewestBooksResolver::class)
+    @Transient(BookStoreNewestBooksResolver::class) // ❹
     val newestBooks: List<Book>
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/key
+❷ https://babyfish-ct.github.io/jimmer/docs/mapping/base/association/one-to-many
+❸ ❹ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient
+---------------------------------------------------*/

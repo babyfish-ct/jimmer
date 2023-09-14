@@ -4,8 +4,8 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.business.resolver.BookStoreAvgPriceResolver;
 import org.babyfish.jimmer.sql.example.business.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
+import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -16,13 +16,13 @@ public interface BookStore extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
-    @Key
+    @Key // ❶
     String name();
 
-    @Null
+    @Nullable // ❷
     String website();
 
-    @OneToMany(mappedBy = "store", orderedProps = {
+    @OneToMany(mappedBy = "store", orderedProps = { // ❸
             @OrderedProp("name"),
             @OrderedProp(value = "edition", desc = true)
     })
@@ -36,7 +36,7 @@ public interface BookStore extends BaseEntity {
     // As for the simple calculated properties, you can view `Author.fullName`
     // -----------------------------
 
-    @Transient(BookStoreAvgPriceResolver.class)
+    @Transient(BookStoreAvgPriceResolver.class) // ❹
     BigDecimal avgPrice();
 
     /*
@@ -50,6 +50,13 @@ public interface BookStore extends BaseEntity {
      * It is worth noting that if the calculated property returns entity object
      * or entity list, the shape can be controlled by the deeper child fetcher
      */
-    @Transient(BookStoreNewestBooksResolver.class)
+    @Transient(BookStoreNewestBooksResolver.class) // ❺
     List<Book> newestBooks();
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/key
+❷ https://babyfish-ct.github.io/jimmer/docs/mapping/base/nullity
+❸ https://babyfish-ct.github.io/jimmer/docs/mapping/base/association/one-to-many
+❹ ❺ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient
+---------------------------------------------------*/

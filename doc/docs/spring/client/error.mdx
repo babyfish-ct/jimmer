@@ -12,7 +12,7 @@ This part is actually unrelated to ORM.
 
 However, since [backend and frontend API integration](./api) is provided, this part of the functionality must also be provided to make it a complete solution.
 
-## Exception Clusters
+## Exception Families
 
 We need to define special Java/Kotlin business exceptions that can be directly translated into data that the client can understand.
 
@@ -28,7 +28,7 @@ So, Jimmer chooses a compromise: dividing business exceptions into multiple fami
 
 Jimmer uses enums to define exception families, where the enum also serves as the error code for that family, e.g.
 
-### Define Exception Clusters
+### Define Exception Families
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -454,7 +454,7 @@ public abstract class UserInfoException private constructor(
 
 ## Declare Exceptions for REST APIs  
 
-### Allow All Exceptions in Cluster
+### Allow To Throw All Exceptions Of Family
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -495,7 +495,7 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 The `@org.babyfish.jimmer.client.ThrowsAll` annotation allows the REST API to throw all exceptions in the family.
 :::
 
-### Allow Some Exceptions in Cluster
+### Allow To Throw Some Exceptions Of Family
 
 Let's locate another business exception family:
 

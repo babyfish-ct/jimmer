@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.example.model;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 import org.babyfish.jimmer.sql.example.model.common.TenantAware;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -16,19 +15,19 @@ public interface Book extends BaseEntity, TenantAware {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 
-    @Key
+    @Key // ❶
     String name();
 
-    @Key
+    @Key // ❷
     int edition();
 
     BigDecimal price();
 
-    @Nullable // Null property, Java API requires this annotation, but kotlin API does not
-    @ManyToOne
+    @Nullable // ❸ Null property, Java API requires this annotation, but kotlin API does not
+    @ManyToOne // ❹
     BookStore store();
 
-    @ManyToMany(orderedProps = {
+    @ManyToMany(orderedProps = { // ❺
             @OrderedProp("firstName"),
             @OrderedProp("lastName")
     })
@@ -45,11 +44,19 @@ public interface Book extends BaseEntity, TenantAware {
 
     // Optional property `storeId`
     // If this property is deleted, please add `BookInput.Mapper.toBookStore(Long)`
-    @IdView
+    @IdView  // ❻
     Long storeId();
 
     // Optional property `authorIds`
     // If this property is deleted, please add `BookInputMapper.toAuthor(Long)`
-    @IdView("authors")
+    @IdView("authors") // ❼
     List<Long> authorIds();
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/key
+❸ https://babyfish-ct.github.io/jimmer/docs/mapping/base/nullity
+❹ https://babyfish-ct.github.io/jimmer/docs/mapping/base/association/many-to-one
+❺ https://babyfish-ct.github.io/jimmer/docs/mapping/base/association/many-to-many
+❻ ❼https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/view/id-view
+---------------------------------------------------*/

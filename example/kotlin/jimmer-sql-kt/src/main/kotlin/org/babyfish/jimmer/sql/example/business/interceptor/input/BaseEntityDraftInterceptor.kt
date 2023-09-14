@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 @Component
-class BaseEntityDraftInterceptor : DraftInterceptor<BaseEntityDraft> {
+class BaseEntityDraftInterceptor : DraftInterceptor<BaseEntityDraft> { // ❶
 
     /*
      * In this simple example, `BaseEntity` has only two fields: `createdTime` and `modifiedTime`.
@@ -21,12 +21,20 @@ class BaseEntityDraftInterceptor : DraftInterceptor<BaseEntityDraft> {
      * simply using ORM to support default value.
      */
 
-    override fun beforeSave(draft: BaseEntityDraft, isNew: Boolean) {
-        if (!isLoaded(draft, BaseEntity::modifiedTime)) {
+    override fun beforeSave(draft: BaseEntityDraft, isNew: Boolean) { // ❷
+        if (!isLoaded(draft, BaseEntity::modifiedTime)) { // ❸
             draft.modifiedTime = LocalDateTime.now()
         }
-        if (isNew && !isLoaded(draft, BaseEntity::createdTime)) {
+        if (isNew && !isLoaded(draft, BaseEntity::createdTime)) { // ❹
             draft.createdTime = LocalDateTime.now()
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/mutation/draft-interceptor
+❷ https://babyfish-ct.github.io/jimmer/docs/object/draft
+
+❸ ❹ https://babyfish-ct.github.io/jimmer/docs/object/tool#isloaded
+     https://babyfish-ct.github.io/jimmer/docs/object/dynamic
+---------------------------------------------------*/

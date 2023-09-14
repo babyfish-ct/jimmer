@@ -29,7 +29,7 @@ import java.time.Duration
 class CacheConfig {
 
     @Bean
-    fun cacheFactory(
+    fun cacheFactory( // ❶
         connectionFactory: RedisConnectionFactory,
         objectMapper: ObjectMapper
     ): CacheFactory {
@@ -39,16 +39,16 @@ class CacheConfig {
         return object : AbstractKCacheFactory() {
 
             // Id -> Object
-            override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+            override fun createObjectCache(type: ImmutableType): Cache<*, *>? = // ❷
                 ChainCacheBuilder<Any, Any>()
                     .add(CaffeineBinder(512, Duration.ofSeconds(1)))
                     .add(RedisValueBinder(redisTemplate, objectMapper, type, Duration.ofMinutes(10)))
                     .build()
 
             // Id -> TargetId, for one-to-one/many-to-one
-            override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+            override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? = // ❸
                 createPropCache<Any, Any>(
-                    filterState.isAffected(prop.targetType),
+                    filterState.isAffected(prop.targetType), // ❹
                     prop,
                     redisTemplate,
                     objectMapper,
@@ -56,9 +56,9 @@ class CacheConfig {
                 )
 
             // Id -> TargetId list, for one-to-many/many-to-many
-            override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+            override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? = // ❺
                 createPropCache<Any, List<*>>(
-                    filterState.isAffected(prop.targetType),
+                    filterState.isAffected(prop.targetType), // ❻
                     prop,
                     redisTemplate,
                     objectMapper,
@@ -66,7 +66,7 @@ class CacheConfig {
                 )
 
             // Id -> computed value, for transient properties with resolver
-            override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+            override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? = // ❼
                 createPropCache<Any, Any>(
                     prop == BookStore::avgPrice.toImmutableProp() ||
                         prop == BookStore::newestBooks.toImmutableProp(),
@@ -98,7 +98,7 @@ class CacheConfig {
              * Note: Once the multi-view cache takes affect, it will consume
              * a lot of cache space, please only use it for important data.
              */
-            if (isMultiView) {
+            if (isMultiView) { // ❽
                 return ChainCacheBuilder<K, V>()
                     .add(RedisHashBinder(redisTemplate, objectMapper, prop, redisDuration))
                     .build()
@@ -111,3 +111,12 @@ class CacheConfig {
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/cache/enable-cache
+❷ https://babyfish-ct.github.io/jimmer/docs/cache/cache-type/object
+❸ ❺ https://babyfish-ct.github.io/jimmer/docs/cache/cache-type/association
+❹ ❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#better-approach
+❼ https://babyfish-ct.github.io/jimmer/docs/cache/cache-type/calculation
+❽ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept
+---------------------------------------------------*/

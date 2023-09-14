@@ -10,7 +10,6 @@ import org.babyfish.jimmer.sql.example.model.dto.FlatTreeNodeView
 import org.babyfish.jimmer.sql.example.model.dto.RecursiveTreeInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
-import org.slf4j.LoggerFactory
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
@@ -39,13 +38,13 @@ class TreeService(
     @GetMapping("/roots/recursive")
     fun findRootTrees(
         @RequestParam(required = false) rootName: String?
-    ): List<@FetchBy("RECURSIVE_FETCHER") TreeNode> =
+    ): List<@FetchBy("RECURSIVE_FETCHER") TreeNode> = // ❶
         treeNodeRepository.findByParentIsNullAndName(rootName, RECURSIVE_FETCHER)
 
     @PutMapping("/root/recursive")
     @ThrowsAll(SaveErrorCode::class)
     fun saveTree(
-        @RequestBody input: RecursiveTreeInput
+        @RequestBody input: RecursiveTreeInput // ❷
     ): TreeNode {
         val treeNode = new(TreeNode::class).by(
             input.toEntity()
@@ -83,7 +82,13 @@ class TreeService(
                 allScalarFields()
             }
         }
-
-        private val LOGGER = LoggerFactory.getLogger(TreeService::class.java)
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+  https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/recursive
+
+❷ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+  https://babyfish-ct.github.io/jimmer/docs/object/view/dto-language#92-recursive-association
+---------------------------------------------------*/

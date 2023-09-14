@@ -31,7 +31,7 @@ class BookService(
 ) {
 
     @GetMapping("/simpleList")
-    fun findSimpleBooks(): List<@FetchBy("SIMPLE_FETCHER") Book> =
+    fun findSimpleBooks(): List<@FetchBy("SIMPLE_FETCHER") Book> = // ❶
         bookRepository.findAll(SIMPLE_FETCHER) {
             asc(Book::name)
         }
@@ -45,7 +45,7 @@ class BookService(
         @RequestParam name: String?,
         @RequestParam storeName: String?,
         @RequestParam authorName: String?,
-    ): Page<@FetchBy("DEFAULT_FETCHER") Book> =
+    ): Page<@FetchBy("DEFAULT_FETCHER") Book> = // ❷
         bookRepository.findBooks(
             PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
             name,
@@ -57,17 +57,17 @@ class BookService(
     @GetMapping("/{id}")
     fun findComplexBook(
         @PathVariable id: Long,
-    ): @FetchBy("COMPLEX_FETCHER") Book? =
+    ): @FetchBy("COMPLEX_FETCHER") Book? = // ❸
         bookRepository.findNullable(id, COMPLEX_FETCHER)
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode::class)
-    fun saveBook(@RequestBody input: BookInput): Book =
+    @ThrowsAll(SaveErrorCode::class) // ❹
+    fun saveBook(@RequestBody input: BookInput): Book = // ❺
         bookRepository.save(input)
 
     @PutMapping("/composite")
-    @ThrowsAll(SaveErrorCode::class)
-    fun saveBook(@RequestBody input: CompositeBookInput): Book =
+    @ThrowsAll(SaveErrorCode::class) // ❻
+    fun saveBook(@RequestBody input: CompositeBookInput): Book = // ❼
         bookRepository.save(input)
 
     @DeleteMapping("/{id}")
@@ -110,3 +110,9 @@ class BookService(
         }
     }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
+❹ ❻ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
+❺ ❼ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
+---------------------------------------------------*/

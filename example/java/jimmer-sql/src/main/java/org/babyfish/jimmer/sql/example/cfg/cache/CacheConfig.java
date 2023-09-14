@@ -30,7 +30,7 @@ import java.util.List;
 public class CacheConfig {
 
     @Bean
-    public CacheFactory cacheFactory(
+    public CacheFactory cacheFactory( // ❶
             RedisConnectionFactory connectionFactory,
             ObjectMapper objectMapper
     ) {
@@ -39,7 +39,7 @@ public class CacheConfig {
 
             // Id -> Object
             @Override
-            public Cache<?, ?> createObjectCache(ImmutableType type) {
+            public Cache<?, ?> createObjectCache(ImmutableType type) { // ❷
                 return new ChainCacheBuilder<>()
                         .add(new CaffeineBinder<>(512, Duration.ofSeconds(1)))
                         .add(new RedisValueBinder<>(redisTemplate, objectMapper, type, Duration.ofMinutes(10)))
@@ -48,9 +48,9 @@ public class CacheConfig {
 
             // Id -> TargetId, for one-to-one/many-to-one
             @Override
-            public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) {
+            public Cache<?, ?> createAssociatedIdCache(ImmutableProp prop) { // ❸
                 return createPropCache(
-                        getFilterState().isAffected(prop.getTargetType()),
+                        getFilterState().isAffected(prop.getTargetType()), // ❹
                         prop,
                         redisTemplate,
                         objectMapper,
@@ -60,9 +60,9 @@ public class CacheConfig {
 
             // Id -> TargetId list, for one-to-many/many-to-many
             @Override
-            public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) {
+            public Cache<?, List<?>> createAssociatedIdListCache(ImmutableProp prop) { // ❺
                 return createPropCache(
-                        getFilterState().isAffected(prop.getTargetType()),
+                        getFilterState().isAffected(prop.getTargetType()), // ❻
                         prop,
                         redisTemplate,
                         objectMapper,
@@ -72,7 +72,7 @@ public class CacheConfig {
 
             // Id -> computed value, for transient properties with resolver
             @Override
-            public Cache<?, ?> createResolverCache(ImmutableProp prop) {
+            public Cache<?, ?> createResolverCache(ImmutableProp prop) { // ❼
                 return createPropCache(
                         prop.equals(BookStoreProps.AVG_PRICE.unwrap()) ||
                                 prop.equals(BookStoreProps.NEWEST_BOOKS.unwrap()),
@@ -102,7 +102,7 @@ public class CacheConfig {
          * Note: Once the multi-view cache takes affect, it will consume
          * a lot of cache space, please only use it for important data.
          */
-        if (isMultiView) {
+        if (isMultiView) { // ❽
             return new ChainCacheBuilder<K, V>()
                     .add(new RedisHashBinder<>(redisTemplate, objectMapper, prop, redisDuration))
                     .build();
@@ -114,3 +114,12 @@ public class CacheConfig {
                 .build();
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/cache/enable-cache
+❷ https://babyfish-ct.github.io/jimmer/docs/cache/cache-type/object
+❸ ❺ https://babyfish-ct.github.io/jimmer/docs/cache/cache-type/association
+❹ ❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#better-approach
+❼ https://babyfish-ct.github.io/jimmer/docs/cache/cache-type/calculation
+❽ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept
+---------------------------------------------------*/

@@ -18,11 +18,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface BookRepository extends JRepository<Book, Long> {
+public interface BookRepository extends JRepository<Book, Long> { // ❶
 
     BookTable table = BookTable.$;
 
-    default Page<Book> findBooks(
+    default Page<Book> findBooks( // ❷
             Pageable pageable,
             @Nullable String name,
             @Nullable String storeName,
@@ -30,33 +30,33 @@ public interface BookRepository extends JRepository<Book, Long> {
             @Nullable Fetcher<Book> fetcher
     ) {
         AuthorTableEx author = AuthorTableEx.$;
-        return pager(pageable)
+        return pager(pageable) // ❸
                 .execute(
                         sql()
                                 .createQuery(table)
-                                .whereIf(
+                                .whereIf( // ❹
                                         name != null && !name.isEmpty(),
                                         table.name().ilike(name)
                                 )
-                                .whereIf(
+                                .whereIf( // ❺
                                         storeName != null && !storeName.isEmpty(),
-                                        table.store().name().ilike(storeName)
+                                        table.store().name().ilike(storeName) // ❻
                                 )
-                                .whereIf(
+                                .whereIf( // ❼
                                         authorName != null && !authorName.isEmpty(),
                                         table.id().in(sql()
-                                                .createSubQuery(author)
+                                                .createSubQuery(author) //  ❽
                                                 .where(
                                                         Predicate.or(
                                                                 author.firstName().ilike(authorName),
                                                                 author.lastName().ilike(authorName)
                                                         )
                                                 )
-                                                .select(author.books().id())
+                                                .select(author.books().id()) // ❾
                                         )
                                 )
-                                .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
-                                .select(table.fetch(fetcher))
+                                .orderBy(SpringOrders.toOrders(table, pageable.getSort())) // ❿
+                                .select(table.fetch(fetcher)) // ⓫
                 );
     }
 
@@ -64,10 +64,10 @@ public interface BookRepository extends JRepository<Book, Long> {
         return Tuple2.toMap(
                 sql()
                         .createQuery(table)
-                        .where(table.store().id().in(storeIds))
-                        .groupBy(table.store().id())
+                        .where(table.store().id().in(storeIds)) // ⓬
+                        .groupBy(table.store().id()) // ⓭
                         .select(
-                                table.store().id(),
+                                table.store().id(), // ⓮
                                 table.price().avg()
                         )
                         .execute()
@@ -80,9 +80,9 @@ public interface BookRepository extends JRepository<Book, Long> {
                         .createQuery(table)
                         .where(
                                 Expression.tuple(table.name(), table.edition()).in(
-                                        sql().createSubQuery(table)
-                                                // Apply `filter` for sub query is better.
-                                                .where(table.store().id().in(storeIds))
+                                        sql().createSubQuery(table) // ⓯
+                                                // Apply root predicate to sub query is faster here.
+                                                .where(table.store().id().in(storeIds)) // ⓰
                                                 .groupBy(table.name())
                                                 .select(
                                                         table.name(),
@@ -91,10 +91,33 @@ public interface BookRepository extends JRepository<Book, Long> {
                                 )
                         )
                         .select(
-                                table.store().id(),
+                                table.store().id(), // ⓱
                                 table.id()
                         )
                         .execute()
         );
     }
 }
+
+/*----------------Documentation Links----------------
+❶ https://babyfish-ct.github.io/jimmer/docs/spring/repository/concept
+
+❷ https://babyfish-ct.github.io/jimmer/docs/spring/repository/default
+
+❸ https://babyfish-ct.github.io/jimmer/docs/spring/repository/default#pagination
+  https://babyfish-ct.github.io/jimmer/docs/query/paging/
+
+❹ ❺ ❼ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-where
+
+❻ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/
+
+❽ ⓯ https://babyfish-ct.github.io/jimmer/docs/query/sub-query
+
+❾ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#half-joins
+
+❿ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-order
+
+⓫ https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/
+
+⓬ ⓭ ⓮ ⓰ ⓱ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#ghost-joins
+---------------------------------------------------*/
