@@ -38,7 +38,7 @@ fun KFilter<*>.toJavaFilter(): Filter<*> {
         interfaces.add(AssociationIntegrityAssuranceFilter::class.java)
     }
     val handler = InvocationHandler { _, method, args ->
-        method.invoke(javaFilter, *args)
+        method.invoke(javaFilter, args)
     }
     return Proxy.newProxyInstance(
         Filter::class.java.classLoader,

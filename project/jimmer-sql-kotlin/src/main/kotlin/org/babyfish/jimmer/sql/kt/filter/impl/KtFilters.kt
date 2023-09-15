@@ -40,7 +40,7 @@ fun <E: Any> Filter<Props>.toKtFilter(): KFilter<E> {
         interfaces.add(KAssociationIntegrityAssuranceFilter::class.java)
     }
     val handler = InvocationHandler { _, method, args ->
-        method.invoke(ktFilter, *args)
+        method.invoke(ktFilter, args)
     }
     return Proxy.newProxyInstance(
         Filter::class.java.classLoader,
