@@ -20,6 +20,7 @@ AuthorTableEx author = AuthorTableEx.$;
 List<Book> books = sqlClient
     .createQuery(book)
     .where(
+        // highlight-next-line
         book.id().in(sqlClient
             .createSubQuery(author) 
             .where(author.firstName().eq("Alex"))
@@ -85,6 +86,7 @@ BookTable book = BookTable.$;
 List<Book> newestBooks = sqlClient
     .createQuery(book)
     .where(
+        // highlight-next-line
         Expression.tuple(
             book.name(),
             book.edition()
@@ -160,6 +162,7 @@ BookTable book = BookTable.$;
 List<Book> newestBooks = sqlClient
     .createQuery(book)
     .where(
+        // highlight-next-line
         book.price().gt(sqlClient
             .createSubQuery(book)
             .groupBy(book.name())
@@ -535,9 +538,9 @@ where
 ```
 
 :::info
-Note that in the final SQL, the selected column in the subquery is the constant `1`, not what is specified in the Java code.  
+Note that in the final SQL, the selected column in the subquery is the constant `1`, not what is specified in the Java/Kotlin code.  
 
-This is because the `exists` operator only cares if the subquery can match data, not what columns are selected. Whatever you select in the Java code will be ignored.
+This is because the `exists` operator only cares if the subquery can match data, not what columns are selected. Whatever you select in the Java/Kotlin code will be ignored.
 :::
 
 ## Untyped Subqueries

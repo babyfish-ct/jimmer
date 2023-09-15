@@ -87,7 +87,7 @@ Developers need to customize a class to implement the custom table join conditio
 private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> {
 
     @Override
-    public Predicate on(ST source, TT target) {
+    public Predicate on(BookTable source, AuthorTable target) {
         return Prdicate.and(
             source.businessProp1().eq(target.businessPropA()),
             source.businessProp2().eq(target.businessPropB())
@@ -103,8 +103,8 @@ private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> 
 private class BookAuthorJoin : KWeakJoin<Book, Author> {
 
     override fun on(
-        source: KNonNullTable<S>,
-        target: KNonNullTable<T>
+        source: KNonNullTable<Book>,
+        target: KNonNullTable<Author>
     ): KNonNullExpression<Boolean> =
         and(
             source.businessProp1 eq target.businessPropA,
@@ -137,7 +137,7 @@ Developers can even use [NativeSQL expressions](../native-sql) to build more arb
 private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> {
 
     @Override
-    public Predicate on(ST source, TT target) {
+    public Predicate on(BookTable source, AuthorTable target) {
         return Predicate.sql(
             "substr(%e, 1, 5) = substr(%e, 1, 5)",
             new Expression[] {
@@ -156,8 +156,8 @@ private static class BookAuthorJoin implements WeakJoin<BookTable, AuthorTable> 
 private class BookAuthorJoin : KWeakJoin<Book, Author> {
 
     override fun on(
-        source: KNonNullTable<S>,
-        target: KNonNullTable<T>
+        source: KNonNullTable<Book>,
+        target: KNonNullTable<Author>
     ): KNonNullExpression<Boolean> =
         sql(Boolean::class, "substr(%e, 1, 5) = substr(%e, 1, 5)") {
             expression(source.code)

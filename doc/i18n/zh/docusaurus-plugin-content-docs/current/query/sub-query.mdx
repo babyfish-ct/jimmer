@@ -20,6 +20,7 @@ AuthorTableEx author = AuthorTableEx.$;
 List<Book> books = sqlClient
     .createQuery(book)
     .where(
+        // highlight-next-line
         book.id().in(sqlClient
             .createSubQuery(author)
             .where(author.firstName().eq("Alex"))
@@ -86,6 +87,7 @@ BookTable book = BookTable.$;
 List<Book> newestBooks = sqlClient
     .createQuery(book)
     .where(
+        // highlight-next-line
         Expression.tuple(
             book.name(),
             book.edition()
@@ -161,6 +163,7 @@ BookTable book = BookTable.$;
 List<Book> newestBooks = sqlClient
     .createQuery(book)
     .where(
+        // highlight-next-line
         book.price().gt(sqlClient
             .createSubQuery(book)
             .groupBy(book.name())
@@ -536,9 +539,9 @@ where
 ```
 
 :::info
-注意，在最终生成的SQL中，子查询选取的列是常量`1`，并非Java代码的设置。
+注意，在最终生成的SQL中，子查询选取的列是常量`1`，并非Java/Kotlin代码的设置。
 
-这是因为`exists`运算符只在乎子查询是否能匹配到数据，并不在乎子查询选取了那些列。无论你在Java代码中让子查询选取什么，都会被无视。
+这是因为`exists`运算符只在乎子查询是否能匹配到数据，并不在乎子查询选取了那些列。无论你在Java/Kotlin代码中让子查询选取什么，都会被无视。
 :::
 
 ## 无类型子查询

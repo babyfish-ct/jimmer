@@ -21,7 +21,7 @@ Using this language, developers can quickly define various data structure shapes
 In some cases, after the server queries data in a certain shape, it is not meant to be returned as an HTTP response, but rather used internally to drive subsequent complex business logic. This is an ideal scenario for this approach.
 
 :::caution
-Note that if the server queries data in a certain shape not for its own use, but directly as the HTTP response, it is more recommended to directly return the dynamic entity object and use the solutions in [Spring section/Zero Frontend Coupling](../../spring/client) to automatically generate client code with a great developer experience.
+Note that if the server queries data in a certain shape not for its own use, but directly as the HTTP response, it is more recommended to directly return the dynamic entity object and use the solutions in [Spring/Generate Client Code](../../spring/client) to automatically generate client code with a great developer experience.
 :::
 
 ## Defining DTO Shapes 
@@ -215,14 +215,14 @@ println(view)
 
 The printed result is as follows *(formatted manually for readability)*:
 
-```
-// highlight-next-line  
+```sh
+# highlight-next-line  
 BookDetailView(
     id=1,
     name=Learning GraphQL,
     edition=1,
     price=50.00,
-    // highlight-next-line
+    # highlight-next-line
     store=BookDetailView.TargetOf_store(
         id=1,
         name=O'REILLY,
@@ -230,14 +230,14 @@ BookDetailView(
         version=0
     ),
     authors=[
-        // highlight-next-line
+        # highlight-next-line
         BookDetailView.TargetOf_authors(
             id=2,
             firstName=Alex,
             lastName=Banks,
             gender=MALE  
         ),
-        // highlight-next-line 
+        # highlight-next-line 
         BookDetailView.TargetOf_authors(
             id=1,
             firstName=Eve,

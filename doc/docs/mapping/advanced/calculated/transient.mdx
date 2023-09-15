@@ -396,9 +396,9 @@ group by
 
 In the previous section we demonstrated the calculation property `BookStore.avgPrice`, which is obviously a non-associative property.
 
-In this section, we will add a calculation property `BookStore.newestBooks` to `BookStore` with the type `java.util.List<Book>`, which is clearly an associative property.
+In this section, we will add a calculation property `BookStore.newestBooks` to `BookStore` with the type `java.util.List<Book>`, which is clearly an association property.
 
-To explain why this example needs to add a calculation property `BookStore.newestBooks`, let's first look at the characteristics of the original associative property `BookStore.books`:
+To explain why this example needs to add a calculation property `BookStore.newestBooks`, let's first look at the characteristics of the original association property `BookStore.books`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -811,7 +811,7 @@ println(stores)
 
 1.  Fetch the calculation property `BookStore.newestBooks`
 
-2.  The calculation property itself is also an associative property, so the shape of its associated objects can be controlled by a deeper child fetcher.
+2.  The calculation property itself is also an association property, so the shape of its associated objects can be controlled by a deeper child fetcher.
 
 The printed result is:
 
@@ -944,11 +944,11 @@ where
 ``` 
 
 :::tip
-This example shows that when the calculation property itself is also an associative property, the shape of its associated objects can be controlled by a deeper child fetcher.
+This example shows that when the calculation property itself is also an association property, the shape of its associated objects can be controlled by a deeper child fetcher.
 
-Since there is a deeper child fetcher, of course both native ORM associative properties and other calculation associative properties can be included.
+Since there is a deeper child fetcher, of course both native ORM association properties and other calculation association properties can be included.
 
-That is, in the process of querying complex data structures by object fetchers, the fetching tasks of ORM associative properties and calculation associative properties can be arbitrarily mixed.
+That is, in the process of querying complex data structures by object fetchers, the fetching tasks of ORM association properties and calculation association properties can be arbitrarily mixed.
 
 -   The fetching task of ORM association properties is actually SQL operations.
 

@@ -111,7 +111,7 @@ where(
 </TabItem>
 </Tabs>
 
-can be replaced with a more convenient form:
+Isn't this a bit tedious? Don't worry, it can be replaced with a more convenient form:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -192,7 +192,7 @@ The only reason constant expressions exist is that some databases support functi
 
 If your project does not have this scenario, never use constant expressions. Always use literal expressions.
 
-Incorrect use of constant expressions can have serious consequences. Erroneously planting mutable numeric parameters as constant expressions into SQL will break the stability of the SQL string, eventually leading to extremely low hit rates of execution plan cache in the database, impacting performance.
+Incorrect use of constant expressions can have serious consequences. Erroneously planting unstable numeric variables as constant expressions into SQL will break the stability of the SQL string, eventually leading to extremely low hit rates of execution plan cache in the database, impacting performance.
 :::
 
 ## Comparison
@@ -418,9 +418,19 @@ Incorrect use of constant expressions can have serious consequences. Erroneously
     </Tabs>
 
     The generated SQL condition is:
-    ```sql
-    where lower(tb_1_.NAME) like ? 
-    ```
+
+    -   If `ilike` is supported by dialect
+        
+        ```sql
+        where tb_1_.NAME ilike ? 
+        ```
+
+    -   Otherwise
+        
+        ```sql
+        where lower(tb_1_.NAME) like ? 
+        ```
+    
     The corresponding JDBC parameter is: `%ab%` 
 
 ### Match Modes
@@ -823,7 +833,7 @@ Jimmer-sql tries to avoid directly using `NOT` in SQL, but the final logic is eq
 
 ## Math Operations
 
-1.  +
+1.  &#43;
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -842,7 +852,7 @@ Jimmer-sql tries to avoid directly using `NOT` in SQL, but the final logic is eq
     </TabItem>
     </Tabs>
 
-2.  -
+2.  &#45;
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -861,7 +871,7 @@ Jimmer-sql tries to avoid directly using `NOT` in SQL, but the final logic is eq
     </TabItem>
     </Tabs>
 
-3.  *
+3.  &#42;
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -1114,7 +1124,7 @@ This form is actually the most common.
 
 The Contact expression concatenates strings. 
 
-This example concatenates firstName and lastName of authors with a space as separator:
+This example concatenates `firstName` and `lastName` of authors with a space as separator:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

@@ -92,7 +92,7 @@ _2 -> name
 _3 -> edition
 ```
 
-如果我们需要返回对象，则必须定义一个BookDTO类型 *(假设Java版使用了lombok)*
+如果我们需要返回对象，有一个选择是定义一个BookDTO类型 *(假设Java版使用了lombok)*
 
 和原始的实体类型`Book`不同，`BookDTO`仅仅包含我们需要的属性，而非所有属性。
 
@@ -190,7 +190,7 @@ println(tuples)
 ]
 ```
 
-尽管JPA与MyBatis都有各自的一套映射方法，但是都有各自的局限性：
+JPA和MyBatis就是采用这样的选择：
 
 -   JPA默认返回对象的所有属性，想要自定义返回属性的话，
 
@@ -198,17 +198,19 @@ println(tuples)
 
     -   或者使用`query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
 
--   MyBatis需要在xml中写类型映射，MyBatis-Plus提供了一些封装可以简化这一流程
+-   MyBatis需要编写和DTO对应的ResultMapper.
 
-但是不论是JPA还是MyBatis亦或是MyBatis-Plus都避免不了需要额外再写一个DTO类，接下来我们使用对象抓取器来简化这一流程。
+然而，不论是JPA还是MyBatis都避免不了需要额外再写一个DTO类并自己肩负起从查询结构到DTO对象的转化逻辑。
 
 :::info
 不幸的是
 -   查询业务往往具有多样性，格式多样化必然DTO类型变多*（作为聚合根类型而言可能存在格式多样化问题，作为其他DTO的关联类型会更容易导致格式多样化问题）*。
 最终导致<ViewMore buttonText="DTO爆炸问题"><DtoExplosion/></ViewMore>
 
--   这样的自定义映射机制破坏了ORM原本的功能，无法控制关联属性，只能返回简单对象而非层次化的数据结构
+-   对于JPA而言，这样的做法违背了了ORM的初衷：便捷性
 :::
+
+接下来，我们使用Jimmer的对象抓取器来简化这一流程。
 
 ## 使用对象抓取器
 
@@ -408,9 +410,9 @@ Annotation processor会为每一个实体接口自动生成一个Fetcher类，�
 对查询返回的输出数据而言，消灭<ViewMore buttonText="DTO爆炸问题"><DtoExplosion/></ViewMore>能极大地提高服务端的生产效率。
 :::
 
-## 和JPA的差别
+## 和JPA EntityGraph的差别
 
-当对象抓取器用于抓取关联属性时 *(后续文档讨论，本文未示范)*，和[JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)比较类似，但存在如下差异
+当对象抓取器用于抓取关联属性时，和[JPA的EntityGraph](https://www.baeldung.com/jpa-entity-graph)比较类似，但存在如下差异
 
 -   对象抓取器使用`batch-load`策略加载关联对象，而非使用JPA中`join-fetch`的概念，这很重要，因为
 
