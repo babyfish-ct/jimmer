@@ -18,13 +18,14 @@ public interface Filterable {
     /**
      * If the condition is true, add a predicate
      * <p>
-     *     Please look at this example about predicate is not `eq`, `ne`, `like`, `ilike`
-     *     <pre><code>
-     *         .whereIf(minPrice != null, table.price().ge(minPrice))
-     *     </code></pre>
+     *     Please look at this example about predicate is not `eq`, `ne`, `like` or `ilike`
      * </p>
      *
-     * The predicate `ge` which is not `eq`, `ne`, `like`, `ilike` cannot be created by null
+     * <pre><code>
+     *     whereIf(minPrice != null, table.price().ge(minPrice))
+     * </code></pre>
+     *
+     * The predicate `ge` which is not `eq`, `ne`, `like` or `ilike` cannot be created by null
      * because `NullPointerException` will be thrown. At this time, you can use {@link #whereIf(boolean, Supplier)}
      *
      * @param condition The condition
@@ -42,7 +43,7 @@ public interface Filterable {
     /**
      * If the condition is true, add a predicate
      * @param condition The condition
-     * @param block An lambda to create predicate when condition is true
+     * @param block A lambda to create predicate when condition is true
      * @return Return the current object to support chain programming style
      */
     @OldChain
