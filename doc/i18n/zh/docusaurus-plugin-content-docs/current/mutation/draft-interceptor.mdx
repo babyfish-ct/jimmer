@@ -6,14 +6,6 @@ title: 拦截器
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
-
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
-
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
-
-本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
-
 ## 定义被拦截数据格式
 
 Draft拦截器和[Save指令](./save-command)配合使用，在对象被保存之前调整数据。
@@ -162,7 +154,7 @@ class BaseEntityDraftInterceptor(
 请不要在`beforeSave`方法中，修改被`@Id`或`@Key`修饰的属性。
 :::
 
-### Spring环境下配置拦截器
+### 使用Jimmer Spring Starter
 
 上文中，我们定义的类`BaseEntityDraftInterceptor`被`@Compoent`修饰，很明显这是一个Spring托管对象。
 
@@ -172,13 +164,9 @@ class BaseEntityDraftInterceptor(
 否则，必需手动注册
 :::
 
-### 底层API配置拦截器
+### 不使用Jimmer Spring Starter
 
-将拦截器挂接到SqlClient对象上，即可生效
-
-## 配置拦截器
-
-将拦截器挂接到SqlClinet对象上，即可生效
+未使用SpringBoot时，将拦截器挂接到SqlClinet对象上，即可生效
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

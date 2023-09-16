@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.example.business;
 
-import lombok.Data;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
@@ -14,17 +13,17 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.List;
 
-/**
- * A real project should be a three-tier architecture consisting
- * of repository, service, and controller.
+/*
+ * Why add spring web annotations to the service class?
  *
- * This demo has no business logic, its purpose is only to tell users
- * how to use jimmer with the <b>least</b> code. Therefore, this demo
- * does not follow this convention, and let services be directly
- * decorated by `@RestController`, not `@Service`.
+ * The success and popularity of rich client technologies represented by React, Vue and Angular
+ * have greatly reduced the significance of the Controller layer on the spring server side.
+ *
+ * Moreover, over-bloated code structures are not conducive to demonstrating the capabilities
+ * of the framework with small examples. Therefore, this example project no longer adheres to
+ * dogmatism and directly adds spring web annotations to the service class.
  */
 @RestController
 @RequestMapping("/author")
