@@ -6,7 +6,7 @@ title: Querying Association Tables
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Association Tables Hidden by Object Models  
+## Association Tables Hidden by Object Model  
 
 Let's review this piece of entity interface code:
 
@@ -104,7 +104,7 @@ associations.forEach(::println)
 Here, `createAssociationQuery` in Java or `queries.forList` in Kotlin represents a query based on the association table instead of entity tables.  
 
 :::tip
-The Java code demo here uses a complex `AssociationTable` type to be compatible with Java 8. It is recommended to upgrade Java and use the `var` keyword.
+The Java code demo here uses `AssociationTable` type with complex generic arguments to be compatible with Java 8. It is recommended to upgrade Java and use the `var` keyword.
 :::
 
 The generated SQL is:
@@ -156,11 +156,11 @@ The `Association<S, T>` represents association table entities that associate `S`
 
 -   `source`: The object (Book in this example) corresponding to the foreign key pointing to the owning side.
 
--   `target`: The object (Author in this example) corresponding to the foreign key pointing to the inverse side.
+-   `target`: The object (Author in this example) corresponding to the foreign key pointing to the target side.
 
 :::note
 
-1.  In this example, object fetchers are not used to define the format of Association objects (in fact Association does not support object fetchers), so the `source` and `target` association properties only contain object ids.
+1.  In this example, object fetchers are not used to define the format of association pseudo entity objects (in fact association pseudo entity does not support object fetchers), so the `source` and `target` association properties only contain id property.
 
 2.  `Author` also has a bidirectional many-to-many association `Author.books`, which is the mirror of `Book.authors`.
 
@@ -311,9 +311,9 @@ Tuple2{
 ``` 
 
 :::caution
-The association object `Association<S, T>` is simple and special, does not support or need [object fetchers](./object-fetcher).  
+The association pseudo entity `Association<S, T>` is simple and special, does not support or need [object fetchers](./object-fetcher).  
 
-Note this only applies to `Association<S, T>` itself, its association properties `source` and `target` still support [object fetchers], such as:
+However, its association properties `source` and `target` can support [object fetchers](./object-fetcher), such as:
 
 <Tabs groupId="language">
 <TabItem value="kotlin" label="Kotlin">
@@ -338,11 +338,11 @@ select(
 
 :::
 
-## Comparison with Non-Association Table Queries  
+## Comparison with Entity Table Queries  
 
 Readers may think that association table queries exist to allow developers to write more performant queries.
 
-But this is not the case. Due to optimizations like [ghost joins](./dynamic-join/optimization#phantom-joins) and [semi joins](./dynamic-join/optimization#semi-joins), whether association table queries are used or not, similar functionality and performance can be achieved. Using association table queries is completely up to user preference.
+But this is not the case. Due to optimizations like [ghost joins](./dynamic-join/optimization#ghost-joins) and [half joins](./dynamic-join/optimization#half-joins), whether association table queries are used or not, similar functionality and performance can be achieved. Using association table queries is completely up to user preference.
 
 ### 1. Use association table subquery to achieve a function  
 
@@ -415,7 +415,7 @@ Where:
 
 -   ❶ `association.target` is a real JOIN that generates SQL JOIN to the `AUTHOR` table for condition check.  
 
--   ❷ `association.source` is a [phantom join](./dynamic-join/optimization#phantom-joins) that does not generate a SQL join.
+-   ❷ `association.source` is a [ghost join](./dynamic-join/optimization#ghost-joins) that does not generate a SQL join.
 
 The final generated SQL is:
 
@@ -439,7 +439,7 @@ where
     )
 ```
 
-### 2. Achieve the same functionality without association table subquery  
+### 2. Achieve the same functionality with entity table subquery  
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -488,7 +488,7 @@ val books = sqlClient
 </TabItem>
 </Tabs>
 
-❶  `author.books` is a [semi join](./dynamic-join/optimization#semi-joins) that only generates SQL JOIN from `AUTHOR` to the `BOOK_AUTHOR_MAPPING` table, without further join to the `BOOK` table.
+❶  `author.books` is a [half join](./dynamic-join/optimization#half-joins) that only generates SQL JOIN from `AUTHOR` to the `BOOK_AUTHOR_MAPPING` table, without further join to the `BOOK` table.
 
 The final generated SQL is:
 
