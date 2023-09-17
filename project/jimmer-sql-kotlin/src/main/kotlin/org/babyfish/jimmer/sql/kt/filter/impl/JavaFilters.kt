@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.filter.impl
 
+import org.babyfish.jimmer.impl.util.InvocationDelegate
 import org.babyfish.jimmer.sql.filter.AssociationIntegrityAssuranceFilter
 import org.babyfish.jimmer.sql.filter.CacheableFilter
 import org.babyfish.jimmer.sql.filter.Filter
@@ -9,7 +10,6 @@ import org.babyfish.jimmer.sql.kt.filter.KAssociationIntegrityAssuranceFilter
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KShardingFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilter
-import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 
 fun KFilter<*>.toJavaFilter(): Filter<*> {
@@ -37,12 +37,9 @@ fun KFilter<*>.toJavaFilter(): Filter<*> {
     if (this is KAssociationIntegrityAssuranceFilter) {
         interfaces.add(AssociationIntegrityAssuranceFilter::class.java)
     }
-    val handler = InvocationHandler { _, method, args ->
-        method.invoke(javaFilter, args)
-    }
     return Proxy.newProxyInstance(
         Filter::class.java.classLoader,
         interfaces.toTypedArray(),
-        handler
+        InvocationDelegate(javaFilter)
     ) as Filter<*>
 }
