@@ -27,6 +27,7 @@ fun KFilter<*>.toJavaFilter(): Filter<*> {
         return javaFilter
     }
     val interfaces = mutableListOf<Class<*>>()
+    interfaces.add(FilterWrapper::class.java)
     interfaces.add(Filter::class.java)
     if (this is KCacheableFilter) {
         interfaces.add(CacheableFilter::class.java)

@@ -29,6 +29,7 @@ fun <E: Any> Filter<Props>.toKtFilter(): KFilter<E> {
         return ktFilter
     }
     val interfaces = mutableListOf<Class<*>>()
+    interfaces.add(FilterWrapper::class.java)
     interfaces.add(Filter::class.java)
     if (this is CacheableFilter) {
         interfaces.add(KCacheableFilter::class.java)

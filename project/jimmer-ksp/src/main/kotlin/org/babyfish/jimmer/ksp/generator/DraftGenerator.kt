@@ -10,7 +10,6 @@ import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import java.io.OutputStreamWriter
-import java.lang.IllegalArgumentException
 
 class DraftGenerator(
     private val codeGenerator: CodeGenerator,
@@ -54,6 +53,7 @@ class DraftGenerator(
                         if (!type.isMappedSuperclass) {
                             addNewByFun(type)
                             addAddFun(type)
+                            addCopyFun(type)
                         }
                     }
                 }.build()
@@ -190,6 +190,25 @@ class DraftGenerator(
                     "return %T.produce(base, block)",
                     type.draftClassName(PRODUCER)
                 )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addCopyFun(type: ImmutableType) {
+        addFunction(
+            FunSpec
+                .builder("copy")
+                .receiver(type.className)
+                .addParameter(
+                    "block",
+                    LambdaTypeName.get(
+                        type.draftClassName,
+                        emptyList(),
+                        UNIT
+                    )
+                )
+                .returns(type.className)
+                .addCode("return %T.`$`.produce(this, block)", type.draftClassName)
                 .build()
         )
     }

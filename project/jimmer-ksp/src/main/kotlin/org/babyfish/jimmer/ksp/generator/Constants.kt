@@ -180,11 +180,13 @@ internal val SELECTION_CLASS_NAME =
         "org.babyfish.jimmer.sql.ast",
         "Selection"
     )
+
 internal val NEW_FETCHER_FUN_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.kt.fetcher",
         "newFetcher"
     )
+
 internal val ENTITY_MANAGER_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.runtime",
