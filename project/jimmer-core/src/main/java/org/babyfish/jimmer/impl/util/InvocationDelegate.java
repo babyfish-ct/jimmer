@@ -8,12 +8,12 @@ import java.lang.reflect.Method;
  * <p>
  * In kotlin, `method.invoke(target, *args)` will throw NPE if `args` is null.
  * However, the `InvocationHandler` of JDK proxy may give null `args`.
+ * </p>
  * <ul>
- *     <li>In kotlin, `method.invoke(target, args)` is different with java, it wraps `args` into a new array</li>
- *     <li>`method.invoke(target, *(args ?: emptyArray&lt;Any?&gt;()))` has unnecessary cost</li>
+ *  <li>In kotlin, `method.invoke(target, args)` is different with java, it wraps `args` into a new array</li>
+ *  <li>`method.invoke(target, *(args ?: emptyArray&lt;Any?&gt;()))` has unnecessary cost</li>
  * </ul>
  * The better practice is to never use kotlin to implement `InvocationHandler`.
- * </p>
  */
 public class InvocationDelegate implements InvocationHandler {
 
