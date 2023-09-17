@@ -28,11 +28,10 @@ import { ViewMore } from '@site/src/components/ViewMore';
 sqlClient.update(
     BookDraft.$.produce(draft -> {
         draft.setId(3L);
-        draft.addIntoAuthors(author -> author.setId(1L));
-        draft.addIntoAuthors(author -> author.setId(2L));
-        // highlight-next-line
-        draft.addIntoAuthors(author -> {
-            author.setId(1000L); // 非法关联id，1000
+        draft.addIntoAuthors(author -> author.setId(1L)); // ❶
+        draft.addIntoAuthors(author -> author.setId(2L)); // ❷
+        draft.addIntoAuthors(author -> { // ❸
+            author.setId(1000L); 
             author.setFirstName("Svetlana");
             author.setLastName("Isakova");
             author.setGender(Gender.FEMALE);
@@ -48,11 +47,10 @@ sqlClient.update(
 sqlClient.update(
     new(Book::class).by {
         id = 3L
-        authors().addBy { id = 1L }
-        authors().addBy { id = 2L }
-        // highlight-next-line
-        authors().addBy {
-            id = 1000L // 非法关联id，1000
+        authors().addBy { id = 1L } // ❶
+        authors().addBy { id = 2L } // ❷
+        authors().addBy { // ❸
+            id = 1000L
             firstName = "Svetlana"
             lastName = "Isakova"
             gender = Gender.FEMALE
@@ -64,9 +62,11 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
-:::note
-这个例子混合了长关联和短关联，但是，高亮标注的那行代码是长关联。
-:::
+这个例子混合了长关联和短关联。
+
+-   ❶ ❷ 它们是<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>，一旦指定了非法id，就会导致错误。
+
+-   ❸ 这是<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>，即使被指定了非法id，Jimmer也会自动创建该关联对象。
 
 生成的SQL如下
 
@@ -101,34 +101,49 @@ values
 ```
 
 :::info
-可见，在保存<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>时，即使为关联对象设置了数据库中不存在的id *(本例中为1000)*，Jimmer也会按照此id创建新的关联对象。
-
-因此，长关联根本不存在`关联id检查问题`。
-
-然而，对于<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>而言，Jimmer只负责在当前对象和关联对象之间创建关联，并不会自动创建不存在的关联对象。
-
 因此，`关联id检查`是一个仅对<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>有意义的话题。本文接下来的例子，所有的讨论都是针对<ViewMore buttonText="短关联"><ShortAssociation/></ViewMore>的。
 :::
 
-### 目标外键
+### 概念定义：目标外键
 
 要讨论短关联的id检查问题，我们先为关联属性定义定一个概念：目标外键。
 
 -   如果关联基于中间表，则中间表中指向目标实体表的外键就是目标外键。
 
-    比如：`Book.authors`的目标外键是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段，`Author.books`的目标外键是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
+    比如：
+
+    -   `Book.authors`的目标外键是`BOOK_AUTHOR_MAPPING`表的`AUTHOR_ID`字段。
+
+    -   `Author.books`的目标外键是`BOOK_AUTHOR_MAPPING`表的`BOOK_ID`字段。
 
 -   如果关联基于外键，无论外键真假 *(请参见[真假外键](../../mapping/base/foreignkey))*，关联本身的外键就是目标外键。
 
-    比如：`Book.store`的目标外键是`BOOK`表的`STORE_ID`字段。
+    比如：
+    
+    `Book.store`的目标外键是`BOOK`表的`STORE_ID`字段。
 
 -   如果以上两个情况都不是，则认为关联没有目标外键。
 
-    没有目标外键的关联属性，就是被指定了`mappedBy`的一对一或一对多属性。即，被`@OneToOne(mappedBy = "...")`或`@OneToMany(mappedBy="...")`修饰的属性，比如：`BookStore.books`。
+    没有目标外键的关联属性，就是被指定了`mappedBy`的一对一或一对多属性。即，被`@OneToOne(mappedBy = "...")`或`@OneToMany(mappedBy="...")`修饰的属性。
+    
+    比如：
+    
+    `BookStore.books`没有目标外键。
+
+总结
+
+|关联|目标外键的列名|目标外键所在的表|
+|---|---|----|
+|`Book.authors`|AUTHOR_ID|BOOK_AUTHOR_MAPPING| 
+|`Author.books`|BOOK_ID|BOOK_AUTHOR_MAPPING| 
+|`Book.store`|STORE_ID|BOOK| 
+|`BookStore`.books| *NA* | *NA* |
 
 ## 检查机制
 
-用户可以配置是否检查短关联对象的id，下面我们讨论具备不同目标外键的属性在检查和不检查两种情况下的行为
+用户可以配置是否检查短关联对象的id。
+
+这里，暂不讨论如何配置，让我们先看是否开启此配置对Jimmer的行为有何影响。
 
 -   没有目标外键的属性
 
@@ -256,13 +271,28 @@ values
         Save error caused by the path: "<root>.store": Illegal ids: [321]
         ```
 
-    :::info
-    可见，对于目标外键为真的属性而言，无论是否是否启用Jimmer的短关联id检查，都会得到异常。
+总结
 
-    -   不验证，由数据库报错。好处是少执行一条SQL查询，坏处是异常信息和异常类型难控制
+||真目标外建|假目标外建|无目标外建|
+|---|---|---|---|
+|不检查|由数据库报错|保存错误数据|忽略非法操作|
+|检查|由Jimmer报错|由Jimmer报错|由Jimmer报错|
 
-    -   验证，由Jimmer报错。好处是异常信息和异常类型明确，坏处是多执行一条SQL查询
-    :::
+:::info
+可见，对于目标外键为真的属性而言，无论是否是否启用Jimmer的短关联id检查，都会得到异常。
+
+-   不验证，由数据库报错。
+
+    -   好处：少执行一条SQL查询
+    
+    -   坏处：异常信息和异常类型难控制
+
+-   验证，由Jimmer报错。
+
+    -   好处：异常信息和异常类型明确
+    
+    -   坏处：多执行一条SQL查询
+:::
 
 :::tip
 只要项目不是对修改业务性能要求到吹毛求疵的那种，就建议此检查机制对所有属性全开，以得到理想的异常信息 *(稍后我们会介绍如何配置)*。
@@ -282,11 +312,11 @@ values
 
 功能如下
 
-|   |NONE|FAKE|ALL|
-|---|----|----|---|
-|没有目标外建的关联|不检查|检查|检查|
-|目标外建为假的关联|不检查|检查|检查|
-|目标外建为真的关联|不检查|不检查|检查|
+||真目标外建|假目标外建|无目标外建|
+|---|---|---|---|
+|NONE|不检查|不检查|不检查|
+|FAKE|不检查|检查|检查|
+|ALL|检查|检查|检查|
 
 全局配置有两种实现方法
 

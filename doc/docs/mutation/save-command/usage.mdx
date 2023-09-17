@@ -7,33 +7,13 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import Grid from '@mui/material/Grid';
-import {Save} from '@site/src/components/Image';
+import {SaveCommandPanel} from '@site/src/components/HomepageFeatures/SaveCommand';
 
 ## Introduction
 
 A save command saves arbitrary shaped data structures, like:
 
-<Save/>
-
--   Top right:
-    
-    The data structure `A` the user wants to save
-
--   Top left:
-
-    Get the existing data structure `B` from the database according to the shape of `A`.
-
--   Bottom:
-
-    Jimmer compares the old data structure `B` and the new data structure `A`, finds the differences, and executes appropriate <span style={{color: 'orange'}}>modifications</span>, <span style={{color: 'green'}}>insertions</span> and even <span style={{color: 'red'}}>deletions</span>, finally making the data structure in the database completely consistent with `A`. The user does not need to care about the details.
-
-    :::info
-    Since `B` and `A` have the same shape, the cost of querying existing data in the database, and comparing old and new data, depends entirely on the shape of `A` *(the data structure the user wants to save)*.
-    :::
-
-    :::tip
-    If you are familiar with [React](https://react.dev/) or [Vue](https://vuejs.org/) in web development, it is not difficult to see this is analogous to `Virtual DOM diff`.
-    :::
+<SaveCommandPanel/>
 
 ## Basic Concepts
 
@@ -123,14 +103,6 @@ A save command persists an arbitrary shaped data structure to the database, for 
     </TabItem>
     </Tabs>
 
-:::tip
-There are fundamental differences between save commands and `save` methods in other ORM frameworks.
-
-Take JPA/Hibernate for example. Whether ordinary properties need to be saved is controlled via [Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--) and [Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--), and whether associated properties need to be saved is controlled via [OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--), [ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--), [OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--) and [ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--). However, no matter how developers configure them, the shape of the data structure JPA/Hibernate can save for you is fixed. 
-
-Jimmer takes a completely different approach. Jimmer objects have [dynamicity](../../object/dynamic). Set properties will be saved while unset properties are ignored, so arbitrary shaped data structures can be persisted.  
-:::
-
 ## APIs
 
 Save commands provide multiple APIs for different languages and coding patterns, but with the same functionality:
@@ -139,7 +111,7 @@ Save commands provide multiple APIs for different languages and coding patterns,
     <thead>
         <tr>
             <th rowspan="2"></th>
-            <th rowspan="2">Spring Boot API</th>
+            <th rowspan="2">Spring Data API</th>
             <th colspan="2">Low-level API</th>
         </tr>
         <tr>

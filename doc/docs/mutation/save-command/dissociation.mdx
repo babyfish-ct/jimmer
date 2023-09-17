@@ -63,7 +63,7 @@ Consider the following example:
 
 Dissociation applies to two types of data:
 
--   Join table data
+-   Middle table data
 
 -   Child table data
 
@@ -72,14 +72,14 @@ Next, we discuss these two dissociation operations.
 :::info
 To simplify the generated SQL as much as possible, let us focus on the association itself and dissociation operations in this article:
 
--   All saved objects specify only the id property
+-   All saved objects specify only the id property *(short association)*
 
--   The save mode of the aggregated root object is explicitly specified as UPDATE_ONLY *(using the update method)*
+-   The save mode of the aggregated root object is explicitly specified as UPDATE_ONLY *(This article uses the syntax of calling the `update` method)*
 :::
 
-## Dissociating Join Table Data
+## Dissociating Middle Table Data
 
-There is a many-to-many association between the `BOOK` table and the `AUTHOR` table, with join table `BOOK_AUTHOR_MAPPING`.
+There is a many-to-many association between the `BOOK` table and the `AUTHOR` table, with middle table `BOOK_AUTHOR_MAPPING`.
 
 The `Book.authors` and `Author.books` properties both map this many-to-many association and are mirrors of each other. Using either can demonstrate the effect. Here we choose `Book.authors`.
 
@@ -202,6 +202,9 @@ Finally 3 SQL statements are generated:
             (? /* 3 */, ? /* 1 */)
         )
     ```
+    :::info
+    This is the deassociation operation we want on the middle table
+    :::
     
 3.  Create association between `Book-3` and `Author-5`
 
@@ -217,7 +220,7 @@ Finally 3 SQL statements are generated:
 
 This operation is for one-to-many associations directly based on foreign keys.
 
-The `BOOK` table has a foreign key field `STORE_ID` pointing to the `BOOK_STORE` table, forming a many-to-one relationship. This many-to-one association is mapped to the `Book.store` property, and the reverse one-to-many association is mapped to the `BookStore.books` property.
+The `BOOK` table has a foreign key field `STORE_ID` pointing to the `BOOK_STORE` table, forming a many-to-one association. This many-to-one association is mapped to the `Book.store` property, and the reverse one-to-many association is mapped to the `BookStore.books` property.
 
 If a parent object in the database *(`BookStore` in this example)* holds some child objects *(`Book` in this example)*, but the overwritten parent object is no longer expected to continue holding some child objects, it will cause those child objects to be dissociated.
 
@@ -231,7 +234,7 @@ Child object dissociation operations have three modes:
 
 -   DELETE: Delete the dissociated child objects
 
-:::tip
+:::info
 Although child object dissociation is caused by a one-to-many association *(i.e. parent object abandoning some child objects, the one-to-many association is `BookStore.books` in this example)*, the dissociation mode is configured for the reverse many-to-one association *(`Book.store` in this example)*. The purpose of this design is to maintain similarity with configuring cascade behaviors of foreign keys in database DDL. 
 
 For Jimmer, a one-to-many association must be bidirectional, so once a one-to-many association is known, its mirroring many-to-one association must also be known. So there is no problem with this design.  
@@ -241,7 +244,7 @@ There are two ways to configure the dissociation mode:
 
 -   Static configuration on entity with annotation, static configuration is global.
 
--   Dynamic configuration in code, but dynamic configuration only affects the current save command. Dynamic configuration can override static configuration.
+-   Dynamic configuration in code, dynamic configuration only affects the current save command, and it can override static configuration.
 
 Take `SET_NULL` as an example:
 
@@ -330,6 +333,8 @@ The query result is:
 |11|GraphQL in Action|2|81.00|2|
 |10|GraphQL in Action|1|80.00|2|
 
+As you can see, `BookStore-2` holds `Book-10`, `Book-11`, and `Book-12`.
+
 Now, update this `BookStore` object:
 
 <Tabs groupId="language">
@@ -417,7 +422,7 @@ This means:
 
 -   `BookStore-2` needs to dissociate `Book-11` and `Book-12`.
 
-    But the specific SQL operations are unknown, determined by the dissociation mode configuration of `Book.store` property.
+    However, the SQL operations determined by the dissociation mode of the configuration of `Book.store` property is unkown.
 
 Different dissociation mode configurations will lead to different execution logic. Next, we discuss the three cases of `NONE`, `SET_NULL` and `DELETE`.
 
@@ -456,13 +461,13 @@ Different dissociation mode configurations will lead to different execution logi
         where 
             STORE_ID = ? /* 2 */
             and 
-            ID not in (
+            ID not in ( /* Note `not` */
                 ? /* 9 */, ? /* 10 */
             )
         ```
-        
-        :::note
-        Note the `not` in the SQL
+
+        :::info
+        Note the `not` in SQL, this is the deassociation operation on the child table for the `SET_NULL` mode. 
         :::
         
 -   `DELETE`:
@@ -524,7 +529,9 @@ Different dissociation mode configurations will lead to different execution logi
         ```
         
     :::tip
-    In fact, step 3 and step 4 are one entity, due to [Delete Command](../delete-command) to be discussed later. 
+    Step 3 and step 4 are a whole, they jointly form the deassociation operation. 
+
+    In fact, this is the [Delete Command](../delete-command) that will be introduced in subsequent documentation. 
     :::
     
 :::info  
@@ -537,12 +544,8 @@ This article simplifies the examples a lot, such as:
     -   Do not specify `id` property, but specify `key` property *(<ViewMore buttonText="Short Association"><ShortAssociation/></ViewMore> expressed in another way)*
 
     -   Specify `key` property and some properties that are neither `id` nor `key` *(<ViewMore buttonText="Long Association"><LongAssociation/></ViewMore>)* 
-
-    :::note
-    The concepts of short association and long association have been discussed before. If you forget, please review [Save Association](./association#association-types).
-    :::
     
 The examples are so simplified in this article just to keep the SQL generated by the save command as simple as possible for readers to quickly understand the characteristics of dissociation operations.
 
-As for associated objects of more complex formats, readers can try it themselves, or refer directly to the official examples [example/java/save-command](https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command) and [example/kotlin/save-command-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt). But these functionalities still exist, just with more generated SQL statements and more tedious hidden details.
+As for associated objects of more complex formats, readers can try it themselves, or refer directly to the official examples [example/java/save-command](https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command) and [example/kotlin/save-command-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt). These functionalities still exist, just with more generated SQL statements and more tedious hidden details.
 :::

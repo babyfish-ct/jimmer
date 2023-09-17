@@ -202,7 +202,7 @@ export const LongAssociation: FC = memo(() => {
                         onChange={onAddressChange}/>
                     </Grid>
                     <Grid item xs={12}>
-                        <Divider textAlign="left">订单明细</Divider>
+                        <Divider textAlign="left">{isZh ? "订单明细" : "Order Items"}</Divider>
                         <TableContainer component={Paper}>
                             <Table size="small">
                                 <TableHead>

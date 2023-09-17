@@ -98,6 +98,7 @@ data class BookInput(
 ## Mapstruct转化器
 
 Jimmer拓展了[mapstruct框架](https://mapstruct.org/)，可以用它来处理动态实体和静态Input DTO之间的转化问题。
+如何使用相关拓展在[对象篇/DTO转换/MapStruct](../../../object/view/mapstruct)中有详细介绍，本文不做重复。
 
 定义BookInputMapper接口，如下
 
@@ -190,8 +191,6 @@ fun saveBook(
 
 Jimmer内置了mapstruct的扩展，如果`BookInput.id`为null，则不会赋给`Book.id`，所以没有任何问题。
 :::
-
-可见，安全性保证问题，最终被转化成了使用mapstruct把Input DTO转化为Jimmer实体的问题。
 
 ## 改进
 
