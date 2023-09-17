@@ -6,14 +6,6 @@ title: 删除语句
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
-
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
-
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
-
-本文所讨论了若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
-
 ## 基本用法
 
 Delete语句用法如下

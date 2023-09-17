@@ -43,7 +43,7 @@ fun findBooks(): List<Book> =
             // highlight-next-line
             orderBy(table.edition.desc())
             // highlight-next-line
-            .orderBy(table.score.desc().nullsLast())
+            orderBy(table.score.desc().nullsLast())
             select(table)
         }
         .execute()
@@ -311,7 +311,7 @@ fun findBooks(sort: Sort): List<Book> =
     sqlClient
         .createQuery(Book::class) {
             // highlight-next-line
-            .orderBy(sort)
+            orderBy(sort)
             select(table)
         }
         .execute()

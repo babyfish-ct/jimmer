@@ -1,17 +1,12 @@
-import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
-
 Currently, other technologies that operate on SQL, whether ORM or non-ORM, have a blank area: they only consider dynamic `where`, and do not consider `dynamic join`.
 
 `Dynamic JOIN` is defined as: If some dynamic query conditions are for tables other than the current table. This means
 
-- When the condition is met: First join to other tables through associative properties, then add dynamic where conditions to the joined table
+- When the condition is met: First join to other tables through association properties, then add dynamic where conditions to the joined table
 
-- When the condition is not met: Cannot join other tables through associative properties
+- When the condition is not met: Cannot join other tables through association properties
 
-<Divider>
-<Chip label="Scene-1"/>
-</Divider>
+## Scene-1
 
 Let's first look at the first scene, taking MyBatis oriented to native SQL as an example
 
@@ -32,7 +27,7 @@ Let's first look at the first scene, taking MyBatis oriented to native SQL as an
     Here, all query parameters may be null, which is clearly a dynamic query.
 
     The last two query parameters: `storeName` and `storeWebsite`, their filtering conditions are not applied on the current table `BOOK`, but on the parent table `BOOK_STORE`.
-    That is, when any of these two parameters is non-null, a JOIN to the `BOOK_STORE` table will be generated. This table connection dynamically determined by the parameter value is referred to as `dynamic JOIN` in this article.
+    That is, when any of these two parameters is non-null, a JOIN to the `BOOK_STORE` table will be generated. This table join dynamically determined by the parameter value is referred to as `dynamic JOIN` in this article.
 
 -   Define MyBatis SQL mapping XML
 
@@ -68,11 +63,9 @@ Let's first look at the first scene, taking MyBatis oriented to native SQL as an
 
     You may have noticed that ❶ uses `or`. This is easy to understand.
     
-    **However, this is only the simplest dynamic connection between two tables. For deeper multi-table connection operations, the complexity of dynamic connections will increase dramatically!**
+    **However, this is only the simplest dynamic connection between two tables. For deeper multi-table join operations, the complexity of dynamic connections will increase dramatically!**
 
-<Divider>
-<Chip label="Scene-2"/> 
-</Divider>
+## Scene-2
 
 Let's take a look at the second scene. With the previous example as the basis, this example is decoupled from any business.
 

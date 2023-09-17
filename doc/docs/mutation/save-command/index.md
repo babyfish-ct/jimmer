@@ -12,13 +12,22 @@ For readers familiar with web frontend technologies, this can be analogized to `
 :::tip 
 Save command require developers to **completely change their thinking pattern**
 
--   The traditional thinking pattern:
+-   Fundamental difference in thinking
 
-    Manually compare the data structure to be saved with existing data in the database, and execute `INSERT`, `UPDATE` or `DELETE` on the changed parts
+    -   The traditional thinking pattern:
 
--   The thinking pattern for save command:
+        Manually compare the data structure to be saved with existing data in the database, and execute `INSERT`, `UPDATE` or `DELETE` on the changed parts
 
-    Accept the data structure passed from client as a whole and just save it. Jimmer will handle everything *(automatically compare the data structure to be saved with existing data in the database, and execute `INSERT`, `UPDATE` or `DELETE` on the changed parts)*
+    -   The thinking pattern for save command:
+
+        Accept the data structure passed from client as a whole and just save it. Jimmer will handle everything *(automatically compare the data structure to be saved with existing data in the database, and execute `INSERT`, `UPDATE` or `DELETE` on the changed parts)*
+
+-   Old habits should be replaced by better methods
+
+    In the traditional development mode, developers like to do one thing: query an object first, then modify some of its properties, and finally save the modified object.
+
+    Although Jimmer also allows developers to do this, it is recommended to use a more performant approach, please refer to [Incomplete Object](./incomplete).
+:::
 
 Calling a save command only takes one line of code, but hides countless details internally that documentation cannot exhaustively enumerate. Therefore, save commands have a dedicated sample project:
 

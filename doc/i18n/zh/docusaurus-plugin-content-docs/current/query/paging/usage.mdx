@@ -26,22 +26,8 @@ import TabItem from '@theme/TabItem';
 
 :::tip
 Jimer分页的特色：开发人员只需编写`data-query`，框架自动生成`count-query`。
-:::
 
-另外，`count-query`其实是可以优化的。
-
-让我们来看一个可以优化的场景，在data-query中有存在一个JOIN，如果它同时满足如下条件：
-
--   此JOIN操作得到的表，并没有被`where`条件使用，而是在其他不会影响记录行数的地方被使用，比如`orderBy`
-
--   此JOIN的方向是从子表指向父表 *(即多对一和一对一关联)*，连接结果不会出现数据重复。也就是说，此JOIN不会导致数据变多
-
--   此JOIN的外键是真的 *(即存在外键约束，请参见[真假外键](../../mapping/base/foreignkey))* 且非null。那么此JOIN不会导致数据变少
-
-则可以安全地从count-query中剔除它，达到优化目的
-
-:::tip
-Jimmer不但可以自动生成`count-query`，还可以做到优化`count-query`
+Jimmer不但可以自动生成`count-query`，还可以做到优化`count-query`。这个优化会在[下一篇文章](./unncessary-join)中讨论。
 :::
 
 ## 配合SpringBoot使用时
@@ -260,6 +246,7 @@ public Page<Book> findBooks(
         pageIndex,
         pageSize,
         (entities, totalCount, queryImplementor) ->
+            // highlight-next-line
             new Page<>(
                     totalCount,
                     (totalCount + pageSize - 1) / pageSize,
@@ -295,6 +282,7 @@ fun findBooks(
             pageIndex,
             pageSize
         ) { entities, totalCount, _ ->
+            // highlight-next-line
             Page(
                 totalCount,
                 (totalCount + pageSize - 1) / pageSize,
@@ -426,8 +414,12 @@ val books = query
 
 -   SpingBoot的配置方法
 
-    在`application.properties`或`application.yml`中添加一个配置，
-    名为`jimmer.dialect`，值为Jimmer提供的方言类的类名，比如`org.babyfish.jimmer.sql.dialect.H2Dialect`。
+    在`application.properties`或`application.yml`中添加一个配置，名为`jimmer.dialect`，值为Jimmer提供的方言类的类名:
+
+    ```title="application.yml"
+    jimmer:
+        dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
+    ```
 
 -   非SpringBoot的配置方法
 
@@ -573,6 +565,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
         @Nullable String name,
         @Nullable String storeName
     ) {
+        // highlight-next-line
         return pager(pageable).excute(
             sql()
                 .createQuery(table)
@@ -585,8 +578,10 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
                     table.store().name().eq(storeName)
                 )
                 .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
-                // highlight-next-line
-                .select(table)
+                .select(
+                    // highlight-next-line
+                    table.fetch(fetcher)
+                )
         );
     }
 }
@@ -618,8 +613,10 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
                     where(table.store.name eq it)
                 }
                 orderBy(pageable.sort)
-                // highlight-next-line
-                select(table.fetch(fetcher))
+                select(
+                    // highlight-next-line
+                    table.fetch(fetcher)
+                )
             }
             // highlight-next-line
             .fetchPage(

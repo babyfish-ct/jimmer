@@ -76,6 +76,7 @@ const ZH: ReactNode =
             </TabItem>
         </Tabs>
         <Admonition type="info">
+            和GraphQL比较
             <ul>
                 <li>GraphQL基于HTTP服务，该功能只有在跨越HTTP服务的边界才能呈现；而在Jimmer中，这是ORM的基础API，你可以在任何代码逻辑中使用此能力。</li>
                 <li>截止到目前为止，GraphQL协议不支持对深度无限的自关联属性的递归查询；而Jimer支持。</li>
@@ -100,6 +101,7 @@ const EN: ReactNode =
             </TabItem>
         </Tabs>
         <Admonition type="info">
+            Compare to GraphQL
             <ul>
                 <li>GraphQL is based on HTTP services, which can only be experienced if it crosses the boundaries of HTTP services. In Jimmer, this is the underlying API for ORM, and you can use this capability in any code logic.</li>
                 <li>Until now, the GraphQL protocol does not support recursive queries on self-associated properties with infinite depth; And Jimer supports</li>

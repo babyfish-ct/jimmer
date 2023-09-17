@@ -663,7 +663,7 @@ Therefore, whatever `SubKey` the association property `BookStore.books` specifie
 :::note
 `BookStore.avgPrice` is also affected by `Book.price`. It changes when `Book.price` changes.
 
-However, `Book.price` is a non-association property of the object, so it must be irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here. 
+However, `Book.price` is a non-associative property of the object, so it must be irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here. 
 :::
 
 ## Usage

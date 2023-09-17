@@ -25,7 +25,7 @@ import { ObjectFetcherPanel } from '@site/src/components/HomepageFeatures/Object
 
     我们不需要的对象属性查询了，形成了浪费，尤其是对象字段很多的时。
 
-    以JPA为例，其返回对象默认是一个完整对象，不需要的非关联属性也会包含在内。这是传统ORM一个很大的问题。
+    以JPA为例，其返回对象默认是一个完整对象，不需要的非关联属性也会包含在内。这是传统ORM一个很大的问题 *(JPA的`@Basic(fetch = FetchType.LAZY)` 为LOB列设计，不能用在任何列上)*。
 
 -   under fetch问题
 

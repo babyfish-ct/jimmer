@@ -6,14 +6,6 @@ title: 修改语句
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## 本文讨论前提
-
-Jimmer支持[触发器](./trigger)，其中分为BinLog触发器和Transaction触发器。
-
-如果使用Transaction触发器，将会导致Jimmer修改操作生成更多更完整的查询语句以模拟触发器。
-
-本文所讨论若干场景和它们各自生成的SQL，都以未使用Transaction触发器作为前提。
-
 ## 基本用法
 
 Update语句用法如下
@@ -127,7 +119,12 @@ Table joins for update statement is forbidden by the current dialect, but there 
 
 -   SpringBoot下的配置
 
-    在`applicaion.yml`或`application.properties`中声明配置，其名为`jimmer.dialect`，其值为`org.babyfish.jimmer.sql.dialect.MySqlDialect`
+    在`applicaion.yml`或`application.properties`中声明方言
+
+    ```title="applicaion.yml"
+    jimmer:
+        dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect
+    ```
 
 -   非SpringBoot下的配置
 
@@ -239,7 +236,12 @@ where
 
 -   SpringBoot下的配置
 
-    在`applicaion.yml`或`application.properties`中声明配置，其名为`jimmer.dialect`，其值为`org.babyfish.jimmer.sql.dialect.PostgresDialect`
+    在`applicaion.yml`或`application.properties`中声明方言配置配置
+
+    ```title="applicaion.yml"
+    jimmer:
+        dialect: org.babyfish.jimmer.sql.dialect.PostgresDialect
+    ```
 
 -   非SpringBoot下的配置
 
@@ -310,7 +312,7 @@ println("Affected row count: $affectedRowCount")
 </TabItem>
 </Tabs>
 
-:::note
+:::caution
 和MySql不同，在Postgres中使用update语句的JOIN存在如下限制
 
 1. 只能在`where`子句中使用表连接，不能在`set`子句中使用表连接。即Postgres还是只允许修改当前表的字段，支持连接到其它表仅仅是为了做条件过滤。
@@ -336,8 +338,7 @@ and
     tb_4_.NAME = ?
 ```
 
-:::note
-
+:::info
 连接路径`author.books().store()`有两级，`books()`是第1级，`store()`是第2级。
 
 1.  第一级`books()`涉及两张表

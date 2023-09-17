@@ -159,8 +159,7 @@ val books = sqlClient
         tb_1_.ID, 
         tb_1_.NAME, 
         tb_1_.EDITION, 
-        tb_1_.PRICE, 
-        tb_1_.STORE_ID 
+        tb_1_.PRICE
     from BOOK as tb_1_ 
     where tb_1_.EDITION = ?
     ```
@@ -371,8 +370,7 @@ val books = sqlClient
         tb_1_.ID, 
         tb_1_.NAME, 
         tb_1_.EDITION, 
-        tb_1_.PRICE, 
-        tb_1_.STORE_ID 
+        tb_1_.PRICE
     from BOOK as tb_1_ 
     where tb_1_.EDITION = ?
     ```
@@ -741,31 +739,43 @@ val books = sqlClient
 
 创建SqlClient时，可以更改全局配置:
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
+-   使用Spring Boot
 
-```java
-JSqlClient sqlClient = JSqlClient
-    .newBuilder()
-    .setDefaultBatchSize(256)
-    .setDefaultListBatchSize(32)
-    ....
-    build();
-```
+    为`application.yml` or `application.properties`假如如下配置
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+    ```title="application.yml"
+    jimmer:
+        default-batch-size: 256
+        default-list-batch-size: 32
+    ```
 
-```kotlin
-val sqlClient = newKSqlClient {
-    setDefaultBatchSize(256)
-    setDefaultListBatchSize(32)
-    ....
-    }
-```
+-   使用底层API
 
-</TabItem>
-</Tabs>
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    JSqlClient sqlClient = JSqlClient
+        .newBuilder()
+        .setDefaultBatchSize(256)
+        .setDefaultListBatchSize(32)
+        ....
+        build();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val sqlClient = newKSqlClient {
+        setDefaultBatchSize(256)
+        setDefaultListBatchSize(32)
+        ....
+        }
+    ```
+
+    </TabItem>
+    </Tabs>
 
 :::caution
 无论是对象抓取器级的batchSize，还是全局级的batchSize，都不要超过1000，因为Oracle数据库中`in(...)`最多允许1000个值。

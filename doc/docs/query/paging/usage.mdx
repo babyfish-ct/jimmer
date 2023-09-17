@@ -25,23 +25,9 @@ Pagination requires executing two SQL queries:
     :::
     
 :::tip
-Jimmer's feature: The developer only needs to write the `data-query`, and the framework automatically generates the `count-query`.  
-:::
+Jimmer's feature: The developer only needs to write the `data-query` *(actual `data-query` without limit and offset)*, and the framework automatically generates the `count-query`.  
 
-In addition, the `count-query` can actually be optimized. 
-
-Let's look at a scenario that can be optimized. In the data-query there is a JOIN that satisfies the following conditions:
-
--   This JOIN operation results in a table that is not used by any `where` conditions, but is used elsewhere in ways that do not affect the number of rows, such as `orderBy`.
-
--   The direction of this JOIN is from the child table to the parent table *(i.e. one-to-one and many-to-one associations)*, so the join result does not produce duplicate data. That is, this JOIN does not cause the data to grow.
-
--   This JOIN has a true foreign key *(i.e. there is a foreign key constraint, see [Real and Fake Foreign Keys](../../mapping/base/foreignkey))*, and it is non-null. So this JOIN does not cause the data to shrink.
-
-Then it can be safely removed from the count-query to achieve optimization. 
-
-:::tip
-Not only can Jimmer automatically generate `count-query`, it can also optimize `count-query`.
+Not only can Jimmer automatically generate `count-query`, it can also optimize `count-query`. This optimization will be discussed in [next article](./unncessary-join).
 :::
 
 ## When Used with Spring Boot  
@@ -119,10 +105,10 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
                 storeName?.takeIf { it.isNotEmpty() }?.let {
                     where(table.store.name eq it)
                 }
-                orderBy(pageable.sort) ❶
+                orderBy(pageable.sort) ①
                 select(table)
             }
-            .fetchPage( ❷
+            .fetchPage( ②
                 pageable.pageNumber, 
                 pageable.pageSize
             )
@@ -132,19 +118,19 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
 </TabItem>
 </Tabs>
 
--   ❶ or ❷
+-   ❶ or ②
 
-    - ❶ Java:
+    -   ❶ Java:
     
         Call the `pager` method of the super interface to create a helper object, and call the `execute` method of that object to implement paged query.
         
         The parameter of `execute` is an unexecuted query, which serves as the template for the `data-query`:
         
-    - ❷ Kotlin:
+    -   ② Kotlin:
         
         Kotlin API extends `fetchPage` function for `KConfigurableRootQuery<*, E>` type, calling it implements paged query.
         
--   ❷ or ❶ Since Spring Data's `Pageable` contains dynamic sorting, dynamic sorting needs to be applied.  
+-   ❷ or ① Since Spring Data's `Pageable` contains dynamic sorting, dynamic sorting needs to be applied.  
 
 -   ❸ After `select`, the query itself is not executed, indicating this is an unexecuted query.
 
@@ -262,6 +248,7 @@ public Page<Book> findBooks(
     pageIndex,
     pageSize, 
     (entities, totalCount, queryImplementor) ->
+        // highlight-next-line
         new Page<>(
             totalCount,
             (totalCount + pageSize - 1) / pageSize,
@@ -298,6 +285,7 @@ fun findBooks(
         pageIndex,
         pageSize
     ) { entities, totalCount, _ ->
+        // highlight-next-line
         Page(
             totalCount,
             (totalCount + pageSize - 1) / pageSize,
@@ -367,15 +355,15 @@ To simplify the discussion, this pseudocode does not consider [reverse sorting o
     public interface ConfigurableRootQuery<T extends Table<?>, R> extends ... {
 
         default int count() {
-        return count(null);
+            return count(null);
         }
         
         default int count(Connection con) {
-        return reselect((q, t) -> q.select(t.count()))
-            .withoutSortingAndPaging()
-            .execute(con)
-            .get(0)
-            .intValue();
+            return reselect((q, t) -> q.select(t.count()))
+                .withoutSortingAndPaging()
+                .execute(con)
+                .get(0)
+                .intValue();
         }
     }
     ```
@@ -430,7 +418,12 @@ Different databases have vastly different support for pagination queries. So whe
 
 -   Spring Boot configuration method:  
 
-    Add a configuration in `application.properties` or `application.yml` called `jimmer.dialect` with value as the class name of the dialect class provided by Jimmer, such as `org.babyfish.jimmer.sql.dialect.H2Dialect`.
+    Add a configuration in `application.properties` or `application.yml` called `jimmer.dialect` with value as the class name of the dialect class provided by Jimmer:
+    
+    ```title="application.yml"
+    jimmer:
+        dialect: org.babyfish.jimmer.sql.dialect.H2Dialect
+    ```
 
 -   Non-Spring Boot configuration method:
 
@@ -541,7 +534,10 @@ limit ?, ?
       from BOOK as tb_1_
       left join BOOK_STORE as tb_2_
         on tb_1_.STORE_ID = tb_2_.ID
-      where tb_
+      core__ where rownum <= ? ❶
+    ```
+
+    Where ❶ is the variable `limit`.
 
 ## Used with Object Fetcher
 
@@ -573,6 +569,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
         @Nullable String name,
         @Nullable String storeName
     ) {
+        // highlight-next-line
         return pager(pageable).excute(
             sql()
                 .createQuery(table)
@@ -585,8 +582,10 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
                     table.store().name().eq(storeName)
                 )
                 .orderBy(SpringOrders.toOrders(table, pageable.getSort()))
-                // highlight-next-line
-                .select(table)
+                .select(
+                    // highlight-next-line
+                    table.fetch(fetcher)
+                )
         );
     }
 }
@@ -619,8 +618,10 @@ interface BookRepository<Book, Long> : KRepository<Book, Long> {
                     where(table.store.name eq it)
                 }
                 orderBy(pageable.sort)
-                // highlight-next-line
-                select(table.fetch(fetcher))
+                select(
+                    // highlight-next-line
+                    table.fetch(fetcher)
+                )
             }
             // highlight-next-line
             .fetchPage(
@@ -714,7 +715,7 @@ It will generate the following 4 SQL statements:
     limit ? /* 5 */, ? /* 5 */
     ```
     
--   Query the one-to-many association `Book.store` for the 5 paged objects
+-   Query the many-to-one association `Book.store` for the 5 paged objects
 
     ```sql
     select

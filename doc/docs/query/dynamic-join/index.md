@@ -11,4 +11,4 @@ We will introduce the following contents:
 -   [Optimizing unnecessary connections](./optimization)
 -   [Pagination safety](./table-ex)
 -   [Weak join](./weak-join)
--   [Kotlin table connection special features](./kotlin-join.mdx)
+-   [Kotlin table join special features](./kotlin-join.mdx)

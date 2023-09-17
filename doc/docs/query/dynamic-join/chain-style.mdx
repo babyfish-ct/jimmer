@@ -10,7 +10,7 @@ How Jimmer solves the dynamic join problem will be discussed in subsequent docs.
 
 ## Basic Concepts
 
-Firstly, Jimmer does not support theoretical joins that exist but are barely used in actual projects and should be carefully avoided to prevent cartesian products.
+Firstly, Jimmer does not support cartesian products which is exists in theoretical and should be carefully avoided in actual projects.
 
 Thus, Jimmer's SQL DSL does not need to support multiple `from` clauses. All cross-table operations are unified as `join`.
 

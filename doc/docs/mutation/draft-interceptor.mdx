@@ -6,14 +6,6 @@ title: Interceptor
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Premise of This Article
-
-Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers.
-
-If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
-
-The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
-
 ## Define Intercepted Data Format  
 
 Draft interceptors work with [Save Command](./save-command) to adjust data before objects are saved.
@@ -71,7 +63,7 @@ interface BaseEntity {
 All entities that need these fields can derive from this superclass.
 
 :::note
-The `@OnDissociate(DissociateAction.SET_NULL)` here is to prevent deletion operations on related `User` data from being blocked due to these two foreign keys. When related `User` is deleted, these two foreign keys are automatically cleared.
+The `@OnDissociate(DissociateAction.SET_NULL)` here is to prevent deletion operations on associated `User` data from being blocked due to these two foreign keys. When associated `User` is deleted, these two foreign keys are automatically cleared.
 :::
 
 ## Define Interceptor  
@@ -164,7 +156,7 @@ If the `isNew` parameter is true, it means the subsequent operation is an insert
 Please do not modify properties decorated with `@Id` or `@Key` in the `beforeSave` method.
 :::
 
-### Configure Interceptor in Spring
+### Using Jimmer Spring Starter
 
 In the above, the class `BaseEntityDraftInterceptor` is decorated with `@Component`, obviously a Spring-managed object.
 
@@ -174,13 +166,9 @@ If using Spring Boot Starter and ensuring the interceptor is Spring-managed, the
 Otherwise, it must be manually registered.
 :::
 
-### Configure Interceptor in Low Level API
+### Not Using Jimmer Spring Starter
 
-Attach the interceptor to the SqlClient object to take effect.
-
-## Configure Interceptor
-
-Attaching the interceptor to the SqlClient object makes it take effect:
+If jimmer spring starter is not used, attaching the interceptor to the SqlClient object makes it take effect:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">

@@ -1,12 +1,12 @@
 ---
 sidebar_position: 2
-title: Regular Properties
+title: Ordinary Properties
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-### Fetching Scalar Fields
+## Fetching Scalar Fields
 
 Scalar fields refer to all non-associative fields in a database table. Taking fetching the book name as an example:
 
@@ -87,7 +87,7 @@ The printed result is (original output is compact, formatted here for readabilit
 ]
 ```
 
-### Fetching Multiple Fields
+## Fetching Multiple Fields
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -172,7 +172,7 @@ The printed result is (original output is compact, formatted here for readabilit
 ]
 ```
 
-### Fetching All Scalar Fields
+## Fetching All Scalar Fields
 
 In some scenarios, fetching all non-associative fields is a very common operation, so `allScalarFields()` is provided to load all non-associative fields.
 
@@ -243,13 +243,13 @@ The printed result is (original output is compact, formatted here for readabilit
 ``` 
 
 :::info
-`allScalarFields()` only loads non-associative fields. In the example we can see it queries `id`, `name`, `edition`, `price`, but does not query the associative properties `store` and `authors`. 
+`allScalarFields()` only loads non-associative fields. In the example we can see it queries `id`, `name`, `edition`, `price`, but does not query the association properties `store` and `authors`. 
 
-Fetching associative properties will be covered in [the next document](./association).
+Fetching association properties will be covered in [the next document](./association).
 :::
 
 
-### Negative Properties (Exclude Unneeded Properties) 
+## Negative Properties
 
 The previously discussed properties are positive properties that incrementally add fields to query. But in some cases, we only need to exclude some specific fields, while querying all other fields.
 
