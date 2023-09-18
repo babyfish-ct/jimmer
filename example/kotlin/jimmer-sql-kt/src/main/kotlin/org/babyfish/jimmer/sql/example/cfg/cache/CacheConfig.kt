@@ -39,7 +39,7 @@ class CacheConfig {
         /*
          * Single-view caches:
          *      - All object caches
-         *      - `Book.store` (not used)
+         *      - `Book.store`
          *      - `Book.authors`
          *      - `TreeNode.parent`
          *      - `TreeNode.childNodes`
