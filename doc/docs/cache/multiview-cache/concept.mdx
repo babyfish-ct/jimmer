@@ -9,11 +9,11 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 ## Concepts
 
-Up to now, the caches we have introduced are all single-view caches, where all clients see the same cache.
+Up to now, the caches we have introduced are all single-view caches, where all clients see the same cached data.
 
-However, often times, different clients will see different data, which is usually caused by permission systems.
+However, often times, different clients will see different persistent data, which is usually caused by permission systems.
 
-Since different clients will see different data, we naturally also expect different clients to see different caches, that is, the cache provides different views for different clients.
+Since different clients will see different persistent data, we naturally also expect different clients to see different cache data, that is, the cache provides different views for different clients.
 
 Multi-view cache solves this problem very well by allowing different clients to see different caches. 
 

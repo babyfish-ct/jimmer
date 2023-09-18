@@ -36,6 +36,20 @@ class CacheConfig {
 
         val redisTemplate = RedisCaches.cacheRedisTemplate(connectionFactory)
 
+        /*
+         * Single-view caches:
+         *      - All object caches
+         *      - `Book.store` (not used)
+         *      - `Book.authors`
+         *      - `TreeNode.parent`
+         *      - `TreeNode.childNodes`
+         *
+         * Multiple-view caches:
+         *      - `BookStore.books`
+         *      - `Author.books`
+         *      - `BookStore.avgPrice`
+         *      - `BookStore.newestBooks`
+         */
         return object : AbstractKCacheFactory() {
 
             // Id -> Object

@@ -269,7 +269,7 @@ println(stores)
 
 ### 响应触发器
 
-:::caution
+:::info
 和对象缓存、关联缓存那种全自动的缓存一致性不同，计算缓存的一致性维护需要用户辅助。
 
 这是因为计算属性引入了ORM框架无法理解的用户自定义计算规则
@@ -508,7 +508,7 @@ class BookStoreAvgPriceResolver(
 :::tip
 如果监听多对一关联`Book.store`的变化，那么就需要针对修改前的旧值和修改后的新值处理两个父对象，还要考虑它们是否为null。
 
-幸运的是，本例所基于的实体模型中，存在逆向的一对多关联`BookStore.books`。
+幸运的是，本例所基于的实体模型中，存在逆向的一对多关联`BookStore.books`，我们可以使用它来简化代码。
 
 如果监听一对多关联`BookStore.books`的变化，我们只需要考虑当前`BookStore`对象的id即可，代码会得到简化，如下
 :::
@@ -701,7 +701,7 @@ fun onEntityChange(e: EntityEvent<*>) {
     当以上条件满足时，我们需要清理其所属书店的计算属性`BookStore.avgPrice`的计算缓存。
 
 -   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)`表示，
-    如果基于外键的`Book.store`没有被修改，返回其一个`Ref`包装对象，其内是未被修改的关联对象。如果该动态对象非null，则只有id属性。
+    如果基于外键的`Book.store`没有被修改，返回其一个`Ref`包装对象，其内是未被修改的关联对象。如果该关联对象非null，则只有id属性。
 
     :::info
     -   如果`getUnchangedRef`返回的包装对象`Ref`本身为null，表示这个属性被修改了，并非`Unchanged`属性。
