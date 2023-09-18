@@ -6,8 +6,6 @@ title: Association Cache
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { ViewMore } from '@site/src/components/ViewMore';
-import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
 import {AssociationCache} from '@site/src/components/Image';
 
 Association cache refers to mapping the current object id to the associated object id or collection.
@@ -27,7 +25,7 @@ If a one-to-one or many-to-one association is based on a real foreign key with a
 
 In other cases, Jimmer will use one-to-one or many-to-one association cache. These cases include:
 
--   The referenced association property is reverse mapped
+-   The referenced association property is reverse side
 
     That is, `@OneToOne`'s `mappedBy` is configured.
 
@@ -35,18 +33,17 @@ In other cases, Jimmer will use one-to-one or many-to-one association cache. The
 
     A pseudo foreign key means that it is conceptually a foreign key in the developer's mind, but there is no corresponding foreign key constraint in the database.
 
-    The pseudo foreign key field may contain illegal values. Being non-null does not mean the associated object exists, so association cache is required to filter out valid associated objects.
+    The pseudo foreign key field may contain illegal values, the non-null value does not mean the associated object exists, so association cache is required to filter out valid associated objects.
     
 -   The referenced association property is based on a join table rather than a foreign key. 
 
--   For an existing Jimmer object, lazily loading a one-to-one or many-to-one associated object when the association property is absent.
-
-    This special case will appear when using Jimmer to implement GraphQL. It basically does not appear in other cases. 
+-   When [implementing GraphQL with Jimmer](../../graphql), [Object Fetcher](../../query/object-fetcher) *(GraphQL and Object Fetchers are homogenous functions)* should not be used in aggregate root queries, 
+    but object fetcher were incorrectly used in aggregate root queries to obtain objects without foreign keys. However, the GraphQL request body contains many-to-one associations.
 :::
 
 In the official sample code included, the many-to-one association `Book.store` is based on a real foreign key, so its many-to-one cache will not be used.
 
-Therefore, the examples in this article are based on the one-to-many association `BookStore.books` and the many-to-many association `Book.authors`.
+Therefore, the examples in this article use the one-to-many association `BookStore.books` and the many-to-many association `Book.authors`.
 
 ## Enabling Association Cache
 
@@ -388,6 +385,75 @@ println(stores)
     In the cache configuration, if association cache is enabled for an association property but object cache is not enabled for its associated object type, an exception will be thrown.
     :::
 
+:::info
+Previously in [Object Fetcher](../../query/object-fetcher), we saw that Jimmer only needs one SQL statement to query all associated objects based on a batch of current objects, but here two SQL statements are needed, please view:
+
+<ViewMore buttonText="The difference compared to not enabling cache">
+
+# Cache Mode
+
+In cache mode, this example has three execution steps:
+
+1.  Query aggregate root from database
+
+    Regardless of whether cache is enabled, this step is the same, no need to discuss.
+
+2.  Based on the `BookStore.books` association cache, map the aggregate root object id to the associated object id
+
+    If no related data exists in the cache, the following SQL will be executed:
+
+    ```sql
+    select
+        ...omit...
+    from BOOK tb_1_ 
+    where
+        tb_1_.STORE_ID in (
+            ? /* 1 */, ? /* 2 */
+        )
+    order by
+        tb_1_.NAME asc,
+        tb_1_.EDITION desc
+    ```
+
+3.  Based on the `Book` object cache, map the associated object id to the associated object
+
+    If no related data exists in the cache, the following SQL will be executed:
+    ```sql 
+    select
+        ...omit...
+    from BOOK tb_1_
+    where
+        tb_1_.ID in (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?    
+        )
+    ```
+# No Cache Mode
+
+If association cache is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
+
+```sql
+select
+    ...omit...
+from BOOK tb_1_ 
+where
+    tb_1_.STORE_ID in (
+        ? /* 1 */, ? /* 2 */
+    )
+order by
+    tb_1_.NAME asc,
+    tb_1_.EDITION desc
+```
+
+# Difference and Summary
+
+No cache mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
+
+Cache mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the cache system, the overall performance is optimal.
+
+</ViewMore>  
+:::
+
 Finally, Jimmer concatenates the results of the two steps as the final data returned to the user:
 
 ```json
@@ -461,77 +527,7 @@ Finally, Jimmer concatenates the results of the two steps as the final data retu
         ]
     }
 ]
-```  
-
-:::info
-The generated SQL would differ if cache is not enabled:
-
-<ViewMore buttonText="Difference without Cache">
-
-<Divider><Chip label="Cache Mode"/></Divider>
-
-In cache mode, this example has three execution steps:
-
-1.  Query aggregate root from database
-
-    Regardless of whether cache is enabled, this step is the same, no need to discuss.
-
-2.  Based on the `BookStore.books` association cache, map the aggregate root object id to the associated object id
-
-    If no related data exists in the cache, the following SQL will be executed:
-
-    ```sql
-    select
-        ...omit...
-    from BOOK tb_1_ 
-    where
-        tb_1_.STORE_ID in (
-            ? /* 1 */, ? /* 2 */
-        )
-    order by
-        tb_1_.NAME asc,
-        tb_1_.EDITION desc
-    ```
-
-3.  Based on the `Book` object cache, map the associated object id to the associated object
-
-    If no related data exists in the cache, the following SQL will be executed:
-    ```sql 
-    select
-        ...omit...
-    from BOOK tb_1_
-    where
-        tb_1_.ID in (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?    
-        )
-    ```
-
-<Divider><Chip label="No Cache Mode"/></Divider>
-
-If cache is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
-
-```sql
-select
-    ...omit...
-from BOOK tb_1_ 
-where
-    tb_1_.STORE_ID in (
-        ? /* 1 */, ? /* 2 */
-    )
-order by
-    tb_1_.NAME asc,
-    tb_1_.EDITION desc
 ```
-
-<Divider><Chip label="Difference and Summary"/></Divider>
-
-No cache mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
-
-Cache mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the cache system, the overall performance is optimal.
-
-</ViewMore>  
-:::
 
 ### Many-to-Many: Book.authors
 
@@ -675,6 +671,88 @@ println(books)
     In the cache configuration, if association cache is enabled for an association property but object cache is not enabled for its associated object type, an exception will be thrown.
     :::
 
+:::info
+Previously in [Object Fetcher](../../query/object-fetcher), we saw that Jimmer only needs one SQL statement to query all associated objects based on a batch of current objects, but here two SQL statements are needed, please view:
+
+<ViewMore buttonText="The difference compared to not enabling cache">
+
+# Cache Mode
+
+In cache mode, this example has three execution steps:
+
+1.  Query aggregate root from database
+
+    Regardless of whether cache is enabled, this step is the same, no need to discuss.
+
+2.  Based on the `Book.authors` association cache, map the aggregate root object id to the associated object ids
+
+    If no related data exists in the cache, the following SQL will be executed:
+
+    ```sql
+    select
+        tb_1_.BOOK_ID,
+        tb_1_.AUTHOR_ID 
+    from BOOK_AUTHOR_MAPPING tb_1_
+    inner join AUTHOR tb_3_
+        on tb_1_.AUTHOR_ID = tb_3_.ID
+    where
+        tb_1_.BOOK_ID in (
+            ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
+        )
+    order by
+        tb_3_.FIRST_NAME asc,
+        tb_3_.LAST_NAME asc
+    ```
+
+3.  Based on the `Author` object cache, map the associated object ids to associated objects
+
+    If no related data exists in the cache, the following SQL will be executed:
+
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.FIRST_NAME,
+        tb_1_.LAST_NAME,
+        tb_1_.GENDER
+    from AUTHOR tb_1_
+    where
+        tb_1_.ID in (
+            ? /* 2 */, ? /* 1 */, ? /* 4 */, ? /* 3 */, ? /* 5 */ 
+        )
+    ```
+
+# No Cache Mode
+
+If cache is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
+
+```sql
+select
+    tb_2_.BOOK_ID,
+    tb_1_.ID,
+    tb_1_.FIRST_NAME,
+    tb_1_.LAST_NAME,
+    tb_1_.GENDER
+from AUTHOR tb_1_
+inner join BOOK_AUTHOR_MAPPING tb_2_
+    on tb_1_.ID = tb_2_.AUTHOR_ID
+where
+    tb_2_.BOOK_ID in (
+        ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
+    )
+order by
+    tb_1_.FIRST_NAME asc, 
+    tb_1_.LAST_NAME asc
+```
+
+# Difference and Summary
+
+No cache mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
+
+Cache mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the cache system, the overall performance is optimal.
+
+</ViewMore>
+:::
+
 Finally, Jimmer concatenates the 3 steps results as the final data returned to the user:
 
 ```json
@@ -727,92 +805,10 @@ Finally, Jimmer concatenates the 3 steps results as the final data returned to t
 ]
 ```
 
-:::info
-The generated SQL would differ if cache is not enabled:
-
-<ViewMore buttonText="Difference without Cache">
-
-<Divider><Chip label="Cache Mode"/></Divider>
-
-In cache mode, this example has three execution steps:
-
-1.  Query aggregate root from database
-
-    Regardless of whether cache is enabled, this step is the same, no need to discuss.
-
-2.  Based on the `Book.authors` association cache, map the aggregate root object id to the associated object ids
-
-    If no related data exists in the cache, the following SQL will be executed:
-
-    ```sql
-    select
-        tb_1_.BOOK_ID,
-        tb_1_.AUTHOR_ID 
-    from BOOK_AUTHOR_MAPPING tb_1_
-    inner join AUTHOR tb_3_
-        on tb_1_.AUTHOR_ID = tb_3_.ID
-    where
-        tb_1_.BOOK_ID in (
-            ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
-        )
-    order by
-        tb_3_.FIRST_NAME asc,
-        tb_3_.LAST_NAME asc
-    ```
-
-3.  Based on the `Author` object cache, map the associated object ids to associated objects
-
-    If no related data exists in the cache, the following SQL will be executed:
-
-    ```sql
-    select
-        tb_1_.ID,
-        tb_1_.FIRST_NAME,
-        tb_1_.LAST_NAME,
-        tb_1_.GENDER
-    from AUTHOR tb_1_
-    where
-        tb_1_.ID in (
-            ? /* 2 */, ? /* 1 */, ? /* 4 */, ? /* 3 */, ? /* 5 */ 
-        )
-    ```
-
-<Divider><Chip label="No Cache Mode"/></Divider>
-
-If cache is not enabled, this query only needs two steps. The first step is exactly the same. The second step executes the following SQL query:
-
-```sql
-select
-    tb_2_.BOOK_ID,
-    tb_1_.ID,
-    tb_1_.FIRST_NAME,
-    tb_1_.LAST_NAME,
-    tb_1_.GENDER
-from AUTHOR tb_1_
-inner join BOOK_AUTHOR_MAPPING tb_2_
-    on tb_1_.ID = tb_2_.AUTHOR_ID
-where
-    tb_2_.BOOK_ID in (
-        ? /* 1 */, ? /* 4 */, ? /* 7 */, ? /* 10 */
-    )
-order by
-    tb_1_.FIRST_NAME asc, 
-    tb_1_.LAST_NAME asc
-```
-
-<Divider><Chip label="Difference and Summary"/></Divider> 
-
-No cache mode: Generate as few SQL statements as possible, make each SQL statement perform as many tasks as possible, such SQL has the best performance.
-
-Cache mode: Does not aim to minimize the number of generated SQL statements. From the SQL point of view, the performance is not optimal, but combined with the cache system, the overall performance is optimal.
-
-</ViewMore>
-:::
-
-## Consistency
+## Cache Invalidation
 
 :::caution
-To use Jimmer's automatic cache consistency, [triggers](../../mutation/trigger) need to be enabled first.
+To use Jimmer's automatic cache invalidation, [triggers](../../mutation/trigger) need to be enabled first.
 :::
 
 ### One-to-Many: BookStore.books

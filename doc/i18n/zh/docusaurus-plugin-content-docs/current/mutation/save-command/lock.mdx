@@ -140,9 +140,9 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     </Tabs>
 
     :::tip
-    对插入操作而言，如果对象的version并未被赋值，Jimmer自动插入0。
+    对插入操作而言，如果对象的version并未被赋值，Jimmer自动插入**0**。
 
-    然而，在这种情况下，后文即将讨论的修改操作会抛出异常。因此，如果你无法断言某个UPSERT模式的保存指令最终会被判定为`INSERT`还是`UPDATE`，则应该坚持指定`version`属性。
+    如果你无法断言某个UPSERT模式的保存指令最终会被判定为`INSERT`还是`UPDATE`，则应该坚持指定`version`属性。
 
     下面的例子，基于一个假设，明确知道`save`操作一定会被判定为`INSERT`，而非`UPDATE`，所以未指定对象的`version`属性。
     :::
@@ -265,7 +265,7 @@ Jimmer使用注解`@org.babyfish.jimmer.sql.Version`支持乐观锁。
     如果你无法判断某个UPSERT模式的保存指令最终会被判定为`INSERT`还是`UPDATE`，则应该坚持指定`version`属性。
     :::
 
-    再次执行，由于数据库中已经存在数据，所以三个对象都会被UPDATE。
+    执行，由于数据库中已经存在数据，所以三个对象都会被UPDATE。
     
     很明显，最后一本书籍的version`9999`是非法的，上面的的代码将会得到如下异常：
 

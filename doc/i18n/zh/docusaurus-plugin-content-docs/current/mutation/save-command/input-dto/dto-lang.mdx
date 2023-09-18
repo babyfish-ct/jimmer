@@ -17,6 +17,8 @@ Jimmer提供了[DTO语言](../../../object/view/dto-language)。
 
 -   Input DTO和实体之间的彼此转化逻辑会被自动生成
 
+-   与之形状吻合的对象抓取器会被自动生成。*(这个功能和input DTO无关，所以本文不做论述)*
+
 开发人员用自动生成的Input DTO作为API的入参，一行代码保存它即可 *(内部逻辑：调用自动生成的转化逻辑把Input DTO转化为动态实体对象，再用保存指令直接保存)*。
 
 :::info
@@ -25,7 +27,7 @@ Jimmer提供了[DTO语言](../../../object/view/dto-language)。
 
 ## 定义DTO的形状
 
-本文侧重于讲解如何查询静态DTO类型，并非系统性介绍DTO语言，请参考[对象篇/DTO转换/DTO语言](../../../object/view/dto-language)以了解完整的DTO语言。
+本文侧重于讲解如何保存静态DTO类型，并非系统性介绍DTO语言，请参考[对象篇/DTO转换/DTO语言](../../../object/view/dto-language)以了解完整的DTO语言。
 
 假如`Book`类的全名为`com.yourcompany.yourpoject.model.Book`，你可以
 
@@ -56,7 +58,7 @@ Jimmer提供了[DTO语言](../../../object/view/dto-language)。
     ...省略其他Input DTO形状定义...
     ```
 
-    :::caution
+    :::info
     用作输入参数的Input DTO的形状定义必须用`input`修饰符修饰。
     
     具体原因已经在[对象篇/DTO转换/DTO语言](../../../object/view/dto-language)中有详细的阐述，本文不再赘述
@@ -70,6 +72,8 @@ Jimmer负责编译dto文件，自动生成符合这些形状的DTO类型。
 如果除了dto文件外还有其他Java/Kotlin原代码文件被修改了，直接点击IDE中运行按钮可以导致dto文件的重新编译
 
 但是，如果除了dto文件外没有其他Java/Kotlin文件被修改，简单地点击IDE中运行按钮并不会导致dto文件被重新编译，除非显式地rebuild！
+
+未来会思考如何解决这个问题，提供更好的服务。
 :::
 
 以上面代码中的`BookInput`为例，此dto文件被Jimmer成功编译后，会自动生成如下DTO类型

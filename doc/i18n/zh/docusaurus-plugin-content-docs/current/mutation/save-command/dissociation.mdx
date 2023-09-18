@@ -72,9 +72,9 @@ import { ViewMore } from '@site/src/components/ViewMore';
 :::info
 在本文中，为了尽可能简化生成的SQL，让我们聚焦于关联本身和脱勾操作
 
--   所有被保存对象一律只指定id属性
+-   所有被保存对象一律只指定id属性 *(短关联)*
 
--   聚合根对象的保存模式一律明确指定为UPDATE_ONLY *(本采用调用update方法的写法)*
+-   聚合根对象的保存模式一律明确指定为UPDATE_ONLY *(本文采用调用update方法的写法)*
 :::
 
 ## 脱勾中间表数据
@@ -201,6 +201,9 @@ sqlClient.update(
             (? /* 3 */, ? /* 1 */)
         )
     ```
+    :::info
+    这就是我们期望的中间表脱钩操作
+    :::
 
 3.  新建`Book-3`和`Author-5`之间的关联
 
@@ -230,7 +233,7 @@ sqlClient.update(
 
 -   DELETE: 将被脱勾的子对象删除
 
-:::tip
+:::info
 虽然子对象脱勾是由于一对多关联导致的 *(即，父对象遗弃某些子对象，本例的一对多关联为`BookStore.books`)*，但是脱勾模式的配置针对逆向的多对一关联 *(本例为`Book.store`)*，这样设计的目的是为了保持和数据库DDL外键的级联特性配置的相似性。
 
 对于Jimmr而言，一对多关联一定是双向关联，知道某个一对多关联，一定知道与其互为镜像的多对一关联。所以，此设计没有任何问题。
@@ -326,6 +329,8 @@ where STORE_ID = 2
 |12|GraphQL in Action|3|80.00|2|
 |11|GraphQL in Action|2|81.00|2|
 |10|GraphQL in Action|1|80.00|2|
+
+可见，`BookStore-2`持有`Book-10`、`Book-11`和`Book-12`。
 
 现在，更新此`BookStore`对象
 
@@ -452,13 +457,13 @@ sqlClient.update(
         where
             STORE_ID = ? /* 2 */
             and
-            ID not in (
+            ID not in ( /* 注意`not` */
                 ? /* 9 */, ? /* 10 */
             )
         ```
 
-        :::note
-        请注意SQL中的`not`
+        :::info
+        请注意SQL中的`not`，这就是`SET_NULL`模式对子表的脱钩操作。
         :::
 
 -   `DELETE`
@@ -520,7 +525,9 @@ sqlClient.update(
         ```
 
     :::tip
-    事实上，步骤3和步骤4是一个整体，因后续要讨论的[删除指令](../delete-command)所致。
+    步骤3和步骤4是一个整体，它们共同组成了脱钩操作。
+
+    事实上，这就是后续文档要介绍的[删除指令](../delete-command)。
     :::
 
 :::info
@@ -534,11 +541,7 @@ sqlClient.update(
 
     -   指定`key`属性以及一些既非`id`也非`key`的属性 *(<ViewMore buttonText="长关联"><LongAssociation/></ViewMore>)*
 
-    :::note
-    短关联和长关联这两个概念已经讨论过，如果忘记，请回顾[保存关联](./association#关联类型)
-    :::
-
 本文如此简化的例子，只是为了让保存指令生成的SQL尽可能简单，让读者能快速明白脱钩操作的特性。
 
-至于格式更复杂的关联对象，读者可以自行尝试，也可以直接参考官方例子[example/java/save-command](https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command)或[example/kotlin/save-command-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt)。但这些功能仍然存在，无外乎生成SQL语句更多，被隐藏的细节更繁琐而已。
+至于格式更复杂的关联对象，读者可以自行尝试，也可以直接参考官方例子[example/java/save-command](https://github.com/babyfish-ct/jimmer/tree/main/example/java/save-command)或[example/kotlin/save-command-kt](https://github.com/babyfish-ct/jimmer/tree/main/example/kotlin/save-command-kt)。这些功能仍然存在，无外乎生成SQL语句更多，被隐藏的细节更繁琐而已。
 :::

@@ -102,6 +102,10 @@ Executing the code will generate two SQL statements:
             ID = ? /* 20 */
         ```
 
+:::info
+Some databases support `UPSERT` *(such as Postgres' `insert into ... on conflict ...`)*, which will be supported before Jimmer-1.0.0
+:::
+
 The usage of the other two modes is simple:
 
 -   INSERT_ONLY:
@@ -181,11 +185,11 @@ Here, `Book.id` is decorated with `@GeneratedValue` using auto increment. So spe
 
 There are two ways to insert an object without an id property:
 
--   Not specifying @Key property 
+-   Not specifying [@Key](../../mapping/advanced/key) property 
 
--   Specifying @Key property
+-   Specifying [@Key](../../mapping/advanced/key) property
 
-`@Key` is a very important concept in save commands that will be explained in detail later. It is not discussed here. 
+[@Key](../../mapping/advanced/key) is a very important concept in save commands that will be explained in detail later. It is not discussed here. 
 
 ### Not Specifying @Key Property *(Not Recommended)*
 
@@ -220,17 +224,17 @@ sqlClient.save(book)
 </TabItem>
 </Tabs>
 
-Obviously, the id property of the object to be saved is not specified, and the `Book` type does not declare a `@Key` property either. So this is an object without neither id nor key.  
+Obviously, the id property of the object to be saved is not specified, and the `Book` type does not declare a [@Key](../../mapping/advanced/key) property either. So this is an object without neither id nor key.  
 
-:::warning
-Here, the object without neither id nor key is the aggregate root. 
+:::info
+In this article, the objects with neither id nor key that we discuss are aggregate roots.
 
-However, for associated objects, by default, associated objects without neither id nor key will lead to exceptions. This will be discussed in later docs.
+For associated objects, having neither id nor key will cause exceptions by default. This will be discussed in subsequent documentations.
 :::
 
 Trying to save an aggregate root object without neither id nor key results in different behaviors for different save modes:
 
--   UPSERT: Insert the object without querying or checking, same as INSERT_ONLY.
+-   UPSERT: Insert the object without querying and checking, same as INSERT_ONLY.
 
 -   INSERT_ONLY: Insert the object.
 
@@ -303,7 +307,7 @@ As long as the `id` of an entity serves no purpose other than being a unique ide
 
     -   Use annotation to statically configure it globally.
 
-    -   Dynamically configure it in code, but dynamic configuration only affects the current save command, and can override static configuration.
+    -   Dynamically configure it in code, dynamic configuration only affects the current save command, and it can override static configuration.
 
     Below we demonstrate both approaches:
 
@@ -475,6 +479,10 @@ As long as the `id` of an entity serves no purpose other than being a unique ide
             where
                 ID = ? /* 20 */
             ```
+
+        :::info
+        Some databases support `UPSERT` *(such as Postgres' `insert into ... on conflict ...`)*, which will be supported before Jimmer-1.0.0
+        :::
         
         :::caution
         Once Key properties are declared for an entity type, for objects to be saved *(whether aggregate root or not)*: 
@@ -487,9 +495,9 @@ As long as the `id` of an entity serves no purpose other than being a unique ide
             
             - Either must be `null`
             
-            - Or must at least have the `id` property
+            - Or must be associated object with its `id` property
         
-        Otherwise, the save command will throw an exception indicating some `key` properties are not set for the object.
+        Otherwise, the save command will throw an exception indicating some `key` properties are not set.
         :::
 
 ## Summary

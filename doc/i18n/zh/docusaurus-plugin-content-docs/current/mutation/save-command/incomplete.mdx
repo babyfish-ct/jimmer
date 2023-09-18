@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 
 为了说明不完整对象的价值，让我们来看一个实际的例子，将id为8的`Book`的`store`修改为null。
 
-为了实现这个目的，我们有两种方式
+看起来，似乎有两种方法可以实现这个功能：
 
 -   通过[修改语句](../update-statement)执行一条UPDATE语句
 
@@ -80,3 +80,7 @@ set
 where
     ID = ? /* 8 */
 ```
+
+:::info
+所以，请忘记以前那种低效的模式：查询->修改->保存
+:::

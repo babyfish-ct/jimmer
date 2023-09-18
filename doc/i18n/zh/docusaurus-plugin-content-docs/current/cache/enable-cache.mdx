@@ -11,7 +11,10 @@ import { ObjectCache, AssociationCache, CalculatedCache } from "@site/src/compon
 
 ## CacheFactory接口
 
-要启用缓存，首先需要实现`CacheFactory`接口，该接口定义如下
+要启用缓存，首先需要实现`CacheFactory`/`KCacheFactory`接口，该接口定义如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
 
 ```java title="CacheFactory.java"
 package org.babyfish.jimmer.sql.cache;
@@ -47,6 +50,25 @@ public interface CacheFactory {
 }
 ```
 
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="KCacheFactory.kt"
+package org.babyfish.jimmer.sql.kt.cache
+
+import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.sql.cache.Cache
+import org.babyfish.jimmer.sql.cache.CacheFactory
+
+interface KCacheFactory : CacheFactory {
+
+    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>?
+}
+```
+
+</TabItem>
+</Tabs>
+
 :::info
 对于Kotin而言，为了在覆盖`createAssociatedIdListCache`时让IDE生成更好的代码，请实现`org.babyfish.jimmer.sql.kt.cache.KCacheFactory`接口。
 
@@ -61,13 +83,19 @@ Jimmer调用此接口初始化缓存系统，用户实现此接口回答问题
 
     所谓<ViewMore buttonText="对象缓存"><ObjectCache/></ViewMore>，指把id映射为实体对象
     
-    :::note
-    该实体对象是孤单的，除了当前表自身的外键所对应的多对一 *(或一对一)* 关联表现为只有id的关联对象外，没有其他关联属性。
+    :::info
+    该实体对象是孤单的，没有关联属性。
+
+    基于外键的一对一/多对一关联除外，它们可以持有只有id属性的关联对象，因为关联对象的id其实就是当前表的外键字段。
     :::
 
 -   createAssociatedIdCache和createAssociatedIdListCache：启用关联缓存
 
-    `createAssociatedIdCache`和`createAssociatedIdListCache`都用于启用关联缓存。二者唯一的区别是，前者针对一对一或多对一关联，后者针对一对多或多对多关联。
+    `createAssociatedIdCache`和`createAssociatedIdListCache`都用于启用关联缓存。二者唯一的区别是：
+    
+    -   `createAssociatedIdCache`： 一对一或多对一关联
+    
+    -   `createAssociatedIdListCache`：一对多或多对多关联
 
     参数指定一个[关联属性](../mapping/base/association)，如果想让它支持关联缓存，就创建缓存并返回；否则返回null。
 
@@ -185,7 +213,7 @@ public class ChainCacheBuilder<K, V> {
 
 如果采用Jimmer的SpringBoot Starter，则可以使用三个缓存技术适配类，如同上文代码中那样
 
-|适配类|实现接口|支持多视角缓存|
+|Jimmer内置的适配类|实现接口|支持多视角缓存|
 |---|---|---|
 |org.babyfish.jimmer.spring.cache.CaffeineBinder|org.babyfish.jimmer.sql.cache.chain.LoadingBinder|否|
 |org.babyfish.jimmer.spring.cache.RedisValueBinder|org.babyfish.jimmer.sql.cache.chain.SimpleBinder|否|
@@ -241,6 +269,7 @@ fun cacheFactory(): KCacheFactory =
 ```java
 JSqlClient sqlClient = JSqlClient
     .newBuilder()
+    // highlight-next-line
     .setCacheFactory(
         new CacheFactory() {
                 ...省略代码...
@@ -256,6 +285,7 @@ JSqlClient sqlClient = JSqlClient
 
 ```kotlin
 val sqlClient = newKSqlClient {
+    // highlight-next-line
     setCacheFactory(
         object: KCacheFactory {
             ...省略代码...
