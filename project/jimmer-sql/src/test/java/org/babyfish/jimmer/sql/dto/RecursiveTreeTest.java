@@ -103,11 +103,11 @@ public class RecursiveTreeTest extends Tests {
                         "--->--->--->childNodes=[" +
                         "--->--->--->--->RecursiveTree.TargetOf_childNodes(" +
                         "--->--->--->--->--->name=Cococla, " +
-                        "--->--->--->--->--->childNodes=[]" +
+                        "--->--->--->--->--->childNodes=null" +
                         "--->--->--->--->), " +
                         "--->--->--->--->RecursiveTree.TargetOf_childNodes(" +
                         "--->--->--->--->--->name=Fenta, " +
-                        "--->--->--->--->--->childNodes=[]" +
+                        "--->--->--->--->--->childNodes=null" +
                         "--->--->--->--->)" +
                         "--->--->--->]" +
                         "--->--->)" +

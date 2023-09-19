@@ -44,7 +44,7 @@ class JacksonTest {
             name = "SQL in Action",
             edition = 1,
             price = BigDecimal("79.9"),
-            store = CompositeBookInput.TargetOf_store(name = "TURING"),
+            store = CompositeBookInput.TargetOf_store(name = "TURING", version = 0),
             authors = listOf(
                 CompositeBookInput.TargetOf_authors(
                     firstName = "Jim",

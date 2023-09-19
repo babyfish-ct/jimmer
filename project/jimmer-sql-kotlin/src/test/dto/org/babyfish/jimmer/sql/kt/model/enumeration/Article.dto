@@ -19,3 +19,15 @@ input ArticleInput {
         }
     }
 }
+
+input ArticleNullableInput {
+    #allScalars
+    writer? {
+        #allScalars
+    }
+}
+
+input ArticleNullableIdInput {
+    #allScalars
+    id(writer)?
+}
