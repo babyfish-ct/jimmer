@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.loader.graphql;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ast.table.Table;
 

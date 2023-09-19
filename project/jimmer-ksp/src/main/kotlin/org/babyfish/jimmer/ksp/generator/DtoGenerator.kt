@@ -473,7 +473,7 @@ class DtoGenerator private constructor(
                                                     propElementName(prop)
                                                 )
                                                 if (prop.baseProp.isList) {
-                                                    if (prop.baseProp.isList && prop.isNullable) {
+                                                    if (!prop.isRecursive && prop.baseProp.isList && prop.isNullable) {
                                                         add("?.takeIf { it.isNotEmpty() }")
                                                     }
                                                 }
@@ -515,7 +515,7 @@ class DtoGenerator private constructor(
                                                     prop.baseProp.targetType!!.idProp!!.name
                                                 }
                                             )
-                                            if (prop.isNullable && prop.baseProp.isList) {
+                                            if (!prop.isRecursive && prop.isNullable && prop.baseProp.isList) {
                                                 add("?.takeIf { it.isNotEmpty() }")
                                             }
                                         }

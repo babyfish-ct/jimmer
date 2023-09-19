@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
-import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -88,8 +87,4 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     JSqlClientImplementor disableSlaveConnectionManager();
 
     Loaders getLoaders();
-
-    Caches getCaches();
-
-    Filters getFilters();
 }

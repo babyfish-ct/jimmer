@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.common.AbstractTest
+import org.babyfish.jimmer.sql.kt.impl.KSqlClientImplementor
 import org.babyfish.jimmer.sql.kt.model.ENTITY_MANAGER
 import org.babyfish.jimmer.sql.kt.newKSqlClient
 import org.babyfish.jimmer.sql.runtime.ConnectionManager
@@ -42,7 +43,7 @@ class MicroServiceExchangeImpl() : MicroServiceExchange {
         ids: Collection<*>,
         fetcher: Fetcher<*>
     ): List<ImmutableSpi> {
-        return MicroServiceExporter(sqlClient(microServiceName).javaClient)
+        return MicroServiceExporter((sqlClient(microServiceName) as KSqlClientImplementor).javaClient)
             .findByIds(ids, fetcher)
     }
 
@@ -52,7 +53,7 @@ class MicroServiceExchangeImpl() : MicroServiceExchange {
         targetIds: Collection<*>,
         fetcher: Fetcher<*>
     ): List<Tuple2<Any, ImmutableSpi>> {
-        return MicroServiceExporter(sqlClient(microServiceName).javaClient)
+        return MicroServiceExporter((sqlClient(microServiceName) as KSqlClientImplementor).javaClient)
             .findByAssociatedIds(prop, targetIds, fetcher)
     }
 

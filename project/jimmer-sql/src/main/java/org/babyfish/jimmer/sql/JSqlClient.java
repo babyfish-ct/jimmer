@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
+import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -90,6 +91,10 @@ public interface JSqlClient extends SubQueryProvider {
     Associations getAssociations(ImmutableProp immutableProp);
 
     Associations getAssociations(AssociationType associationType);
+
+    Caches getCaches();
+
+    Filters getFilters();
 
     BinLog getBinLog();
 

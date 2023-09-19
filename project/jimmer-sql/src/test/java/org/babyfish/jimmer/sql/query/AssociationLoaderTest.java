@@ -1,11 +1,10 @@
 package org.babyfish.jimmer.sql.query;
 
-import org.babyfish.jimmer.Immutable;
-import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +21,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                     .applyStore(store -> store.setId(manningId));
         });
         anyAndExpect(
-                getSqlClient()
+                ((JSqlClientImplementor)getSqlClient())
                         .getLoaders()
                         .reference(BookTable.class, BookTable::store)
                         .loadCommand(book),
@@ -65,7 +64,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 })
         );
         anyAndExpect(
-                getSqlClient()
+                ((JSqlClientImplementor)getSqlClient())
                         .getLoaders()
                         .reference(BookTable.class, BookTable::store)
                         .batchLoadCommand(books),
@@ -105,7 +104,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
     @Test
     public void testLoadOneToMany() {
         anyAndExpect(
-                getSqlClient()
+                ((JSqlClientImplementor)getSqlClient())
                         .getLoaders()
                         .list(
                                 BookStoreTableEx.class,
@@ -163,7 +162,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 })
         );
         anyAndExpect(
-                getSqlClient()
+                ((JSqlClientImplementor)getSqlClient())
                         .getLoaders()
                         .list(
                                 BookStoreTableEx.class,
@@ -229,7 +228,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
     @Test
     public void loadManyToMany() {
         anyAndExpect(
-                getSqlClient()
+                ((JSqlClientImplementor)getSqlClient())
                         .getLoaders()
                         .list(
                                 BookTableEx.class,
@@ -281,7 +280,7 @@ public class AssociationLoaderTest extends AbstractQueryTest {
                 })
         );
         anyAndExpect(
-                getSqlClient()
+                ((JSqlClientImplementor)getSqlClient())
                         .getLoaders()
                         .list(
                                 BookTableEx.class,
