@@ -42,7 +42,15 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 多视图缓存由[全局过滤器](../../query/global-filter)导致。
 
-只要某个实体被施加了[全局过滤器](../../query/global-filter)，所有以它作为目标类型的关联缓存以及依赖这些关联缓存的计算缓存都需要多视图化。
+:::info
+只要某个实体被施加了[全局过滤器](../../query/global-filter)，
+
+-   所有以它作为目标类型的关联缓存
+
+-   依赖这些关联缓存的计算缓存
+
+都需要多视图化。
+:::
 
 比如，如果为`Book`添加全局过滤器，那么如下这些属性：
 
@@ -60,15 +68,11 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 这里所讨论的[全局过滤器](../../query/global-filter)，不但包含用户自定义的过滤器，还包括[逻辑删除](../../mapping/advanced/logical-deleted)所隐含的内置过滤器。
 
-后续文档会从[逻辑删除](../../mapping/advanced/logical-deleted)和用户自定义过滤器两个方面入手，介绍多视图缓存。
+后续文档会从用户自定义过滤器和[逻辑删除](../../mapping/advanced/logical-deleted)两个方面入手，介绍多视图缓存。
 
 ## SubKey
 
-这一节中，我们需要介绍一个关键的术语：`SubKey`。
-
-:::info
-`SubKey`是非常重要，是后续文档所需的前提概念。
-:::
+`SubKey`是多视图缓存的重要概念，也是后续文档所需的前提概念。
 
 让我们先来看看单视图缓存的结构
 
@@ -181,7 +185,7 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 -   Key
 
-    多视图缓存中的Key，和单视图缓存中的Key无异，表示特定的对象属性，由Jimmer自定决定
+    多视图缓存中的Key，和单视图缓存中的Key无异，表示特定的实体属性，由Jimmer自定决定
 
 -   SubKey
 

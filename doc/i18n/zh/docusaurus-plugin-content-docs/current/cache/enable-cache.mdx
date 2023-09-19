@@ -62,7 +62,17 @@ import org.babyfish.jimmer.sql.cache.CacheFactory
 
 interface KCacheFactory : CacheFactory {
 
-    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>?
+    override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+        null
+
+    override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
+        null
+
+    override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
+        null
+
+    override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
+        null
 }
 ```
 
