@@ -78,7 +78,8 @@ fun sqlClient(dataSource: DataSource): KSqlClient =
 </Tabs>
 
 :::caution
-不要使用普通的方法从连接池借用和归还连接，一定要使用Spring的`org.springframework.jdbc.datasource.DataSourceUtils`
+不要使用普通的方法从连接池借用 *(dataSource.getConnection)* 和归还 *(con.close)* 连接，
+一定要使用Spring的`org.springframework.jdbc.datasource.DataSourceUtils`，因为这可以和Spring的事务管理机制相结合。
 :::
 
 ## 和JdbcTemplate协同

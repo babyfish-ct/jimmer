@@ -8,13 +8,14 @@ import TabItem from '@theme/TabItem';
 
 ## Integrate Spring Transaction
 
-### Use Spring Boot starter
+### Using Spring Boot starter
 
 If using the Spring Boot Starter provided by Jimmer, no extra work is needed. Jimmer will automatically integrate into Spring's transaction management mechanism.
 
-### Don't use Spring Boot Starter 
+### Not Using Spring Boot Starter 
 
-If using Spring only, without the Spring Boot Starter provided by Jimmer. You need to code by yourself to integrate Jimmer into Spring's transaction management mechanism.
+If using Spring only, without the Spring Boot Starter provided by Jimmer. 
+You need to code by yourself to integrate Jimmer into Spring's transaction management mechanism.
 
 Developers need to create `JSqlClient/KSqlClient` and set its `ConnectionManager`. In `ConnectionManager`, use Spring's `org.springframework.jdbc.datasource.DataSourceUtils` to open and close connections.
 
@@ -78,7 +79,9 @@ fun sqlClient(dataSource: DataSource): KSqlClient =
 </Tabs>
 
 :::caution
-Don't use normal methods to borrow and return connections from the connection pool. You must use Spring's `org.springframework.jdbc.datasource.DataSourceUtils`.
+Don't use normal methods to borrow *(dataSource.getConnection)* and return *(con.close)* connections from the connection pool. 
+You must use Spring's `org.springframework.jdbc.datasource.DataSourceUtils`, 
+because this can be combined with Spring's transaction management mechanism.
 :::
 
 ## Work with JdbcTemplate
