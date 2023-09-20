@@ -193,7 +193,7 @@ interface BookRepository : KRepository<BookStore, Long> {
     from BOOK as tb_1_ 
     where
         /* highlight-next-line */ 
-        lower(tb_1_.NAME) like ? /* 实际参数：%g% */ 
+        lower(tb_1_.NAME) like ? /* %g% */ 
     order by 
         tb_1_.NAME asc, 
         tb_1_.EDITION desc
@@ -876,7 +876,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
     -   Java
 
-        创建Pager对象，并执行分页参数，参数是**未**执行的原始查询
+        创建Pager对象，用它对**未**执行的原始查询的进行分页
 
         -   `pager`是从基接口`JRepository/KRepository`继承的方法
         -   `pager`方法有多种重载版本，这里调用的版本参数是pagable对象
@@ -888,7 +888,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
 -   ❹ 从pageable对象中取出sort对象，实施动态排序
 
-现在，我们展示动态排序的用法，为了聚焦在分页逻辑上，除分页外的其他查询参数都指定为null。
+现在，我们展示分页查询的用法，为了聚焦在分页逻辑上，除分页外的其他查询参数都指定为null。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1019,7 +1019,7 @@ order by
     tb_1_.EDITION desc
 /* MySQL分页 */ 
 /* highlight-next-line */
-limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
+limit ?, /* 5(offset) */ ? /* 5(limit) */
 ```
 
 ## 对象抓取器
@@ -1389,7 +1389,7 @@ order by
     tb_1_.NAME asc, 
     tb_1_.EDITION desc
 /* MySQL分页 */ 
-limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
+limit ?, /* 5(offset) */ ? /* 5(limit) */
 
 /* 
  * 第三步：为分页后的5条数据（非分页前的12条数据）
@@ -1402,8 +1402,7 @@ limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
 select tb_1_.ID, tb_1_.NAME 
 from BOOK_STORE as tb_1_ 
 where tb_1_.ID in (
-    ?, ?
-    /* 实际参数列表：2， 1 */
+    ?/* 2 */, ? /* 1 */
 )
 
 /* 
@@ -1415,8 +1414,7 @@ from AUTHOR as tb_1_
 inner join BOOK_AUTHOR_MAPPING as tb_2_ 
     on tb_1_.ID = tb_2_.AUTHOR_ID 
 where tb_2_.BOOK_ID in (
-    ?, ?, ?, ?, ?
-    /* 实际参数列表：10, 3, 2, 1, 9 */
+    ? /* 10 */, ?/* 3 */, ?/* 2 */, ?/* 1 */, ?/* 9 */
 )
 ```
 

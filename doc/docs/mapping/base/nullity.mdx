@@ -76,4 +76,13 @@ Here is just a simple list of precautions. Please ignore these terms for now. Th
 
     -   All global filters applied to the associated entity are also applied to the current entity.
 
- 
+## inputNotNull
+
+As mentioned before, due to some query scenarios, one-to-one and many-to-one properties based on foreign keys must be declared as nullable. 
+
+However, when saving data, developers may not expect users to modify the foreign key fields in the database to null. In this case, `inputNotNull` of `@OneToOne` or `@ManyToOne` can be set to true, for example:
+
+- `@OneToOne(inputNotNull = true)`
+- `@ManyToOne(inputNotNull = true)`
+
+If `inputNotNull` is configured for an associated property, it will be given priority consideration in [database validation](../../configuration/database-validation) to verify that the foreign key field in the database cannot be null.

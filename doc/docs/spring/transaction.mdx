@@ -5,8 +5,20 @@ title: Spring Transaction
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {ViewMore} from '@site/src/components/ViewMore';
+import Execute from '../_shared/execute.mdx';
 
 ## Integrate Spring Transaction
+
+In Jimmer, all database operation APIs have two execution modes:
+
+-   Execute on a specified JDBC connection
+
+-   Execute without specifying a JDBC connection, but a `ConnectionManager` needs to be configured for Jimmer to teach Jimmer how to borrow and return connections. 
+
+Please refer to <ViewMore buttonText="here" title="Two execution ways"> <Execute/></ViewMore> for more details.
+
+So Jimmer itself does not provide connection/transaction management capabilities, such management capabilities completely rely on user customization of `ConnectionManager`. `ConnectionManager` is the key to integrate Jimmer with the connection/transaction management capabilities of any IOC framework *(of course including Spring)*.
 
 ### Using Spring Boot starter
 

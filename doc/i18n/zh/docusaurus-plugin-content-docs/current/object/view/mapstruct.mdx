@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: mapstruct 
+title: MapStruct 
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,35 +8,40 @@ import TabItem from '@theme/TabItem';
 import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
 
-Jimmer动态对象和静态POJO完全不同，是一套完整的新技术体系，该体系支撑起了整个Jimmer ORM。
-
-然而，有时我们需要在Jimmer动态和普通静态POJO之间相互转化。比如Jimmer自身就为了API的安全性推荐了Input DTO *(无论REST还是GraphQL)*。
-
 :::caution
-对于Kotlin而言，不推荐在此方案, [DTO语言](./dto-language)更值得推荐。
+除非为了兼容遗留系统中已有的DTO类型，否则不推荐使用MapStruct，更推荐使用[DTO语言](./dto-language)，原因如下
 
--   和Kotlin配合的问题
+-   不可忽略的开发成本
 
-    -   此方案基于[mapstruct框架](https://mapstruct.org/)，mapstruct框架基于`apt`
+    Jimmer以可以表达任意形状数据结构的动态实体对象为系统核心，让系统同时具备便捷性和灵活性。
+    
+    因此，Jimmer的DTO只是为兼容JVM现有生态的而创建的极其廉价的装饰物，并非系统核心，即使需要，也追求可以忽略不计的开发成本。
 
-    -   Kotlin已经废弃了[kapt](https://kotlinlang.org/docs/kapt.html)，而主张使用[ksp](https://kotlinlang.org/docs/ksp-overview.html)
+    然而，手动定义DTO并利用MapStruct完成映射，明显具备不可忽略的开发成本。
 
-    因此，随着Kotlin的演化，未来使用`kapt`可能会遇到越来越多的问题。
+-   只能作为Input DTO
 
--   DTO语言自动生成的DTO类型具备内置的[对象抓取器](../../query/object-fetcher)，因此
+    DTO语言自动生成的DTO类型具备内置的[对象抓取器](../../query/object-fetcher)，因此可以作为查询的输出类型，请参见：
 
-    -   可以被底层API查询，请参见[对象抓取器/DTO查询](../../query/object-fetcher/dto)
+    -   [对象抓取器/DTO查询](../../query/object-fetcher/dto)
 
-    -   可以被Spring Data风格用户代码查询，请参见[Spring Data/查询DTO](../../spring/repository/dto)
+    -   [Spring Data/查询DTO](../../spring/repository/dto)
 
-    然而，手动定义并采用MapStruct映射的DTO没有这些功能，它只支持和动态实体相互转化。
+    然而，手动定义并采用MapStruct映射的DTO没有对应的[对象抓取器](../../query/object-fetcher)定义，只支持和动态实体相互转化。
+    所以仅适合作为Input DTO使用，不适合作为Output DTO。
+
+-   和Kotlin项目配合的问题
+
+    -   [mapstruct框架](https://mapstruct.org/)是基于`apt`*(Annotation Processor)* 的。
+
+        因此，这需要在kotlin中使用`kapt`，这会明显降低kotlin项目的编译速度。
+
+    -   Kotlin已经废弃了[kapt](https://kotlinlang.org/docs/kapt.html)，而主张使用[ksp](https://kotlinlang.org/docs/ksp-overview.html)。
+
+        因此，随着Kotlin的演化，未来使用`kapt`可能会遇到越来越多的问题。
 :::
 
 ## 依赖和预编译器
-
-:::info
-Jimmer选择以[MapStruct](https://github.com/mapstruct/mapstruct)作为和静态POJO彼此转化的技术。
-:::
 
 对于将静态POJO转化为Jimmer动态对象而言，MapStruct并不知道该如何构建Jimmer对象。因此
 

@@ -5,8 +5,20 @@ title: 整合Spring事务
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {ViewMore} from '@site/src/components/ViewMore';
+import Execute from '../_shared/execute.mdx';
 
 ## 整合Spring事务
+
+Jimmer中所有数据库操作API都有两种执行方式：
+
+-   在指定的JDBC连接上执行
+
+-   无需指定JDBC连接即可执行，但需要为Jimmer配置`ConnectionManager`，教会Jimmer如何租借和归还连接。
+
+请参考<ViewMore buttonText="这里" title="两种执行方法"><Execute/></ViewMore>以了解更多。
+
+所以，Jimmer本身并未提供连接/事务管理能力，这种管理能力完全依赖用户对`ConnectionManager`的定制，`ConnectionManager`就是将Jimmer和任何IOC框架 *(当然，包括Spring)* 的连接/事务管理能力整合在一起的关键点。
 
 ### 使用Spring Boot starter
 
