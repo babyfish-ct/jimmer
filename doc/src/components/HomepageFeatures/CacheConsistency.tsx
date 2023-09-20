@@ -89,7 +89,7 @@ const ZH: ReactNode =
                             <TableRow>
                                 <TableCell>BookStore.avgPrice-2</TableCell>
                                 <TableCell>计算缓存</TableCell>
-                                <TableCell>对于旧的父对象<code>BookStore-2</code>而言，其关统计型计算属性<code>BookStore.avgPrice</code>所对应的缓存失效</TableCell>
+                                <TableCell>对于旧的父对象<code>BookStore-2</code>而言，其统计型计算属性<code>BookStore.avgPrice</code>所对应的缓存失效</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>BookStore.books-1</TableCell>
@@ -104,7 +104,7 @@ const ZH: ReactNode =
                             <TableRow>
                                 <TableCell>BookStore.avgPrice-1</TableCell>
                                 <TableCell>计算缓存</TableCell>
-                                <TableCell>对于新的父对象<code>BookStore-1</code>而言，其关统计型计算属性<code>BookStore.avgPrice</code>所对应的缓存失效</TableCell>
+                                <TableCell>对于新的父对象<code>BookStore-1</code>而言，其统计型计算属性<code>BookStore.avgPrice</code>所对应的缓存失效</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>

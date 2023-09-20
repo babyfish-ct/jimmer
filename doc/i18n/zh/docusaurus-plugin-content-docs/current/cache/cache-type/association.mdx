@@ -39,7 +39,7 @@ import {AssociationCache} from '@site/src/components/Image';
 
 -   引用关联属性基于中间表，而非基于外键
 
--   对于已经存在的Jimmer对象，在其一对一或多对一关属性缺时加载一对一或多一关联对象
+-   对于已经存在的Jimmer对象，在其一对一或多对一关联属性缺少时加载一对一或多一关联对象
 
     这种特殊的案例，在[用Jimmer实现GraphQL](../../graphql)时会出现，其他情况下基本不会出现
 :::
@@ -363,7 +363,7 @@ println(stores)
         tb_1_.EDITION desc
     ```
 
-    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys BookStore.books-*
     1) "BookStore.books-2"
@@ -639,7 +639,7 @@ println(books)
     如果不通过`@ManyToMany.orderedProps`为关联属性`Book.authors`指定默认排序，这里就的`join`不会出现
     :::
 
-    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys Book.authors-*
     1) "Book.authors-4"
