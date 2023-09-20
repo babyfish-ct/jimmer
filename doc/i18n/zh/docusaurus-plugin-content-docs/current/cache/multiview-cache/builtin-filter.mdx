@@ -238,7 +238,7 @@ println(stores)
     其中`tb_1_.DELETED = false`这个过滤条件来自逻辑删除功能所隐含的内置过滤器
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ``` sh
     127.0.0.1:6379> keys BookStore.books-*
     1) "BookStore.books-2"
@@ -313,7 +313,7 @@ println(stores)
     其中`tb_1_.DELETED = false`这个过滤条件来自逻辑删除功能所隐含的内置过滤器。
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```sh
     127.0.0.1:6379> keys BookStore.avgPrice-*
     1) "BookStore.avgPrice-2"

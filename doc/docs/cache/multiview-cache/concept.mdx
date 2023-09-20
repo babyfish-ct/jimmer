@@ -225,7 +225,7 @@ public interface CacheableFilter<P extends Props> extends Filter<P> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="KCachableFilter.kt"  
+```kotlin title="KCacheableFilter.kt"
 package org.babyfish.jimmer.sql.kt.filter
 
 interface KCacheableFilter<E: Any> : KFilter<E> {
@@ -243,7 +243,11 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 Users need to implement the `getParameters()` method to contribute part of the information to sub key.
 
 :::info
+<<<<<<< HEAD
 When multiple `CacheableFilter/KCachableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the sub key.
+=======
+When multiple `CacheableFilter/KCacheableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the SubKey.
+>>>>>>> main
 :::
 
 ### SubKey of Complex Calculated Properties
