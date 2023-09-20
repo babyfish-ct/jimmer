@@ -362,6 +362,15 @@ class DtoGenerator private constructor(
                         when {
                             prop.isNullable -> defaultValue("null")
                             prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
+                            prop.toTailProp().baseProp.isPrimitive -> defaultValue(
+                                when (prop.baseProp.typeName()) {
+                                    BOOLEAN -> "false"
+                                    CHAR -> "'\\0'"
+                                    else -> "0"
+                                }
+                            )
+                            prop.toTailProp().baseProp.typeName() == STRING ->
+                                defaultValue("\"\"")
                         }
                     }
                     .build()
@@ -1003,6 +1012,8 @@ class DtoGenerator private constructor(
 
                     TypeRef.TN_BYTE, TypeRef.TN_SHORT, TypeRef.TN_INT, TypeRef.TN_LONG,
                     TypeRef.TN_FLOAT, TypeRef.TN_DOUBLE -> "0"
+
+                    TypeRef.TN_STRING -> "\"\""
 
                     TypeRef.TN_ARRAY -> if (typeRef.arguments[0].typeRef == null) {
                         "emptyArray<Any?>()"
