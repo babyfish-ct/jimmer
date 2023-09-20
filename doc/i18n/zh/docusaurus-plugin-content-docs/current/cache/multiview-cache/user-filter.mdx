@@ -22,7 +22,7 @@ import TabItem from '@theme/TabItem';
 
 都无法支持缓存。
 
-Jimmer采用`CachableFilter/KCacheableFitler接口`如下接口定义缓存友好的过滤器
+Jimmer采用`CacheableFilter/KCacheableFitler接口`如下接口定义缓存友好的过滤器
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -481,7 +481,7 @@ fun cacheFactory(
 就关联属性而言，是否需要构建多视图缓存的唯一判断依据是目标实体是否被施加了过滤器，Jimmer为此提供了更好的支持。
 
 开发人员只需要把超接口`CacheFactory/KCacheFactory`替换为超类`AbstractCacheFactory/AbstractKCacheFactory`，
-即可继承的一个叫做`getFilterState/filterState`的成员，它可以帮助我们判断是否应该构建多视图缓存。
+即可继承一个叫做`getFilterState/filterState`的成员，它可以帮助我们判断是否应该构建多视图缓存。
 :::
 
 <Tabs groupId="language">

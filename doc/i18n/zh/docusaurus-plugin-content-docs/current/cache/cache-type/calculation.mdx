@@ -228,7 +228,7 @@ println(stores)
         tb_1_.ID
     ```
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys BookStore.avgPrice-*
     1) "BookStore.avgPrice-2"
