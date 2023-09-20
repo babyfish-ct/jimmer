@@ -215,7 +215,7 @@ var sqlClient = newKSqlClient {
 
 ## BinLog触发器开发工作
 
-和Tranaction触发器不同，BinLog触发器需要采用第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
+和Transaction触发器不同，BinLog触发器需要采用第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
 
 因此，仅仅在构建SqlClient对象时把TriggerType指定为`BINLOG_ONLY`(默认行为)或`BOTH`是不够的。
 

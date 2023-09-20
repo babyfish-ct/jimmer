@@ -185,7 +185,11 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 -   Key
 
+<<<<<<< HEAD
     多视图缓存中的Key，和单视图缓存中的Key无异，表示特定的实体属性，由Jimmer自定决定
+=======
+    多视图缓存中的Key，和单视图缓存中的Key无异，表示特定的对象属性，由Jimmer自行决定
+>>>>>>> main
 
 -   SubKey
 
@@ -210,7 +214,7 @@ import {MultiViewCache} from '@site/src/components/Image';
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="CachableFilter.java"
+```java title="CacheableFilter.java"
 package org.babyfish.jimmer.sql.filter;
 
 public interface CacheableFilter<P extends Props> extends Filter<P> {
@@ -225,7 +229,7 @@ public interface CacheableFilter<P extends Props> extends Filter<P> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="KCachableFilter.kt"
+```kotlin title="KCacheableFilter.kt"
 package org.babyfish.jimmer.sql.kt.filter
 
 interface KCacheableFilter<E: Any> : KFilter<E> {
@@ -243,7 +247,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 用户需要实现`getParameters()`方法，为SubKey贡献一部分信息。
 
 :::info
-当关联实体受多个`CachableFilter/KCachableFilter`影响时，每个过滤器对象的`getParameters()`方法返回的数据合并在一起，作为SubKey。
+当关联实体受多个`CacheableFilter/KCacheableFilter`影响时，每个过滤器对象的`getParameters()`方法返回的数据合并在一起，作为SubKey。
 :::
 
 ### 复杂计算属性的SubKey

@@ -37,8 +37,14 @@ import {AssociationCache} from '@site/src/components/Image';
 
 -   引用关联属性基于中间表，而非基于外键
 
+<<<<<<< HEAD
 -   在[用Jimmer实现GraphQL](../../graphql)时，本不应该在聚合根查询中使用[对象抓取器](../../query/object-fetcher) *(GraphQL和对象抓取器是同质的功能)*，
     但在聚合根查询中错误地使用了对象抓取器得到没有外键的对象。然而，GraphQL请求体中包含多对一关联。
+=======
+-   对于已经存在的Jimmer对象，在其一对一或多对一关联属性缺少时加载一对一或多一关联对象
+
+    这种特殊的案例，在[用Jimmer实现GraphQL](../../graphql)时会出现，其他情况下基本不会出现
+>>>>>>> main
 :::
 
 在附带的官方示例中，多对一关联`Book.store`基于真实外键，所以，其多对一缓存不会被使用。
@@ -360,7 +366,7 @@ println(stores)
         tb_1_.EDITION desc
     ```
 
-    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys BookStore.books-*
     1) "BookStore.books-2"
@@ -636,7 +642,7 @@ println(books)
     如果不通过`@ManyToMany.orderedProps`为关联属性`Book.authors`指定默认排序，这里就的`join`不会出现
     :::
 
-    Jimmer会把从查询结果放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```
     127.0.0.1:6379> keys Book.authors-*
     1) "Book.authors-4"
