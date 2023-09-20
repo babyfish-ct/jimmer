@@ -349,7 +349,13 @@ class DtoGenerator private constructor(
                     .builder(prop.name, propTypeName(prop))
                     .addAnnotation(
                         AnnotationSpec.builder(JSON_PROPERTY_CLASS_NAME)
-                            .addMember("%S", prop.name)
+                            .apply {
+                                if (prop.isNullable) {
+                                    addMember("%S", prop.name)
+                                } else {
+                                    addMember("%S, required = true", prop.name)
+                                }
+                            }
                             .build()
                     )
                     .apply {

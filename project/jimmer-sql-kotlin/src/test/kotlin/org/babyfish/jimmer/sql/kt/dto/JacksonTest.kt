@@ -4,11 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.CompositeBookInput
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNullableInput
 import java.math.BigDecimal
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
-import kotlin.test.expect
+import kotlin.test.*
 
 class JacksonTest {
 
@@ -61,6 +59,19 @@ class JacksonTest {
         val input2 = ObjectMapper().readValue(json, CompositeBookInput::class.java)
         expect(input) {
             input2
+        }
+    }
+
+    @Test
+    fun testMissNonNull() {
+        val ex = assertFails {
+            ObjectMapper().readValue(
+                """{"name": "TURING"}""",
+                BookStoreNullableInput::class.java
+            )
+        }
+        assertTrue {
+            ex.message!!.contains("Missing required creator property 'version'")
         }
     }
 }
