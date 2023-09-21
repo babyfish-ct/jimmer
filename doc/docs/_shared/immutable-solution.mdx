@@ -132,10 +132,7 @@ val treeNode = new(TreeNode::class).by {
 
 // Step 2, the key step!
 // Based on existing data object, make some "changes" to create new data object  
-val newTreeNode = new(TreeNode::class).by(
-    // highlight-next-line
-    treeNode // existing data
-) {
+val newTreeNode = treeNode.copy {
     childNodes()[0] // Food
         .childNodes()[0] // Drinks
         .childNodes()[0] // Cococola
@@ -148,6 +145,24 @@ println("newTreeNode: $newTreeNode")
 
 </TabItem> 
 </Tabs>
+
+:::tip 
+For Kotlin,
+
+```kotlin
+val newTreeNode = treeNode.copy { 
+    ... 
+}
+```
+
+is actually a shorthand for
+
+```kotlin 
+val newTreeNode = new(TreeNode::class).by(treeNode) { 
+    ... 
+}
+```
+:::
 
 ## Output
 

@@ -197,6 +197,10 @@ public fun MutableList<TreeNodeDraft>.addBy(
     add(TreeNodeDraft.`$`.produce(base, block) as TreeNodeDraft)
     return this
 }
+
+// highlight-next-line
+public fun TreeNode.copy(block: TreeNodeDraft.() -> Unit): TreeNode =
+    TreeNodeDraft.`$`.produce(this, block)
 ```
 
 </TabItem>
@@ -246,6 +250,14 @@ You can use it like this:
     ```kotlin
     val newTreeNode = new(TreeNode::class).by(oldTreeNode) {
         ...omitted...
+    }
+    ```
+
+    or
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy {
+        ...省略...
     }
     ```
 
@@ -565,7 +577,7 @@ The two are completely equivalent.
 
 ### Inherit getter `childNodes()`
 
-For both Java and Kotlin, `TreeNodeDraft` cannot override the `childNodes()` method. From a syntactic point of view, it can only inherit the `childNodes()` method of `TreeNode`.
+For both Java and Kotlin, `TreeNodeDraft` cannot override the return type of `childNodes()` method. From a syntactic point of view, it can only inherit the `childNodes()` method of `TreeNode`.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -586,8 +598,6 @@ var childNodes: List<TreeNode>
 
 :::caution
 Although the return type defined in the `TreeNode` interface is `List<TreeNode>`, after being inherited by the `TreeNodeDraft` interface, its return type should be understood as `List<TreeNodeDraft>`. 
-
-The incompatible return types also explain why this method cannot be overridden.
 :::
 
 :::info  

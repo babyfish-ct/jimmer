@@ -198,6 +198,10 @@ public fun MutableList<TreeNodeDraft>.addBy(
     add(TreeNodeDraft.`$`.produce(base, block) as TreeNodeDraft)
     return this
 }
+
+// highlight-next-line
+public fun TreeNode.copy(block: TreeNodeDraft.() -> Unit): TreeNode =
+    TreeNodeDraft.`$`.produce(this, block)
 ```
 
 </TabItem>
@@ -246,6 +250,14 @@ public fun MutableList<TreeNodeDraft>.addBy(
     
     ```kotlin
     val newTreeNode = new(TreeNode::class).by(oldTreeNode) {
+        ...省略...
+    }
+    ```
+    
+    或
+
+    ```kotlin
+    val newTreeNode = oldTreeNode.copy {
         ...省略...
     }
     ```
@@ -566,7 +578,7 @@ public interface TreeNodeDraft extends TreeNode, Draft {
 
 ### 继承getter `childNodes()`
 
-无论对Java还是kotlin，`TreeNodeDraft`无法覆盖`childNodes()`方法，从语法层面上讲，只能继承`TreeNode`的`childNodes()`方法。
+无论对Java还是kotlin，`TreeNodeDraft`无法覆盖`childNodes()`方法的返回类型，从语法层面上讲，只能继承`TreeNode`的`childNodes()`方法。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -587,8 +599,6 @@ var childNodes: List<TreeNode>
 
 :::caution
 虽然这个的方法在`TreeNode`接口中定义的返回类型是`List<TreeNode>`，但是，被`TreeNodeDraft`接口继承后，应该将其返回类型理解成`List<TreeNodeDraft>`。
-
-返回类型的不兼容，也说明了为什么无法覆盖这个方法。
 :::
 
 :::info

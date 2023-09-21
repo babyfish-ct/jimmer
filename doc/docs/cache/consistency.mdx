@@ -45,8 +45,6 @@ Jimmer will automatically create the `JIMMER_TRANS_CACHE_OPERATOR` table.
 
 However, the default `org.babyfish.jimmer.sql.dialect.DefaultDialect` does not support this operation and will throw an exception.
 
-Here is the English translation:
-
 Therefore, if cache consistency needs to be driven by transaction trigger, don't use the default `DefaultDialect`, please explicitly specify the database dialect.
 :::
 

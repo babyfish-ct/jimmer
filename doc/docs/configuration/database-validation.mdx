@@ -23,6 +23,9 @@ Database validation is a very important feature that is used to verify the consi
 
 -   Verify that the nullity of columns is consistent with the definitions of properties in the entity model. 
 
+    If a property is decorated with `@OneToOne(inputNotNull = true)` or `@ManyToOne(inputNotNull = true)`, 
+    the nullity of the property itself is ignored. it is considered that the corresponding foreign key in the data cannot be null.
+
 -   For the id property of each entity in the entity model, verify that the database has a primary key constraint that exactly matches.
 
 -   For true foreign keys defined in the entity model (see [True and False Foreign Keys](../mapping/base/foreignkey)), verify that the database has exactly matching foreign key constraints.
