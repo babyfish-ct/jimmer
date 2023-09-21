@@ -1,9 +1,6 @@
 package org.babyfish.jimmer.example.kt.core
 
-import org.babyfish.jimmer.example.kt.core.model.Book
-import org.babyfish.jimmer.example.kt.core.model.TreeNode
-import org.babyfish.jimmer.example.kt.core.model.addBy
-import org.babyfish.jimmer.example.kt.core.model.by
+import org.babyfish.jimmer.example.kt.core.model.*
 import org.babyfish.jimmer.kt.new
 
 fun main(args: Array<String>) {
@@ -36,8 +33,11 @@ private fun bookDemo() {
 
     /*
      * Second step, make some "changes" based on the existing object to get a new object.
+     *
+     * `val newBook = book.copy {...}` is shorthand for
+     * `val newBook = new(Book::class).by(book) {...}`
      */
-    val newBook = new(Book::class).by(book) {
+    val newBook = book.copy {
         name += "!"
         store().name += "!"
         for (author in authors()) {
@@ -72,8 +72,11 @@ private fun treeNodeDemo() {
 
     /*
      * Second step, make some "changes" based on the existing object to get a new object.
+     *
+     * `val newTreeNode = treeNode.copy {...}` is shorthand for
+     * `val newTreeNode = new(TreeNode::class).by(treeNode) {...}`
      */
-    val newTreeNode = new(TreeNode::class).by(treeNode) {
+    val newTreeNode = treeNode.copy {
         childNodes()[0] // Food
             .childNodes()[0] // Drinks
             .childNodes()[0] // Cococola
