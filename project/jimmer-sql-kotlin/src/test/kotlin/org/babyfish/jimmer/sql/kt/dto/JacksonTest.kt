@@ -24,7 +24,7 @@ class JacksonTest {
         val ex = assertFailsWith<ValueInstantiationException>() {
             ObjectMapper().readValue(json, CompositeBookInput::class.java)
         }
-        assertTrue { ex.message!!.contains("parameter name") }
+        assertTrue { ex.message!!.contains("Missing required creator property 'name'") }
     }
 
     @Test
