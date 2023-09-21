@@ -297,7 +297,7 @@ class DtoGenerator private constructor(
     }
 
     private fun addPrimaryConstructor() {
-        val builder = FunSpec.constructorBuilder().addAnnotation(JSON_CREATOR_CLASS_NAME)
+        val builder = FunSpec.constructorBuilder()
         builder.addPrimaryParameters()
         typeBuilder.primaryConstructor(builder.build())
 
@@ -308,6 +308,14 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
+                        if (!prop.isNullable) {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_PROPERTY_CLASS_NAME)
+                                    .addMember("required = true")
+                                    .build()
+                            )
+                        }
                         if (prop.annotations.isEmpty()) {
                             for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
                                 addAnnotation(
@@ -333,6 +341,14 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.alias)
                     .apply {
+                        if (!prop.typeRef.isNullable) {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_PROPERTY_CLASS_NAME)
+                                    .addMember("required = true")
+                                    .build()
+                            )
+                        }
                         for (anno in prop.annotations) {
                             addAnnotation(annotationOf(anno))
                         }
@@ -347,30 +363,10 @@ class DtoGenerator private constructor(
             addParameter(
                 ParameterSpec
                     .builder(prop.name, propTypeName(prop))
-                    .addAnnotation(
-                        AnnotationSpec.builder(JSON_PROPERTY_CLASS_NAME)
-                            .apply {
-                                if (prop.isNullable) {
-                                    addMember("%S", prop.name)
-                                } else {
-                                    addMember("%S, required = true", prop.name)
-                                }
-                            }
-                            .build()
-                    )
                     .apply {
                         when {
                             prop.isNullable -> defaultValue("null")
                             prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
-                            prop.toTailProp().baseProp.isPrimitive -> defaultValue(
-                                when (prop.baseProp.typeName()) {
-                                    BOOLEAN -> "false"
-                                    CHAR -> "'\\0'"
-                                    else -> "0"
-                                }
-                            )
-                            prop.toTailProp().baseProp.typeName() == STRING ->
-                                defaultValue("\"\"")
                         }
                     }
                     .build()
@@ -380,11 +376,6 @@ class DtoGenerator private constructor(
             addParameter(
                 ParameterSpec
                     .builder(userProp.alias, typeName(userProp.typeRef))
-                    .addAnnotation(
-                        AnnotationSpec.builder(JSON_PROPERTY_CLASS_NAME)
-                            .addMember("%S", userProp.alias)
-                            .build()
-                    )
                     .apply {
                         defaultValue(userProp)?.let {
                             defaultValue(it)

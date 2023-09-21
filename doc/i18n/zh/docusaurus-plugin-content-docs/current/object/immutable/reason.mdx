@@ -82,15 +82,11 @@ val aggregateRoot = new(TreeNode::class).by {
 :::tip
 这段代码会导致异常：org.babyfish.jimmer.CircularReferenceException。
 
-虽然开发人员可以在实体类型之间定义双向关联，但无法在实体对象之间创建双向关联。此行为被明确禁止。
-
-可见，Jimmer阻止用户创建具备循环引用的数据结构。
-
 Jimmer对象是不变对象，用户既无法在创建对象时构建循环引用，也无法通过后期修改来形成循环引用，这个品质将会被永远保留。
 :::
 
 ## 其他好处
 
-除了保证实体对象之间绝对没有循环引用外
+除了保证对象之间绝对没有循环引用外，不可变对象还有很多其他好处。
 
 <ImmutableOtherBenefit/>

@@ -267,12 +267,6 @@ class Constants {
                     "ViewMetadata"
             );
 
-    public static final ClassName JSON_PROPERTY_CLASS_NAME =
-            ClassName.get(JsonProperty.class);
-
-    public static final ClassName OBJECTS_CLASS_NAME =
-            ClassName.get(Objects.class);
-
     public static final String DRAFT_FIELD_CTX =
             "__ctx";
 
