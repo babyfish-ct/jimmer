@@ -16,17 +16,44 @@ import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiView
 
 ## Project Positioning 
 
-Jimmer is a revolutionary ORM for Java and Kotlin, as well as a complete suite of solutions built on top of it (including a powerful cache management mechanism).
+Jimmer is a revolutionary ORM for Java and Kotlin, as well as a complete integrated built on top of it (including a powerful cache management mechanism).
 
-Currently, there are many Java-based relational database upper-layer technology solutions, including ORM and non-ORM styles. There are so many such solutions that Jimmer does not want to add any duplication.
+Currently, there are many Java-based relational database upper layer technology solutions, including ORM and non-ORM styles. 
+Jimmer does not want to simply repeat what others have done, but wants to achieve two important goals:
 
-In fact, completing basic CRUD access to databases is only the most fundamental and simple part of actual project work. There are some other pain points that have always plagued developers, which are more complex and cumbersome than simple data CRUD.
+### 1. Reform within ORM
 
-Jimmer collects most of the common and cumbersome problems in business project development, and provides a comprehensive set of solutions.
+-   Traditional ORMs provide an OOP programming model, which is very convenient, but lacks flexibility. 
 
-:::tip
-ORM is just Jimmer's entry point, not the entirety.  
-:::
+-   Non-ORM lightweight SQL template solutions have fine-grained control over SQL, which is very flexible, but requires huge amounts of work.
+
+Jimmer uses an innovative method to resolve this seeming contradiction between convenience and flexibility, achieving the best of both worlds.
+
+### 2. Reform of the entire development architecture
+
+In fact, completing CRUD database access is only the most basic and simple part of actual projects. There are other pain points that have always plagued developers.
+
+So, Jimmer is a complete integrated solution, with ORM only as an entry point rather than the entirety. 
+
+Jimmer changes the entire development mindset: 
+
+**The only thing developers need to focus on is establishing a Global Entity Association Model based on requirements!**
+
+Everything else is unimportant, cheap, or even transparent, because Jimmer can do the following for you:
+
+-   Easily adapt to changing requirements
+
+-   One-statement query for complex data structures 
+
+-   One-statement saveing for complex data structures
+
+-   Fully automatic multi-level cache, including consistency maintenance
+
+-   Query and assemble data from multiple microservices
+
+-   Generate client code with a great developer experience
+
+This powerful suite of features eliminates large amounts of low-value business code, significantly improves productivity, and leaves high-value, high-quality business code.
 
 ## Pain Points
 
@@ -208,9 +235,85 @@ In microservice architectures, the database is fragmented. Querying different pa
 
 <Button href="../spring/spring-cloud" size="small">Learn More</Button>
 
-## All Features
+## Mindmap
 
 <MindMap initialExpandLevel={1}/>
+
+Here is an English translation of the Chinese roadmap:
+
+## Roadmap
+
+### Completed Work
+
+```
+2022-05 --+-- `0.0.0` 
+          |   Planning completed, first version released
+          |
+2023-02 --+-- `0.6.x` 
+          |   Core features completed, rudimentary docs provided
+          |
+          |   Some users start learning and trying it out
+          |
+2023-05 --+-- `0.7.x` 
+          | Some users start using in projects
+          |
+          | Start high-quality doc writing to replace rudimentary docs
+          |
+2023-09 --+-- `0.8.x` 
+          |   Features relatively complete, more users adopting
+          |
+          |   Complete high-quality docs (9-22)
+          |
+Future   ... Upcoming Work
+```
+
+### Short-term Work(1.0.0)
+
+-   Provide Open API3 generation capabilities
+
+    Jimmer allows server and client to use different programming models, to get most suitable for themselves.
+
+    However, currently this feature only generates TypeScript and Java client code, without Open API3 docs, leading to incorrect metadata in Swagger. 
+    
+    Generating Open API 3 docs is an upcoming task.
+
+-   Support inheritance between entities
+
+    Currently, `@Entity` types can inherit from `@MappedSuperclass` but not other `@Entity` types. 
+    
+    This will be implemented similarly to JPA.
+
+-   Integrate with sharding-sphere
+
+    Currently, Jimmer uses triggers *(Not database triggers, but Jimmer's ability to detect database changes)* to invalidate caches. 
+    
+    Jimmer supports two types of triggers, of which the BinLog trigger is recommended for cache invalidation.
+
+    When using sharding-jdbc, the table names in binlog events are physical names, which need to be mapped to logical names by sharding-jdbc config for Jimmer cache invalidation.
+
+-   Support Microsoft SQL Server
+
+    Multi-column `in` expressions *(`where (column1, column2) in ((1, 10), (2, 20))`)* are heavily used in Jimmer, 
+    
+    However, after developing for a while, it was discovered that Microsoft SQL Server does not support this SQL feature. The current workaround is to temporarily not support Microsoft SQL Server.
+
+    Special handling will be added for SQL Server support.
+
+-   Remove runtime Antlr dependency
+
+    Currently Jimmer runtime depends on Antlr *(Remote associations need it)* which contains a large `icu4j.jar`. 
+    
+    This will be removed so final package size is smaller.
+
+### Long-term Ideas
+
+Currently, Jimmer's remote associations (across services) can only use used for automatically querying data from multiple services and concatenating the final result.
+
+In the future, may support:
+
+- Joins with remote associations in SQL DSL (may need wide tables like HBase) 
+
+- Let save command support data structure containing remote associations
 
 ## Framework Comparison 
 
