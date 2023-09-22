@@ -165,7 +165,7 @@ class ImmutableProcessor(
                     )
                     if (dtoFile.exists()) {
                         dtoMap[immutableType] = try {
-                            FileInputStream(dtoFile).use {
+                            dtoFile.reader(Charsets.UTF_8).use {
                                 KspDtoCompiler(immutableType, "${e.value}/$relativePath").compile(it)
                             }
                         } catch (ex: DtoAstException) {
