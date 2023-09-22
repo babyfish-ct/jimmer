@@ -19,11 +19,8 @@ import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
-import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
-import java.lang.RuntimeException
-import java.util.concurrent.ThreadLocalRandom
+import java.io.*
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -103,19 +100,19 @@ class ImmutableProcessor(
                         if (classDeclaration.classKind != ClassKind.INTERFACE) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "must be interface"
+                                        "must be interface"
                             )
                         }
                         if (classDeclaration.typeParameters.isNotEmpty()) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "cannot have type parameters"
+                                        "cannot have type parameters"
                             )
                         }
                         if (classDeclaration.isPrivate() || classDeclaration.isProtected()) {
                             throw GeneratorException(
                                 "The immutable interface '${classDeclaration.fullName}' " +
-                                    "cannot be private or protected'"
+                                        "cannot be private or protected'"
                             )
                         }
                         modelMap.computeIfAbsent(file) { mutableListOf() } +=
@@ -165,7 +162,7 @@ class ImmutableProcessor(
                     )
                     if (dtoFile.exists()) {
                         dtoMap[immutableType] = try {
-                            FileInputStream(dtoFile).use {
+                            dtoFile.inputStream().reader(Charsets.UTF_8).use {
                                 KspDtoCompiler(immutableType, "${e.value}/$relativePath").compile(it)
                             }
                         } catch (ex: DtoAstException) {
@@ -190,13 +187,13 @@ class ImmutableProcessor(
                         if (type != otherType && dtoType.name == otherDtoType.name) {
                             throw DtoException(
                                 "Conflict dto type name, the \"" +
-                                    type.qualifiedName +
-                                    "\" and \"" +
-                                    otherType.qualifiedName +
-                                    "\" are belong to same package, " +
-                                    "but they have define a dto type named \"" +
-                                    dtoType.name +
-                                    "\""
+                                        type.qualifiedName +
+                                        "\" and \"" +
+                                        otherType.qualifiedName +
+                                        "\" are belong to same package, " +
+                                        "but they have define a dto type named \"" +
+                                        dtoType.name +
+                                        "\""
                             )
                         }
                     }
@@ -213,10 +210,10 @@ class ImmutableProcessor(
                 file
                     .declarations
                     .filterIsInstance<KSClassDeclaration>()
-                    .filter{
+                    .filter {
                         it.classKind == ClassKind.ENUM_CLASS &&
-                            it.annotation(ErrorFamily::class) != null &&
-                            include(it)
+                                it.annotation(ErrorFamily::class) != null &&
+                                include(it)
                     }
             }
             .toList()
@@ -232,15 +229,15 @@ class ImmutableProcessor(
                 .generate(allFiles)
             val sqlClassDeclarations = classDeclarations.filter {
                 it.annotation(Entity::class) !== null ||
-                    it.annotation(MappedSuperclass::class) !== null ||
-                    it.annotation(Embeddable::class) != null
+                        it.annotation(MappedSuperclass::class) !== null ||
+                        it.annotation(Embeddable::class) != null
             }
             if (sqlClassDeclarations.size > 1) {
                 throw GeneratorException(
                     "The $file declares several types decorated by " +
-                        "@${Entity::class.qualifiedName}, @${MappedSuperclass::class.qualifiedName} " +
-                        "or ${Embeddable::class.qualifiedName}: " +
-                        sqlClassDeclarations.joinToString { it.fullName }
+                            "@${Entity::class.qualifiedName}, @${MappedSuperclass::class.qualifiedName} " +
+                            "or ${Embeddable::class.qualifiedName}: " +
+                            sqlClassDeclarations.joinToString { it.fullName }
                 )
             }
             if (sqlClassDeclarations.isNotEmpty()) {
@@ -265,7 +262,7 @@ class ImmutableProcessor(
                     continue
                 }
                 if (classDeclaration.annotation(Entity::class) !== null) {
-                     packageCollector.accept(classDeclaration)
+                    packageCollector.accept(classDeclaration)
                 }
             }
         }
