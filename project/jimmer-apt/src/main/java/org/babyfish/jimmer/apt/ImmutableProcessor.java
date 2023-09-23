@@ -14,9 +14,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -185,7 +184,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                     File dtoFile = new File(e.getKey() + '/' + relativePath);
                     if (dtoFile.exists()) {
                         List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
-                        try (InputStream in = Files.newInputStream(dtoFile.toPath())) {
+                        try (Reader in = Files.newBufferedReader(dtoFile.toPath(), Charset.forName("utf-8"))) {
                             dtoTypes = new AptDtoCompiler(
                                     immutableType,
                                     e.getValue() + '/' + relativePath
