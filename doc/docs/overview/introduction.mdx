@@ -45,13 +45,13 @@ Everything else is unimportant, cheap, or even transparent, because Jimmer can d
 
 -   One-statement query for complex data structures 
 
--   One-statement saveing for complex data structures
+-   One-statement saving for complex data structures
 
 -   Fully automatic multi-level cache, including consistency maintenance
 
 -   Query and assemble data from multiple microservices
 
--   Generate client code with a great developer experience
+-   Generate client code with a great development experience
 
 This powerful suite of features eliminates large amounts of low-value business code, significantly improves productivity, and leaves high-value, high-quality business code.
 
@@ -410,3 +410,23 @@ Even in some special scenarios where we cannot directly use the unified ORM enti
 </tr>
 </tbody>
 </table>
+
+## About Reactive/R2DBC
+
+It should be noted that `Reactive/R2DBC` was never a design goal for Jimmer, for two reasons:
+
+-   When the Jimmer project was created, Java 21 was nearing release, and as expected, by the time Jimmer was relatively mature, Java 21 had been released. With the help of virtual threads, asynchronous programming ecosystems were no longer necessary, or even should be phased out.
+
+    -   From Java 21 onwards, asynchronous ecosystems are harmful for the Java community, as they lead to ecosystem fragmentation. 
+
+    -   Asynchronous ecosystems have poor observability, are hard to debug and analyze, and exceptions lack useful stacktrace information, which is extremely detrimental for diagnosing exceptions in production systems.
+
+        :::note 
+        If using Kotlin coroutines (the `suspend` keyword), we can use the language's own flow control instead of opaque reactive APIs. This seems to solve the problem. 
+
+        However, Kotlin coroutines also do not solve the poor debuggability and diagnosability.
+
+        In fact, not just Kotlin coroutines, any magic added by languages for async only makes code easier to write, but does not solve debuggability and diagnosability.
+        :::
+
+-   Jimmer should devote time and effort to highly practical areas, adding more innovative features, simplifying and disrupting more development patterns, to realize Jimmer's true ideals.
