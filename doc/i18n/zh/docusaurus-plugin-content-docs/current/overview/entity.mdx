@@ -1,0 +1,178 @@
+---
+sidebar_position: 2
+title: 不一样的实体
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Jimmer实体的风格
+
+无论你按照[例子(最快学习方法)](./standard-demo)打开例子项目，还是继续阅读后续文档，你都会发现Jimmer的实体与众不同，如下
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="Book.java"
+@Entity
+public interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    long id();
+
+    String name();
+
+    int edition();
+
+    BigDecimal price();
+
+    @Nullable
+    @ManyToOne
+    BookStore store();
+
+    @ManyToMany
+    List<Author> authors();
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="Book.kt"
+@Entity
+interface Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long
+
+    val name: String
+
+    val edition: Int
+
+    val price: BigDecimal
+
+    @ManyToOne
+    val store: BookStore?
+
+    @ManyToMany
+    val authors: List<Author>
+}
+```
+
+</TabItem>
+</Tabs>
+
+你会发现，Jimmer的实体和其它ORM有很大的不同
+
+-   被定义为接口，而非类。
+
+-   所有属性只能读取，无法设置：
+
+    -   对Java而言，只有getter，没有setter。
+    
+        这里，getter既可以如同传统POJO一样以`get`开头，也可以如同java record一样不用`get`开头 *(就像这里你看到的这样)*。
+
+    -   对于kotlin而言，所有属性都被声明为`val`，而非`var`。
+
+这种风格迥异的实体对象会在后续文档[对象篇](../object)中详细介绍，但是为了方便读者学习理解，这里有必要进行一定的重复，进行简要讨论。
+
+本文将从两个角度来简要讨论两个问题
+
+-   谁实现这些接口？
+
+-   这种实体有什么功能？
+
+再次强调，本文的论述相对简单，完整的论述请参见[对象篇](../object)。
+
+:::info
+这种实体风格对Jimmer而言非常重要，它是Jimmer大部分强大功能的底层基础。
+:::
+
+## 谁实现这些接口？
+
+Jimmer实体并非简单的POJO，内部有很多特有的逻辑实现，所以，并不能由开发人员用简单的类来定义。
+
+所以，Jimmer让开发人员定义抽象的接口，由于Jimmer框架在编译时自动生成更多的源代码来实现。
+
+-   对于Java而言，预编译技术是[Annotation Processor](https://www.baeldung.com/java-annotation-processing-builder)
+
+    *众所周知的Lombok就是借助这项技术实现的。*
+
+-   对于Kotlin而言，预编译技术是[KSP](https://kotlinlang.org/docs/ksp-overview.html)
+
+Jimmer为Java和Kotlin提供了各自需要的[Annotation Processor](https://www.baeldung.com/java-annotation-processing-builder)和[KSP](https://kotlinlang.org/docs/ksp-overview.html)，
+它们会完成一系列代码生成工作，其中就包括实现这些接口。
+
+具体细节用法，请参见[快速上手/生成代码](./get-started/generate-code)，本文不再重复。
+
+## 这种实体有什么功能？
+
+Jimmer实体具有两个重要的功能
+
+1.  动态性
+2.  不可变性
+
+### 1. 动态性
+
+Jimmer实体在不破坏强类型语言的拼写安全、类型安全、甚至空安全 *(限Kotlin)* 的前提下，为实体对象引入了动态性。
+
+:::note
+所以，Jimmer既是静态的，也是动态的。
+:::
+
+所谓动态性，指将对象某个属性指定为null和不指定对象某个属性是完全不同的两回事。
+
+-   指定为null：知道当前属性的值，真的没有数据。
+
+-   不指定：不知道属性的值，当前业务也不关心。
+
+    :::info
+    -   在代码中直接访问未被指定的对象属性，会导致异常`org.babyfish.jimmer.UnloadedException`
+
+    -   Jackson序列化*(需要`org.babyfish.jimmer.jackson.ImmutableModule`)*会自动忽略未被指定的所有属性。
+    :::
+
+借助于实体对象的不可变性，Jimmer实现了两个强大的功能
+
+-   [查询篇/对象抓取器](../query/object-fetcher)
+
+    一条语句查询任意形状的数据结构，就如同GraphQL所做的那样。
+
+-   [修改篇/保持指令](../mutation/save-command)
+
+    一条语句保存任意形状的数据结构，就如同React/Vue那样，Jimmer自动找出diff并修改数据库。
+
+完整的动态性描述，请参见[对象篇/动态性](../object/dynamic)
+
+### 2. 不可变性
+
+不可变性的好处非常多，其中很多是开发人员众所周知的。然而，本文仅讨论Jimmer期望从不可变性中获取的好处。
+
+作为一个ORM框架，Jimmer当然允许开发人员在实体类型之间声明双向关联。
+
+然而，在创建对象的时，一旦当前对象持有了关联对象，关联的方向就确定了，关联对象不可能反过来引用当前对象。
+
+即
+-   Jimmer类型之间允许定义循环引用，是否声明双向关联在设计全局实体关联模型时被决定。
+
+-   Jimmer对象之间禁止建立循环引用，单向关联的方向由每个业务场景自己选择，和全局设计无关。
+
+:::tip
+-   Jimmer保证实体对象之间绝对没有循环引用。
+
+-   实体对象不可变，保证用户在后续代码中无法破坏此约定。
+:::
+
+绝不包含循环引用的数据结构，能够被轻易地进行JSON序列化处理。更重要的是，这种JSON足够标准和简单，简单到能够被HTTP客户端的任何编程语言所理解和处理。
+
+因此，对于查询而言，Jimmer允许开发人员直接返回实体对象给客户端，无需依赖DTO。
+
+:::note
+事实上，Jimmer支持一种DTO语言，让DTO的构建、转化甚至查询都变得非常廉价而快速。
+
+然而，Jimmer主张的是`Input DTO`，而非`Output DTO`，所以，对查询而言，建议直接返回实体对象。
+:::
+
+完整的动态性描述，请参见[对象篇/不可变性](../object/immutable)

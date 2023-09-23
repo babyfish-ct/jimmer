@@ -1,4 +1,4 @@
 ---
-sidebar_position: 3
-title: Get started
+sidebar_position: 4
+title: Get Started
 ---

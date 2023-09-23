@@ -24,8 +24,8 @@ import TabItem from '@theme/TabItem';
 @Entity
 public interface Book {
 
-    @Nullable // 空属性，Java API 需要此注释，但 Kotlin API 不需要
     @ManyToOne
+    @JoinColumn(name = "STORE_ID")
     BookStore store();
 
     ...省略其他代码...
@@ -40,7 +40,8 @@ public interface Book {
 interface Book {
 
     @ManyToOne
-    val store: BookStore?
+    @JoinColumn(name = "STORE_ID")
+    val store: BookStore
 
     ...省略其他代码...
 }
@@ -64,7 +65,8 @@ interface Book {
 @Entity
 public interface BookStore {
 
-    // `mappedBy`表示`BookStore.books`是`Book.store`的镜像
+    // `mappedBy`表示`BookStore.books
+    // `是`Book.store`的镜像
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     List<Book> books();
@@ -80,7 +82,8 @@ public interface BookStore {
 @Entity
 interface BookStore {
 
-    // `mappedBy`表示`BookStore.books`是`Book.store`的镜像
+    // `mappedBy`表示`BookStore.books`
+    // 是`Book.store`的镜像
     // highlight-next-line
     @OneToMany(mappedBy = "store")
     val books: List<Book>
@@ -95,11 +98,8 @@ interface BookStore {
 </div>
 </div>
 
-:::caution
-注意
-
+:::configuration
 -   `@OneToMany`关联仅仅是`@ManyToOne`关联的镜像，不得使用`@JoinColumn`和`@JoinTable`
 
 -   `@OneToMany`关联属性必须非null，如果查询父对象并要求抓取其一对多关联属性，那么对于没有对应子对象的父对象而言，该属性的值是一个长度为0的集合，而非null
-
 :::
