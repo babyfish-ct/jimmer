@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.UnloadedException;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -22,7 +23,6 @@ import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
@@ -386,22 +386,25 @@ class Saver {
             return ObjectType.NEW;
         }
 
+        DraftHandler<?, ?> handler = data.getSqlClient().getDraftHandlers(draftSpi.__type());
+        PropId idPropId = draftSpi.__type().getIdProp().getId();
+
         if (trigger == null &&
                 data.getMode() == SaveMode.UPDATE_ONLY &&
-                draftSpi.__isLoaded(draftSpi.__type().getIdProp().getId())) {
-            update(draftSpi, false);
+                draftSpi.__isLoaded(idPropId) &&
+                isKeyOnlyDraftHandler(handler, draftSpi.__type())) {
+            update(draftSpi, ImmutableObjects.makeIdOnly(draftSpi.__type(), draftSpi.__get(idPropId)), false);
             return ObjectType.EXISTING;
         }
 
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
             boolean updated;
-            PropId idPropId = draftSpi.__type().getIdProp().getId();
             if (draftSpi.__isLoaded(idPropId)) {
-                updated = update(draftSpi, false);
+                updated = update(draftSpi, existingSpi, false);
             } else {
                 draftSpi.__set(idPropId, existingSpi.__get(idPropId));
-                updated = update(draftSpi, true);
+                updated = update(draftSpi, existingSpi, true);
             }
             if (updated && trigger != null) {
                 trigger.modifyEntityTable(existingSpi, draftSpi);
@@ -425,7 +428,7 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void insert(DraftSpi draftSpi) {
 
-        callInterceptor(draftSpi, true);
+        callInterceptor(draftSpi, null);
 
         ImmutableType type = draftSpi.__type();
         IdGenerator idGenerator = data.getSqlClient().getIdGenerator(type.getJavaClass());
@@ -610,9 +613,9 @@ class Saver {
         cache.save(draftSpi, true);
     }
 
-    private boolean update(DraftSpi draftSpi, boolean excludeKeyProps) {
+    private boolean update(DraftSpi draftSpi, ImmutableSpi original, boolean excludeKeyProps) {
 
-        callInterceptor(draftSpi, false);
+        callInterceptor(draftSpi, original);
 
         ImmutableType type = draftSpi.__type();
 
@@ -748,25 +751,25 @@ class Saver {
     }
 
     @SuppressWarnings("unchecked")
-    private void callInterceptor(DraftSpi draftSpi, boolean insert) {
+    private void callInterceptor(DraftSpi draftSpi, ImmutableSpi original) {
         ImmutableType type = draftSpi.__type();
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
         if (info != null) {
             draftSpi.__set(info.getProp().getId(), info.getRestoredValue());
         }
-        DraftInterceptor<?> interceptor = data.getSqlClient().getDraftInterceptor(type);
-        if (interceptor != null) {
+        DraftHandler<?, ?> handlers = data.getSqlClient().getDraftHandlers(type);
+        if (handlers != null) {
             PropId idPropId = type.getIdProp().getId();
             Object id = draftSpi.__isLoaded(idPropId) ?
                     draftSpi.__get(type.getIdProp().getId()) :
                     null;
-            ((DraftInterceptor<Draft>) interceptor).beforeSave(draftSpi, insert);
+            ((DraftHandler<Draft, ImmutableSpi>) handlers).beforeSave(draftSpi, original);
             if (id != null) {
                 if (!draftSpi.__isLoaded(idPropId)) {
-                    throw new IllegalStateException("Draft interceptor cannot be used to unload id");
+                    throw new IllegalStateException("Draft handlers cannot be used to unload id");
                 }
                 if (!id.equals(draftSpi.__get(idPropId))) {
-                    throw new IllegalStateException("Draft interceptor cannot be used to change id");
+                    throw new IllegalStateException("Draft handlers cannot be used to change id");
                 }
             }
         }
@@ -821,7 +824,7 @@ class Saver {
                 }
                 return q.select(
                         ((Table<ImmutableSpi>)table).fetch(
-                                IdAndKeyFetchers.getFetcher(type)
+                                IdAndKeyFetchers.getFetcher(data.getSqlClient(), type)
                         )
                 );
             }).forUpdate(data.isPessimisticLockRequired()).execute(con);
@@ -932,6 +935,17 @@ class Saver {
             );
         }
         spi.__set(idProp.getId(), convertedId);
+    }
+
+    private boolean isKeyOnlyDraftHandler(DraftHandler<?, ?> handler, ImmutableType type) {
+        if (handler == null) {
+            return true;
+        }
+        Collection<ImmutableProp> dependencies = handler.dependencies();
+        if (dependencies.isEmpty()) {
+            return true;
+        }
+        return data.getKeyProps(type).containsAll(dependencies);
     }
 
     private static void increaseDraftVersion(DraftSpi spi) {

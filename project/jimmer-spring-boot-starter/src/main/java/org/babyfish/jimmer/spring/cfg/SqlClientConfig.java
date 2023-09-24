@@ -4,6 +4,7 @@ import kotlin.Unit;
 import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
 import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
+import org.babyfish.jimmer.sql.DraftHandler;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
@@ -66,6 +67,7 @@ public class SqlClientConfig {
             @Autowired(required = false) MicroServiceExchange exchange,
             List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
+            List<DraftHandler<?, ?>> handlers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
             List<KFilter<?>> kotlinFilters,
@@ -111,6 +113,7 @@ public class SqlClientConfig {
                 exchange,
                 callbacks,
                 providers,
+                handlers,
                 interceptors,
                 javaFilters,
                 javaCustomizers,
@@ -142,6 +145,7 @@ public class SqlClientConfig {
             @Autowired(required = false) MicroServiceExchange exchange,
             List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
+            List<DraftHandler<?, ?>> handlers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> javaFilters,
             List<KFilter<?>> kotlinFilters,
@@ -187,6 +191,7 @@ public class SqlClientConfig {
                     exchange,
                     callbacks,
                     providers,
+                    handlers,
                     interceptors,
                     kotlinFilters
                             .stream()
@@ -225,6 +230,7 @@ public class SqlClientConfig {
             MicroServiceExchange exchange,
             List<CacheAbandonedCallback> callbacks,
             List<ScalarProvider<?, ?>> providers,
+            List<DraftHandler<?, ?>> handlers,
             List<DraftInterceptor<?>> interceptors,
             List<Filter<?>> filters,
             List<Customizer> customizers,
@@ -288,6 +294,7 @@ public class SqlClientConfig {
             builder.addScalarProvider(provider);
         }
 
+        builder.addDraftHandlers(handlers);
         builder.addDraftInterceptors(interceptors);
         builder.addFilters(filters);
         builder.addCustomizers(customizers);

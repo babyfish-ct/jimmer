@@ -29,6 +29,7 @@ import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -349,15 +350,37 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setSaveCommandPessimisticLock(boolean lock);
 
         @OldChain
-        Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
+        Builder addDraftHandler(DraftHandler<?, ?> handler);
 
         @OldChain
-        Builder addDraftInterceptors(DraftInterceptor<?>... interceptors);
+        Builder addDraftHandlers(DraftHandler<?, ?>... handlers);
 
         @OldChain
-        Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors);
+        Builder addDraftHandlers(Collection<? extends DraftHandler<?, ?>> handlers);
 
         @OldChain
+        default Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
+            return addDraftHandler(DraftInterceptor.wrap(interceptor));
+        }
+
+        @OldChain
+        default Builder addDraftInterceptors(DraftInterceptor<?>... interceptors) {
+            DraftHandler<?, ?>[] handlers = new DraftHandler[interceptors.length];
+            for (int i = interceptors.length - 1; i >= 0; --i) {
+                handlers[i] = DraftInterceptor.wrap(interceptors[i]);
+            }
+            return addDraftHandlers(handlers);
+        }
+
+        @OldChain
+        default Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors) {
+            List<DraftHandler<?, ?>> handlers = new ArrayList<>(interceptors.size());
+            for (DraftInterceptor<?> interceptor : interceptors) {
+                handlers.add(DraftInterceptor.wrap(interceptor));
+            }
+            return addDraftHandlers(handlers);
+        }
+
         Builder setDefaultBinLogObjectMapper(ObjectMapper mapper);
 
         @OldChain
