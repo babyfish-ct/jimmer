@@ -3,6 +3,10 @@ sidebar_position: 3
 title: Save Command
 ---
 
+:::tip
+One statement to save complex data of arbitrary shape, find DIFF to change database, like React/Vue
+:::
+
 Save commands are a very powerful capability of Jimmer that can greatly simplify the development difficulty of persisting complex data structures.
 
 If [object fetchers](../../query/object-fetcher) enable output data to be in any shape, then save commands allow input data to also be in any shape.

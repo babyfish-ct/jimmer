@@ -3,13 +3,13 @@ import clsx from 'clsx';
 import styles from './styles.module.css';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { ViewMore } from '../ViewMore';
-import { DynamicJoinProblem, DynamicJoinProblemPanel } from './DynamicJoinProblem';
-import { Communication, CommunicationPanel } from './Communication';
-import { ObjectFetcher, ObjectFetcherPanel } from './ObjectFetcher';
-import { SaveCommand, SaveCommandPanel } from './SaveCommand';
-import { CacheConsistency, CacheConsistencyPanel } from './CacheConsistency';
-import { Performance, PerformancePanel } from './Performance';
-import { DtoExplosion, ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from '../Image';
+import { DynamicJoinProblemPanel } from './DynamicJoinProblem';
+import { CommunicationPanel } from './Communication';
+import { ObjectFetcherPanel } from './ObjectFetcher';
+import { SaveCommandPanel } from './SaveCommand';
+import { CacheConsistencyPanel } from './CacheConsistency';
+import { PerformancePanel } from './Performance';
+import { ObjectCache, AssociationCache, CalculatedCache, MultiViewCache } from '../Image';
 import Grid from '@mui/material/Grid';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -60,9 +60,11 @@ const FEATURE_LIST_ZH: FeatureItem[] = [
         <ViewMore buttonText="快速预览" title="动静兼备的ORM框架">
           <Tabs groupId="homeDynamic">
             <TabItem value="query" label="查询任意形状数据结构">
+              <h1>一句话查询任意形状的数据结构，就如同GraphQL所做的那样</h1>
               <ObjectFetcherPanel/>
             </TabItem>
             <TabItem value="save" label="保存任意形状数据结构">
+              <h1>一句话保存任意复杂的数据结构，自动找出DIFF并修改数据库，类似于React/Vue</h1>
               <SaveCommandPanel/>
             </TabItem>
             <TabItem value="join" label="动态表连接">
@@ -179,9 +181,11 @@ const FEATURE_LIST_EN: FeatureItem[] = [
         <ViewMore buttonText="Quick view" title="ORM framework that combines dynamism and static typing">
           <Tabs groupId="homeDynamic">
             <TabItem value="query" label="Query data structure of arbitrary shape">
+              <h1>One statement to query data structure of arbitrary shape, like GraphQL</h1>
               <ObjectFetcherPanel/>
             </TabItem>
             <TabItem value="save" label="Save data structure of arbitrary shape">
+              <h1>One statement to save complex data of arbitrary shape, find DIFF to change database, like React/Vue</h1>
               <SaveCommandPanel/>
             </TabItem>
             <TabItem value="join" label="Dynamic table joins">

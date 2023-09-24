@@ -9,6 +9,11 @@ import TabItem from '@theme/TabItem';
 import { ObjectFetcherPanel } from '@site/src/components/HomepageFeatures/ObjectFetcher';
 
 ## 概念
+
+:::tip
+一句话查询任意形状的数据结构，就如同GraphQL所做的那样
+:::
+
 对象抓取器，是Jimmer的一个重要功能，抓取指定的字段，然后组装成对象，这一切是自动完成的，节省了很多手写转换逻辑的时间。
 
 对象抓取器和以下这类技术类似，但更加强大

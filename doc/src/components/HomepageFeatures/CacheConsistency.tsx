@@ -14,10 +14,10 @@ import { Consistency } from "../Image";
 export const CacheConsistency: FC = memo(() => {
     const zh = useZh();
     return zh ? 
-        <ViewMore buttonText='简要了解' title='缓存一致性' variant='outlined'>
+        <ViewMore buttonText='简要了解' title='缓存一致性'>
             {ZH}
         </ViewMore> : 
-        <ViewMore buttonText='A Brief Introduction' title='Cache Consistency' variant='outlined'>
+        <ViewMore buttonText='A Brief Introduction' title='Cache Consistency'>
             {EN}
         </ViewMore>;
 });

@@ -10,6 +10,10 @@ import { ObjectFetcherPanel } from '@site/src/components/HomepageFeatures/Object
 
 ## Concept
 
+:::tip
+One statement to query data structure of arbitrary shape, like GraphQL
+:::
+
 The object fetcher is an important feature of Jimmer that automatically fetches specified fields and assembles them into objects, saving a lot of time writing manual conversion logic.
 
 The object fetcher is similar to the following technologies, but more powerful:
