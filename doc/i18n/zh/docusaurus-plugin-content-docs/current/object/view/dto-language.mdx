@@ -112,7 +112,7 @@ BookView {
     ...略...
 }
 
-AnnotherBookView {
+AnotherBookView {
     ...略...
 }
 
@@ -120,20 +120,20 @@ input BookInput {
     ...略...
 }
 
-input AnnotherBookInput {
+input AnotherBookInput {
     ...略...
 }
 ```
 
 这表示
 
--   `BookView`和`AnnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View&lt;E&gt;`接口
+-   `BookView`和`AnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View<E>`接口
 
     :::note
     建议输出形状为`View`结尾
     :::
 
--   `BookInput`和`AnnotherBookInput`用作保存输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input&lt;E&gt;`接口
+-   `BookInput`和`AnotherBookInput`用作保存输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input<E>`接口
 
     :::note
     建议输入形状为`Input`结尾
@@ -218,11 +218,11 @@ inputOnly BookUpdateInfo {
 BookView {
     id
     name 
-    editon
+    edition
 }
 ```
 
-这表示，DTO只映射实体中的三个属性：`id`、`name`和`editon`，如下
+这表示，DTO只映射实体中的三个属性：`id`、`name`和`edition`，如下
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -326,7 +326,7 @@ BookView {
 
 和上面一样，如果按官方例子中`Book`类型的继承关系来理解的话，`#allScalars`会加入属性`createdTime`、`modifiedTime`、`tenant`、`id`、`name`、`edition`和`price`。
 
-而`-teant`从中减去了`tenant`属性，最终加入属性`createdTime`、`modifiedTime`、`id`、`name`、`edition`和`price`。
+而`-tenant`从中减去了`tenant`属性，最终加入属性`createdTime`、`modifiedTime`、`id`、`name`、`edition`和`price`。
 
 :::info
 负属性指定的其实不是实体属性名，而是DTO中对应属性的名称，在这里二者相同，并无差异。
