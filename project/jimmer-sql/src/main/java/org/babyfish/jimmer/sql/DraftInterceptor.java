@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Simpler {@link DraftHandler}, it will not query original data,
  * only tell you whether the current operation is insert.
- * @param <D>
+ * @param <D> Draft type
  */
 public interface DraftInterceptor<D extends Draft> {
 

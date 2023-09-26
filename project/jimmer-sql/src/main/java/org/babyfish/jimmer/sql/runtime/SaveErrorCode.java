@@ -40,7 +40,7 @@ public enum SaveErrorCode {
     NO_VERSION,
 
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
-    ILLEGAL_VERSION,
+    OPTIMISTIC_LOCK_ERROR,
 
 
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
@@ -60,5 +60,11 @@ public enum SaveErrorCode {
     FAILED_REMOTE_VALIDATION,
 
     @ErrorField(name = "exportedPath", type = ExportedSavePath.class)
-    UNSTRUCTURED_ASSOCIATION,
+    UNSTRUCTURED_ASSOCIATION;
+
+    /**
+     * Will be removed in `1.0.0`
+     */
+    @Deprecated
+    public static final SaveErrorCode ILLEGAL_VERSION = OPTIMISTIC_LOCK_ERROR;
 }

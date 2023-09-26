@@ -9,13 +9,17 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -29,8 +33,11 @@ import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.*;
 import java.util.*;
+import java.util.function.BiFunction;
 
 class Saver {
+
+    private static final String GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON = "Joining is disabled in general optimistic lock";
 
     private final AbstractEntitySaveCommandImpl.Data data;
 
@@ -615,10 +622,7 @@ class Saver {
 
     private boolean update(DraftSpi draftSpi, ImmutableSpi original, boolean excludeKeyProps) {
 
-        callInterceptor(draftSpi, original);
-
         ImmutableType type = draftSpi.__type();
-
         Set<ImmutableProp> excludeProps = null;
         if (excludeKeyProps) {
             excludeProps = data.getKeyProps(type);
@@ -627,9 +631,29 @@ class Saver {
             excludeProps = Collections.emptySet();
         }
 
+        callInterceptor(draftSpi, original);
+
+        boolean needUpdated = false;
+        for (ImmutableProp prop : type.getProps().values()) {
+            if (!prop.isId() &&
+                    prop.isColumnDefinition() &&
+                    draftSpi.__isLoaded(prop.getId()) &&
+                    !excludeProps.contains(prop)
+            ) {
+                //callInterceptor(draftSpi, original);
+                needUpdated = true;
+                break;
+            }
+        }
+
+        if (!needUpdated) {
+            return false;
+        }
+
         List<ImmutableProp> updatedProps = new ArrayList<>();
         List<Object> updatedValues = new ArrayList<>();
         Integer version = null;
+        BiFunction<Table<?>, Object, Predicate> lambda = data.optimisticLockLambda(type);
 
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
@@ -639,12 +663,14 @@ class Saver {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
                     ScalarProvider<Object, Object> scalarProvider;
-                    if (prop.isReference(TargetLevel.ENTITY)) {
+                    if (lambda != null) {
+                        scalarProvider = null;
+                    } else if (prop.isReference(TargetLevel.ENTITY)) {
                         scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
                         if (value != null) {
                             value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                         }
-                    } else {
+                    } else  {
                         scalarProvider = data.getSqlClient().getScalarProvider(prop);
                     }
                     if (scalarProvider != null) {
@@ -679,6 +705,75 @@ class Saver {
         if (updatedProps.isEmpty() && version == null) {
             return false;
         }
+
+        int rowCount;
+        if (lambda != null) {
+            rowCount = executeUpdateWithLambda(draftSpi, updatedProps, updatedValues, version, lambda);
+        } else {
+            rowCount = executeUpdateWithoutLambda(draftSpi, updatedProps, updatedValues, version);
+        }
+        if (rowCount != 0) {
+            addOutput(AffectedTable.of(type), rowCount);
+            if (version != null) {
+                increaseDraftVersion(draftSpi);
+            }
+            cache.save(draftSpi, true);
+        } else if (version != null || lambda != null) {
+            throw new SaveException(
+                    SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
+                    path,
+                    "Cannot update the entity whose type is \"" +
+                            type +
+                            "\" and id is \"" +
+                            draftSpi.__get(type.getIdProp().getId()) +
+                            "\" when using optimistic lock"
+            );
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private int executeUpdateWithLambda(
+            DraftSpi draftSpi,
+            List<ImmutableProp> updatedProps,
+            List<Object> updatedValues,
+            Integer version,
+            BiFunction<Table<?>, Object, Predicate> lambda
+    ) {
+        ImmutableType type = draftSpi.__type();
+        ImmutableProp idProp = type.getIdProp();
+        MutableUpdateImpl update = new MutableUpdateImpl(data.getSqlClient(), type, true);
+        Table<?> table = update.getTable();
+        if (table instanceof TableImplementor<?>) {
+            table = new UntypedJoinDisabledTableProxy<>(
+                    (TableImplementor<Object>) table,
+                    GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON
+            );
+        } else {
+            table = ((TableProxy<?>)table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
+        }
+        int updatedCount = updatedProps.size();
+        for (int i = 0; i < updatedCount; i++) {
+            update.set(table.get(updatedProps.get(i).getName()), updatedValues.get(i));
+        }
+        update.where(((PropExpression<Object>)table.get(idProp.getName())).eq(draftSpi.__get(idProp.getId())));
+        if (version != null) {
+            ImmutableProp versionProp = type.getVersionProp();
+            assert  versionProp != null;
+            update.where(((PropExpression<Object>)table.get(versionProp.getName())).eq(version));
+        }
+        update.where(lambda.apply(table, draftSpi));
+        return update.execute(con);
+    }
+
+    private int executeUpdateWithoutLambda(
+            DraftSpi draftSpi,
+            List<ImmutableProp> updatedProps,
+            List<Object> updatedValues,
+            Integer version
+    ) {
+        ImmutableType type = draftSpi.__type();
+        ImmutableProp idProp = type.getIdProp();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
         builder
@@ -705,7 +800,7 @@ class Saver {
                 .enter(SqlBuilder.ScopeType.WHERE)
                 .definition(null, type.getIdProp().getStorage(strategy), true)
                 .sql(" = ")
-                .variable(draftSpi.__get(type.getIdProp().getId()));
+                .variable(draftSpi.__get(idProp.getId()));
         if (versionColumName != null) {
             builder
                     .separator()
@@ -716,7 +811,7 @@ class Saver {
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        int rowCount = data.getSqlClient().getExecutor().execute(
+        return data.getSqlClient().getExecutor().execute(
                 new Executor.Args<>(
                         data.getSqlClient(),
                         con,
@@ -728,26 +823,6 @@ class Saver {
                         PreparedStatement::executeUpdate
                 )
         );
-        if (rowCount != 0) {
-            addOutput(AffectedTable.of(type), rowCount);
-            if (version != null) {
-                increaseDraftVersion(draftSpi);
-            }
-            cache.save(draftSpi, true);
-        } else if (version != null) {
-            throw new SaveException(
-                    SaveErrorCode.ILLEGAL_VERSION,
-                    path,
-                    "Cannot update the entity whose type is \"" +
-                            type +
-                            "\", id is \"" +
-                            draftSpi.__get(type.getIdProp().getId()) +
-                            "\" and version is \"" +
-                            version +
-                            "\""
-            );
-        }
-        return true;
     }
 
     @SuppressWarnings("unchecked")

@@ -5,8 +5,11 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.Arrays;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public interface AbstractEntitySaveCommand {
@@ -172,6 +175,12 @@ public interface AbstractEntitySaveCommand {
 
         @OldChain
         Cfg setPessimisticLock(boolean pessimisticLock);
+
+        @OldChain
+        <E, T extends Table<E>> Cfg setOptimisticLock(
+                Class<T> tableType,
+                BiFunction<T, E, Predicate> block
+        );
 
         @OldChain
         Cfg setDeleteMode(DeleteMode mode);

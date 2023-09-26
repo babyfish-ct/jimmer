@@ -5,7 +5,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.Executable;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.table.Table;
 
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public interface BatchEntitySaveCommand<E>
@@ -122,6 +125,14 @@ public interface BatchEntitySaveCommand<E>
     @NewChain
     default BatchEntitySaveCommand<E> setPessimisticLock(boolean pessimisticLock) {
         return configure(cfg -> cfg.setPessimisticLock(pessimisticLock));
+    }
+
+    @NewChain
+    default <T extends Table<E>> BatchEntitySaveCommand<E> setOptimisticLock(
+            Class<T> tableType,
+            BiFunction<T, E, Predicate> block
+    ) {
+        return configure(cfg -> cfg.setOptimisticLock(tableType, block));
     }
 
     @NewChain

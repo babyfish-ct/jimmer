@@ -8,6 +8,19 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 
+/**
+ * Complexer {@link DraftInterceptor}, before saving draft, query the original entity with
+ * `id`, `key` and other properties returned by {@link #dependencies()}
+ *
+ * <p>
+ *     The default behavior of `save` with `UPDATE_ONLY` or `update` is not querying original entity.
+ *     However, if {@link #dependencies()} returns some properties which is neither `id` nor `key`,
+ *     the default behavior will be broken, original entity will be queried even if the save mode is `UPDATE_ONLY`
+ * </p>
+ *
+ * @param <D> The draft type
+ * @param <E> The entity type
+ */
 public interface DraftHandler<D extends Draft, E> {
 
     /**

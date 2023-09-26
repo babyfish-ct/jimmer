@@ -5,6 +5,8 @@ import java.lang.annotation.*;
 /**
  * Specifies that an interface is an immutable interface.
  *
+ * <p>Don't use it on ORM entity type!</p>
+ *
  * If a top-level user interface is decorated with
  * this annotation or org.babyfish.jimmer.sql.Entity,
  * the Annotation Processor will generate more source code for it.

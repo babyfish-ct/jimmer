@@ -4,8 +4,8 @@ import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
+import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.*;
-import org.babyfish.jimmer.sql.model.oneway.Task;
 import org.babyfish.jimmer.sql.model.oneway.TaskDraft;
 import org.babyfish.jimmer.sql.model.oneway.Worker;
 import org.babyfish.jimmer.sql.runtime.DbNull;
@@ -1429,7 +1429,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
     }
 
     @Test
-    public void testByIllegalVersion() {
+    public void testBySpecialOptimisticLock() {
         executeAndExpectResult(
                 getSqlClient().getEntities().saveCommand(
                         BookStoreDraft.$.produce(store -> {
@@ -1455,13 +1455,63 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.message(
                                 "Save error caused by the path: \"<root>\": " +
                                         "Cannot update the entity whose type is " +
-                                        "\"org.babyfish.jimmer.sql.model.BookStore\", " +
-                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" and version is \"1\""
+                                        "\"org.babyfish.jimmer.sql.model.BookStore\" and " +
+                                        "id is \"2fa3955e-3e83-49b9-902e-0465c109c779\" when using optimistic lock"
                         );
                         it.type(SaveException.class);
                         it.detail(ex -> {
                             Assertions.assertEquals(
-                                    SaveErrorCode.ILLEGAL_VERSION,
+                                    SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
+                                    ((SaveException)ex).getCode()
+                            );
+                        });
+                    });
+                }
+        );
+        assertEvents();
+    }
+
+    @Test
+    public void testGeneralOptimisticLock() {
+        executeAndExpectResult(
+                getSqlClient()
+                        .getEntities()
+                        .saveCommand(
+                                BookDraft.$.produce(book -> {
+                                    book.setId(graphQLInActionId3);
+                                    book.setPrice(BigDecimal.ONE);
+                                })
+                        )
+                        .setMode(SaveMode.UPDATE_ONLY)
+                        .setOptimisticLock(BookTable.class, (table, it) -> {
+                            return table.price().le(it.price());
+                        }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.ID = ?"
+                        );
+                        it.variables(graphQLInActionId3);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update BOOK tb_1_ set PRICE = ? where tb_1_.ID = ? and tb_1_.PRICE <= ?"
+                        );
+                        it.variables(BigDecimal.ONE, graphQLInActionId3, BigDecimal.ONE);
+                    });
+                    ctx.throwable(it -> {
+                        it.type(SaveException.class);
+                        it.message(
+                                "Save error caused by the path: \"<root>\": Cannot update the entity " +
+                                        "whose type is \"org.babyfish.jimmer.sql.model.Book\" " +
+                                        "and id is \"780bdf07-05af-48bf-9be9-f8c65236fecc\" " +
+                                        "when using optimistic lock"
+                        );
+                        it.detail(ex -> {
+                            Assertions.assertEquals(
+                                    SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
                                     ((SaveException)ex).getCode()
                             );
                         });
