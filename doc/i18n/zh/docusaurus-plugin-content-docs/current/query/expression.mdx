@@ -109,7 +109,7 @@ where(
 </TabItem>
 </Tabs>
 
-可以用更便捷的写法代替
+这是不是比较繁琐？别担心，可以用更便捷的写法代替
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -414,9 +414,19 @@ from BOOK as tb_1_
     </Tabs>
 
     最终生成的SQL条件
-    ```sql
-    where lower(tb_1_.NAME) like ?
-    ```
+
+    -   如果数据库方言支持`ilike`
+        
+        ```sql
+        where tb_1_.NAME ilike ? 
+        ```
+
+    -   否则
+        
+        ```sql
+        where lower(tb_1_.NAME) like ? 
+        ```
+    
     相应的JDBC参数: `%ab%`
 
 ### 匹配模式

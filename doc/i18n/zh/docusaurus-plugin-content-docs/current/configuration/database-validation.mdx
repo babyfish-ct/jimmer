@@ -22,6 +22,8 @@ import TabItem from '@theme/TabItem';
 
 -   验证列的nullity是否和实体模型中属性的定义一致。
 
+    如果属性被`@OneToOne(inputNotNull = true)`或`@ManyToOne(inputNotNull = true)`修饰，则无视属性本身的nullity，认为数据中对应的外键不能为null。
+
 -   对于实体模型中各实体的id属性，验证数据库是否有存在完全匹配的的主键约束。
 
 -   对于实体模型中定义的真外键 *(参见[真假外键](../mapping/base/foreignkey))* 而言，验证数据库中是否存在完全匹配的的外键约束。
@@ -209,7 +211,7 @@ import TabItem from '@theme/TabItem';
 
 ## 暂时忽略局部验证
 
-有的时候，开发人员正在开发一个新功能，它还没有完成固无法验证。开发人员自然不会去运行还未完成的功能，期望未完成的部分不要数据库结构验证。
+有的时候，开发人员正在开发一个新功能，它还没有完成故无法验证。开发人员自然不会去运行还未完成的功能，期望未完成的部分不要数据库结构验证。
 
 对此，Jimmer提供注解`@org.babyfish.jimmer.sql.DatabaseValidationIgnore`，该注解有以下两种用法：
 

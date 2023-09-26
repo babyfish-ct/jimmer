@@ -6,19 +6,11 @@ title: Mutable Association Table
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Premise of This Article
-
-Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers. 
-
-If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
-
-The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
-
 ## Overview
 
 First, the association table is hidden by the object model, with no direct corresponding entity type. This problem has been explained in [Query Association Table](../query/associations), so I won't repeat it here.
 
-In addition, in the [Save Command](./save-command) section, we introduced the save command. It can compare the existing data in the database with the new data the user wants to save. If a relation property based on the association table has changed, the association table will be modified.
+In addition, in the [Save Command](./save-command) section, we introduced the save command. It can compare the existing data structure in the database with the new data structure the user wants to save. If a relation property based on the association table has changed, the association table will be modified.
 
 Admittedly, the Save Command feature is very powerful, and modifying the association table is just a very small part of its capabilities. However, sometimes we just need a simple way to insert or delete data directly from the association table, we don't need the full capabilities of the Save Command.  
 
@@ -331,6 +323,10 @@ The generated SQL statements are:
         (?, ?)
     ```
 
+:::info
+Some databases support `UPSERT` *(such as Postgres' `insert into ... on conflict ...`)*, which will be supported before Jimmer-1.0.0
+:::
+
 ## Delete Association  
 
 <Tabs groupId="language">
@@ -482,7 +478,7 @@ public void setAuthors(long bookId, Collection<Long> authorIds) {
                 AssociationTable.of(BookTableEx.class, BookTableEx::authors);    
     List<Long> oldAuthorIds = sqlClient
             .createAssociationQuery(table)
-            .where(table.source().id().eq(1L))
+            .where(table.source().id().eq(bookId))
             .select(table.target().id())
             .execute();
 

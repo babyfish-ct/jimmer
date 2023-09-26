@@ -342,7 +342,13 @@ Jimmer can control the visibility of each property, making it shown or hidden.
 
 Unlike [dynamic](./dynamic) where a property can be loaded or unloaded, visibility is an orthogonal feature, completely unrelated to dynamism.
 
-Visibility only affects [Jackson serialization](./jackson) of objects *(including their own toString behavior)*, deciding whether a property is serialized. Other than that, it does not impact any other behavior of the object.
+Visibility only affects [Jackson serialization](./jackson) of objects *(including their own `toString` behavior)*, deciding whether a property is serialized. Other than that, it does not impact any other behavior of the object.
+
+So the previous examples can be easily explained:
+
+-   First query: `Book.authors` is shown, `Book.authorIds` is hidden
+
+-   Second query: `Book.authors` is hidden, `Book.authorIds` is shown
 
 :::tip
 Only when both conditions below are met will a property participate in Jackson serialization
@@ -352,9 +358,3 @@ Only when both conditions below are met will a property participate in Jackson s
 
 See [tool methods](./tool) for how to control visibility of Jimmer object properties yourself
 :::
-
-So the previous examples can be easily explained:
-
--   First query: `Book.authors` is shown, `Book.authorIds` is hidden
-
--   Second query: `Book.authors` is hidden, `Book.authorIds` is shown

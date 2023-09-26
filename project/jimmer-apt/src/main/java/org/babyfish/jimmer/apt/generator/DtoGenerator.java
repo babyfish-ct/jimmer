@@ -383,10 +383,13 @@ public class DtoGenerator {
                 if (prop.getBaseProp().isList()) {
                     if (prop.isNullable()) {
                         builder.addStatement(
-                                "this.$L = spi.__isLoaded($T.$L.unwrap().getId()) ? base.$L().stream().map($T::$L).collect($T.toList()) : $L",
+                                "this.$L = spi.__isLoaded($T.$L.unwrap().getId())$L ? \n" +
+                                        "    base.$L().stream().map($T::$L).collect($T.toList()) : \n" +
+                                        "    $L",
                                 prop.getName(),
                                 dtoType.getBaseType().getPropsClassName(),
                                 Strings.upper(prop.getBaseProp().getName()),
+                                prop.isRecursive() ? "" : " && !base." + prop.getBaseProp().getGetterName() + "().isEmpty()",
                                 prop.getBaseProp().getGetterName(),
                                 prop.getBaseProp().getTargetType().getClassName(),
                                 prop.getBaseProp().getTargetType().getIdProp().getName(),
@@ -462,10 +465,13 @@ public class DtoGenerator {
                 if (prop.getBaseProp().isList()) {
                     if (prop.isNullable()) {
                         builder.addStatement(
-                                "this.$L = spi.__isLoaded($T.$L.unwrap().getId()) ? base.$L().stream().map($T::new).collect($T.toList()) : $L",
+                                "this.$L = spi.__isLoaded($T.$L.unwrap().getId())$L ? \n" +
+                                        "    base.$L().stream().map($T::new).collect($T.toList()) : \n" +
+                                        "    $L",
                                 prop.getName(),
                                 dtoType.getBaseType().getPropsClassName(),
                                 Strings.upper(prop.getBaseProp().getName()),
+                                prop.isRecursive() ? "" : " && !base." + prop.getBaseProp().getGetterName() + "().isEmpty()",
                                 prop.getBaseProp().getGetterName(),
                                 getPropElementName(prop),
                                 Collectors.class,

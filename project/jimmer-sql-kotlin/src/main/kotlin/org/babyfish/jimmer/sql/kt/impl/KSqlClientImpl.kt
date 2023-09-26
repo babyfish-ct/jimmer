@@ -7,7 +7,6 @@ import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
-import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.kt.*
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -31,7 +30,7 @@ import kotlin.reflect.KProperty1
 
 internal class KSqlClientImpl(
     override val javaClient: JSqlClientImplementor
-) : KSqlClient {
+) : KSqlClientImplementor {
 
     // Override it for performance optimization
     @Suppress("UNCHECKED_CAST")

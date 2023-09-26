@@ -118,17 +118,17 @@ interface BookRepository : KRepository<BookStore, Long> {
     This represents a query that is created but not yet executed. It needs to call `execute` to actually execute it to get the final result `List<Book>`.
     
     :::note
-    The query is not executed immediately after creation, `execute` must be called to execute it. This is not a bug, but an important capability that the [pagination query](#pagination-queries) section will illustrate.
+    The query is not executed immediately after creation, `execute` must be called to execute it. This is not a design flaw, but an important capability that the [pagination query](#pagination-queries) section will illustrate.
     :::
 
     `execute` is not the only execution method, in addition to `execute`, there are other execution methods:
 
     |Method|Return Type|Note|
     |--|--|--|
-    |execute (as shown in this example)|List&lt;T&gt;|Returns a list|
-    |fetchOne|T (cannot be null)|Returns one record, throws exception if no data or multiple data|
-    |fetchOneOrNull|T (can be null)|Returns one record, throws exception if multiple data|
-    |fetchOptional (Java only)|Optional wrapping of T or null|Returns one record, throws exception if multiple data| 
+    |execute *(as shown in this example)*|List&lt;T&gt;|Returns a list|
+    |fetchOne|T *(cannot be null)*|Returns one record, throws exception if no data or multiple data|
+    |fetchOneOrNull|T *(can be null)*|Returns one record, throws exception if multiple data|
+    |fetchOptional *(Java only)*|Optional wrapping of T or null|Returns one record, throws exception if multiple data| 
     |forEach|No return|Use when data volume is large, don't want to build collection, just iterate|
 
     All these execution methods have two overloaded versions:
@@ -195,7 +195,7 @@ Usage:
     from BOOK as tb_1_
     where
         /* highlight-next-line */
-        lower(tb_1_.NAME) like ? /* actual param: %g% */
+        lower(tb_1_.NAME) like ? /* %g% */
     order by
         tb_1_.NAME asc,
         tb_1_.EDITION desc
@@ -203,7 +203,7 @@ Usage:
 
 ## Dynamic JOIN
 
-Next, add a `storeName` parameter to this query method to filter on the `name` attribute of `BookStore` associated via the `Book.store` property of the current `Book`.
+Next, add a `storeName` parameter to this query method to filter on the `name` property of `BookStore` associated via the `Book.store` property of the current `Book`.
 
 <Tabs groupId="language"> 
 <TabItem value="java" label="Java">
@@ -288,7 +288,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
 Where Java's `table.store().name()` or Kotlin's `table.store.name` means:
 
-Starting from the current queried object `Book`, connect to the `BookStore` object via the associated property `Book.store`, and finally apply filter condition on the `BookStore.name` attribute.
+Starting from the current queried object `Book`, join to the `BookStore` object via the association property `Book.store`, and finally apply filter condition on the `BookStore.name` property.
 
 Obviously, if the `storeName` parameter is not specified, the final SQL will not contain JOIN, no need to demonstrate. 
 
@@ -333,7 +333,7 @@ Next, add an `authorName` parameter to this query method to filter on the `first
 :::note  
 Unfortunately, if you try to emulate the previous example's `table.store.name` by writing `table.authors.firstName`, you'll find there is no `table.authors` option in the IDE auto-complete of `table`.
 
-This is because `Book.authors` is a collection association (collective term for one-to-many and many-to-many associations). Blindly connecting other objects via collection associations will lead to duplicate data in the query results. More importantly, this duplication is fatal for pagination queries to be shown later. 
+This is because `Book.authors` is a collection association (collective term for one-to-many and many-to-many associations). Blindly joining other objects via collection associations will lead to duplicate data in the query results. More importantly, this duplication is fatal for pagination queries to be shown later. 
 
 For more details, please refer to [Pagination Safety](../../query/dynamic-join/table-ex).
 
@@ -462,7 +462,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
     -   Java: The subquery is based on the global variable `AuthorTableEx.$`, alias it to `author` for subsequent convenience.
 
-        Here, the subquery is based on `AuthorTableEx.$` rather than `AuthorTable.$` so that `select(table.books.id)` can compile.
+        Here, the subquery is based on `AuthorTableEx.$` rather than `AuthorTable.$` so that `select(table.books().id())` can compile.
 
         Please read [query/Pagination Safety](../../query/dynamic-join/table-ex) for more details.
         
@@ -470,7 +470,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
         -   Inside subquery lambda: `table` var represents `KNonNullTableEx<Author>`
         -   Outside subquery lambda, inside parent query lambda: `table` var represents `KNonNullTable<Book>` 
-        -   If need to reference parent query table inside subquery (not shown in this example, usually used for correlated subqueries): please use `parentTable` var
+        -   If need to reference parent query table inside subquery (not shown in this example, usually used for correlated subqueries): please use `parentTable`
         
 -   ❷  Create subquery
 
@@ -508,9 +508,9 @@ where
         inner join BOOK_AUTHOR_MAPPING as tb_3_
             on tb_2_.ID = tb_3_.AUTHOR_ID
         where
-            lower(tb_2_.FIRST_NAME) like ? /* actual param: %a% */ 
+            lower(tb_2_.FIRST_NAME) like ? /* %a% */ 
         or
-            lower(tb_2_.LAST_NAME) like ? /* actual param: %a% */ 
+            lower(tb_2_.LAST_NAME) like ? /* %a% */ 
     )
 order by
     tb_1_.NAME asc,
@@ -645,7 +645,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 
 -   For Kotlin, `org.babyfish.jimmer.spring.repository.orderBy` extends the capability of Jimmer's underlying SQL DSL, so the query object can sort based on the Spring Data Sort object.
 
-To facilitate the top-level code to accept sorting strings from the frontend, Jimmer provides the utility class `org.babyfish.jimmer.spring.model.SortUtils` to convert the string passed from the frontend to `org.springframework.data.domain.Sort`. 
+To facilitate the top-level code to accept sorting strings from the client, Jimmer provides the utility class `org.babyfish.jimmer.spring.model.SortUtils` to convert the string passed from the frontend to `org.springframework.data.domain.Sort`. 
 
 It can be used like:
 
@@ -745,7 +745,7 @@ Let's continue improving the example by adding pagination capability.
 
 To implement pagination, need:
 
--   Replace the `org.springframework.data.domain.Sort` type parameter with `org.springframework.data.domain.Pageable` (latter contains former) 
+-   Replace the `org.springframework.data.domain.Sort` type parameter with `org.springframework.data.domain.Pageable` *(`Pageable` contains `Sort`)* 
 -   Change return value from `java.util.List<Book>` to `org.springframework.data.domain.Page<Book>`
 -   Internally use specific APIs to achieve pagination in one statement
 
@@ -879,21 +879,21 @@ interface BookRepository : KRepository<BookStore, Long> {
 
 -   ❸ Execute paged query
 
-    - Java
+    -   Java
 
-        Create Pager object and execute paged parameters. Argument is the **unexecuted** original query
+        Create a Pager object to paginate the original **unexecuted** query
 
-        - `pager` is a method inherited from base interface `JRepository/KRepository`
-        - The `pager` method has multiple overloaded versions, here the one called accepts a pagable object 
-        - The `pager` method creates a `Pager` object, which has an `execute` method that accepts the **unexecuted** original query
+        -   `pager` is a method inherited from base interface `JRepository/KRepository`
+        -   The `pager` method has multiple overloaded versions, here the one called accepts a pagable object 
+        -   The `pager` method creates a `Pager` object, which has an `execute` method that accepts the **unexecuted** original query
 
-    - Kotlin
+    -   Kotlin
 
         Kotlin API provides the extension method `fetchPage` for `KConfigurableRootQuery<*, E>` types to implement paged queries
         
 -   ❹ Get sort object from pageable to perform dynamic sorting
 
-Now let's demonstrate the usage of dynamic sorting by specifying all other query parameters as null to focus on the pagination logic.
+Now let's demonstrate the usage of paging query by specifying all other query parameters as null to focus on the pagination logic.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -1024,7 +1024,7 @@ order by
     tb_1_.EDITION desc
 /* MySQL pagination */  
 /* highlight-next-line */
-limit ?, /* actual param: 5(offset) */ ? /* actual param: 5(limit) */
+limit ?, /* 5(offset) */ ? /* 5(limit) */
 ```
 
 ## Object Fetcher
@@ -1169,7 +1169,7 @@ interface BookRepository : KRepository<BookStore, Long> {
 </TabItem>
 </Tabs>
 
-If no Fetcher is passed or simple object shape is passed, the result will necessarily be similar to previous examples, no need to repeat.
+If no fetcher is passed or simple object shape is passed, the result will necessarily be similar to previous examples, no need to repeat.
 
 So let's just demonstrate querying a complex data structure directly. To focus on the object fetcher, all other query parameters are specified as null except the fetcher.
 
@@ -1396,7 +1396,7 @@ order by
     tb_1_.NAME asc,
     tb_1_.EDITION desc
 /* MySQL pagination */
-limit ?, /* actual param: 5(offset) */ ? /* actual param: 5(limit) */  
+limit ?, /* 5(offset) */ ? /*  5(limit) */  
 
 /* 
  * Step 3: For the 5 paged data (not 12 rows before paging),  
@@ -1411,8 +1411,7 @@ limit ?, /* actual param: 5(offset) */ ? /* actual param: 5(limit) */
 select tb_1_.ID, tb_1_.NAME
 from BOOK_STORE as tb_1_
 where tb_1_.ID in (
-    ?, ?
-    /* actual param list: 2, 1 */
+    ?/* 2 */, ?/* 1 */
 )
 
 /* 
@@ -1424,8 +1423,7 @@ from AUTHOR as tb_1_
 inner join BOOK_AUTHOR_MAPPING as tb_2_
     on tb_1_.ID = tb_2_.AUTHOR_ID
 where tb_2_.BOOK_ID in (
-    ?, ?, ?, ?, ?
-    /* actual param list: 10, 3, 2, 1, 9 */  
+    ?/* 10 */, ?/* 3 */, ?/* 2 */, ?/* 1 */, ?/* 9 */
 )
 ```
 

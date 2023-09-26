@@ -90,6 +90,38 @@ fun cacheFactory(
 </TabItem>
 </Tabs>
 
+如果不想为某些实体类型支持缓存，返回null即可
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+@Override
+public Cache<?, ?> createObjectCache(ImmutableType type) {
+    if (type.getJavaClass() == SomeEnitity.class) {
+        // highlight-next-line
+        return null;
+    }
+    ...
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+override fun createObjectCache(type: ImmutableType): Cache<*, *>? =
+    if (type.javaClass === SomeEnitity::class.java) {
+        // highlight-next-line
+        null
+    } else {
+        ...
+    }
+```
+
+</TabItem>
+</Tabs>
+
 ## 使用对象缓存
 
 有两种用法可以利用对象缓存
@@ -148,7 +180,7 @@ where
     )
 ```
 
-Jimmer会把从查询结构放入缓存中，因此，我们可以从缓存中查看这些数据
+Jimmer会把查询结果放入缓存中，因此，我们可以从缓存中查看这些数据
 ```
 127.0.0.1:6379> keys Book-*
 1) "Book-4"
@@ -277,8 +309,9 @@ println(books)
         )
     ```
     :::info
-    如果没有启用缓存，生成的SQL会有差异
-    <ViewMore buttonText="不启用缓存的差异">
+    我们需要的字段仅有`ID`和`NAME`，但这里查询了所有字段，和之前在[对象抓取器](../../query/object-fetcher)中所讲的不一样。请查看:
+    
+    <ViewMore buttonText="和不启用缓存相比的差异">
 
     有缓存模式下，这里生成的SQL为
     ```sql
@@ -345,7 +378,7 @@ println(books)
     </ViewMore>
     :::
 
-    Jimmer会把从查询结构放入缓存中，因此，我们可以从缓存中查看这些数据
+    Jimmer会把查询结果放入缓存中，因此，我们可以从缓存中查看这些数据
     ```
     127.0.0.1:6379> keys BookStore-*
     1) "BookStore-1"

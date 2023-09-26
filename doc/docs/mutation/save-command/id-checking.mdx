@@ -28,11 +28,10 @@ First, for <ViewMore buttonText="long associations"><LongAssociation/></ViewMore
 sqlClient.update(
     BookDraft.$.produce(draft -> {
         draft.setId(3L);
-        draft.addIntoAuthors(author -> author.setId(1L));
-        draft.addIntoAuthors(author -> author.setId(2L));
-        // highlight-next-line
-        draft.addIntoAuthors(author -> {
-            author.setId(1000L); // illegal associated id, 1000
+        draft.addIntoAuthors(author -> author.setId(1L)); // ❶
+        draft.addIntoAuthors(author -> author.setId(2L)); // ❷
+        draft.addIntoAuthors(author -> { // ❸
+            author.setId(1000L); 
             author.setFirstName("Svetlana");
             author.setLastName("Isakova");
             author.setGender(Gender.FEMALE);
@@ -48,11 +47,10 @@ sqlClient.update(
 sqlClient.update(
     new(Book::class).by {
         id = 3L
-        authors().addBy { id = 1L } 
-        authors().addBy { id = 2L }
-        // highlight-next-line
-        authors().addBy {
-            id = 1000L // illegal associated id, 1000
+        authors().addBy { id = 1L } // ❶
+        authors().addBy { id = 2L } // ❷
+        authors().addBy { // ❸
+            id = 1000L 
             firstName = "Svetlana"
             lastName = "Isakova"
             gender = Gender.FEMALE
@@ -64,9 +62,11 @@ sqlClient.update(
 </TabItem>
 </Tabs>
 
-:::note
-This example mixes long and short associations, but the highlighted line of code is a long association.
-:::
+This example mixes long associations and short associations.
+
+- ❶ ❷ They are <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>, specifying invalid ids will lead to errors.
+
+- ❸ This is a <ViewMore buttonText="long association"><LongAssociation/></ViewMore>, even if an invalid id is specified, Jimmer will automatically create the associated object.
 
 The generated SQL is:
 
@@ -101,34 +101,49 @@ values
 ```
 
 :::info
-As you can see, when saving a <ViewMore buttonText="long association"><LongAssociation/></ViewMore>, even if an illegal id is specified for the associated object *(1000 in this example)*, Jimmer will still create a new associated object using that id.
-
-Therefore, `association id checking` is not an issue at all for <ViewMore buttonText="long associations"><LongAssociation/></ViewMore>.
-
-However, for <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>, Jimmer is only responsible for creating the association between the current object and the associated object, and will not automatically create non-existing associated objects.
-
 Therefore, `association id checking` is a topic that only makes sense for <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>. In the following examples of this article, all discussions are about <ViewMore buttonText="short associations"><ShortAssociation/></ViewMore>.
 :::
 
-### Target Foreign Key
+### Concept Definition: Target Foreign Key
 
 To discuss the id checking problem of short associations, we first define a concept for associated properties: the target foreign key.
 
 -   For associations based on join tables, the foreign key in the join table that points to the target entity table is the target foreign key.
 
-    For example: The target foreign key for `Book.authors` is the `AUTHOR_ID` field in the `BOOK_AUTHOR_MAPPING` table. The target foreign key for `Author.books` is the `BOOK_ID` field in the `BOOK_AUTHOR_MAPPING` table.
+    For examples: 
+    
+    -   The target foreign key for `Book.authors` is the `AUTHOR_ID` field in the `BOOK_AUTHOR_MAPPING` table. 
+
+    -   The target foreign key for `Author.books` is the `BOOK_ID` field in the `BOOK_AUTHOR_MAPPING` table.
 
 -   For associations based on foreign keys, whether the foreign key is fake or not (please refer to [Fake Foreign Keys](../../mapping/base/foreignkey)), the foreign key of the association itself is the target foreign key.
 
-    For example: The target foreign key for `Book.store` is the `STORE_ID` field in the `BOOK` table.
+    For example: 
+    
+    The target foreign key for `Book.store` is the `STORE_ID` field in the `BOOK` table.
 
 -   If neither of the above two cases apply, the association is considered to not have a target foreign key.
 
-    Properties without a target foreign key are the ones with `mappedBy` specified for one-to-one or one-to-many mappings. That is, properties decorated with `@OneToOne(mappedBy = "...")` or `@OneToMany(mappedBy="...")`, such as: `BookStore.books`.
+    Properties without a target foreign key are the ones with `mappedBy` specified for one-to-one or one-to-many mappings. That is, properties decorated with `@OneToOne(mappedBy = "...")` or `@OneToMany(mappedBy="...")`. 
+    
+    For example: 
+    
+    There is no target foreign key for `BookStore.books`.
+
+Summary 
+
+|Association | Column of target foreign key | Table of target foreign key |
+|---|---|----| 
+|`Book.authors`|AUTHOR_ID|BOOK_AUTHOR_MAPPING| 
+|`Author.books`|BOOK_ID|BOOK_AUTHOR_MAPPING| 
+|`Book.store`|STORE_ID|BOOK| 
+|`BookStore`.books| *NA* | *NA* |
 
 ## Checking Mechanism
 
-Users can configure whether to check the ids of short associated objects. Below we discuss the behaviors with and without checking enabled for properties with different target foreign keys.
+Users can configure whether to check the ids of short associated objects. 
+
+Here, let's not discuss how to configure for now, but look at whether enabling this configuration has any impact on Jimmer's behavior.
 
 -   Properties without target foreign keys
 
@@ -175,7 +190,7 @@ Users can configure whether to check the ids of short associated objects. Below 
         update book set store_id = 2 where id in(1, 2, 1000, 10001)
         ```
         
-        If 1000 and 10001 are ids that do not exist in the database, this update statement will only affect the two existing records, and the two non-existing records will be naturally ignored.
+        If `1000` and `10001` are ids that do not exist in the database, this update statement will only affect the two existing records, and the two non-existing records will be naturally ignored.
 
     -   With checking
 
@@ -191,7 +206,7 @@ Users can configure whether to check the ids of short associated objects. Below 
             )
         ```
 
-        If ids 1000 and 1001 do not exist in the database, the following exception will be thrown:
+        If ids `1000` and `1001` do not exist in the database, the following exception will be thrown:
 
         ```
         Save error caused by the path: "<root>.books": Illegal ids: [1000, 1001]
@@ -228,7 +243,7 @@ Users can configure whether to check the ids of short associated objects. Below 
     </TabItem>
     </Tabs>
 
-    Assume id 321 does not exist for BookStore in the database.
+    Assume id `321` does not exist for BookStore in the database.
 
     -   Without checking
 
@@ -255,14 +270,29 @@ Users can configure whether to check the ids of short associated objects. Below 
         ```
         Save error caused by the path: "<root>.store": Illegal ids: [321]
         ```
-  
-    :::info
-    As you can see, for properties with a real target foreign key, exceptions will be thrown regardless of whether Jimmer's short association id checking is enabled.
 
-    -   Without checking, the database throws the error. The advantage is avoiding an extra SQL query, the disadvantage is less control over the exception message and type.
+Summary 
 
-    -   With checking, Jimmer throws the error. The advantage is clear exception message and type, the disadvantage is an extra SQL query.
-    :::
+||Real target foreign key|Fake target foreign key|No target foreign keys|
+|---|---|---|---|
+|Without checking|Error from database|Save wrong data|Ignore invalid operations|
+|With checking|Error from Jimmer|Error from Jimmer|Error from Jimmer|
+
+:::info
+As you can see, for properties with a real target foreign key, exceptions will be thrown regardless of whether Jimmer's short association id checking is enabled.
+
+-   Without checking, the database throws the error. 
+
+    -   Advantage: Avoid an extra SQL query
+
+    -   Disadvantage: Less control over the exception message and type.
+
+-   With checking, Jimmer throws the error. 
+
+    -   Advantage: clear exception message and type.
+    
+    -   Disadvantage: An extra SQL query.
+:::
 
 :::tip
 It is recommended to turn on this checking mechanism for all properties if your project does not have extreme performance requirements, in order to get ideal exception information *(we will introduce how to configure it later)*.
@@ -282,11 +312,11 @@ The global configuration provides three levels:
 
 The behaviors are:
 
-|   |NONE|FAKE|ALL|
-|---|----|----|---|
-|Associations without target foreign key|No checking|Checking|Checking|  
-|Associations with fake target foreign key|No checking|Checking|Checking|
-|Associations with real target foreign key|No checking|No checking|Checking|
+||Real target foreign key|Fake target foreign key|No target foreign keys|
+|---|---|---|---|
+|NONE|No checking|No checking|No checking|
+|FAKE|No checking|Checking|Checking|
+|ALL|Checking|Checking|Checking|
 
 There are two ways to configure globally:
 

@@ -4,8 +4,8 @@ import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.kt.ast.expression.desc
 import org.babyfish.jimmer.sql.kt.ast.expression.ne
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
+import org.babyfish.jimmer.sql.kt.impl.KSqlClientImplementor
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
-import org.babyfish.jimmer.sql.kt.model.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.edition
 import org.babyfish.jimmer.sql.kt.model.classic.store.by
 import org.junit.Test
@@ -15,7 +15,7 @@ class LoaderTest : AbstractQueryTest() {
     @Test
     fun testWithoutFilter() {
         connectAndExpect({ con ->
-            sqlClient
+            (sqlClient as KSqlClientImplementor)
                 .loaders
                 .list(BookStore::books)
                 .forConnection(con)
@@ -58,7 +58,7 @@ class LoaderTest : AbstractQueryTest() {
     @Test
     fun testWithFilter() {
         connectAndExpect({ con ->
-            sqlClient
+            (sqlClient as KSqlClientImplementor)
                 .loaders
                 .list(BookStore::books)
                 .forConnection(con)
@@ -100,7 +100,7 @@ class LoaderTest : AbstractQueryTest() {
     @Test
     fun test() {
         connectAndExpect({ con ->
-            sqlClient
+            (sqlClient as KSqlClientImplementor)
                 .loaders
                 .value(BookStore::avgPrice)
                 .forConnection(con)

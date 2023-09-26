@@ -3,6 +3,9 @@ sidebar_position: 1
 title: Problem
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 In this article we discuss:
 
 -   The problem of using dynamic entities as method parameters 
@@ -13,9 +16,9 @@ In this article we discuss:
 
 ## Problem of Dynamic Entities Parameters
 
-Up to this point, we have systematically explained all the capabilities of save commands. 
+Up to this point, we have systematically explained all the capabilities of save command. 
 
-Now we know that no matter what shape the data structure to be saved is, we can persist it to the database in one line of code calling save commands, with all internal details hidden. This is a very convenient low-level capability.
+Now we know that no matter what shape the data structure to be saved is, we can persist it to the database in one line of code calling save command, with all internal details hidden. This is a very convenient low-level capability.
 
 However, how should the upper layer APIs of business systems be designed? Should we directly accept dynamic objects via `@RequestBody`?
 
@@ -154,7 +157,7 @@ Comparing Jimmer's Input DTOs with [GraphQLInput](https://graphql.org/graphql-js
 
 -   Similarities
 
-    In GraphQL, query results are GraphQLObjects, i.e. dynamic objects of arbitrary shapes. However, if modification operations accept object parameters, they must be GraphQLInputs, i.e. static objects of fixed shapes. 
+    In GraphQL, query results are GraphQLObjects, i.e. dynamic objects of arbitrary shapes. However, if mutation operations accept object parameters, they must be GraphQLInputs, i.e. static objects of fixed shapes. 
 
     GraphQLInput has exactly the same idea as InputDTO here, which is the inevitable design to resolve security issues - different routes leading to the same destination.
 
@@ -162,7 +165,7 @@ Comparing Jimmer's Input DTOs with [GraphQLInput](https://graphql.org/graphql-js
 
     -   GraphQLInput is just a protocol, merely constraining that object parameters for modification operations must be static objects of fixed shapes.
 
-        The benefit is not limiting specific implementation technologies. But the downside is saving business logic needs to be implemented by developers for every specific GraphQLInput shape. Tedious work still exists objectively, and developers can truly feel the pain of Input DTO explosion.
+        The benefit is not limiting specific implementation technologies, but the downside is the persistence business logic needs to be implemented by developers for every specific GraphQLInput shape. Tedious work still exists objectively, and developers can truly feel the pain of Input DTO explosion.
 
     -   Jimmer's InputDTO is just an alternative representation of the dynamic entity to address security issues. Once the user finishes converting Input DTO to dynamic entity, the huge convenience of persisting arbitrary shaped data structures in one line of code via save commands can still be enjoyed. 
 

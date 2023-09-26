@@ -17,6 +17,8 @@ Developers can use this language to quickly define the shape of the Input DTO to
 
 -   The mutual conversion logic between Input DTOs and entities will be generated automatically
 
+-   The object fetcher that matches its shape will be automatically generated. *(This feature is unrelated to input DTOs, so it is not discussed in this article)*
+
 Developers use the auto-generated Input DTOs as method parameters, and persist them in one line of code *(Internal logic: Call the auto-generated conversion logic to convert the Input DTO to a dynamic entity object, then directly persist using the save command)*.
 
 :::info
@@ -25,7 +27,8 @@ This is the most efficient way to eliminate the pain of Input DTO explosion.
 
 ## Defining DTO Shape 
 
-This article focuses on explaining how to query static DTO types, not a systematic introduction to DTO language. Please refer to [Object Section/DTO Mapping/DTO Language](../../../object/view/dto-language) for the complete DTO language.
+This article focuses on explaining how to save static DTO types, not a systematic introduction to DTO language. 
+Please refer to [Object/DTO conversion/DTO Language](../../../object/view/dto-language) to know more.
 
 Assume the fully qualified name of the `Book` class is `com.yourcompany.yourpoject.model.Book`. You can:
 
@@ -39,7 +42,7 @@ Assume the fully qualified name of the `Book` class is `com.yourcompany.yourpoje
 
     ```sh title="Book.dto"
     # highlight-next-line
-    BookInput {
+    input BookInput {
         
         #allScalars(Book)
         
@@ -56,10 +59,10 @@ Assume the fully qualified name of the `Book` class is `com.yourcompany.yourpoje
     ...Other Input DTO shapes omitted...
     ```
 
-    :::caution
+    :::info
     Input DTO shapes used as input parameters must be decorated with the `input` modifier.
     
-    The specific reasons are elaborated in [Object Section/DTO Mapping/DTO Language](../../../object/view/dto-language) and not repeated here.
+    The specific reasons are elaborated in [Object/DTO conversion/DTO Language](../../../object/view/dto-language) and not repeated here.
     :::
 
 ## Auto-Generated DTO Types
@@ -70,6 +73,8 @@ Jimmer is responsible for compiling dto files and automatically generating DTO t
 If Java/Kotlin source files other than dto files are modified, directly clicking the Run button in IDE can trigger recompilation of dto files.
 
 However, if no Java/Kotlin files other than dto files are modified, simply clicking the Run button in IDE will not trigger dto file recompilation unless rebuild is explicitly triggered!
+
+In the future we will think about how to solve this problem and provide better service.
 :::
 
 Take `BookInput` in the above code as an example. After successful compilation of this dto file, the following DTO types will be auto-generated:
@@ -162,19 +167,19 @@ data class BookInput(
 </TabItem>
 </Tabs>
 
--   ❶ If the id is designated some auto-generation strategy, it is not required. This is also a feature of save commands, see details in [Save Modes/Summary](../save-mode#summary).
+-   ❶ If the id is designated some auto-generation strategy, it is not required. This is also a feature of save commands, see details in [Mutation/Save Command/Save Mode/Summary](../save-mode#summary).
 
     :::info
     -   For Jimmer entities, `id` cannot be null. Missing `id` *(i.e. not assigning it)* represents the object does not have an `id`.
     
     -   For Input DTOs, static POJO types do not have the concept of missing properties. `null` represents missing `id`.
 
-    This seems contradictory, but can be handled simply: If Input DTO's `id` is `null`, the converted entity object will not have an `id` *(although `id` cannot be assigned `null`, dynamic objects always ingore unassinged properties)*.
+    This seems contradictory, but can be handled simply: If Input DTO's `id` is `null`, the converted entity object will not have an `id` *(although `id` of entity cannot be assigned `null`, dynamic objects allow unspecified properties)*.
     :::
 
--   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using a <ViewMore buttonText="short association"><ShortAssociation/></ViewMore>. 
+-   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using the <ViewMore buttonText="short association"><ShortAssociation/></ViewMore> mode. 
 
--   ❸ Explicitly specifies this Input DTO wants to edit the entity's many-to-many association `Book.authors` using a <ViewMore buttonText="long association"><LongAssociation/></ViewMore>.
+-   ❸ Explicitly specifies this Input DTO wants to edit the entity's many-to-many association `Book.authors` using the <ViewMore buttonText="long association"><LongAssociation/></ViewMore> mode.
     The type of associated objects is also fixed to the nested Input DTO type `BookInput.TargetOf_authors`. 
 
 -   ❹ Convert dynamic entity to static Input DTO
@@ -237,7 +242,7 @@ So I make up an entity type `Product` with more properties:
 @Entity
 public interface Product {
 
-    ...Entity properties omitted... 
+    ...Many entity properties, omitted... 
 }
 ```
 
@@ -248,7 +253,7 @@ public interface Product {
 @Entity  
 interface Product {
 
-    ...Entity properties omitted...
+    ...Many entity properties, omitted...
 }
 ```
 

@@ -24,12 +24,12 @@ Usually, the UI design will use radio buttons *(associated reference)* or checkb
 
 Where:
 
--   Radio buttons correspond to the many-to-one association `Book.store`
+-   Single-select dropdown corresponds to the many-to-one association `Book.store`
 
--   Checkboxes correspond to the many-to-many association `Book.authors`
+-   Multiple-select dropdown corresponds to the many-to-many association `Book.authors`
 
 :::note
-In actual projects, the available data may be too much to be designed as a dropdown UI. In this case, an object selector with filtering and pagination can be used instead of a dropdown, which is a common workaround.
+In actual projects, the available data may be too much to be designed as a dropdown UI. In this case, an modal selector with filtering and pagination can be used instead of a dropdown, which is a common workaround.
 :::
 
 Since the user only wants to modify the association itself between the current object and other objects, without further modifying the associated objects, the UI cannot have nested multi-level associations. This is why it is called a **short association**. 
@@ -39,7 +39,7 @@ When passing data structures of arbitrary shapes as parameters to the save comma
 
 -   The associated object has only the id property
 
--   The associated object has only the key property  
+-   The associated object has only the key properties
 :::
 
 Two examples are shown below:
@@ -107,7 +107,7 @@ Two examples are shown below:
     :::note
     The data structure is hard-coded here only for demonstration. In actual projects the data structure to be saved is submitted by the front-end UI.
 
-    Of course, if the user defines the `authorIds` property according to [Mapping Section/Advanced Mapping/View Properties/IdView](../../mapping/advanced/view/id-view), the above code can be simplified, for example:
+    Of course, if the user defines the `authorIds` property according to [Mapping/Advanced mapping/View Properties/IdView](../../mapping/advanced/view/id-view), the above code can be simplified, for example:
     
     ```
     draft.setAuthorIds(Arrays.asList(4L, 5L));
@@ -218,7 +218,9 @@ When passing data structures of arbitrary shapes as parameters to the save comma
 
 - If the id property has already been specified for the associated object, continue to specify any non-id properties for the object *(including key properties)*
 
-- If all key properties have already been specified for the associated object, continue to specify any properties that are neither id nor key for the object
+- Otherwise, all key properties and other properties must be been specified for the associated object.
+
+Regardless of which approach above, specify at least one property for associated objects that is neither id nor key.
 :::
 
 Examples:
@@ -229,9 +231,9 @@ Examples:
 ```java 
 Order order = Order.$.produce(draft -> {
     draft.applyCustomer(customer -> customer.setId(1L));
-    draft.setProvince("四川");
-    draft.setCity("成都");
-    draft.setAddress("龙泉驿区洪玉路与十洪路交叉口");
+    draft.setProvince("Prenzlauer Berg");
+    draft.setCity("Berlin");
+    draft.setAddress("Brandenburgische Straße 9, Prenzlauer Berg, Berlin, Germany");
     draft.addIntoItems(item -> {
         item.applyProduct(product -> product.setId(1L));
         // Property neither id nor key  
@@ -255,9 +257,9 @@ sqlClient.save(order);
 ```kotlin
 val order = new(Order::class).by {
     customer().apply { id = 1L }
-    province = "四川"
-    city = "成都" 
-    address = "龙泉驿区洪玉路与十洪路交叉口"
+    province = "Prenzlauer Berg"
+    city = "Berlin" 
+    address = "Brandenburgische Straße 9, Prenzlauer Berg, Berlin, Germany"
     items().addBy {
         product().apply { id = 1L }
         // Property neither id nor key
@@ -288,11 +290,10 @@ It was mentioned before:
 :::info
 If the entity type declares the Key property *(which also means the id has no business meaning other than serving as a unique identifier)*, then
 
--   For the aggregated root object to be saved, it is recommended to specify either the id property or the key property, otherwise it will be understood as forced insertion.
+-   For the aggregated root object to be saved, it is recommended to specify either the id property or the key properties, otherwise it will be understood as forced insertion.
 
--   For associated objects to be saved, either the id property or all key properties must be specified, otherwise an exception will occur.
+-   For the associated objects to be saved that this article is discussing, either the id property or all key properties must be specified, otherwise an exception will occur.
 :::
-
 
 However, there is one exceptional case for one-to-many relationships.
 

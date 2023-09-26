@@ -5,6 +5,8 @@ title: 支持自定义过滤器
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
+import {SwaggerAuthorize} from '@site/src/components/Image';
 
 ## 缓存友好过滤器
 
@@ -22,7 +24,7 @@ import TabItem from '@theme/TabItem';
 
 都无法支持缓存。
 
-Jimmer采用`CachableFilter/KCacheableFitler接口`如下接口定义缓存友好的过滤器
+Jimmer采用`CacheableFilter/KCacheableFitler接口`如下接口定义缓存友好的过滤器
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -404,7 +406,7 @@ fun cacheFactory(
     <thead>
         <tr>
             <th>缓存技术风格</th>
-            <th>多视图</th>
+            <th>是否多视图</th>
             <th>抽象接口❶</th>
             <th>内置实现❷</th>
         </tr>
@@ -416,7 +418,7 @@ fun cacheFactory(
                 <div><i>(通常是一级缓存技术：比如Guava, Caffine)</i></div>
             </td>
             <td>
-                否
+                单视图
             </td>
             <td>
                 LoadingBinder&lt;K, V&gt;
@@ -427,7 +429,7 @@ fun cacheFactory(
         </tr>
         <tr>
             <td>
-                是
+                多视图
             </td>
             <td>
                 LoadingBinder.Parameterized&lt;K, V&gt;
@@ -442,7 +444,7 @@ fun cacheFactory(
                 <div><i>(通常是二级缓存技术：比如Redis)</i></div>
             </td>
             <td>
-                否
+                单视图
             </td>
             <td>
                 SimpleBinder&lt;K, V&gt;
@@ -453,7 +455,7 @@ fun cacheFactory(
         </tr>
         <tr>
             <td>
-                是
+                多视图
             </td>
             <td>
                 SimpleBinder.Parameterized&lt;K, V&gt;
@@ -481,7 +483,7 @@ fun cacheFactory(
 就关联属性而言，是否需要构建多视图缓存的唯一判断依据是目标实体是否被施加了过滤器，Jimmer为此提供了更好的支持。
 
 开发人员只需要把超接口`CacheFactory/KCacheFactory`替换为超类`AbstractCacheFactory/AbstractKCacheFactory`，
-即可继承的一个叫做`getFilterState/filterState`的成员，它可以帮助我们判断是否应该构建多视图缓存。
+即可继承一个叫做`getFilterState/filterState`的成员，它可以帮助我们判断是否应该构建多视图缓存。
 :::
 
 <Tabs groupId="language">
@@ -568,7 +570,12 @@ fun cacheFactory(
             ...省略代码...
 
         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-            ...省略代码...
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
 
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
             createPropCache(
@@ -580,8 +587,8 @@ fun cacheFactory(
 
         override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
             createPropCache(
-                // highlight-next-line
-                filterState.isAffectedBy(prop.targetType),
+                prop === BookStore::avgPrice.toImmutableProp() ||
+                    prop === BookStore::newestBooks.toImmutableProp(),
                 prop,
                 Duration.ofHours(1)
             )
@@ -716,18 +723,232 @@ println(stores)
 </TabItem>
 </Tabs>
 
-:::caution
-有了前面文档的大量基础，本文打算简化讨论，只展示Redis中的数据和最终返回给用户的JSON。不再逐步跟踪SQL。
-:::
+### 以一种身份执行
 
-前文假设Spring上下文中有一个类型为`TenantProvider`的对象，其Java方法`get()`和kotlin属性`tenant`用于从当前操作者身份信息中提取所属租户。
+假设当前租户名称为`a`，执行过程如下
 
-我们可以把上述代码执行3次，每一次都让`TenantProvider`返回不同信息以模拟三种不同的用户身份。
+-   第一步：查询聚合根
 
-三次调用中，让`TenantProvider`分别返回null、"a"和"b"。
+    首先查询聚合根对象，执行如下SQL
+    
+    ```sql
+    select
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.WEBSITE
+    from BOOK_STORE tb_1_
+    ```
+
+    这里实现了代码中的查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
+
+-   第二步：通过关联缓存查询❶处的`BookStore.books`
+
+    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象，这两条BOOK_STORE的主键`ID`为1和2。
+
+    Jimmer先从Redis查找数据，被查找的键为`BookStore.books-1`和`BookStore.books-2`。
+
+    假设无法在Redis中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys BookStore.books-*
+    (empty array)
+    ```
+
+    所以，执行如下SQL，完成关联属性`BookStore.books`
+    ```sql
+    SQL: select,
+        tb_1_.STORE_ID,
+        tb_1_.ID
+    from BOOK tb_1_
+    where
+            tb_1_.STORE_ID in (
+                ? /* 1 */, ? /* 2 */
+            )
+        and
+            // highlight-next-line
+            tb_1_.TENANT = ? /* a */
+    order by
+        tb_1_.NAME asc,
+        tb_1_.EDITION desc
+    ```
+
+    :::info
+    其中`tb_1_.TENANT = 'a'`这个过滤条件来自用户过滤器`TenantFilter`。
+    :::
+
+    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    ```sh
+    127.0.0.1:6379> keys BookStore.books-*
+    1) "BookStore.books-2"
+    2) "BookStore.books-1"
+
+    127.0.0.1:6379> hgetall BookStore.books-1
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "[5,3,1,9,7]"
+
+    127.0.0.1:6379> hgetall BookStore.books-2
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "[11]"
+    ```
+    :::info
+    多视角缓存采用Redis的Hash结构，所以，这里需要使用redis的`hgetall`指令，普通`get`指令会报错
+
+    Redis的Hash是两层KV结构的嵌套
+
+    -   外层结构的Redis Key，`BookStore.books-1`和`BookStore.books-2`，和单视图缓存的RedisKey无异。
+
+    -   内层结构的Hash Key，在Jimmer中也称SubKey，由全局过滤器的提供。
+
+        这里，`{"tenant":"a"}`由`TenantProvider`提供，表示当前缓存项的值并非所有关联对象的id集合，而仅仅包含租户`a`可以看到的关联对象的id集合。
+    :::
+
+    :::tip
+    毫无疑问，在Redis中的数据因超时而被清除之前，**用相同的租户身份**再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，相关SQL不会被生成。
+    :::
+
+-   第三步：把id集合转化为关联对象
+
+    在上一步中，我们得到了关联属性`BookStore.books`所对应的关联对象id集合，它们表示租户`a`可以看到的关联对象id集合。
+
+    现在，就可以利用`Book`类型的对象缓存，把`Book` id的集合转化为`Book`的集合。
+    
+    这个步骤非常简单，无需讨论。
+
+-   第四步：通过计算缓存查询❷处的`BookStore.avgPrice`
+
+    上面的代码会得到一系列聚合根对象，如果数据库采用官方例子的数据，会得到两个聚合根对象，这两条BOOK_STORE的主键`ID`为1和2。
+    
+    Jimmer先从Redis查找数据，被查找的键为`BookStore.avgPrice-1`和`BookStore.avgPrice-2`。
+
+    假设无法在Redis中找到这些键所对应的数据
+    ```
+    127.0.0.1:6379> keys BookStore.avgPrice-*
+    (empty array)
+    ```
+
+    所以，执行如下SQL，完成计算属性的计算
+    ```sql
+    select
+        tb_1_.ID,
+        avg(tb_2_.PRICE)
+    from BOOK_STORE tb_1_
+    left join BOOK tb_2_
+        on tb_1_.ID = tb_2_.STORE_ID
+    where
+            tb_1_.ID in (
+                ? /* 1 */, ? /* 2 */
+            )
+        and
+            // highlight-next-line
+            tb_1_.TENANT = ? /* a */
+    group by
+        tb_1_.ID
+    ```
+
+    :::info
+    其中`tb_1_.TENANT = 'a'`这个过滤条件来自用户过滤器`TenantFilter`。
+    :::
+
+    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    ```sh
+    127.0.0.1:6379> keys BookStore.avgPrice-*
+    1) "BookStore.avgPrice-2"
+    2) "BookStore.avgPrice-1"
+
+    127.0.0.1:6379> hgetall BookStore.avgPrice-1
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "53.1"
+
+    127.0.0.1:6379> hgetall BookStore.avgPrice-2
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "81"
+    ```
+
+    :::info
+    多视角缓存采用Redis的Hash结构，所以，需要使用redis的`hgetall`指令，而非`get`
+
+    Redis的Hash是两层KV结构的嵌套
+
+    -   外层结构的Redis Key，`BookStore.avgPrice-1`和`BookStore.avgPrice-2`，和单视图缓存的RedisKey无异。
+
+    -   内层结构的Hash Key，在Jimmer中也称SubKey，由全局过滤器的提供。
+
+        这里，`{"tenant": "a"}`由`TenantProvider`提供，表示当前缓存项的值并非所有关联对象的平均价格，而是租户`a`可以看到的关联对象的平均价格。
+    :::
+
+    :::tip
+    毫无疑问，在Redis中的数据因超时而被清除之前，**用相同的租户身份**再次执行上述Java/Kotlin代码，将直接从Redis中返回关联数据，相关SQL不会被生成。
+    :::
+
+最终，Jimmer把4个步骤的结果拼接在一起，作为最终返回给用户的数据
+
+```json
+[
+    {
+        "id":2,
+        "name":"MANNING",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":11,
+                "name":"GraphQL in Action",
+                "edition":2,
+                "price":81
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":81
+    },
+    {
+        "id":1,
+        "name":"O'REILLY",
+        "website":null,
+        // highlight-next-line
+        "books":[
+            {
+                "id":5,
+                "name":"Effective TypeScript",
+                "edition":2,
+                "price":69
+            },
+            {
+                "id":3,
+                ...略...
+            },
+            {
+                "id":1,
+                ...略...
+            },
+            {
+                "id":9,
+                ...略...
+            },
+            {
+                "id":7,
+                ...略...
+            }
+        ],
+        // highlight-next-line
+        "avgPrice":53.1
+    }
+]
+```
+
+### 多种身份反复执行
+
+之前讨论过了租户为`a`时的查询执行过程。同理，我们那可以利用不同租户身份执行多次，让如下三种视角都在Redis中留下缓存数据。
+-   `tenant` = null
+-   `tenant` = "a"
+-   `tenant` = "b"
 
 :::info
-对于官方附带例子而言，`TenantProvider`基于HTTP请求头实现，并附有swagger界面的支持，用三种不同的用户身份执行三次很容易。
+对于官方附带例子而言，`TenantProvider`基于HTTP请求头实现，并附有<ViewMore buttonText="swagger界面"><SwaggerAuthorize/></ViewMore>的支持，用三种不同的用户身份执行三次很容易。
+
+其中，`tenant = null`对应swagger UI的unauhtorized/logout状态。
 :::
 
 打开redis-cli，我们可以验证Redis中的数据
@@ -778,10 +999,10 @@ println(stores)
 读者可以仔细看看这些`redis-cli`命令，很容易发现，Subey`{"tenant":"a"}`的数据和SubKey`{"tenant":"b"}`的数据合并起来刚好就是SubKey`{}`的数据。
 :::
 
-这三次调用返回给用户的数据为
+不同租户查询到的数据分别为
 
 <Tabs groupId="language">
-<TabItem value="tenant_null" label="filter.tenent=null">
+<TabItem value="tenant_null" label="tenent=null">
 
 ```json
 [
@@ -865,7 +1086,7 @@ println(stores)
 ```
 
 </TabItem>
-<TabItem value="tenant_a" label="filter.tenent=a">
+<TabItem value="tenant_a" label="tenent=a">
 
 ```json
 [
@@ -921,7 +1142,7 @@ println(stores)
 ```
 
 </TabItem>
-<TabItem value="tenant_b" label="filter.tenent=b">
+<TabItem value="tenant_b" label="tenent=b">
 
 ```json
 [

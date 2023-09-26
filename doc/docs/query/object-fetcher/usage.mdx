@@ -10,7 +10,7 @@ import { DtoExplosion } from "@site/src/components/Image";
 
 ## Why Introduce Object Fetchers
 
-Before understanding object fetchers, it is necessary to first understand conventional attribute queries.
+Before understanding object fetchers, it is necessary to first understand conventional property queries.
 
 For example, I need a SQL like this:
 
@@ -25,7 +25,7 @@ from book b
 where b.edition = 3; 
 ```
 
-In this SQL, we only query some columns. The corresponding Jimmer code is:
+In this SQL, we only query a part of columns. The corresponding Jimmer code is:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -79,12 +79,12 @@ The printed output is *(formatted for readability)*:
 ```
 
 :::info
-Since only some object properties are queried, `select(table)` cannot be simply used. Instead, `select(expr1, expr2, ..., expr3)` is required.
+Since a part of object properties are queried, `select(table)` cannot be simply used. Instead, `select(expr1, expr2, ..., expr3)` is required.
 
-However, this results in tuples being returned instead of Book objects.  
+However, this results in tuples being returned instead of objects.  
 :::
 
-In the tuples, the attribute order corresponds to the `select()` order. In the above example, the mapping in each tuple is:  
+In the tuples, the property order corresponds to the `select()` order. In the above example, the mapping in each tuple is:  
 
 ```
 _1 -> id
@@ -92,7 +92,7 @@ _2 -> name
 _3 -> edition
 ```
 
-If we want to return objects, we must define a BookDTO type *(assuming lombok is used for Java)*:
+If we want to return objects, one choice is to define a BookDTO type *(assuming lombok is used for Java)*:
 
 Unlike the original `Book` entity type, `BookDTO` only contains the properties we need rather than all properties.
 
@@ -190,26 +190,28 @@ The result after conversion is the type we want:
 ]
 ```
 
-Although JPA and MyBatis have their own sets of mapping methods, both have limitations:
+JPA and MyBatis make this kind of choice:
 
--   For JPA, it returns all object properties by default. To customize returned properties:
-  
-    -   Use HQL: `select new BookDTO(...) from ....`
-    
+-   JPA returns all scalar properties of an object by default. If you want to customize the returned properties, 
+
+    -   Either use HQL: `select new BookDTO(...) from ...`
+
     -   Or use `query.unwrap(SQLQuery.class).setResultTransformer(Transformers.aliasToBean(DTO.class))`
-    
--   MyBatis needs to write type mappings in XML. MyBatis-Plus provides some wrappers to simplify this process.
 
-However, neither JPA nor MyBatis nor MyBatis-Plus can avoid having to write an extra DTO class. Next we'll use object fetchers to simplify this process.
-  
+-   MyBatis needs to write a `ResultMapper` corresponding to the DTO.
+
+However, neither JPA nor MyBatis can avoid having to write an additional DTO class and take on the logic of transforming from the query structure to the DTO object themselves.
+
 :::info
 Unfortunately
 
--   query requirements are often diverse. Formats diversification inevitably leads to more DTO types *(as the aggregate root type, format diversification is likely; as associated types of other DTOs, diversification is even more likely)*.
-    This ultimately results in <ViewMore buttonText="DTO explosion"><DtoExplosion/></ViewMore>  
+-   Query business often has diversity, and inevitable format diversity means more DTO types *(as aggregate root types there may be format diversity issues, and as associated types of other DTOs it will be easier to lead to format diversity issues)*. 
+    This eventually leads to <ViewMore buttonText="DTO explosion problem"><DtoExplosion/></ViewMore>
 
--   Such custom mapping mechanisms break the original functionality of ORM, unable to control associated properties, and can only return simple objects rather than hierarchical data structures.
+-   For JPA, this goes against the original intention of ORM: convenience
 :::
+
+Next, we'll use Jimmer's object fetcher to simplify this process.
   
 ## Using Object Fetchers
   
@@ -414,9 +416,9 @@ With the [dynamicity](../../object/dynamic) of Jimmer entities, there is no need
 For the output data of the query, eliminating <ViewMore buttonText="DTO explosion problem"><DtoExplosion/></ViewMore> can greatly improve server-side productivity.
 :::
   
-## Differences from JPA
+## Differences from JPA EntityGraph
   
-When object fetchers are used to fetch associative properties *(discussed in subsequent docs, not demonstrated here)*, they are similar to [JPA's EntityGraph](https://www.baeldung.com/jpa-entity-graph), but have the following differences:
+When object fetchers are used to fetch association properties, they are similar to [JPA's EntityGraph](https://www.baeldung.com/jpa-entity-graph), but have the following differences:
   
 -   Object fetchers use `batch-load` strategy to load associated objects, not JPA's `join-fetch` concept. This is important because:
 
@@ -424,6 +426,6 @@ When object fetchers are used to fetch associative properties *(discussed in sub
     
     -   More friendly to [association cache](../../cache/cache-type/association) and [remote associations](../../spring/spring-cloud).
     
--   JPA's EntityGraph only controls associative properties, but object fetchers can control any properties, same as GraphQL, with precision down to each property.
+-   JPA's EntityGraph only controls association properties, but object fetchers can control any properties, same as GraphQL, with precision down to each property.
   
 -   For infinite recursive structures caused by self-associated properties, object fetchers support [recursive query](./recursive).

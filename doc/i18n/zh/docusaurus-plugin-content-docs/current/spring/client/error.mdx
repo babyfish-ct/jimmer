@@ -89,6 +89,8 @@ enum class UserInfoErrorCode {
 所以，这里生成的异常名为`UserInfoException`
 :::
 
+经过Jimmer的编译，将会生成如下的异常类。
+
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
@@ -658,10 +660,9 @@ fun registerUser(@RequestBody input: RegisterUserInput) {
 
 ```json
 {
-    "family":"GEOGRAPHY_ERROR_CODE",
-    "code":"ILLEGAL_POSITION",
-    "longitude":104.06,
-    "latitude":30.67
+    "family":"USER_INFO_ERROR_CODE",
+    "code":"ILLEGAL_USER_NAME",
+    "illegalChars": ["&", "`", "@"]
 }
 ```
 
@@ -678,15 +679,13 @@ jimmer:
 
 ```json
 {
-    "family":"GEOGRAPHY_ERROR_CODE",
-    "code":"ILLEGAL_POSITION",
-    "longitude":104.06,
-    "latitude":30.67,
+    "family":"USER_INFO_ERROR_CODE",
+    "code":"ILLEGAL_USER_NAME",
+    "illegalChars": ["&", "`", "@"],
     // highlight-next-line
     "debugInfo":{
-        "message":"Illegal geography position which is already marked",
+        "message":"Illegal user name, it contains some illegal chars",
         "stackFrames":[
-            "org.babyfish.jimmer.spring.java.bll.GeographyException.illegalPosition(GeographyException.java:35)",
             "org.babyfish.jimmer.spring.java.bll.ErrorService.test(ErrorService.java:18)",
             "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
             "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
@@ -805,7 +804,7 @@ jimmer:
         "causeBy":{
             "message":null,
             "stackFrames":[
-                "org.babyfish.jimmer.spring.java.bll.ErrorService.validatePosition(ErrorService.java:28)",
+                "org.babyfish.jimmer.spring.java.bll.ErrorService.registerUser(ErrorService.java:28)",
                 "org.babyfish.jimmer.spring.java.bll.ErrorService.test(ErrorService.java:16)",
                 "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
                 "java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)",
@@ -994,7 +993,7 @@ export type ApiErrors = { ❺
 
 -   ❶ `AllErrors`定义所有错误类型
 
-    :::cuation
+    :::caution
     只有REST API使用注解明确声明会被抛出错误码才会被用于生成TypeScript代码。
     
     比如，上文中我们使用Java/Kotlin代码定义了错误码`PlatformError.PERMISSION_DENIED`和`PlatformErrorCode.DATA_IS_FROZEN`，

@@ -5,16 +5,29 @@ title: Spring Transaction
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import {ViewMore} from '@site/src/components/ViewMore';
+import Execute from '../_shared/execute.mdx';
 
 ## Integrate Spring Transaction
 
-### Use Spring Boot starter
+In Jimmer, all database operation APIs have two execution modes:
+
+-   Execute on a specified JDBC connection
+
+-   Execute without specifying a JDBC connection, but a `ConnectionManager` needs to be configured for Jimmer to teach Jimmer how to borrow and return connections. 
+
+Please refer to <ViewMore buttonText="here" title="Two execution ways"> <Execute/></ViewMore> for more details.
+
+So Jimmer itself does not provide connection/transaction management capabilities, such management capabilities completely rely on user customization of `ConnectionManager`. `ConnectionManager` is the key to integrate Jimmer with the connection/transaction management capabilities of any IOC framework *(of course including Spring)*.
+
+### Using Spring Boot starter
 
 If using the Spring Boot Starter provided by Jimmer, no extra work is needed. Jimmer will automatically integrate into Spring's transaction management mechanism.
 
-### Don't use Spring Boot Starter 
+### Not Using Spring Boot Starter 
 
-If using Spring only, without the Spring Boot Starter provided by Jimmer. You need to code by yourself to integrate Jimmer into Spring's transaction management mechanism.
+If using Spring only, without the Spring Boot Starter provided by Jimmer. 
+You need to code by yourself to integrate Jimmer into Spring's transaction management mechanism.
 
 Developers need to create `JSqlClient/KSqlClient` and set its `ConnectionManager`. In `ConnectionManager`, use Spring's `org.springframework.jdbc.datasource.DataSourceUtils` to open and close connections.
 
@@ -78,7 +91,9 @@ fun sqlClient(dataSource: DataSource): KSqlClient =
 </Tabs>
 
 :::caution
-Don't use normal methods to borrow and return connections from the connection pool. You must use Spring's `org.springframework.jdbc.datasource.DataSourceUtils`.
+Don't use normal methods to borrow *(dataSource.getConnection)* and return *(con.close)* connections from the connection pool. 
+You must use Spring's `org.springframework.jdbc.datasource.DataSourceUtils`, 
+because this can be combined with Spring's transaction management mechanism.
 :::
 
 ## Work with JdbcTemplate

@@ -25,15 +25,15 @@ Jimmer has many configurations, some of which can be configured in Spring Boot's
 | jimmer.default-list-batch-size | int | 16 | Default fetch size for collection properties |
 | jimmer.offset-optimizing-threshold | int | Integer.MAX_VALUE | Offset threshold to enable deep paging optimization for paged queries |
 | jimmer.is-foreign-key-enabled-by-default | boolean | true | Foreign keys without explicit declaration are treated as real foreign keys |
-| jimmer.transaction-cache-operator-fixed-delay | int | 5000 | Retry interval for failed or excessive cache cleanup tasks when trigger type is `TRANSACTION_ONLY` (not relying on external CDC) |
+| jimmer.transaction-cache-operator-fixed-delay | int | 5000 | Retry interval for failed or excessive cache invalidation tasks when trigger type is `TRANSACTION_ONLY` (not relying on external CDC) |
 | jimmer.micro-service-name | string | | Service name of current application if using remote associations |
 | jimmer.error-translator.disabled | boolean | false | Whether to disable exception mapping in automatic front-end integration |
-| jimmer.error-translator.http-status | HttpStatus | INTERNAL_SERVER_ERROR | Unified HTTP status of server exceptions on client side |
+| jimmer.error-translator.http-status | int | 500 | Unified HTTP status of server exceptions on client side |
 | jimmer.error-translator.debug-info-supported | boolean | false | Whether to include exception message etc. to help debugging in client errors, should be disabled in production |
 | jimmer.error-translator.debug-info-max-stack-trace-count | int | 0 | Maximum number of stacktrace in exception information in client errors, should be disabled in production |
 | jimmer.client.ts.path | string | | Download path of automatically generated TypeScript code, e.g. "/ts.zip" |
 | jimmer.client.ts.api-name | string | Api | API name of automatically generated TypeScript code |
-| jimmer.client.java-feign.indent | int | 4 | Indentation of automatically generated TypeScript code |
+| jimmer.client.ts.indent | int | 4 | Indentation of automatically generated TypeScript code |
 | jimmer.client.ts.anonymous | boolean | false | Whether to use anonymous style to avoid naming DTO types in automatically generated TypeScript code |
 | jimmer.client.java-feign.path | string | | Download path of automatically generated Spring Cloud Feign Java code, e.g. "/java-feign.zip" |
 | jimmer.client.java-feign.api-name | string | Api | API name of automatically generated Spring Cloud Feign Java code |

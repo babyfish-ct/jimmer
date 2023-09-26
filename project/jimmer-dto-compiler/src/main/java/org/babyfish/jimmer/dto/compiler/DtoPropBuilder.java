@@ -105,6 +105,14 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                         "\" is not entity level association property"
                         );
                     }
+                    if (prop.alias == null && baseProp.isList()) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                "The alias must be specified for the mapping property with function \"id\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is list association"
+                        );
+                    }
                     funcName = "id";
                     break;
                 case "flat":

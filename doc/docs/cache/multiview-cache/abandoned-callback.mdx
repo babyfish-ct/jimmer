@@ -8,25 +8,25 @@ import TabItem from '@theme/TabItem';
 
 ## CacheAbandonedCallback
 
-According to the previous documentation, using multi-view caches is relatively strict and the following two conditions must be met at the same time:
+Using multi-view caches is relatively strict and the following three conditions must be met at the same time:
 
 1.  The properties that need multi-view cache must be explicitly specified.
 
-    Caching is multi-layered. Multiple `Binder` objects must be specified for the `ChainCacheBuilder<K, V>` used to build the cache instance, i.e. `LoadingBinder/KLoadingBinder` or `SimpleBinder/KSimpleBinder`.
+    Cache is multi-layered. Multiple `Binder` objects must be specified for the `ChainCacheBuilder<K, V>` used to build the cache instance, i.e. `LoadingBinder/KLoadingBinder` or `SimpleBinder/KSimpleBinder`.
     
     For multi-view caches, **all** `Binder` objects must implement the `LoadingBinder.Parameterized<K, V>/KLoadingBinder.Parameterized<K, V>` or `SimpleBinder.Parameterized<K, V>/KSimpleBinder.Parameterized<K, V>` interface. Otherwise, the final cache created by `ChainCacheBuilder<K, V>` is a single-view cache.
 
 2.  The filtering rules for association properties and the calculation rules for calculated properties must be cache friendly.
 
-    -   For association properties, **all** global filters that affect their associated objects must be cache friendly filters. If any one filter is not cache friendly, it may cause the property to be unable to use cache.
+    -   For association properties, **all** global filters that affect their associated objects must be cache friendly filters. If any one filter is not cache friendly, it may cause the all affected properties to be unable to use cache.
 
         - For user-defined cache filters, the `CacheableFilter<E>/KCacheableFilter<E>` interface must be implemented.
 
-        - For the `@LogicalDeleted` soft deletion annotation, its `useMultiViewCache` property must be configured as `true` *(this will cause its built-in global filter to implement the `CacheableFilter<E>/KCacheableFilter<E>` interface)*.
+        - For the `@LogicalDeleted`, its `useMultiViewCache` property must be configured as `true` *(this will cause its built-in global filter to implement the `CacheableFilter<E>/KCacheableFilter<E>` interface)*.
 
     -   For calculated properties, the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` must not return null.
     
-3.  The property uses attribute-level filters in [object fetchers](../../query/object-fetcher).
+3.  The object fetch cannot use [property-level filters](../../query/object-fetcher/association#property-level-filters).
 
 If these prerequisite conditions are not fully met, even if cache is specified for association or calculated properties, Jimmer will abandon them. Although the reasons have been explained in detail in previous documents, troubleshooting such issues during actual development is inconvenient. 
 
@@ -62,7 +62,7 @@ This callback interface tells developers that although cache is specified for a 
 
     -   PARAMETERIZED_CACHE_REQUIRED: The `getParameters` method of some `CacheableFilter<E>/KCacheableFilter<E>` objects affecting the association properties or the `getParameterMapRef` method of `TransientResolver<ID, V>/KTransientResolver<ID, V>` implementing the calculated properties returns a Map of non-zero length, but the cache configured for that property by the developer is not a multi-view cache.
 
-    -   FIELD_FILTER_USED: The developer uses attribute-level filters for the property in [object fetchers](../../query/object-fetcher).
+    -   FIELD_FILTER_USED: The developer uses property-level filters for the property in [object fetchers](../../query/object-fetcher).
 
 Developers can implement the `CacheAbandonedCallback` interface themselves, create an object, and register it with SqlClient. There is no limit on the number of registered callback objects.
 

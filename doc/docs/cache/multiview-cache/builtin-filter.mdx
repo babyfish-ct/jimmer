@@ -6,7 +6,7 @@ title: Built-in Filters
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Define Soft Delete Flag
+## Define Logical Delete Flag
 
 Jimmer supports logical delete, for example
 
@@ -49,37 +49,35 @@ interface Book {
 </TabItem>
 </Tabs>
 
-Here is the English translation:
-
 :::caution 
 
 The `useMultiViewCache = true` in the above code is very important. 
 
-The `@LogicalDeleted` uses the built-in global filter to implement the soft delete logic. 
+The `@LogicalDeleted` uses the built-in global filter to implement the logical delete logic. 
 
 -   If `useMultiViewCache` of `@LogicalDeleted` annotation is false, 
-    the corresponding built-in filter only implements `Filter/KFilter` interfaces, which is unfriendly to caching. 
+    the corresponding built-in filter only implements `Filter/KFilter` interfaces, which is unfriendly to cache. 
     
 -   If `useMultiViewCache` of `@LogicalDeleted` annotation is true, 
-    the corresponding built-in filter only implements `CacheableFilter/KCacheableFilter` interfaces, which is caching-friendly. 
+    the corresponding built-in filter only implements `CacheableFilter/KCacheableFilter` interfaces, which is cache-friendly. 
     
-The default value of this property is `false`, indicating that all properties sensitive to this filter 
-*(`BookStore.books`, `Author.books`, `BookStore.avgPrice`, and `BookStore.newestBooks`)* do NOT support caching, 
+The default value of this property is `false`, indicating that all properties sensitive to the build-in filter 
+*(`BookStore.books`, `Author.books`, `BookStore.avgPrice`, and `BookStore.newestBooks` of the example)* do NOT support cache, 
 which is a more conservative option. 
 
 To make all these properties cacheable, `useMultiViewCache = true` must be configured. 
 :::
 
-## Enable multi-view caching
+## Enable multi-view cache
 
-How to enable multi-view caching has already been discussed in detail in the [previous document](./user-filter), 
+How to enable multi-view cache has already been discussed in detail in the [previous document](./user-filter), 
 so I will not repeat it here.
 
 ## SubKey of Calculated Properties  
 
 Logical delete is a built-in filter, and all affected association properties will automatically specify `SubKey` for their association caches.
 
-However, unfortunately, due to the introduction of user-defined calculation rules that the framework cannot understand, developers must manually specify `SubKey` for the `Resolver` implementation of calculated properties.
+However, unfortunately, due to the introduction of user-defined calculation rules that the framework cannot understand, developers must manually specify `SubKey` for the `TransientResolver` implementation of calculated properties.
 
 <Tabs groupId="language"> 
 <TabItem value="java" label="Java">
@@ -132,7 +130,7 @@ Therefore, whatever `SubKey` the association property `BookStore.books` specifie
 :::note
 `BookStore.avgPrice` is also affected by `Book.price`. It changes when `Book.price` changes.
 
-However, `Book.price` is a non-association property of the object, so it is irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here.
+However, `Book.price` is a non-associative property of the object, so it is irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here.
 :::
 
 ## Usage  
@@ -199,11 +197,6 @@ println(stores)
     ```
 
     This implements the query in the code and obtains some BookStore objects. Such objects directly queried by users are called aggregate root objects.
-    
-    :::caution
-    Jimmer does NOT cache the returned aggregate objects queried by users because the consistency of such query results cannot be guaranteed. 
-    Even if cache them at the cost of sacrificing consistency is required, it should be handled by users as a business problem rather than an behavior that should be abstracted and unified by the framework.
-    :::
 
 -   Step 2: Query `BookStore.books` ❶ via association cache
 
@@ -240,7 +233,7 @@ println(stores)
     :::
 
     Jimmer will put the query results into Redis, so we can view the data in redis:
-    ```
+    ```sh
     127.0.0.1:6379> keys BookStore.books-*  
     1) "BookStore.books-2"
     2) "BookStore.books-1"
@@ -271,19 +264,19 @@ println(stores)
     Undoubtedly, if the cached data in Redis is not cleared due to timeout, executing the above Java/Kotlin code again will directly return the association data from Redis without generating related SQL.
     :::
 
--   Step 3: Convert id collection to associated objects
+    -   Step 3: Convert id collection to associated objects
 
-    In the previous step, we obtained the collection of ids of the associated objects corresponding to the association property `BookStore.books`. They are all undeleted objects.  
+        In the previous step, we obtained the collection of ids of the associated objects corresponding to the association property `BookStore.books`. They are all undeleted objects.  
 
-    Now we can use the object cache of `Book` type to convert the `Book` id collection to `Book` collection. 
+        Now we can use the object cache of `Book` type to convert the `Book` id collection to `Book` collection. 
 
-    This step is very simple and needs no discussion.
+        This step is very simple and needs no discussion.
 
     - Step 4: Query `BookStore.avgPrice` ❷ via calculated cache 
 
-    The above code will obtain a list of aggregate root objects. If using the official sample data, there will be two aggregate root objects with `ID` of 1 and 2.
+        The above code will obtain a list of aggregate root objects. If using the official sample data, there will be two aggregate root objects with `ID` of 1 and 2.
 
-    Jimmer first looks up the data in Redis with keys `BookStore.avgPrice-1` and `BookStore.avgPrice-2`.
+        Jimmer first looks up the data in Redis with keys `BookStore.avgPrice-1` and `BookStore.avgPrice-2`.
 
     Assuming the data for these keys cannot be found in Redis
     ```
@@ -623,7 +616,7 @@ In the [Logical Delete](../../query/global-filter/logical-deleted) documentation
     Readers can take a close look at these `redis-cli` commands and easily find that the data of SubKey `{"logicalDeleted":false}` merged with the data of SubKey `{"logicalDeleted":true}` is exactly the data of SubKey `{}`.
     :::
 
-## Consistency
+## Cache Invalidation
 
 Now let's modify the logical delete flag of the `Book` object with id 6.
 

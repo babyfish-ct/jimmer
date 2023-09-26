@@ -17,7 +17,6 @@ import org.babyfish.jimmer.sql.collection.IdViewList;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
 import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 
-import java.beans.ConstructorProperties;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -267,15 +266,6 @@ class Constants {
                     "org.babyfish.jimmer.sql.fetcher",
                     "ViewMetadata"
             );
-
-    public static final ClassName JSON_CREATOR_CLASS_NAME =
-            ClassName.get(JsonCreator.class);
-
-    public static final ClassName JSON_PROPERTY_CLASS_NAME =
-            ClassName.get(JsonProperty.class);
-
-    public static final ClassName OBJECTS_CLASS_NAME =
-            ClassName.get(Objects.class);
 
     public static final String DRAFT_FIELD_CTX =
             "__ctx";

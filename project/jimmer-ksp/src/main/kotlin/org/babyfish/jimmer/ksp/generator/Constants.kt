@@ -36,7 +36,6 @@ internal const val FETCHER_DSL = "FetcherDsl"
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
-internal val JSON_CREATOR_CLASS_NAME = JsonCreator::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
@@ -180,11 +179,13 @@ internal val SELECTION_CLASS_NAME =
         "org.babyfish.jimmer.sql.ast",
         "Selection"
     )
+
 internal val NEW_FETCHER_FUN_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.kt.fetcher",
         "newFetcher"
     )
+
 internal val ENTITY_MANAGER_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.runtime",

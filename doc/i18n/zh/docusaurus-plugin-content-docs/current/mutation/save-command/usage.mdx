@@ -7,33 +7,13 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import Grid from '@mui/material/Grid';
-import {Save} from '@site/src/components/Image';
+import {SaveCommandPanel} from '@site/src/components/HomepageFeatures/SaveCommand';
 
 ## 简介
 
 所谓保存指令，指保存任意形状的数据结构，如图：
 
-<Save/>
-
--   右上角
-    
-    用户要保存的数据结构，记为`A`
-
--   左上角
-
-    按照`A`的形状，从数据库现有数据中得到已有数据结构，记为`B`。
-
--   下方
-
-    Jimmer比较旧数据结构`B`和新数据结构`A`，找不同之处，执行适当的<span style={{color: 'orange'}}>修改</span>、<span style={{color: 'green'}}>插入</span>甚至<span style={{color: 'red'}}>删除</span>操作，最终让数据库中的数据结构和`A`整体完全一致，用户不用关心中间细节。
-
-    :::info
-    `B`和`A`的形状一样，因此数据库中已有数据查询成本，以及新旧数据之间的比较成本，完全视`A`*(用户要保存的数据结构)*的形状而定。
-    :::
-
-    :::tip
-    如果你了解Web领域的[React](https://react.dev/)或[Vue](https://vuejs.org/)，不难看出这个功能很像`Virtual DOM diff`。
-    :::
+<SaveCommand/>
 
 ## 基本概念
 
@@ -123,15 +103,6 @@ import {Save} from '@site/src/components/Image';
     </TabItem>
     </Tabs>
 
-:::tip
-Save指令和其他ORM框架的`save`方法之间存在本质差异。
-
-以JPA/Hibernate为例，对象的普通属性是否需要被保存通过[Column.insertable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#insertable--)和[Column.updatable](https://docs.oracle.com/javaee/7/api/javax/persistence/Column.html#updatable--)控制，
-关联属性是否需要被保存通过[OneToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToOne.html#cascade--)、[ManyToOne.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToOne.html#cascade--)、[OneToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/OneToMany.html#cascade--)和[ManyToMany.cascade](https://docs.oracle.com/javaee/7/api/javax/persistence/ManyToMany.html#cascade--)控制。然而，无论开发人员如何配置，JPA/Hibernate能够为你保存的数据结构的形状是固定的。
-
-Jimmer采用完全不同的方法，被保存的Jimmer对象具备[动态性](../../object/dynamic)，被设置的属性会被保存，而未被设置的属性会被忽略，这样，就可以保存任意形状的数据结构。
-:::
-
 ## API
 
 Save指令为不同语言和不同的开发模式提供了多个API，但功能都一样
@@ -140,7 +111,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     <thead>
         <tr>
             <th rowspan="2"></th>
-            <th rowspan="2">Spring Boot API</th>
+            <th rowspan="2">Spring Data API</th>
             <th colspan="2">底层API</th>
         </tr>
         <tr>
@@ -228,7 +199,7 @@ Save指令为不同语言和不同的开发模式提供了多个API，但功能�
     }
     ```
 
--   名称中包含`All`或`batch`的方法表示保存多个对象，而非一个对象
+-   名称中包含`saveAll`的方法表示保存多个对象，而非一个对象
 
 -   对于被保存的聚合根而言，具备三种保存模式：UPSERT(默认)、INSERT_ONLY、UPDATE_ONLY *(更详细的描述请参见[保存模式](./save-mode))*。这需要通过配置来实现
 

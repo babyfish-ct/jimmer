@@ -20,10 +20,7 @@ import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
-import java.lang.RuntimeException
-import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -165,7 +162,7 @@ class ImmutableProcessor(
                     )
                     if (dtoFile.exists()) {
                         dtoMap[immutableType] = try {
-                            FileInputStream(dtoFile).use {
+                            dtoFile.reader(Charsets.UTF_8).use {
                                 KspDtoCompiler(immutableType, "${e.value}/$relativePath").compile(it)
                             }
                         } catch (ex: DtoAstException) {

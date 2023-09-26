@@ -56,9 +56,11 @@ Jimmer支持触发器，用户可以监听数据库的变化。
 
     因此，Transaction触发器适合在当前事务中追加更多的修改行为，不会破坏原子性。
     
-    尤其适合和[save-command](./save-command)一起使用。save-command保存任意复杂的数据结构，是一个非常黑盒化的高级API；而Transaction触发器可以为save-command附加某些的细节监听和相关冗余数据联动行为。
+    适合在数据库发生变化时通过添加额外的修改来实现通用性很强的部分业务逻辑。
 
 ## 设置触发器类型
+
+### 概念
 
 在讨论设置触发器类型之前，我们先看开发人员如何使用触发器
 -   `sqlClient.getTriggers()`或`sqlClient.getTriggers(false)`:
@@ -93,7 +95,7 @@ TriggerType有三个取值
 <table>
     <thead>
         <tr>
-            <th></th>
+            <th>触发器类型</th>
             <th>getTriggers(false)</th>
             <th>getTriggers(true)</th>
         </tr>
@@ -106,7 +108,7 @@ TriggerType有三个取值
         </tr>
         <tr>
             <td>TRANSACTION_ONLY</td>
-            <td colspan="2"><center><b>共享的</b>Triggers对象</center></td>
+            <td colspan="2"><center><b>共享的</b>Transaction Triggers对象</center></td>
         </tr>
         <tr>
             <td>BOTH</td>
@@ -115,6 +117,8 @@ TriggerType有三个取值
         </tr>
     </tbody>
 </table>
+
+## Q & A
 
 -   **Q**: 为什么默认`BINLOG_ONLY`模式?
 
@@ -136,11 +140,19 @@ TriggerType有三个取值
 
     和Jimmer内置的缓存一致性机制必须由`sqlClient.getTriggers(false)`驱动不同；用户的业务代码没有这个限制，开发人员可以自由决定某个处理逻辑究竟注册到`sqlClient.getTriggers(false)`还是`sqlClient.getTriggers(true)`，甚至同时向二者注册。
 
-    - 如果开发人员的处理逻辑包含一些数据联动修改，必须参与当前事务的原子性作用域，就应该选择将处理逻辑注册到`sqlClient.getTriggers(true)`
+    -   如果开发人员的事件响应逻辑包含一些数据联动修改，必须参与当前事务的原子性作用域，就应该选择将处理逻辑注册到`sqlClient.getTriggers(true)`
 
-    - 如果开发人员的处理逻辑没必要参与当前事务，就应该选择将处理逻辑注册到`sqlClient.getTriggers(false)`，让当前事务尽快结束，尽快释放锁资源
+    -   如果开发人员的事件响应逻辑没必要参与当前事务，就应该选择将处理逻辑注册到`sqlClient.getTriggers(false)`，让当前事务尽快结束，尽快释放锁资源
 
-    - 如果开发人员的处理逻辑同时包含以上两种情况，就应该将处理逻辑一分为二，然后分别注册到两种触发器上。
+    -   如果开发人员的事件响应逻辑同时包含以上两种情况，就应该将处理逻辑一分为二，然后分别注册到两种触发器上。
+
+        :::caution
+        如果开发人员为两种触发器注册了同一个事件响应回调，那么每次事件通知时这个回调的确会被执行两次。
+
+        这时，区分两次调用就非常重要了。回调方法的参数是一个对象，可以获取JDBC连接对象，其值是否为null可用作区分二者的标准:
+        -   非null，第一次回调，由Transaction Trigger引起
+        -   null，第二次回调，由BinLog Trigger引起
+        :::
 
 -   **Q**: 对于不支持binlog的数据库而言，其缓存一致性清理是不是无法在事务提交后做？
 
@@ -150,25 +162,28 @@ TriggerType有三个取值
 
     然而，不并是收到通知后，必须马上执行缓存清理工作，因为redis这种远程缓存的清理行为有网络通信成本，也有通讯失败的可能，这样做会导致本地事务被拖长甚至失败。
 
-    Jimmer的缓存系统支持自定义CacheOperator，通过自定义CacheOperator，用户可以覆盖缓存系统的删除行为，将缓存删除任务记到ThreadLocal中但不马上执行，等事务提交后再真正执行。
+    Jimmer的缓存系统支持自定义CacheOperator，通过自定义CacheOperator，用户可以覆盖缓存系统的删除行为，将缓存删除任务记录下来但不马上执行，等事务提交后再真正的缓存清理。
 
     - 不需要可靠性的做法
-        1. 自定义CacheOperator用ThreadLocal记录要删除的缓存条目，并不马上执行。
+        1. 自定义CacheOperator并不立即清理缓存，而是用ThreadLocal记录要删除的缓存的键。
         2. 在Spring的`After commit`事件中，集中清理缓存。
 
     - 需要可靠性的做法
-        1. 自定义CacheOperator用ThreadLocal记录要删除的缓存条目，并不马上执行。
-        2. 在Spring的`Before Commit`事件中，将零散的记录整合。一次性插入本地事件表。
+        1. 自定义CacheOperator并不立即清理缓存，而是用同一个数据库中一个本地事件表记录要删除的缓存的键。
         3. 在Spring的`After Commit`事件中，从本地事件表中取数据，清理缓存，如果成功，删除本地事件表的数据。
-        4. 用一个轮询服务，为第3步的失败兜底。
+        4. 用一个轮询服务，为第2步的失败兜底。
 
-### Spring环境下设置触发器类型
+        :::tip
+        幸运的是，对于触发器的类型为`TRANSACTION_ONLY`这种情况，Jimmer的Spring Boot Starter已经这样实现了。请参见[缓存一致性/Transaction触发器](../cache/consistency#transaction触发器的一致性)
+        :::
+
+### 使用Jimmer Spring Boot Starter
 
 如果使用SpringBoot Starter，设置触发器类型非常简单。
 
 在`application.properties`或`applicaion.yml`中添加一个配置即可。其名称为`jimmer.trigger-type`，其值为`BINLOG_ONLY` | `TRANSACTION_ONLY` | `BOTH`。
 
-### 使用底层API设置触发器类型
+### 不使用Jimmer Spring Boot Starter
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -200,13 +215,13 @@ var sqlClient = newKSqlClient {
 
 ## BinLog触发器开发工作
 
-和Tranaction触发器不同，BinLog触发器需要采用第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
+和Transaction触发器不同，BinLog触发器需要采用第三方技术将数据库binlog变更推送到消息队列，并让应用监听消息队列。
 
-因此，仅仅在构建SqlClient对象时把TriggerType指定为`BINLOG_ONLY`(也是默认行为)是不够的。
+因此，仅仅在构建SqlClient对象时把TriggerType指定为`BINLOG_ONLY`(默认行为)或`BOTH`是不够的。
 
 消息队列有多有选择，例如Kafka和RabbitMQ；把数据库binlog的增量推送到消息队列的第三方技术也有多种选择，例如MaxWell、Debezium、Canal和DataBus。
 
-Jimmer对这类选择未做任何限制。但为简化问题讨论，本文假设消息队列选用Kafka，推送技术采用Maxwell和Debezium。
+Jimmer对这类选择未做任何限制。但为简化问题讨论，本文假设消息队列选用Kafka，推送技术采用Maxwell *(MySQL)* 和Debezium *(Postgres)*。
 
 :::caution
 由于Debezium本身是kafka-connector，所以，使用Debezium必然导致消息队列是Kafka

@@ -5,5 +5,9 @@ package org.babyfish.jimmer.sql.cache;
  */
 public interface FilterStateAware {
 
+    /**
+     * This method is invoked by Jimmer, it can be ignored by user.
+     * @param filterState
+     */
     void setFilterState(FilterState filterState);
 }

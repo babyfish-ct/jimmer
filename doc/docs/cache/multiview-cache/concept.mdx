@@ -9,11 +9,11 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 ## Concepts
 
-Up to now, the caches we have introduced are all single-view caches, where all clients see the same cache.
+Up to now, the caches we have introduced are all single-view caches, where all clients see the same cached data.
 
-However, often times, different clients will see different data, which is usually caused by permission systems.
+However, often times, different clients will see different persistent data, which is usually caused by permission systems.
 
-Since different clients will see different data, we naturally also expect different clients to see different caches, that is, the cache provides different views for different clients.
+Since different clients will see different persistent data, we naturally also expect different clients to see different cache data, that is, the cache provides different views for different clients.
 
 Multi-view cache solves this problem very well by allowing different clients to see different caches. 
 
@@ -42,7 +42,15 @@ Therefore, this table can also be interpreted as property cache can be multi-vie
 
 Multi-view cache is caused by [global filters](../../query/global-filter).
 
-As long as an entity is applied with a [global filter](../../query/global-filter), all association caches targeting it and calculated caches relying on these association caches need to be multi-viewed.
+:::info
+As long as an entity is applied with a [global filter](../../query/global-filter), 
+
+-   all association caches targeting it
+
+-   calculated caches relying on these association caches
+
+need to be multi-viewed.
+:::
 
 For example, if a global filter is added to `Book`, then properties like:
 
@@ -50,25 +58,21 @@ For example, if a global filter is added to `Book`, then properties like:
 
 -   Calculated properties relying on the above association properties, such as `BookStore.avgPrice`, `BookStore.newestBooks` 
 
-    will be sensitive to the filter, that is, different filtering conditions will result in different data seen by different clients.
+will be sensitive to the filter, that is, different filtering conditions will result in different data seen by different clients.
 
 :::caution
 These filter-sensitive properties either do not support cache or support multi-view cache. Configuring single-view cache for them will be considered invalid and the cache configuration will be ignored.
 
-Don't worry. Jimmer will tell developers [why cache is disabled](./abandoned-callback).
+Don't worry. Jimmer will tell developers [why cache is abandoned](./abandoned-callback).
 :::
 
 The [global filters](../../query/global-filter) discussed here include not only user-defined filters, but also the built-in filters implied by [logical delete](../../mapping/advanced/logical-deleted).
 
-Subsequent documents will introduce multi-view cache from [logical delete](../../mapping/advanced/logical-deleted) and user-defined filters.
+Subsequent documents will introduce multi-view cache from user-defined filters and [logical delete](../../mapping/advanced/logical-deleted).
 
 ## SubKey  
 
-In this section, we need to introduce a key term: `SubKey`.
-
-:::info
-`SubKey` is very important as a prerequisite for subsequent documents.
-:::
+`SubKey` is an important concept for multi-view cache and a prerequisite for subsequent documentation.
 
 Let's first take a look at the structure of single-view cache  
 
@@ -177,15 +181,15 @@ For Redis, this structure is [Redis Hashes](https://redis.io/docs/data-types/has
 In this case, the `SubKey` in the table is the `Hash Key` in Redis. 
 :::
 
-Obviously, compared to single-view cache, multi-view cache splits the data into finer granularity by SubKey, allowing different clients to see different data.
+Obviously, compared to single-view cache, multi-view cache splits the data into finer granularity by sub key, allowing different clients to see different data.
 
 -   Key
 
-    The Key in multi-view cache is no different from the Key in single-view cache, representing a specific object property, decided by Jimmer.
+    The Key in multi-view cache is no different from the key in single-view cache, representing a specific entity property, decided by Jimmer.
 
 -   SubKey
 
-    The key characteristic of multi-view cache. The permission system allows different clients to have different SubKeys, eventually extracting different data from the cache.
+    The key characteristic of multi-view cache. The permission system allows different clients to have different sub keys, eventually extracting different data from the cache.
     
     :::info
     In Jimmer, SubKey must be the JSON-serialized string of `java.util.SortedMap<String, Object>`.
@@ -196,7 +200,7 @@ Obviously, compared to single-view cache, multi-view cache splits the data into 
     This ensures there is no redundant information internally in multi-view cache.
     :::
 
-Multi-view cache is only for property cache, i.e. association cache and calculated cache. So association properties and complex calculated properties must specify SubKey for their multi-view caches.
+Multi-view cache is only for property cache, i.e. association cache and calculated cache. So association properties and complex calculated properties must specify sub key for their multi-view caches.
 
 ### SubKey of Association Properties
 
@@ -221,7 +225,7 @@ public interface CacheableFilter<P extends Props> extends Filter<P> {
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="KCachableFilter.kt"  
+```kotlin title="KCacheableFilter.kt"
 package org.babyfish.jimmer.sql.kt.filter
 
 interface KCacheableFilter<E: Any> : KFilter<E> {
@@ -236,10 +240,14 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 </TabItem>
 </Tabs>
 
-Users need to implement the `getParameters()` method to contribute part of the information to SubKey.
+Users need to implement the `getParameters()` method to contribute part of the information to sub key.
 
 :::info
-When multiple `CacheableFilter/KCachableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the SubKey.
+<<<<<<< HEAD
+When multiple `CacheableFilter/KCachableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the sub key.
+=======
+When multiple `CacheableFilter/KCacheableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the SubKey.
+>>>>>>> main
 :::
 
 ### SubKey of Complex Calculated Properties
@@ -287,18 +295,18 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
 </TabItem>
 </Tabs>
 
-This method returns the `Ref` wrapper of `SortedMap`.  
+This method returns the `Ref` which is the wrapper of `SortedMap`.  
 
--   If `Ref` itself is null, it means getting SubKey is difficult and multi-view cache cannot be applied to the calculated property.
+-   If `Ref` itself is null, it means getting sub key is difficult and multi-view cache cannot be applied to the calculated property.
 
     :::info
-    In this case, Jimmer will tell developers [why cache is disabled](./abandoned-callback).
+    In this case, Jimmer will tell developers [why cache is abandoned](./abandoned-callback).
     :::
 
--   Otherwise, the internal value of `Ref` represents the SubKey of the current calculated property. 
+-   Otherwise, the internal value of `Ref` represents the sub key of the current calculated property. 
 
 :::info 
-When maintaining cache consistency, Jimmer will automatically delete invalid cached data.
+When invalidating cache, Jimmer will automatically delete invalid cached by key.
 
 Cached items of multi-view cache are always deleted as a whole based on `Key` rather than partially based on `Key` + `SubKey`, to maximize the relative simplicity of multi-view cache.
 :::

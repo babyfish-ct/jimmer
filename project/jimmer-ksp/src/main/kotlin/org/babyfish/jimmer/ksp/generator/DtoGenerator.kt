@@ -188,17 +188,16 @@ class DtoGenerator private constructor(
 
         addToEntity()
 
-        typeBuilder.addType(
-            TypeSpec
-                .companionObjectBuilder()
-                .apply {
-                    if (!isInputOnly) {
+        if (!isInputOnly) {
+            typeBuilder.addType(
+                TypeSpec
+                    .companionObjectBuilder()
+                    .apply {
                         addMetadata()
                     }
-                    addCreate()
-                }
-                .build()
-        )
+                    .build()
+            )
+        }
 
         for (prop in dtoType.dtoProps) {
             val targetType = prop.targetType
@@ -299,7 +298,7 @@ class DtoGenerator private constructor(
 
     private fun addPrimaryConstructor() {
         val builder = FunSpec.constructorBuilder()
-        builder.addPrimaryParameters(false)
+        builder.addPrimaryParameters()
         typeBuilder.primaryConstructor(builder.build())
 
         for (prop in dtoType.dtoProps) {
@@ -309,6 +308,14 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
+                        if (!prop.isNullable) {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_PROPERTY_CLASS_NAME)
+                                    .addMember("required = true")
+                                    .build()
+                            )
+                        }
                         if (prop.annotations.isEmpty()) {
                             for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
                                 addAnnotation(
@@ -334,6 +341,14 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.alias)
                     .apply {
+                        if (!prop.typeRef.isNullable) {
+                            addAnnotation(
+                                AnnotationSpec
+                                    .builder(JSON_PROPERTY_CLASS_NAME)
+                                    .addMember("required = true")
+                                    .build()
+                            )
+                        }
                         for (anno in prop.annotations) {
                             addAnnotation(annotationOf(anno))
                         }
@@ -343,38 +358,15 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun FunSpec.Builder.addPrimaryParameters(creator: Boolean) {
+    private fun FunSpec.Builder.addPrimaryParameters() {
         for (prop in dtoType.dtoProps) {
             addParameter(
                 ParameterSpec
                     .builder(prop.name, propTypeName(prop))
                     .apply {
-                        if (creator) {
-                            addAnnotation(
-                                AnnotationSpec
-                                    .builder(JSON_PROPERTY_CLASS_NAME)
-                                    .addMember("%S", prop.name)
-                                    .build()
-                            )
-                            when {
-                                prop.isNullable -> defaultValue("null")
-                                prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
-                            }
-                        } else {
-                            when {
-                                prop.isNullable -> defaultValue("null")
-                                prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
-                                prop.toTailProp().baseProp.isPrimitive -> defaultValue(
-                                    when (prop.baseProp.typeName()) {
-                                        BOOLEAN -> "false"
-                                        CHAR -> "'\\0'"
-                                        else -> "0"
-                                    }
-                                )
-
-                                prop.toTailProp().baseProp.typeName() == STRING ->
-                                    defaultValue("\"\"")
-                            }
+                        when {
+                            prop.isNullable -> defaultValue("null")
+                            prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
                         }
                     }
                     .build()
@@ -385,17 +377,8 @@ class DtoGenerator private constructor(
                 ParameterSpec
                     .builder(userProp.alias, typeName(userProp.typeRef))
                     .apply {
-                        if (creator) {
-                            addAnnotation(
-                                AnnotationSpec
-                                    .builder(JSON_PROPERTY_CLASS_NAME)
-                                    .addMember("%S", userProp.alias)
-                                    .build()
-                            )
-                        } else {
-                            defaultValue(userProp.typeRef)?.let {
-                                defaultValue(it)
-                            }
+                        defaultValue(userProp)?.let {
+                            defaultValue(it)
                         }
                     }
                     .build()
@@ -415,7 +398,7 @@ class DtoGenerator private constructor(
                             ParameterSpec
                                 .builder(userProp.alias, typeName(userProp.typeRef))
                                 .apply {
-                                    defaultValue(userProp.typeRef)?.let {
+                                    defaultValue(userProp)?.let {
                                         defaultValue(it)
                                     }
                                 }
@@ -495,6 +478,11 @@ class DtoGenerator private constructor(
                                                     if (prop.baseProp.isList) "map" else "let",
                                                     propElementName(prop)
                                                 )
+                                                if (prop.baseProp.isList) {
+                                                    if (!prop.isRecursive && prop.baseProp.isList && prop.isNullable) {
+                                                        add("?.takeIf { it.isNotEmpty() }")
+                                                    }
+                                                }
                                             } else {
                                                 add(
                                                     "base.%N%L%N { %T(it) }",
@@ -517,30 +505,26 @@ class DtoGenerator private constructor(
                                             appendEnumToValue(prop, true)
                                         }
 
-                                        prop.isIdOnly ->
+                                        prop.isIdOnly -> {
+                                            add("base")
                                             if (prop.isNullable) {
-                                                appendTakeIf(prop)
-                                                addStatement(
-                                                    "?.%N?.%L",
-                                                    prop.baseProp.name,
-                                                    if (prop.baseProp.isList) {
-                                                        "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
-                                                    } else {
-                                                        prop.baseProp.targetType!!.idProp!!.name
-                                                    }
-                                                )
-                                            } else {
-                                                add(
-                                                    "base.%N%L%L",
-                                                    prop.baseProp.name,
-                                                    if (prop.baseProp.isNullable) "?." else ".",
-                                                    if (prop.baseProp.isList) {
-                                                        "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
-                                                    } else {
-                                                        prop.baseProp.targetType!!.idProp!!.name
-                                                    }
-                                                )
+                                                appendTakeIf(prop, "")
                                             }
+                                            add(
+                                                "%L%N%L%L",
+                                                if (prop.isNullable) "?." else ".",
+                                                prop.baseProp.name,
+                                                if (prop.isNullable) "?." else ".",
+                                                if (prop.baseProp.isList) {
+                                                    "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
+                                                } else {
+                                                    prop.baseProp.targetType!!.idProp!!.name
+                                                }
+                                            )
+                                            if (!prop.isRecursive && prop.isNullable && prop.baseProp.isList) {
+                                                add("?.takeIf { it.isNotEmpty() }")
+                                            }
+                                        }
 
                                         else ->
                                             if (prop.isNullable) {
@@ -599,15 +583,6 @@ class DtoGenerator private constructor(
                                     }
                                     .build()
                             )
-                        } else if (prop.isNullable) {
-                            addStatement("val that_%L = that.%N", prop.name, prop.name)
-                            beginControlFlow("if (that_%L !== null)", prop.name)
-                            addAssignment(prop)
-                            if (prop.baseProp.isList) {
-                                nextControlFlow("else")
-                                addStatement("this.%N = emptyList()", prop.baseProp.name)
-                            }
-                            endControlFlow()
                         } else {
                             addAssignment(prop)
                         }
@@ -619,8 +594,8 @@ class DtoGenerator private constructor(
     }
 
     private fun CodeBlock.Builder.addFlatSetting(prop: DtoProp<ImmutableType, ImmutableProp>) {
-        val that = (if (prop.isNullable) "that_" else "that.") + prop.name
-        if (prop.isNullable) {
+        val that = (if (prop.isOnlyDtoNullable) "that_" else "that.") + prop.name
+        if (prop.isOnlyDtoNullable) {
             addStatement("val that_%L = that.%N", prop.name, prop.name)
         }
         add("%T.set(\n", FLAT_UTILS_CLASS_NAME)
@@ -657,28 +632,38 @@ class DtoGenerator private constructor(
     }
 
     private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        if (prop.isOnlyDtoNullable) {
+            addStatement("val %L = that.%L", prop.name, prop.name)
+            beginControlFlow("if (%L !== null)", prop.name)
+            addAssignment(prop, prop.name, ".")
+            if (prop.baseProp.isList) {
+                nextControlFlow("else")
+                addStatement("this.%L = emptyList()", prop.baseProp.name)
+            }
+            endControlFlow()
+        } else {
+            addAssignment(prop, "that.${prop.name}", if (prop.isNullable) "?." else ".")
+        }
+    }
+
+    private fun FunSpec.Builder.addAssignment(
+        prop: DtoProp<ImmutableType, ImmutableProp>,
+        right: String,
+        dot: String
+    ) {
         val targetType = prop.targetType
-        val that = (if (prop.isNullable) "that_" else "that.") + prop.name
         when {
             targetType !== null ->
                 if (prop.baseProp.isList) {
-                    addStatement(
-                        "this.%N = $that%Lmap { it.toEntity() }",
-                        prop.baseProp.name,
-                        if (prop.baseProp.isNullable) "?." else "."
-                    )
+                    addStatement("this.%N = $right%Lmap { it.toEntity() }", prop.baseProp.name, dot)
                 } else {
-                    addStatement(
-                        "this.%N = $that%LtoEntity()",
-                        prop.baseProp.name,
-                        if (prop.baseProp.isNullable) "?." else "."
-                    )
+                    addStatement("this.%N = $right%LtoEntity()", prop.baseProp.name, dot)
                 }
             prop.isIdOnly -> {
                 beginControlFlow(
-                    "this.%N = $that%L%N",
+                    "this.%N = $right%L%N",
                     prop.baseProp.name,
-                    if (prop.baseProp.isNullable) "?." else ".",
+                    dot,
                     if (prop.baseProp.isList) "map" else "let"
                 )
                 beginControlFlow(
@@ -696,9 +681,9 @@ class DtoGenerator private constructor(
                         .builder()
                         .apply {
                             if (prop.isNullable) {
-                                beginControlFlow("if ($that !== null)")
+                                beginControlFlow("if ($right !== null)")
                             }
-                            add("this.%N = $that", prop.baseProp.name)
+                            add("this.%N = $right", prop.baseProp.name)
                             apply {
                                 appendValueToEnum(prop)
                             }
@@ -710,7 +695,7 @@ class DtoGenerator private constructor(
                         .build()
                 )
             else ->
-                addStatement("this.%N = $that", prop.baseProp.name)
+                addStatement("this.%N = $right", prop.baseProp.name)
         }
     }
 
@@ -905,38 +890,6 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun TypeSpec.Builder.addCreate() {
-        val names = mutableListOf<String>()
-        collectNames(names)
-        val className = ClassName(root.packageName(), names[0], *names.subList(1, names.size).toTypedArray())
-        addFunction(
-            FunSpec
-                .builder("create")
-                .returns(className)
-                .apply {
-                    addPrimaryParameters(true)
-                    addAnnotation(JVM_STATIC_CLASS_NAME)
-                    addAnnotation(JSON_CREATOR_CLASS_NAME)
-                    addCode(
-                        CodeBlock
-                            .builder()
-                            .add("return %T(", className)
-                            .apply {
-                                for (dtoProp in dtoType.dtoProps) {
-                                    add(dtoProp.name).add(", ")
-                                }
-                                for (userProp in dtoType.userProps) {
-                                    add(userProp.alias).add(", ")
-                                }
-                            }
-                            .add(")\n")
-                            .build()
-                    )
-                }
-                .build()
-        )
-    }
-
     companion object {
         @JvmStatic
         private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
@@ -1039,8 +992,9 @@ class DtoGenerator private constructor(
             unindent()
         }
 
-        private fun defaultValue(typeRef: TypeRef): String? =
-            if (typeRef.isNullable) {
+        private fun defaultValue(prop: UserProp): String? {
+            val typeRef = prop.typeRef
+            return if (typeRef.isNullable) {
                 "null"
             } else {
                 when (typeRef.typeName) {
@@ -1098,5 +1052,9 @@ class DtoGenerator private constructor(
                     else -> null
                 }
             }
+        }
+
+        private val DtoProp<*, *>.isOnlyDtoNullable: Boolean
+            get() = isNullable && !baseProp.isNullable
     }
 }

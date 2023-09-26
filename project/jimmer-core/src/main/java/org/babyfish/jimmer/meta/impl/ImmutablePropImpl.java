@@ -206,7 +206,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             throw new ModelException(
                     "Illegal property \"" +
                             this +
-                            "\", it `inputNotNull` can only be specified for nullable property"
+                            "\", the `inputNotNull` cannot be specified for non-null property"
             );
         }
         OnDissociate onDissociate = getAnnotation(OnDissociate.class);

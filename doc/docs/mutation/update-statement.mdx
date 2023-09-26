@@ -6,14 +6,6 @@ title: Update Statement
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Premise of This Article
-
-Jimmer supports [triggers](./trigger), including BinLog Triggers and Transaction Triggers.
-
-If using Transaction Triggers, it will cause Jimmer modification operations to generate more complete query statements to simulate triggers.
-
-The various scenarios discussed in this article and their respective generated SQL are all based on the premise of not using Transaction Triggers.
-
 ## Basic Usage
 
 The usage of the update statement is:
@@ -129,7 +121,12 @@ First, MySQLDialect needs to be specified when creating SqlClient:
 
 -   Spring Boot configuration:
 
-    Declare configuration in `application.yml` or `application.properties`, named `jimmer.dialect` with value `org.babyfish.jimmer.sql.dialect.MySqlDialect`
+    Declare dialect in `application.yml` or `application.properties`, like this
+
+    ```title="applicaion.yml"
+    jimmer:
+        dialect: org.babyfish.jimmer.sql.dialect.MySqlDialect
+    ```
     
 -   Non-Spring Boot configuration:
 
@@ -243,8 +240,13 @@ First, PostgresDialect needs to be specified when creating SqlClient:
 
 -   Spring Boot configuration:
 
-    Declare configuration in `application.yml` or `application.properties`, named `jimmer.dialect` with value `org.babyfish.jimmer.sql.dialect.PostgresDialect`
+    Declare dialect in `application.yml` or `application.properties`, like this
     
+    ```title="applicaion.yml"
+    jimmer:
+        dialect: org.babyfish.jimmer.sql.dialect.PostgresDialect
+    ```
+
 -   Non-Spring Boot configuration:
 
     <Tabs groupId="language">
@@ -316,7 +318,7 @@ println("Affected row count: $affectedRowCount")
 </TabItem>
 </Tabs>
 
-:::note
+:::caution
 Unlike MySQL, using JOIN in update statements in Postgres has the following restrictions:
 
 1.  JOIN can only be used in the `where` clause, not in the `set` clause. That is, Postgres still only allows modifying fields of the current table, supporting joins to other tables only for condition filtering.
@@ -342,8 +344,7 @@ and
     tb_4_.NAME = ?
 ```
 
-:::note
-
+:::info
 The join path `author.books().store()` has two levels, `books()` is level 1 and `store()` is level 2. 
 
 1.  Level 1 `books()` involves two tables:

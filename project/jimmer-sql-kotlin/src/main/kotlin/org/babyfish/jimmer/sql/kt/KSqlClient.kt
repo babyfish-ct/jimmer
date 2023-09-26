@@ -5,7 +5,6 @@ import org.babyfish.jimmer.lang.NewChain
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode
-import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLog
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.ast.KExecutable
@@ -16,7 +15,6 @@ import org.babyfish.jimmer.sql.kt.cfg.KSqlClientDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
-import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import kotlin.reflect.KClass
@@ -80,8 +78,6 @@ interface KSqlClient {
 
     val filters: KFilters
 
-    val loaders: KLoaders
-
     fun getAssociations(prop: KProperty1<*, *>): KAssociations
 
     @NewChain
@@ -96,8 +92,6 @@ interface KSqlClient {
     val entityManager: EntityManager
 
     val binLog: BinLog
-
-    val javaClient: JSqlClientImplementor
 
     fun <E: Any> findById(type: KClass<E>, id: Any): E? =
         entities.findById(type, id)
@@ -158,6 +152,8 @@ interface KSqlClient {
 
     fun <E: Any> deleteByIds(type: KClass<E>, ids: Collection<*>, block: KDeleteCommandDsl.() -> Unit): KDeleteResult =
         entities.deleteAll(type, ids, block = block)
+
+    val javaClient: JSqlClientImplementor
 }
 
 fun newKSqlClient(block: KSqlClientDsl.() -> Unit): KSqlClient {

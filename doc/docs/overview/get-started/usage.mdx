@@ -140,7 +140,7 @@ fun main(args: Array<String>) {
 
 -   ❷ For the aggregate root type `Book`, query all non-associative properties of the object *(id, name, edition, price)*  
 
--   ❸ Fetch the many-to-many associative property `Book.authors` of the object
+-   ❸ Fetch the many-to-many association property `Book.authors` of the object
 
 -   ❹ For the associated object type `Author`, query all non-associative properties of the object *(id, firstName, lastName, gender)*
 
@@ -269,7 +269,7 @@ fun main(args: Array<String>) {
 
 -   ❷ and ❸ For the aggregate root type `Book`, query the `name` and `edition` properties *(id is forcibly queried, no need to declare querying `id` here)*
 
--   ❸ Fetch the many-to-one associative property `Book.store` of the object  
+-   ❸ Fetch the many-to-one association property `Book.store` of the object  
 
 -   ❹ For the associated object type `BookStore`, query the `id` and `name` properties *(id is forcibly queried, no need to declare querying `id` here)*
 

@@ -1,16 +1,18 @@
 ---
 sidebar_position: 2
-title: Custom Filters
+title: User Defined Cacheable Filters
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import { ViewMore } from '@site/src/components/ViewMore';
+import {SwaggerAuthorize} from '@site/src/components/Image';
 
 ## Cache-friendly Filters
 
 ### Basic Concepts
 
-In the [User-defined Filters](../../query/global-filter/user-filter) documentation, we introduced that custom global filters need to implement the `Filter/KFilter` interface.
+In the [User defined Filters](../../query/global-filter/user-filter) documentation, we introduced that custom global filters need to implement the `Filter/KFilter` interface.
 
 However, ordinary filters defined using this interface are not cache-friendly. 
 
@@ -65,18 +67,18 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 
 This interface inherits from `Filter/KFilter` and adds two new methods:
 
--   `getParameters`: The SubKey fragment contributed by this filter for multi-view cache. 
+-   `getParameters`: The sub key fragment contributed by this filter for multi-view cache. 
 
 -   `isAffectedBy`: Accepts an event that the filtered entity is modified, and judges whether the filtering fields depended on by the current filter are changed.
 
 :::info
-An entity type allows being processed by multiple global filters. If there are multiple global filters:
+An entity type allows being processed by multiple global filters: 
 
--   If any one of them is cache-unfriendly, it will cause other filter-sensitive properties to become uncacheable.
+-   If any one of them is cache-unfriendly, it will cause all filter-sensitive properties to become uncacheable.
 
     Therefore, these global filters must either all be cache-unfriendly `Filter/KFilter`, or all be cache-friendly `CacheableFilter/KCacheableFilter`. Mixing them together makes no sense.
 
-    If such meaningless mixing occurs accidentally, Jimmer will tell [why caching is disabled](./abandoned-callback). 
+    If such meaningless mixing occurs accidentally, Jimmer will tell [why cache is abandoned](./abandoned-callback). 
 
 -   When all global filters are cache-friendly, the data returned by the `getParameters()` method of all `CacheableFilter/KCacheableFilter` objects is merged together as the `SubKey` of the multi-view cache.
 
@@ -226,7 +228,7 @@ class TenantFilter(
 
 ## Enable Multi-view Cache
 
-### Normal Approach
+### Simple Approach
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -404,7 +406,7 @@ The `RedisHashBinder` class in the above code is a very important implementation
     <thead>
         <tr>
             <th>Cache Style</th>
-            <th>Multi-view</th>  
+            <th>Is Multi-view</th>  
             <th>Abstract API❶</th>
             <th>Built-in Impl❷</th>
         </tr>
@@ -416,7 +418,7 @@ The `RedisHashBinder` class in the above code is a very important implementation
                 <div><i>(usually first-level cache technologies like Guava, Caffine)</i></div>
             </td>
             <td>
-                No
+                Single-view
             </td>
             <td>
                 LoadingBinder&lt;K, V&gt;
@@ -427,7 +429,7 @@ The `RedisHashBinder` class in the above code is a very important implementation
         </tr>
         <tr>
             <td>
-                Yes
+                Multi-view
             </td>
             <td>
                 LoadingBinder.Parameterized&lt;K, V&gt;
@@ -442,7 +444,7 @@ The `RedisHashBinder` class in the above code is a very important implementation
                 <div><i>(usually second-level cache technologies like Redis)</i></div>
             </td>
             <td>
-                No
+                Single-view
             </td>
             <td>
                 SimpleBinder&lt;K, V&gt;
@@ -453,7 +455,7 @@ The `RedisHashBinder` class in the above code is a very important implementation
         </tr>
         <tr>
             <td>
-                Yes
+                Multi-view
             </td>
             <td>
                 SimpleBinder.Parameterized&lt;K, V&gt;
@@ -567,7 +569,12 @@ fun cacheFactory(
             ...code omitted...    
 
         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-            ...code omitted...
+            createPropCache(
+                // highlight-next-line
+                filterState.isAffectedBy(prop.targetType),
+                prop,
+                Duration.ofHours(1)
+            )
 
         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
             createPropCache(
@@ -579,8 +586,8 @@ fun cacheFactory(
 
         override fun createResolverCache(prop: ImmutableProp): Cache<*, *> =
             createPropCache(
-                // highlight-next-line
-                filterState.isAffectedBy(prop.targetType),
+                prop === BookStore::avgPrice.toImmutableProp() ||
+                    prop === BookStore::newestBooks.toImmutableProp(),
                 prop,
                 Duration.ofHours(1)
             )
@@ -600,7 +607,7 @@ fun cacheFactory(
 </TabItem>
 </Tabs> 
 
-:::caution
+:::info
 Unfortunately, this method can only simplify the construction of association caches, i.e. simplify the `createAssociatedIdCache` and `createAssociatedIdListCache` methods.
 
 For calculated properties, since the framework is unaware of the internal logic used by user-defined calculated properties, it cannot simplify them. Users need to decide whether to build multi-view caches based on their own business characteristics.
@@ -610,7 +617,7 @@ For calculated properties, since the framework is unaware of the internal logic 
 
 We have defined the `getParameters` method in `TenantFilter`. All affected association properties will automatically specify `SubKey` for their association caches. 
 
-However, unfortunately, due to the introduction of user-defined computation rules that the framework cannot understand, developers must manually specify `SubKey` for the `Resolver` implementation of calculated properties.
+However, unfortunately, due to the introduction of user-defined calculation rules that the framework cannot understand, developers must manually specify `SubKey` for the `TransientResolver` implementation of calculated properties.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -663,7 +670,7 @@ Therefore, whatever `SubKey` the association property `BookStore.books` specifie
 :::note
 `BookStore.avgPrice` is also affected by `Book.price`. It changes when `Book.price` changes.
 
-However, `Book.price` is a non-association property of the object, so it must be irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here. 
+However, `Book.price` is a non-associative property of the object, so it must be irrelevant to the multi-view cache system. The `getParameterMapRef` method does not need to consider it here. 
 :::
 
 ## Usage
@@ -715,21 +722,244 @@ println(stores)
 </TabItem>
 </Tabs>
 
-:::caution
-With the large amount of basics in previous documents, this article intends to simplify the discussion by only showing the data in Redis and the final JSON returned to the user. The SQL generation process is no longer tracked step by step.
-:::
+### Execute with one tenant identity
 
-The previous article assumed there is an object of type `TenantProvider` in the Spring context. Its Java method `get()` and Kotlin property `tenant` are used to extract the tenant from the identity information of the current operator.
+Assume the current tenant name is `a`, the execution process is as follows:
 
-We can execute the above code 3 times, making `TenantProvider` return different information each time to simulate 3 different user identities. 
+-   First step: Query aggregate root
 
-In the 3 calls, make `TenantProvider` return null, "a" and "b" respectively.
+    First query the aggregate root object by executing the following SQL:
+
+    ```sql
+    select 
+        tb_1_.ID,
+        tb_1_.NAME,
+        tb_1_.WEBSITE  
+    from BOOK_STORE tb_1_
+    ```
+
+    Here the query in the code is implemented to get some BookStore objects. Such objects directly queried by the user are called aggregate root objects.
+
+-   Second step: Query `BookStore.books` in ❶ through association cache
+
+    The above code will get a series of aggregate root objects. If using the official example data, it will get two aggregate root objects with `ID` of 1 and 2 for `BOOK_STORE`.
+
+    Jimmer first looks up the data from Redis. The keys looked up are `BookStore.books-1` and `BookStore.books-2`.
+
+    Assume the data for these keys cannot be found in Redis:
+
+    ```
+    127.0.0.1:6379> keys BookStore.books-*
+    (empty array)
+    ```
+    
+    So the following SQL is executed to complete the associated property `BookStore.books`:
+
+    ```sql
+    SQL: select,
+        tb_1_.STORE_ID,
+        tb_1_.ID  
+    from BOOK tb_1_
+    where
+            tb_1_.STORE_ID in (
+                ? /* 1 */, ? /* 2 */
+            )
+        and
+            // highlight-next-line
+            tb_1_.TENANT = ? /* a */
+    order by
+        tb_1_.NAME asc,
+        tb_1_.EDITION desc
+    ```
+
+    :::info
+    The filter condition `tb_1_.TENANT = 'a'` comes from the user filter `TenantFilter`.
+    :::
+
+    Jimmer will put the query result into Redis. So we can view the data from Redis:
+
+    ```sh
+    127.0.0.1:6379> keys BookStore.books-*
+    1) "BookStore.books-2"  
+    2) "BookStore.books-1"
+
+    127.0.0.1:6379> hgetall BookStore.books-1
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "[5,3,1,9,7]"
+
+    127.0.0.1:6379> hgetall BookStore.books-2 
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "[11]"
+    ```
+
+    :::info
+    Jimmer uses Redis Hash for multi-perspective cache. So `hgetall` instead of `get` is needed.
+
+    Redis Hash is a nested KV structure:
+
+    -   The outer Redis Key, e.g. `BookStore.books-1` and `BookStore.books-2`, is no different from single-perspective cache.
+
+    -   The inner Hash Key, also called SubKey in Jimmer, is provided by global filters.
+
+        Here, `{"tenant":"a"}` is provided by `TenantProvider`, indicating the cached value is not the id set of all associated objects, but the id set of associated objects visible to tenant `a`.
+    :::
+
+    :::tip
+    Undoubtedly, executing the above Java/Kotlin code again **with the same tenant identity** before data expiration in Redis, it will directly return associated data from Redis without generating related SQL.
+    :::
+
+-   Third step: Convert id set to associated objects
+
+    In the previous step we got the id set of associated objects corresponding to associated property `BookStore.books`, representing the associated objects visible to tenant `a`.
+
+    Now we can use the object cache of `Book` to convert the `Book` id set into `Book` object set.
+
+    This step is very simple without further discussion.
+
+-   Fourth step: Query `BookStore.avgPrice` in ❷ through computation cache
+
+    The above code will get a series of aggregate root objects. If using the official example data, it will get two aggregate root objects with `ID` of 1 and 2 for `BOOK_STORE`.
+
+    Jimmer first looks up the data from Redis. The keys looked up are `BookStore.avgPrice-1` and `BookStore.avgPrice-2`.
+
+    Assume the data for these keys cannot be found in Redis:
+
+    ```
+    127.0.0.1:6379> keys BookStore.avgPrice-*
+    (empty array)
+    ```
+
+    So the following SQL is executed to compute the calculation property:
+
+    ```sql
+    select
+        tb_1_.ID,
+        avg(tb_2_.PRICE)
+    from BOOK_STORE tb_1_ 
+    left join BOOK tb_2_
+        on tb_1_.ID = tb_2_.STORE_ID
+    where
+            tb_1_.ID in (
+                ? /* 1 */, ? /* 2 */
+            )
+        and
+            // highlight-next-line
+            tb_1_.TENANT = ? /* a */
+    group by
+        tb_1_.ID
+    ```
+    
+    :::info
+    The filter condition `tb_1_.TENANT = 'a'` comes from the user filter `TenantFilter`.
+    :::
+
+    Jimmer will put the query result into Redis. So we can view the data from Redis:
+
+    ```sh
+    127.0.0.1:6379> keys BookStore.avgPrice-*
+    1) "BookStore.avgPrice-2"
+    2) "BookStore.avgPrice-1"
+
+    127.0.0.1:6379> hgetall BookStore.avgPrice-1
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "53.1"
+
+    127.0.0.1:6379> hgetall BookStore.avgPrice-2
+    #highlight-next-line
+    1) "{\"tenant\":\"a\"}"
+    2) "81"
+    ```
+    
+    :::info
+    Jimmer uses Redis Hash for multi-perspective cache. So `hgetall` instead of `get` is needed.
+
+    Redis Hash is a nested KV structure:
+
+    -   The outer Redis Key, e.g. `BookStore.avgPrice-1` and `BookStore.avgPrice-2`, is no different from single-perspective cache.
+
+    -   The inner Hash Key, also called SubKey in Jimmer, is provided by global filters.
+        
+        Here, `{"tenant": "a"}` is provided by `TenantProvider`, 
+        indicating the cached value is not the average price of all associated objects, but the average price of associated objects visible to tenant `a`.
+    :::
+
+    :::tip
+    Undoubtedly, executing the above Java/Kotlin code again **with the same tenant identity** before data expiration in Redis, it will directly return associated data from Redis without generating related SQL.
+    :::
+
+Finally, Jimmer concatenates the results of the 4 steps and returns them to the user.
+
+```json
+[
+  {
+    "id":2, 
+    "name":"MANNING",
+    "website":null,
+    // highlight-next-line  
+    "books":[
+      {
+        "id":11,
+        "name":"GraphQL in Action",
+        "edition":2,
+        "price":81  
+      }
+    ],
+    // highlight-next-line
+    "avgPrice":81
+  },
+  { 
+    "id":1,
+    "name":"O'REILLY",
+    "website":null,
+    // highlight-next-line
+    "books":[
+      {
+        "id":5,
+        "name":"Effective TypeScript",
+        "edition":2,
+        "price":69
+      }, 
+      {
+        "id":3,
+        ...omitted...
+      },
+      {  
+        "id":1,
+        ...omitted...
+      },
+      {
+        "id":9,
+        ...omitted...
+      },
+      {
+        "id":7,
+        ...omitted...
+      }
+    ],
+    // highlight-next-line  
+    "avgPrice":53.1
+  }
+]
+```
+
+### Execute repeatedly with multiple tenant identities
+
+The query execution process with tenant `a` has been discussed. Similarly, we can execute multiple times using different tenant identities to leave cache data in Redis from the following perspectives:
+
+- `tenant` = null
+- `tenant` = "a" 
+- `tenant` = "b"
 
 :::info
-For the official sample, `TenantProvider` is implemented based on HTTP headers with swagger UI support. It is easy to execute with 3 different user identities.
+For the official example, `TenantProvider` is implemented based on HTTP request header and has <ViewMore buttonText="swagger UI"> <SwaggerAuthorize/></ViewMore> support. It's easy to execute three times with three different user identities.
+
+Among them, `tenant = null` corresponds to the unauthorized/logout state in swagger UI.
 :::
 
-Open redis-cli. We can verify the data in Redis:
+Open redis-cli, we can verify the data in Redis:
 
 ```sh
 127.0.0.1:6379> keys BookStore.books-*
@@ -774,13 +1004,13 @@ Open redis-cli. We can verify the data in Redis:
 ```
 
 :::tip
-Readers can take a close look at these `redis-cli` commands and easily find that the data of SubKey `{"tenant":"a"}` merged with the data of SubKey `{"tenant":"b"}` is exactly the data of SubKey `{}`. 
+Readers can take a close look at these `redis-cli` commands and easily find that the data of sub key `{"tenant":"a"}` merged with the data of sub key `{"tenant":"b"}` is exactly the data of SubKey `{}`. 
 :::
 
 The data returned to the user in the 3 calls is: 
 
 <Tabs groupId="language">
-<TabItem value="tenant_null" label="filter.tenent=null">  
+<TabItem value="tenant_null" label="tenent=null">  
 
 ```json
 [
@@ -864,7 +1094,7 @@ The data returned to the user in the 3 calls is:
 ```
 
 </TabItem>
-<TabItem value="tenant_a" label="filter.tenent=a">
+<TabItem value="tenant_a" label="tenent=a">
 
 ```json 
 [
@@ -920,7 +1150,7 @@ The data returned to the user in the 3 calls is:
 ```
 
 </TabItem>
-<TabItem value="tenant_b" label="filter.tenent=b">
+<TabItem value="tenant_b" label="tenent=b">
 
 ```json
 [
@@ -978,9 +1208,9 @@ The data returned to the user in the 3 calls is:
 </TabItem>
 </Tabs>
 
-## Consistency  
+## Cache Invalidation  
 
-Now let's modify the `tenant` property of the `Book` object with id 6 from "b" to "a".
+Now let's modify the property `Book.tenant` of the `Book` object with id `6` from "b" to "a".
 
 Since `Book-6` belongs to `BookStore-1`, it is foreseeable that the multi-view caches corresponding to the properties `BookStore.books-1` and `BookStore.avgPrice-1` will definitely be invalidated.
 
@@ -1042,7 +1272,7 @@ Delete data from redis: [BookStore.avgPrice-1] ❹
 
 -   ❹ The calculated cache `BookStore.avgPrice` of `BookStore` object with id 1 is also affected. This is the most amazing characteristic.
 
-    Although the framework is unaware of the computation rule used by users in calculated properties, in the [Calculated Cache](../cache-type/calculation) documentation, we discussed the following code in the `BookStoreAvgPriceResolver` class:
+    Although the framework is unaware of the calculation rule used by users in calculated properties, in the [Calculated Cache](../cache-type/calculation) documentation, we discussed the following code in the `BookStoreAvgPriceResolver` class:
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">

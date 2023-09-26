@@ -11,6 +11,7 @@ import javax.validation.constraints.NotBlank
 interface BookStore {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
     @Key

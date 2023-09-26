@@ -203,11 +203,6 @@ println(stores)
     ```
 
     这里实现了代码中的查询，得到了一些BookStore对象。这种被用户直接查询而得的对象叫做聚合根对象
-    
-    :::caution
-    Jimmer不会对用户查询返回的聚合对象进行缓存，因为这种查询结果的一致性无法保证。
-    即便需要以牺牲一致性为代价对其缓存，也是用户的业务问题，不是应该由框架抽象并统一的行为。
-    :::
 
 -   第二步：通过关联缓存查询❶处的`BookStore.books`
 
@@ -243,7 +238,7 @@ println(stores)
     其中`tb_1_.DELETED = false`这个过滤条件来自逻辑删除功能所隐含的内置过滤器
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ``` sh
     127.0.0.1:6379> keys BookStore.books-*
     1) "BookStore.books-2"
@@ -318,7 +313,7 @@ println(stores)
     其中`tb_1_.DELETED = false`这个过滤条件来自逻辑删除功能所隐含的内置过滤器。
     :::
 
-    Jimmer会把从查询结构放入Redis，因此，我们可以从redis中查看这些数据
+    Jimmer会把查询结果放入Redis，因此，我们可以从redis中查看这些数据
     ```sh
     127.0.0.1:6379> keys BookStore.avgPrice-*
     1) "BookStore.avgPrice-2"

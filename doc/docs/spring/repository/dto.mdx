@@ -17,12 +17,12 @@ Using this language, developers can quickly define multiple data structure shape
 In some cases, after the server queries data of a certain shape, it is not used as the return of an HTTP request, but is used by itself to drive subsequent complex business logic. This is an ideal scenario for using this approach.
 
 :::caution
-Note that if the data of a certain shape queried by the server is not for its own use, but to be directly returned as the HTTP request return value, it is more recommended to directly return the dynamic entity object and use the scheme in [Spring Section/Frontend-Backend Decoupling](../../spring/client) to automatically generate client code with high development experience.
+Note that if the data of a certain shape queried by the server is not for its own use, but to be directly returned as the HTTP request return value, it is more recommended to directly return the dynamic entity object and use the scheme in [Spring/Generate Client Code](../../spring/client) to automatically generate client code with high development experience.
 :::
 
 ## Define DTO shape
 
-This article focuses on how to query static DTO types, not a systematic introduction to the DTO language. Please refer to [Object Section/DTO Mapping/DTO Language](../../object/view/dto-language) for a complete DTO language.
+This article focuses on how to query static DTO types, not a systematic introduction to the DTO language. Please refer to [Object/DTO Conversion/DTO Language](../../object/view/dto-language) for a complete DTO language.
 
 Assume the fully qualified name of the `Book` class is `com.yourcompany.yourpoject.model.Book`, you can
 
@@ -356,7 +356,7 @@ There are two implementation plans:
 
     You can see:
 
-    1.  First, define a method-level generic parameter `V`, which generic parameter must extend `org.babyfish.jimmer.View<Book>` *(this is very important, otherwise Jimmer will remind developers to do so via exceptions)*.
+    1.  First, define a method-level generic parameter `V`, which must extend `org.babyfish.jimmer.View<Book>` *(this is very important, otherwise Jimmer will remind developers to do so via exceptions)*.
 
     2.  Then, use `V` to declare the parameter `viewType` of type `Class<V>` or `KClass<V>`, and hand over the decision-making power of the data structure shape to the caller.
 

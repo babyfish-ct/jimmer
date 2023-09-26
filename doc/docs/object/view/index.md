@@ -3,14 +3,20 @@ sidebar_position: 5
 title: DTO conversion 
 ---
 
-必要时，我们不得不在Jimmer动态对象和静态DTO对象之间彼此转换，为此Jimmer提供了两种方法
+When necessary, we have to convert between Jimmer dynamic objects and static DTO objects. Jimmer provides two methods for this:
 
--   使用Jimmer附带的DTO语言，基于实体类型快速定义若干个数据结构的形状，用于生成DTO类型、和实体之间的转换逻辑，以及查询逻辑([对象抓取器]/(../../query/object-fetcher))
+-   Use the DTO language that comes with Jimmer. This is the preferred solution. Based on the entity type, quickly define the shapes of several data structures. After compilation by Jimmer, for each shape definitation, it automatically generates:
+  
+    -   Java/Kotlin definition of DTO type
+  
+    -   Mutual conversion logic between DTO object and entity object
+  
+    -   [Object fetcher](../../query/object-fetcher) matching the shape
+  
+-   For DTO types already defined in legacy projects, use [mapstruct](https://mapstruct.org/) for mutual conversion.
 
--   自己定义DTO类型，并使用[mapstruct](https://mapstruct.org/)彼此转换
+:::tip 
+Whether it is a dynamic entity object that represents any data structure shape, or a static DTO object corresponding to a specific data structure shape, they are equivalent in Jimmer's view, and can be queried in one line of code or saved in one line of code as a whole.
 
-:::tip
-无论是代表任何数据结构形状的动态实体对象，还是根据特定据结构形状对应的静态DTO对象，二者在Jimmer看来是等价的，都能被作为一个整体使用一行代码查询或使用一行代码保存。
-
-因此，开发人员只需负责动态实体和静态DTO对象之间彼此转换即可。从数据库和缓存操作的角度来看，无任何额外成本。
+Therefore, developers only need to be responsible for the mutual conversion between dynamic entity objects and static DTO objects. From the perspective of database and cache operations, there is no additional cost.
 :::

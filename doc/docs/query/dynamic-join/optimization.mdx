@@ -176,9 +176,9 @@ Here, we use another approach to solve the same problems.
         ) {
             ATable table = ATable.$;
 
-            // Create JOIN object unconditionally first,
-            // will be auto ignored if not used later,
-            // so no useless JOIN  
+            // Create JOIN objects unconditionally first,
+            // Not used join objects will be auto ignored,
+            // so no useless JOIN objects 
             // highlight-start
             BTableEx b = table.asTableEx().bs();
             CTableEx c = b.cs();
@@ -529,5 +529,5 @@ The reason: The target table's primary key is actually the foreign key from the 
 :::info
 1.  For associations mapped by join table, if the associated object obtained via join operation accesses only the id field and no other fields, such join is considered a half join.
 
-2.  In the final generated SQL, a half join uses only one JOIN statement to join the intermediate table, without further joining the target table with a second JOIN statement.
+2.  In the final generated SQL, a half join uses only one JOIN statement to join the intermediate table, without using second JOIN statement to further join the target table.
 :::

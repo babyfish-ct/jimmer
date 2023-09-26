@@ -17,7 +17,7 @@ In the figure, we list three business perspectives as examples. For any business
 To achieve this kind of data structure shape tailoring that is accurate to properties, the only way is to make entity objects support dynamism. 
 
 :::info
-The dynamism of Jimmer entities is not the kind of dynamism that gives up spell checking and type safety like dynamic languages. It is just that [the `fetch = FetchType.LAZY` of the @Basic annotation in Hibernate](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement) is extended to any property. 
+The dynamism of Jimmer entities is not the kind of dynamism that gives up spell checking and type safety like dynamic languages. It is just that [the `fetch = FetchType.LAZY` of the @Basic annotation in Hibernate](https://docs.jboss.org/hibernate/orm/6.2/userguide/html_single/Hibernate_User_Guide.html#BytecodeEnhancement) is extended to any properties. 
 
 So Jimmer entities are 100% strongly typed, with spell safety, type safety, and even null safety (limited to Kotlin). It just allows any property of an object to be missing.
 :::
@@ -285,7 +285,15 @@ Let's look at the following examples.
 The ubiquitous dynamism of Jimmer objects can easily express data structures of any shape, which ultimately brings the following important characteristics to the Jimmer project:
 
 :::tip
-Use a unified entity model to express any data format required by the business, rather than define DTOs for each data format required by the business scenario.
+Developers use a unified entity model to express any data format required by the business, 
+and utilize Jimmer's capabilities to interact with the data structure as a whole with the database; 
+Rather than defining DTOs for each data format required by business scenarios, 
+and taking on the heavy work of interacting DTOs with the database yourself. 
 
-This is the key for Jimmer to avoid both the lack of flexibility of traditional ORM and the repetitive labor of MyBatis.
+This is the key for Jimmer to avoid both the lack of flexibility of traditional ORMs and the repetitive labor of MyBatis. 
+
+*Although the save instruction requires [Input DTO](../mutation/save-command/input-dto) for safety and 
+supports [DTO language](../object/view/dto-language) for this purpose, 
+Jimmer's DTO is just an extremely cheap decoration created for compatibility with the existing JVM ecosystem, 
+not the core of the system, and its impact on development costs can be ignored.* 
 :::

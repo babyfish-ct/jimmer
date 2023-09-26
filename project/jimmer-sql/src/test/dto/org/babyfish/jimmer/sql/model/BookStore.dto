@@ -1,0 +1,11 @@
+input BookStoreNullableInput {
+    #allScalars
+    books? {
+        #allScalars
+    }
+}
+
+input BookStoreNullableIdInput {
+    #allScalars
+    id(books)? as bookIds
+}

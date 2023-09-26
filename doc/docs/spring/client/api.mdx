@@ -12,7 +12,7 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 If using Jimmer to build backend systems, developers have three ways to solve the <ViewMore buttonText="DTO Explosion"><DtoExplosion/></ViewMore> problem.
 
-||Description|Where object shapes are restricted|Frontend experience|
+||Description|Where object shapes are restricted|Client experience|
 |-|-|-|-|
 |Solution 1|Use Jimmer to build GraphQL services|Client side|Good|
 |Solution 2|Use Jimmer to build REST services, shapes specified by client|Client side|Bad| 
@@ -24,9 +24,9 @@ Let's discuss the three cases separately:
 
 Use Jimmer to build GraphQL services
 
-Backend: [Develop GraphQL Backend with Jimmer](../../graphql) 
+Server: [Develop GraphQL Backend with Jimmer](../../graphql) 
 
-Frontend: Many client frameworks to choose from. Using my [graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client) can get the ultimate TypeScript experience
+Client: Many client frameworks to choose from. Using my [graphql-ts-client](https://github.com/babyfish-ct/graphql-ts-client) can get the ultimate TypeScript experience
 
 :::caution
 Jimmer itself supports recursive query of self-associated properties, but so far, the GraphQL protocol does not support this feature, which means the feature will be lost.
@@ -89,13 +89,13 @@ or
 { id, name, authors { id, firstName, lastName }}
 ```
 :::info
-To learn how to express more complex Fetchers in string code, refer to the `toString()` method of Fetcher.
+To learn how to express more complex object fetcher in string code, refer to the `toString()` method of object fetcher.
 :::  
 
 :::caution  
 Although this approach can give REST capabilities similar to GraphQL, which is very flexible, it only facilitates server-side writing. The client will get a messy type system, so it is not recommended.
 
-If due to some historical constraints, the client uses JavaScript instead of TypeScript, and there is no foreseeable hope of any improvement, then consider this usage.
+If due to some historical constraints, the client uses JavaScript, not TypeScript, and there is no foreseeable hope of any improvement, then consider this usage.
 :::
 
 ### Solution 3 (Topic of This Article)
@@ -103,6 +103,10 @@ If due to some historical constraints, the client uses JavaScript instead of Typ
 Use Jimmer to build REST services, shapes enumerated by server 
 
 This usage is more in line with the original intention of the REST protocol, and it is also easier to manage permissions *(although the previous two usages are flexible, permission control is very difficult)*, and it is also the topic to be discussed in this article.
+
+:::info 
+The case discussed here is when the server API returns dynamic entities *(recommended)*, not DTOs. 
+:::
 
 Let's look at a contradiction first
 
@@ -112,20 +116,20 @@ Let's look at a contradiction first
 
 This contradiction is essentially the difference in awareness of <ViewMore buttonText="DTO Explosion"><DtoExplosion/></ViewMore> between the server side and the client side.
 
--   Server perspective, i.e. producer perspective.
+-   Server perspective is producer perspective.
 
     From the producer's point of view, DTO explosion is a very annoying problem, which means that their own development costs will also increase dramatically.
 
     Therefore, Jimmer uses dynamic entities combined with [object fetchers](../../query/object-fetcher) to eliminate DTO explosions on the server side.
 
--   Frontend perspective, i.e. consumer perspective. 
+-   Client perspective is consumer perspective. 
 
     From the consumer's point of view, DTO explosion is beneficial, each business scenario has an accurate return type, which is very nice to use. *(Difficult to implement? What does that have to do with me?)*
 
-    Therefore, Jimmer server can automatically generate TypeScript code to restore the DTO explosion eliminated on the server side on the client side.
+    Therefore, Jimmer server can automatically generate client code to *(such as TypeScript)* restore the DTO explosion eliminated on the server side on the client side.
 
 :::tip
-The server eliminates DTO explosions, and the client restores DTO explosions. This is the fundamental value of Jimmer's automatic front-end integration, and it is also the essential difference between Jimmer and any other technology that automatically generates client code.
+The server eliminates DTO explosions, and the client restores DTO explosions. This is the fundamental value of Jimmer's automatic sever-client integration, and it is also the essential difference between Jimmer and any other technology that automatically generates client code.
 
 Only by letting the server and client use completely different programming models can both sides get the ultimate development experience at the same time.
 :::
@@ -497,9 +501,9 @@ It is obvious that the return type of each business scenario is accurately defin
     So every time the server team notifies that REST API changes have occurred, just execute `yarn api` simply to refresh the local TypeScript client code
 
     :::caution
-    This method is only suitable when the front-end team is very small in size. If there are many front-end developers, it is more recommended to implement secondary development on the CI environment to achieve the following:
+    This method is only suitable when the web team is very small in size. If there are many web developers, it is more recommended to implement secondary development on the CI environment to achieve the following:
     
-    Each time the backend service code on a specific branch is committed, the CI environment compiles and starts the backend service, then downloads the ts code, decompresses it, and commits it to git. Finally, front-end engineers can simply pull the latest code from git.
+    Each time the server code on a specific branch is committed, the CI environment compiles and starts the service, then downloads the ts code, decompresses it, and commits it to git. Finally, web engineers can simply pull the latest code from git.
     :::
 
 3.  Create Global API Object

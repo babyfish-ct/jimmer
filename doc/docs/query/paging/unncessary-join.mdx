@@ -16,7 +16,7 @@ Jimmer will auto-optimize `count-query` to copy over as few table joins as possi
 
 1.  Table joins used by the where clause cannot be optimized.
 
-    That is, **only** table joins used solely by the `select` or `order by` clause of the top-level query in the original data-query can be optimized.
+    That is, **only** table joins used solely by the `select` or `order by` clause of the top-level query can be optimized.
    
 2.  Table joins based on collection associations (one-to-many, many-to-many) cannot be optimized.
 
@@ -26,7 +26,7 @@ Jimmer will auto-optimize `count-query` to copy over as few table joins as possi
 
     - Join type is left outer join
     
-    - Although join type is inner join, the association is based on non-null foreign key.
+    - Although join type is inner join, the association is based on non-null real foreign key.
     
         So-called real foreign key means there is a foreign key constraint in the database. See [Real vs Fake Foreign Keys](../../mapping/base/foreignkey).
      
@@ -43,7 +43,7 @@ In summary, to determine whether a table join in the original data-query can be 
     </tr>
     <tr>
         <td colspan="2">
-            Is used <b>solely</b> by select or orderBy clause of top-level query in original data-query
+            Is used <b>solely</b> by select or orderBy clause of top-level query
         </td>
     </tr>
     <tr>
@@ -111,7 +111,7 @@ val rowCount = query.count()
 
 Note α:
 
-Although `table.store()` is only used by orderBy clause without being used by where clause,
+Although `table.store()` is only used by `orderBy` clause without being used by where clause,
 -   `table.store()` is inner join
 -   `Book.store` association is nullable
 

@@ -184,7 +184,7 @@ Each parameter of this method can be null, look at the 6 possible invocations:
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK as tb_1_
-    where lower(tb_1_.NAME) like ? /* actual param: %g% */ 
+    where lower(tb_1_.NAME) like ? /* %g% */ 
     ```
 
 -   Specify minPrice
@@ -219,7 +219,7 @@ Each parameter of this method can be null, look at the 6 possible invocations:
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK as tb_1_  
-    where tb_1_.PRICE >= ? /* actual param: 40 */
+    where tb_1_.PRICE >= ? /* 40 */
     ```
 
 - Specify maxPrice
@@ -254,7 +254,7 @@ Each parameter of this method can be null, look at the 6 possible invocations:
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK as tb_1_  
-    where tb_1_.PRICE <= ? /* actual param: 60 */
+    where tb_1_.PRICE <= ? /* 60 */
     ```
 
 -   Specify both minPrice and maxPrice
@@ -292,7 +292,7 @@ Each parameter of this method can be null, look at the 6 possible invocations:
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK as tb_1_  
     where 
-        (tb_1_.PRICE between ? /* actual param: 40 */ and ? /* actual param: 60 */)
+        (tb_1_.PRICE between ? /* 40 */ and ? /* 60 */)
     ```
 
 -   Specify all parameters
@@ -330,9 +330,9 @@ Each parameter of this method can be null, look at the 6 possible invocations:
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK as tb_1_  
     where
-        lower(tb_1_.NAME) like ? /* actual param: %g% */
+        lower(tb_1_.NAME) like ? /* %g% */
     and 
-        (tb_1_.PRICE between ? /* actual param: 40 */ and ? /* actual param: 60 */)
+        (tb_1_.PRICE between ? /* 40 */ and ? /* 60 */)
     ```
 
 ## Dynamic JOIN  
@@ -423,7 +423,7 @@ Let's see how to use it:
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK as tb_1_ 
-    where tb_1_.NAME like ? /* actual param: G% */
+    where tb_1_.NAME like ? /* G% */
     ```
 
 -   Specify `storeName` parameter, JOIN generated
@@ -455,7 +455,7 @@ Let's see how to use it:
     /* highlight-next-line */  
     inner join BOOK_STORE as tb_2_
         on tb_1_.STORE_ID = tb_2_.ID
-    where tb_2_.NAME = ? /* actual param: MANNING */
+    where tb_2_.NAME = ? /* MANNING */
     ```
 
 ## Dynamic ORDER BY  
@@ -480,8 +480,10 @@ public interface BookRepository extends JRepository<Book, Long> {
 
         // This parameter is not used in subsequent examples, always null.
         // Reason:
-        // If a query does not need any parameters, the method from base interface is enough, no need to define this method.
-        // The value of this parameter in this example is solely to make the current custom abstract method look reasonable. 
+        // If a query does not need any parameters, the method from base 
+        // interface is enough,  no need to define this method. The value 
+        // of this parameter in this example is solely to make the current 
+        // custom abstract method look reasonable. 
         @Nullable String name,
 
         // highlight-next-line  
@@ -507,8 +509,10 @@ interface BookRepository : KRepository<Book, Long> {
 
         // This parameter is not used in subsequent examples, always null.
         // Reason:
-        // If a query does not need any parameters, the method from base interface is enough, no need to define this method.
-        // The value of this parameter in this example is solely to make the current custom abstract method look reasonable.
+        // If a query does not need any parameters, the method from base 
+        // interface is enough, no need to define this method. The value 
+        // of this parameter in this example is solely to make the current 
+        // custom abstract method look reasonable.
         name: String? = null,
 
         // highlight-next-line
@@ -520,7 +524,7 @@ interface BookRepository : KRepository<Book, Long> {
 </TabItem>
 </Tabs>
 
-To facilitate the top-level code to accept sorting strings from the frontend, Jimmer provides the utility class `org.babyfish.jimmer.spring.model.SortUtils` to convert the sorting string passed from the frontend to `org.springframework.data.domain.Sort`.
+To facilitate the top-level code to accept sorting strings from the frontend, Jimmer provides the utility class `org.babyfish.jimmer.spring.model.SortUtils` to convert the sorting string passed from the client to `org.springframework.data.domain.Sort`.
 
 It can be used like:
 
@@ -674,8 +678,10 @@ public interface BookRepository extends JRepository<Book, Long> {
 
         // This parameter is not used in subsequent examples, always null.
         // Reason:
-        // If a query does not need any parameters, the method from base interface is enough, no need to define this method.
-        // The value of this parameter in this example is solely to make the current custom abstract method look reasonable.
+        // If a query does not need any parameters, the method from base 
+        // interface is enough, no need to define this method. The value 
+        // of this parameter in this example is solely to make the current 
+        // custom abstract method look reasonable.
         @Nullable String name,
 
         // highlight-next-line
@@ -704,8 +710,10 @@ interface BookRepository : KRepository<Book, Long> {
 
         // This parameter is not used in subsequent examples, always null.
         // Reason:
-        // If a query does not need any parameters, the method from base interface is enough, no need to define this method.
-        // The value of this parameter in this example is solely to make the current custom abstract method look reasonable.
+        // If a query does not need any parameters, the method from base 
+        // interface is enough, no need to define this method. The value 
+        // of this parameter in this example is solely to make the current 
+        // custom abstract method look reasonable.
         name: String? = null,
 
         // highlight-next-line
@@ -851,7 +859,7 @@ order by
     tb_1_.EDITION desc
 /* MySQL paging */
 /* highlight-next-line */  
-limit ?, /* actual param: 5 (offset) */ ? /* actual param: 5 (limit) */ 
+limit ?, /* 5 (offset) */ ? /* 5 (limit) */ 
 ```
 
 ## Object Fetchers  
@@ -881,8 +889,10 @@ public interface BookRepository extends JRepository<Book, Long> {
 
         // This parameter is not used in subsequent examples, always null.
         // Reason:
-        // If a query does not need any parameters, the method from base interface is enough, no need to define this method.
-        // The value of this parameter in this example is solely to make the current custom abstract method look reasonable.
+        // If a query does not need any parameters, the method from base 
+        // interface is enough, no need to define this method. The value 
+        // of this parameter in this example is solely to make the current 
+        // custom abstract method look reasonable.
         @Nullable String name,
 
         Pageable pageable,
@@ -913,8 +923,10 @@ interface BookRepository : KRepository<Book, Long> {
 
         // This parameter is not used in subsequent examples, always null.
         // Reason:
-        // If a query does not need any parameters, the method from base interface is enough, no need to define this method.
-        // The value of this parameter in this example is solely to make the current custom abstract method look reasonable.
+        // If a query does not need any parameters, the method from base 
+        // interface is enough, no need to define this method. The value 
+        // of this parameter in this example is solely to make the current 
+        // custom abstract method look reasonable.
         name: String? = null,
 
         pageable: Pageable,
@@ -1154,7 +1166,7 @@ order by
     tb_1_.NAME asc,
     tb_1_.EDITION desc 
 /* MySQL paging */
-limit ?, /* actual param: 5 (offset) */ ? /* actual param: 5 (limit) */
+limit ?, /* 5 (offset) */ ? /* 5 (limit) */
 
 /*  
  * Step 3: For the 5 paged data (not 12 rows before paging),

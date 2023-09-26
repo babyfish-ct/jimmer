@@ -6,56 +6,58 @@ title: Cache Consistency
 :::caution
 In previous articles on [object cache](./cache-type/object), [association cache](./cache-type/association), and [calculated cache](./cache-type/calculation), we have discussed in detail how Jimmer automatically deletes affected caches when data is modified.
 
-So here we will not repeat the discussion of how Jimmer intelligently deletes affected caches. 
+So here we will not repeat the discussion of how Jimmer intelligently invalidates affected caches. 
 
 The focus of this article is how Jimmer ensures cache deletion operations issued can definitely succeed.
 :::
 
-Whether it is the fully automatic consistency of [object cache](./cache-type/object) and [association cache](./cache-type/association), or the user assisted consistency of [calculated cache](./cache-type/calculation), the cache consistency of Jimmer is driven by [triggers](../mutation/trigger).
+Whether it is the fully automatic invalidation of [object cache](./cache-type/object) and [association cache](./cache-type/association), or the user assisted invalidation of [calculated cache](./cache-type/calculation), the cache consistency of Jimmer is driven by [triggers](../mutation/trigger).
 
 Jimmer triggers are divided into BinLog triggers and Transaction triggers.
 
-For different situations, Jimmer adopts different strategies to ensure cache consistency, that is, to ensure that cache cleanup operations must succeed.
+For different situations, Jimmer adopts different strategies to ensure cache consistency, that is, to ensure that cache invalidation operations must succeed.
 
 
 ## Consistency of BinLog Trigger (Recommended)
 
-When `trigger-type` is `BINLOG_ONLY` or `BOTH`, Jimmer uses the BinLog trigger to delete invalid caches.
+When `trigger-type` is `BINLOG_ONLY` or `BOTH`, Jimmer uses the BinLog trigger to invalidate caches.
 
-In this case, developers respond to messaging queue notifications, process them simply and then call Jimmer's `BinLog` API *(this user code is very simple, and its complexity can be ignored)*. Calling the `BinLog` API initiates all trigger callbacks, including cache deletion.
+In this case, developers respond to messaging queue notifications, process them simply and then call Jimmer's `BinLog` API *(this user code is very simple, and its complexity can be ignored)*. Calling the `BinLog` API initiates all trigger callbacks, including cache invalidation.
 
-Take Kafka as an example. As long as the `BinLog` API call succeeds before committing the consumption progress, cache cleanup can be guaranteed to eventually succeed.
+Take Kafka as an example, make sure to commit the consumption progress after successfully calling the `BinLog` API, cache invalidation can be guaranteed to eventually succeed.
 
 ## Consistency of Transaction Trigger 
 
-When `trigger-type` is `TRANSACTION_ONLY`, Jimmer will be **forced** to use the Transaction trigger to delete invalid caches.
+When `trigger-type` is `TRANSACTION_ONLY`, Jimmer will be **forced** to use the Transaction trigger to invalidate caches.
 
 For Transaction triggers:
 
--   Caches will only be deleted when modifications caused by calling Jimmer APIs within the current App triggers callbacks, including cache deletion.
+-   Only modifying the database through Jimmer's own API can trigger all callback behaviors.
 
--   All trigger callbacks complete before the transaction is committed, including cache deletion.
+-   All trigger callbacks complete before the transaction is committed.
 
-If a simple implementation of direct cache deletion is adopted, any exception during cache deletion will cause the transaction to be rolled back. Obviously, this implementation is not reasonable.
+If a simple implementation of direct cache invalidation is adopted, any exception during cache invalidation will cause the transaction to be rolled back. Obviously, this implementation is not reasonable.
 
-Therefore, when `trigger-type` is `TRANSACTION_ONLY`, the cache deletion operations perceived by the user will be delayed. Cache deletion operations are not executed first, but are stored in the `JIMMER_TRANS_CACHE_OPERATOR` table. 
+Therefore, when `trigger-type` is `TRANSACTION_ONLY`, the cache invalidation operations perceived by the user will be delayed, they will not be executed immediately, but are stored in the `JIMMER_TRANS_CACHE_OPERATOR` table. 
 
 :::caution  
 Jimmer will automatically create the `JIMMER_TRANS_CACHE_OPERATOR` table.
 
 However, the default `org.babyfish.jimmer.sql.dialect.DefaultDialect` does not support this operation and will throw an exception.
 
-So do not use the default `DefaultDialect`, be sure to specify the database dialect explicitly.  
+Therefore, if cache consistency needs to be driven by transaction trigger, don't use the default `DefaultDialect`, please explicitly specify the database dialect.
 :::
 
 Modifications to the `JIMMER_TRANS_CACHE_OPERATOR` table and business tables belong to the same database local transaction, either both succeed or both fail.
 
 After the transaction commits successfully, Jimmer will immediately execute a `Flush` operation.
 
-The so-called `Flush` operation is to obtain cache deletion operations that have not yet been executed from the `JIMMER_TRANS_CACHE_OPERATOR` table as perceived by the user, execute the actual cache deletion operation, and delete related records if successful.
+The so-called `Flush` operation is to query cache invalidation operations that have not yet been executed from the `JIMMER_TRANS_CACHE_OPERATOR` table, execute the actual cache invalidation operation, and delete related records if successful.
 
 For the `Flush` operation executed immediately after transaction commit:
 
--   If successful, it's best to have good real-time performance. This should be the case most of the time.
+-   If successful, it's best to have good real-time. This should be the case most of the time.
 
--   Even if it fails, it doesn't matter. Because Jimmer will periodically execute `Flush` operations to ensure related cache operations eventually succeed. The interval of `Flush` operations is controlled by the global SpringBoot configuration item `jimmer.transaction-cache-operator-fixed-delay`, which is specified in milliseconds and defaults to 5000.
+-   Even if it fails, it doesn't matter. Jimmer will periodically execute `Flush` operations to ensure related cache invalidation eventually succeed. 
+
+    The interval of `Flush` operations is controlled by the global SpringBoot configuration item `jimmer.transaction-cache-operator-fixed-delay`, which is specified in milliseconds and defaults to 5000.

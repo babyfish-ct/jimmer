@@ -132,10 +132,7 @@ val treeNode = new(TreeNode::class).by {
 
 // 第二步，关键步骤！
 // 基于现有数据对象，做某些“变更”，创建新的数据对象。
-val newTreeNode = new(TreeNode::class).by(
-    // highlight-next-line
-    treeNode // existing data
-) {
+val newTreeNode = treeNode.copy {
     childNodes()[0] // Food
         .childNodes()[0] // Drinks
         .childNodes()[0] // Cococola
@@ -148,6 +145,26 @@ println("newTreeNode: $newTreeNode")
 
 </TabItem>
 </Tabs>
+
+:::tip
+对于kotlin而言，
+
+```kotlin
+val newTreeNode = treeNode.copy {
+    ...
+}
+```
+
+其实是
+
+```kotlin
+val newTreeNode = new(TreeNode::class).by(treeNode) {
+    ... 
+}`
+```
+
+的简写方式
+:::
 
 ## 执行结果
 

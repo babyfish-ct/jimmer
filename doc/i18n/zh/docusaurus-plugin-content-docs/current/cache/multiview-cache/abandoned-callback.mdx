@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 ## CacheAbandonedCallback
 
-按照前面文档的阐述，使用多视图缓存相对严苛，必须同时满足以下两个条件
+按照前面文档的阐述，使用多视图缓存相对严苛，必须同时满足以下3个条件
 
 1.  必须明确为需要属性置顶多视图缓存。
 
@@ -26,7 +26,7 @@ import TabItem from '@theme/TabItem';
 
     -   对于计算属性而言，其`TransientResolver<ID, V>/KTransientResolver<ID, V>`的方法`getParameterMapRef`不得返回null。
 
-3.  对属性使用了[对象抓取器](../../query/object-fetcher)中的属性级过滤器
+3.  对象抓取器不使用[属性级过滤器](../../query/object-fetcher/association#属性过滤器)。
 
 如果这些前提条件并未完全满足，即便为关联属性或计算属性指定了缓存，Jimmer也会弃之不用。虽然前面的文档详细解释过原因，但实际开发中遇到这类问题时排查不方便。
 

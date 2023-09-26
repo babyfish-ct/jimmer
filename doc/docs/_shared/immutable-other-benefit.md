@@ -2,7 +2,7 @@
 
 -   For collection containers that rely on hashCode, such as Set and Map, object immutability is desperately needed.
 
-    Once mutable objects are held by hashCode sensitive collection containers like Set or Map *(as Key)*, developers must be very careful to ensure that the data shared by these containers is not modified. If a mistake is accidentally made, it usually takes debug tracking to find the problem, which often wastes time and affects efficiency. *(In fact, hashCode sensitive collection containers holding mutable objects is a common behavior, and it can also be said that most Java code is not strict, developers just avoid this problem.)*
+    Once mutable objects are held by hashCode sensitive collection containers like Set or Map *(as Key)*, developers must be very careful to ensure that the data shared by these containers is stable. If a mistake is accidentally made, it usually takes debug tracking to find the problem, which often wastes time and affects efficiency. *(In fact, hashCode sensitive collection containers holding mutable objects is a common behavior, and it can also be said that most Java code is not strict, developers just avoid this problem.)*
   
 -   In actual development, there are some other situations where objects are held for a long time. Although not dependent on hashCode, problems can also arise from holding objects for a long time, such as:
 

@@ -140,18 +140,18 @@ Characteristics of optimistic lock:
     </Tabs>
 
     :::tip
-    For INSERT operations, if the `version` of the object is not assigned, Jimmer will automatically insert 0.
+    For INSERT operations, if the `version` of the object is not assigned, Jimmer will automatically insert **0**.
 
-    However, in this case, the modification operations discussed later will throw exceptions. Therefore, if you cannot ascertain whether a UPSERT save command will ultimately be determined as `INSERT` or `UPDATE`, you should insist on specifying the `version` property.
+    If you cannot ascertain whether a UPSERT save command will ultimately be determined as `INSERT` or `UPDATE`, you should insist on specifying the `version` property.
 
     The following example assumes we know for sure the `save` will be determined as `INSERT` rather than `UPDATE`, so the `version` properties are not specified.
     :::
 
-    No ids are specified so Jimmer determines existence per object key.
+    No ids are specified so jimmer determines their existence by their key properties.
 
     Assuming none of the objects exist, 3 new records will be inserted.
 
-    No `version` properties are specified, so they are filled with 0 automatically.
+    No `version` properties are specified, so they are filled with `0` automatically.
 
     The final printed result will be *(formatted for readability)*:
 
@@ -260,12 +260,12 @@ Characteristics of optimistic lock:
     </Tabs>
 
     :::caution
-    For modification operations, if the `version` of the object is not assigned, Jimmer will throw an exception.
+    For `UPDATE` operations, if the `version` of the object is not assigned, Jimmer will throw an exception.
 
     If you cannot determine whether a UPSERT save command will ultimately be `INSERT` or `UPDATE`, you should insist on specifying the `version` property.
     :::
 
-    When executed again, since data already exists, the 3 objects will be updated.
+    Execute, since data already exists, the 3 objects will be updated.
 
     Obviously, the last book's `version` `9999` is illegal. The above code will result in the following exception:
 
@@ -375,7 +375,7 @@ Characteristics of optimistic lock:
     :::info
     As you can see, the version is incremented by 1 automatically after data modification.
 
-    In real projects, the version number of optimistic lock is often a hidden field in the form. If the form does not automatically redirect after saving, but keeps the UI unchanged to support multiple submissions, the hidden field should be updated with such return info after each successful save.
+    In real projects, the version number of optimistic lock is often a hidden field in the form UI. If the form UI does not automatically redirect to other UI after saving, but keeps the UI unchanged to support multiple submissions, the hidden field should be updated with such return info after each successful save.
     :::
 
 ## Pessimistic Lock

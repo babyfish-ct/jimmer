@@ -102,6 +102,10 @@ sqlClient.save(book)
             ID = ? /* 20 */
         ```
 
+:::info
+某些数据库支持`UPSERT` *(比如Postgres的`insert into ... on conflict ...`)*, 这会在Jimmer-1.0.0之前给予支持
+:::
+
 这就是默认保存模式`UPSERT`的用法，另外两种模式的用法很简单：
 
 -   INSERT_ONLY:
@@ -181,11 +185,11 @@ public interface Book {
 
 为了插入id属性缺失的对象，有两种方法
 
--   不指定@Key属性
+-   不指定[@Key](../../mapping/advanced/key)属性
 
--   指定@Key属性
+-   指定[@Key](../../mapping/advanced/key)属性
 
-`@Key`是保存指令中一个非常重要的概念，后文会做详细介绍，这里暂不讨论。
+[@Key](../../mapping/advanced/key)是保存指令中一个非常重要的概念，后文会做详细介绍，这里暂不讨论。
 
 ### 不指定@Key属性 *(不推荐)*
 
@@ -220,12 +224,12 @@ sqlClient.save(book)
 </TabItem>
 </Tabs>
 
-很明显，被保存的对象的id属性并未被指定，`Book`类型也并未声明@Key属性。所以，这是一个既无id也无key的对象。
+很明显，被保存的对象的id属性并未被指定，`Book`类型也并未声明@Key属性。所以，这是一个既无id也无[@Key](../../mapping/advanced/key)的对象。
 
-:::warning
-这里，既无id也无key的对象是聚合根。
+:::info
+本文中，我们所讨论的既无id也无key的对象是聚合根。
 
-然而，对于关联对象而言，默认情况下，既无id也无key的关联对象会导致异常。这将在后续文档中讨论。
+对于关联对象而言，既无id也无key在默认情况下会导致异常。这将在后续文档中讨论。
 :::
 
 如果试图既无id也无key的聚合根对象，不同的保存模式对应不同的行为：

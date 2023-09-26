@@ -12,7 +12,7 @@ Unlike other ORMs, Jimmer uses immutable objects as entity objects.
 
 ## Motivation
 
-### Forbid circular references 
+### Forbid Circular References 
 
 ORMs are often accompanied by a very headache problem: circular references.
 
@@ -32,7 +32,7 @@ Jimmer entity-related data structures never contain circular references, so they
 This brings great simplification to application development.
 :::
 
-### Demo
+### Incorrect Demo
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  
@@ -83,16 +83,11 @@ Readers can ignore this auto-generated interface for now, later documentation [D
 :::tip
 This code will cause an exception: org.babyfish.jimmer.CircularReferenceException.
 
-Although developers can define bidirectional associations between entity types, they cannot create bidirectional associations between entity objects. This behavior is explicitly prohibited.
-
-It can be seen that Jimmer prevents users from creating data structures with circular references.
-
 Jimmer objects are immutable objects. Users can neither build circular references when creating objects, nor form circular references through subsequent modifications. This quality will be preserved forever.
 :::
 
-
 ## Other benefits
 
-In addition to ensuring that there are absolutely no circular references between entity objects:
+In addition to ensuring absolutely no circular references between objects, immutable objects have many other benefits, including:
 
 <ImmutableOtherBenefit/>

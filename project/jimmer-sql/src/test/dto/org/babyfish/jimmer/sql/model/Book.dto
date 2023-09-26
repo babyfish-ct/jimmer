@@ -78,3 +78,14 @@ input-only CompositeBookInput {
         -id
     }
 }
+
+input BookNullableInput {
+    #allScalars
+    store {
+        #allScalars
+    }
+}
+input BookNullableIdInput {
+    #allScalars
+    id(store)
+}

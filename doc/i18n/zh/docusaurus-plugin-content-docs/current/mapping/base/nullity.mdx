@@ -76,3 +76,15 @@ Java下属性是否为null，靠以下规则制定
     -   所有被施加于关联实体的全局过滤器都实现了`AssociationIntegrityAssuranceFilter`/`KAssociationIntegrityAssuranceFilter`接口。
 
     -   所有被施加于关联实体的全局过滤器也被施加于当前实体。
+
+## inputNotNull
+
+如果前文所言，由于某些特有的查询场景，基于外键的一对一和多对一属性必须被声明为可空的。
+
+然而，在保存数据时，开发人员可能不期望用户将数据库的外键字段修改为null。这时，可以将`@OneToOne`或`@ManyToOne`的`inputNotNull`设置为true，例如
+
+-   `@OneToOne(inputNotNull = true)`
+
+-   `@ManyToOne(inputNotNull = true)`
+
+如果某个关联属性配置了`inputNotNull`，在[数据库验证](../../configuration/database-validation)中会被优先考虑，从而验证数据库中外键字段不能为null。

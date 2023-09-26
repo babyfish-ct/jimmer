@@ -26,7 +26,7 @@ Although the code to return entire objects in queries is simple, the default obj
 
     Object properties that we don't need are queried, causing waste, especially when there are many object fields.
 
-    Take JPA as an example. The returned object by default is a complete object that contains non-associative properties that are not needed. This is a big problem for traditional ORMs.
+    Take JPA as an example. The returned object by default is a complete object that contains non-associative properties that are not needed. This is a big problem for traditional ORMs *(JPA's `@Basic(fetch = FetchType.LAZY)` is desgined for LOB column, it cannot be used by any column)*.
 
 -   Under fetching problem
 

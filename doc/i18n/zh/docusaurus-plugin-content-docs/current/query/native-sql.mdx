@@ -102,13 +102,13 @@ List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
         table,
         Expression.numeric().sql(
             Integer.class,
-            // hight-next-line
+            // highlight-next-line
             "rank() over(order by %e desc)",
             table.price()
         ),
         Expression.numeric().sql(
             Integer.class,
-            // hight-next-line
+            // highlight-next-line
             "rank() over(partition by %e order by %e desc)",
             new Expression[] { table.store().id(), table.price() }
         )

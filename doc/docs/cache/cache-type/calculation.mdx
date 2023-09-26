@@ -266,12 +266,12 @@ Finally, Jimmer concatenates the results of the 3 steps as the final data return
 ]
 ```
 
-## Consistency  
+## Cache Invalidation  
 
 ### Responding to Triggers
 
-:::caution
-Unlike the fully automatic cache consistency of object cache and association cache, maintaining the consistency of calculated cache requires user assistance.
+:::info
+Unlike the fully automatic cache invalidation of object cache and association cache, maintaining the consistency of calculated cache requires user assistance.
 
 This is because calculated properties introduce custom calculation rules that the ORM framework cannot understand.
 :::
@@ -503,12 +503,12 @@ Next, we will implement the empty methods above: `onEntityChange` and `onAssocia
 
 Users can change the association between `BOOK_STORE` and `BOOK` by modifying the foreign key `STORE_ID` of `BOOK`. This will inevitably affect the `BookStore.avgPrice` of some bookstores. 
 
-For this, we can understand the relationship change between objects through the `onAssociationChange` method:
+For this, we can understand the association change between objects through the `onAssociationChange` method:
 
 :::tip
 If listening for changes to the many-to-one association `Book.store`, then the two parent objects corresponding to the old and new values need to be handled, and whether they are null must be considered.
 
-Fortunately, the entity model on which this example is based has the reverse one-to-many association `BookStore.books`.  
+Fortunately, the entity model of the example has the reverse one-to-many association `BookStore.books`, and we can use it to simplify the code.
 
 If listening for changes to the one-to-many association `BookStore.books`, we only need to consider the id of the current `BookStore` object, which simplifies the code as follows:
 :::
@@ -563,7 +563,7 @@ fun onAssociationChange(e: AssociationEvent) {
     `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
 
     :::tip
-    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplinary action.
+    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplined behavior.
     :::
 
 -   ❷ If the one-to-many association `BookStore.books` is modified.
@@ -625,9 +625,9 @@ Delete data from redis: [BookStore.avgPrice-2] ❷
 Delete data from redis: [BookStore.books-2]
 ```
 
--   ❶ The calculated cache `BookStore.avgPrice-1` of the parent object referenced by the old value `1` of the foreign key is deleted.
+-   ❶ The calculated cache `BookStore.avgPrice-1` of the parent object referenced by the old foreign key `1` is deleted.
 
--   ❷ The calculated cache `BookStore.avgPrice-2` of the parent object referenced by the new value `2` of the foreign key is deleted.
+-   ❷ The calculated cache `BookStore.avgPrice-2` of the parent object referenced by the new foreign key `2` is deleted.
 
 ### Modifying BOOK.PRICE
 
@@ -690,7 +690,7 @@ fun onEntityChange(e: EntityEvent<*>) {
     `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
 
     :::tip
-    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplinary action.
+    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplined behavior.
     :::
 
 -   ❷ `e.isChanged(BookProps.PRICE)`/`e.isChanged(Book::price)` contains two meanings at the same time:
@@ -701,15 +701,15 @@ fun onEntityChange(e: EntityEvent<*>) {
 
     When the above conditions are met, we need to clean up the calculated cache of `BookStore.avgPrice` of its bookstore.
 
--   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)` means that if the foreign key-based `Book.store` has not been modified, return a `Ref` wrapper object containing the unmodified associated object. If the dynamic object is non-null, it only has the id property.
+-   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)` means that if the foreign key-based `Book.store` has not been modified, return a `Ref` wrapper object containing the unmodified associated object. If the associated object is nont null, it only has the id property.
 
     :::info
-    - If `getUnchangedRef` returns a null wrapper object `Ref`, it means this property has been modified rather than being an `Unchanged` property.
+    - If `getUnchangedRef` returns null, it means this property has been modified rather than being an `Unchanged` property.
 
     - If `getUnchangedRef` returns a non-null wrapper object `Ref` but its internal `value` is null, it means this property has not been modified and its value has remained null all along.
     :::
     
--   ❹ If the foreign key of the modified data has not been modified and is non-null.
+-   ❹ If the foreign key of the modified data has not been modified and is not null.
 
     :::tip
     The case where the foreign key field is modified does not need to be considered here, because the `onAssociationChange` discussed above will handle this case properly.

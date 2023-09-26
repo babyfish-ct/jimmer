@@ -12,6 +12,7 @@ class CompanyViewTest {
     @Test
     fun testDtoToEntity() {
         val view = CompanyView(
+            id = 0,
             companyName = "myCompany",
             streetName = "myStreet",
             cityName = "myCity",

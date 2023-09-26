@@ -90,14 +90,15 @@ data class BookInput(
     This seems contradictory and difficult to convert between. Don't worry, Jimmer provides automated solutions, discussed later.
     :::
 
--   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using a <ViewMore buttonText="short association"><ShortAssociation/></ViewMore>.  
+-   ❷ Explicitly specifies this Input DTO wants to edit the entity's many-to-one association `Book.store` using the <ViewMore buttonText="short association"><ShortAssociation/></ViewMore> mode.  
 
--   ❸ Explicitly specifies this Input DTO wants to edit the entity's many-to-many association `Book.authors` using a <ViewMore buttonText="long association"><LongAssociation/></ViewMore>.
+-   ❸ Explicitly specifies this Input DTO wants to edit the entity's many-to-many association `Book.authors` using the <ViewMore buttonText="long association"><LongAssociation/></ViewMore> mode.
     The type of associated objects is also fixed to the nested Input DTO type `BookInput.AuthorItem`.
 
 ## MapStruct Converter
 
 Jimmer extends [MapStruct](https://mapstruct.org/) which can be used to handle conversions between dynamic entities and static Input DTOs.
+How to use the relevant extensions is detailed in [Object/DTO Conversion/MapStruct](../../../object/view/mapstruct), this article will not repeat it.
 
 Define the `BookInputMapper` interface:
 
@@ -190,8 +191,6 @@ In this example, MapStruct is used to convert `BookInput` to `Book` entity and d
 
 Jimmer has built-in extensions to MapStruct that will not assign `BookInput.id` to `Book.id` if it is null, so there are no issues.  
 :::
-
-As you can see, the security guarantee issue is ultimately transformed to using MapStruct to convert Input DTO to Jimmer entity.
 
 ## Improvement 
 
@@ -334,7 +333,7 @@ So I make up an entity type `Product` with more properties:
 @Entity
 public interface Product {
 
-    ...Entity properties omitted... 
+    ...Many entity properties, omitted... 
 }
 ```
 
@@ -345,7 +344,7 @@ public interface Product {
 @Entity
 interface Product {
 
-    ...Entity properties omitted...
+    ...Many entity properties, omitted...
 } 
 ```
 

@@ -428,7 +428,6 @@ public class JimmerProperties {
 
         private final boolean disabled;
 
-        @NotNull
         private final int httpStatus;
 
         private final boolean debugInfoSupported;

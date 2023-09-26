@@ -183,7 +183,7 @@ interface BookRepository : KRepository<Book, Long> {
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
     from BOOK as tb_1_
-    where lower(tb_1_.NAME) like ? /* 实际参数: %g% */
+    where lower(tb_1_.NAME) like ? /* %g% */
     ```
 
 -   指定minPrice
@@ -217,7 +217,7 @@ interface BookRepository : KRepository<Book, Long> {
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
     from BOOK as tb_1_
-    where tb_1_.PRICE >= ? /* 实际参数: 40 */
+    where tb_1_.PRICE >= ? /* 40 */
     ```
 
 -   指定maxPrice
@@ -251,7 +251,7 @@ interface BookRepository : KRepository<Book, Long> {
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
     from BOOK as tb_1_
-    where tb_1_.PRICE <= ? /* 实际参数: 60 */
+    where tb_1_.PRICE <= ? /* 60 */
     ```
 
 -   同时指定minPrice和maxPrice
@@ -289,7 +289,7 @@ interface BookRepository : KRepository<Book, Long> {
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
     from BOOK as tb_1_
     where (
-        tb_1_.PRICE between ? /* 实际参数: 40 */ and ? /* 实际参数: 60 */
+        tb_1_.PRICE between ? /* 40 */ and ? /* 60 */
     ) 
     ```
 
@@ -328,9 +328,9 @@ interface BookRepository : KRepository<Book, Long> {
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
     from BOOK as tb_1_
     where 
-        where lower(tb_1_.NAME) like ? /* 实际参数: %g% */
+        where lower(tb_1_.NAME) like ? /* %g% */
     and (
-        tb_1_.PRICE between ? /* 实际参数: 40 */ and ? /* 实际参数: 60 */
+        tb_1_.PRICE between ? /* 40 */ and ? /* 60 */
     ) 
     ```
 
@@ -422,7 +422,7 @@ interface BookRepository : KRepository<Book, Long> {
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
     from BOOK as tb_1_
-    where tb_1_.NAME like ? /* 实际参数: G% */
+    where tb_1_.NAME like ? /* G% */
     ```
 
 -   指定参数`storeName`，生成JOIN
@@ -454,7 +454,7 @@ interface BookRepository : KRepository<Book, Long> {
     /* highlight-next-line */
     inner join BOOK_STORE as tb_2_ 
         on tb_1_.STORE_ID = tb_2_.ID 
-    where tb_2_.NAME = ? /* 实际参数: MANNING */
+    where tb_2_.NAME = ? /* MANNING */
     ```
 
 ## 动态ORDER BY
@@ -519,7 +519,7 @@ interface BookRepository : KRepository<Book, Long> {
 </TabItem>
 </Tabs>
 
-为了方便上层代码从前端接受排序字符串，Jimmer提供了辅助类`org.babyfish.jimmer.spring.model.SortUtils`，把前端传递的字符串转化为`org.springframework.data.domain.Sort`。
+为了方便上层代码从前端接受排序字符串，Jimmer提供了辅助类`org.babyfish.jimmer.spring.model.SortUtils`，把客户端传递的字符串转化为`org.springframework.data.domain.Sort`。
 
 其使用方式为
 <Tabs groupId="language">
@@ -849,7 +849,7 @@ order by
     tb_1_.EDITION desc
 /* MySQL分页 */ 
 /* highlight-next-line */
-limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
+limit ?, /* 5(offset) */ ? /* 5(limit) */
 ```
 
 ## 对象抓取器
@@ -1150,7 +1150,7 @@ order by
     tb_1_.NAME asc, 
     tb_1_.EDITION desc
 /* MySQL分页 */ 
-limit ?, /* 实际参数: 5(offset) */ ? /* 实际参数: 5(limit) */
+limit ?, /* 5(offset) */ ? /* 5(limit) */
 
 /* 
  * 第三步：为分页后的5条数据（非分页前的12条数据）

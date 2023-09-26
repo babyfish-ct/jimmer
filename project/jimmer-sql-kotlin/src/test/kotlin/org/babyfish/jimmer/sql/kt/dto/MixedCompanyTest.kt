@@ -12,6 +12,7 @@ class MixedCompanyTest {
     @Test
     fun testDtoToEntity() {
         val view = MixedCompanyView(
+            id = 0L,
             companyName = "myCompany",
             streetName = "myStreet",
             cityName = "myCity",

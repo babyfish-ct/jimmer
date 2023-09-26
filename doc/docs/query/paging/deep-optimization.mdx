@@ -48,7 +48,7 @@ Therefore, Jimmer supports deep pagination optimization. Set a threshold `offset
     </Tabs>
 
 :::info  
-If this threshold is not set, the default is `Integer.MAX_VALUE`, meaning no pagination query can enable this feature. 
+If this threshold is not set, the default is `Integer.MAX_VALUE`, meaning this feature is disabled. 
 :::
 
 ## Effectiveness
@@ -119,12 +119,10 @@ To simplify discussion, assume using `org.babyfish.jimmer.sql.H2Dialect`. Pagina
         on optimize_.ID = optimize_core_.optimize_core_id_
     ```
     
-As you can see, when offset is too large, Jimmer queries page ids first, then converts the paged id set to object set. This is useful when data volume is large.
+As you can see, when offset is too large, Jimmer queries ids of the page first, then converts the ids to objects. This is useful when data volume is large.
 
 ## Set to 0
 
 For some databases (e.g. MySQL), if data volume is large, performance is poor even when querying the first page (offset is 0). 
 
 In this case, simply set `offset-optimizing-threshold` to 0 directly.
-
-```

@@ -344,6 +344,12 @@ Jimmer可以控制每个属性的可见性，让其显示或隐藏。
 
 可见性仅仅影响对象的[Jackson序列化](./jackson) *(包括对象自己的toString行为)*，决定对象的属性是否被序列化。除此之外，不会影响对象的其他任何行为。
 
+因此，之前例子就很容易解释了
+
+-   第一次查询：`Book.authors`被显示，`Book.authorIds`被隐藏
+
+-   第二次查询：`Book.authors`被隐藏，`Book.authorIds`被显示
+
 :::tip
 只有下面两个条件同时满足时，属性才会参与Jackson序列化
 
@@ -352,9 +358,3 @@ Jimmer可以控制每个属性的可见性，让其显示或隐藏。
 
 可以参考[工具方法](./tool)，了解如何自己控制Jimmer对象属性的可见性
 :::
-
-因此，之前例子就很容易解释了
-
--   第一次查询：`Book.authors`被显示，`Book.authorIds`被隐藏
-
--   第二次查询：`Book.authors`被隐藏，`Book.authorIds`被显示

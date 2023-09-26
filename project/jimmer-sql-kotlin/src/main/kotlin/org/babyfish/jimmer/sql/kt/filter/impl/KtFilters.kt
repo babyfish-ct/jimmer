@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.filter.impl
 
+import org.babyfish.jimmer.impl.util.InvocationDelegate
 import org.babyfish.jimmer.sql.ast.table.Props
 import org.babyfish.jimmer.sql.filter.AssociationIntegrityAssuranceFilter
 import org.babyfish.jimmer.sql.filter.CacheableFilter
@@ -10,7 +11,6 @@ import org.babyfish.jimmer.sql.kt.filter.KAssociationIntegrityAssuranceFilter
 import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KShardingFilter
-import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 
 @Suppress("UNCHECKED_CAST")
@@ -29,6 +29,7 @@ fun <E: Any> Filter<Props>.toKtFilter(): KFilter<E> {
         return ktFilter
     }
     val interfaces = mutableListOf<Class<*>>()
+    interfaces.add(FilterWrapper::class.java)
     interfaces.add(Filter::class.java)
     if (this is CacheableFilter) {
         interfaces.add(KCacheableFilter::class.java)
@@ -39,12 +40,9 @@ fun <E: Any> Filter<Props>.toKtFilter(): KFilter<E> {
     if (this is AssociationIntegrityAssuranceFilter) {
         interfaces.add(KAssociationIntegrityAssuranceFilter::class.java)
     }
-    val handler = InvocationHandler { _, method, args ->
-        method.invoke(ktFilter, *args)
-    }
     return Proxy.newProxyInstance(
         Filter::class.java.classLoader,
         interfaces.toTypedArray(),
-        handler
+        InvocationDelegate(ktFilter)
     ) as KFilter<E>
 }

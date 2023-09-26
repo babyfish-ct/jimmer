@@ -14,7 +14,7 @@ Through vertical splitting, entity types can be divided into different microserv
 :::tip
 Jimmer automatically implements automatic query of remote associated data. 
 
-That is, if the [object fetcher](../query/object-fetcher) contains remote associated properties of any depth, it will query different parts of the data across multiple microservices, and finally merge the query results of different parts into the data structure expected by the object fetcher as a whole return. No need for developers to implement remote queries and data splicing themselves.
+That is, if the [object fetcher](../query/object-fetcher) contains remote association properties of any depth, it will query different parts of the data across multiple microservices, and finally merge the query results of different parts into the data structure expected by the object fetcher as a whole return. No need for developers to implement remote queries and data splicing themselves.
 :::
 
 ## Databases
@@ -298,7 +298,7 @@ Any microservice must enable Jimmer's microservice support. There are two ways:
     eureka:
         client:
             serviceUrl:
-            defaultZone: http://localhost:7000/eureka/
+                defaultZone: http://localhost:7000/eureka/
     ```
 
     Here, "store-service" is used both as the name of the current service in spring-cloud registry center and as the microservice configuration in Jimmer.

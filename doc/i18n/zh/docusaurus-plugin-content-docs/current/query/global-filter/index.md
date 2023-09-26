@@ -7,13 +7,13 @@ title: 全局过滤器
 
 该功能有如下应用场景
 
--   逻辑删除
-
-    逻辑删除是Jimmer内置的全局过滤器，无需用户定义。
-
 -   多视角数据，数据查询需要携带用户身份相关的查询条件，即使除用户身份以外的所有查询参数都相同，不同的用户也会看到不同的数据。
 
     多视角数据有一个典型的案例：多租户。本文档用多租户作为例子，讲解用户自定义全局过滤器。
+
+-   逻辑删除
+
+    逻辑删除是Jimmer内置的全局过滤器，无需用户定义。
 
 :::note
 对于有Hibernate背景知识的用户而言，全局过滤器和[org.hibernate.annotations.Where](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/Where.html)、[org.hibernate.annotations.Filter](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/Filter.html)以及[org.hibernate.annotations.FilterDef](https://javadoc.io/static/org.hibernate/hibernate-core/5.4.13.Final/org/hibernate/annotations/FilterDef.html)类似。
@@ -24,7 +24,7 @@ title: 全局过滤器
 :::
 
 :::caution
-1.  经过反复权衡，目前全局过滤器仅仅影响主查询的主表，对join操作得到的表和子查询中的表没有影响。
+1.  经过反复权衡，目前全局过滤器仅仅影响顶级查询的主表，对join操作得到的表和子查询中的表没有影响。
 
     这对[对象抓取器](../object-fetcher)没有影响，因为[对象抓取器](../object-fetcher)不是Table Join操作。
 

@@ -6,15 +6,15 @@ title: Incomplete Object
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-The parameter of a save command is a dynamic object. If only some of the properties are specified, then the object is an incomplete object.
+The parameter of a save command is a dynamic object. If some of the properties are not specified, then the object is an incomplete object.
 
-To demonstrate the value of incomplete objects, let's look at a real example - changing the `store` of the `Book` with id 8 to null. 
+To demonstrate the value of incomplete objects, let's look at a real example - changing the many-to-one association `store` of the `Book` with id `8` to null. 
 
-There are two ways to achieve this:
+It seems there are two ways to implement this functionality:
 
 -   Execute an UPDATE statement via [update statements](../update-statement)
 
--   Obtain a `Book` object, change its `store` property to null, and save it
+-   Query the `Book` object, change its `store` property to null, and save it
 
 Most developers prefer the second approach. So in this article, we will discuss the second approach.
 
@@ -80,3 +80,7 @@ set
 where
     ID = ? /* 8 */
 ```
+
+:::info 
+So forget about the old inefficient pattern: query -> modify -> save 
+:::

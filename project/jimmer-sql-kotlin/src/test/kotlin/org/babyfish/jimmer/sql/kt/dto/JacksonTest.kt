@@ -1,14 +1,11 @@
 package org.babyfish.jimmer.sql.kt.dto
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.CompositeBookInput
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNullableInput
 import java.math.BigDecimal
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
-import kotlin.test.expect
+import kotlin.test.*
 
 class JacksonTest {
 
@@ -23,10 +20,10 @@ class JacksonTest {
                 |{"firstName":"Kate","lastName":"White","gender":"FEMALE"}
                 |]
                 |}""".trimMargin().replace("\r", "").replace("\n", "")
-        val ex = assertFailsWith<ValueInstantiationException>() {
-            ObjectMapper().readValue(json, CompositeBookInput::class.java)
+        val ex = assertFails {
+            jacksonObjectMapper().readValue(json, CompositeBookInput::class.java)
         }
-        assertTrue { ex.message!!.contains("parameter name") }
+        assertTrue { ex.message!!.contains("value failed for JSON property name due to missing") }
     }
 
     @Test
@@ -44,7 +41,7 @@ class JacksonTest {
             name = "SQL in Action",
             edition = 1,
             price = BigDecimal("79.9"),
-            store = CompositeBookInput.TargetOf_store(name = "TURING"),
+            store = CompositeBookInput.TargetOf_store(name = "TURING", version = 0),
             authors = listOf(
                 CompositeBookInput.TargetOf_authors(
                     firstName = "Jim",
@@ -58,9 +55,22 @@ class JacksonTest {
                 )
             )
         )
-        val input2 = ObjectMapper().readValue(json, CompositeBookInput::class.java)
+        val input2 = jacksonObjectMapper().readValue(json, CompositeBookInput::class.java)
         expect(input) {
             input2
+        }
+    }
+
+    @Test
+    fun testMissNonNull() {
+        val ex = assertFails {
+            jacksonObjectMapper().readValue(
+                """{"name":"TURING"}""",
+                BookStoreNullableInput::class.java
+            )
+        }
+        assertTrue {
+            ex.message!!.contains("Missing required creator property 'version'")
         }
     }
 }
