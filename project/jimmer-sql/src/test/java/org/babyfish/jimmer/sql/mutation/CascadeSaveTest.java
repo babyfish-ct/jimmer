@@ -863,14 +863,6 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ADMINISTRATOR " +
-                                        "set DELETED = ?, MODIFIED_TIME = ? " +
-                                        "where ID = ?"
-                        );
-                        it.variables(false, Interceptor.TIME, 4L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
                                         "where tb_1_.NAME = ?"
@@ -907,8 +899,6 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.modified(
                                 "{" +
                                         "--->\"name\":\"a_4\"," +
-                                        "--->\"deleted\":false," +
-                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                                         "--->\"metadata\":{" +
                                         "--->--->\"name\":\"am_4\"," +
                                         "--->--->\"deleted\":false," +

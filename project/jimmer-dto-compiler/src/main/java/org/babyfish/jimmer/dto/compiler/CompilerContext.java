@@ -140,6 +140,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getBaseType();
     }
 
+    public Collection<T> getSuperTypes(T baseType) {
+        return compiler.getSuperTypes(baseType);
+    }
+
     public List<String> getEnumConstants(P baseProp) {
         return compiler.getEnumConstants(baseProp);
     }

@@ -1726,14 +1726,6 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ADMINISTRATOR " +
-                                        "set DELETED = ?, MODIFIED_TIME = ? " +
-                                        "where ID = ?"
-                        );
-                        it.variables(false, Interceptor.TIME, 4L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, " +
                                         "tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, " +
                                         "tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
@@ -1772,8 +1764,6 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.modified(
                                 "{" +
                                         "--->\"name\":\"a_4\"," +
-                                        "--->\"deleted\":false," +
-                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                                         "--->\"metadata\":{" +
                                         "--->--->\"name\":\"am_4\"," +
                                         "--->--->\"deleted\":false," +
@@ -1790,22 +1780,6 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                 }
         );
         assertEvents(
-                "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"name\":\"a_4\"," +
-                        "--->--->\"deleted\":true," +
-                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
-                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                        "--->--->\"id\":4" +
-                        "--->}, " +
-                        "--->newEntity={" +
-                        "--->--->\"name\":\"a_4\"," +
-                        "--->--->\"deleted\":false," +
-                        "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
-                        "--->--->\"id\":4" +
-                        "--->}, " +
-                        "--->reason=null" +
-                        "}",
                 "Event{" +
                         "--->oldEntity={" +
                         "--->--->\"name\":\"am_4\"," +

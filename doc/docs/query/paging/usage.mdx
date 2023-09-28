@@ -62,7 +62,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
         @Nullable String name,
         @Nullable String storeName
     ) {
-        return pager(pageable).excute( ❶
+        return pager(pageable).execute( ❶
             sql()
                 .createQuery(table)
                 .whereIf(
@@ -570,7 +570,7 @@ public interface BookRepository<Book, Long> extends JRepository<Book, Long> {
         @Nullable String storeName
     ) {
         // highlight-next-line
-        return pager(pageable).excute(
+        return pager(pageable).execute(
             sql()
                 .createQuery(table)
                 .whereIf(

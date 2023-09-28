@@ -631,8 +631,6 @@ class Saver {
             excludeProps = Collections.emptySet();
         }
 
-        callInterceptor(draftSpi, original);
-
         boolean needUpdated = false;
         for (ImmutableProp prop : type.getProps().values()) {
             if (!prop.isId() &&
@@ -640,7 +638,6 @@ class Saver {
                     draftSpi.__isLoaded(prop.getId()) &&
                     !excludeProps.contains(prop)
             ) {
-                //callInterceptor(draftSpi, original);
                 needUpdated = true;
                 break;
             }
@@ -649,6 +646,8 @@ class Saver {
         if (!needUpdated) {
             return false;
         }
+
+        callInterceptor(draftSpi, original);
 
         List<ImmutableProp> updatedProps = new ArrayList<>();
         List<Object> updatedValues = new ArrayList<>();
@@ -664,6 +663,7 @@ class Saver {
                     Object value = draftSpi.__get(prop.getId());
                     ScalarProvider<Object, Object> scalarProvider;
                     if (lambda != null) {
+
                         scalarProvider = null;
                     } else if (prop.isReference(TargetLevel.ENTITY)) {
                         scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
@@ -866,7 +866,7 @@ class Saver {
 
         ImmutableType type = example.__type();
         Collection<ImmutableProp> actualKeyProps = actualKeyProps(example, requiresKey);
-        if (actualKeyProps == null || actualKeyProps.isEmpty()) {
+        if (actualKeyProps.isEmpty()) {
             return null;
         }
 
@@ -934,8 +934,8 @@ class Saver {
         if (id != null) {
             return Collections.singleton(idProp);
         }
-        Set<ImmutableProp> keyProps = data.getKeyProps(type);
-        if (keyProps == null && requiresKey) {
+        Collection<ImmutableProp> keyProps = data.getKeyProps(type);
+        if (keyProps.isEmpty() && requiresKey) {
             throw new SaveException(
                     SaveErrorCode.NO_KEY_PROPS,
                     path,
