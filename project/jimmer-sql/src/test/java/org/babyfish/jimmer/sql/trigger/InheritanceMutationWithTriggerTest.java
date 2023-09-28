@@ -45,7 +45,7 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(it -> {
-            UserIdGenerator idGenerator = this::autoId;
+            UserIdGenerator<?> idGenerator = this::autoId;
             it.setIdGenerator(idGenerator);
             it.addDraftInterceptor(INTERCEPTOR);
         });

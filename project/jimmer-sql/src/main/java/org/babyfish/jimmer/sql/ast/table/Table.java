@@ -1,13 +1,14 @@
 package org.babyfish.jimmer.sql.ast.table;
 
 import org.babyfish.jimmer.View;
+import org.babyfish.jimmer.meta.spi.TableDelegate;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 
-public interface Table<E> extends Selection<E>, Props {
+public interface Table<E> extends TableDelegate<E>, Selection<E>, Props {
 
     /**
      * Shortcut for `this.id().eq(other.id())`

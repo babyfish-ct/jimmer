@@ -95,7 +95,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean saveCommandPessimisticLock;
 
-    private final DraftInterceptorManager draftInterceptorManager;
+    private final DraftHandlerManager draftHandlerManager;
 
     private final String microServiceName;
 
@@ -129,7 +129,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             TransientResolverManager transientResolverManager,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             boolean saveCommandPessimisticLock,
-            DraftInterceptorManager draftInterceptorManager,
+            DraftHandlerManager draftHandlerManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange
     ) {
@@ -171,7 +171,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.transientResolverManager = transientResolverManager;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
         this.saveCommandPessimisticLock = saveCommandPessimisticLock;
-        this.draftInterceptorManager = draftInterceptorManager;
+        this.draftHandlerManager = draftHandlerManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
     }
@@ -430,7 +430,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftInterceptorManager,
+                draftHandlerManager,
                 microServiceName,
                 microServiceExchange
         );
@@ -470,7 +470,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftInterceptorManager,
+                draftHandlerManager,
                 microServiceName,
                 microServiceExchange
         );
@@ -505,7 +505,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 transientResolverManager,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftInterceptorManager,
+                draftHandlerManager,
                 microServiceName,
                 microServiceExchange
         );
@@ -537,8 +537,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public DraftInterceptor<?> getDraftInterceptor(ImmutableType type) {
-        return draftInterceptorManager.get(type);
+    public DraftHandler<?, ?> getDraftHandlers(ImmutableType type) {
+        return draftHandlerManager.get(type);
     }
 
     @Override
@@ -629,7 +629,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private boolean saveCommandPessimisticLock = false;
 
-        private final List<DraftInterceptor<?>> interceptors = new ArrayList<>();
+        private final List<DraftHandler<?, ?>> handlers = new ArrayList<>();
 
         private ObjectMapper binLogObjectMapper;
 
@@ -1024,20 +1024,20 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
-            return addDraftInterceptors(Collections.singletonList(interceptor));
+        public Builder addDraftHandler(DraftHandler<?, ?> handler) {
+            return addDraftHandlers(Collections.singletonList(handler));
         }
 
         @Override
-        public Builder addDraftInterceptors(DraftInterceptor<?>... interceptors) {
-            return addDraftInterceptors(Arrays.asList(interceptors));
+        public Builder addDraftHandlers(DraftHandler<?, ?>... handlers) {
+            return addDraftHandlers(Arrays.asList(handlers));
         }
 
         @Override
-        public Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors) {
-            for (DraftInterceptor<?> interceptor : interceptors) {
-                if (interceptor != null) {
-                    this.interceptors.add(interceptor);
+        public Builder addDraftHandlers(Collection<? extends DraftHandler<?, ?>> handlers) {
+            for (DraftHandler<?, ?> handler : handlers) {
+                if (handler != null) {
+                    this.handlers.add(handler);
                 }
             }
             return this;
@@ -1264,7 +1264,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     transientResolverManager,
                     idOnlyTargetCheckingLevel,
                     saveCommandPessimisticLock,
-                    new DraftInterceptorManager(interceptors),
+                    new DraftHandlerManager(handlers),
                     microServiceName,
                     microServiceExchange
             );

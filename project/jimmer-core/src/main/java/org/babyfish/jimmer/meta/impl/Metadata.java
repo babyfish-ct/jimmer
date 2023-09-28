@@ -5,6 +5,7 @@ import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.spi.TableDelegate;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
@@ -20,8 +21,6 @@ import java.util.function.BiFunction;
 public class Metadata {
 
     private Metadata() {}
-
-    private static final Class<?> TABLE_CLASS;
 
     private static final StaticCache<Class<?>, ImmutableTypeImpl> CACHE =
             new StaticCache<>(Metadata::create);
@@ -41,12 +40,12 @@ public class Metadata {
     }
 
     private static ImmutableTypeImpl create(Class<?> javaClass) {
-        if (TABLE_CLASS != null && TABLE_CLASS.isAssignableFrom(javaClass)) {
+        if (TableDelegate.class.isAssignableFrom(javaClass)) {
             if (javaClass.getTypeParameters().length != 0) {
                 return null;
             }
             Type type = TypeUtils
-                    .getTypeArguments(javaClass, TABLE_CLASS)
+                    .getTypeArguments(javaClass, TableDelegate.class)
                     .values()
                     .iterator()
                     .next();
@@ -193,15 +192,5 @@ public class Metadata {
             return existing;
         }
         return null;
-    }
-
-    static {
-        Class<?> tableClass;
-        try {
-            tableClass = Class.forName("org.babyfish.jimmer.sql.ast.table.Table");
-        } catch (ClassNotFoundException ex) {
-            tableClass = null;
-        }
-        TABLE_CLASS = tableClass;
     }
 }

@@ -307,13 +307,16 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 ctx.getTargetType(baseProp) == null;
     }
 
-    private static <T extends BaseType> void collectSuperTypes(
+    private void collectSuperTypes(
             T baseType,
             Map<String, T> qualifiedNameTypeMap,
             Map<String, Set<T>> nameTypeMap
     ) {
         qualifiedNameTypeMap.put(baseType.getQualifiedName(), baseType);
         nameTypeMap.computeIfAbsent(baseType.getName(), it -> new LinkedHashSet<>()).add(baseType);
+        for (T superType : ctx.getSuperTypes(baseType)) {
+            collectSuperTypes(superType, qualifiedNameTypeMap, nameTypeMap);
+        }
     }
 
     DtoType<T, P> build() {
