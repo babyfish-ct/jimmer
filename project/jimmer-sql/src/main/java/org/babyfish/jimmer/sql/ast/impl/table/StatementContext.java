@@ -10,6 +10,11 @@ public class StatementContext {
 
     private int tableAliasSequence;
 
+    public StatementContext(ExecutionPurpose purpose) {
+        this.purpose = purpose;
+        this.filterIgnored = false;
+    }
+
     public StatementContext(ExecutionPurpose purpose, boolean filterIgnored) {
         this.purpose = purpose;
         this.filterIgnored = filterIgnored;

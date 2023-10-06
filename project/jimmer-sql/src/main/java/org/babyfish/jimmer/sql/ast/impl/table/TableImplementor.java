@@ -29,6 +29,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     ImmutableProp getJoinProp();
 
+    WeakJoinHandle getWeakJoinHandle();
+
     JoinType getJoinType();
 
     String getAlias();

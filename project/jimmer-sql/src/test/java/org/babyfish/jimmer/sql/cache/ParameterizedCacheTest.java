@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ public class ParameterizedCacheTest extends AbstractQueryTest {
         JSqlClient sqlClient = getSqlClient(it -> {
             it.addFilters(new UndeletedFilter());
             it.addDisabledFilters(new DeletedFilter());
-            it.ignoreBuiltInFilters();
+            it.setLogicalDeletedBehavior(LogicalDeletedBehavior.IGNORED);
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new AbstractCacheFactory() {

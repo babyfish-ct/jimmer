@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -23,11 +24,21 @@ public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
         implements MutableQuery, SortableImplementor {
 
+    public static final int ORDER_BY_PRIORITY_STATEMENT = 0;
+
+    public static final int ORDER_BY_PRIORITY_GLOBAL_FILTER = 1;
+
+    public static final int ORDER_BY_PRIORITY_PROP_FILTER = 2;
+
     private final List<Expression<?>> groupByExpressions = new ArrayList<>();
 
     private List<Predicate> havingPredicates = new ArrayList<>();
 
     private final List<Order> orders = new ArrayList<>();
+
+    private int orderByPriority = ORDER_BY_PRIORITY_STATEMENT;
+
+    private int acceptedByPriority = ORDER_BY_PRIORITY_STATEMENT;
 
     private int subQueryDisabledCount = 0;
 
@@ -116,9 +127,7 @@ public abstract class AbstractMutableQueryImpl
     public AbstractMutableQueryImpl orderBy(Order... orders) {
         validateMutable();
         for (Order order : orders) {
-            if (order != null) {
-                this.orders.add(order);
-            }
+            addOrder(order);
         }
         return this;
     }
@@ -136,9 +145,7 @@ public abstract class AbstractMutableQueryImpl
     public AbstractMutableQueryImpl orderBy(List<Order> orders) {
         validateMutable();
         for (Order order : orders) {
-            if (order != null) {
-                this.orders.add(order);
-            }
+            addOrder(order);
         }
         return this;
     }
@@ -156,6 +163,12 @@ public abstract class AbstractMutableQueryImpl
     protected void onFrozen() {
         havingPredicates = mergePredicates(havingPredicates);
         super.onFrozen();
+    }
+
+    @Override
+    public void applyGlobalFiler(Table<?> table) {
+        setOrderByPriority(ORDER_BY_PRIORITY_GLOBAL_FILTER);
+        super.applyGlobalFiler(table);
     }
 
     @Override
@@ -268,6 +281,26 @@ public abstract class AbstractMutableQueryImpl
 
     List<Order> getOrders() {
         return Collections.unmodifiableList(orders);
+    }
+
+    public int getAcceptedOrderByPriority() {
+        return acceptedByPriority;
+    }
+
+    public void setOrderByPriority(int priority) {
+        this.orderByPriority = priority;
+    }
+
+    private void addOrder(Order order) {
+        int priorityDiff = orderByPriority - acceptedByPriority;
+        if (order == null || priorityDiff < 0) {
+            return;
+        }
+        if (priorityDiff > 0) {
+            this.orders.clear();
+            acceptedByPriority = orderByPriority;
+        }
+        this.orders.add(order);
     }
 
     private static class UseJoinOfIgnoredClauseVisitor extends AstVisitor {

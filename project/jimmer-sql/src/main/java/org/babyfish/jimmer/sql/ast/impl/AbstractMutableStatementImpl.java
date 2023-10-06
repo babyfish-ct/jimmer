@@ -1,23 +1,33 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
+import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.filter.CacheableFilter;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.Filters;
+import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.*;
 
 public abstract class AbstractMutableStatementImpl implements FilterableImplementor {
+
+    private static final Predicate[] EMPTY_PREDICATE = new Predicate[0];
 
     private final JSqlClientImplementor sqlClient;
 
@@ -132,7 +142,50 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     }
 
     protected void onFrozen() {
+        StatementContext ctx = getContext();
+        if (ctx == null || !ctx.isFilterIgnored()) {
+            Filter<Props> globalFilter = getSqlClient().getFilters().getFilter(type);
+            if (globalFilter != null) {
+                applyGlobalFilers();
+            }
+        }
         predicates = mergePredicates(predicates);
+    }
+
+    private void applyGlobalFilers() {
+        if (this instanceof Ast) {
+            ((Ast) this).accept(new ApplyFilterVisitor());
+        } else {
+            applyGlobalFiler(getTable());
+        }
+    }
+
+    public void applyGlobalFiler(Table<?> table) {
+        Filter<Props> globalFilter = getSqlClient().getFilters().getFilter(table.getImmutableType());
+        if (globalFilter == null) {
+            return;
+        }
+        if (globalFilter instanceof CacheableFilter<?>) {
+            SortableImplementor sortableImplementor = this instanceof SortableImplementor ? (SortableImplementor) this : null;
+            if (sortableImplementor != null) {
+                sortableImplementor.disableSubQuery();
+            }
+            try {
+                FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, true);
+                globalFilter.filter(args);
+            } finally {
+                if (sortableImplementor != null) {
+                    sortableImplementor.enableSubQuery();
+                }
+            }
+        } else {
+            FilterArgsImpl<Props> args = new FilterArgsImpl<>(
+                    this,
+                    TableProxies.wrap(table),
+                    false
+            );
+            globalFilter.filter(args);
+        }
     }
 
     public void validateMutable() {
@@ -177,5 +230,17 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         );
     }
 
-    private static final Predicate[] EMPTY_PREDICATE = new Predicate[0];
+    private class ApplyFilterVisitor extends AstVisitor {
+
+        private Set<TableImplementor<?>> tableImplementors = new HashSet<>();
+
+        public ApplyFilterVisitor() {
+            super(new AstContext(sqlClient));
+        }
+
+        @Override
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
+            applyGlobalFiler(tableImplementor);
+        }
+    }
 }

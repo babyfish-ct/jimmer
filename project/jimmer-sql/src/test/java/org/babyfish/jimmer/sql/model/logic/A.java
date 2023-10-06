@@ -9,6 +9,6 @@ public interface A {
     @Id
     long id();
 
-    @LogicalDeleted(value = "1", restoredValue = "0")
+    @LogicalDeleted(value = "1")
     int deleted();
 }

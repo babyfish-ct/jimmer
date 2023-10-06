@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.query.Example;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -147,6 +148,11 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public ImmutableProp __prop() {
         return table.getJoinProp();
+    }
+
+    @Override
+    public WeakJoinHandle __weakJoinHandle() {
+        return table.getWeakJoinHandle();
     }
 
     @Override

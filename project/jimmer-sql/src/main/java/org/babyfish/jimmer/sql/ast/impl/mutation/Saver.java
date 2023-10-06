@@ -828,10 +828,6 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void callInterceptor(DraftSpi draftSpi, ImmutableSpi original) {
         ImmutableType type = draftSpi.__type();
-        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        if (info != null) {
-            draftSpi.__set(info.getProp().getId(), info.getRestoredValue());
-        }
         DraftHandler<?, ?> handlers = data.getSqlClient().getDraftHandlers(type);
         if (handlers != null) {
             PropId idPropId = type.getIdProp().getId();

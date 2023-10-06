@@ -61,9 +61,9 @@ public abstract class AbstractDataLoader {
     private final Storage storage;
 
     private final boolean remote;
-    
+
     private final ImmutableProp sourceIdProp;
-    
+
     private final ImmutableProp targetIdProp;
 
     private final org.babyfish.jimmer.sql.filter.Filter<Props> globalFiler;
@@ -569,7 +569,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
-        
+
         if (sourceIds.size() == 1) {
             Object sourceId = sourceIds.iterator().next();
             List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, true, (q, source) -> {
@@ -578,9 +578,9 @@ public abstract class AbstractDataLoader {
                 Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                 q.where(pkExpr.eq(sourceId));
                 q.where(fkExpr.isNotNull());
-                if (!applyPropFilter(q, targetTable, sourceIds) & !applyGlobalFilter(q, targetTable)) {
-                    applyDefaultOrder(q, targetTable);
-                }
+                applyPropFilter(q, targetTable, sourceIds);
+                applyGlobalFilter(q, targetTable);
+                applyDefaultOrder(q, targetTable);
                 return q.select(fkExpr);
             }).limit(limit, offset).execute(con);
             return Utils.toMap(sourceId, targetIds);
@@ -592,9 +592,9 @@ public abstract class AbstractDataLoader {
                     Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
-                    if (!applyPropFilter(q, targetTable, sourceIds) & !applyGlobalFilter(q, targetTable)) {
-                        applyDefaultOrder(q, targetTable);
-                    }
+                    applyPropFilter(q, targetTable, sourceIds);
+                    applyGlobalFilter(q, targetTable);
+                    applyDefaultOrder(q, targetTable);
                     return q.select(pkExpr, fkExpr);
                 }).execute(con);
         return Tuple2.toMap(tuples);
@@ -608,9 +608,9 @@ public abstract class AbstractDataLoader {
                     Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                     q.where(sourceIdExpr.eq(sourceId));
-                    if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
-                        applyDefaultOrder(q, association.target());
-                    }
+                    applyPropFilter(q, association.target(), sourceIds);
+                    applyGlobalFilter(q, association.target());
+                    applyDefaultOrder(q, association.target());
                     return q.select(targetIdExpr);
                 }).limit(limit, offset).execute(con);
                 return Utils.toTuples(sourceId, targetIds);
@@ -619,9 +619,9 @@ public abstract class AbstractDataLoader {
                 Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                 Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
                 q.where(sourceIdExpr.in(sourceIds));
-                if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
-                    applyDefaultOrder(q, association.target());
-                }
+                applyPropFilter(q, association.target(), sourceIds);
+                applyGlobalFilter(q, association.target());
+                applyDefaultOrder(q, association.target());
                 return q.select(sourceIdExpr, targetIdExpr);
             }).execute(con);
         }
@@ -641,9 +641,9 @@ public abstract class AbstractDataLoader {
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, true, (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
-            if (!applyPropFilter(q, target, targetIds) & !applyGlobalFilter(q, target)) {
-                applyDefaultOrder(q, target);
-            }
+            applyPropFilter(q, target, targetIds);
+            applyGlobalFilter(q, target);
+            applyDefaultOrder(q, target);
             return q.select(
                     ((Table<ImmutableSpi>)target).fetch(fetcher)
             );
@@ -662,9 +662,9 @@ public abstract class AbstractDataLoader {
                         .inverseJoin(prop)
                         .get(sourceIdProp.getName());
                 q.where(sourceIdExpr.eq(sourceId));
-                if (!applyPropFilter(q, target, sourceIds) & !applyGlobalFilter(q, target) ) {
-                    applyDefaultOrder(q, target);
-                }
+                applyPropFilter(q, target, sourceIds);
+                applyGlobalFilter(q, target);
+                applyDefaultOrder(q, target);
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
@@ -674,16 +674,16 @@ public abstract class AbstractDataLoader {
                     .inverseJoin(prop)
                     .get(sourceIdProp.getName());
             q.where(sourceIdExpr.in(sourceIds));
-            if (!applyPropFilter(q, target, sourceIds) & !applyGlobalFilter(q, target)) {
-                applyDefaultOrder(q, target);
-            }
+            applyPropFilter(q, target, sourceIds);
+            applyGlobalFilter(q, target);
+            applyDefaultOrder(q, target);
             return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
         }).execute(con);
     }
 
-    private boolean applyGlobalFilter(Sortable sortable, Table<?> table) {
+    private void applyGlobalFilter(Sortable sortable, Table<?> table) {
         if (remote) {
-            return false;
+            return;
         }
         SortableImplementor sortableImplementor = (SortableImplementor)sortable;
         Filter<Props> globalFiler = this.globalFiler;
@@ -692,20 +692,17 @@ public abstract class AbstractDataLoader {
             try {
                 FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, true);
                 globalFiler.filter(args);
-                return args.isSorted();
             } finally {
                 sortableImplementor.enableSubQuery();
             }
         } else if (globalFiler != null) {
             FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, false);
             globalFiler.filter(args);
-            return args.isSorted();
         }
-        return false;
     }
 
     @SuppressWarnings("unchecked")
-    private boolean applyPropFilter(
+    private void applyPropFilter(
             MutableQuery query,
             Table<?> table,
             Collection<Object> keys
@@ -716,16 +713,20 @@ public abstract class AbstractDataLoader {
                     (Table<ImmutableSpi>) table,
                     keys
             );
+            ((AbstractMutableQueryImpl)query)
+                    .setOrderByPriority(AbstractMutableQueryImpl.ORDER_BY_PRIORITY_PROP_FILTER);
             propFilter.apply(args);
-            return args.isSorted();
         }
-        return false;
     }
 
     private void applyDefaultOrder(
             MutableQuery query,
             Table<?> table
     ) {
+        if (((AbstractMutableQueryImpl)query).getAcceptedOrderByPriority() >
+                AbstractMutableQueryImpl.ORDER_BY_PRIORITY_STATEMENT) {
+            return;
+        }
         List<OrderedItem> orderedItems = prop.getOrderedItems();
         if (!orderedItems.isEmpty() && !remote) {
             for (OrderedItem orderedItem : orderedItems) {

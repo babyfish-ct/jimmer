@@ -119,6 +119,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
+    public WeakJoinHandle getWeakJoinHandle() {
+        return weakJoinHandle;
+    }
+
+    @Override
     public JoinType getJoinType() {
         return joinType;
     }

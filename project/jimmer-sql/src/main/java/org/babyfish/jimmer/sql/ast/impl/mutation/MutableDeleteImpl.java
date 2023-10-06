@@ -38,7 +38,7 @@ public class MutableDeleteImpl
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
-                new StatementContext(ExecutionPurpose.QUERY, false),
+                new StatementContext(ExecutionPurpose.QUERY),
                 sqlClient,
                 immutableType
         );
@@ -47,7 +47,7 @@ public class MutableDeleteImpl
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
         deleteQuery = new MutableRootQueryImpl<>(
-                new StatementContext(ExecutionPurpose.QUERY, false),
+                new StatementContext(ExecutionPurpose.QUERY),
                 sqlClient,
                 table
         );

@@ -24,9 +24,9 @@ public class TableProxies {
     private TableProxies() {}
 
     @SuppressWarnings("unchecked")
-    public static <T extends TableEx<?>> T wrap(Table<?> table) {
+    public static <T extends Table<?>> T wrap(Table<?> table) {
         ImmutableType immutableType = table.getImmutableType();
-        if (immutableType instanceof AssociationType || immutableType.isKotlinClass()) {
+        if (immutableType instanceof AssociationType || immutableType.isKotlinClass() || table instanceof AbstractTypedTable<?>) {
             return (T)table;
         }
         Class<?> javaClass = immutableType.getJavaClass();

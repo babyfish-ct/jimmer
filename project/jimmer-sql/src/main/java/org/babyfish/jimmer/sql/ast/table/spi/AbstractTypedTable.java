@@ -20,6 +20,8 @@ import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -328,6 +330,17 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
+    public WeakJoinHandle __weakJoinHandle() {
+        if (raw != null) {
+            return raw.getWeakJoinHandle();
+        }
+        if (delayedOperation != null) {
+            return delayedOperation.weakJoinHandle();
+        }
+        return null;
+    }
+
+    @Override
     public boolean __isInverse() {
         return delayedOperation instanceof DelayInverseJoin<?>;
     }
@@ -489,7 +502,11 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
         @Override
         public String toString() {
-            return prop.toString();
+            return "DelayJoin{" +
+                    "parent=" + parent +
+                    ", prop=" + prop +
+                    ", weakJoinHandle=" + weakJoinHandle +
+                    '}';
         }
     }
 

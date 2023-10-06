@@ -77,6 +77,4 @@ public interface Filters {
      * </ul>
      */
     Ref<SortedMap<String, Object>> getTargetParameterMapRef(TypedProp.Association<?, ?> prop);
-
-    BuiltInFilters builtIns();
 }

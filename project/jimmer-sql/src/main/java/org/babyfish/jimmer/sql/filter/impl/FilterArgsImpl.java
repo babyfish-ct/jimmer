@@ -3,9 +3,12 @@ package org.babyfish.jimmer.sql.filter.impl;
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
@@ -24,15 +27,13 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     private static final String JOIN_DISABLED_REASON =
             "it is not allowed by cacheable filter";
 
-    private final SortableImplementor sortable;
+    private final FilterableImplementor filterable;
 
     private final P props;
 
-    private boolean sorted;
-
     @SuppressWarnings("unchecked")
-    public FilterArgsImpl(SortableImplementor sortable, Props props, boolean forCache) {
-        this.sortable = sortable;
+    public FilterArgsImpl(FilterableImplementor filterable, Props props, boolean forCache) {
+        this.filterable = filterable;
         if (forCache) {
             if (props instanceof TableImplementor<?>) {
                 props = new UntypedJoinDisabledTableProxy<>((TableImplementor<?>)props, JOIN_DISABLED_REASON);
@@ -43,10 +44,6 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
         this.props = (P)props;
     }
 
-    public boolean isSorted() {
-        return sorted;
-    }
-
     @Override
     public @NotNull P getTable() {
         return props;
@@ -55,48 +52,49 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable where(Predicate... predicates) {
-        return sortable.where(predicates);
+        filterable.where(predicates);
+        return this;
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Expression<?>... expressions) {
-        if (!sorted) {
-            sorted = Arrays.stream(expressions).anyMatch(Objects::nonNull);
+        if (filterable instanceof SortableImplementor) {
+            ((SortableImplementor) filterable).orderBy(expressions);
         }
-        return sortable.orderBy(expressions);
+        return this;
     }
 
     @Override
     @OldChain
     public Sortable orderBy(Order... orders) {
-        if (!sorted) {
-            sorted = Arrays.stream(orders).anyMatch(Objects::nonNull);
+        if (filterable instanceof SortableImplementor) {
+            ((SortableImplementor) filterable).orderBy(orders);
         }
-        return sortable.orderBy(orders);
+        return this;
     }
 
     @Override
     @OldChain
     public Sortable orderBy(List<Order> orders) {
-        if (!sorted) {
-            sorted = orders.stream().anyMatch(Objects::nonNull);
+        if (filterable instanceof SortableImplementor) {
+            ((SortableImplementor) filterable).orderBy(orders);
         }
-        return sortable.orderBy(orders);
+        return this;
     }
 
     @Override
     public MutableSubQuery createSubQuery(TableProxy<?> table) {
-        return sortable.createSubQuery(table);
+        return filterable.createSubQuery(table);
     }
 
     @Override
     public <SE, ST extends TableEx<SE>, TE, TT extends TableEx<TE>>
     MutableSubQuery createAssociationSubQuery(AssociationTable<SE, ST, TE, TT> table) {
-        return sortable.createAssociationSubQuery(table);
+        return filterable.createAssociationSubQuery(table);
     }
 
-    public AbstractMutableQueryImpl unwrap() {
-        return (AbstractMutableQueryImpl) sortable;
+    public AbstractMutableStatementImpl unwrap() {
+        return (AbstractMutableStatementImpl) filterable;
     }
 }

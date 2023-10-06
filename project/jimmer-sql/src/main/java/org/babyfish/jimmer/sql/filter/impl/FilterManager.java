@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.filter.impl;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -23,6 +20,7 @@ import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -30,6 +28,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class FilterManager implements Filters {
+
+    private final LogicalDeletedFilterProvider provider;
 
     private final Set<Filter<?>> allFilters;
 
@@ -48,16 +48,14 @@ public class FilterManager implements Filters {
     private final TypeCache<List<Filter<Props>>> allCacheableCache =
             new TypeCache<>(this::createAllCacheable, false);
 
-    private final BuiltInFilters builtIns;
-
     private JSqlClientImplementor sqlClient;
 
     public FilterManager(
-            BuiltInFilters builtIns,
+            LogicalDeletedFilterProvider provider,
             List<Filter<?>> filters,
             Collection<Filter<?>> disabledFilters
     ) {
-        this.builtIns = builtIns;
+        this.provider = provider;
         this.allFilters = standardFilters(filters);
         this.disabledFilters = standardDisabledFilters(null, disabledFilters, this.allFilters);
         this.filterMap = filterMap(this.allFilters, this.disabledFilters);
@@ -68,13 +66,13 @@ public class FilterManager implements Filters {
     }
 
     private FilterManager(
-            BuiltInFilters builtIns,
+            LogicalDeletedFilterProvider provider,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
             Map<String, List<Filter<Props>>> filterMap,
             Map<String, List<Filter<Props>>> allCacheableFilterMap
     ) {
-        this.builtIns = builtIns;
+        this.provider = provider;
         this.allFilters = filters;
         this.disabledFilters = disabledFilters;
         this.filterMap = filterMap;
@@ -146,6 +144,20 @@ public class FilterManager implements Filters {
         return getTargetParameterMapRef(prop.unwrap());
     }
 
+    public FilterManager setBehavior(LogicalDeletedBehavior behavior) {
+        LogicalDeletedFilterProvider newProvider = provider.toBehavior(behavior);
+        if (newProvider == provider) {
+            return this;
+        }
+        return new FilterManager(
+                newProvider,
+                allFilters,
+                disabledFilters,
+                filterMap,
+                allCacheableFilterMap
+        );
+    }
+
     public FilterManager enable(Collection<Filter<?>> filters) {
         if (filters.isEmpty()) {
             return this;
@@ -158,7 +170,7 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
-                builtIns,
+                provider,
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
@@ -175,7 +187,7 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
-                builtIns,
+                provider,
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
@@ -253,11 +265,6 @@ public class FilterManager implements Filters {
         onInitialized();
     }
 
-    @Override
-    public BuiltInFilters builtIns() {
-        return builtIns;
-    }
-
     public boolean contains(ImmutableType type) {
         for (ImmutableType t : type.getAllTypes()) {
             if (filterMap.containsKey(t.toString())) {
@@ -309,6 +316,10 @@ public class FilterManager implements Filters {
     private Filter<Props> create(ImmutableType type, boolean shardingOnly) {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
         if (type != null) {
+            Filter<Props> logicalDeletedFilter = provider.get(type);
+            if (logicalDeletedFilter != null) {
+                filters.add(logicalDeletedFilter);
+            }
             for (ImmutableType t : type.getAllTypes()) {
                 List<Filter<Props>> list = filterMap.get(t.toString());
                 if (list != null) {
@@ -324,6 +335,7 @@ public class FilterManager implements Filters {
         if (filters.isEmpty()) {
             return null;
         }
+        // Cannot optimize when `.size() == 1`
         for (Filter<?> filter : filters) {
             if (!(filter instanceof CacheableFilter<?>)) {
                 return new CompositeFilter(filters);
@@ -455,7 +467,7 @@ public class FilterManager implements Filters {
         Set<Filter<?>> set = new LinkedHashSet<>();
         for (Filter<?> filter : filters) {
             Filter<?> unwrapped = unwrap(filter);
-            if (unwrapped != null) {
+            if (unwrapped != null && !(unwrapped instanceof LogicalDeletedFilterProvider.Internal)) {
                 set.add(unwrapped);
             }
         }
@@ -498,7 +510,7 @@ public class FilterManager implements Filters {
         Set<Filter<?>> set = base != null ? new HashSet<>(base) : new HashSet<>();
         for (Filter<?> filter : more) {
             Filter<?> unwrapped = unwrap(filter);
-            if (unwrapped != null) {
+            if (unwrapped != null && !(unwrapped instanceof LogicalDeletedFilterProvider.Internal)) {
                 set.add(unwrapped);
             }
         }

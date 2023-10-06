@@ -964,8 +964,8 @@ public class SaveTest extends AbstractMutationTest {
                 it.variables(10L);
             });
             ctx.statement(it -> {
-                it.sql("update ADMINISTRATOR_METADATA set NAME = ?, DELETED = ? where ID = ?");
-                it.variables("am_10", false, 10L);
+                it.sql("update ADMINISTRATOR_METADATA set NAME = ? where ID = ?");
+                it.variables("am_10", 10L);
             });
             ctx.entity(it -> {
                 it.original("{\"name\":\"am_10\",\"id\":10}");

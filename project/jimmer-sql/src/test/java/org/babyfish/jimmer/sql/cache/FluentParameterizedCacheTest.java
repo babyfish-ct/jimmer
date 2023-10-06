@@ -11,6 +11,7 @@ import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +32,7 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(it -> {
-            it.ignoreBuiltInFilters();
+            it.setLogicalDeletedBehavior(LogicalDeletedBehavior.IGNORED);
             it.addFilters(new UndeletedFilter());
             it.addDisabledFilters(new DeletedFilter());
             it.setCaches(cfg -> {

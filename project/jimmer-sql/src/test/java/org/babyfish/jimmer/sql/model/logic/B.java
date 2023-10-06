@@ -12,7 +12,7 @@ public interface B {
     @Id
     long id();
 
-    @LogicalDeleted(value = "DISABLED", restoredValue = "ENABLED")
+    @LogicalDeleted(value = "DISABLED")
     Status status();
 
     enum Status {

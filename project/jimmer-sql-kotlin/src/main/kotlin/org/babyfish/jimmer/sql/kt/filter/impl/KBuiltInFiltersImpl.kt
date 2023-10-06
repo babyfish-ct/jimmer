@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.filter.impl
 
-import org.babyfish.jimmer.sql.filter.BuiltInFilters
 import org.babyfish.jimmer.sql.kt.filter.KBuiltInFilters
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import kotlin.reflect.KClass

@@ -42,19 +42,19 @@ public class MutableUpdateImpl
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
         this.triggerIgnored = false;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType, boolean triggerIgnored) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
         this.triggerIgnored = triggerIgnored;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
         this.triggerIgnored = false;
     }
 

@@ -326,6 +326,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setTriggerType(TriggerType triggerType);
 
         @OldChain
+        Builder setLogicalDeletedBehavior(LogicalDeletedBehavior behavior);
+
+        @OldChain
         Builder addFilters(Filter<?>... filters);
 
         @OldChain
@@ -333,9 +336,6 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder addDisabledFilters(Filter<?>... filters);
-
-        @OldChain
-        Builder ignoreBuiltInFilters();
 
         @OldChain
         Builder addDisabledFilters(Collection<? extends Filter<?>> filters);

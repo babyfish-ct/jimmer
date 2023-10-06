@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.kt.filter.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
-import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl
+import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.query.Order
+import org.babyfish.jimmer.sql.ast.query.Sortable
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -16,7 +17,7 @@ import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
 internal class KFilterArgsImpl<E: Any>(
-    val javaQuery: AbstractMutableQueryImpl,
+    val javaStatement: AbstractMutableStatementImpl,
     javaTable: TableImplementor<E>
 ) : KFilterArgs<E> {
 
@@ -24,38 +25,38 @@ internal class KFilterArgsImpl<E: Any>(
         KNonNullTableExImpl(javaTable, JOIN_DISABLED_REASON)
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
-        javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
+        javaStatement.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
     override fun orderBy(vararg expressions: KExpression<*>?) {
-        javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+        (javaStatement as? Sortable)?.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
     override fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?) {
-        javaQuery.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+        (javaStatement as? Sortable)?.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
     override fun orderBy(vararg orders: Order?) {
-        javaQuery.orderBy(*orders)
+        (javaStatement as? Sortable)?.orderBy(*orders)
     }
 
     override fun orderByIf(condition: Boolean, vararg orders: Order?) {
-        javaQuery.orderByIf(condition, *orders)
+        (javaStatement as? Sortable)?.orderByIf(condition, *orders)
     }
 
     override fun orderBy(orders: List<Order?>) {
-        javaQuery.orderBy(orders)
+        (javaStatement as? Sortable)?.orderBy(orders)
     }
 
     override fun orderByIf(condition: Boolean, orders: List<Order?>) {
-        javaQuery.orderByIf(condition, orders)
+        (javaStatement as? Sortable)?.orderByIf(condition, orders)
     }
 
     override val subQueries: KSubQueries<E> =
-        KSubQueriesImpl(javaQuery)
+        KSubQueriesImpl(javaStatement)
 
     override val wildSubQueries: KWildSubQueries<E> =
-        KWildSubQueriesImpl(javaQuery)
+        KWildSubQueriesImpl(javaStatement)
 
     companion object {
         @JvmStatic

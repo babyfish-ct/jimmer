@@ -19,12 +19,11 @@ import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
-import org.babyfish.jimmer.sql.filter.BuiltInFilters;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
-import org.babyfish.jimmer.sql.filter.impl.BuiltinFiltersImpl;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
+import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -618,11 +617,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private Triggers transactionTriggers;
 
+        private LogicalDeletedBehavior logicalDeletedBehavior = LogicalDeletedBehavior.DEFAULT;
+
         private final List<Filter<?>> filters = new ArrayList<>();
 
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
-
-        private boolean ignoreBuiltInFilters = false;
 
         private IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel =
                 IdOnlyTargetCheckingLevel.NONE;
@@ -968,6 +967,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setLogicalDeletedBehavior(LogicalDeletedBehavior behavior) {
+            this.logicalDeletedBehavior = behavior != null ? behavior : LogicalDeletedBehavior.DEFAULT;
+            return this;
+        }
+
+        @Override
         public Builder addFilters(Filter<?>... filters) {
             return addFilters(Arrays.asList(filters));
         }
@@ -995,12 +1000,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     this.disabledFilters.add(filter);
                 }
             }
-            return this;
-        }
-
-        @Override
-        public Builder ignoreBuiltInFilters() {
-            ignoreBuiltInFilters = true;
             return this;
         }
 
@@ -1304,24 +1303,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         private FilterManager createFilterManager() {
-            BuiltInFilters builtInFilters = new BuiltinFiltersImpl();
-            if (ignoreBuiltInFilters) {
-                return new FilterManager(builtInFilters, filters, disabledFilters);
-            }
-            List<Filter<?>> mergedFilters = new ArrayList<>(filters);
-            List<Filter<?>> mergedDisabledFilters = new ArrayList<>(disabledFilters);
-            for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
-                Filter<?> notDeletedFilter = builtInFilters.getDeclaredNotDeletedFilter(type);
-                Filter<?> alreadyDeletedFilter = builtInFilters.getDeclaredAlreadyDeletedFilter(type);
-                if (notDeletedFilter != null) {
-                    mergedFilters.add(notDeletedFilter);
-                }
-                if (alreadyDeletedFilter != null) {
-                    mergedFilters.add(alreadyDeletedFilter);
-                    mergedDisabledFilters.add(alreadyDeletedFilter);
-                }
-            }
-            return new FilterManager(builtInFilters, mergedFilters, mergedDisabledFilters);
+            return new FilterManager(
+                    new LogicalDeletedFilterProvider(logicalDeletedBehavior, entityManager(), microServiceName),
+                    filters,
+                    disabledFilters
+            );
         }
 
         private void validateAssociations(FilterManager filterManager) {

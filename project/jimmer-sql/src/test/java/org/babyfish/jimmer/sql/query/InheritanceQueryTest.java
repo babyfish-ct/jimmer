@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.model.inheritance.PermissionFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.Role;
 import org.babyfish.jimmer.sql.model.inheritance.RoleFetcher;
 import org.babyfish.jimmer.sql.model.inheritance.RoleTable;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -14,7 +15,9 @@ public class InheritanceQueryTest extends AbstractQueryTest {
 
     @Override
     protected LambdaClient getLambdaClient() {
-        return getLambdaClient(JSqlClient.Builder::ignoreBuiltInFilters);
+        return getLambdaClient(it -> {
+            it.setLogicalDeletedBehavior(LogicalDeletedBehavior.IGNORED);
+        });
     }
 
     @Test
