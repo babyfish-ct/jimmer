@@ -192,8 +192,8 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
     }
 
-    fun ignoreBuiltInFilters() {
-        javaBuilder.ignoreBuiltInFilters()
+    fun setLogicalDeletedBehavior(behavior: LogicalDeletedBehavior) {
+        javaBuilder.setLogicalDeletedBehavior(behavior)
     }
 
     fun setIdOnlyTargetCheckingLevel(checkingLevel: IdOnlyTargetCheckingLevel) {
