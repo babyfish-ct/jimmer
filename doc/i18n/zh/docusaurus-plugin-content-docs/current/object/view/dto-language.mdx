@@ -34,7 +34,7 @@ DTO语言的代码体现为扩展名为`dto`的文件，一旦编译完成，这
 因此，第一件事，是在`src/main`下建立`dto`子目录。
 
 :::warning
-dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译。因此，有两点注意事项
+dto文件由Jimmer的Annotation Processor *(Java)* 或 Ksp *(Kotlin)* 编译。因此，有两点注意事项
 
 -   对于多工程结构的项目而言，dto文件需要定义在实体类型所在子项目中。
 
@@ -1059,7 +1059,7 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 
 前面我们所讲的例子中，所有DTO属性都是由实体属性映射而来，成为映射属性。
 
-除了映射属性外，DTO类型还支持映射属性
+除了映射属性外，DTO类型还支持映射自定义属性
 
 ```sh title="Author.dto"
 import java.util.LocaleDateTime ❶
