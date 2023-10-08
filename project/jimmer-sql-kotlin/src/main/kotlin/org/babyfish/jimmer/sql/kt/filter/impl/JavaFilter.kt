@@ -12,21 +12,21 @@ import org.babyfish.jimmer.sql.filter.impl.FilterWrapper
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 
 internal open class JavaFilter(
-    protected val kFilter: KFilter<*>
+    protected val kotlinFilter: KFilter<*>
 ) : FilterWrapper, Filter<Props> {
 
     private val immutableType: ImmutableType =
-        if (kFilter is FilterWrapper) {
-            kFilter.immutableType
+        if (kotlinFilter is FilterWrapper) {
+            kotlinFilter.immutableType
         } else {
             TypeUtils
-                .getTypeArguments(kFilter::class.java, KFilter::class.java)
+                .getTypeArguments(kotlinFilter::class.java, KFilter::class.java)
                 .values
                 .first()
                 .let {
                     if (it !is Class<*>) {
                         throw IllegalArgumentException(
-                            "\"${kFilter::class.qualifiedName}\" is illegal, " +
+                            "\"${kotlinFilter::class.qualifiedName}\" is illegal, " +
                                 "the type argument of \"${KFilter::class.qualifiedName}\" " +
                                 "is not specified"
                         )
@@ -38,7 +38,7 @@ internal open class JavaFilter(
     @Suppress("UNCHECKED_CAST")
     override fun filter(args: FilterArgs<Props>?) {
         val javaQuery = (args as FilterArgsImpl<*>).unwrap()
-        (kFilter as KFilter<Any>).filter(
+        (kotlinFilter as KFilter<Any>).filter(
             KFilterArgsImpl(
                 javaQuery,
                 args.getTable().let {
@@ -56,21 +56,21 @@ internal open class JavaFilter(
         immutableType
 
     override fun getFilterType(): Class<*> =
-        if (kFilter is FilterWrapper) {
-            kFilter.filterType
+        if (kotlinFilter is FilterWrapper) {
+            kotlinFilter.filterType
         } else {
-            kFilter.javaClass
+            kotlinFilter.javaClass
         }
 
     override fun unwrap(): Any =
-        kFilter
+        kotlinFilter
 
     override fun hashCode(): Int =
-        FilterWrapper.unwrap(kFilter).hashCode()
+        FilterWrapper.unwrap(kotlinFilter).hashCode()
 
     override fun equals(other: Any?): Boolean =
-        FilterWrapper.unwrap(kFilter) == FilterWrapper.unwrap(other)
+        FilterWrapper.unwrap(kotlinFilter) == FilterWrapper.unwrap(other)
 
     override fun toString(): String =
-        "JavaFilter(ktFilter=$kFilter)"
+        "JavaFilter(kotlinFilter=$kotlinFilter)"
 }

@@ -23,7 +23,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.function.Function;
 
-public class ParameterizedCacheEvictTest extends AbstractQueryTest {
+public class LogicalDeletedEvictTest extends AbstractQueryTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -34,7 +34,7 @@ public class ParameterizedCacheEvictTest extends AbstractQueryTest {
     @BeforeEach
     public void initialize() {
         deleteMessages = new ArrayList<>();
-        ParameterizedCacheEvictTest that = this;
+        LogicalDeletedEvictTest that = this;
         sqlClient = getSqlClient(it -> {
             it.addFilters(new UndeletedFilter());
             it.setCaches(cfg -> {

@@ -23,18 +23,17 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-public class FluentParameterizedCacheTest extends AbstractQueryTest {
+public class LogicalDeletedCacheTest extends AbstractQueryTest {
 
     private JSqlClient sqlClient;
+
+    private JSqlClient sqlClientForAllData;
 
     private JSqlClient sqlClientForDeletedData;
 
     @BeforeEach
     public void initialize() {
         sqlClient = getSqlClient(it -> {
-            it.setLogicalDeletedBehavior(LogicalDeletedBehavior.IGNORED);
-            it.addFilters(new UndeletedFilter());
-            it.addDisabledFilters(new DeletedFilter());
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new CacheFactory() {
@@ -45,17 +44,17 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
 
                             @Override
                             public @Nullable Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create(prop);
+                                return new CacheImpl<>(prop);
                             }
 
                             @Override
                             public @Nullable Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create(prop);
+                                return new CacheImpl<>(prop);
                             }
 
                             @Override
                             public @Nullable Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create(prop);
+                                return new CacheImpl<>(prop);
                             }
                         }
                 );
@@ -74,11 +73,10 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
         });
+        sqlClientForAllData = sqlClient
+                .filters(cfg -> cfg.setBehavior(LogicalDeletedBehavior.IGNORED));
         sqlClientForDeletedData = sqlClient
-                .filters(it -> {
-                    it.disableByTypes(UndeletedFilter.class);
-                    it.enableByTypes(DeletedFilter.class);
-                });
+                .filters(cfg -> cfg.setBehavior(LogicalDeletedBehavior.REVERSED));
     }
 
     @Test
@@ -105,15 +103,15 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ROLE tb_1_ " +
-                                        "where tb_1_.DELETED = ?"
-                        ).variables(false);
+                                        "where tb_1_.DELETED <> ?"
+                        ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ID " +
                                             "from PERMISSION tb_1_ " +
                                             "where tb_1_.ROLE_ID = ? " +
-                                            "and tb_1_.DELETED = ?"
-                            ).variables(100L, false);
+                                            "and tb_1_.DELETED <> ?"
+                            ).variables(100L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                             "from PERMISSION tb_1_ " +
@@ -143,6 +141,80 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
+                    sqlClientForAllData
+                            .createQuery(role)
+                            .select(
+                                    role.fetch(
+                                            RoleFetcher.$
+                                                    .allScalarFields()
+                                                    .deleted()
+                                                    .permissions(
+                                                            PermissionFetcher.$
+                                                                    .allScalarFields()
+                                                                    .deleted()
+                                                    )
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ROLE tb_1_"
+                        ).variables();
+                        ctx.statement(1).sql(
+                                "select " +
+                                        "--->tb_1_.ROLE_ID, " +
+                                        "--->tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from PERMISSION tb_1_ " +
+                                        "where tb_1_.ROLE_ID in (?, ?)"
+                        ).variables(100L, 200L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{" +
+                                        "--->--->\"name\":\"r_1\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"permissions\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"p_1\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\",\"id\":1000" +
+                                        "--->--->--->},{" +
+                                        "--->--->--->--->\"name\":\"p_2\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":2000" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":100" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"r_2\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"permissions\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"p_3\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":3000" +
+                                        "--->--->--->},{" +
+                                        "--->--->--->--->\"name\":\"p_4\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\",\"id\":4000" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":200" +
+                                        "--->}" +
+                                        "]"
+                        );
+                    }
+            );
+            executeAndExpect(
                     sqlClientForDeletedData
                             .createQuery(role)
                             .select(
@@ -163,19 +235,11 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                         "from ROLE tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
-                        if (useSql) {
-                            ctx.statement(1).sql(
-                                    "select tb_1_.ID " +
-                                            "from PERMISSION tb_1_ " +
-                                            "where tb_1_.ROLE_ID = ? " +
-                                            "and tb_1_.DELETED = ?"
-                            ).variables(200L, true);
-                            ctx.statement(2).sql(
-                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
-                                            "from PERMISSION tb_1_ " +
-                                            "where tb_1_.ID = ?"
-                            ).variables(4000L);
-                        }
+                        ctx.statement(1).sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from PERMISSION tb_1_ " +
+                                        "where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?"
+                        ).variables(200L, true);
                         ctx.rows(
                                 "[" +
                                         "--->{" +
@@ -225,21 +289,19 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
                                         "from PERMISSION tb_1_ " +
-                                        "where tb_1_.DELETED = ?"
-                        ).variables(false);
+                                        "where tb_1_.DELETED <> ?"
+                        ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ID, tb_1_.ROLE_ID " +
                                             "from PERMISSION tb_1_ " +
                                             "inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID " +
-                                            "where tb_1_.ID in (?, ?) " +
-                                            "and tb_1_.ROLE_ID is not null " +
-                                            "and tb_2_.DELETED = ?"
-                            ).variables(1000L, 3000L, false);
+                                            "where tb_1_.ID in (?, ?) and tb_1_.ROLE_ID is not null " +
+                                            "and tb_2_.DELETED <> ?"
+                            ).variables(1000L, 3000L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE tb_1_ " +
-                                            "where tb_1_.ID = ?"
+                                            "from ROLE tb_1_ where tb_1_.ID = ?"
                             ).variables(100L);
                         }
                         ctx.rows(
@@ -270,6 +332,88 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
+                    sqlClientForAllData.createQuery(permission)
+                            .select(
+                                    permission.fetch(
+                                            PermissionFetcher.$
+                                                    .allScalarFields()
+                                                    .deleted()
+                                                    .role(
+                                                            RoleFetcher.$
+                                                                    .allScalarFields()
+                                                                    .deleted()
+                                                    )
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID " +
+                                        "from PERMISSION tb_1_"
+                        ).variables();
+                        ctx.statement(1).sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ROLE tb_1_ where tb_1_.ID in (?, ?)"
+                        ).variables(100L, 200L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{" +
+                                        "--->--->\"name\":\"p_1\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"role\":{" +
+                                        "--->--->--->\"name\":\"r_1\"," +
+                                        "--->--->--->\"deleted\":false," +
+                                        "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->\"id\":100" +
+                                        "--->--->}," +
+                                        "--->--->\"id\":1000" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"p_2\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"role\":{" +
+                                        "--->--->--->\"name\":\"r_1\"," +
+                                        "--->--->--->\"deleted\":false," +
+                                        "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->\"id\":100" +
+                                        "--->--->}," +
+                                        "--->--->\"id\":2000" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"p_3\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"role\":{" +
+                                        "--->--->--->\"name\":\"r_2\"," +
+                                        "--->--->--->\"deleted\":true," +
+                                        "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->\"id\":200" +
+                                        "--->--->}," +
+                                        "--->--->\"id\":3000" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"p_4\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"role\":{" +
+                                        "--->--->--->\"name\":\"r_2\"," +
+                                        "--->--->--->\"deleted\":true," +
+                                        "--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->\"id\":200" +
+                                        "--->--->}," +
+                                        "--->--->\"id\":4000" +
+                                        "--->}" +
+                                        "]"
+                        );
+                    }
+            );
+            executeAndExpect(
                     sqlClientForDeletedData.createQuery(permission)
                             .select(
                                     permission.fetch(
@@ -289,21 +433,10 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                         "from PERMISSION tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
-                        if (useSql) {
-                            ctx.statement(1).sql(
-                                    "select tb_1_.ID, tb_1_.ROLE_ID " +
-                                            "from PERMISSION tb_1_ " +
-                                            "inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID " +
-                                            "where tb_1_.ID in (?, ?) " +
-                                            "and tb_1_.ROLE_ID is not null " +
-                                            "and tb_2_.DELETED = ?"
-                            ).variables(2000L, 4000L, true);
-                            ctx.statement(2).sql(
-                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE tb_1_ " +
-                                            "where tb_1_.ID = ?"
-                            ).variables(200L);
-                        }
+                        ctx.statement(1).sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ROLE tb_1_ where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?"
+                        ).variables(100L, 200L, true);
                         ctx.rows(
                                 "[" +
                                         "--->{" +
@@ -358,15 +491,15 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ADMINISTRATOR tb_1_ " +
-                                        "where tb_1_.DELETED = ?"
-                        ).variables(false);
+                                        "where tb_1_.DELETED <> ?"
+                        ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID " +
                                             "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
                                             "inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
-                                            "where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_3_.DELETED = ?"
-                            ).variables(1L, 3L, false);
+                                            "where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_3_.DELETED <> ?"
+                            ).variables(1L, 3L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE tb_1_ " +
@@ -411,6 +544,122 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
+                    sqlClientForAllData
+                            .createQuery(administrator)
+                            .select(
+                                    administrator.fetch(
+                                            AdministratorFetcher.$
+                                                    .allScalarFields()
+                                                    .deleted()
+                                                    .roles(
+                                                            RoleFetcher.$
+                                                                    .allScalarFields()
+                                                                    .deleted()
+                                                    )
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ADMINISTRATOR tb_1_"
+                        ).variables();
+                        ctx.statement(1).sql(
+                                "select " +
+                                        "--->tb_2_.ADMINISTRATOR_ID, " +
+                                        "--->tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ROLE tb_1_ inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ " +
+                                        "--->on tb_1_.ID = tb_2_.ROLE_ID " +
+                                        "where tb_2_.ADMINISTRATOR_ID in (?, ?, ?, ?, ?)"
+                        ).variables(-1L, 1L, 2L, 3L, 4L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{" +
+                                        "--->--->\"name\":\"a_-1\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"roles\":[]," +
+                                        "--->--->\"id\":-1" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"a_1\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"roles\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"r_1\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":100" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":1" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"a_2\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"roles\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"r_1\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":100" +
+                                        "--->--->--->}," +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"r_2\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":200" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":2" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"a_3\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"roles\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"r_1\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":100" +
+                                        "--->--->--->}," +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"r_2\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":200" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":3" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"a_4\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"roles\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"r_2\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":200" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":4" +
+                                        "--->}" +
+                                        "]"
+                        );
+                    }
+            );
+            executeAndExpect(
                     sqlClientForDeletedData
                             .createQuery(administrator)
                             .select(
@@ -431,19 +680,14 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                         "from ADMINISTRATOR tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
-                        if (useSql) {
-                            ctx.statement(1).sql(
-                                    "select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID " +
-                                            "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
-                                            "inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID " +
-                                            "where tb_1_.ADMINISTRATOR_ID in (?, ?, ?) and tb_3_.DELETED = ?"
-                            ).variables(-1L, 2L, 4L, true);
-                            ctx.statement(2).sql(
-                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE tb_1_ " +
-                                            "where tb_1_.ID = ?"
-                            ).variables(200L);
-                        }
+                        ctx.statement(1).sql(
+                                "select " +
+                                        "--->tb_2_.ADMINISTRATOR_ID, " +
+                                        "--->tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ROLE tb_1_ inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ " +
+                                        "--->on tb_1_.ID = tb_2_.ROLE_ID " +
+                                        "where tb_2_.ADMINISTRATOR_ID in (?, ?, ?) and tb_1_.DELETED = ?"
+                        ).variables(-1L, 2L, 4L, true);
                         ctx.rows(
                                 "[" +
                                         "--->{" +
@@ -516,15 +760,15 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                         ctx.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
                                         "from ROLE tb_1_ " +
-                                        "where tb_1_.DELETED = ?"
-                        ).variables(false);
+                                        "where tb_1_.DELETED <> ?"
+                        ).variables(true);
                         if (useSql) {
                             ctx.statement(1).sql(
                                     "select tb_1_.ADMINISTRATOR_ID " +
                                             "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
                                             "inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
-                                            "where tb_1_.ROLE_ID = ? and tb_3_.DELETED = ?"
-                            ).variables(100L, false);
+                                            "where tb_1_.ROLE_ID = ? and tb_3_.DELETED <> ?"
+                            ).variables(100L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ADMINISTRATOR tb_1_ " +
@@ -560,6 +804,99 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                     }
             );
             executeAndExpect(
+                    sqlClientForAllData
+                            .createQuery(role)
+                            .select(
+                                    role.fetch(
+                                            RoleFetcher.$
+                                                    .allScalarFields()
+                                                    .deleted()
+                                                    .administrators(
+                                                            AdministratorFetcher.$
+                                                                    .allScalarFields()
+                                                                    .deleted()
+                                                    )
+                                    )
+                            ),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ROLE tb_1_"
+                        ).variables();
+                        ctx.statement(1).sql(
+                                "select " +
+                                        "--->tb_2_.ROLE_ID, " +
+                                        "--->tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ADMINISTRATOR tb_1_ inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ " +
+                                        "--->on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                        "where tb_2_.ROLE_ID in (?, ?)"
+                        ).variables(100L, 200L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{" +
+                                        "--->--->\"name\":\"r_1\"," +
+                                        "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"administrators\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"a_1\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":1" +
+                                        "--->--->--->}," +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"a_2\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":2" +
+                                        "--->--->--->}," +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"a_3\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":3" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":100" +
+                                        "--->},{" +
+                                        "--->--->\"name\":\"r_2\"," +
+                                        "--->--->\"deleted\":true," +
+                                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->\"administrators\":[" +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"a_2\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":2" +
+                                        "--->--->--->}," +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"a_3\"," +
+                                        "--->--->--->--->\"deleted\":false," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":3" +
+                                        "--->--->--->}," +
+                                        "--->--->--->{" +
+                                        "--->--->--->--->\"name\":\"a_4\"," +
+                                        "--->--->--->--->\"deleted\":true," +
+                                        "--->--->--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
+                                        "--->--->--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
+                                        "--->--->--->--->\"id\":4" +
+                                        "--->--->--->}" +
+                                        "--->--->]," +
+                                        "--->--->\"id\":200" +
+                                        "--->}" +
+                                        "]"
+                        );
+                    }
+            );
+            executeAndExpect(
                     sqlClientForDeletedData
                             .createQuery(role)
                             .select(
@@ -580,19 +917,12 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                                         "from ROLE tb_1_ " +
                                         "where tb_1_.DELETED = ?"
                         ).variables(true);
-                        if (useSql) {
-                            ctx.statement(1).sql(
-                                    "select tb_1_.ADMINISTRATOR_ID " +
-                                            "from ADMINISTRATOR_ROLE_MAPPING tb_1_ " +
-                                            "inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID " +
-                                            "where tb_1_.ROLE_ID = ? and tb_3_.DELETED = ?"
-                            ).variables(200L, true);
-                            ctx.statement(2).sql(
-                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ADMINISTRATOR tb_1_ " +
-                                            "where tb_1_.ID in (?, ?)"
-                            ).variables(2L, 4L);
-                        }
+                        ctx.statement(1).sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED " +
+                                        "from ADMINISTRATOR tb_1_ inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ " +
+                                        "--->on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
+                                        "where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?"
+                        ).variables(200L, true);
                         ctx.rows(
                                 "[" +
                                         "--->{" +
@@ -621,46 +951,6 @@ public class FluentParameterizedCacheTest extends AbstractQueryTest {
                         );
                     }
             );
-        }
-    }
-
-    private static class UndeletedFilter implements CacheableFilter<NamedEntityProps> {
-
-        @Override
-        public void filter(FilterArgs<NamedEntityProps> args) {
-            args.where(args.getTable().deleted().eq(false));
-        }
-
-        @Override
-        public SortedMap<String, Object> getParameters() {
-            SortedMap<String, Object> map = new TreeMap<>();
-            map.put("deleted", false);
-            return map;
-        }
-
-        @Override
-        public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
-        }
-    }
-
-    private static class DeletedFilter implements CacheableFilter<NamedEntityProps> {
-
-        @Override
-        public void filter(FilterArgs<NamedEntityProps> args) {
-            args.where(args.getTable().deleted().eq(true));
-        }
-
-        @Override
-        public SortedMap<String, Object> getParameters() {
-            SortedMap<String, Object> map = new TreeMap<>();
-            map.put("deleted", true);
-            return map;
-        }
-
-        @Override
-        public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
         }
     }
 }

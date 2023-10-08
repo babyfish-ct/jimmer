@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
-        implements MutableQuery, SortableImplementor {
+        implements MutableQuery {
 
     public static final int ORDER_BY_PRIORITY_STATEMENT = 0;
 
@@ -166,24 +166,9 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    public void applyGlobalFiler(Table<?> table) {
+    protected void applyGlobalFilers() {
         setOrderByPriority(ORDER_BY_PRIORITY_GLOBAL_FILTER);
-        super.applyGlobalFiler(table);
-    }
-
-    @Override
-    public void disableSubQuery() {
-        this.subQueryDisabledCount++;
-    }
-
-    @Override
-    public void enableSubQuery() {
-        this.subQueryDisabledCount--;
-    }
-
-    @Override
-    public boolean isSubQueryDisabled() {
-        return subQueryDisabledCount != 0;
+        super.applyGlobalFilers();
     }
 
     void accept(

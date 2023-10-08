@@ -4,11 +4,8 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
@@ -18,9 +15,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
 
@@ -59,8 +54,8 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(Expression<?>... expressions) {
-        if (filterable instanceof SortableImplementor) {
-            ((SortableImplementor) filterable).orderBy(expressions);
+        if (filterable instanceof Sortable) {
+            ((Sortable) filterable).orderBy(expressions);
         }
         return this;
     }
@@ -68,8 +63,8 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(Order... orders) {
-        if (filterable instanceof SortableImplementor) {
-            ((SortableImplementor) filterable).orderBy(orders);
+        if (filterable instanceof Sortable) {
+            ((Sortable) filterable).orderBy(orders);
         }
         return this;
     }
@@ -77,8 +72,8 @@ public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
     @Override
     @OldChain
     public Sortable orderBy(List<Order> orders) {
-        if (filterable instanceof SortableImplementor) {
-            ((SortableImplementor) filterable).orderBy(orders);
+        if (filterable instanceof Sortable) {
+            ((Sortable) filterable).orderBy(orders);
         }
         return this;
     }

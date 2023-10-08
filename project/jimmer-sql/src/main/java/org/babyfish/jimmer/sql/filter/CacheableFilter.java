@@ -11,7 +11,17 @@ import java.util.SortedMap;
  */
 public interface CacheableFilter<P extends Props> extends Filter<P> {
 
+    /**
+     * Return the sub keys of association cache for multi-view cache
+     * @see <a href="https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/concept#subkey">SubKeys for multi-view cache</a>
+     * @return The sub key map
+     */
     SortedMap<String, Object> getParameters();
 
+    /**
+     * Is the association cache affected by the change of CURRENT table?
+     * @param e The change event of CURRENT table
+     * @return Whether the association cache should be affected
+     */
     boolean isAffectedBy(EntityEvent<?> e);
 }

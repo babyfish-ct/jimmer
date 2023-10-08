@@ -12,7 +12,6 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -28,7 +27,6 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -682,23 +680,9 @@ public abstract class AbstractDataLoader {
     }
 
     private void applyGlobalFilter(Sortable sortable, Table<?> table) {
-        if (remote) {
-            return;
-        }
-        SortableImplementor sortableImplementor = (SortableImplementor)sortable;
-        Filter<Props> globalFiler = this.globalFiler;
-        if (globalFiler instanceof CacheableFilter<?>) {
-            sortableImplementor.disableSubQuery();
-            try {
-                FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, true);
-                globalFiler.filter(args);
-            } finally {
-                sortableImplementor.enableSubQuery();
-            }
-        } else if (globalFiler != null) {
-            FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, false);
-            globalFiler.filter(args);
-        }
+        AbstractMutableQueryImpl query = (AbstractMutableQueryImpl) sortable;
+        query.setOrderByPriority(AbstractMutableQueryImpl.ORDER_BY_PRIORITY_GLOBAL_FILTER);
+        query.applyGlobalFiler(table);
     }
 
     @SuppressWarnings("unchecked")

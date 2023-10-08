@@ -9,11 +9,6 @@ import java.lang.annotation.Target;
 
 /**
  * Logical deleted flag.
- *
- * <p>
- *     If property is decorated by this @annotation, its initial value is `restoredValue`
- *     so that developers do not need to use `DraftInterceptor` to assign an initial value to it
- * </p>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)

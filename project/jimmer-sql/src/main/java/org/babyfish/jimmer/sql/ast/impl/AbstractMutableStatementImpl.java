@@ -4,13 +4,11 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
-import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.query.Filterable;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
-import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -18,7 +16,6 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -152,7 +149,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         predicates = mergePredicates(predicates);
     }
 
-    private void applyGlobalFilers() {
+    protected void applyGlobalFilers() {
         if (this instanceof Ast) {
             ((Ast) this).accept(new ApplyFilterVisitor());
         } else {
@@ -162,23 +159,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     public void applyGlobalFiler(Table<?> table) {
         Filter<Props> globalFilter = getSqlClient().getFilters().getFilter(table.getImmutableType());
-        if (globalFilter == null) {
-            return;
-        }
-        if (globalFilter instanceof CacheableFilter<?>) {
-            SortableImplementor sortableImplementor = this instanceof SortableImplementor ? (SortableImplementor) this : null;
-            if (sortableImplementor != null) {
-                sortableImplementor.disableSubQuery();
-            }
-            try {
-                FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, true);
-                globalFilter.filter(args);
-            } finally {
-                if (sortableImplementor != null) {
-                    sortableImplementor.enableSubQuery();
-                }
-            }
-        } else {
+        if (globalFilter != null) {
             FilterArgsImpl<Props> args = new FilterArgsImpl<>(
                     this,
                     TableProxies.wrap(table),
@@ -213,10 +194,6 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     public ExecutionPurpose getPurpose() {
         return getContext().getPurpose();
-    }
-
-    public boolean isSubQueryDisabled() {
-        return false;
     }
 
     protected static List<Predicate> mergePredicates(List<Predicate> predicates) {
