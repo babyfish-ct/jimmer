@@ -171,16 +171,23 @@ public class AssociationEvent implements DatabaseEvent {
 
     @NotNull
     public Type getType() {
-        if (detachedTargetId == null && attachedTargetId == null) {
+        Object dtId = detachedTargetId;
+        Object atId = attachedTargetId;
+        if (dtId == null && atId == null) {
             return Type.EVICT;
         }
-        if (detachedTargetId == null) {
+        if (dtId == null) {
             return Type.ATTACH;
         }
-        if (attachedTargetId == null) {
+        if (atId == null) {
             return Type.DETACH;
         }
         return Type.REPLACE;
+    }
+
+    @Override
+    public boolean isEvict() {
+        return detachedTargetId == null && attachedTargetId == null;
     }
 
     private void validateTarget() {
@@ -218,9 +225,9 @@ public class AssociationEvent implements DatabaseEvent {
     }
 
     public enum Type {
-        DETACH,
+        EVICT,
         ATTACH,
+        DETACH,
         REPLACE,
-        EVICT
     }
 }

@@ -13,6 +13,8 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     private final Object id;
 
+    private final ImmutableType immutableType;
+
     private final E oldEntity;
 
     private final E newEntity;
@@ -20,6 +22,19 @@ public class EntityEvent<E> implements DatabaseEvent {
     private final Connection con;
 
     private final Object reason;
+
+    private EntityEvent(ImmutableType immutableType, Object id, Connection con, Object reason) {
+        this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.immutableType = Objects.requireNonNull(immutableType, "immutable type cannot be null");
+        this.oldEntity = null;
+        this.newEntity = null;
+        this.con = con;
+        this.reason = reason;
+    }
+
+    public static <E> EntityEvent<E> evict(ImmutableType immutableType, Object id, Connection con, Object reason) {
+        return new EntityEvent<>(immutableType, id, con, reason);
+    }
 
     public EntityEvent(E oldEntity, E newEntity, Connection con, Object reason) {
         if (oldEntity == null && newEntity == null) {
@@ -37,6 +52,11 @@ public class EntityEvent<E> implements DatabaseEvent {
             if (oe.__type() != ne.__type()) {
                 throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
             }
+        }
+        if (oe != null) {
+            immutableType = oe.__type();
+        } else {
+            immutableType = ne.__type();
         }
         PropId idPropId = (oe != null ? oe : ne).__type().getIdProp().getId();
         Object oldId = null;
@@ -64,11 +84,13 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @Nullable
     public E getOldEntity() {
+        validateState();
         return oldEntity;
     }
 
     @Nullable
     public E getNewEntity() {
+        validateState();
         return newEntity;
     }
 
@@ -104,22 +126,37 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @NotNull
     public ImmutableType getImmutableType() {
-        E oe = this.oldEntity;
-        if (oe != null) {
-            return ((ImmutableSpi) oe).__type();
+        if (immutableType == null) {
+            throw new IllegalArgumentException("Fuck: " + this);
         }
-        return ((ImmutableSpi) newEntity).__type();
+        return immutableType;
     }
 
     @NotNull
     public Type getType() {
-        if (oldEntity == null) {
+        E oe = oldEntity;
+        E ne = newEntity;
+        if (oe == null && ne == null) {
+            return Type.EVICT;
+        }
+        if (oe == null) {
             return Type.INSERT;
         }
-        if (newEntity == null) {
+        if (ne == null) {
             return Type.DELETE;
         }
         return Type.UPDATE;
+    }
+
+    @Override
+    public boolean isEvict() {
+        return oldEntity == null && newEntity == null;
+    }
+
+    private void validateState() {
+        if (oldEntity == null && newEntity == null) {
+            throw new IllegalStateException("Cannot get information except id and immutable type because the event type is `EVICT`");
+        }
     }
 
     /**
@@ -306,6 +343,7 @@ public class EntityEvent<E> implements DatabaseEvent {
     }
 
     private void validateProp(ImmutableProp prop) {
+        validateState();
         if (!prop.getDeclaringType().isAssignableFrom(getImmutableType())) {
             throw new IllegalArgumentException(
                     "The argument `prop` cannot be \"" +
@@ -336,6 +374,14 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @Override
     public String toString() {
+        if (oldEntity == null && newEntity == null) {
+            return "EntityEvent{" +
+                    "id=" + id +
+                    ", immutableType=" + immutableType +
+                    ", con=" + con +
+                    ", reason=" + reason +
+                    '}';
+        }
         return "Event{" +
                 "oldEntity=" + oldEntity +
                 ", newEntity=" + newEntity +
@@ -361,8 +407,9 @@ public class EntityEvent<E> implements DatabaseEvent {
     }
 
     public enum Type {
-        DELETE,
+        EVICT,
         INSERT,
+        DELETE,
         UPDATE,
     }
 }

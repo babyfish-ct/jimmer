@@ -9,7 +9,6 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
 import org.babyfish.jimmer.sql.common.ParameterizedCaches;
 import org.babyfish.jimmer.sql.filter.common.CacheableFileFilter;
-import org.babyfish.jimmer.sql.filter.common.FileChildFilesInvalidator;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -36,7 +35,6 @@ public class FilterCacheEvictTest extends AbstractQueryTest {
         FilterCacheEvictTest that = this;
         sqlClient = getSqlClient(it -> {
             it.addFilters(new CacheableFileFilter());
-            it.addInitializers(new FileChildFilesInvalidator());
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new CacheFactory() {
@@ -121,11 +119,22 @@ public class FilterCacheEvictTest extends AbstractQueryTest {
                     return null;
                 },
                 ctx -> {
-                    ctx.sql("select tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.ID = ?");
+                    ctx.sql(
+                            "select distinct tb_1_.ID from FILE tb_1_ where tb_1_.PARENT_ID = ?"
+                    ).variables(22L);
+                    ctx.statement(1).sql(
+                            "select tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.ID = ?"
+                    ).variables(22L);
+                    ctx.statement(2).sql(
+                            "select distinct tb_1_.ID " +
+                                    "from file_user tb_1_ " +
+                                    "inner join FILE_USER_MAPPING tb_2_ on tb_1_.ID = tb_2_.USER_ID " +
+                                    "where tb_2_.FILE_ID = ?"
+                    ).variables(22L);
                 }
         );
         Assertions.assertEquals(
-                "[File.users-22, File.childFiles-20, User.files-2]",
+                "[File.childFiles-20, User.files-1, User.files-2, File.users-22, User.files-2]",
                 deleteMessages.toString()
         );
     }

@@ -445,7 +445,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, purpose, true, (q, table) -> {
+                sqlClient, immutableType, purpose, false, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));

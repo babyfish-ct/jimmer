@@ -324,11 +324,35 @@ public class TriggersImpl implements Triggers {
     }
 
     @Override
-    public void fireAssociationEvict(ImmutableProp prop, Object sourceId, Object reason) {
-        List<AssociationListener> listeners = associationListeners(prop);
-        Throwable throwable = null;
+    public void fireEntityEvict(ImmutableType type, Object sourceId, Connection con, Object reason) {
+        List<EntityListener<ImmutableSpi>> listeners = entityListeners(type);
         if (!listeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(prop, sourceId, null, reason);
+            Throwable throwable = null;
+            EntityEvent<ImmutableSpi> e = EntityEvent.evict(type, sourceId, con, reason);
+            for (EntityListener<ImmutableSpi> listener : listeners) {
+                try {
+                    listener.onChange(e);
+                } catch (RuntimeException | Error ex) {
+                    if (throwable == null) {
+                        throwable = ex;
+                    }
+                }
+            }
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            }
+            if (throwable != null) {
+                throw (Error)throwable;
+            }
+        }
+    }
+
+    @Override
+    public void fireAssociationEvict(ImmutableProp prop, Object sourceId, Connection con, Object reason) {
+        List<AssociationListener> listeners = associationListeners(prop);
+        if (!listeners.isEmpty()) {
+            Throwable throwable = null;
+            AssociationEvent e = new AssociationEvent(prop, sourceId, con, reason);
             for (AssociationListener listener : listeners) {
                 try {
                     listener.onChange(e);
@@ -338,12 +362,12 @@ public class TriggersImpl implements Triggers {
                     }
                 }
             }
-        }
-        if (throwable instanceof RuntimeException) {
-            throw (RuntimeException)throwable;
-        }
-        if (throwable != null) {
-            throw (Error)throwable;
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            }
+            if (throwable != null) {
+                throw (Error)throwable;
+            }
         }
     }
 

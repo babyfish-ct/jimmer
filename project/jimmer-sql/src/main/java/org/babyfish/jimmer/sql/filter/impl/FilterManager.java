@@ -5,6 +5,8 @@ import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
+import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
@@ -21,6 +23,8 @@ import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -37,7 +41,7 @@ public class FilterManager implements Filters {
 
     private final Map<String, List<Filter<Props>>> filterMap;
 
-    private final Map<String, List<Filter<Props>>> allCacheableFilterMap;
+    private final Map<String, List<CacheableFilter<Props>>> allCacheableFilterMap;
 
     private final TypeCache<Filter<Props>> cache =
             new TypeCache<>(this::create, true);
@@ -45,11 +49,12 @@ public class FilterManager implements Filters {
     private final TypeCache<Filter<Props>> shardingOnlyCache =
             new TypeCache<>(this::createShardingOnly, true);
 
-    private final TypeCache<List<Filter<Props>>> allCacheableCache =
+    private final TypeCache<List<CacheableFilter<Props>>> allCacheableCache =
             new TypeCache<>(this::createAllCacheable, false);
 
     private JSqlClientImplementor sqlClient;
 
+    @SuppressWarnings("unchecked")
     public FilterManager(
             LogicalDeletedFilterProvider provider,
             List<Filter<?>> filters,
@@ -59,7 +64,7 @@ public class FilterManager implements Filters {
         this.allFilters = standardFilters(filters);
         this.disabledFilters = standardDisabledFilters(null, disabledFilters, this.allFilters);
         this.filterMap = filterMap(this.allFilters, this.disabledFilters);
-        this.allCacheableFilterMap = filterMap(
+        this.allCacheableFilterMap = (Map<String, List<CacheableFilter<Props>>>)(Map<?, ?>)filterMap(
                 this.allFilters.stream().filter(it -> it instanceof CacheableFilter<?>).collect(Collectors.toList()),
                 Collections.emptyList()
         );
@@ -70,7 +75,7 @@ public class FilterManager implements Filters {
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
             Map<String, List<Filter<Props>>> filterMap,
-            Map<String, List<Filter<Props>>> allCacheableFilterMap
+            Map<String, List<CacheableFilter<Props>>> allCacheableFilterMap
     ) {
         this.provider = provider;
         this.allFilters = filters;
@@ -345,12 +350,12 @@ public class FilterManager implements Filters {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Filter<Props>> createAllCacheable(ImmutableType type) {
-        List<Filter<Props>> filters = new ArrayList<>();
+    private List<CacheableFilter<Props>> createAllCacheable(ImmutableType type) {
+        List<CacheableFilter<Props>> filters = new ArrayList<>();
         for (ImmutableType t : type.getAllTypes()) {
-            List<Filter<Props>> list = allCacheableFilterMap.get(t.toString());
+            List<CacheableFilter<Props>> list = allCacheableFilterMap.get(t.toString());
             if (list != null) {
-                for (Filter<Props> filter : list) {
+                for (CacheableFilter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
                         filters.add(filter);
                     }
@@ -518,6 +523,190 @@ public class FilterManager implements Filters {
         return set;
     }
 
+    private static Collection<?> affectedSourceIds(List<CacheableFilter<Props>> filters, EntityEvent<?> e) {
+        if (filters.size() == 1) {
+            return filters.get(0).getAffectedSourceIds(e);
+        }
+        Set<Object> ids = null;
+        for (CacheableFilter<?> filter : filters) {
+            Collection<?> someIds = filter.getAffectedSourceIds(e);
+            if (someIds != null && !someIds.isEmpty()) {
+                if (ids == null) {
+                    ids = new LinkedHashSet<>();
+                }
+                for (Object someId : someIds) {
+                    if (someId != null) {
+                        ids.add(someId);
+                    }
+                }
+            }
+        }
+        return ids == null || ids.isEmpty() ? null : ids;
+    }
+
+    private static Collection<?> affectedSourceIds(List<CacheableFilter<Props>> filters, AssociationEvent e) {
+        if (filters.size() == 1) {
+            return filters.get(0).getAffectedSourceIds(e);
+        }
+        Set<Object> ids = null;
+        for (CacheableFilter<?> filter : filters) {
+            Collection<?> someIds = filter.getAffectedSourceIds(e);
+            if (someIds != null && !someIds.isEmpty()) {
+                if (ids == null) {
+                    ids = new LinkedHashSet<>();
+                }
+                for (Object someId : someIds) {
+                    if (someId != null) {
+                        ids.add(someId);
+                    }
+                }
+            }
+        }
+        return ids == null || ids.isEmpty() ? null : ids;
+    }
+
+    private void onInitialized() {
+        for (Filter<?> filter : allFilters) {
+            if (filter instanceof CacheableFilter<?>) {
+                ((CacheableFilter<?>)filter).initialize(sqlClient);
+            }
+        }
+        CachesImpl caches = (CachesImpl) this.sqlClient.getCaches();
+        for (Map.Entry<ImmutableType, LocatedCache<?, ?>> entry : caches.getObjectCacheMap().entrySet()) {
+            ImmutableType type = entry.getKey();
+            List<CacheableFilter<Props>> filters = allCacheableCache.get(type);
+            if (!filters.isEmpty() && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(filters, EntityEvent.class)) {
+                Triggers triggers = sqlClient.getTriggers();
+                sqlClient.getTriggers().addEntityListener(e -> {
+                    Collection<?> sourceIds = affectedSourceIds(filters, e);
+                    if (sourceIds != null) {
+                        for (Object sourceId : sourceIds) {
+                            triggers.fireEntityEvict(type, sourceId, e.getConnection());
+                        }
+                    }
+                });
+            }
+            if (!filters.isEmpty() && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(filters, AssociationEvent.class)) {
+                Triggers triggers = sqlClient.getTriggers();
+                sqlClient.getTriggers().addAssociationListener(e -> {
+                    Collection<?> sourceIds = affectedSourceIds(filters, e);
+                    if (sourceIds != null) {
+                        for (Object sourceId : sourceIds) {
+                            triggers.fireEntityEvict(type, sourceId, e.getConnection());
+                        }
+                    }
+                });
+            }
+        }
+        for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
+            ImmutableProp prop = entry.getKey();
+            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+                List<CacheableFilter<Props>> filters = allCacheableCache.get(prop.getTargetType());
+                if (!filters.isEmpty()) {
+                    sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
+                        handleTargetChange(prop, filters, e);
+                    });
+                }
+            }
+        }
+    }
+
+    private void handleTargetChange(
+            ImmutableProp prop,
+            List<CacheableFilter<Props>> filters,
+            EntityEvent<?> e
+    ) {
+        if (e.isEvict()) {
+            fireAssociationEvent(prop, e);
+            return;
+        }
+        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
+            ImmutableProp mappedBy = prop.getMappedBy();
+            if (mappedBy != null && mappedBy.isColumnDefinition()) {
+                if (e.getUnchangedRef(mappedBy) == null) {
+                    return;
+                }
+            }
+        }
+        boolean affected = false;
+        for (CacheableFilter<Props> filter : filters) {
+            if (filter.isAffectedBy(e)) {
+                affected = true;
+                break;
+            }
+        }
+        if (affected) {
+            fireAssociationEvent(prop, e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
+        Triggers triggers = sqlClient.getTriggers();
+        ImmutableProp mappedBy = prop.getMappedBy();
+        if (mappedBy != null && mappedBy.isColumnDefinition()) {
+            if (e.isEvict()) {
+                ImmutableType targetType = prop.getTargetType();
+                ImmutableType sourceType = mappedBy.getTargetType();
+                Object parentId = Queries
+                        .createQuery(sqlClient, targetType, ExecutionPurpose.EVICT, true, (q, target) -> {
+                            Expression<Object> targetIdExpr = target.get(targetType.getIdProp().getName());
+                            Expression<Object> sourceIdExpr = target.join(mappedBy.getName()).get(sourceType.getIdProp().getName());
+                            q.where(targetIdExpr.eq(e.getId()));
+                            return q.select(sourceIdExpr);
+                        })
+                        .fetchOneOrNull();
+                if (parentId != null) {
+                    triggers.fireAssociationEvict(prop, parentId, e.getConnection());
+                }
+            } else {
+                Ref<Object> ref = e.getUnchangedRef(mappedBy);
+                if (ref != null) {
+                    ImmutableSpi source = (ImmutableSpi) ref.getValue();
+                    if (source != null) {
+                        ImmutableType sourceType = source.__type();
+                        Object sourceId = source.__get(sourceType.getIdProp().getId());
+                        triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
+                    }
+                }
+            }
+        } else {
+            ImmutableType declaringType = prop.getDeclaringType();
+            List<ImmutableType> sourceTypes =
+                    declaringType.isEntity() ?
+                            Collections.singletonList(declaringType) :
+                            sqlClient.getEntityManager().getImplementationTypes(declaringType);
+            String targetIdPropName = prop.getTargetType().getIdProp().getName();
+            for (ImmutableType sourceType : sourceTypes) {
+                Collection<Object> sourceIds = Queries
+                        .createQuery(sqlClient, sourceType, ExecutionPurpose.EVICT, true, (q, source) -> {
+                            Expression<Object> sourceIdExpr = source.get(sourceType.getIdProp().getName());
+                            Expression<Object> targetIdExpr = source.join(prop.getName()).get(targetIdPropName);
+                            q.where(targetIdExpr.eq(e.getId()));
+                            return q.select(sourceIdExpr);
+                        })
+                        .distinct()
+                        .execute();
+                for (Object sourceId : sourceIds) {
+                    triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
+                }
+            }
+        }
+    }
+
+    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
+        Set<ImmutableType> affectTypes = new HashSet<>();
+        for (ImmutableType type : allTypes) {
+            for (ImmutableType upcastType : type.getAllTypes()) {
+                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType.toString())) {
+                    affectTypes.add(type);
+                    break;
+                }
+            }
+        }
+        return affectTypes;
+    }
+
     private static class CompositeFilter implements Filter<Props> {
 
         private final List<Filter<Props>> filters;
@@ -573,7 +762,6 @@ public class FilterManager implements Filters {
                 }
                 for (Map.Entry<String, Object> e : subMap.entrySet()) {
                     String key = e.getKey();
-                    Object value = e.getValue();
                     if (key == null || key.isEmpty()) {
                         throw new IllegalStateException(
                                 "The method `getParameters` of \"" +
@@ -581,6 +769,7 @@ public class FilterManager implements Filters {
                                         "\" cannot map with null or empty key"
                         );
                     }
+                    Object value = e.getValue();
                     if (value == null) {
                         throw new IllegalStateException(
                                 "The method `getParameters` of \"" +
@@ -615,105 +804,23 @@ public class FilterManager implements Filters {
             return false;
         }
 
+        @Nullable
+        @Override
+        public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
+            return affectedSourceIds(filters, e);
+        }
+
+        @Nullable
+        @Override
+        public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) {
+            return affectedSourceIds(filters, e);
+        }
+
         @Override
         public String toString() {
             return "CompositeCacheableFilter{" +
                     "filters=" + filters +
                     '}';
         }
-    }
-
-    private void onInitialized() {
-        CachesImpl caches = (CachesImpl) this.sqlClient.getCaches();
-        for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
-            ImmutableProp prop = entry.getKey();
-            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-                List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
-                if (!filters.isEmpty()) {
-                    sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
-                        handleTargetChange(prop, filters, e);
-                    });
-                }
-            }
-        }
-    }
-
-    private void handleTargetChange(
-            ImmutableProp prop,
-            List<Filter<Props>> filters,
-            EntityEvent<?> e
-    ) {
-        if (!(sqlClient.getCaches().getPropertyCache(prop) instanceof Cache.Parameterized<?, ?>)) {
-            return;
-        }
-        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
-            ImmutableProp mappedBy = prop.getMappedBy();
-            if (mappedBy != null && mappedBy.isColumnDefinition()) {
-                if (e.getUnchangedRef(mappedBy) == null) {
-                    return;
-                }
-            }
-        }
-        boolean affected = false;
-        for (Filter<Props> filter : filters) {
-            if (filter instanceof CacheableFilter<?> && ((CacheableFilter<?>)filter).isAffectedBy(e)) {
-                affected = true;
-                break;
-            }
-        }
-        if (affected) {
-            fireAssociationEvent(prop, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
-        Triggers triggers = sqlClient.getTriggers();
-        ImmutableProp mappedBy = prop.getMappedBy();
-        if (mappedBy != null && mappedBy.isColumnDefinition()) {
-            Ref<Object> ref = e.getUnchangedRef(mappedBy);
-            if (ref != null) {
-                ImmutableSpi source = (ImmutableSpi) ref.getValue();
-                if (source != null) {
-                    ImmutableType sourceType = source.__type();
-                    Object sourceId = source.__get(sourceType.getIdProp().getId());
-                    triggers.fireAssociationEvict(prop, sourceId);
-                }
-            }
-        } else {
-            ImmutableType declaringType = prop.getDeclaringType();
-            List<ImmutableType> sourceTypes =
-                    declaringType.isEntity() ?
-                            Collections.singletonList(declaringType) :
-                            sqlClient.getEntityManager().getImplementationTypes(declaringType);
-            String targetIdPropName = prop.getTargetType().getIdProp().getName();
-            for (ImmutableType sourceType : sourceTypes) {
-                Collection<Object> sourceIds = Queries
-                        .createQuery(sqlClient, sourceType, ExecutionPurpose.EVICT, true, (q, source) -> {
-                            Expression<Object> sourceIdExpr = source.get(sourceType.getIdProp().getName());
-                            Expression<Object> targetIdExpr = source.join(prop.getName()).get(targetIdPropName);
-                            q.where(targetIdExpr.eq(e.getId()));
-                            return q.select(sourceIdExpr);
-                        })
-                        .distinct()
-                        .execute();
-                for (Object sourceId : sourceIds) {
-                    triggers.fireAssociationEvict(prop, sourceId);
-                }
-            }
-        }
-    }
-
-    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
-        Set<ImmutableType> affectTypes = new HashSet<>();
-        for (ImmutableType type : allTypes) {
-            for (ImmutableType upcastType : type.getAllTypes()) {
-                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType.toString())) {
-                    affectTypes.add(type);
-                    break;
-                }
-            }
-        }
-        return affectTypes;
     }
 }
