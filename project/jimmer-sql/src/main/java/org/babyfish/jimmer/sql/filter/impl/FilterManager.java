@@ -14,7 +14,6 @@ import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.PropsFor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
-import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
@@ -349,7 +348,6 @@ public class FilterManager implements Filters {
         return new CompositeCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
     }
 
-    @SuppressWarnings("unchecked")
     private List<CacheableFilter<Props>> createAllCacheable(ImmutableType type) {
         List<CacheableFilter<Props>> filters = new ArrayList<>();
         for (ImmutableType t : type.getAllTypes()) {
@@ -576,25 +574,17 @@ public class FilterManager implements Filters {
             ImmutableType type = entry.getKey();
             List<CacheableFilter<Props>> filters = allCacheableCache.get(type);
             if (!filters.isEmpty() && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(filters, EntityEvent.class)) {
-                Triggers triggers = sqlClient.getTriggers();
                 sqlClient.getTriggers().addEntityListener(e -> {
-                    Collection<?> sourceIds = affectedSourceIds(filters, e);
-                    if (sourceIds != null) {
-                        for (Object sourceId : sourceIds) {
-                            triggers.fireEntityEvict(type, sourceId, e.getConnection());
-                        }
-                    }
+                    EvictContext.execute(() -> {
+                        handleOtherChange(type, filters, e);
+                    });
                 });
             }
             if (!filters.isEmpty() && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(filters, AssociationEvent.class)) {
-                Triggers triggers = sqlClient.getTriggers();
                 sqlClient.getTriggers().addAssociationListener(e -> {
-                    Collection<?> sourceIds = affectedSourceIds(filters, e);
-                    if (sourceIds != null) {
-                        for (Object sourceId : sourceIds) {
-                            triggers.fireEntityEvict(type, sourceId, e.getConnection());
-                        }
-                    }
+                    EvictContext.execute(() -> {
+                        handleOtherChange(type, filters, e);
+                    });
                 });
             }
         }
@@ -640,8 +630,66 @@ public class FilterManager implements Filters {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    private void handleOtherChange(
+            ImmutableType type,
+            List<CacheableFilter<Props>> filters,
+            EntityEvent<?> e
+    ) {
+        EvictContext ctx = EvictContext.get();
+        if (ctx != null) {
+            ctx.add(e.getImmutableType(), e.getId());
+        }
+        Collection<?> sourceIds = affectedSourceIds(filters, e);
+        if (sourceIds != null) {
+            Triggers triggers = sqlClient.getTriggers();
+            for (Object sourceId : sourceIds) {
+                if (ctx == null || ctx.add(type, sourceId)) {
+                    triggers.fireEntityEvict(type, sourceId, e.getConnection());
+                }
+            }
+        }
+    }
+
+    private void handleOtherChange(
+            ImmutableType type,
+            List<CacheableFilter<Props>> filters,
+            AssociationEvent e
+    ) {
+        EvictContext ctx = EvictContext.get();
+        if (ctx != null) {
+            ctx.add(e.getImmutableProp(), e.getSourceId());
+        }
+        if (ctx != null && !e.isEvict()) {
+            ctx.disable(e.getImmutableProp());
+            Object detachedTargetId = e.getDetachedTargetId();
+            Object attachedTargetId = e.getAttachedTargetId();
+            ImmutableProp backProp = e.getImmutableProp().getOpposite();
+            if (detachedTargetId != null) {
+                ctx.add(e.getImmutableProp().getTargetType(), detachedTargetId);
+                if (backProp != null) {
+                    ctx.add(backProp, detachedTargetId);
+                }
+            }
+            if (attachedTargetId != null) {
+                ctx.add(e.getImmutableProp().getTargetType(), attachedTargetId);
+                if (backProp != null) {
+                    ctx.add(backProp, attachedTargetId);
+                }
+            }
+        }
+        Collection<?> sourceIds = affectedSourceIds(filters, e);
+        if (sourceIds != null) {
+            Triggers triggers = sqlClient.getTriggers();
+            for (Object sourceId : sourceIds) {
+                if (ctx == null || ctx.add(type, sourceId)) {
+                    triggers.fireEntityEvict(type, sourceId, e.getConnection());
+                }
+            }
+        }
+    }
+
     private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
+        EvictContext ctx = EvictContext.get();
         Triggers triggers = sqlClient.getTriggers();
         ImmutableProp mappedBy = prop.getMappedBy();
         if (mappedBy != null && mappedBy.isColumnDefinition()) {
@@ -656,7 +704,7 @@ public class FilterManager implements Filters {
                             return q.select(sourceIdExpr);
                         })
                         .fetchOneOrNull();
-                if (parentId != null) {
+                if (parentId != null && (ctx == null || ctx.add(prop, parentId))) {
                     triggers.fireAssociationEvict(prop, parentId, e.getConnection());
                 }
             } else {
@@ -666,7 +714,9 @@ public class FilterManager implements Filters {
                     if (source != null) {
                         ImmutableType sourceType = source.__type();
                         Object sourceId = source.__get(sourceType.getIdProp().getId());
-                        triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
+                        if (ctx == null || ctx.add(prop, sourceId)) {
+                            triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
+                        }
                     }
                 }
             }
@@ -688,7 +738,9 @@ public class FilterManager implements Filters {
                         .distinct()
                         .execute();
                 for (Object sourceId : sourceIds) {
-                    triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
+                    if (ctx == null || ctx.add(prop, sourceId)) {
+                        triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
+                    }
                 }
             }
         }
@@ -820,6 +872,96 @@ public class FilterManager implements Filters {
         public String toString() {
             return "CompositeCacheableFilter{" +
                     "filters=" + filters +
+                    '}';
+        }
+    }
+
+    private static class EvictContext {
+
+        private static final ThreadLocal<EvictContext> LOCAL = new ThreadLocal<>();
+
+        private final Set<EvictItem> items = new HashSet<>();
+
+        private final Set<ImmutableProp> disabledAssociations = new HashSet<>();
+
+        public static void execute(Runnable block) {
+            EvictContext ctx = LOCAL.get();
+            if (ctx != null) {
+                block.run();
+            } else {
+                ctx = new EvictContext();
+                LOCAL.set(ctx);
+                try {
+                    block.run();
+                } finally {
+                    LOCAL.remove();
+                }
+            }
+        }
+
+        @Nullable
+        public static EvictContext get() {
+            return LOCAL.get();
+        }
+
+        public boolean add(ImmutableType type, Object id) {
+            return items.add(new EvictItem(type, id));
+        }
+
+        public boolean add(ImmutableProp prop, Object id) {
+            if (disabledAssociations.contains(prop)) {
+                return false;
+            }
+            return items.add(new EvictItem(prop, id));
+        }
+
+        public void disable(ImmutableProp prop) {
+            this.disabledAssociations.add(prop);
+            ImmutableProp opposite = prop.getOpposite();
+            if (opposite != null) {
+                this.disabledAssociations.add(opposite);
+            }
+        }
+    }
+
+    private static class EvictItem {
+
+        final Object sourceId;
+        final Object meta;
+
+        EvictItem(ImmutableType type, Object sourceId) {
+            this.meta = type;
+            this.sourceId = sourceId;
+        }
+
+        EvictItem(ImmutableProp prop, Object sourceId) {
+            this.meta = prop;
+            this.sourceId = sourceId;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = sourceId.hashCode();
+            result = 31 * result + meta.hashCode();
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EvictItem evictItem = (EvictItem) o;
+
+            if (!sourceId.equals(evictItem.sourceId)) return false;
+            return meta.equals(evictItem.meta);
+        }
+
+        @Override
+        public String toString() {
+            return "EvictItem{" +
+                    "sourceId=" + sourceId +
+                    ", meta=" + meta +
                     '}';
         }
     }
