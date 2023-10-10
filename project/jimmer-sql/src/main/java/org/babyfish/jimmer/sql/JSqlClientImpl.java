@@ -14,7 +14,7 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.event.TriggersImpl;
+import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
@@ -613,9 +613,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private TriggerType triggerType = TriggerType.BINLOG_ONLY;
 
-        private Triggers triggers;
+        private TriggersImpl triggers;
 
-        private Triggers transactionTriggers;
+        private TriggersImpl transactionTriggers;
 
         private LogicalDeletedBehavior logicalDeletedBehavior = LogicalDeletedBehavior.DEFAULT;
 
@@ -1271,6 +1271,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
             filterManager.initialize(sqlClient);
             binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
             transientResolverManager.initialize(sqlClient);
+            triggers.initialize(sqlClient);
+            if (transactionTriggers != null && transactionTriggers != triggers) {
+                transactionTriggers.initialize(sqlClient);
+            }
             for (Initializer initializer : initializers) {
                 try {
                     initializer.initialize(sqlClient);

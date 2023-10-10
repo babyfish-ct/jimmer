@@ -1372,6 +1372,7 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
         );
         assertEvents(
                 "Event{" +
+                        "--->type=LOGICAL_DELETED, " +
                         "--->oldEntity={" +
                         "--->--->\"name\":\"am_1\"," +
                         "--->--->\"deleted\":false," +
@@ -1396,6 +1397,19 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         "--->--->}," +
                         "--->--->\"id\":10" +
                         "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator, " +
+                        "--->sourceId=10, " +
+                        "--->detachedTargetId=1, " +
+                        "--->attachedTargetId=null, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata, " +
+                        "--->sourceId=1, " +
+                        "--->detachedTargetId=10, " +
+                        "--->attachedTargetId=null, " +
                         "--->reason=null" +
                         "}"
         );

@@ -16,8 +16,6 @@ import java.util.SortedMap;
 
 public class CacheableFileFilter extends FileFilter implements CacheableFilter<FileProps> {
 
-    private JSqlClient sqlClient;
-
     @Override
     public SortedMap<String, Object> getParameters() {
         return ParameterMaps.of("userId", currentUserId());
@@ -26,11 +24,6 @@ public class CacheableFileFilter extends FileFilter implements CacheableFilter<F
     @Override
     public boolean isAffectedBy(EntityEvent<?> e) {
         return false;
-    }
-
-    @Override
-    public void initialize(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
     }
 
     @Nullable

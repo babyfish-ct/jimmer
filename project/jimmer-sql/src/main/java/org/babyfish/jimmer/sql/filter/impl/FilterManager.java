@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
@@ -8,8 +9,6 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.PropsFor;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -17,9 +16,10 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.event.impl.BackRefIds;
+import org.babyfish.jimmer.sql.event.impl.EvictContext;
 import org.babyfish.jimmer.sql.filter.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 import org.jetbrains.annotations.NotNull;
@@ -352,6 +352,13 @@ public class FilterManager implements Filters {
         List<CacheableFilter<Props>> filters = new ArrayList<>();
         for (ImmutableType t : type.getAllTypes()) {
             List<CacheableFilter<Props>> list = allCacheableFilterMap.get(t.toString());
+            Filter<Props> logicalDeletedFilter = provider.get(type);
+            if (logicalDeletedFilter instanceof CacheableFilter<?>) {
+                if (list == null) {
+                    list = new ArrayList<>();
+                }
+                list.add((CacheableFilter<Props>) logicalDeletedFilter);
+            }
             if (list != null) {
                 for (CacheableFilter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
@@ -607,16 +614,7 @@ public class FilterManager implements Filters {
             EntityEvent<?> e
     ) {
         if (e.isEvict()) {
-            fireAssociationEvent(prop, e);
             return;
-        }
-        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
-            ImmutableProp mappedBy = prop.getMappedBy();
-            if (mappedBy != null && mappedBy.isColumnDefinition()) {
-                if (e.getUnchangedRef(mappedBy) == null) {
-                    return;
-                }
-            }
         }
         boolean affected = false;
         for (CacheableFilter<Props> filter : filters) {
@@ -625,8 +623,25 @@ public class FilterManager implements Filters {
                 break;
             }
         }
-        if (affected) {
-            fireAssociationEvent(prop, e);
+        if (!affected) {
+            return;
+        }
+        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
+            ImmutableProp mappedBy = prop.getMappedBy();
+            if (mappedBy != null && mappedBy.isColumnDefinition()) {
+                ImmutableSpi oe = (ImmutableSpi) e.getOldEntity();
+                ImmutableSpi ne = (ImmutableSpi) e.getNewEntity();
+                if (oe != null && ImmutableObjects.isLoaded(oe, mappedBy)) {
+                    return;
+                }
+                if (ne != null && ImmutableObjects.isLoaded(ne, mappedBy)) {
+                    return;
+                }
+            }
+        }
+        List<?> backRefIds = BackRefIds.findBackRefIds(sqlClient, prop, e.getId(), e.getConnection());
+        for (Object backRefId : backRefIds) {
+            sqlClient.getTriggers().fireAssociationEvict(prop, backRefId, e.getConnection(), e.getReason());
         }
     }
 
@@ -643,9 +658,7 @@ public class FilterManager implements Filters {
         if (sourceIds != null) {
             Triggers triggers = sqlClient.getTriggers();
             for (Object sourceId : sourceIds) {
-                if (ctx == null || ctx.add(type, sourceId)) {
-                    triggers.fireEntityEvict(type, sourceId, e.getConnection());
-                }
+                triggers.fireEntityEvict(type, sourceId, e.getConnection());
             }
         }
     }
@@ -661,87 +674,12 @@ public class FilterManager implements Filters {
         }
         if (ctx != null && !e.isEvict()) {
             ctx.disable(e.getImmutableProp());
-            Object detachedTargetId = e.getDetachedTargetId();
-            Object attachedTargetId = e.getAttachedTargetId();
-            ImmutableProp backProp = e.getImmutableProp().getOpposite();
-            if (detachedTargetId != null) {
-                ctx.add(e.getImmutableProp().getTargetType(), detachedTargetId);
-                if (backProp != null) {
-                    ctx.add(backProp, detachedTargetId);
-                }
-            }
-            if (attachedTargetId != null) {
-                ctx.add(e.getImmutableProp().getTargetType(), attachedTargetId);
-                if (backProp != null) {
-                    ctx.add(backProp, attachedTargetId);
-                }
-            }
         }
         Collection<?> sourceIds = affectedSourceIds(filters, e);
         if (sourceIds != null) {
             Triggers triggers = sqlClient.getTriggers();
             for (Object sourceId : sourceIds) {
-                if (ctx == null || ctx.add(type, sourceId)) {
-                    triggers.fireEntityEvict(type, sourceId, e.getConnection());
-                }
-            }
-        }
-    }
-
-    private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
-        EvictContext ctx = EvictContext.get();
-        Triggers triggers = sqlClient.getTriggers();
-        ImmutableProp mappedBy = prop.getMappedBy();
-        if (mappedBy != null && mappedBy.isColumnDefinition()) {
-            if (e.isEvict()) {
-                ImmutableType targetType = prop.getTargetType();
-                ImmutableType sourceType = mappedBy.getTargetType();
-                Object parentId = Queries
-                        .createQuery(sqlClient, targetType, ExecutionPurpose.EVICT, true, (q, target) -> {
-                            Expression<Object> targetIdExpr = target.get(targetType.getIdProp().getName());
-                            Expression<Object> sourceIdExpr = target.join(mappedBy.getName()).get(sourceType.getIdProp().getName());
-                            q.where(targetIdExpr.eq(e.getId()));
-                            return q.select(sourceIdExpr);
-                        })
-                        .fetchOneOrNull();
-                if (parentId != null && (ctx == null || ctx.add(prop, parentId))) {
-                    triggers.fireAssociationEvict(prop, parentId, e.getConnection());
-                }
-            } else {
-                Ref<Object> ref = e.getUnchangedRef(mappedBy);
-                if (ref != null) {
-                    ImmutableSpi source = (ImmutableSpi) ref.getValue();
-                    if (source != null) {
-                        ImmutableType sourceType = source.__type();
-                        Object sourceId = source.__get(sourceType.getIdProp().getId());
-                        if (ctx == null || ctx.add(prop, sourceId)) {
-                            triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
-                        }
-                    }
-                }
-            }
-        } else {
-            ImmutableType declaringType = prop.getDeclaringType();
-            List<ImmutableType> sourceTypes =
-                    declaringType.isEntity() ?
-                            Collections.singletonList(declaringType) :
-                            sqlClient.getEntityManager().getImplementationTypes(declaringType);
-            String targetIdPropName = prop.getTargetType().getIdProp().getName();
-            for (ImmutableType sourceType : sourceTypes) {
-                Collection<Object> sourceIds = Queries
-                        .createQuery(sqlClient, sourceType, ExecutionPurpose.EVICT, true, (q, source) -> {
-                            Expression<Object> sourceIdExpr = source.get(sourceType.getIdProp().getName());
-                            Expression<Object> targetIdExpr = source.join(prop.getName()).get(targetIdPropName);
-                            q.where(targetIdExpr.eq(e.getId()));
-                            return q.select(sourceIdExpr);
-                        })
-                        .distinct()
-                        .execute();
-                for (Object sourceId : sourceIds) {
-                    if (ctx == null || ctx.add(prop, sourceId)) {
-                        triggers.fireAssociationEvict(prop, sourceId, e.getConnection());
-                    }
-                }
+                triggers.fireEntityEvict(type, sourceId, e.getConnection());
             }
         }
     }
@@ -872,96 +810,6 @@ public class FilterManager implements Filters {
         public String toString() {
             return "CompositeCacheableFilter{" +
                     "filters=" + filters +
-                    '}';
-        }
-    }
-
-    private static class EvictContext {
-
-        private static final ThreadLocal<EvictContext> LOCAL = new ThreadLocal<>();
-
-        private final Set<EvictItem> items = new HashSet<>();
-
-        private final Set<ImmutableProp> disabledAssociations = new HashSet<>();
-
-        public static void execute(Runnable block) {
-            EvictContext ctx = LOCAL.get();
-            if (ctx != null) {
-                block.run();
-            } else {
-                ctx = new EvictContext();
-                LOCAL.set(ctx);
-                try {
-                    block.run();
-                } finally {
-                    LOCAL.remove();
-                }
-            }
-        }
-
-        @Nullable
-        public static EvictContext get() {
-            return LOCAL.get();
-        }
-
-        public boolean add(ImmutableType type, Object id) {
-            return items.add(new EvictItem(type, id));
-        }
-
-        public boolean add(ImmutableProp prop, Object id) {
-            if (disabledAssociations.contains(prop)) {
-                return false;
-            }
-            return items.add(new EvictItem(prop, id));
-        }
-
-        public void disable(ImmutableProp prop) {
-            this.disabledAssociations.add(prop);
-            ImmutableProp opposite = prop.getOpposite();
-            if (opposite != null) {
-                this.disabledAssociations.add(opposite);
-            }
-        }
-    }
-
-    private static class EvictItem {
-
-        final Object sourceId;
-        final Object meta;
-
-        EvictItem(ImmutableType type, Object sourceId) {
-            this.meta = type;
-            this.sourceId = sourceId;
-        }
-
-        EvictItem(ImmutableProp prop, Object sourceId) {
-            this.meta = prop;
-            this.sourceId = sourceId;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = sourceId.hashCode();
-            result = 31 * result + meta.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            EvictItem evictItem = (EvictItem) o;
-
-            if (!sourceId.equals(evictItem.sourceId)) return false;
-            return meta.equals(evictItem.meta);
-        }
-
-        @Override
-        public String toString() {
-            return "EvictItem{" +
-                    "sourceId=" + sourceId +
-                    ", meta=" + meta +
                     '}';
         }
     }

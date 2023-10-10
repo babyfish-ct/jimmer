@@ -1,15 +1,18 @@
-package org.babyfish.jimmer.sql.event;
+package org.babyfish.jimmer.sql.event.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.event.*;
+import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,6 +20,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TriggersImpl implements Triggers {
 
     private final boolean transaction;
+
+    private JSqlClientImplementor sqlClient;
 
     private final CopyOnWriteArrayList<EntityListener<ImmutableSpi>> globalEntityListeners =
             new CopyOnWriteArrayList<>();
@@ -32,6 +37,16 @@ public class TriggersImpl implements Triggers {
 
     public TriggersImpl(boolean transaction) {
         this.transaction = transaction;
+    }
+
+    public void initialize(JSqlClientImplementor sqlClient) {
+        if (this.sqlClient != null) {
+            throw new IllegalStateException("sqlClient cannot be changed after initialized");
+        }
+        if (sqlClient == null) {
+            throw new IllegalArgumentException("sqlClient cannot be null");
+        }
+        this.sqlClient = sqlClient;
     }
 
     @Override
@@ -150,83 +165,13 @@ public class TriggersImpl implements Triggers {
                 }
             }
         }
-        ImmutableType type = event.getImmutableType();
-        for (ImmutableProp prop : type.getProps().values()) {
-            if (prop.isColumnDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
-                ChangedRef<Object> changedRef = event.getChangedRef(prop);
-                if (changedRef != null) {
-                    ChangedRef<Object> fkRef = changedRef.toIdRef();
-                    throwable = fireForeignKeyChange(
-                            prop,
-                            event.getId(),
-                            fkRef.getOldValue(),
-                            fkRef.getNewValue(),
-                            con,
-                            reason,
-                            throwable
-                    );
-                }
-            }
-        }
+        throwable = fireAssociationEventByEntityEvent(event, throwable);
         if (throwable instanceof RuntimeException) {
             throw (RuntimeException)throwable;
         }
         if (throwable != null) {
             throw (Error)throwable;
         }
-    }
-
-    private Throwable fireForeignKeyChange(
-            ImmutableProp prop,
-            Object childId,
-            Object oldFk,
-            Object newFk,
-            Connection con,
-            Object reason,
-            Throwable throwable
-    ) {
-        ImmutableProp inverseProp = prop.getOpposite();
-        List<AssociationListener> listeners = associationListeners(prop);
-        List<AssociationListener> inverseListeners = associationListeners(inverseProp);
-        if (!listeners.isEmpty()) {
-            AssociationEvent e = new AssociationEvent(prop, childId, oldFk, newFk, con, reason);
-            for (AssociationListener listener : listeners) {
-                try {
-                    listener.onChange(e);
-                } catch (RuntimeException | Error ex) {
-                    if (throwable == null) {
-                        throwable = ex;
-                    }
-                }
-            }
-        }
-        if (!inverseListeners.isEmpty()) {
-            if (oldFk != null) {
-                AssociationEvent e = new AssociationEvent(inverseProp, oldFk, childId, null, con, reason);
-                for (AssociationListener inverseListener : inverseListeners) {
-                    try {
-                        inverseListener.onChange(e);
-                    } catch (RuntimeException | Error ex) {
-                        if (throwable == null) {
-                            throwable = ex;
-                        }
-                    }
-                }
-            }
-            if (newFk != null) {
-                AssociationEvent e = new AssociationEvent(inverseProp, newFk, null, childId, con, reason);
-                for (AssociationListener inverseListener : inverseListeners) {
-                    try {
-                        inverseListener.onChange(e);
-                    } catch (RuntimeException | Error ex) {
-                        if (throwable == null) {
-                            throwable = ex;
-                        }
-                    }
-                }
-            }
-        }
-        return throwable;
     }
 
     @Override
@@ -325,6 +270,10 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void fireEntityEvict(ImmutableType type, Object sourceId, Connection con, Object reason) {
+        EvictContext ctx = EvictContext.get();
+        if (ctx != null && !ctx.add(type, sourceId)) {
+            return;
+        }
         List<EntityListener<ImmutableSpi>> listeners = entityListeners(type);
         if (!listeners.isEmpty()) {
             Throwable throwable = null;
@@ -338,6 +287,7 @@ public class TriggersImpl implements Triggers {
                     }
                 }
             }
+            throwable = fireAssociationEventByEntityEvent(e, throwable);
             if (throwable instanceof RuntimeException) {
                 throw (RuntimeException)throwable;
             }
@@ -349,6 +299,10 @@ public class TriggersImpl implements Triggers {
 
     @Override
     public void fireAssociationEvict(ImmutableProp prop, Object sourceId, Connection con, Object reason) {
+        EvictContext ctx = EvictContext.get();
+        if (ctx != null && !ctx.add(prop, sourceId)) {
+            return;
+        }
         List<AssociationListener> listeners = associationListeners(prop);
         if (!listeners.isEmpty()) {
             Throwable throwable = null;
@@ -399,5 +353,96 @@ public class TriggersImpl implements Triggers {
     @Override
     public boolean isTransaction() {
         return transaction;
+    }
+
+    private Throwable fireAssociationEventByEntityEvent(EntityEvent<?> event, Throwable throwable) {
+        ImmutableType type = event.getImmutableType();
+        if (!event.isEvict()) {
+            for (ImmutableProp prop : type.getProps().values()) {
+                if (prop.isColumnDefinition() && prop.isAssociation(TargetLevel.PERSISTENT)) {
+                    ChangedRef<Object> changedRef = event.getChangedRef(prop);
+                    if (changedRef != null) {
+                        ChangedRef<Object> fkRef = changedRef.toIdRef();
+                        Object childId = event.getId();
+                        Object oldFk = fkRef.getOldValue();
+                        Object newFk = fkRef.getNewValue();
+                        Connection con = event.getConnection();
+                        Object reason = event.getReason();
+                        ImmutableProp inverseProp = prop.getOpposite();
+                        List<AssociationListener> listeners = associationListeners(prop);
+                        List<AssociationListener> inverseListeners = associationListeners(inverseProp);
+                        if (!listeners.isEmpty()) {
+                            AssociationEvent e = new AssociationEvent(prop, childId, oldFk, newFk, con, reason);
+                            for (AssociationListener listener : listeners) {
+                                try {
+                                    listener.onChange(e);
+                                } catch (RuntimeException | Error ex) {
+                                    if (throwable == null) {
+                                        throwable = ex;
+                                    }
+                                }
+                            }
+                        }
+                        if (!inverseListeners.isEmpty()) {
+                            if (oldFk != null) {
+                                AssociationEvent e = new AssociationEvent(inverseProp, oldFk, childId, null, con, reason);
+                                for (AssociationListener inverseListener : inverseListeners) {
+                                    try {
+                                        inverseListener.onChange(e);
+                                    } catch (RuntimeException | Error ex) {
+                                        if (throwable == null) {
+                                            throwable = ex;
+                                        }
+                                    }
+                                }
+                            }
+                            if (newFk != null) {
+                                AssociationEvent e = new AssociationEvent(inverseProp, newFk, null, childId, con, reason);
+                                for (AssociationListener inverseListener : inverseListeners) {
+                                    try {
+                                        inverseListener.onChange(e);
+                                    } catch (RuntimeException | Error ex) {
+                                        if (throwable == null) {
+                                            throwable = ex;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        MetadataStrategy metadataStrategy = sqlClient.getMetadataStrategy();
+        ImmutableType thisType = event.getImmutableType();
+        for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(thisType)) {
+            EvictContext ctx = EvictContext.get();
+            if (!backProp.isAssociation(TargetLevel.PERSISTENT)) {
+                continue;
+            }
+            if (ctx != null && !ctx.isAllowed(backProp)) {
+                continue;
+            }
+            if (!event.isEvict() && backProp.isTargetForeignKeyReal(metadataStrategy)) {
+                continue;
+            }
+            if (!event.isEvict()) {
+                ImmutableProp mappedBy = backProp.getMappedBy();
+                if (mappedBy != null && mappedBy.isTargetForeignKeyReal(metadataStrategy)) {
+                    continue;
+                }
+            }
+            List<?> backRefIds = BackRefIds.findBackRefIds(sqlClient, backProp, event.getId(), event.getConnection());
+            for (Object backRefId : backRefIds) {
+                try {
+                    fireAssociationEvict(backProp, backRefId, event.getConnection());
+                } catch (RuntimeException | Error ex) {
+                    if (throwable == null) {
+                        throwable = ex;
+                    }
+                }
+            }
+        }
+        return throwable;
     }
 }

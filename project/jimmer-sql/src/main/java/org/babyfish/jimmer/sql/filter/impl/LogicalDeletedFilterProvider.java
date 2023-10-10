@@ -97,7 +97,7 @@ public class LogicalDeletedFilterProvider {
         @Override
         public void filter(FilterArgs<Props> args) {
             PropExpression<Object> expr = args.getTable().get(info.getProp().getName());
-            switch (info.getNotDeletedAction()) {
+            switch (info.getAction()) {
                 case NE:
                     args.where(expr.ne(info.getValue()));
                     break;
@@ -164,7 +164,7 @@ public class LogicalDeletedFilterProvider {
         @Override
         public void filter(FilterArgs<Props> args) {
             PropExpression<Object> expr = args.getTable().get(info.getProp().getName());
-            switch (info.getNotDeletedAction()) {
+            switch (info.getAction()) {
                 case NE:
                     args.where(expr.eq(info.getValue()));
                     break;

@@ -36,7 +36,6 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
         deleteMessages = new ArrayList<>();
         LogicalDeletedEvictTest that = this;
         sqlClient = getSqlClient(it -> {
-            it.addFilters(new UndeletedFilter());
             it.setCaches(cfg -> {
                 cfg.setCacheFactory(
                         new CacheFactory() {
@@ -47,17 +46,17 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
 
                             @Override
                             public @Nullable Cache<?, ?> createAssociatedIdCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create(prop, that::onPropCacheDelete);
+                                return new CacheImpl<>(prop, that::onPropCacheDelete);
                             }
 
                             @Override
                             public @Nullable Cache<?, List<?>> createAssociatedIdListCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create(prop, that::onPropCacheDelete);
+                                return new CacheImpl<>(prop, that::onPropCacheDelete);
                             }
 
                             @Override
                             public @Nullable Cache<?, ?> createResolverCache(@NotNull ImmutableProp prop) {
-                                return ParameterizedCaches.create(prop, that::onPropCacheDelete);
+                                return new CacheImpl<>(prop, that::onPropCacheDelete);
                             }
                         }
                 );
@@ -180,6 +179,7 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
         );
         Assertions.assertEquals(
                 Arrays.asList(
+                        "Permission.role-1000",
                         "Role.permissions-100",
                         "Role.permissionCount-100"
                 ),
@@ -212,9 +212,7 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                 Arrays.asList(
                         "Permission.role-1000",
                         "Role.permissions-100",
-                        "Role.permissionCount-100",
-                        "Role.permissions-200",
-                        "Role.permissionCount-200"
+                        "Role.permissionCount-100"
                 ),
                 deleteMessages
         );
@@ -278,25 +276,5 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                 ),
                 deleteMessages
         );
-    }
-
-    private static class UndeletedFilter implements CacheableFilter<NamedEntityProps> {
-
-        @Override
-        public void filter(FilterArgs<NamedEntityProps> args) {
-            args.where(args.getTable().deleted().eq(false));
-        }
-
-        @Override
-        public SortedMap<String, Object> getParameters() {
-            SortedMap<String, Object> map = new TreeMap<>();
-            map.put("deleted", false);
-            return map;
-        }
-
-        @Override
-        public boolean isAffectedBy(EntityEvent<?> e) {
-            return e.getUnchangedRef(NamedEntityProps.DELETED) == null;
-        }
     }
 }

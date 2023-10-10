@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.event;
 
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -23,6 +24,8 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     private final Object reason;
 
+    private Type type;
+
     private EntityEvent(ImmutableType immutableType, Object id, Connection con, Object reason) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.immutableType = Objects.requireNonNull(immutableType, "immutable type cannot be null");
@@ -32,6 +35,25 @@ public class EntityEvent<E> implements DatabaseEvent {
         this.reason = reason;
     }
 
+    /**
+     * Create an evict event which does not support
+     * <ul>
+     *     <li>{@link #getOldEntity()}</li>
+     *     <li>{@link #getNewEntity()}</li>
+     *     <li>{@link #getChangedRef(TypedProp.Single)}</li>
+     *     <li>{@link #getChangedRef(ImmutableProp)}</li>
+     *     <li>{@link #getUnchangedRef(TypedProp.Single)}</li>
+     *     <li>{@link #getUnchangedRef(ImmutableProp)}</li>
+     *     <li>{@link #getUnchangedValue(TypedProp.Single)}</li>
+     *     <li>{@link #getUnchangedRef(ImmutableProp)}</li>
+     * </ul>
+     * @param immutableType
+     * @param id
+     * @param con
+     * @param reason
+     * @return
+     * @param <E>
+     */
     public static <E> EntityEvent<E> evict(ImmutableType immutableType, Object id, Connection con, Object reason) {
         return new EntityEvent<>(immutableType, id, con, reason);
     }
@@ -82,12 +104,28 @@ public class EntityEvent<E> implements DatabaseEvent {
         this.reason = reason;
     }
 
+    /**
+     * Get the old entity no matter it is logically deleted or not
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * @return The old entity
+     * @exception IllegalStateException The current event is an evict event
+     */
     @Nullable
     public E getOldEntity() {
         validateState();
         return oldEntity;
     }
 
+    /**
+     * Get the new entity no matter it is logically deleted or not
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * @return The new entity
+     * @exception IllegalStateException The current event is an evict event
+     */
     @Nullable
     public E getNewEntity() {
         validateState();
@@ -134,6 +172,14 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     @NotNull
     public Type getType() {
+        Type type = this.type;
+        if (type == null) {
+            this.type = type = getType0();
+        }
+        return type;
+    }
+
+    private Type getType0() {
         E oe = oldEntity;
         E ne = newEntity;
         if (oe == null && ne == null) {
@@ -145,9 +191,31 @@ public class EntityEvent<E> implements DatabaseEvent {
         if (ne == null) {
             return Type.DELETE;
         }
+        boolean oldDeleted = ImmutableObjects.isLogicalDeleted(oe);
+        boolean newDeleted = ImmutableObjects.isLogicalDeleted(ne);
+        if (oldDeleted && !newDeleted) {
+            return Type.LOGICAL_INSERTED;
+        }
+        if (!oldDeleted && newDeleted) {
+            return Type.LOGICAL_DELETED;
+        }
         return Type.UPDATE;
     }
 
+    /**
+     * Is the current event an evict event which does not support
+     * <ul>
+     *     <li>{@link #getOldEntity()}</li>
+     *     <li>{@link #getNewEntity()}</li>
+     *     <li>{@link #getChangedRef(TypedProp.Single)}</li>
+     *     <li>{@link #getChangedRef(ImmutableProp)}</li>
+     *     <li>{@link #getUnchangedRef(TypedProp.Single)}</li>
+     *     <li>{@link #getUnchangedRef(ImmutableProp)}</li>
+     *     <li>{@link #getUnchangedValue(TypedProp.Single)}</li>
+     *     <li>{@link #getUnchangedRef(ImmutableProp)}</li>
+     * </ul>
+     * @return Is the current event an evict event
+     */
     @Override
     public boolean isEvict() {
         return oldEntity == null && newEntity == null;
@@ -161,11 +229,17 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     /**
      * Get the unchanged ref of specified property
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * <p>If old/new entity is not null but is logically deleted, old/new entity will be considered as null</p>
+     *
      * @param prop The specified property
      * @param <T> The return type of specified property
      * @return If the value of specified property is NOT changed,
      * return a ref object which is the wrapper of unchanged value;
      * otherwise, return null.
+     * @exception IllegalStateException The current event type is EVICT
      * @exception IllegalArgumentException The declaring type of
      * specified property is not assignable from the entity type
      * of current event object
@@ -184,7 +258,13 @@ public class EntityEvent<E> implements DatabaseEvent {
         }
         PropId propId = prop.getId();
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
+        if (ImmutableObjects.isLogicalDeleted(oe)) {
+            oe = null;
+        }
         ImmutableSpi ne = (ImmutableSpi) newEntity;
+        if (ImmutableObjects.isLogicalDeleted(ne)) {
+            ne = null;
+        }
         boolean oldLoaded = oe != null && oe.__isLoaded(propId);
         boolean newLoaded = ne != null && ne.__isLoaded(propId);
         if (!oldLoaded && !newLoaded) {
@@ -211,11 +291,17 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     /**
      * Get the unchanged ref of specified property
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * <p>If old/new entity is not null but is logically deleted, old/new entity will be considered as null</p>
+     *
      * @param prop The specified property
      * @param <T> The return type of specified property
      * @return If the value of specified property is NOT changed,
      * return a ref object which is the wrapper of unchanged value;
      * otherwise, return null.
+     * @exception IllegalStateException The current event type is EVICT
      * @exception IllegalArgumentException The declaring type of
      * specified property is not assignable from the entity type
      * of current event object
@@ -227,12 +313,18 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     /**
      * Get the changed ref of specified property
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * <p>If old/new entity is not null but is logically deleted, old/new entity will be considered as null</p>
+     *
      * @param prop The specified property
      * @param <T> The return type of specified property
      * @return If the value of specified property is NOT changed,
      * return a changed ref object which is a wrapper of
      * both old value and new value;
      * otherwise, return null.
+     * @exception IllegalStateException The current event type is EVICT
      * @exception IllegalArgumentException The declaring type of
      * specified property is not assignable from the entity type
      * of current event object
@@ -251,7 +343,16 @@ public class EntityEvent<E> implements DatabaseEvent {
         }
         PropId propId = prop.getId();
         ImmutableSpi oe = (ImmutableSpi) oldEntity;
+        if (ImmutableObjects.isLogicalDeleted(oe)) {
+            oe = null;
+        }
         ImmutableSpi ne = (ImmutableSpi) newEntity;
+        if (ImmutableObjects.isLogicalDeleted(ne)) {
+            ne = null;
+        }
+        if (oe == null && ne == null) {
+            return null;
+        }
         if (oe == null) {
             if (!ne.__isLoaded(propId)) {
                 return null;
@@ -285,12 +386,18 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     /**
      * Get the changed ref of specified property
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * <p>If old/new entity is not null but is logically deleted, old/new entity will be considered as null</p>
+     *
      * @param prop The specified property
      * @param <T> The return type of specified property
      * @return If the value of specified property is NOT changed,
      * return a changed ref object which is a wrapper of
      * both old value and new value;
      * otherwise, return null.
+     * @exception IllegalStateException The current event type is EVICT
      * @exception IllegalArgumentException The declaring type of
      * specified property is not assignable from the entity type
      * of current event object
@@ -302,9 +409,15 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     /**
      * Get the value of specified property if it is not changed.
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * <p>If old/new entity is not null but is logically deleted, old/new entity will be considered as null</p>
+     *
      * @param prop The specified property
      * @param <T> The return type of returned property
      * @return The unchanged value of specified property
+     * @exception IllegalStateException The current event type is EVICT
      * @exception IllegalArgumentException
      * <ul>
      *     <li>The declaring type of
@@ -327,9 +440,15 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     /**
      * Get the value of specified property if it is not changed.
+     *
+     * <p>This method is not supported by evict event by throwing IllegalStateException</p>
+     *
+     * <p>If old/new entity is not null but is logically deleted, old/new entity will be considered as null</p>
+     *
      * @param prop The specified property
      * @param <T> The return type of returned property
      * @return The unchanged value of specified property
+     * @exception IllegalStateException The current event type is EVICT
      * @exception IllegalArgumentException
      * <ul>
      *     <li>The declaring type of
@@ -382,6 +501,15 @@ public class EntityEvent<E> implements DatabaseEvent {
                     ", reason=" + reason +
                     '}';
         }
+        Type type = getType();
+        if (type == Type.LOGICAL_INSERTED || type == Type.LOGICAL_DELETED) {
+            return "Event{" +
+                    "type=" + type +
+                    ", oldEntity=" + oldEntity +
+                    ", newEntity=" + newEntity +
+                    ", reason=" + reason +
+                    '}';
+        }
         return "Event{" +
                 "oldEntity=" + oldEntity +
                 ", newEntity=" + newEntity +
@@ -410,6 +538,8 @@ public class EntityEvent<E> implements DatabaseEvent {
         EVICT,
         INSERT,
         DELETE,
+        LOGICAL_INSERTED,
+        LOGICAL_DELETED,
         UPDATE,
     }
 }

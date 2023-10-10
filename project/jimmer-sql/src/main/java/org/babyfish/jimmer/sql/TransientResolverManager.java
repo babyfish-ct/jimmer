@@ -7,12 +7,17 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
+import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
+import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.runtime.StrategyProvider;
 import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
 
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -69,8 +74,48 @@ class TransientResolverManager {
         return provider;
     }
 
-    @SuppressWarnings("unchecked")
     private TransientResolver<?, ?> createResolver(ImmutableProp prop) {
+        TransientResolver<?, ?> resolver = createResolver0(prop);
+        if (resolver != null) {
+            Cache<Object, ?> cache = sqlClient.getCaches().getPropertyCache(prop);
+            if (cache != null && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(resolver, Entity.class)) {
+                sqlClient.getTriggers().addEntityListener(e -> {
+                    Collection<?> ids = resolver.getAffectedSourceIds(e);
+                    if (ids != null && !ids.isEmpty()) {
+                        List<Object> nonNullIds = new ArrayList<>(ids.size());
+                        for (Object id : ids) {
+                            if (id != null) {
+                                nonNullIds.add(id);
+                            }
+                        }
+                        if (!nonNullIds.isEmpty()) {
+                            cache.deleteAll(nonNullIds);
+                        }
+                    }
+                });
+            }
+            if (cache != null && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(resolver, AssociationEvent.class)) {
+                sqlClient.getTriggers().addAssociationListener(e -> {
+                    Collection<?> ids = resolver.getAffectedSourceIds(e);
+                    if (ids != null && !ids.isEmpty()) {
+                        List<Object> nonNullIds = new ArrayList<>(ids.size());
+                        for (Object id : ids) {
+                            if (id != null) {
+                                nonNullIds.add(id);
+                            }
+                        }
+                        if (!nonNullIds.isEmpty()) {
+                            cache.deleteAll(nonNullIds);
+                        }
+                    }
+                });
+            }
+        }
+        return resolver;
+    }
+
+    @SuppressWarnings("unchecked")
+    private TransientResolver<?, ?> createResolver0(ImmutableProp prop) {
         if (!prop.getDeclaringType().isEntity()) {
             throw new IllegalArgumentException("\"" + prop + "\" is not declared in entity");
         }

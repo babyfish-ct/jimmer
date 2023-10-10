@@ -54,14 +54,8 @@ public final class LogicalDeletedInfo {
         return prop;
     }
 
-    public Action getNotDeletedAction() {
-        if (value != null) {
-            return Action.NE;
-        }
-        if (value == null) {
-            return Action.IS_NOT_NULL;
-        }
-        return Action.IS_NULL;
+    public Action getAction() {
+        return action;
     }
 
     public Object getValue() {

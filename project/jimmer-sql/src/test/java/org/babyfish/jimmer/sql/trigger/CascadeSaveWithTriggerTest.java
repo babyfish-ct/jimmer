@@ -1781,6 +1781,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
         );
         assertEvents(
                 "Event{" +
+                        "--->type=LOGICAL_INSERTED, " +
                         "--->oldEntity={" +
                         "--->--->\"name\":\"am_4\"," +
                         "--->--->\"deleted\":true," +
@@ -1805,7 +1806,9 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         "--->--->\"id\":40" +
                         "--->}, " +
                         "--->reason=null" +
-                        "}"
+                        "}",
+                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator, sourceId=40, detachedTargetId=null, attachedTargetId=4, reason=null}",
+                "AssociationEvent{prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata, sourceId=4, detachedTargetId=null, attachedTargetId=40, reason=null}"
         );
     }
 

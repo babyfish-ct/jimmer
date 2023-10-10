@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import org.babyfish.jimmer.lang.Ref;
+import org.babyfish.jimmer.sql.cache.PropCacheInvalidator;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,7 +16,7 @@ import java.util.SortedMap;
  * @param <ID>
  * @param <V>
  */
-public interface TransientResolver<ID, V> {
+public interface TransientResolver<ID, V> extends PropCacheInvalidator {
 
     /**
      *
