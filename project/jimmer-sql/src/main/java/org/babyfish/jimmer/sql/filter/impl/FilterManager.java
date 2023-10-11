@@ -115,6 +115,15 @@ public class FilterManager implements Filters {
     }
 
     @Override
+    public Filter<Props> getLogicalDeletedFilter(ImmutableType type) {
+        Filter<Props> filter = provider.get(type);
+        if (!(filter instanceof CacheableFilter<?>)) {
+            return filter;
+        }
+        return new CompositeCacheableFilter(type, Collections.singletonList((CacheableFilter<Props>)filter));
+    }
+
+    @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef(Class<?> type) {
         return getParameterMapRef(ImmutableType.get(type));
     }
@@ -284,7 +293,10 @@ public class FilterManager implements Filters {
             return false;
         }
         if (prop.getDeclaringType() == prop.getTargetType()) {
-            return false;
+            return true;
+        }
+        if (provider.get(prop.getTargetType()) != null) {
+            return true;
         }
         Set<Filter<Props>> declaredFilters = new HashSet<>();
         for (ImmutableType t : prop.getDeclaringType().getAllTypes()) {
@@ -339,7 +351,12 @@ public class FilterManager implements Filters {
         if (filters.isEmpty()) {
             return null;
         }
-        // Cannot optimize when `.size() == 1`
+        if (filters.size() == 1) {
+            Filter<Props> filter = filters.iterator().next();
+            if (!(filter instanceof CacheableFilter<?>)) {
+                return filter;
+            }
+        }
         for (Filter<?> filter : filters) {
             if (!(filter instanceof CacheableFilter<?>)) {
                 return new CompositeFilter(filters);

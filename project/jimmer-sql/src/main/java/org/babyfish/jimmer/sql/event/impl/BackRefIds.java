@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.event.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -23,7 +24,7 @@ public class BackRefIds {
         ImmutableProp prop = backProp.getMappedBy();
         if (prop != null && prop.isColumnDefinition()) {
             return Queries
-                    .createQuery(sqlClient, thisType, ExecutionPurpose.EVICT, true, (q, table) -> {
+                    .createQuery(sqlClient, thisType, ExecutionPurpose.EVICT, FilterLevel.IGNORE_USER_FILTERS, (q, table) -> {
                         Expression<Object> idExpr = table.get(thisType.getIdProp().getName());
                         Expression<Object> backRefIdExpr = table.join(prop.getName()).get(backRefType.getIdProp().getName());
                         q.where(idExpr.eq(id));
@@ -32,7 +33,7 @@ public class BackRefIds {
                     .execute(con);
         }
         return Queries
-                .createQuery(sqlClient, backRefType, ExecutionPurpose.EVICT, true, (q, table) -> {
+                .createQuery(sqlClient, backRefType, ExecutionPurpose.EVICT, FilterLevel.IGNORE_USER_FILTERS, (q, table) -> {
                     Expression<?> backRefIdExpr = table.get(backRefType.getIdProp().getName());
                     Expression<Object> idExpr = table.join(backProp.getName()).get(thisType.getIdProp().getName());
                     q.where(idExpr.eq(id));

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.common.ParameterizedCaches;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.babyfish.jimmer.sql.filter.common.CacheableFileFilter;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
+import org.babyfish.jimmer.sql.model.filter.File;
 import org.babyfish.jimmer.sql.model.filter.FileFetcher;
 import org.babyfish.jimmer.sql.model.filter.FileTable;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,47 @@ public class FilterCacheTest extends AbstractQueryTest {
     }
 
     @Test
+    public void testById() {
+        for (int i = 0; i < 2; i++) {
+            boolean useSql = i == 0;
+            connectAndExpect(
+                    con -> {
+                        List<File>[] ref = new List[1];
+                        FileFilter.withUser(2L, () -> {
+                            ref[0] = sqlClient.findByIds(File.class, Arrays.asList(1L, 2L, 3L, 4L, 11L, 12L, 13L, 14L, 100L));
+                        });
+                        return ref[0];
+                    },
+                    ctx -> {
+                        if (useSql) {
+                            ctx.sql(
+                                    "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                            "from FILE tb_1_ " +
+                                            "where " +
+                                            "--->tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                                            "and " +
+                                            "--->exists(" +
+                                            "--->--->select 1 " +
+                                            "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                            "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
+                                            "--->)"
+                            );
+                        }
+                        ctx.rows(
+                                "[" +
+                                        "--->{\"id\":1,\"name\":\"usr\",\"parent\":null}," +
+                                        "--->{\"id\":2,\"name\":\"bin\",\"parent\":{\"id\":1}}," +
+                                        "--->{\"id\":3,\"name\":\"cd\",\"parent\":{\"id\":2}}," +
+                                        "--->{\"id\":4,\"name\":\"vim\",\"parent\":{\"id\":2}}," +
+                                        "--->{\"id\":11,\"name\":\"purge\",\"parent\":{\"id\":8}}," +
+                                        "--->{\"id\":12,\"name\":\"ssh\",\"parent\":{\"id\":8}}" +
+                                        "]"
+                        );
+                    }
+            );
+        }
+    }
+    @Test
     public void testRecursive() {
         FileTable table = FileTable.$;
         FileFilter.withUser(2L, () -> {
@@ -126,7 +169,14 @@ public class FilterCacheTest extends AbstractQueryTest {
                                 ctx.statement(2).sql(
                                         "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                                 "from FILE tb_1_ " +
-                                                "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                                                "where " +
+                                                "--->tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?) " +
+                                                "and " +
+                                                "--->exists(" +
+                                                "--->--->select 1 " +
+                                                "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                                "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
+                                                "--->)"
                                 );
                                 ctx.statement(3).sql(
                                         "select tb_1_.PARENT_ID, tb_1_.ID " +
@@ -144,7 +194,14 @@ public class FilterCacheTest extends AbstractQueryTest {
                                 ctx.statement(4).sql(
                                         "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                                 "from FILE tb_1_ " +
-                                                "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                                                "where " +
+                                                "--->tb_1_.ID in (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                                                "and " +
+                                                "--->exists(" +
+                                                "--->--->select 1 " +
+                                                "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                                "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
+                                                "--->)"
                                 );
                                 ctx.statement(5).sql(
                                         "select tb_1_.PARENT_ID, tb_1_.ID " +
@@ -162,7 +219,14 @@ public class FilterCacheTest extends AbstractQueryTest {
                                 ctx.statement(6).sql(
                                         "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                                 "from FILE tb_1_ " +
-                                                "where tb_1_.ID in (?, ?)"
+                                                "where " +
+                                                "--->tb_1_.ID in (?, ?) " +
+                                                "and " +
+                                                "--->exists(" +
+                                                "--->--->select 1 " +
+                                                "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                                "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
+                                                "--->)"
                                 );
                                 ctx.statement(7).sql(
                                         "select tb_1_.PARENT_ID, tb_1_.ID " +
@@ -180,7 +244,14 @@ public class FilterCacheTest extends AbstractQueryTest {
                                 ctx.statement(8).sql(
                                         "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                                 "from FILE tb_1_ " +
-                                                "where tb_1_.ID in (?, ?, ?, ?, ?, ?, ?)"
+                                                "where " +
+                                                "--->tb_1_.ID in (?, ?, ?, ?, ?, ?, ?) " +
+                                                "and " +
+                                                "--->exists(" +
+                                                "--->--->select 1 " +
+                                                "--->--->from FILE_USER_MAPPING tb_2_ " +
+                                                "--->--->where tb_2_.FILE_ID = tb_1_.ID and tb_2_.USER_ID = ?" +
+                                                "--->)"
                                 );
                                 ctx.statement(9).sql(
                                         "select tb_1_.PARENT_ID, tb_1_.ID " +

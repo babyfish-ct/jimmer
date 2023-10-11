@@ -33,20 +33,20 @@ public class MutableRootQueryImpl<T extends Table<?>>
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType,
             ExecutionPurpose purpose,
-            boolean ignoreFilter
+            FilterLevel filterLevel
     ) {
         super(sqlClient, immutableType);
-        ctx = new StatementContext(purpose, ignoreFilter);
+        ctx = new StatementContext(purpose, filterLevel);
     }
 
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table,
             ExecutionPurpose purpose,
-            boolean ignoreFilter
+            FilterLevel filterLevel
     ) {
         super(sqlClient, table);
-        ctx = new StatementContext(purpose, ignoreFilter);
+        ctx = new StatementContext(purpose, filterLevel);
     }
 
     public MutableRootQueryImpl(

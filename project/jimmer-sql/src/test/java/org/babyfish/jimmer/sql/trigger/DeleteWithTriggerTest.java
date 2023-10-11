@@ -1359,9 +1359,9 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
-                                        "where tb_1_.ID in (?)"
+                                        "where tb_1_.ID in (?) and tb_1_.DELETED <> ?"
                         );
-                        it.variables(10L);
+                        it.variables(10L, true);
                     });
                     ctx.statement(it -> {
                         it.sql("update ADMINISTRATOR_METADATA set DELETED = ? where ID in (?)");

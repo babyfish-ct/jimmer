@@ -115,8 +115,8 @@ public class LogicalDeletedCacheTest extends AbstractQueryTest {
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID " +
                                             "from PERMISSION tb_1_ " +
-                                            "where tb_1_.ID = ?"
-                            ).variables(1000L);
+                                            "where tb_1_.ID = ? and tb_1_.DELETED <> ?"
+                            ).variables(1000L, true);
                         }
                         ctx.rows(
                                 "[" +
@@ -301,8 +301,8 @@ public class LogicalDeletedCacheTest extends AbstractQueryTest {
                             ).variables(1000L, 3000L, true);
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
-                                            "from ROLE tb_1_ where tb_1_.ID = ?"
-                            ).variables(100L);
+                                            "from ROLE tb_1_ where tb_1_.ID = ? and tb_1_.DELETED <> ?"
+                            ).variables(100L, true);
                         }
                         ctx.rows(
                                 "[" +
@@ -503,8 +503,8 @@ public class LogicalDeletedCacheTest extends AbstractQueryTest {
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ROLE tb_1_ " +
-                                            "where tb_1_.ID = ?"
-                            ).variables(100L);
+                                            "where tb_1_.ID = ? and tb_1_.DELETED <> ?"
+                            ).variables(100L, true);
                         }
                         ctx.rows(
                                 "[" +
@@ -772,8 +772,8 @@ public class LogicalDeletedCacheTest extends AbstractQueryTest {
                             ctx.statement(2).sql(
                                     "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                             "from ADMINISTRATOR tb_1_ " +
-                                            "where tb_1_.ID in (?, ?)"
-                            ).variables(1L, 3L);
+                                            "where tb_1_.ID in (?, ?) and tb_1_.DELETED <> ?"
+                            ).variables(1L, 3L, true);
                         }
                         ctx.rows(
                                 "[" +

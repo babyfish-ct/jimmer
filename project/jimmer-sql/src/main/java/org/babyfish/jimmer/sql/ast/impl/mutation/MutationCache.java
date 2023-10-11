@@ -8,6 +8,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -73,7 +74,7 @@ class MutationCache {
             String idPropName = type.getIdProp().getName();
             List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
                 List<ImmutableSpi> spiList = (List<ImmutableSpi>)
-                        Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, true, (q, t) -> {
+                        Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, t) -> {
                             q.where(t.<Expression<Object>>get(idPropName).in(missedIds));
                             return q.select(t);
                         }).forUpdate(pessimisticLockRequired).execute(con);

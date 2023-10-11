@@ -166,9 +166,9 @@ public abstract class AbstractMutableQueryImpl
     }
 
     @Override
-    protected void applyGlobalFilers() {
+    protected void applyGlobalFilers(FilterLevel level) {
         setOrderByPriority(ORDER_BY_PRIORITY_GLOBAL_FILTER);
-        super.applyGlobalFilers();
+        super.applyGlobalFilers(level);
     }
 
     void accept(

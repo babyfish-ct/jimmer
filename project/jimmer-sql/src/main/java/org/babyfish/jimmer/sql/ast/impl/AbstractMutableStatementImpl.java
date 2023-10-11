@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
@@ -14,7 +15,6 @@ import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
@@ -140,25 +140,31 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     protected void onFrozen() {
         StatementContext ctx = getContext();
-        if (ctx == null || !ctx.isFilterIgnored()) {
+        FilterLevel filterLevel = ctx != null ? ctx.getFilterLevel() : FilterLevel.DEFAULT;
+        if (filterLevel != FilterLevel.IGNORE_ALL) {
             Filter<Props> globalFilter = getSqlClient().getFilters().getFilter(type);
             if (globalFilter != null) {
-                applyGlobalFilers();
+                applyGlobalFilers(filterLevel);
             }
         }
         predicates = mergePredicates(predicates);
     }
 
-    protected void applyGlobalFilers() {
+    protected void applyGlobalFilers(FilterLevel level) {
         if (this instanceof Ast) {
-            ((Ast) this).accept(new ApplyFilterVisitor());
+            ((Ast) this).accept(new ApplyFilterVisitor(level));
         } else {
-            applyGlobalFiler(getTable());
+            applyGlobalFiler(getTable(), level);
         }
     }
 
-    public void applyGlobalFiler(Table<?> table) {
-        Filter<Props> globalFilter = getSqlClient().getFilters().getFilter(table.getImmutableType());
+    public void applyGlobalFiler(Table<?> table, FilterLevel level) {
+        Filter<Props> globalFilter;
+        if (level == FilterLevel.IGNORE_USER_FILTERS) {
+            globalFilter = getSqlClient().getFilters().getLogicalDeletedFilter(table.getImmutableType());
+        } else {
+            globalFilter = getSqlClient().getFilters().getFilter(table.getImmutableType());
+        }
         if (globalFilter != null) {
             FilterArgsImpl<Props> args = new FilterArgsImpl<>(
                     this,
@@ -209,15 +215,18 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private class ApplyFilterVisitor extends AstVisitor {
 
+        private final FilterLevel level;
+
         private Set<TableImplementor<?>> tableImplementors = new HashSet<>();
 
-        public ApplyFilterVisitor() {
+        public ApplyFilterVisitor(FilterLevel level) {
             super(new AstContext(sqlClient));
+            this.level = level;
         }
 
         @Override
         public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
-            applyGlobalFiler(tableImplementor);
+            applyGlobalFiler(tableImplementor, level);
         }
     }
 }

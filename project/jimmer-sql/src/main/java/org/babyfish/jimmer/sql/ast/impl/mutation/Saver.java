@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -350,7 +351,7 @@ class Saver {
                             data.getSqlClient(),
                             prop.getTargetType(),
                             ExecutionPurpose.MUTATE,
-                            true,
+                            FilterLevel.DEFAULT,
                             (q, t) -> {
                                 PropExpression<Object> idExpr = t.get(prop.getTargetType().getIdProp().getName());
                                 q.where(idExpr.in(illegalTargetIds));
@@ -867,7 +868,7 @@ class Saver {
         }
 
         List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
-            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
+            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, FilterLevel.IGNORE_ALL, (q, table) -> {
                 for (ImmutableProp keyProp : actualKeyProps) {
                     if (keyProp.isReference(TargetLevel.ENTITY)) {
                         ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();

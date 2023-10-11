@@ -6,6 +6,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
@@ -272,7 +273,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 this,
                 table,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
         );
     }
 
@@ -298,7 +299,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 this,
                 (TableProxy<?>) table,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
         );
     }
 

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
@@ -241,7 +242,7 @@ class ChildTableOperator {
         PropId childIdPropId = childType.getIdProp().getId();
         List<ImmutableSpi> childRows = Internal.requiresNewDraftContext(ctx -> {
             List<ImmutableSpi> list = (List<ImmutableSpi>) Queries
-                    .createQuery(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, true, (q, child) -> {
+                    .createQuery(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, child) -> {
                         PropExpression<Object> parentIdExpr = child.join(parentProp.getName()).get(parentIdPropName);
                         if (parentIds.size() > 1) {
                             q.where(parentIdExpr.in(parentIds));

@@ -100,14 +100,14 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                     ctx.sql(
                             "select distinct tb_1_.ID " +
                                     "from ADMINISTRATOR_METADATA tb_1_ " +
-                                    "where tb_1_.ADMINISTRATOR_ID = ?"
-                    );
+                                    "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?"
+                    ).variables(1L, true);
                     ctx.statement(1).sql(
                             "select distinct tb_1_.ID " +
                                     "from ROLE tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID " +
-                                    "where tb_2_.ADMINISTRATOR_ID = ?"
-                    ).variables(1L);
+                                    "where tb_2_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?"
+                    ).variables(1L, true);
                 }
         );
         Assertions.assertEquals(
@@ -139,22 +139,20 @@ public class LogicalDeletedEvictTest extends AbstractQueryTest {
                             "select distinct tb_1_.ID " +
                                     "from ADMINISTRATOR tb_1_ " +
                                     "inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID " +
-                                    "where tb_2_.ROLE_ID = ?"
-                    ).variables(100L);
+                                    "where tb_2_.ROLE_ID = ? and tb_1_.DELETED <> ?"
+                    ).variables(100L, true);
                     ctx.statement(1).sql(
                             "select distinct tb_1_.ID " +
                                     "from PERMISSION tb_1_ " +
-                                    "where tb_1_.ROLE_ID = ?"
-                    ).variables(100L);
+                                    "where tb_1_.ROLE_ID = ? and tb_1_.DELETED <> ?"
+                    ).variables(100L, true);
                 }
         );
         Assertions.assertEquals(
                 "[" +
                         "Administrator.roles-1, " +
-                        "Administrator.roles-2, " +
                         "Administrator.roles-3, " +
-                        "Permission.role-1000, " +
-                        "Permission.role-2000" +
+                        "Permission.role-1000" +
                         "]",
                 deleteMessages.toString()
         );
