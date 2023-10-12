@@ -202,20 +202,49 @@ public class PropsGenerator {
                 if (withJoinType) {
                     builder
                             .beginControlFlow("if (raw != null)")
-                            .addStatement("return new $T(raw.joinImplementor($S, joinType))", returnType, prop.getName())
+                            .addStatement(
+                                    "return new $T(raw.joinImplementor($T.$L.unwrap(), joinType))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            )
                             .endControlFlow()
-                            .addStatement("return new $T(joinOperation($S, joinType))", returnType, prop.getName());
+                            .addStatement(
+                                    "return new $T(joinOperation($T.$L.unwrap(), joinType))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            );
                 } else {
                     builder
                             .beginControlFlow("if (raw != null)")
-                            .addStatement("return new $T(raw.joinImplementor($S))", returnType, prop.getName())
+                            .addStatement(
+                                    "return new $T(raw.joinImplementor($T.$L.unwrap()))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            )
                             .endControlFlow()
-                            .addStatement("return new $T(joinOperation($S))", returnType, prop.getName());
+                            .addStatement(
+                                    "return new $T(joinOperation($T.$L.unwrap()))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            );
                 }
             } else if (prop.isAssociation(false)) {
-                builder.addStatement("return new $T(get($S))", returnType, prop.getName());
+                builder.addStatement(
+                        "return new $T(get($T.$L.unwrap()))",
+                        returnType,
+                        prop.getDeclaringType().getPropsClassName(),
+                        Strings.upper(prop.getName())
+                );
             } else {
-                builder.addStatement("return get($S)", prop.getName());
+                builder.addStatement(
+                        "return get($T.$L.unwrap())",
+                        prop.getDeclaringType().getPropsClassName(),
+                        Strings.upper(prop.getName())
+                );
             }
         }
         return builder.build();

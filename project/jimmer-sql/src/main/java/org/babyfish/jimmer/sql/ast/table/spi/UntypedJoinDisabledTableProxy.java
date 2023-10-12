@@ -41,7 +41,17 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
+    public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+        return table.get(prop);
+    }
+
+    @Override
     public <XT extends Table<?>> XT join(String prop) {
+        throw new IllegalStateException(joinDisabledReason);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop) {
         throw new IllegalStateException(joinDisabledReason);
     }
 
@@ -51,7 +61,17 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType) {
+        throw new IllegalStateException(joinDisabledReason);
+    }
+
+    @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
+        throw new IllegalStateException(joinDisabledReason);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
         throw new IllegalStateException(joinDisabledReason);
     }
 

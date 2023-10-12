@@ -160,6 +160,20 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return (XE)PropExpressionImpl.of(this, immutableProp);
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+        if (raw != null) {
+            return raw.get(prop);
+        }
+        ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
+            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+        }
+        return (XE)PropExpressionImpl.of(this, prop);
+    }
+
     @Override
     public <XT extends Table<?>> XT join(String prop) {
         if (raw != null) {
@@ -170,6 +184,22 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
+                        JoinType.INNER,
+                        null
+                )
+        );
+    }
+
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop) {
+        if (raw != null) {
+            __beforeJoin();
+            return raw.join(prop);
+        }
+        return TableProxies.fluent(
+                new DelayJoin<>(
+                        this,
+                        prop,
                         JoinType.INNER,
                         null
                 )
@@ -193,6 +223,22 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType) {
+        if (raw != null) {
+            __beforeJoin();
+            return raw.join(prop, joinType);
+        }
+        return TableProxies.fluent(
+                new DelayJoin<>(
+                        this,
+                        prop,
+                        joinType,
+                        null
+                )
+        );
+    }
+
+    @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
         if (raw != null) {
             __beforeJoin();
@@ -202,6 +248,22 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                 new DelayJoin<>(
                         this,
                         immutableType.getProp(prop),
+                        joinType,
+                        treatedAs
+                )
+        );
+    }
+
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
+        if (raw != null) {
+            __beforeJoin();
+            return raw.join(prop, joinType, treatedAs);
+        }
+        return TableProxies.fluent(
+                new DelayJoin<>(
+                        this,
+                        prop,
                         joinType,
                         treatedAs
                 )
@@ -385,12 +447,24 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return new DelayJoin<>(this, immutableType.getProp(prop), JoinType.INNER, null);
     }
 
+    protected <X> DelayedOperation<X> joinOperation(ImmutableProp prop) {
+        return new DelayJoin<>(this, prop, JoinType.INNER, null);
+    }
+
     protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType) {
         return new DelayJoin<>(this, immutableType.getProp(prop), joinType, null);
     }
 
+    protected <X> DelayedOperation<X> joinOperation(ImmutableProp prop, JoinType joinType) {
+        return new DelayJoin<>(this, prop, joinType, null);
+    }
+
     protected <X> DelayedOperation<X> joinOperation(String prop, JoinType joinType, ImmutableType treatedAs) {
         return new DelayJoin<>(this, immutableType.getProp(prop), joinType, treatedAs);
+    }
+
+    protected <X> DelayedOperation<X> joinOperation(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
+        return new DelayJoin<>(this, prop, joinType, treatedAs);
     }
 
     protected <X> DelayedOperation<X> joinOperation(Class<? extends WeakJoin<?, ?>> weakJoinType, JoinType joinType) {

@@ -18,11 +18,19 @@ public interface Props {
 
     ImmutableType getImmutableType();
 
+    <XE extends Expression<?>> XE get(ImmutableProp prop);
+
     <XE extends Expression<?>> XE get(String prop);
+
+    <XT extends Table<?>> XT join(ImmutableProp prop);
 
     <XT extends Table<?>> XT join(String prop);
 
+    <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType);
+
     <XT extends Table<?>> XT join(String prop, JoinType joinType);
+
+    <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs);
 
     <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs);
 

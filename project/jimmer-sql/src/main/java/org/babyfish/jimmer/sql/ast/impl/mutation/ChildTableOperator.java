@@ -3,16 +3,19 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
-import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
@@ -31,6 +34,8 @@ class ChildTableOperator {
     private final Connection con;
 
     private final ImmutableProp parentProp;
+
+    private final boolean hasFilter;
 
     private final ColumnDefinition fkDefinition;
 
@@ -57,6 +62,7 @@ class ChildTableOperator {
         this.sqlClient = sqlClient;
         this.con = con;
         this.parentProp = parentProp;
+        this.hasFilter = sqlClient.getFilters().getFilter(parentProp.getDeclaringType()) != null;
         this.fkDefinition = parentProp.getStorage(strategy);
         this.pkDefinition = parentProp.getDeclaringType().getIdProp().getStorage(strategy);
         this.pkReader = (Reader<Object>) sqlClient.getReader(parentProp.getDeclaringType().getIdProp());
@@ -71,6 +77,11 @@ class ChildTableOperator {
     }
 
     public boolean exists(Object parentId, Collection<Object> retainedChildIds) {
+
+        if (hasFilter) {
+            return existsByDsl(parentId, retainedChildIds);
+        }
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         SqlBuilder subBuilder = builder.createChildBuilder();
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
@@ -78,13 +89,13 @@ class ChildTableOperator {
                 .sql("select 1 from ")
                 .sql(parentProp.getDeclaringType().getTableName(strategy))
                 .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(parentProp.<ColumnDefinition>getStorage(strategy))
+                .definition(parentProp.getStorage(strategy))
                 .sql(" = ")
                 .variable(parentId);
         if (!retainedChildIds.isEmpty()) {
             subBuilder
                     .separator()
-                    .definition(parentProp.getDeclaringType().getIdProp().<ColumnDefinition>getStorage(strategy))
+                    .definition(parentProp.getDeclaringType().getIdProp().getStorage(strategy))
                     .sql(" not in").enter(SqlBuilder.ScopeType.LIST);
             for (Object retainedChildId : retainedChildIds) {
                 subBuilder.separator().variable(retainedChildId);
@@ -118,6 +129,15 @@ class ChildTableOperator {
                         stmt -> stmt.executeQuery().next()
                 )
         );
+    }
+
+    private boolean existsByDsl(Object parentId, Collection<Object> retainedChildIds) {
+        ImmutableType childType = parentProp.getDeclaringType();
+        return Queries.createQuery(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, table) -> {
+            q.where(table.<Expression<Object>>get(parentProp.getName()).eq(parentId));
+            q.where(table.<Expression<Object>>get(childType.getIdProp().getName()).notIn(retainedChildIds));
+            return q.select(Expression.constant(1));
+        }).fetchOneOrNull(con) != null;
     }
 
     public int setParent(Object parentId, Collection<Object> childIds) {
@@ -162,6 +182,7 @@ class ChildTableOperator {
     }
 
     private int setParentImpl(Object parentId, Collection<Object> childIds) {
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
         builder
@@ -273,7 +294,11 @@ class ChildTableOperator {
     }
     
     private int unsetParentImpl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
-        
+
+        if (hasFilter) {
+            return unsetParentImplByDsl(parentId, retainedChildIds);
+        }
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         builder
@@ -307,7 +332,25 @@ class ChildTableOperator {
         );
     }
 
+    private int unsetParentImplByDsl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
+        ImmutableType childType = parentProp.getDeclaringType();
+        ImmutableType parentType = parentProp.getTargetType();
+        MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, childType);
+        TableImplementor<?> table = update.getTableImplementor();
+        update.set(table.joinImplementor(parentProp).get(parentType.getIdProp()), (Object) null);
+        update.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentType.getIdProp()).eq(parentId));
+        if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
+            update.where(table.<Expression<Object>>get(childType.getIdProp()).notIn(retainedChildIds));
+        }
+        return update.execute(con);
+    }
+
     public List<Object> getDetachedChildIds(Object parentId, Collection<Object> retainedChildIds) {
+
+        if (hasFilter) {
+            return getDetachedChildIdsByDsl(parentId, retainedChildIds);
+        }
+
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         MetadataStrategy strategy = sqlClient.getMetadataStrategy();
         ImmutableProp idProp = parentProp.getDeclaringType().getIdProp();
@@ -349,6 +392,19 @@ class ChildTableOperator {
                         }
                 )
         );
+    }
+
+    private List<Object> getDetachedChildIdsByDsl(Object parentId, Collection<Object> retainedChildIds) {
+        ImmutableType childType = parentProp.getDeclaringType();
+        ImmutableType parentType = parentProp.getTargetType();
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
+        TableImplementor<?> table = query.getTableImplementor();
+        Expression<Object> childIdExpr = table.get(childType.getIdProp());
+        query.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentType.getIdProp()).eq(parentId));
+        if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
+            query.where(childIdExpr.notIn(retainedChildIds));
+        }
+        return query.select(childIdExpr).forUpdate(pessimisticLockRequired).execute(con);
     }
 
     private void addDetachConditions(

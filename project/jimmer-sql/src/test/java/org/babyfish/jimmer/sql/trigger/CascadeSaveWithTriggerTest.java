@@ -1744,11 +1744,11 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "select ID " +
-                                        "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ? and ID not in (?)"
+                                "select tb_1_.ID " +
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.ID not in (?) and tb_1_.DELETED <> ?"
                         );
-                        it.variables(4L, 40L);
+                        it.variables(4L, 40L, true);
                     });
                     ctx.entity(it -> {
                         it.original(

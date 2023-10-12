@@ -82,6 +82,10 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
         return raw.get(prop);
     }
 
+    public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+        return raw.get(prop);
+    }
+
     public Expression<T> coalesce(T defaultValue) {
         return raw.coalesce(defaultValue);
     }

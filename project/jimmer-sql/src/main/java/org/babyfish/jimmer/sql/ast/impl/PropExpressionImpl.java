@@ -304,6 +304,21 @@ public class PropExpressionImpl<T>
             return (XE)PropExpressionImpl.of(this, deeperProp);
         }
 
+        @SuppressWarnings("unchecked")
+        @Override
+        public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+            if (prop.getDeclaringType() != this.deepestProp.getTargetType()) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" does not belong to the current embeddable type \"" +
+                                this.deepestProp.getTargetType() +
+                                "\""
+                );
+            }
+            return (XE)PropExpressionImpl.of(this, prop);
+        }
+
         @Override
         public final Expression<T> coalesce(T defaultValue) {
             return Embedded.super.coalesce(defaultValue);
