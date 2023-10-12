@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
@@ -12,7 +13,6 @@ import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.PaginationContextImpl;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.util.EmbeddableObjects;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -92,15 +92,19 @@ class ChildTableOperator {
                 .definition(parentProp.getStorage(strategy))
                 .sql(" = ")
                 .variable(parentId);
-        if (!retainedChildIds.isEmpty()) {
-            subBuilder
-                    .separator()
-                    .definition(parentProp.getDeclaringType().getIdProp().getStorage(strategy))
-                    .sql(" not in").enter(SqlBuilder.ScopeType.LIST);
-            for (Object retainedChildId : retainedChildIds) {
-                subBuilder.separator().variable(retainedChildId);
+        if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
+            if (retainedChildIds.size() == 1) {
+                subBuilder.sql(" <> ").variable(CollectionUtils.first(retainedChildIds));
+            } else {
+                subBuilder
+                        .separator()
+                        .definition(parentProp.getDeclaringType().getIdProp().getStorage(strategy))
+                        .sql(" not in").enter(SqlBuilder.ScopeType.LIST);
+                for (Object retainedChildId : retainedChildIds) {
+                    subBuilder.separator().variable(retainedChildId);
+                }
+                subBuilder.leave();
             }
-            subBuilder.leave();
         }
         subBuilder.leave();
 
@@ -133,11 +137,13 @@ class ChildTableOperator {
 
     private boolean existsByDsl(Object parentId, Collection<Object> retainedChildIds) {
         ImmutableType childType = parentProp.getDeclaringType();
-        return Queries.createQuery(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, table) -> {
-            q.where(table.<Expression<Object>>get(parentProp.getName()).eq(parentId));
-            q.where(table.<Expression<Object>>get(childType.getIdProp().getName()).notIn(retainedChildIds));
-            return q.select(Expression.constant(1));
-        }).fetchOneOrNull(con) != null;
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
+        TableImplementor<?> table = query.getTableImplementor();
+        query.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentProp.getTargetType().getIdProp()).eq(parentId));
+        if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
+            query.where(table.<Expression<Object>>get(childType.getIdProp()).notIn(retainedChildIds));
+        }
+        return query.select(Expression.constant(1)).execute(con) != null;
     }
 
     public int setParent(Object parentId, Collection<Object> childIds) {
@@ -216,13 +222,19 @@ class ChildTableOperator {
         builder
                 .leave()
                 .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, pkDefinition, true)
-                .sql(" in ")
-                .enter(SqlBuilder.ScopeType.LIST);
-        for (Object childId : childIds) {
-            builder.separator().variable(childId);
+                .definition(null, pkDefinition, true);
+        if (childIds.size() == 1) {
+            builder.sql(" = ").variable(CollectionUtils.first(childIds));
+        } else {
+            builder
+                    .sql(" in ")
+                    .enter(SqlBuilder.ScopeType.LIST);
+            for (Object childId : childIds) {
+                builder.separator().variable(childId);
+            }
+            builder.leave();
         }
-        builder.leave().leave();
+        builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
@@ -258,29 +270,25 @@ class ChildTableOperator {
         assert trigger != null;
         PropId parentPropId = parentProp.getId();
         ImmutableType childType = parentProp.getDeclaringType();
-        String parentIdPropName = parentProp.getTargetType().getIdProp().getName();
-        String childIdPropName = childType.getIdProp().getName();
+        ImmutableProp parentIdProp = parentProp.getTargetType().getIdProp();
+        ImmutableProp childIdProp = childType.getIdProp();
         PropId childIdPropId = childType.getIdProp().getId();
+
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
+        TableImplementor<?> table = query.getTableImplementor();
+        query.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentIdProp).in(parentIds));
+        if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
+            query.where(table.<PropExpression<Object>>get(childIdProp).notIn(retainedChildIds));
+        }
         List<ImmutableSpi> childRows = Internal.requiresNewDraftContext(ctx -> {
-            List<ImmutableSpi> list = (List<ImmutableSpi>) Queries
-                    .createQuery(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, child) -> {
-                        PropExpression<Object> parentIdExpr = child.join(parentProp.getName()).get(parentIdPropName);
-                        if (parentIds.size() > 1) {
-                            q.where(parentIdExpr.in(parentIds));
-                        } else {
-                            q.where(parentIdExpr.eq(parentIds.iterator().next()));
-                        }
-                        if (!retainedChildIds.isEmpty()) {
-                            q.where(child.<PropExpression<Object>>get(childIdPropName).notIn(retainedChildIds));
-                        }
-                        return q.select(child);
-                    })
-                    .execute(con);
+            List<ImmutableSpi> list = (List<ImmutableSpi>) query.select(table).execute(con);
             return ctx.resolveList(list);
         });
+
         if (childRows.isEmpty()) {
             return 0;
         }
+
         List<Object> affectedChildIds = new ArrayList<>(childRows.size());
         for (ImmutableSpi childRow : childRows) {
             Object childId = childRow.__get(childIdPropId);
@@ -335,10 +343,11 @@ class ChildTableOperator {
     private int unsetParentImplByDsl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
         ImmutableType childType = parentProp.getDeclaringType();
         ImmutableType parentType = parentProp.getTargetType();
+        ImmutableProp parentIdProp = parentType.getIdProp();
         MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, childType);
         TableImplementor<?> table = update.getTableImplementor();
-        update.set(table.joinImplementor(parentProp).get(parentType.getIdProp()), (Object) null);
-        update.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentType.getIdProp()).eq(parentId));
+        update.set(table.joinImplementor(parentProp).get(parentIdProp), (Object) null);
+        update.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentIdProp).eq(parentId));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
             update.where(table.<Expression<Object>>get(childType.getIdProp()).notIn(retainedChildIds));
         }
@@ -416,7 +425,7 @@ class ChildTableOperator {
                 .enter(SqlBuilder.ScopeType.WHERE)
                 .definition(null, fkDefinition, true);
         if (parentIds.size() == 1) {
-            builder.sql(" = ").variable(parentIds.iterator().next());
+            builder.sql(" = ").variable(CollectionUtils.first(parentIds));
         } else {
             builder.sql(" in ").enter(SqlBuilder.ScopeType.LIST);
             for (Object parentId : parentIds) {
@@ -427,13 +436,18 @@ class ChildTableOperator {
         if (!retainedChildIds.isEmpty()) {
             builder
                     .separator()
-                    .definition(null, pkDefinition, true)
-                    .sql(" not in ")
-                    .enter(SqlBuilder.ScopeType.LIST);
-            for (Object retainedChildId : retainedChildIds) {
-                builder.separator().variable(retainedChildId);
+                    .definition(null, pkDefinition, true);
+            if (retainedChildIds.size() == 1) {
+                builder.sql(" <> ").variable(CollectionUtils.first(retainedChildIds));
+            } else {
+                builder
+                        .sql(" not in ")
+                        .enter(SqlBuilder.ScopeType.LIST);
+                for (Object retainedChildId : retainedChildIds) {
+                    builder.separator().variable(retainedChildId);
+                }
+                builder.leave();
             }
-            builder.leave();
         }
         builder.leave();
     }

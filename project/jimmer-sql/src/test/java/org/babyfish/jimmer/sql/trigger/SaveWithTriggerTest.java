@@ -667,7 +667,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.unorderedVariables(learningGraphQLId1, learningGraphQLId2, learningGraphQLId3, graphQLInActionId1);
                     });
                     ctx.statement(it -> {
-                        it.sql("update BOOK set STORE_ID = ? where ID in (?)");
+                        it.sql("update BOOK set STORE_ID = ? where ID = ?");
                         it.variables(oreillyId, graphQLInActionId1);
                     });
                     ctx.statement(it -> {

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -221,12 +222,18 @@ public class Deleter {
                 .from()
                 .sql(childType.getTableName(strategy))
                 .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, definition, true)
-                .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
-        for (Object id : ids) {
-            builder.separator().variable(id);
+                .definition(null, definition, true);
+        if (ids.size() == 1) {
+            builder.sql(" = ").variable(CollectionUtils.first(ids));
+        } else {
+            builder
+                    .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
+            for (Object id : ids) {
+                builder.separator().variable(id);
+            }
+            builder.leave();
         }
-        builder.leave().leave();
+        builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         List<Object> childIds = data
@@ -316,13 +323,19 @@ public class Deleter {
         }
         builder
                 .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, definition, true)
-                .sql(" in ")
-                .enter(SqlBuilder.ScopeType.LIST);
-        for (Object id : ids) {
-            builder.separator().variable(id);
+                .definition(null, definition, true);
+        if (ids.size() == 1) {
+            builder.sql(" = ").variable(CollectionUtils.first(ids));
+        } else {
+            builder
+                    .sql(" in ")
+                    .enter(SqlBuilder.ScopeType.LIST);
+            for (Object id : ids) {
+                builder.separator().variable(id);
+            }
+            builder.leave();
         }
-        builder.leave().leave();
+        builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         int affectedRowCount = data
@@ -360,13 +373,19 @@ public class Deleter {
                 .sql("delete from ")
                 .sql(type.getTableName(strategy))
                 .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, definition, true)
-                .sql(" in ")
-                .enter(SqlBuilder.ScopeType.LIST);
-        for (Object id : ids) {
-            builder.separator().variable(id);
+                .definition(null, definition, true);
+        if (ids.size() == 1) {
+            builder.sql(" = ").variable(CollectionUtils.first(ids));
+        } else {
+            builder
+                    .sql(" in ")
+                    .enter(SqlBuilder.ScopeType.LIST);
+            for (Object id : ids) {
+                builder.separator().variable(id);
+            }
+            builder.leave();
         }
-        builder.leave().leave();
+        builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         int affectedRowCount = data

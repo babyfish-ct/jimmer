@@ -1746,7 +1746,7 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
-                                        "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.ID not in (?) and tb_1_.DELETED <> ?"
+                                        "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.ID <> ? and tb_1_.DELETED <> ?"
                         );
                         it.variables(4L, 40L, true);
                     });

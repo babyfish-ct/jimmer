@@ -181,7 +181,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
                                         "from ORDER_ITEM " +
-                                        "where (FK_ORDER_X, FK_ORDER_Y) in ((?, ?))"
+                                        "where (FK_ORDER_X, FK_ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
                     });
@@ -239,7 +239,7 @@ public class StatementWithTriggerTest extends AbstractTriggerTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "delete from ORDER_ " +
-                                        "where (ORDER_X, ORDER_Y) in ((?, ?))"
+                                        "where (ORDER_X, ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
                     });
