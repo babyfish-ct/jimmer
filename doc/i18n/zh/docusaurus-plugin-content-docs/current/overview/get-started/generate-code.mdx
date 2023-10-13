@@ -156,7 +156,7 @@ kotlin {
 :::caution
 注意，上面的代码，仅仅针对初次入门时项目结构没有切分的场景。
 
-如果把实实体的定义剥离成一个独立项目、和其他数据层业务层开，这套代码生成器需要配置到实体定义项目中。
+如果把实体的定义剥离成一个独立项目、和其他数据层业务层开，这套代码生成器需要配置到实体定义项目中。
 为了保证实体定义项目的简单，原则上讲应该只添加一个最简单的的依赖：`jimmer-core`。
 
 Jimmer定义数据类型需要如下4个注解之一
@@ -222,7 +222,7 @@ dependencies {
 ```
 
 </TabItem>
-<TabItem value="kotin_gralde" label="Kotlin(Gradle.kts)">
+<TabItem value="kotlin_gradle" label="Kotlin(Gradle.kts)">
 
 ```kotlin title="build.gradle.kts"
 ...省略其他代码...
@@ -231,12 +231,18 @@ dependencies {
     
     ...省略其他依赖...
 
-    // 用户编写的实体代码所需的依赖
+   // 用户编写的实体代码所需的依赖
     implementation("org.babyfish.jimmer:jimmer-core:${jimmerVersion}")
+    // kotlin项目需要依赖拓展包
+    // highlight-next-line
+    implementation("org.babyfish.jimmer:jimmer-core-kotlin:${jimmerVersion}")
 
     // 生成的代码所需的依赖，其他项目必然导入包含此依赖
     // highlight-next-line
     compileOnly("org.babyfish.jimmer:jimmer-sql:${jimmerVersion}")
+    // kotlin项目需要依赖拓展包
+    // highlight-next-line
+    compileOnly("org.babyfish.jimmer:jimmer-sql-kotlin:${jimmerVersion}")
 }
 
 ...省略其他代码...
