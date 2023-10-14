@@ -6,13 +6,8 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.LogicalDeleted;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -146,7 +141,7 @@ public class Deleter {
                 );
                 int affectedRowCount;
                 try {
-                    affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                    affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
                 } catch (MiddleTableOperator.DeletionPreventedException ex) {
                     throw new ExecutionException(
                             "Cannot delete rows from middle table \"" +
@@ -171,7 +166,7 @@ public class Deleter {
                 if (middleTableOperator != null) {
                     int affectedRowCount;
                     try {
-                        affectedRowCount = middleTableOperator.removeBySourceIds(ids);
+                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
                     } catch (MiddleTableOperator.DeletionPreventedException ex) {
                         throw new ExecutionException(
                                 "Cannot delete rows from middle table \"" +
@@ -217,37 +212,6 @@ public class Deleter {
     private void tryDeleteFromChildTable(ImmutableProp backProp, Collection<?> ids) {
 
         ImmutableType childType = backProp.getDeclaringType();
-        List<Object> childIds;
-        if (data.getSqlClient().getFilters().getFilter(childType) != null) {
-            childIds = findChildIdsByParentIdsByDsl(backProp, ids);
-        } else {
-            childIds = findChildIdsByParentIds(backProp, ids);
-        }
-
-        if (!childIds.isEmpty()) {
-            if (data.getDissociateAction(backProp) != DissociateAction.DELETE) {
-                throw new ExecutionException(
-                        "Cannot delete entities whose type are \"" +
-                                backProp.getTargetType().getJavaClass().getName() +
-                                "\" because there are some child entities whose type are \"" +
-                                backProp.getDeclaringType().getJavaClass().getName() +
-                                "\", these child entities use the association property \"" +
-                                backProp +
-                                "\" to reference current entities."
-                );
-            }
-            Deleter childDeleter = childDeleterMap.computeIfAbsent(
-                    backProp.toString(),
-                    it -> new Deleter(cascadeData, con, cache, trigger, affectedRowCountMap)
-            );
-            childDeleter.addPreHandleInput(childType, childIds);
-            childDeleter.preHandle();
-        }
-    }
-
-    private List<Object> findChildIdsByParentIds(ImmutableProp backProp, Collection<?> ids) {
-
-        ImmutableType childType = backProp.getDeclaringType();
 
         MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
         ColumnDefinition definition = backProp.getStorage(strategy);
@@ -274,7 +238,7 @@ public class Deleter {
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        return data
+        List<Object> childIds = data
                 .getSqlClient()
                 .getExecutor()
                 .execute(
@@ -297,15 +261,26 @@ public class Deleter {
                                 }
                         )
                 );
-    }
 
-    @SuppressWarnings("unchecked")
-    private List<Object> findChildIdsByParentIdsByDsl(ImmutableProp backProp, Collection<?> ids) {
-        ImmutableType childType = backProp.getDeclaringType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(data.getSqlClient(), childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
-        TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.joinImplementor(backProp).<Expression<Object>>get(backProp.getTargetType().getIdProp()).in((Collection<Object>) ids));
-        return query.select(table.<Expression<Object>>get(childType.getIdProp())).execute(con);
+        if (!childIds.isEmpty()) {
+            if (data.getDissociateAction(backProp) != DissociateAction.DELETE) {
+                throw new ExecutionException(
+                        "Cannot delete entities whose type are \"" +
+                                backProp.getTargetType().getJavaClass().getName() +
+                                "\" because there are some child entities whose type are \"" +
+                                backProp.getDeclaringType().getJavaClass().getName() +
+                                "\", these child entities use the association property \"" +
+                                backProp +
+                                "\" to reference current entities."
+                );
+            }
+            Deleter childDeleter = childDeleterMap.computeIfAbsent(
+                    backProp.toString(),
+                    it -> new Deleter(cascadeData, con, cache, trigger, affectedRowCountMap)
+            );
+            childDeleter.addPreHandleInput(childType, childIds);
+            childDeleter.preHandle();
+        }
     }
 
     private void postHandle() {

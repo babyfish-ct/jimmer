@@ -91,15 +91,9 @@ public class SaveTest extends AbstractMutationTest {
                         });
                         ctx.statement(it -> {
                             it.sql(
-                                    "select tb_1_.ID " +
-                                            "from FILE tb_1_ " +
-                                            "where tb_1_.PARENT_ID in (?, ?) and exists(" +
-                                            "--->select 1 " +
-                                            "--->from FILE_USER_MAPPING tb_3_ " +
-                                            "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
-                                            ")"
+                                    "select ID from FILE where PARENT_ID in (?, ?)"
                             );
-                            it.variables(11L, 12L, 2L);
+                            it.variables(11L, 12L);
                         });
                         ctx.statement(it -> {
                             it.sql(

@@ -446,7 +446,7 @@ class MiddleTableOperator {
         return remove(sourceId, removingTargetIds) + addTargetIds(sourceId, addingTargetIds);
     }
 
-    public int removeBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
+    public int physicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
         boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
         if (trigger != null || deletionBySourcePrevented) {
             List<Tuple2<?, ?>> tuples = getTuples(sourceIds);

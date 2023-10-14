@@ -22,16 +22,8 @@ public class DeleteTest extends AbstractMutationTest {
                             it.variables(8L);
                         });
                         ctx.statement(it -> {
-                            it.sql(
-                                    "select tb_1_.ID " +
-                                            "from FILE tb_1_ " +
-                                            "where tb_1_.PARENT_ID = ? and exists(" +
-                                            "--->select 1 " +
-                                            "--->from FILE_USER_MAPPING tb_3_ " +
-                                            "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
-                                            ")"
-                            );
-                            it.variables(8L, 2L);
+                            it.sql("select ID from FILE where PARENT_ID = ?");
+                            it.variables(8L);
                         });
                         ctx.statement(it -> {
                             it.sql("delete from FILE_USER_MAPPING where FILE_ID in (?, ?, ?, ?, ?)");
