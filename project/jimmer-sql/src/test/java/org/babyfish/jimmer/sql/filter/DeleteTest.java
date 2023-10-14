@@ -31,7 +31,7 @@ public class DeleteTest extends AbstractMutationTest {
                                             "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
                                             ")"
                             );
-                            it.variables(8L);
+                            it.variables(8L, 2L);
                         });
                         ctx.statement(it -> {
                             it.sql("delete from FILE_USER_MAPPING where FILE_ID in (?, ?, ?, ?, ?)");
