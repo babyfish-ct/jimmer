@@ -130,7 +130,7 @@ public final class LogicalDeletedInfo {
         Object value = parseValue(prop, deleted.value(), "value");
         Action action;
         if (prop.isNullable()) {
-            action = value == null ? Action.IS_NULL : Action.IS_NOT_NULL;
+            action = value != null ? Action.IS_NULL : Action.IS_NOT_NULL;
         } else {
             action = Action.NE;
         }

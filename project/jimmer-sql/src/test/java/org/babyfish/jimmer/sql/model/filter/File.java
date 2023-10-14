@@ -17,6 +17,7 @@ public interface File {
     @ManyToOne
     @Key
     @Nullable
+    @OnDissociate(DissociateAction.DELETE)
     File parent();
 
     @OneToMany(mappedBy = "parent", orderedProps = @OrderedProp("id"))

@@ -191,6 +191,12 @@ class Constants {
                     "AbstractTypedFetcher"
             );
 
+    public static final ClassName ID_ONLY_REFERENCE_TYPE =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "IdOnlyReferenceType"
+            );
+
     public static final ClassName FETCHER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",

@@ -285,11 +285,17 @@ create table administrator(
     name varchar(50) not null,
     deleted boolean not null,
     created_time timestamp not null,
-    modified_time timestamp not null
+    modified_time timestamp not null,
+    __deleted_constraint_part int as (
+        case deleted when false then 1 else null end
+    )
 );
 alter table administrator
     add constraint pk_administrator
         primary key(id);
+alter table administrator
+    add constraint uq_administrator
+        unique(name, __deleted_constraint_part);
 
 create table administrator_metadata(
     id bigint not null,
@@ -733,7 +739,8 @@ create sequence file_id_seq as bigint start with 100;
 
 create table file_user(
     id bigint not null,
-    name varchar(20) not null
+    name varchar(20) not null,
+    deleted_time datetime
 );
 
 alter table file_user
@@ -808,12 +815,12 @@ insert into file(id, name, parent_id) values
         (45, 'services', 40)
 ;
 
-insert into file_user(id, name) values
-    (1, 'root'),
-    (2, 'bob'),
-    (3, 'alex'),
-    (4, 'jessica'),
-    (5, 'linda')
+insert into file_user(id, name, deleted_time) values
+    (1, 'root', '2023-10-13 04:48:21'),
+    (2, 'bob', null),
+    (3, 'alex', null),
+    (4, 'jessica', null),
+    (5, 'linda', '2023-10-13 04:48:24')
 ;
 
 insert into file_user_mapping(file_id, user_id) values

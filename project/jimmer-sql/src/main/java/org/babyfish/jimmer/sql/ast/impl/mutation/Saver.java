@@ -125,7 +125,6 @@ class Saver {
     private void saveAssociations(DraftSpi currentDraftSpi, ObjectType currentObjectType, boolean forParent) {
 
         ImmutableType currentType = currentDraftSpi.__type();
-
         for (ImmutableProp prop : currentType.getProps().values()) {
             if (prop.isAssociation(TargetLevel.ENTITY) &&
                     prop.isColumnDefinition() == forParent &&
@@ -868,7 +867,7 @@ class Saver {
         }
 
         List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
-            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, FilterLevel.IGNORE_ALL, (q, table) -> {
+            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, table) -> {
                 for (ImmutableProp keyProp : actualKeyProps) {
                     if (keyProp.isReference(TargetLevel.ENTITY)) {
                         ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();

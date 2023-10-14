@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.loader;
 
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -12,7 +13,9 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -25,6 +28,7 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherFactory;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
@@ -73,9 +77,11 @@ public abstract class AbstractDataLoader {
 
     private final long offset;
 
+    private final boolean rawValue;
+
     private final TransientResolver<?, ?> resolver;
 
-    private final Fetcher<ImmutableSpi> fetcher;
+    private final FetcherImplementor<ImmutableSpi> fetcher;
 
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
@@ -86,7 +92,8 @@ public abstract class AbstractDataLoader {
             Fetcher<?> fetcher,
             FieldFilter<?> propFilter,
             int limit,
-            int offset
+            int offset,
+            boolean rawValue
     ) {
         if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
@@ -167,16 +174,17 @@ public abstract class AbstractDataLoader {
         }
         this.limit = limit;
         this.offset = offset;
+        this.rawValue = rawValue;
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.resolver = null;
             this.fetcher = fetcher != null ?
-                    (Fetcher<ImmutableSpi>) fetcher :
+                    (FetcherImplementor<ImmutableSpi>) fetcher :
                     new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
         } else {
             this.resolver = sqlClient.getResolver(prop);
             if (prop.isAssociation(TargetLevel.ENTITY)) {
                 this.fetcher = fetcher != null ?
-                        (Fetcher<ImmutableSpi>) fetcher :
+                        (FetcherImplementor<ImmutableSpi>) fetcher :
                         new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
             } else {
                 this.fetcher = null;
@@ -570,7 +578,7 @@ public abstract class AbstractDataLoader {
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
 
         if (sourceIds.size() == 1) {
-            Object sourceId = sourceIds.iterator().next();
+            Object sourceId = CollectionUtils.first(sourceIds);
             List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, source) -> {
                 Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                 Table<?> targetTable = source.join(prop.getName());
@@ -602,7 +610,7 @@ public abstract class AbstractDataLoader {
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
         if (propFilter == null && prop.getReal().isMiddleTableDefinition()) {
             if (sourceIds.size() == 1) {
-                Object sourceId = sourceIds.iterator().next();
+                Object sourceId = CollectionUtils.first(sourceIds);
                 List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
                     Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
                     Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
@@ -655,7 +663,7 @@ public abstract class AbstractDataLoader {
             Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter
     ) {
         if (sourceIds.size() == 1) {
-            Object sourceId = sourceIds.iterator().next();
+            Object sourceId = CollectionUtils.first(sourceIds);
             List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
                 Expression<Object> sourceIdExpr = target
                         .inverseJoin(prop)
@@ -948,7 +956,9 @@ public abstract class AbstractDataLoader {
     }
 
     private boolean isUnreliableParentId() {
-        return !remote && (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey());
+        return !remote && (
+                (!rawValue && (globalFiler != null || propFilter != null)) || !((ColumnDefinition)storage).isForeignKey()
+        );
     }
 
     public static Connection transientResolverConnection() {

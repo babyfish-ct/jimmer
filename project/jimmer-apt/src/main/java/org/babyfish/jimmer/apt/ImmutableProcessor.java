@@ -163,11 +163,13 @@ public class ImmutableProcessor extends AbstractProcessor {
         } catch (IOException ex) {
             throw new DtoException("Failed to guess base project dir", ex);
         }
-        if (basePath.startsWith("file://")) {
-            basePath = basePath.substring(7);
-        } else if (basePath.startsWith("file:/")) {
-            basePath = basePath.substring(6);
+        if (basePath.startsWith("file:")) {
+            basePath = basePath.substring(5);
         }
+        if (File.separatorChar != '\\' && !basePath.startsWith("/")) {
+            basePath = '/' + basePath;
+        }
+
         basePath = basePath.substring(0, basePath.lastIndexOf('/'));
         File baseFile = new File(basePath);
         Map<String, String> actualPathMap = new HashMap<>();

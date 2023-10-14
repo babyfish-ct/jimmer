@@ -176,8 +176,12 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(1L);
                     });
                     ctx.statement(it -> {
-                        it.sql("select ID from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID = ?");
-                        it.variables(1L);
+                        it.sql(
+                                "select tb_1_.ID " +
+                                        "from ADMINISTRATOR_METADATA tb_1_ " +
+                                        "where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?"
+                        );
+                        it.variables(1L, true);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from ADMINISTRATOR_METADATA where ID = ?");

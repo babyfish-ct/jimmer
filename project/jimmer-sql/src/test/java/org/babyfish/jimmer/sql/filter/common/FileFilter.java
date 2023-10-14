@@ -23,23 +23,25 @@ public class FileFilter implements Filter<FileProps> {
         }
     }
 
-    public static Long currentUserId() {
-        return USER_ID_LOCAL.get();
+    public static long currentUserId() {
+        Long userId = USER_ID_LOCAL.get();
+        if (userId == null) {
+            throw new IllegalArgumentException("There is no current user id");
+        }
+        return userId;
     }
 
     @Override
     public void filter(FilterArgs<FileProps> args) {
-        Long userId = USER_ID_LOCAL.get();
-        if (userId != null) {
-            FileProps table = args.getTable();
-            AssociationTable<File, FileTableEx, User, UserTableEx> association =
-                    AssociationTable.of(FileTableEx.class, FileTableEx::users);
-            args.where(
-                    args.createAssociationSubQuery(association)
-                            .where(association.source().id().eq(table.id()))
-                            .where(association.target().id().eq(userId))
-                            .exists()
-            );
-        }
+        Long userId = currentUserId();
+        FileProps table = args.getTable();
+        AssociationTable<File, FileTableEx, User, UserTableEx> association =
+                AssociationTable.of(FileTableEx.class, FileTableEx::users);
+        args.where(
+                args.createAssociationSubQuery(association)
+                        .where(association.source().id().eq(table.id()))
+                        .where(association.target().id().eq(userId))
+                        .exists()
+        );
     }
 }

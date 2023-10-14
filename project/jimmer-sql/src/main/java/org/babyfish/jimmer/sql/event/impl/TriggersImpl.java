@@ -416,10 +416,10 @@ public class TriggersImpl implements Triggers {
         MetadataStrategy metadataStrategy = sqlClient.getMetadataStrategy();
         ImmutableType thisType = event.getImmutableType();
         for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(thisType)) {
-            EvictContext ctx = EvictContext.get();
             if (!backProp.isAssociation(TargetLevel.PERSISTENT)) {
                 continue;
             }
+            EvictContext ctx = EvictContext.get();
             if (ctx != null && !ctx.isAllowed(backProp)) {
                 continue;
             }

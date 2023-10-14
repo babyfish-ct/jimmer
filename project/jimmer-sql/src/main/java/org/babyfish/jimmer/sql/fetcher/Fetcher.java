@@ -63,6 +63,20 @@ public interface Fetcher<E> {
     );
 
     /**
+     * Fetch association directly based on foreign key, the associated object has only id property
+     * @param prop Property name
+     * @param referenceType Reference type which has 2 choices
+     *                      <ul>
+     *                          <li>DEFAULT: The associated will filtered by global filters(include built-lt logical deleted filter)</li>
+     *                          <li>RAW: Raw value of foreign key</li>
+     *                      </ul>
+     *                      <p>If the property is not an association directly based on foreign key, this argument will be ignored</p>
+     * @return A new fetcher
+     */
+    @NewChain
+    Fetcher<E> add(String prop, IdOnlyReferenceType referenceType);
+
+    /**
      * Unfetch a property
      * @param prop Property name
      * @return A new fetcher

@@ -19,6 +19,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
 
     final boolean negative;
 
+    final boolean rawValue;
+
     final ImmutableProp prop;
 
     private final FieldFilter<?> filter;
@@ -61,6 +63,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.prev = base.prev;
             this.immutableType = base.immutableType;
             this.negative = base.negative;
+            this.rawValue = base.rawValue;
             this.prop = base.prop;
             this.filter = base.filter;
             this.batchSize = base.batchSize;
@@ -72,6 +75,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             this.prev = null;
             this.immutableType = ImmutableType.get(javaClass);
             this.negative = false;
+            this.rawValue = false;
             this.prop = immutableType.getIdProp();
             this.filter = null;
             this.batchSize = 0;
@@ -82,10 +86,11 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         }
     }
 
-    protected FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative) {
+    protected FetcherImpl(FetcherImpl<E> prev, ImmutableProp prop, boolean negative, IdOnlyReferenceType referenceType) {
         this.prev = prev;
         this.immutableType = prev.immutableType;
         this.negative = negative;
+        this.rawValue = referenceType == IdOnlyReferenceType.RAW;
         this.prop = prop;
         this.filter = null;
         this.batchSize = 0;
@@ -108,6 +113,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.prev = prev;
         this.immutableType = prev.immutableType;
         this.negative = false;
+        this.rawValue = false;
         this.prop = prop;
         if (fieldConfig != null) {
             FieldConfigImpl<?, Table<?>> loaderImpl = (FieldConfigImpl<?, Table<?>>) fieldConfig;
@@ -135,6 +141,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         this.prev = prev;
         this.immutableType = base.immutableType;
         this.negative = base.negative;
+        this.rawValue = base.rawValue;
         this.prop = base.prop;
         this.filter = base.filter;
         this.batchSize = base.batchSize;
@@ -175,7 +182,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                 fetcher.offset,
                                 fetcher.recursionStrategy,
                                 fetcher.childFetcher,
-                                false
+                                false,
+                                fetcher.rawValue
                         );
                 if (!map.containsKey(name)) {
                     map.putIfAbsent(name, field);
@@ -220,7 +228,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                                 )
                                         ) :
                                         null,
-                                true
+                                true,
+                                false
                         );
                         orderedMap.put(dependency.getProp().getName(), dependencyField);
                         if (prop.isFormula() && !(prop.getSqlTemplate() instanceof FormulaTemplate)) {
@@ -306,6 +315,10 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
             fieldMap = map;
         }
         return map;
+    }
+
+    public boolean __isRawValue() {
+        return rawValue && getFieldMap().isEmpty();
     }
 
     @Override
@@ -396,7 +409,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
     @Override
     public FetcherImplementor<E> add(String prop) {
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        return addImpl(immutableProp, false);
+        return addImpl(immutableProp, false, IdOnlyReferenceType.DEFAULT);
     }
 
     @NewChain
@@ -410,7 +423,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             "\" cannot be removed"
             );
         }
-        return addImpl(immutableProp, true);
+        return addImpl(immutableProp, true, IdOnlyReferenceType.DEFAULT);
     }
 
     @NewChain
@@ -486,8 +499,18 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         return addImpl(immutableProp, loaderImpl);
     }
 
+    @Override
+    public FetcherImplementor<E> add(String prop, IdOnlyReferenceType referenceType) {
+        Objects.requireNonNull(prop, "'prop' cannot be null");
+        ImmutableProp immutableProp = immutableType.getProp(prop);
+        if (!immutableProp.isAssociation(TargetLevel.PERSISTENT) || !immutableProp.isColumnDefinition()) {
+            referenceType = IdOnlyReferenceType.DEFAULT;
+        }
+        return addImpl(immutableProp, false, referenceType);
+    }
+
     @NewChain
-    private FetcherImpl<E> addImpl(ImmutableProp prop, boolean negative) {
+    private FetcherImpl<E> addImpl(ImmutableProp prop, boolean negative, IdOnlyReferenceType referenceType) {
         if (prop.isId()) {
             return this;
         }
@@ -498,7 +521,7 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                             "\", it is transient property without resolver"
             );
         }
-        return createFetcher(prop, negative);
+        return createFetcher(prop, negative, referenceType);
     }
 
     @NewChain
@@ -563,8 +586,8 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
         return isSimple;
     }
 
-    protected FetcherImpl<E> createFetcher(ImmutableProp prop, boolean negative) {
-        return new FetcherImpl<>(this, prop, negative);
+    protected FetcherImpl<E> createFetcher(ImmutableProp prop, boolean negative, IdOnlyReferenceType referenceType) {
+        return new FetcherImpl<>(this, prop, negative, referenceType);
     }
 
     protected FetcherImpl<E> createFetcher(ImmutableProp prop, FieldConfig<?, ? extends Table<?>> fieldConfig) {

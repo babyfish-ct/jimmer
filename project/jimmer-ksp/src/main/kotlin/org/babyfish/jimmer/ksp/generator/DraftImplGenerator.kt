@@ -48,6 +48,7 @@ class DraftImplGenerator(
                     addShowFun(PropId::class)
                     addShowFun(String::class)
                     addDraftContextFun()
+                    addBaseFun()
                     addResolveFun()
                 }
                 .build()
@@ -495,6 +496,17 @@ class DraftImplGenerator(
                 .returns(DRAFT_CONTEXT_CLASS_NAME)
                 .addModifiers(KModifier.OVERRIDE)
                 .addCode("return __ctx")
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addBaseFun() {
+        addFunction(
+            FunSpec
+                .builder("__base")
+                .returns(ANY.copy(nullable = true))
+                .addModifiers(KModifier.OVERRIDE)
+                .addCode("return __base")
                 .build()
         )
     }
