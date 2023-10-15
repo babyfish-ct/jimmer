@@ -175,6 +175,33 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
     }
 
     @Override
+    public <XE extends Expression<?>> XE getId() {
+        if (raw != null) {
+            return raw.getId();
+        }
+        return get(immutableType.getIdProp());
+    }
+
+    @Override
+    public <XE extends Expression<?>> XE getAssociatedId(String prop) {
+        if (raw != null) {
+            return raw.getAssociatedId(prop);
+        }
+        ImmutableProp immutableProp = immutableType.getProp(prop);
+        return join(immutableProp, immutableProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                .get(immutableProp.getTargetType().getIdProp());
+    }
+
+    @Override
+    public <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop) {
+        if (raw != null) {
+            return raw.getAssociatedId(prop);
+        }
+        return join(prop, prop.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                .get(prop.getTargetType().getIdProp());
+    }
+
+    @Override
     public <XT extends Table<?>> XT join(String prop) {
         if (raw != null) {
             __beforeJoin();

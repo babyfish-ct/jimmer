@@ -6,10 +6,11 @@ import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -19,15 +20,17 @@ import java.util.*;
 
 class MutationCache {
 
-    private final JSqlClientImplementor sqlClientWithoutCache;
+    final JSqlClientImplementor sqlClientWithoutCache;
 
     private final boolean pessimisticLockRequired;
 
-    private final Map<TypedId, ImmutableSpi> idObjMap = new HashMap<>();
+    final Map<TypedId, ImmutableSpi> idObjMap = new HashMap<>();
 
-    private final Map<TypedKey, ImmutableSpi> keyObjMap = new HashMap<>();
+    final Map<TypedKey, ImmutableSpi> keyObjMap = new HashMap<>();
 
     private final IdentityHashMap<Object, Object> savedMap = new IdentityHashMap<>();
+
+    private NoFilter noFilter;
 
     public MutationCache(JSqlClientImplementor sqlClient, boolean pessimisticLockRequired) {
         this.sqlClientWithoutCache = sqlClient.caches(CacheDisableConfig::disableAll);
@@ -35,7 +38,7 @@ class MutationCache {
     }
 
     public boolean hasId(ImmutableType type, Object id) {
-        return idObjMap.get(new TypedId(type, id)) != null;
+        return get(new TypedId(type, id)) != null;
     }
 
     public ImmutableSpi find(ImmutableSpi example, boolean requiresKey) {
@@ -45,25 +48,25 @@ class MutationCache {
         if (example.__isLoaded(idPropId)) {
             Object id = example.__get(idPropId);
             if (id != null) {
-                return idObjMap.get(new TypedId(type, id));
+                return get(new TypedId(type, id));
             }
         }
         TypedKey key = TypedKey.of(example, keyProps(type), requiresKey);
         if (key == null) {
             return null;
         }
-        return keyObjMap.get(key);
+        return get(key);
     }
 
     @SuppressWarnings("unchecked")
-    public List<ImmutableSpi> loadByIds(ImmutableType type, Collection<Object> ids, Connection con) {
+    public List<ImmutableSpi> loadByIds(ImmutableType type, Collection<?> ids, Connection con) {
         if (!(ids instanceof Set<?>)) {
             ids = new HashSet<>(ids);
         }
         List<ImmutableSpi> list = new ArrayList<>(ids.size());
         Collection<Object> missedIds = new ArrayList<>();
         for (Object id : ids) {
-            ImmutableSpi spi = idObjMap.get(new TypedId(type, id));
+            ImmutableSpi spi = get(new TypedId(type, id));
             if (spi != null) {
                 list.add(spi);
             } else {
@@ -71,13 +74,12 @@ class MutationCache {
             }
         }
         if (!missedIds.isEmpty()) {
-            String idPropName = type.getIdProp().getName();
             List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
+                MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, filterLevel());
+                TableImplementor<?> table = query.getTableImplementor();
+                query.where(table.<Expression<Object>>getId().in(missedIds));
                 List<ImmutableSpi> spiList = (List<ImmutableSpi>)
-                        Queries.createQuery(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, t) -> {
-                            q.where(t.<Expression<Object>>get(idPropName).in(missedIds));
-                            return q.select(t);
-                        }).forUpdate(pessimisticLockRequired).execute(con);
+                        query.select(table).forUpdate(isPessimisticLockRequired()).execute(con);
                 return ctx.resolveList(spiList);
             });
             for (ImmutableSpi row : rows) {
@@ -147,5 +149,74 @@ class MutationCache {
 
     public boolean isPessimisticLockRequired() {
         return pessimisticLockRequired;
+    }
+
+    public MutationCache withFilter(boolean withFilter) {
+        if (withFilter) {
+            return this;
+        }
+        NoFilter noFilter = this.noFilter;
+        if (noFilter == null) {
+            this.noFilter = noFilter = new NoFilter(this);
+        }
+        return noFilter;
+    }
+
+    FilterLevel filterLevel() {
+        return FilterLevel.DEFAULT;
+    }
+
+    ImmutableSpi get(TypedId id) {
+        return idObjMap.get(id);
+    }
+
+    ImmutableSpi get(TypedKey key) {
+        return idObjMap.get(key);
+    }
+
+    private static class NoFilter extends MutationCache {
+
+        private final MutationCache parent;
+
+        public NoFilter(MutationCache parent) {
+            super(parent.sqlClientWithoutCache, parent.pessimisticLockRequired);
+            this.parent = parent;
+        }
+
+        @Override
+        public List<ImmutableSpi> loadByIds(ImmutableType type, Collection<?> ids, Connection con) {
+            if (sqlClientWithoutCache.getFilters().getFilter(type) == null) {
+                return parent.loadByIds(type, ids, con);
+            }
+            return super.loadByIds(type, ids, con);
+        }
+
+        @Override
+        FilterLevel filterLevel() {
+            return FilterLevel.IGNORE_ALL;
+        }
+
+        @Override
+        public MutationCache withFilter(boolean withFilter) {
+            return withFilter ? parent : this;
+        }
+
+        @Override
+        ImmutableSpi get(TypedId id) {
+            ImmutableSpi spi = super.get(id);
+            if (spi != null) {
+                return spi;
+            }
+            return parent.get(id);
+        }
+
+        @Override
+        ImmutableSpi get(TypedKey key) {
+            ImmutableSpi spi = super.get(key);
+            if (spi != null) {
+                return spi;
+            }
+            return parent.get(key);
+        }
     }
 }

@@ -153,13 +153,13 @@ class MiddleTableOperator {
         return query.select(table.<Expression<Object>>get(targetType.getIdProp())).execute(con);
     }
 
-    private Collection<Tuple2<?, ?>> filterReader(Collection<Tuple2<?, ?>> tuples) {
+    private Collection<Tuple2<?, ?>> filterTuples(Collection<Tuple2<?, ?>> tuples) {
         if (tuples.isEmpty()) {
             return tuples;
         }
 
         if (hasFilter) {
-            return filterReaderByDsl(tuples);
+            return filterTuplesByDsl(tuples);
         }
 
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -202,7 +202,7 @@ class MiddleTableOperator {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Tuple2<?, ?>> filterReaderByDsl(Collection<Tuple2<?, ?>> tuples) {
+    private List<Tuple2<?, ?>> filterTuplesByDsl(Collection<Tuple2<?, ?>> tuples) {
         ImmutableType targetType = prop.getTargetType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, targetType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
@@ -222,11 +222,13 @@ class MiddleTableOperator {
     }
 
     List<Tuple2<?, ?>> getTuples(Collection<Object> sourceIds) {
-
         if (hasFilter) {
-            return getTupleReaderByDsl(sourceIds);
+            return getTuplesByDsl(sourceIds);
         }
+        return getTuplesWithoutFilters(sourceIds);
+    }
 
+    private List<Tuple2<?, ?>> getTuplesWithoutFilters(Collection<Object> sourceIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
                 .enter(SqlBuilder.ScopeType.SELECT)
@@ -264,7 +266,7 @@ class MiddleTableOperator {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Tuple2<?, ?>> getTupleReaderByDsl(Collection<Object> sourceIds) {
+    private List<Tuple2<?, ?>> getTuplesByDsl(Collection<Object> sourceIds) {
         ImmutableType targetType = prop.getTargetType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, targetType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
@@ -381,7 +383,7 @@ class MiddleTableOperator {
             return 0;
         }
         if (checkExistence) {
-            tuples = filterReader(tuples);
+            tuples = filterTuples(tuples);
             if (tuples.isEmpty()) {
                 return 0;
             }
@@ -449,7 +451,7 @@ class MiddleTableOperator {
     public int physicallyDeleteBySourceIds(Collection<Object> sourceIds) throws DeletionPreventedException {
         boolean deletionBySourcePrevented = middleTable.isDeletionBySourcePrevented();
         if (trigger != null || deletionBySourcePrevented) {
-            List<Tuple2<?, ?>> tuples = getTuples(sourceIds);
+            List<Tuple2<?, ?>> tuples = getTuplesWithoutFilters(sourceIds);
             if (deletionBySourcePrevented && !tuples.isEmpty()) {
                 throw new DeletionPreventedException(middleTable, tuples);
             }

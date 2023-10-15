@@ -63,7 +63,6 @@ public class DraftImplGenerator {
         addUnload(PropId.class);
         addUnload(String.class);
         addDraftContext();
-        addBase();
         addResolve();
         addModified();
         parentBuilder.addType(typeBuilder.build());
@@ -763,16 +762,6 @@ public class DraftImplGenerator {
                 .addAnnotation(Override.class)
                 .returns(DraftContext.class)
                 .addStatement("return $L", DRAFT_FIELD_CTX);
-        typeBuilder.addMethod(builder.build());
-    }
-
-    private void addBase() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("__base")
-                .addModifiers(Modifier.PUBLIC)
-                .addAnnotation(Override.class)
-                .returns(TypeName.OBJECT)
-                .addStatement("return $L", DRAFT_FIELD_BASE);
         typeBuilder.addMethod(builder.build());
     }
 

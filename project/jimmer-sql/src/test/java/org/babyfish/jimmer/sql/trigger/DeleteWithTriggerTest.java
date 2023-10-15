@@ -23,7 +23,11 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ?");
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.STORE_ID = ?"
+                        );
                         it.variables(manningId);
                     });
                     ctx.throwable(it -> {
@@ -210,7 +214,11 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID = ?");
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                        "from BOOK tb_1_ " +
+                                        "where tb_1_.STORE_ID = ?"
+                        );
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
@@ -227,14 +235,6 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                                 graphQLInActionId2, sammerId,
                                 graphQLInActionId3, sammerId
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
-                                        "from BOOK tb_1_ " +
-                                        "where tb_1_.ID in (?, ?, ?)"
-                        );
-                        it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
                         it.sql("delete from BOOK where ID in (?, ?, ?)");
@@ -402,9 +402,9 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 getSqlClient().getEntities().batchDeleteCommand(
                         Book.class,
                         Arrays.asList(
-                            learningGraphQLId1,
-                            learningGraphQLId2,
-                            nonExistingId
+                                learningGraphQLId1,
+                                learningGraphQLId2,
+                                nonExistingId
                         )
                 ),
                 ctx -> {
@@ -671,52 +671,48 @@ public class DeleteWithTriggerTest extends AbstractTriggerTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID = ?");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?)");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID = ?"
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                         "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                        "where tb_1_.PARENT_ID in (?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from TREE_NODE tb_1_ " +
+                                        "where tb_1_.PARENT_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?, ?, ?, ?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NODE_ID in (?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?, ?, ?)");
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
-                                        "from TREE_NODE tb_1_ " +
-                                        "where tb_1_.NODE_ID in (?, ?)");
                     });
                     ctx.statement(it -> {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?)");

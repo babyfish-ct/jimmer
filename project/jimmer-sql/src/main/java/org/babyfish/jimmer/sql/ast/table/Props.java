@@ -22,6 +22,12 @@ public interface Props {
 
     <XE extends Expression<?>> XE get(String prop);
 
+    <XE extends Expression<?>> XE getId();
+
+    <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop);
+
+    <XE extends Expression<?>> XE getAssociatedId(String prop);
+
     <XT extends Table<?>> XT join(ImmutableProp prop);
 
     <XT extends Table<?>> XT join(String prop);

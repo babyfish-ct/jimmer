@@ -6,8 +6,13 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.LogicalDeleted;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.DissociateAction;
@@ -56,13 +61,8 @@ public class Deleter {
         this.cascadeData = new DeleteCommandImpl.Data(data);
         this.cascadeData.setMode(DeleteMode.PHYSICAL);
         this.con = con;
-        if (trigger != null) {
-            this.cache = cache;
-            this.trigger = trigger;
-        } else {
-            this.cache = cache;
-            this.trigger = null;
-        }
+        this.cache = cache;
+        this.trigger = trigger;
         this.affectedRowCountMap = affectedRowCountMap;
     }
 
@@ -213,54 +213,59 @@ public class Deleter {
 
         ImmutableType childType = backProp.getDeclaringType();
 
-        MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
-        ColumnDefinition definition = backProp.getStorage(strategy);
-        SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
-        Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
-        builder
-                .enter(SqlBuilder.ScopeType.SELECT)
-                .definition(childType.getIdProp().<ColumnDefinition>getStorage(strategy))
-                .leave()
-                .from()
-                .sql(childType.getTableName(strategy))
-                .enter(SqlBuilder.ScopeType.WHERE)
-                .definition(null, definition, true);
-        if (ids.size() == 1) {
-            builder.sql(" = ").variable(CollectionUtils.first(ids));
+        List<Object> childIds;
+        if (trigger != null) {
+            childIds = findChildIdsWithoutFiltersByDsl(backProp, ids);
         } else {
+            MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
+            ColumnDefinition definition = backProp.getStorage(strategy);
+            SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
+            Reader<Object> reader = (Reader<Object>) data.getSqlClient().getReader(childType.getIdProp());
             builder
-                    .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
-            for (Object id : ids) {
-                builder.separator().variable(id);
+                    .enter(SqlBuilder.ScopeType.SELECT)
+                    .definition(childType.getIdProp().<ColumnDefinition>getStorage(strategy))
+                    .leave()
+                    .from()
+                    .sql(childType.getTableName(strategy))
+                    .enter(SqlBuilder.ScopeType.WHERE)
+                    .definition(null, definition, true);
+            if (ids.size() == 1) {
+                builder.sql(" = ").variable(CollectionUtils.first(ids));
+            } else {
+                builder
+                        .sql(" in ").enter(SqlBuilder.ScopeType.LIST);
+                for (Object id : ids) {
+                    builder.separator().variable(id);
+                }
+                builder.leave();
             }
             builder.leave();
-        }
-        builder.leave();
 
-        Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        List<Object> childIds = data
-                .getSqlClient()
-                .getExecutor()
-                .execute(
-                        new Executor.Args<>(
-                                data.getSqlClient(),
-                                con,
-                                sqlResult.get_1(),
-                                sqlResult.get_2(),
-                                sqlResult.get_3(),
-                                ExecutionPurpose.DELETE,
-                                null,
-                                stmt -> {
-                                    List<Object> values = new ArrayList<>();
-                                    try (ResultSet rs = stmt.executeQuery()) {
-                                        while (rs.next()) {
-                                            values.add(reader.read(rs, new Reader.Context(null, true)));
+            Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
+            childIds = data
+                    .getSqlClient()
+                    .getExecutor()
+                    .execute(
+                            new Executor.Args<>(
+                                    data.getSqlClient(),
+                                    con,
+                                    sqlResult.get_1(),
+                                    sqlResult.get_2(),
+                                    sqlResult.get_3(),
+                                    ExecutionPurpose.DELETE,
+                                    null,
+                                    stmt -> {
+                                        List<Object> values = new ArrayList<>();
+                                        try (ResultSet rs = stmt.executeQuery()) {
+                                            while (rs.next()) {
+                                                values.add(reader.read(rs, new Reader.Context(null, true)));
+                                            }
                                         }
+                                        return values;
                                     }
-                                    return values;
-                                }
-                        )
-                );
+                            )
+                    );
+        }
 
         if (!childIds.isEmpty()) {
             if (data.getDissociateAction(backProp) != DissociateAction.DELETE) {
@@ -281,6 +286,22 @@ public class Deleter {
             childDeleter.addPreHandleInput(childType, childIds);
             childDeleter.preHandle();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object> findChildIdsWithoutFiltersByDsl(ImmutableProp backProp, Collection<?> ids) {
+        ImmutableType childType = backProp.getDeclaringType();
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(data.getSqlClient(), childType, ExecutionPurpose.MUTATE, FilterLevel.IGNORE_ALL);
+        TableImplementor<?> table = query.getTableImplementor();
+        query.where(table.<Expression<Object>>getAssociatedId(backProp).in((Collection<Object>)ids));
+        List<Object> childRows = (List<Object>) query.select(table).execute(con);
+        List<Object> childIds = new ArrayList<>(childRows.size());
+        PropId childIdProp = childType.getIdProp().getId();
+        for (Object childRow : childRows) {
+            cache.save((ImmutableSpi) childRow, false);
+            childIds.add(((ImmutableSpi) childRow).__get(childIdProp));
+        }
+        return childIds;
     }
 
     private void postHandle() {
@@ -423,7 +444,7 @@ public class Deleter {
             return ids;
         }
         PropId idPropId = type.getIdProp().getId();
-        List<ImmutableSpi> rows = cache.loadByIds(type, ids, con);
+        List<ImmutableSpi> rows = cache.withFilter(logical(type)).loadByIds(type, ids, con);
         Iterator<ImmutableSpi> itr = rows.iterator();
         List<Object> changedIds = new ArrayList<>();
         while (itr.hasNext()) {
@@ -448,7 +469,7 @@ public class Deleter {
         if (trigger == null) {
             return ids;
         }
-        List<ImmutableSpi> rows = cache.loadByIds(type, ids, con);
+        List<ImmutableSpi> rows = cache.withFilter(false).loadByIds(type, ids, con);
         for (ImmutableSpi row : rows) {
             trigger.modifyEntityTable(row, null);
         }

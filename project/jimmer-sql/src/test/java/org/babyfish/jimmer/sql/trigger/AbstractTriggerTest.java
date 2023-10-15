@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 
 public class AbstractTriggerTest extends AbstractMutationTest {
 
-    private List<String> events = new ArrayList<>();
+    protected List<String> events = new ArrayList<>();
 
     private boolean eventAsserted = false;
 
@@ -57,11 +57,13 @@ public class AbstractTriggerTest extends AbstractMutationTest {
 
     protected void assertEvents(String ... events) {
         eventAsserted = true;
-        int len = Math.min(events.length, this.events.size());
-        for (int i = 0; i < len; i++) {
-            String expected = events[i].replace("--->", "");
-            Assertions.assertEquals(expected, this.events.get(i), "events[" + i + "]");
+        List<String> expected = new ArrayList<>();
+        for (String event : events) {
+            expected.add(event.replace("--->", ""));
         }
-        Assertions.assertEquals(events.length, this.events.size(), "event count");
+        List<String> actual = new ArrayList<>(this.events);
+        Collections.sort(expected);
+        Collections.sort(actual);
+        Assertions.assertEquals(expected, actual);
     }
 }

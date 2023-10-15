@@ -216,6 +216,23 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
+    public <XE extends Expression<?>> XE getId() {
+        return get(immutableType.getIdProp());
+    }
+
+    @Override
+    public <XE extends Expression<?>> XE getAssociatedId(String prop) {
+        TableImplementor<?> joinedTable = joinImplementor(prop);
+        return joinedTable.get(joinedTable.getImmutableType().getIdProp());
+    }
+
+    @Override
+    public <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop) {
+        TableImplementor<?> joinedTable = joinImplementor(prop);
+        return joinedTable.get(joinedTable.getImmutableType().getIdProp());
+    }
+
+    @Override
     public <XT extends Table<?>> XT join(ImmutableProp prop) {
         return TableProxies.wrap(joinImplementor(prop));
     }

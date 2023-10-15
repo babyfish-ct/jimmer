@@ -19,7 +19,5 @@ public interface DraftSpi extends Draft, ImmutableSpi {
 
     DraftContext __draftContext();
 
-    Object __base();
-
     Object __resolve();
 }

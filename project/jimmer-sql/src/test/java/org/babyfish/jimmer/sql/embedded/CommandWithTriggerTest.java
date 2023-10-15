@@ -964,9 +964,10 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(
-                                "select ORDER_ITEM_A, ORDER_ITEM_B, ORDER_ITEM_C " +
-                                        "from ORDER_ITEM " +
-                                        "where (FK_ORDER_X, FK_ORDER_Y) = (?, ?)"
+                                "select " +
+                                        "tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
+                                        "tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
+                                        "from ORDER_ITEM tb_1_ where (tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y) = (?, ?)"
                         );
                         it.variables("001", "001");
                     });
@@ -999,18 +1000,6 @@ public class CommandWithTriggerTest extends AbstractTriggerTest {
                                 1, 1, 2, "00A", "00A",
                                 1, 1, 2, "00A", "00B"
                         );
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select " +
-                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C, " +
-                                        "--->tb_1_.NAME, tb_1_.FK_ORDER_X, tb_1_.FK_ORDER_Y " +
-                                        "from ORDER_ITEM tb_1_ " +
-                                        "where (" +
-                                        "--->tb_1_.ORDER_ITEM_A, tb_1_.ORDER_ITEM_B, tb_1_.ORDER_ITEM_C" +
-                                        ") in ((?, ?, ?), (?, ?, ?))"
-                        );
-                        it.variables(1, 1, 1, 1, 1, 2);
                     });
                     ctx.statement(it -> {
                         it.sql(

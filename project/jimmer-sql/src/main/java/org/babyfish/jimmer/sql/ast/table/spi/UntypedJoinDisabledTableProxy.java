@@ -46,6 +46,21 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
+    public <XE extends Expression<?>> XE getId() {
+        return table.getId();
+    }
+
+    @Override
+    public <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop) {
+        return table.get(prop);
+    }
+
+    @Override
+    public <XE extends Expression<?>> XE getAssociatedId(String prop) {
+        return table.get(prop);
+    }
+
+    @Override
     public <XT extends Table<?>> XT join(String prop) {
         throw new IllegalStateException(joinDisabledReason);
     }
