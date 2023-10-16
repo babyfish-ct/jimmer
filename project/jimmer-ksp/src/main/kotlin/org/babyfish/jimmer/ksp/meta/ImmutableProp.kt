@@ -86,6 +86,7 @@ class ImmutableProp(
 
     fun isDsl(isTableEx: Boolean): Boolean =
         when {
+            idViewBaseProp != null -> false
             isKotlinFormula || isTransient || (idViewBaseProp !== null && idViewBaseProp!!.isList)-> false
             isRemote && isReverse -> false
             isList && isAssociation(true) -> isTableEx

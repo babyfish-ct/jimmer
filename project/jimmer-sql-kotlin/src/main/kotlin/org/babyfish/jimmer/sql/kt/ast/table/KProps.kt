@@ -8,12 +8,18 @@ import kotlin.reflect.KProperty1
 interface KProps<E: Any> {
 
     fun <X: Any, EXP: KPropExpression<X>> get(prop: String): EXP
+    fun <X: Any, EXP: KPropExpression<X>> get(prop: ImmutableProp): EXP
+    fun <X: Any, EXP: KPropExpression<X>> getId(): EXP
+    fun <X: Any, EXP: KPropExpression<X>> getAssociatedId(prop: String): EXP
+    fun <X: Any, EXP: KPropExpression<X>> getAssociatedId(prop: ImmutableProp): EXP
 
     fun <X: Any> join(prop: String): KNonNullTable<X>
+    fun <X: Any> join(prop: ImmutableProp): KNonNullTable<X>
     fun <X: Any> joinReference(prop: KProperty1<E, X?>): KNonNullTable<X>
     fun <X: Any> joinList(prop: KProperty1<E, List<X>>): KNonNullTable<X>
 
     fun <X: Any> outerJoin(prop: String): KNullableTable<X>
+    fun <X: Any> outerJoin(prop: ImmutableProp): KNullableTable<X>
     fun <X: Any> outerJoinReference(prop: KProperty1<E, X?>): KNullableTable<X>
     fun <X: Any> outerJoinList(prop: KProperty1<E, List<X>>): KNullableTable<X>
 

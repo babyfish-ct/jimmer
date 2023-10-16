@@ -37,7 +37,78 @@ internal class KNonNullTableExImpl<E: Any>(
             }
         } as EXP
 
+    @Suppress("UNCHECKED_CAST")
+    override fun <X : Any, EXP : KPropExpression<X>> get(prop: ImmutableProp): EXP =
+        javaTable.get<PropExpressionImpl<X>>(prop).let {
+            val isNullable = if (it.table !== javaTable) {
+                // IdView
+                (it.table as TableImplementor).joinProp.isNullable
+            } else {
+                it.prop.isNullable
+            }
+            if (isNullable) {
+                NullablePropExpressionImpl(it)
+            } else {
+                NonNullPropExpressionImpl(it)
+            }
+        } as EXP
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X : Any, EXP : KPropExpression<X>> getId(): EXP =
+        javaTable.getId<PropExpressionImpl<X>>().let {
+            val isNullable = if (it.table !== javaTable) {
+                // IdView
+                (it.table as TableImplementor).joinProp.isNullable
+            } else {
+                it.prop.isNullable
+            }
+            if (isNullable) {
+                NullablePropExpressionImpl(it)
+            } else {
+                NonNullPropExpressionImpl(it)
+            }
+        } as EXP
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X : Any, EXP : KPropExpression<X>> getAssociatedId(prop: String): EXP =
+        javaTable.getAssociatedId<PropExpressionImpl<X>>(prop).let {
+            val isNullable = if (it.table !== javaTable) {
+                // IdView
+                (it.table as TableImplementor).joinProp.isNullable
+            } else {
+                it.prop.isNullable
+            }
+            if (isNullable) {
+                NullablePropExpressionImpl(it)
+            } else {
+                NonNullPropExpressionImpl(it)
+            }
+        } as EXP
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X : Any, EXP : KPropExpression<X>> getAssociatedId(prop: ImmutableProp): EXP =
+        javaTable.getAssociatedId<PropExpressionImpl<X>>(prop).let {
+            val isNullable = if (it.table !== javaTable) {
+                // IdView
+                (it.table as TableImplementor).joinProp.isNullable
+            } else {
+                it.prop.isNullable
+            }
+            if (isNullable) {
+                NullablePropExpressionImpl(it)
+            } else {
+                NonNullPropExpressionImpl(it)
+            }
+        } as EXP
+
     override fun <X : Any> join(prop: String): KNonNullTableEx<X> =
+        if (joinDisabledReason != null) {
+            throw IllegalStateException("Table join is disabled because $joinDisabledReason")
+        } else {
+            KNonNullTableExImpl(javaTable.join(prop))
+        }
+
+    override fun <X : Any> join(prop: ImmutableProp): KNonNullTableEx<X> =
         if (joinDisabledReason != null) {
             throw IllegalStateException("Table join is disabled because $joinDisabledReason")
         } else {

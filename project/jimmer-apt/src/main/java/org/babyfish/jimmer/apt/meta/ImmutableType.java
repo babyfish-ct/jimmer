@@ -654,13 +654,13 @@ public class ImmutableType implements BaseType {
                 }
             }
             for (ImmutableProp prop : props.values()) {
-                if (map.containsKey(prop.getName())) {
-                    continue;
-                }
                 if (prop.isReverse()) {
                     continue;
                 }
                 if (prop.getAnnotation(OneToOne.class) == null && prop.getAnnotation(ManyToOne.class) == null) {
+                    continue;
+                }
+                if (map.containsKey(prop.getName())) {
                     continue;
                 }
                 String expectedPropName = prop.getName() + "Id";

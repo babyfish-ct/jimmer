@@ -193,9 +193,6 @@ public class PropsGenerator {
             boolean withImplementation,
             boolean ignoreOverride
     ) {
-        if (prop.getIdViewBaseProp() != null) {
-            return null;
-        }
         if (withJoinType && !prop.isAssociation(true)) {
             return null;
         }
@@ -310,10 +307,7 @@ public class PropsGenerator {
         if (idPropName == null) {
             return null;
         }
-        if (!prop.isAssociation(true)) {
-            return null;
-        }
-        if (prop.isList() != isTableEx) {
+        if (prop.isTransient() || !prop.isAssociation(true) || prop.isList() != isTableEx) {
             return null;
         }
         MethodSpec.Builder builder = MethodSpec
