@@ -104,6 +104,7 @@ public class TableGenerator {
                     addProperty(prop, false);
                     addProperty(prop, true);
                 }
+                addIdProperty(prop, type.getIdPropName(prop.getName()));
             }
             addAsTableEx();
             addDisableJoin();
@@ -192,6 +193,19 @@ public class TableGenerator {
                 isTableEx,
                 prop,
                 withJoinType,
+                true
+        );
+        if (method != null) {
+            typeBuilder.addMethod(method);
+        }
+    }
+
+    private void addIdProperty(ImmutableProp prop, String idPropName) {
+        MethodSpec method = PropsGenerator.associatedIdProperty(
+                context,
+                isTableEx,
+                prop,
+                idPropName,
                 true
         );
         if (method != null) {

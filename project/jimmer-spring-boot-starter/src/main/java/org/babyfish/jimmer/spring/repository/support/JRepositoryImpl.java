@@ -3,7 +3,6 @@ package org.babyfish.jimmer.spring.repository.support;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.spring.repository.JRepository;
@@ -13,8 +12,10 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -22,7 +23,6 @@ import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
 
 @NoRepositoryBean
 public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
-
-    private static final TypedProp.Scalar<?, ?>[] EMPTY_SORTED_PROPS = new TypedProp.Scalar[0];
 
     protected final JSqlClientImplementor sqlClient;
 
@@ -334,8 +332,8 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
             @Nullable Sort sort
     ) {
         MutableRootQueryImpl<Table<?>> query =
-                new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, false);
-        Table<?> table = query.getTable();
+                new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, FilterLevel.DEFAULT);
+        TableImplementor<?> table = query.getTableImplementor();
         if (sortedProps != null) {
             for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
                 if (!sortedProp.unwrap().getDeclaringType().isAssignableFrom(immutableType)) {
@@ -347,7 +345,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
                                     "\" or its super types"
                     );
                 }
-                PropExpression<?> expr = table.get(sortedProp.unwrap().getName());
+                PropExpression<?> expr = table.get(sortedProp.unwrap());
                 Order astOrder;
                 if (sortedProp.isDesc()) {
                     astOrder = expr.desc();

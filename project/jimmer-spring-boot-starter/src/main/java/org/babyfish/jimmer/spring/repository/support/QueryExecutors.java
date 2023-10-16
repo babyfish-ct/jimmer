@@ -10,7 +10,10 @@ import org.babyfish.jimmer.spring.repository.parser.Predicate;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -49,7 +52,7 @@ public class QueryExecutors {
             return queryMethod.getJavaMethod().getReturnType() == int.class ? rowCount : null;
         } else {
             ConfigurableRootQuery<?, Object> query = Queries
-                    .createQuery(sqlClient, type, ExecutionPurpose.QUERY, false, (q, table) -> {
+                    .createQuery(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT, (q, table) -> {
                         q.where(astPredicate(table, queryData.getPredicate(), args));
                         for (Query.Order order : queryData.getOrders()) {
                             q.orderBy(
