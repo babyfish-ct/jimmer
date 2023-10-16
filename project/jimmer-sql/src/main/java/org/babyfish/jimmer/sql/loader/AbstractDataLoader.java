@@ -13,9 +13,7 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
-import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -37,8 +35,6 @@ import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.util.*;
@@ -46,8 +42,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractDataLoader {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataLoader.class);
 
     private static final ThreadLocal<Connection> TRANSIENT_RESOLVER_CON_LOCAL = new ThreadLocal<>();
 
@@ -804,7 +798,7 @@ public abstract class AbstractDataLoader {
         Filter<?> filter = globalFiler;
         if (filter instanceof CacheableFilter<?>) {
             SortedMap<String, Object> parameters = ((CacheableFilter<?>) filter).getParameters();
-            if (parameters != null && parameters.isEmpty()) {
+            if (parameters == null || parameters.isEmpty()) {
                 return null;
             }
             return parameters;

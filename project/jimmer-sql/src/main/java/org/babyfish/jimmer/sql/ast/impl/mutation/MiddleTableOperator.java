@@ -221,13 +221,6 @@ class MiddleTableOperator {
                 .execute(con);
     }
 
-    List<Tuple2<?, ?>> getTuples(Collection<Object> sourceIds) {
-        if (hasFilter) {
-            return getTuplesByDsl(sourceIds);
-        }
-        return getTuplesWithoutFilters(sourceIds);
-    }
-
     private List<Tuple2<?, ?>> getTuplesWithoutFilters(Collection<Object> sourceIds) {
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
         builder
@@ -263,23 +256,6 @@ class MiddleTableOperator {
                 Arrays.asList(sourceIdExpression, targetIdExpression),
                 ExecutionPurpose.MUTATE
         );
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Tuple2<?, ?>> getTuplesByDsl(Collection<Object> sourceIds) {
-        ImmutableType targetType = prop.getTargetType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, targetType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
-        TableImplementor<?> table = query.getTableImplementor();
-        ImmutableProp sourceIdProp = prop.getDeclaringType().getIdProp();
-        query.where(
-                table.inverseJoinImplementor(prop).<Expression<Object>>get(sourceIdProp).in(sourceIds)
-        );
-        return (List<Tuple2<?, ?>>)(List<?>)query
-                .select(
-                        table.inverseJoinImplementor(prop).<Expression<Object>>get(sourceIdProp),
-                        table.<Expression<Object>>get(prop.getTargetType().getIdProp())
-                )
-                .execute(con);
     }
 
     int addTargetIds(Object sourceId, Collection<Object> targetIds) {

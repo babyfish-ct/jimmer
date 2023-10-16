@@ -139,7 +139,7 @@ class ChildTableOperator {
         ImmutableType childType = parentProp.getDeclaringType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentProp.getTargetType().getIdProp()).eq(parentId));
+        query.where(table.<Expression<Object>>getAssociatedId(parentProp).eq(parentId));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
             query.where(table.<Expression<Object>>get(childType.getIdProp()).notIn(retainedChildIds));
         }

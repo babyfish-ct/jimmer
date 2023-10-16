@@ -3,21 +3,15 @@ package org.babyfish.jimmer.sql.kt.cache
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
-import org.babyfish.jimmer.sql.event.EntityEvent
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
-import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
-import org.babyfish.jimmer.sql.kt.event.getUnchangedRef
-import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
-import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
 import org.babyfish.jimmer.sql.kt.model.inheritance.*
-import java.util.*
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
-class ParameterizedCacheTest : AbstractQueryTest() {
+class LogicalDeletedCacheTest : AbstractQueryTest() {
 
     private lateinit var _sqlClient: KSqlClient
 
@@ -26,9 +20,6 @@ class ParameterizedCacheTest : AbstractQueryTest() {
     @BeforeTest
     fun initialize() {
         _sqlClient = sqlClient {
-            ignoreBuiltInFilters()
-            addFilters(UndeleteFilter())
-            addDisabledFilters(DeleteFilter())
             setCaches {
                 setCacheFactory(
                     object : KCacheFactory {
@@ -37,13 +28,13 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                             createCache<Any, Any>()
 
                         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-                            createParameterizedCache<Any, Any?>()
+                            createCache<Any, Any?>()
 
                         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-                            createParameterizedCache<Any, List<*>>()
+                            createCache<Any, List<*>>()
 
                         override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
-                            createParameterizedCache<Any, Any?>()
+                            createCache<Any, Any?>()
                     }
                 )
             }
@@ -54,8 +45,7 @@ class ParameterizedCacheTest : AbstractQueryTest() {
             }
         }
         _sqlClientForDeletedData = _sqlClient.filters {
-            disableByTypes(UndeleteFilter::class)
-            enableByTypes(DeleteFilter::class)
+            setBehavior(LogicalDeletedBehavior.REVERSED)
         }
     }
 
@@ -80,17 +70,18 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE tb_1_ 
-                        |where tb_1_.DELETED = ?""".trimMargin()
-                ).variables(false)
+                        |where tb_1_.DELETED <> ?""".trimMargin()
+                ).variables(true)
                 if (useSql) {
                     statement(1).sql(
-                        """select tb_1_.ID from PERMISSION tb_1_ 
-                        |where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?""".trimMargin()
-                    ).variables(100L, false)
+                        """select tb_1_.ID 
+                            |from PERMISSION tb_1_ 
+                            |where tb_1_.ROLE_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(100L, true)
                     statement(2).sql(
                         """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID 
-                        |from PERMISSION tb_1_ where tb_1_.ID = ?""".trimMargin()
-                    ).variables(1000L)
+                        |from PERMISSION tb_1_ where tb_1_.ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(1000L, true)
                 }
                 rows(
                     """[
@@ -132,16 +123,11 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                         |from ROLE tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
-                if (useSql) {
-                    statement(1).sql(
-                        """select tb_1_.ID from PERMISSION tb_1_ 
+                statement(1).sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
+                        |from PERMISSION tb_1_ 
                         |where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?""".trimMargin()
-                    ).variables(200L, true)
-                    statement(2).sql(
-                        """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.ROLE_ID 
-                        |from PERMISSION tb_1_ where tb_1_.ID = ?""".trimMargin()
-                    ).variables(4000L)
-                }
+                ).variables(200L, true)
                 rows(
                     """[
                         |--->{
@@ -187,21 +173,19 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID 
                         |from PERMISSION tb_1_ 
-                        |where tb_1_.DELETED = ?""".trimMargin()
-                ).variables(false)
+                        |where tb_1_.DELETED <> ?""".trimMargin()
+                ).variables(true)
                 if (useSql) {
                     statement(1).sql(
                         """select tb_1_.ID, tb_1_.ROLE_ID 
-                        |from PERMISSION tb_1_ 
-                        |inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID 
-                        |where tb_1_.ID in (?, ?) 
-                        |and tb_1_.ROLE_ID is not null 
-                        |and tb_2_.DELETED = ?""".trimMargin()
-                    ).variables(1000L, 3000L, false)
+                            |from PERMISSION tb_1_ 
+                            |inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID 
+                            |where tb_1_.ID in (?, ?) and tb_1_.ROLE_ID is not null and tb_2_.DELETED <> ?""".trimMargin()
+                    ).variables(1000L, 3000L, true)
                     statement(2).sql(
                         """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
-                        |from ROLE tb_1_ where tb_1_.ID = ?""".trimMargin()
-                    ).variables(100L)
+                        |from ROLE tb_1_ where tb_1_.ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(100L, true)
                 }
                 rows(
                     """[
@@ -248,20 +232,9 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                         |from PERMISSION tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
-                if (useSql) {
-                    statement(1).sql(
-                        """select tb_1_.ID, tb_1_.ROLE_ID 
-                        |from PERMISSION tb_1_ 
-                        |inner join ROLE tb_2_ on tb_1_.ROLE_ID = tb_2_.ID 
-                        |where tb_1_.ID in (?, ?) 
-                        |and tb_1_.ROLE_ID is not null 
-                        |and tb_2_.DELETED = ?""".trimMargin()
-                    ).variables(2000L, 4000L, true)
-                    statement(2).sql(
-                        """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
-                        |from ROLE tb_1_ where tb_1_.ID = ?""".trimMargin()
-                    ).variables(200L)
-                }
+                statement(1).sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED from ROLE tb_1_ where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?""".trimMargin()
+                ).variables(100L, 200L, true)
                 rows(
                     """[
                         |--->{
@@ -312,21 +285,21 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR tb_1_ 
-                        |where tb_1_.DELETED = ?""".trimMargin()
-                ).variables(false)
+                        |where tb_1_.DELETED <> ?""".trimMargin()
+                ).variables(true)
                 if (useSql) {
                     statement(1).sql(
                         """select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID 
                         |from ADMINISTRATOR_ROLE_MAPPING tb_1_ 
                         |inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID 
                         |where tb_1_.ADMINISTRATOR_ID in (?, ?) 
-                        |and tb_3_.DELETED = ?""".trimMargin()
-                    ).variables(1L, 3L, false)
+                        |and tb_3_.DELETED <> ?""".trimMargin()
+                    ).variables(1L, 3L, true)
                     statement(2).sql(
                         """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
                         |from ROLE tb_1_ 
-                        |where tb_1_.ID = ?""".trimMargin()
-                    ).variables(100L)
+                        |where tb_1_.ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(100L, true)
                 }
                 rows(
                     """[
@@ -383,20 +356,12 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                         |from ADMINISTRATOR tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
-                if (useSql) {
-                    statement(1).sql(
-                        """select tb_1_.ADMINISTRATOR_ID, tb_1_.ROLE_ID 
-                        |from ADMINISTRATOR_ROLE_MAPPING tb_1_ 
-                        |inner join ROLE tb_3_ on tb_1_.ROLE_ID = tb_3_.ID 
-                        |where tb_1_.ADMINISTRATOR_ID in (?, ?) 
-                        |and tb_3_.DELETED = ?""".trimMargin()
-                    ).variables(2L, 4L, true)
-                    statement(2).sql(
-                        """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                statement(1).sql(
+                    """select tb_2_.ADMINISTRATOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE tb_1_ 
-                        |where tb_1_.ID = ?""".trimMargin()
-                    ).variables(200L)
-                }
+                        |inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID 
+                        |where tb_2_.ADMINISTRATOR_ID in (?, ?) and tb_1_.DELETED = ?""".trimMargin()
+                ).variables(2L, 4L, true)
                 rows(
                     """[
                         |--->{
@@ -457,21 +422,21 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ROLE tb_1_ 
-                        |where tb_1_.DELETED = ?""".trimMargin()
-                ).variables(false)
+                        |where tb_1_.DELETED <> ?""".trimMargin()
+                ).variables(true)
                 if (useSql) {
                     statement(1).sql(
                         """select tb_1_.ADMINISTRATOR_ID 
                         |from ADMINISTRATOR_ROLE_MAPPING tb_1_ 
                         |inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID 
                         |where tb_1_.ROLE_ID = ? 
-                        |and tb_3_.DELETED = ?""".trimMargin()
-                    ).variables(100L, false)
+                        |and tb_3_.DELETED <> ?""".trimMargin()
+                    ).variables(100L, true)
                     statement(2).sql(
                         """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
                         |from ADMINISTRATOR tb_1_ 
-                        |where tb_1_.ID in (?, ?)""".trimMargin()
-                    ).variables(1L, 3L)
+                        |where tb_1_.ID in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(1L, 3L, true)
                 }
                 rows(
                     """[
@@ -519,20 +484,12 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                         |from ROLE tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
-                if (useSql) {
-                    statement(1).sql(
-                        """select tb_1_.ADMINISTRATOR_ID 
-                        |from ADMINISTRATOR_ROLE_MAPPING tb_1_ 
-                        |inner join ADMINISTRATOR tb_3_ on tb_1_.ADMINISTRATOR_ID = tb_3_.ID 
-                        |where tb_1_.ROLE_ID = ? 
-                        |and tb_3_.DELETED = ?""".trimMargin()
-                    ).variables(200L, true)
-                    statement(2).sql(
-                        """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME 
+                statement(1).sql(
+                    """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR tb_1_ 
-                        |where tb_1_.ID in (?, ?)""".trimMargin()
-                    ).variables(2L, 4L)
-                }
+                        |inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID 
+                        |where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?""".trimMargin()
+                ).variables(200L, true)
                 rows(
                     """[
                         |--->{
@@ -584,20 +541,20 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                         |from ADMINISTRATOR tb_1_ 
-                        |where tb_1_.DELETED = ?""".trimMargin()
-                ).variables(false)
+                        |where tb_1_.DELETED <> ?""".trimMargin()
+                ).variables(true)
                 if (useSql) {
                     statement(1).sql(
                         """select tb_1_.ADMINISTRATOR_ID, tb_1_.ID 
                         |from ADMINISTRATOR_METADATA tb_1_ 
                         |where tb_1_.ADMINISTRATOR_ID in (?, ?) 
-                        |and tb_1_.DELETED = ?""".trimMargin()
-                    ).variables(1L, 3L, false)
+                        |and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(1L, 3L, true)
                     statement(2).sql(
                         """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID 
                         |from ADMINISTRATOR_METADATA tb_1_ 
-                        |where tb_1_.ID in (?, ?)""".trimMargin()
-                    ).variables(10L, 30L)
+                        |where tb_1_.ID in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
+                    ).variables(10L, 30L, true)
                 }
                 rows(
                     """[
@@ -654,19 +611,12 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                         |from ADMINISTRATOR tb_1_ 
                         |where tb_1_.DELETED = ?""".trimMargin()
                 ).variables(true)
-                if (useSql) {
-                    statement(1).sql(
-                        """select tb_1_.ADMINISTRATOR_ID, tb_1_.ID 
+                statement(1).sql(
+                    """select tb_1_.ADMINISTRATOR_ID, 
+                        |tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.DELETED 
                         |from ADMINISTRATOR_METADATA tb_1_ 
-                        |where tb_1_.ADMINISTRATOR_ID in (?, ?) 
-                        |and tb_1_.DELETED = ?""".trimMargin()
-                    ).variables(2L, 4L, true)
-                    statement(2).sql(
-                        """select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID 
-                        |from ADMINISTRATOR_METADATA tb_1_ 
-                        |where tb_1_.ID in (?, ?)""".trimMargin()
-                    ).variables(20L, 40L)
-                }
+                        |where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_1_.DELETED = ?""".trimMargin()
+                ).variables(2L, 4L, true)
                 rows(
                     """[
                         |--->{
@@ -704,31 +654,5 @@ class ParameterizedCacheTest : AbstractQueryTest() {
                 )
             }
         }
-    }
-
-    private class UndeleteFilter : KCacheableFilter<NamedEntity> {
-
-        override fun filter(args: KFilterArgs<NamedEntity>) {
-            args.where(args.table.deleted eq false)
-        }
-
-        override fun getParameters(): SortedMap<String, Any> =
-            sortedMapOf("deleted" to false)
-
-        override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-            e.getUnchangedRef(NamedEntity::deleted) == null
-    }
-
-    private class DeleteFilter : KCacheableFilter<NamedEntity> {
-
-        override fun filter(args: KFilterArgs<NamedEntity>) {
-            args.where(args.table.deleted eq true)
-        }
-
-        override fun getParameters(): SortedMap<String, Any> =
-            sortedMapOf("deleted" to true)
-
-        override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-            e.getUnchangedRef(NamedEntity::deleted) == null
     }
 }

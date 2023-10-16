@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.kt.common
 
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.cache.chain.CacheChain
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder
@@ -10,6 +11,15 @@ fun <K, V> createCache(): Cache<K, V> =
     ChainCacheBuilder<K, V>()
         .add(LevelOneBinder())
         .add(LevelTwoBinder())
+        .build()
+
+fun <K, V> createCache(
+    prop: ImmutableProp? = null,
+    onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
+): Cache<K, V> =
+    ChainCacheBuilder<K, V>()
+        .add(LevelOneBinder())
+        .add(LevelTwoBinder(prop, onDelete))
         .build()
 
 private class LevelOneBinder<K, V> : KLoadingBinder<K, V> {
@@ -49,7 +59,10 @@ private class LevelOneBinder<K, V> : KLoadingBinder<K, V> {
     }
 }
 
-private class LevelTwoBinder<K, V> : KSimpleBinder<K, V> {
+private class LevelTwoBinder<K, V>(
+    private val prop: ImmutableProp? = null,
+    private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
+) : KSimpleBinder<K, V> {
 
     private val valueMap = mutableMapOf<K, V>()
 
@@ -72,5 +85,8 @@ private class LevelTwoBinder<K, V> : KSimpleBinder<K, V> {
 
     override fun deleteAll(keys: Collection<K>, reason: Any?) {
         valueMap.keys.removeAll(keys.toSet())
+        if (prop !== null) {
+            onDelete?.invoke(prop, keys)
+        }
     }
 }

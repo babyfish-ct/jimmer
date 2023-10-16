@@ -1,9 +1,10 @@
 package org.babyfish.jimmer.sql.kt.filter
 
+import org.babyfish.jimmer.sql.cache.PropCacheInvalidator
 import org.babyfish.jimmer.sql.event.EntityEvent
 import java.util.*
 
-interface KCacheableFilter<E: Any> : KFilter<E> {
+interface KCacheableFilter<E: Any> : KFilter<E>, PropCacheInvalidator {
 
     /**
      * Return the sub keys of association cache for multi-view cache

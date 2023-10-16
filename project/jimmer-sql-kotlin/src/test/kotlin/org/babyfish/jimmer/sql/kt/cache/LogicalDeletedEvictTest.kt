@@ -6,22 +6,15 @@ import org.babyfish.jimmer.jackson.ImmutableModule
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
-import org.babyfish.jimmer.sql.event.EntityEvent
 import org.babyfish.jimmer.sql.kt.KSqlClient
-import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
 import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
-import org.babyfish.jimmer.sql.kt.event.getUnchangedRef
-import org.babyfish.jimmer.sql.kt.filter.KCacheableFilter
-import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
-import org.babyfish.jimmer.sql.kt.model.inheritance.*
-import java.util.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.expect
 
-class ParameterizedCacheEvictTest : AbstractQueryTest() {
+class LogicalDeletedEvictTest : AbstractQueryTest() {
 
     private lateinit var _sqlClient: KSqlClient
 
@@ -30,8 +23,6 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
     @BeforeTest
     fun initialize() {
         _sqlClient = sqlClient {
-            addFilters(UndeleteFilter())
-            addDisabledFilters(DeleteFilter())
             setCaches {
                 setCacheFactory(
                     object : KCacheFactory {
@@ -40,13 +31,13 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
                             createCache<Any, Any>()
 
                         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-                            createParameterizedCache<Any, Any?>(prop, this@ParameterizedCacheEvictTest::onPropCacheDelete)
+                            createCache<Any, Any?>(prop, this@LogicalDeletedEvictTest::onPropCacheDelete)
 
                         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-                            createParameterizedCache<Any, List<*>>(prop, this@ParameterizedCacheEvictTest::onPropCacheDelete)
+                            createCache<Any, List<*>>(prop, this@LogicalDeletedEvictTest::onPropCacheDelete)
 
                         override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
-                            createParameterizedCache<Any, Any?>(prop, this@ParameterizedCacheEvictTest::onPropCacheDelete)
+                            createCache<Any, Any?>(prop, this@LogicalDeletedEvictTest::onPropCacheDelete)
                     }
                 )
             }
@@ -82,13 +73,13 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
             sql(
                 """select distinct tb_1_.ID 
                     |from ADMINISTRATOR_METADATA tb_1_ 
-                    |where tb_1_.ADMINISTRATOR_ID = ?""".trimMargin()
-            ).variables(1L)
+                    |where tb_1_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(1L, true)
             statement(1).sql(
-                """select distinct tb_1_.ID from ROLE tb_1_ 
-                    |inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID 
-                    |where tb_2_.ADMINISTRATOR_ID = ?""".trimMargin()
-            ).variables(1L)
+                """select distinct tb_1_.ID 
+                    |from ROLE tb_1_ inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID 
+                    |where tb_2_.ADMINISTRATOR_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(1L, true)
         }
         expect(
             listOf(
@@ -113,21 +104,19 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
                 """select distinct tb_1_.ID 
                     |from ADMINISTRATOR tb_1_ 
                     |inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID 
-                    |where tb_2_.ROLE_ID = ?""".trimMargin()
-            ).variables(100L)
+                    |where tb_2_.ROLE_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(100L, true)
             statement(1).sql(
                 """select distinct tb_1_.ID 
                     |from PERMISSION tb_1_ 
-                    |where tb_1_.ROLE_ID = ?""".trimMargin()
-            ).variables(100L)
+                    |where tb_1_.ROLE_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(100L, true)
         }
         expect(
             listOf(
                 "delete Administrator.roles-[1]",
-                "delete Administrator.roles-[2]",
                 "delete Administrator.roles-[3]",
-                "delete Permission.role-[1000]",
-                "delete Permission.role-[2000]"
+                "delete Permission.role-[1000]"
             )
         ) {
             messages
@@ -146,6 +135,7 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
         }
         expect(
             listOf(
+                "delete Permission.role-[1000]",
                 "delete Role.permissions-[100]",
                 "delete Role.permissionCount-[100]"
             )
@@ -179,32 +169,6 @@ class ParameterizedCacheEvictTest : AbstractQueryTest() {
         ) {
             messages
         }
-    }
-
-    private class UndeleteFilter : KCacheableFilter<NamedEntity> {
-
-        override fun filter(args: KFilterArgs<NamedEntity>) {
-            args.where(args.table.deleted eq false)
-        }
-
-        override fun getParameters(): SortedMap<String, Any> =
-            sortedMapOf("deleted" to false)
-
-        override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-            e.getUnchangedRef(NamedEntity::deleted) == null
-    }
-
-    private class DeleteFilter : KCacheableFilter<NamedEntity> {
-
-        override fun filter(args: KFilterArgs<NamedEntity>) {
-            args.where(args.table.deleted eq true)
-        }
-
-        override fun getParameters(): SortedMap<String, Any> =
-            sortedMapOf("deleted" to true)
-
-        override fun isAffectedBy(e: EntityEvent<*>): Boolean =
-            e.getUnchangedRef(NamedEntity::deleted) == null
     }
 
     companion object {

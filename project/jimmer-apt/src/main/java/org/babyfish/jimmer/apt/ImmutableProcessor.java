@@ -15,7 +15,9 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 import java.io.*;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -171,7 +173,10 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
 
         basePath = basePath.substring(0, basePath.lastIndexOf('/'));
-        File baseFile = new File(basePath);
+        File baseFile = new File(URLDecoder.decode(basePath, StandardCharsets.UTF_8));
+        if (!baseFile.exists()) {
+            throw new AssertionError("The target directory \"" + basePath + "\" does not exists");
+        }
         Map<String, String> actualPathMap = new HashMap<>();
         while (baseFile != null) {
             collectActualDtoDir(baseFile, actualPathMap);
