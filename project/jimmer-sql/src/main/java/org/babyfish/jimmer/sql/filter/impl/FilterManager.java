@@ -757,10 +757,6 @@ public class FilterManager implements Filters {
 
         @Override
         public SortedMap<String, Object> getParameters() {
-            if (filters.size() == 1) {
-                SortedMap<String, Object> map = filters.get(0).getParameters();
-                return map != null ? map : Collections.emptySortedMap();
-            }
             SortedMap<String, Object> map = new TreeMap<>();
             for (CacheableFilter<Props> filter : filters) {
                 SortedMap<String, Object> subMap = filter.getParameters();
@@ -778,11 +774,7 @@ public class FilterManager implements Filters {
                     }
                     Object value = e.getValue();
                     if (value == null) {
-                        throw new IllegalStateException(
-                                "The method `getParameters` of \"" +
-                                        filter.getClass().getName() +
-                                        "\" cannot map with null value"
-                        );
+                        break;
                     }
                     Object conflictValue = map.get(key);
                     if (conflictValue != null && !conflictValue.equals(value)) {

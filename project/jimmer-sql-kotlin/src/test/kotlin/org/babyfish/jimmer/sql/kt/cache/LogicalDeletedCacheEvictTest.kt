@@ -9,12 +9,11 @@ import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
-import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.expect
 
-class LogicalDeletedEvictTest : AbstractQueryTest() {
+class LogicalDeletedCacheEvictTest : AbstractQueryTest() {
 
     private lateinit var _sqlClient: KSqlClient
 
@@ -31,13 +30,13 @@ class LogicalDeletedEvictTest : AbstractQueryTest() {
                             createCache<Any, Any>()
 
                         override fun createAssociatedIdCache(prop: ImmutableProp): Cache<*, *>? =
-                            createCache<Any, Any?>(prop, this@LogicalDeletedEvictTest::onPropCacheDelete)
+                            createCache<Any, Any?>(prop, this@LogicalDeletedCacheEvictTest::onPropCacheDelete)
 
                         override fun createAssociatedIdListCache(prop: ImmutableProp): Cache<*, List<*>>? =
-                            createCache<Any, List<*>>(prop, this@LogicalDeletedEvictTest::onPropCacheDelete)
+                            createCache<Any, List<*>>(prop, this@LogicalDeletedCacheEvictTest::onPropCacheDelete)
 
                         override fun createResolverCache(prop: ImmutableProp): Cache<*, *>? =
-                            createCache<Any, Any?>(prop, this@LogicalDeletedEvictTest::onPropCacheDelete)
+                            createCache<Any, Any?>(prop, this@LogicalDeletedCacheEvictTest::onPropCacheDelete)
                     }
                 )
             }
@@ -172,7 +171,7 @@ class LogicalDeletedEvictTest : AbstractQueryTest() {
     }
 
     companion object {
-        val MAPPER = ObjectMapper()
+        private val MAPPER = ObjectMapper()
             .registerModule(JavaTimeModule())
             .registerModule(ImmutableModule())
     }
