@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.filter.impl;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.LogicalDeletedInfo;
-import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
@@ -80,7 +80,7 @@ public class LogicalDeletedFilterProvider {
 
         protected final LogicalDeletedInfo info;
 
-        private DefaultFilter(LogicalDeletedInfo info) {
+        DefaultFilter(LogicalDeletedInfo info) {
             this.info = info;
         }
 
@@ -96,7 +96,7 @@ public class LogicalDeletedFilterProvider {
 
         @Override
         public void filter(FilterArgs<Props> args) {
-            PropExpression<Object> expr = args.getTable().get(info.getProp().getName());
+            Expression<Object> expr = args.getTable().get(info.getProp().getName());
             switch (info.getAction()) {
                 case NE:
                     args.where(expr.ne(info.getValue()));
@@ -121,11 +121,11 @@ public class LogicalDeletedFilterProvider {
         }
     }
 
-    private static class IgnoredFilter implements Filter<Props>, FilterWrapper, Internal {
+    public static class IgnoredFilter implements Filter<Props>, FilterWrapper, Internal {
 
         protected final LogicalDeletedInfo info;
 
-        private IgnoredFilter(LogicalDeletedInfo info) {
+        IgnoredFilter(LogicalDeletedInfo info) {
             this.info = info;
         }
 
@@ -147,7 +147,7 @@ public class LogicalDeletedFilterProvider {
 
         protected final LogicalDeletedInfo info;
 
-        private ReversedFilter(LogicalDeletedInfo info) {
+        ReversedFilter(LogicalDeletedInfo info) {
             this.info = info;
         }
 
@@ -163,7 +163,7 @@ public class LogicalDeletedFilterProvider {
 
         @Override
         public void filter(FilterArgs<Props> args) {
-            PropExpression<Object> expr = args.getTable().get(info.getProp().getName());
+            Expression<Object> expr = args.getTable().get(info.getProp().getName());
             switch (info.getAction()) {
                 case NE:
                     args.where(expr.eq(info.getValue()));

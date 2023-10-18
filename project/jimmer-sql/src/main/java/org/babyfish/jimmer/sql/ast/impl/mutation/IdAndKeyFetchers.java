@@ -3,11 +3,10 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.DraftHandler;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.fetcher.IdOnlyReferenceType;
+import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.SqlContext;
@@ -42,12 +41,12 @@ public class IdAndKeyFetchers {
                 new FetcherImpl<>((Class<ImmutableSpi>)type.getJavaClass());
         fetcher = fetcher.add(type.getIdProp().getName());
         for (ImmutableProp keyProp : type.getKeyProps()) {
-            fetcher = fetcher.add(keyProp.getName(), IdOnlyReferenceType.RAW);
+            fetcher = fetcher.add(keyProp.getName(), IdOnlyFetchType.RAW);
         }
         DraftHandler<?, ?> handler = sqlClient.getDraftHandlers(type);
         if (handler != null) {
             for (ImmutableProp prop : handler.dependencies()) {
-                fetcher = fetcher.add(prop.getName(), IdOnlyReferenceType.RAW);
+                fetcher = fetcher.add(prop.getName(), IdOnlyFetchType.RAW);
             }
         }
         return fetcher;

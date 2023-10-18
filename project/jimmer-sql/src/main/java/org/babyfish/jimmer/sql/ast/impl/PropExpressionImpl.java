@@ -31,6 +31,8 @@ public class PropExpressionImpl<T>
 
     protected final String path;
 
+    protected final boolean rawId;
+
     public static PropExpressionImpl<?> of(EmbeddedImpl<?> base, ImmutableProp prop) {
         if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
             return new EmbeddedImpl<>(base, prop);
@@ -48,7 +50,7 @@ public class PropExpressionImpl<T>
         return new PropExpressionImpl<>(base, prop);
     }
 
-    public static PropExpressionImpl<?> of(Table<?> table, ImmutableProp prop) {
+    public static PropExpressionImpl<?> of(Table<?> table, ImmutableProp prop, boolean rawId) {
         if (prop.isTransient()) {
             throw new IllegalArgumentException(
                     "Cannot create prop expression for transient property \"" +
@@ -78,22 +80,22 @@ public class PropExpressionImpl<T>
             );
         }
         if (prop.isEmbedded(EmbeddedLevel.SCALAR)) {
-            return new EmbeddedImpl<>(table, prop);
+            return new EmbeddedImpl<>(table, prop, rawId);
         }
         Class<?> elementClass = prop.getElementClass();
         if (String.class.isAssignableFrom(elementClass)) {
-            return new StrImpl(table, prop);
+            return new StrImpl(table, prop, rawId);
         }
         if (elementClass.isPrimitive() || Number.class.isAssignableFrom(elementClass)) {
-            return new NumImpl<>(table, prop);
+            return new NumImpl<>(table, prop, rawId);
         }
         if (Comparable.class.isAssignableFrom(elementClass)) {
-            return new CmpImpl<>(table, prop);
+            return new CmpImpl<>(table, prop, rawId);
         }
-        return new PropExpressionImpl<>(table, prop);
+        return new PropExpressionImpl<>(table, prop, rawId);
     }
 
-    PropExpressionImpl(Table<?> table, ImmutableProp prop) {
+    PropExpressionImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             throw new IllegalArgumentException("prop '" + prop + "' cannot be association property");
         }
@@ -105,6 +107,7 @@ public class PropExpressionImpl<T>
         this.deepestProp = prop;
         this.base = null;
         this.path = null;
+        this.rawId = rawId && prop.isId();
     }
 
     PropExpressionImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
@@ -116,6 +119,7 @@ public class PropExpressionImpl<T>
         this.deepestProp = prop;
         this.base = base;
         this.path = base.path == null ? prop.getName() : base.path + "." + prop.getName();
+        this.rawId = base.rawId;
     }
 
     @Override
@@ -126,6 +130,11 @@ public class PropExpressionImpl<T>
     @Override
     public ImmutableProp getProp() {
         return prop;
+    }
+
+    @Override
+    public boolean isRawId() {
+        return rawId;
     }
 
     @Nullable
@@ -139,7 +148,7 @@ public class PropExpressionImpl<T>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
+        visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop, rawId);
     }
 
     @Override
@@ -153,14 +162,14 @@ public class PropExpressionImpl<T>
         EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         if (partial != null) {
             if (ignoreEmbeddedTuple || partial.size() == 1) {
-                tableImplementor.renderSelection(prop, builder, path != null ? partial : null);
+                tableImplementor.renderSelection(prop, rawId, builder, path != null ? partial : null);
             } else {
                 builder.enter(SqlBuilder.ScopeType.TUPLE);
-                tableImplementor.renderSelection(prop, builder, path != null ? partial : null);
+                tableImplementor.renderSelection(prop, rawId, builder, path != null ? partial : null);
                 builder.leave();
             }
         } else {
-            tableImplementor.renderSelection(prop, builder, null);
+            tableImplementor.renderSelection(prop, rawId, builder, null);
         }
     }
 
@@ -200,8 +209,8 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<String>
             implements PropExpression.Str, StringExpressionImplementor {
 
-        StrImpl(Table<?> table, ImmutableProp prop) {
-            super(table, prop);
+        StrImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
+            super(table, prop, rawId);
         }
 
         StrImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
@@ -233,8 +242,8 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<N>
             implements PropExpression.Num<N>, NumericExpressionImplementor<N> {
 
-        NumImpl(Table<?> table, ImmutableProp prop) {
-            super(table, prop);
+        NumImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
+            super(table, prop, rawId);
         }
 
         NumImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
@@ -261,8 +270,8 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<T>
             implements PropExpression.Cmp<T>, ComparableExpressionImplementor<T> {
 
-        CmpImpl(Table<?> table, ImmutableProp prop) {
-            super(table, prop);
+        CmpImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
+            super(table, prop, rawId);
         }
 
         CmpImpl(EmbeddedImpl<?> base, ImmutableProp prop) {
@@ -289,8 +298,8 @@ public class PropExpressionImpl<T>
             extends PropExpressionImpl<T>
             implements PropExpression.Embedded<T> {
 
-        protected EmbeddedImpl(Table<?> table, ImmutableProp prop) {
-            super(table, prop);
+        protected EmbeddedImpl(Table<?> table, ImmutableProp prop, boolean rawId) {
+            super(table, prop, rawId);
         }
 
         protected EmbeddedImpl(EmbeddedImpl<?> base, ImmutableProp prop) {

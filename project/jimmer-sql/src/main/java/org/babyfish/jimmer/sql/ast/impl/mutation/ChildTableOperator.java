@@ -139,9 +139,9 @@ class ChildTableOperator {
         ImmutableType childType = parentProp.getDeclaringType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.<Expression<Object>>getAssociatedId(parentProp).eq(parentId));
+        query.where(table.getAssociatedId(parentProp).eq(parentId));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
-            query.where(table.<Expression<Object>>get(childType.getIdProp()).notIn(retainedChildIds));
+            query.where(table.get(childType.getIdProp()).notIn(retainedChildIds));
         }
         return query.select(Expression.constant(1)).execute(con) != null;
     }
@@ -276,9 +276,9 @@ class ChildTableOperator {
 
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, parentProp.getDeclaringType(), ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentIdProp).in(parentIds));
+        query.where(table.getAssociatedId(parentProp).in(parentIds));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
-            query.where(table.<PropExpression<Object>>get(childIdProp).notIn(retainedChildIds));
+            query.where(table.get(childIdProp).notIn(retainedChildIds));
         }
         List<ImmutableSpi> childRows = Internal.requiresNewDraftContext(ctx -> {
             List<ImmutableSpi> list = (List<ImmutableSpi>) query.select(table).execute(con);
@@ -346,10 +346,10 @@ class ChildTableOperator {
         ImmutableProp parentIdProp = parentType.getIdProp();
         MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, childType);
         TableImplementor<?> table = update.getTableImplementor();
-        update.set(table.joinImplementor(parentProp).get(parentIdProp), (Object) null);
-        update.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentIdProp).eq(parentId));
+        update.set((PropExpression<Object>)table.getAssociatedId(parentProp), (Object) null);
+        update.where(table.getAssociatedId(parentProp).eq(parentId));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
-            update.where(table.<Expression<Object>>get(childType.getIdProp()).notIn(retainedChildIds));
+            update.where(table.get(childType.getIdProp()).notIn(retainedChildIds));
         }
         return update.execute(con);
     }
@@ -405,11 +405,10 @@ class ChildTableOperator {
 
     private List<Object> getDetachedChildIdsByDsl(Object parentId, Collection<Object> retainedChildIds) {
         ImmutableType childType = parentProp.getDeclaringType();
-        ImmutableType parentType = parentProp.getTargetType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, childType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
         Expression<Object> childIdExpr = table.get(childType.getIdProp());
-        query.where(table.joinImplementor(parentProp).<Expression<Object>>get(parentType.getIdProp()).eq(parentId));
+        query.where(table.getAssociatedId(parentProp).eq(parentId));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
             query.where(childIdExpr.notIn(retainedChildIds));
         }

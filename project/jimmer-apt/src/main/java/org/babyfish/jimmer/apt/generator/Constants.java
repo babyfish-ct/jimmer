@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.apt.generator;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
@@ -191,10 +189,10 @@ class Constants {
                     "AbstractTypedFetcher"
             );
 
-    public static final ClassName ID_ONLY_REFERENCE_TYPE =
+    public static final ClassName ID_ONLY_FETCH_TYPE =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
-                    "IdOnlyReferenceType"
+                    "IdOnlyFetchType"
             );
 
     public static final ClassName FETCHER_CLASS_NAME =

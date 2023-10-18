@@ -165,12 +165,6 @@ public abstract class AbstractMutableQueryImpl
         super.onFrozen();
     }
 
-    @Override
-    protected void applyGlobalFilers(FilterLevel level) {
-        setOrderByPriority(ORDER_BY_PRIORITY_GLOBAL_FILTER);
-        super.applyGlobalFilers(level);
-    }
-
     void accept(
             AstVisitor visitor,
             List<Selection<?>> overriddenSelections,
@@ -264,7 +258,8 @@ public abstract class AbstractMutableQueryImpl
         return !this.groupByExpressions.isEmpty();
     }
 
-    List<Order> getOrders() {
+    @Override
+    protected List<Order> getOrders() {
         return Collections.unmodifiableList(orders);
     }
 
@@ -286,6 +281,7 @@ public abstract class AbstractMutableQueryImpl
             acceptedByPriority = orderByPriority;
         }
         this.orders.add(order);
+        modify();
     }
 
     private static class UseJoinOfIgnoredClauseVisitor extends AstVisitor {
@@ -300,13 +296,17 @@ public abstract class AbstractMutableQueryImpl
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
-            handle(table, prop != null && prop.isId());
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+            handle(
+                    table,
+                    prop != null && prop.isId() &&
+                    (rawId || table.isRawIdAllowed(getAstContext().getSqlClient()))
+            );
         }
 
-        private void handle(TableImplementor<?> table, boolean isId) {
+        private void handle(TableImplementor<?> table, boolean isRawId) {
             if (table.getDestructive() != TableRowCountDestructive.NONE) {
-                if (isId) {
+                if (isRawId) {
                     getAstContext().useTableId(table);
                     use(table.getParent());
                 } else {

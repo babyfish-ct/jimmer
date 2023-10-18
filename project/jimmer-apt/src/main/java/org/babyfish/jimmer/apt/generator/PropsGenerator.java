@@ -249,14 +249,14 @@ public class PropsGenerator {
                 }
             } else if (prop.isAssociation(false)) {
                 builder.addStatement(
-                        "return new $T(get($T.$L.unwrap()))",
+                        "return new $T(__get($T.$L.unwrap()))",
                         returnType,
                         prop.getDeclaringType().getPropsClassName(),
                         Strings.upper(prop.getName())
                 );
             } else {
                 builder.addStatement(
-                        "return get($T.$L.unwrap())",
+                        "return __get($T.$L.unwrap())",
                         prop.getDeclaringType().getPropsClassName(),
                         Strings.upper(prop.getName())
                 );
@@ -325,7 +325,7 @@ public class PropsGenerator {
         }
         if (withImplementation) {
             builder.addStatement(
-                    "return getAssociatedId($T.$L.unwrap())",
+                    "return __getAssociatedId($T.$L.unwrap())",
                     prop.getDeclaringType().getPropsClassName(),
                     Strings.upper(prop.getName())
             );

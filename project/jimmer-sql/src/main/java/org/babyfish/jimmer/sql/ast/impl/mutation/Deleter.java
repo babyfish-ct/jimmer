@@ -293,7 +293,7 @@ public class Deleter {
         ImmutableType childType = backProp.getDeclaringType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(data.getSqlClient(), childType, ExecutionPurpose.MUTATE, FilterLevel.IGNORE_ALL);
         TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.<Expression<Object>>getAssociatedId(backProp).in((Collection<Object>)ids));
+        query.where(table.getAssociatedId(backProp).in((Collection<Object>)ids));
         List<Object> childRows = (List<Object>) query.select(table).execute(con);
         List<Object> childIds = new ArrayList<>(childRows.size());
         PropId childIdProp = childType.getIdProp().getId();

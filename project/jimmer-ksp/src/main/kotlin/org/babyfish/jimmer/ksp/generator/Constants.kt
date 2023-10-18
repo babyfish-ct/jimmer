@@ -176,6 +176,10 @@ internal val FETCHER_CREATOR_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
     "FetcherCreator"
 )
+internal val ID_ONLY_FETCH_TYPE = ClassName(
+    "org.babyfish.jimmer.sql.fetcher",
+    "IdOnlyFetchType"
+)
 internal val SELECTION_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.ast",

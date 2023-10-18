@@ -18,7 +18,7 @@ public class DataLoader extends AbstractDataLoader {
                 field.getFilter(),
                 field.getLimit(),
                 field.getOffset(),
-                field.isRawValue()
+                field.isRawId()
         );
     }
 }

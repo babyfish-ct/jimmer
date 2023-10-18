@@ -26,7 +26,7 @@ internal abstract class NullityPredicate(
                 builder.enter(SqlBuilder.ScopeType.AND)
                 for (column in partial) {
                     builder.separator()
-                    table.renderSelection(prop, builder,
+                    table.renderSelection(prop, true, builder,
                         SingleColumn(column, false)
                     )
                     if (isNegative()) {

@@ -12,11 +12,11 @@ interface KRemoteRef<E: Any> {
     companion object {
 
         @JvmStatic
-        fun <E: Any> protect(table: KNonNullTable<E>): KRemoteRef.NonNull<E> =
+        fun <E: Any> protect(table: KNonNullTable<E>): NonNull<E> =
             KRemoteRefImpl.NonNull((table as KTableImplementor<*>).javaTable)
 
         @JvmStatic
-        fun <E: Any> protect(table: KNullableTable<E>): KRemoteRef.Nullable<E> =
+        fun <E: Any> protect(table: KNullableTable<E>): Nullable<E> =
             KRemoteRefImpl.Nullable((table as KTableImplementor<*>).javaTable)
     }
 }

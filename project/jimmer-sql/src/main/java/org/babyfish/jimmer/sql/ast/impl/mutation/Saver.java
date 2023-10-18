@@ -352,7 +352,7 @@ class Saver {
                             ExecutionPurpose.MUTATE,
                             FilterLevel.DEFAULT,
                             (q, t) -> {
-                                PropExpression<Object> idExpr = t.get(prop.getTargetType().getIdProp().getName());
+                                Expression<Object> idExpr = t.get(prop.getTargetType().getIdProp());
                                 q.where(idExpr.in(illegalTargetIds));
                                 return q.select(idExpr);
                             }
@@ -754,13 +754,13 @@ class Saver {
         }
         int updatedCount = updatedProps.size();
         for (int i = 0; i < updatedCount; i++) {
-            update.set(table.get(updatedProps.get(i).getName()), updatedValues.get(i));
+            update.set((PropExpression<Object>) table.get(updatedProps.get(i)), updatedValues.get(i));
         }
-        update.where(((PropExpression<Object>)table.get(idProp.getName())).eq(draftSpi.__get(idProp.getId())));
+        update.where(table.get(idProp).eq(draftSpi.__get(idProp.getId())));
         if (version != null) {
             ImmutableProp versionProp = type.getVersionProp();
             assert  versionProp != null;
-            update.where(((PropExpression<Object>)table.get(versionProp.getName())).eq(version));
+            update.where(table.get(versionProp).eq(version));
         }
         update.where(lambda.apply(table, draftSpi));
         return update.execute(con);
@@ -871,10 +871,7 @@ class Saver {
                 for (ImmutableProp keyProp : actualKeyProps) {
                     if (keyProp.isReference(TargetLevel.ENTITY)) {
                         ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
-                        Expression<Object> targetIdExpression =
-                                table
-                                        .<Table<?>>join(keyProp.getName())
-                                        .get(targetIdProp.getName());
+                        Expression<Object> targetIdExpression = table.getAssociatedId(keyProp);
                         ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getId());
                         if (target != null) {
                             q.where(targetIdExpression.eq(target.__get(targetIdProp.getId())));
@@ -884,9 +881,9 @@ class Saver {
                     } else {
                         Object value = example.__get(keyProp.getId());
                         if (value != null) {
-                            q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
+                            q.where(table.get(keyProp).eq(value));
                         } else {
-                            q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
+                            q.where(table.get(keyProp).isNull());
                         }
                     }
                 }

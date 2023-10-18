@@ -126,7 +126,7 @@ public class FilterCacheTest extends AbstractQueryTest {
                 executeAndExpect(
                         sqlClient
                                 .createQuery(table)
-                                .where(table.parent().isNull())
+                                .where(table.parentId().isNull())
                                 .orderBy(table.id().asc())
                                 .select(
                                         table.fetch(

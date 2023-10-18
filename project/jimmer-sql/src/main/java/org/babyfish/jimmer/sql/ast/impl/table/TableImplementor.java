@@ -5,10 +5,13 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<TableImplementor<?>> {
@@ -21,6 +24,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
 
     boolean isRemote();
 
+    boolean isRawIdAllowed(JSqlClientImplementor sqlClient);
+
     ImmutableProp getJoinProp();
 
     WeakJoinHandle getWeakJoinHandle();
@@ -32,6 +37,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
     TableRowCountDestructive getDestructive();
 
     void renderJoinAsFrom(SqlBuilder builder, TableImplementor.RenderMode mode);
+
+    <X> PropExpression<X> get(ImmutableProp prop, boolean rawId);
 
     <X> TableImplementor<X> joinImplementor(ImmutableProp prop);
 

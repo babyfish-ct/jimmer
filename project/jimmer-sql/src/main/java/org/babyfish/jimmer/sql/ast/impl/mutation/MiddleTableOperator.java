@@ -149,8 +149,8 @@ class MiddleTableOperator {
         ImmutableType targetType = prop.getTargetType();
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClient, targetType, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
-        query.where(table.inverseJoinImplementor(prop).<Expression<Object>>get(prop.getDeclaringType().getIdProp()).eq(id));
-        return query.select(table.<Expression<Object>>get(targetType.getIdProp())).execute(con);
+        query.where(table.inverseGetAssociatedId(prop).eq(id));
+        return query.select(table.get(targetType.getIdProp())).execute(con);
     }
 
     private Collection<Tuple2<?, ?>> filterTuples(Collection<Tuple2<?, ?>> tuples) {

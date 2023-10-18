@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.filter.common;
 
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
@@ -39,8 +40,8 @@ public class FileFilter implements Filter<FileProps> {
                 AssociationTable.of(FileTableEx.class, FileTableEx::users);
         args.where(
                 args.createAssociationSubQuery(association)
-                        .where(association.source().id().eq(table.id()))
-                        .where(association.target().id().eq(userId))
+                        .where(association.sourceId().eq(table.id()))
+                        .where(association.targetId().eq(userId))
                         .exists()
         );
     }

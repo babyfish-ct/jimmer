@@ -74,7 +74,7 @@ public interface Fetcher<E> {
      * @return A new fetcher
      */
     @NewChain
-    Fetcher<E> add(String prop, IdOnlyReferenceType referenceType);
+    Fetcher<E> add(String prop, IdOnlyFetchType referenceType);
 
     /**
      * Unfetch a property

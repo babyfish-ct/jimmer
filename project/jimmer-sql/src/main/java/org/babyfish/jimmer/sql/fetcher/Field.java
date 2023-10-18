@@ -37,5 +37,5 @@ public interface Field {
 
     boolean isImplicit();
 
-    boolean isRawValue();
+    boolean isRawId();
 }

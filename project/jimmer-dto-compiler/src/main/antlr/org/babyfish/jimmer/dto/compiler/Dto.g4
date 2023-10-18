@@ -88,7 +88,7 @@ positiveProp
     (
         (annotations += annotation)* dtoBody (recursive='*')?
         |
-        enumBody
+        '->' enumBody
     )?
     ;
 
@@ -176,7 +176,7 @@ enumBody
 
 enumMapping
     :
-    constant = Identifier '->' value = (StringLiteral | IntegerLiteral)
+    constant = Identifier ':' value = (StringLiteral | IntegerLiteral)
     ;
 
 // Lexer --------

@@ -113,6 +113,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
             );
             tableImplementor.renderSelection(
                     tableImplementor.getImmutableType().getIdProp(),
+                    idPropExpr.isRawId(),
                     builder,
                     null,
                     true,
@@ -157,7 +158,7 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
                 .getSelectableProps();
         for (ImmutableProp prop : selectableProps.values()) {
             builder.separator();
-            table.renderSelection(prop, builder, null);
+            table.renderSelection(prop, true, builder, null);
         }
     }
 

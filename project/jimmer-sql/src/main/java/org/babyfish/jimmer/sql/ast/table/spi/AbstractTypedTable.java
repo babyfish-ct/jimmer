@@ -7,10 +7,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
@@ -20,8 +17,6 @@ import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -90,8 +85,8 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         if (other.getImmutableType() != immutableType) {
             throw new IllegalArgumentException("Cannot compare tables of different types");
         }
-        String idPropName = immutableType.getIdProp().getName();
-        return this.<Expression<Object>>get(idPropName).eq(other.get(idPropName));
+        ImmutableProp idProp = immutableType.getIdProp();
+        return this.get(idProp).eq(other.get(idProp));
     }
 
     @Override
@@ -147,58 +142,79 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <XE extends Expression<?>> XE get(String prop) {
+    public <X> PropExpression<X> get(String prop) {
         if (raw != null) {
             return raw.get(prop);
         }
         ImmutableProp immutableProp = immutableType.getProp(prop);
         ImmutableProp idViewBaseProp = immutableProp.getIdViewBaseProp();
-        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
-            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
-                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+        if (idViewBaseProp != null) {
+            return getAssociatedId(prop);
         }
-        return (XE)PropExpressionImpl.of(this, immutableProp);
+        return (PropExpression<X>) PropExpressionImpl.of(this, immutableProp, false);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+    public <X> PropExpression<X> get(ImmutableProp prop) {
         if (raw != null) {
             return raw.get(prop);
         }
         ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
         if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
-            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
-                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+            return getAssociatedId(prop);
         }
-        return (XE)PropExpressionImpl.of(this, prop);
+        return (PropExpression<X>)PropExpressionImpl.of(this, prop, false);
     }
 
     @Override
-    public <XE extends Expression<?>> XE getId() {
+    public <X> PropExpression<X> getId() {
         if (raw != null) {
             return raw.getId();
         }
         return get(immutableType.getIdProp());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <XE extends Expression<?>> XE getAssociatedId(String prop) {
+    public <X> PropExpression<X> getAssociatedId(String prop) {
         if (raw != null) {
             return raw.getAssociatedId(prop);
         }
         ImmutableProp immutableProp = immutableType.getProp(prop);
-        return join(immutableProp, immutableProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
-                .get(immutableProp.getTargetType().getIdProp());
+        Table<?> joinedTable = join(immutableProp, immutableProp.isNullable() ? JoinType.LEFT : JoinType.INNER);
+        return (PropExpression<X>) PropExpressionImpl.of(joinedTable, immutableProp.getTargetType().getIdProp(), true);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop) {
+    public <X> PropExpression<X> getAssociatedId(ImmutableProp prop) {
         if (raw != null) {
             return raw.getAssociatedId(prop);
         }
-        return join(prop, prop.isNullable() ? JoinType.LEFT : JoinType.INNER)
-                .get(prop.getTargetType().getIdProp());
+        Table<?> joinedTable = join(prop, prop.isNullable() ? JoinType.LEFT : JoinType.INNER);
+        return (PropExpression<X>) PropExpressionImpl.of(joinedTable, joinedTable.getImmutableType().getIdProp(), true);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected final <EXP extends PropExpression<?>> EXP __get(ImmutableProp prop) {
+        if (raw != null) {
+            return (EXP) raw.get(prop);
+        }
+        ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
+            return (EXP) getAssociatedId(prop);
+        }
+        return (EXP) PropExpressionImpl.of(this, prop, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected final <EXP extends PropExpression<?>> EXP __getAssociatedId(ImmutableProp prop) {
+        if (raw != null) {
+            return (EXP) raw.getAssociatedId(prop);
+        }
+        Table<?> joinedTable = join(prop, prop.isNullable() ? JoinType.LEFT : JoinType.INNER);
+        return (EXP) PropExpressionImpl.of(joinedTable, prop.getTargetType().getIdProp(), true);
     }
 
     @Override
@@ -295,6 +311,16 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                         treatedAs
                 )
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
+        if (raw != null) {
+            return raw.inverseGetAssociatedId(prop);
+        }
+        Table<?> joinedTable = inverseJoin(prop);
+        return (PropExpression<X>) PropExpressionImpl.of(joinedTable, joinedTable.getImmutableType().getIdProp(), true);
     }
 
     @Override

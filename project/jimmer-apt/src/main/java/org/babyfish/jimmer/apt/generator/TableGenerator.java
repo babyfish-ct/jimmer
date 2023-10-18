@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -365,7 +366,11 @@ public class TableGenerator {
                 .methodBuilder(type.getIdProp().getName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(PropsGenerator.returnTypeName(context, false, type.getIdProp()))
-                .addStatement("return get($S)", type.getIdProp().getName());
+                .addStatement(
+                        "return __get($T.$L.unwrap())",
+                        type.getPropsClassName(),
+                        StringUtil.snake(type.getIdProp().getName(), StringUtil.SnakeCase.UPPER)
+                );
         typeBuilder.addMethod(builder.build());
     }
 

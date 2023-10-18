@@ -6,11 +6,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.sql.Id;
-import org.babyfish.jimmer.sql.JoinTable;
-import org.babyfish.jimmer.sql.ManyToOne;
-import org.babyfish.jimmer.sql.OneToOne;
+import org.babyfish.jimmer.sql.*;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -93,16 +89,7 @@ public class FetcherGenerator {
                                 addAssociationPropByFieldConfig(prop);
                             }
                         }
-                        JoinTable joinTable = prop.getAnnotation(JoinTable.class);
-                        if (joinTable == null) {
-                            OneToOne oneToOne = prop.getAnnotation(OneToOne.class);
-                            if (oneToOne != null && oneToOne.mappedBy().isEmpty()) {
-                                addReferencePropByReferenceType(prop);
-                            }
-                            if (prop.getAnnotation(ManyToOne.class) != null) {
-                                addReferencePropByReferenceType(prop);
-                            }
-                        }
+                        addPropByIdOnlyFetchType(prop);
                     }
                 }
             }
@@ -264,18 +251,28 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addReferencePropByReferenceType(ImmutableProp prop) {
+    private void addPropByIdOnlyFetchType(ImmutableProp prop) {
+        ImmutableProp associationProp = prop.getIdViewBaseProp();
+        if (associationProp == null) {
+            associationProp = prop;
+        }
+        if (associationProp.isTransient() || !associationProp.isAssociation(true)) {
+            return;
+        }
+        if (prop.isReverse() && prop.getAnnotation(ManyToMany.class) == null && prop.getAnnotation(JoinTable.class) == null) {
+            return;
+        }
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(prop.getName())
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(NewChain.class)
                 .addParameter(
-                        Constants.ID_ONLY_REFERENCE_TYPE,
-                        "referenceType"
+                        Constants.ID_ONLY_FETCH_TYPE,
+                        "idOnlyFetchType"
                 )
                 .returns(type.getFetcherClassName())
                 .addStatement(
-                        "return add($S, referenceType)",
+                        "return add($S, idOnlyFetchType)",
                         prop.getName()
                 );
         typeBuilder.addMethod(builder.build());
@@ -288,8 +285,8 @@ public class FetcherGenerator {
                 .addParameter(type.getFetcherClassName(), "prev")
                 .addParameter(org.babyfish.jimmer.meta.ImmutableProp.class, "prop")
                 .addParameter(boolean.class, "negative")
-                .addParameter(Constants.ID_ONLY_REFERENCE_TYPE, "referenceType")
-                .addStatement("super(prev, prop, negative, referenceType)");
+                .addParameter(Constants.ID_ONLY_FETCH_TYPE, "idOnlyFetchType")
+                .addStatement("super(prev, prop, negative, idOnlyFetchType)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -325,10 +322,10 @@ public class FetcherGenerator {
                         "prop"
                 )
                 .addParameter(boolean.class, "negative")
-                .addParameter(Constants.ID_ONLY_REFERENCE_TYPE, "referenceType")
+                .addParameter(Constants.ID_ONLY_FETCH_TYPE, "idOnlyFetchType")
                 .returns(type.getFetcherClassName())
                 .addAnnotation(Override.class)
-                .addStatement("return new $T(this, prop, negative, referenceType)", type.getFetcherClassName());
+                .addStatement("return new $T(this, prop, negative, idOnlyFetchType)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 

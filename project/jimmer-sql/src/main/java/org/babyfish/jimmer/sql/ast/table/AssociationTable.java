@@ -5,6 +5,7 @@ import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.table.AssociationTableProxyImpl;
 
 import java.util.function.Function;
@@ -21,9 +22,17 @@ public interface AssociationTable<
         return (ST)join("source");
     }
 
+    default <SID> Expression<SID> sourceId() {
+        return getAssociatedId("source");
+    }
+
     @SuppressWarnings("unchecked")
     default ST source(ImmutableType treatedAs) {
         return (ST)join("source", JoinType.INNER, treatedAs);
+    }
+
+    default <TID> Expression<TID> targetId() {
+        return getAssociatedId("target");
     }
 
     @SuppressWarnings("unchecked")

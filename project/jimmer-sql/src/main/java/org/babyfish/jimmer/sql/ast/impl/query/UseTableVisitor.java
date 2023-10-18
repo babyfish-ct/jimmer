@@ -13,13 +13,13 @@ public class UseTableVisitor extends AstVisitor {
     }
 
     @Override
-    public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
+    public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
 
         if (prop == null) {
             if (table.getImmutableType().getSelectableProps().size() > 1) {
                 use(table);
             }
-        } else if (prop.isId()) {
+        } else if (prop.isId() && (rawId || table.isRawIdAllowed(getAstContext().getSqlClient()))) {
             getAstContext().useTableId(table);
             use(table.getParent());
         } else {

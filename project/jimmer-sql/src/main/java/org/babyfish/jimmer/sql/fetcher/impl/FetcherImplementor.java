@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldConfig;
-import org.babyfish.jimmer.sql.fetcher.IdOnlyReferenceType;
+import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
 
     @Override
     @NewChain
-    FetcherImplementor<E> add(String prop, IdOnlyReferenceType referenceType);
+    FetcherImplementor<E> add(String prop, IdOnlyFetchType idOnlyFetchType);
 
     @Override
     @NewChain

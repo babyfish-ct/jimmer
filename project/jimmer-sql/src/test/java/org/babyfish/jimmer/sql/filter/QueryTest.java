@@ -79,7 +79,7 @@ public class QueryTest extends AbstractQueryTest {
             executeAndExpect(
                     sqlClient
                             .createQuery(table)
-                            .where(table.parent().isNull())
+                            .where(table.parentId().isNull())
                             .orderBy(table.id().asc())
                             .select(
                                     table.fetch(
@@ -337,6 +337,78 @@ public class QueryTest extends AbstractQueryTest {
                                         "--->--->--->}" +
                                         "--->--->]" +
                                         "--->}" +
+                                        "]"
+                        );
+                    }
+            );
+        });
+    }
+
+    @Test
+    public void testByParentId() {
+
+        FileTable table = FileTable.$;
+
+        FileFilter.withUser(2, () -> {
+            executeAndExpect(
+                    sqlClient.createQuery(table).where(table.parent().id().eq(40L)).select(table),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from FILE tb_1_ " +
+                                        "inner join FILE tb_2_ on tb_1_.PARENT_ID = tb_2_.ID " +
+                                        "where " +
+                                        "--->tb_2_.ID = ? " +
+                                        "and " +
+                                        "--->exists(" +
+                                        "--->--->select 1 " +
+                                        "--->--->from FILE_USER_MAPPING tb_3_ " +
+                                        "--->--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        "--->) " +
+                                        "and " +
+                                        "--->exists(" +
+                                        "--->--->select 1 " +
+                                        "--->--->from FILE_USER_MAPPING tb_6_ " +
+                                        "--->--->where tb_6_.FILE_ID = tb_2_.ID and tb_6_.USER_ID = ?" +
+                                        ")"
+                        ).variables(40L, 2L, 2L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{\"id\":41,\"name\":\"passwd\",\"parent\":{\"id\":40}}," +
+                                        "--->{\"id\":44,\"name\":\"profile\",\"parent\":{\"id\":40}}," +
+                                        "--->{\"id\":45,\"name\":\"services\",\"parent\":{\"id\":40}}," +
+                                        "--->{\"id\":43,\"name\":\"ssh\",\"parent\":{\"id\":40}}" +
+                                        "]"
+                        );
+                    }
+            );
+        });
+    }
+
+    @Test
+    public void testByRawParentId() {
+
+        FileTable table = FileTable.$;
+
+        FileFilter.withUser(2, () -> {
+            executeAndExpect(
+                    sqlClient.createQuery(table).where(table.parentId().eq(40L)).select(table),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from FILE tb_1_ " +
+                                        "where tb_1_.PARENT_ID = ? and exists(" +
+                                        "--->select 1 " +
+                                        "--->from FILE_USER_MAPPING tb_3_ " +
+                                        "--->where tb_3_.FILE_ID = tb_1_.ID and tb_3_.USER_ID = ?" +
+                                        ")"
+                        ).variables(40L, 2L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{\"id\":41,\"name\":\"passwd\",\"parent\":{\"id\":40}}," +
+                                        "--->{\"id\":44,\"name\":\"profile\",\"parent\":{\"id\":40}}," +
+                                        "--->{\"id\":45,\"name\":\"services\",\"parent\":{\"id\":40}}," +
+                                        "--->{\"id\":43,\"name\":\"ssh\",\"parent\":{\"id\":40}}" +
                                         "]"
                         );
                     }

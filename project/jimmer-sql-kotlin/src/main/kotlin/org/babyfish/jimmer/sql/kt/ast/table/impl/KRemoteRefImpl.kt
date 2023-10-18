@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.sql.kt.ast.table.impl
 
-import org.babyfish.jimmer.sql.ast.PropExpression
-import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNullablePropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NonNullPropExpressionImpl
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullablePropExpressionImpl
@@ -17,21 +17,19 @@ internal abstract class KRemoteRefImpl<E: Any>(
         javaTable: Table<*>
     ) : KRemoteRefImpl<E>(javaTable), KRemoteRef.NonNull<E> {
 
-        @Suppress("UNCHECKED_CAST")
-        override fun <X : Any, EXP : KPropExpression<X>> id(): EXP =
-            NonNullPropExpressionImpl<X>(
-                javaTable.get(javaTable.immutableType.idProp.name)
-            ) as EXP
+        override fun <X : Any> id(): KNonNullPropExpression<X> =
+            NonNullPropExpressionImpl(
+                javaTable.get<X>(javaTable.immutableType.idProp) as PropExpressionImpl<X>
+            )
     }
 
     class Nullable<E: Any>(
         javaTable: Table<*>
     ) : KRemoteRefImpl<E>(javaTable), KRemoteRef.Nullable<E> {
 
-        @Suppress("UNCHECKED_CAST")
-        override fun <X : Any, EXP : KPropExpression<X>> id(): EXP =
+        override fun <X : Any> id(): KNullablePropExpression<X> =
             NullablePropExpressionImpl<X>(
-                javaTable.get(javaTable.immutableType.idProp.name)
-            ) as EXP
+                javaTable.get<X>(javaTable.immutableType.idProp) as PropExpressionImpl<X>
+            )
     }
 }

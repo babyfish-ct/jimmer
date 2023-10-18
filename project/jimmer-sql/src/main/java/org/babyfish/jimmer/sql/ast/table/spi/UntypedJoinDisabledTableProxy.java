@@ -5,10 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.Predicate;
-import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
@@ -36,27 +33,30 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
-    public <XE extends Expression<?>> XE get(String prop) {
+    public <X> PropExpression<X> get(String prop) {
         return table.get(prop);
     }
 
     @Override
-    public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+    public <X> PropExpression<X> get(ImmutableProp prop) {
         return table.get(prop);
     }
 
     @Override
-    public <XE extends Expression<?>> XE getId() {
+    public <X> PropExpression<X> getId() {
         return table.getId();
     }
 
     @Override
-    public <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop) {
+    public <X> PropExpression<X> getAssociatedId(ImmutableProp prop) {
+        if (!prop.isColumnDefinition()) {
+            throw new IllegalStateException(joinDisabledReason);
+        }
         return table.get(prop);
     }
 
     @Override
-    public <XE extends Expression<?>> XE getAssociatedId(String prop) {
+    public <X> PropExpression<X> getAssociatedId(String prop) {
         return table.get(prop);
     }
 
@@ -88,6 +88,15 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     @Override
     public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
         throw new IllegalStateException(joinDisabledReason);
+    }
+
+    @Override
+    public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
+        ImmutableProp opposite = prop.getOpposite();
+        if (opposite == null || !opposite.isColumnDefinition()) {
+            throw new IllegalStateException(joinDisabledReason);
+        }
+        return table.inverseGetAssociatedId(prop);
     }
 
     @Override
@@ -202,7 +211,7 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
 
     @Override
     public TableImplementor<E> __resolve(RootTableResolver resolver) {
-        return null;
+        return table;
     }
 
     @SuppressWarnings("unchecked")

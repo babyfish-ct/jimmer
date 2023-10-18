@@ -20,7 +20,7 @@ import java.util.List;
 public class FilterArgsImpl<P extends Props> implements FilterArgs<P> {
 
     private static final String JOIN_DISABLED_REASON =
-            "it is not allowed by cacheable filter";
+            "it is not allowed by in filter";
 
     private final FilterableImplementor filterable;
 

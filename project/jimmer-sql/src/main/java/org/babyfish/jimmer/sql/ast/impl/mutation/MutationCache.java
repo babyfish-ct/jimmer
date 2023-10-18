@@ -77,7 +77,7 @@ class MutationCache {
             List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
                 MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(sqlClientWithoutCache, type, ExecutionPurpose.MUTATE, filterLevel());
                 TableImplementor<?> table = query.getTableImplementor();
-                query.where(table.<Expression<Object>>getId().in(missedIds));
+                query.where(table.getId().in(missedIds));
                 List<ImmutableSpi> spiList = (List<ImmutableSpi>)
                         query.select(table).forUpdate(isPessimisticLockRequired()).execute(con);
                 return ctx.resolveList(spiList);

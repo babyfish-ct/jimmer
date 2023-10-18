@@ -5,9 +5,8 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldConfig;
-import org.babyfish.jimmer.sql.fetcher.IdOnlyReferenceType;
+import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 
 import java.util.function.Consumer;
 
@@ -21,9 +20,9 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
             FetcherImpl<E> prev,
             ImmutableProp prop,
             boolean negative,
-            IdOnlyReferenceType referenceType
+            IdOnlyFetchType idOnlyFetchType
     ) {
-        super(prev, prop, negative, referenceType);
+        super(prev, prop, negative, idOnlyFetchType);
     }
 
     protected AbstractTypedFetcher(
@@ -84,12 +83,12 @@ public abstract class AbstractTypedFetcher<E, T extends AbstractTypedFetcher<E, 
     @NewChain
     @SuppressWarnings("unchecked")
     @Override
-    public T add(String prop, IdOnlyReferenceType referenceType) {
-        return (T) super.add(prop, referenceType);
+    public T add(String prop, IdOnlyFetchType idOnlyFetchType) {
+        return (T) super.add(prop, idOnlyFetchType);
     }
 
     @Override
-    protected abstract T createFetcher(ImmutableProp prop, boolean negative, IdOnlyReferenceType referenceType);
+    protected abstract T createFetcher(ImmutableProp prop, boolean negative, IdOnlyFetchType referenceType);
 
     @Override
     protected abstract T createFetcher(ImmutableProp prop, FieldConfig<?, ? extends Table<?>> fieldConfig);

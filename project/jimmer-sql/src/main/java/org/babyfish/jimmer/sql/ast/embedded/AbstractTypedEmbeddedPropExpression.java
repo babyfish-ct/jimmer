@@ -109,6 +109,11 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
+    public boolean isRawId() {
+        return ((PropExpressionImplementor<?>)raw).isRawId();
+    }
+
+    @Override
     public EmbeddedColumns.Partial getPartial(MetadataStrategy strategy) {
         return ((PropExpressionImplementor<?>)raw).getPartial(strategy);
     }
@@ -129,5 +134,9 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
             return (T)((AbstractTypedEmbeddedPropExpression<?>)selection).raw;
         }
         return (T)selection;
+    }
+
+    public <EXP extends PropExpression<?>> EXP __get(ImmutableProp prop) {
+        return raw.get(prop);
     }
 }

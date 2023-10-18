@@ -32,7 +32,7 @@ class FieldImpl implements Field {
 
     private final boolean implicit;
 
-    private final boolean rawValue;
+    private final boolean rawId;
 
     FieldImpl(
             ImmutableType entityType,
@@ -44,7 +44,7 @@ class FieldImpl implements Field {
             RecursionStrategy<?> recursionStrategy,
             FetcherImpl<?> childFetcher,
             boolean implicit,
-            boolean rawValue
+            boolean rawId
     ) {
         this.entityType = entityType;
         this.prop = prop;
@@ -56,7 +56,7 @@ class FieldImpl implements Field {
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
         this.implicit = implicit;
-        this.rawValue = rawValue;
+        this.rawId = rawId;
     }
 
     FieldImpl(
@@ -71,7 +71,7 @@ class FieldImpl implements Field {
         this.offset = base.offset;
         this.recursionStrategy = base.recursionStrategy;
         this.implicit = base.implicit;
-        this.rawValue = base.rawValue;
+        this.rawId = base.rawId;
         this.childFetcher = childFetcher;
         this.isSimpleField = determineIsSimpleField();
     }
@@ -127,8 +127,8 @@ class FieldImpl implements Field {
     }
 
     @Override
-    public boolean isRawValue() {
-        return rawValue;
+    public boolean isRawId() {
+        return rawId;
     }
 
     @Override
@@ -143,7 +143,7 @@ class FieldImpl implements Field {
         if (offset != field.offset) return false;
         if (isSimpleField != field.isSimpleField) return false;
         if (implicit != field.implicit) return false;
-        if (rawValue != field.rawValue) return false;
+        if (rawId != field.rawId) return false;
         if (!entityType.equals(field.entityType)) return false;
         if (!prop.equals(field.prop)) return false;
         if (!Objects.equals(filter, field.filter)) return false;
@@ -164,7 +164,7 @@ class FieldImpl implements Field {
         result = 31 * result + (childFetcher != null ? childFetcher.hashCode() : 0);
         result = 31 * result + (isSimpleField ? 1 : 0);
         result = 31 * result + (implicit ? 1 : 0);
-        result = 31 * result + (rawValue ? 1 : 0);
+        result = 31 * result + (rawId ? 1 : 0);
         return result;
     }
 

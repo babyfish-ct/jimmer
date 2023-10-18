@@ -262,8 +262,7 @@ fun count(expression: KExpression<*>, distinct: Boolean = false): KNonNullExpres
     }
 
 fun count(table: KTable<*>, distinct: Boolean = false): KNonNullExpression<Long> {
-    val idProp = (table as TableSelection).immutableType.idProp
-    val idExpr = table.get<Any, KPropExpression<Any>>(idProp!!.name)
+    val idExpr = table.getId<Any>()
     return count(idExpr, distinct)
 }
 

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher;
 
-public enum IdOnlyReferenceType {
+public enum IdOnlyFetchType {
 
     /**
      * When fetch one-to-one/many-to-one association mapped by foreign key directly,

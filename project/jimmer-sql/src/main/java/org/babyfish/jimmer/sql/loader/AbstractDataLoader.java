@@ -14,10 +14,12 @@ import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
@@ -574,9 +576,9 @@ public abstract class AbstractDataLoader {
         if (sourceIds.size() == 1) {
             Object sourceId = CollectionUtils.first(sourceIds);
             List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, source) -> {
-                Expression<Object> pkExpr = source.get(sourceIdProp.getName());
-                Table<?> targetTable = source.join(prop.getName());
-                Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
+                Expression<Object> pkExpr = source.get(sourceIdProp);
+                Table<?> targetTable = source.join(prop);
+                Expression<Object> fkExpr = source.getAssociatedId(prop);
                 q.where(pkExpr.eq(sourceId));
                 q.where(fkExpr.isNotNull());
                 applyPropFilter(q, targetTable, sourceIds);
@@ -590,7 +592,7 @@ public abstract class AbstractDataLoader {
                 .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, source) -> {
                     Expression<Object> pkExpr = source.get(sourceIdProp.getName());
                     Table<?> targetTable = source.join(prop.getName());
-                    Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
+                    Expression<Object> fkExpr = source.getAssociatedId(prop);
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
                     applyPropFilter(q, targetTable, sourceIds);
@@ -606,8 +608,8 @@ public abstract class AbstractDataLoader {
             if (sourceIds.size() == 1) {
                 Object sourceId = CollectionUtils.first(sourceIds);
                 List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
-                    Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
-                    Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
+                    Expression<Object> sourceIdExpr = association.sourceId();
+                    Expression<Object> targetIdExpr = association.targetId();
                     q.where(sourceIdExpr.eq(sourceId));
                     applyPropFilter(q, association.target(), sourceIds);
                     applyGlobalFilter(q, association.target());
@@ -617,8 +619,8 @@ public abstract class AbstractDataLoader {
                 return Utils.toTuples(sourceId, targetIds);
             }
             return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
-                Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
-                Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
+                Expression<Object> sourceIdExpr = association.sourceId();
+                Expression<Object> targetIdExpr = association.targetId();
                 q.where(sourceIdExpr.in(sourceIds));
                 applyPropFilter(q, association.target(), sourceIds);
                 applyGlobalFilter(q, association.target());
@@ -659,9 +661,7 @@ public abstract class AbstractDataLoader {
         if (sourceIds.size() == 1) {
             Object sourceId = CollectionUtils.first(sourceIds);
             List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
-                Expression<Object> sourceIdExpr = target
-                        .inverseJoin(prop)
-                        .get(sourceIdProp.getName());
+                Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);
                 q.where(sourceIdExpr.eq(sourceId));
                 applyPropFilter(q, target, sourceIds);
                 applyGlobalFilter(q, target);
@@ -671,9 +671,7 @@ public abstract class AbstractDataLoader {
             return Utils.toTuples(sourceId, results);
         }
         return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
-            Expression<Object> sourceIdExpr = target
-                    .inverseJoin(prop)
-                    .get(sourceIdProp.getName());
+            Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);
             q.where(sourceIdExpr.in(sourceIds));
             applyPropFilter(q, target, sourceIds);
             applyGlobalFilter(q, target);
@@ -685,7 +683,18 @@ public abstract class AbstractDataLoader {
     private void applyGlobalFilter(Sortable sortable, Table<?> table) {
         AbstractMutableQueryImpl query = (AbstractMutableQueryImpl) sortable;
         query.setOrderByPriority(AbstractMutableQueryImpl.ORDER_BY_PRIORITY_GLOBAL_FILTER);
-        query.applyGlobalFiler(table, FilterLevel.DEFAULT);
+        TableImplementor<?> tableImplementor = null;
+        if (table instanceof TableImplementor<?>) {
+            tableImplementor = (TableImplementor<?>) table;
+        } else if (table instanceof TableProxy<?>) {
+            tableImplementor = ((TableProxy<?>) table).__unwrap();
+        }
+        if (tableImplementor == null) {
+            throw new AssertionError(
+                    "The table create by data loader must be table implementation or table wrapper"
+            );
+        }
+        query.applyGlobalFiler(tableImplementor, FilterLevel.DEFAULT);
     }
 
     @SuppressWarnings("unchecked")

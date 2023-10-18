@@ -4,7 +4,7 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
-import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
 
 import java.util.function.Function;
 
@@ -18,15 +18,15 @@ public interface Props {
 
     ImmutableType getImmutableType();
 
-    <XE extends Expression<?>> XE get(ImmutableProp prop);
+    <X> PropExpression<X> get(ImmutableProp prop);
 
-    <XE extends Expression<?>> XE get(String prop);
+    <X> PropExpression<X> get(String prop);
 
-    <XE extends Expression<?>> XE getId();
+    <X> PropExpression<X> getId();
 
-    <XE extends Expression<?>> XE getAssociatedId(ImmutableProp prop);
+    <X> PropExpression<X> getAssociatedId(ImmutableProp prop);
 
-    <XE extends Expression<?>> XE getAssociatedId(String prop);
+    <X> PropExpression<X> getAssociatedId(String prop);
 
     <XT extends Table<?>> XT join(ImmutableProp prop);
 
@@ -39,6 +39,8 @@ public interface Props {
     <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs);
 
     <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs);
+
+    <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop);
 
     <XT extends Table<?>> XT inverseJoin(ImmutableProp prop);
 

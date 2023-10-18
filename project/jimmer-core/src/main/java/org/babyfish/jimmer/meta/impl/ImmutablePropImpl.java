@@ -494,8 +494,15 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             return false;
         }
         Storage storage = getStorage(strategy);
-        if (storage == null && getPrimaryAnnotationType() == ManyToMany.class) {
-            storage = getMappedBy().<MiddleTable>getStorage(strategy).getInverse();
+        if (storage == null) {
+            ImmutableProp mappedBy = getMappedBy();
+            if (mappedBy != null && !isRemote()) {
+                storage = mappedBy.getStorage(strategy);
+                if (storage instanceof MiddleTable) {
+                    return ((MiddleTable)storage).getColumnDefinition().isForeignKey();
+                }
+            }
+            return false;
         }
         if (storage instanceof MiddleTable) {
             return ((MiddleTable)storage).getTargetColumnDefinition().isForeignKey();

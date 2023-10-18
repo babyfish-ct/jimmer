@@ -345,6 +345,7 @@ public class MutableUpdateImpl
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
         impl.renderSelection(
                 target.prop,
+                true,
                 builder,
                 target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy()),
                 withPrefix
@@ -495,8 +496,8 @@ public class MutableUpdateImpl
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
-            super.visitTableReference(table, prop);
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+            super.visitTableReference(table, prop, rawId);
             if (dialect != null) {
                 validateTable(table);
             }

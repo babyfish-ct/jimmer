@@ -25,19 +25,15 @@ public class BackRefIds {
         if (prop != null && prop.isColumnDefinition()) {
             return Queries
                     .createQuery(sqlClient, thisType, ExecutionPurpose.EVICT, FilterLevel.IGNORE_USER_FILTERS, (q, table) -> {
-                        Expression<Object> idExpr = table.get(thisType.getIdProp().getName());
-                        Expression<Object> backRefIdExpr = table.join(prop.getName()).get(backRefType.getIdProp().getName());
-                        q.where(idExpr.eq(id));
-                        return q.select(backRefIdExpr);
+                        q.where(table.getId().eq(id));
+                        return q.select(table.getAssociatedId(prop));
                     })
                     .execute(con);
         }
         return Queries
                 .createQuery(sqlClient, backRefType, ExecutionPurpose.EVICT, FilterLevel.IGNORE_USER_FILTERS, (q, table) -> {
-                    Expression<?> backRefIdExpr = table.get(backRefType.getIdProp().getName());
-                    Expression<Object> idExpr = table.join(backProp.getName()).get(thisType.getIdProp().getName());
-                    q.where(idExpr.eq(id));
-                    return q.select(backRefIdExpr);
+                    q.where(table.getAssociatedId(backProp).eq(id));
+                    return q.select(table.getId());
                 })
                 .distinct()
                 .execute(con);
