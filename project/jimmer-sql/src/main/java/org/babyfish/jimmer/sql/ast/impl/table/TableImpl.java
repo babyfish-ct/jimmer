@@ -98,6 +98,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         return immutableType;
     }
 
+    @Override
     public AbstractMutableStatementImpl getStatement() {
         return statement;
     }

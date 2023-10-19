@@ -66,7 +66,6 @@ public class ConfigurableSubQueryImpl<R>
             default:
                 throw new IllegalArgumentException("selection count must between 1 and 9");
         }
-        baseQuery.freeze();
     }
 
     @Override

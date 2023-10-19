@@ -8,6 +8,8 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
+import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
+import org.babyfish.jimmer.sql.ast.query.SubQueryProvider;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.dialect.OracleDialect;

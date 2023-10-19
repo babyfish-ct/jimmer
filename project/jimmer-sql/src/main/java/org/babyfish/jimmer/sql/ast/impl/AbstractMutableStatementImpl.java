@@ -1,10 +1,11 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.query.ApplyFilterVisitor;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -17,7 +18,9 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.Filters;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -26,6 +29,8 @@ import java.util.*;
 public abstract class AbstractMutableStatementImpl implements FilterableImplementor {
 
     private static final Predicate[] EMPTY_PREDICATES = new Predicate[0];
+
+    private static final Object PRESENT = new Object();
 
     private final JSqlClientImplementor sqlClient;
 
@@ -41,7 +46,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private int modCount;
 
-    private final Set<TableImplementor<?>> filteredTables = new HashSet<>();
+    private final IdentityHashMap<TableImplementor<?>, Object> appliedTableMap = new IdentityHashMap<>();
 
     public AbstractMutableStatementImpl(
             JSqlClientImplementor sqlClient,
@@ -114,8 +119,14 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return tableImplementor;
     }
 
+    public List<Predicate> getPredicates() {
+        return Collections.unmodifiableList(predicates);
+    }
+
     public Predicate getPredicate() {
-        return predicates.isEmpty() ? null : predicates.get(0);
+        freeze();
+        List<Predicate> ps = predicates;
+        return ps.isEmpty() ? null : predicates.get(0);
     }
 
     public abstract StatementContext getContext();
@@ -144,50 +155,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     }
 
     protected void onFrozen() {
-        StatementContext ctx = getContext();
-        FilterLevel filterLevel = ctx != null ? ctx.getFilterLevel() : FilterLevel.DEFAULT;
-        if (filterLevel != FilterLevel.IGNORE_ALL) {
-            Filter<Props> globalFilter = getSqlClient().getFilters().getFilter(type);
-            if (globalFilter != null) {
-                applyGlobalFilers(filterLevel);
-            }
-        }
         predicates = mergePredicates(predicates);
     }
 
-    protected final void applyGlobalFilers(FilterLevel level) {
-        applyGlobalFiler(getTableImplementor(), level);
-        int modCount = 0;
-        AstVisitor visitor = new ApplyFilterVisitor(level);
-        AstContext astContext = visitor.getAstContext();
-        astContext.pushStatement(this);
-        try {
-            int predicateIndex = 0;
-            __APPLY_FILTERS__:
-            while (modCount() != modCount) {
-                modCount = modCount();
-                ListIterator<Predicate> itr = predicates.listIterator(predicateIndex);
-                while (itr.hasNext()) {
-                    ((Ast) itr.next()).accept(visitor);
-                    if (modCount() != modCount) {
-                        predicateIndex = itr.nextIndex();
-                        continue __APPLY_FILTERS__;
-                    }
-                }
-                for (Order order : getOrders()) {
-                    ((Ast) order.getExpression()).accept(visitor);
-                    if (modCount() != modCount) {
-                        continue __APPLY_FILTERS__;
-                    }
-                }
-            }
-        } finally {
-            astContext.popStatement();
-        }
-    }
-
     public final void applyGlobalFiler(TableImplementor<?> table, FilterLevel level) {
-        if (level == FilterLevel.IGNORE_ALL || !filteredTables.add(table)) {
+        if (level == FilterLevel.IGNORE_ALL || appliedTableMap.put(table, PRESENT) != null) {
             return;
         }
         Filter<Props> globalFilter;
@@ -249,32 +221,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         );
     }
 
-    protected final int modCount() {
+    public final int modCount() {
         return modCount;
     }
 
     protected final void modify() {
         modCount++;
-    }
-
-    protected class ApplyFilterVisitor extends AstVisitor {
-
-        private final FilterLevel level;
-
-        public ApplyFilterVisitor(FilterLevel level) {
-            super(new AstContext(sqlClient));
-            this.level = level;
-        }
-
-        @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
-            if (prop.isId() && (rawId || table.isRawIdAllowed(getAstContext().getSqlClient()))) {
-                table = table.getParent();
-            }
-            while (table != null) {
-                applyGlobalFiler(table, level);
-                table = table.getParent();
-            }
-        }
     }
 }

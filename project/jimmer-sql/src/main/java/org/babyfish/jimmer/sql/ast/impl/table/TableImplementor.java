@@ -16,6 +16,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
 public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, Iterable<TableImplementor<?>> {
 
+    AbstractMutableStatementImpl getStatement();
+
     TableImplementor<?> getParent();
 
     boolean isInverse();

@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 
 public class FilterManager implements Filters {
 
+    private final static ThreadLocal<Set<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
+
     private final LogicalDeletedFilterProvider provider;
 
     private final Set<Filter<?>> allFilters;
@@ -117,10 +119,13 @@ public class FilterManager implements Filters {
     @Override
     public Filter<Props> getLogicalDeletedFilter(ImmutableType type) {
         Filter<Props> filter = provider.get(type);
-        if (!(filter instanceof CacheableFilter<?>)) {
-            return filter;
+        if (filter == null) {
+            return null;
         }
-        return new CompositeCacheableFilter(type, Collections.singletonList((CacheableFilter<Props>)filter));
+        if (filter instanceof CacheableFilter<?>) {
+            return new ExportedCacheableFilter(type, Collections.singletonList((CacheableFilter<Props>) filter));
+        }
+        return new ExportedFilter(Collections.singletonList(filter));
     }
 
     @Override
@@ -351,18 +356,12 @@ public class FilterManager implements Filters {
         if (filters.isEmpty()) {
             return null;
         }
-        if (filters.size() == 1) {
-            Filter<Props> filter = filters.iterator().next();
-            if (!(filter instanceof CacheableFilter<?>)) {
-                return filter;
-            }
-        }
         for (Filter<?> filter : filters) {
             if (!(filter instanceof CacheableFilter<?>)) {
-                return new CompositeFilter(filters);
+                return new ExportedFilter(filters);
             }
         }
-        return new CompositeCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
+        return new ExportedCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
     }
 
     private List<CacheableFilter<Props>> createAllCacheable(ImmutableType type) {
@@ -714,36 +713,70 @@ public class FilterManager implements Filters {
         return affectTypes;
     }
 
-    private static class CompositeFilter implements Filter<Props> {
+    public static void executing(Runnable block) {
+        Set<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        if (executingFilters != null) {
+            block.run();
+        } else {
+            executingFilters = new LinkedHashSet<>();
+            EXECUTING_FILTERS_LOCAL.set(executingFilters);
+            try {
+                block.run();
+            } finally {
+                EXECUTING_FILTERS_LOCAL.remove();
+            }
+        }
+    }
+
+    private static void execute(Filter<Props> filter, FilterArgs<Props> args) {
+        Set<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        if (executingFilters != null && !executingFilters.add(filter)) {
+            throw new IllegalStateException(
+                    "A dead recursion was discovered during the filter execution process, " +
+                            "where the filter \"" +
+                            filter +
+                            "\" to be executed is the same as the filters \"" +
+                            executingFilters +
+                            "\" currently being executed in the context."
+            );
+        }
+        try {
+            filter.filter(args);
+        } finally {
+            if (executingFilters != null) executingFilters.remove(filter);
+        }
+    }
+
+    private static class ExportedFilter implements Filter<Props>, Exported {
 
         private final List<Filter<Props>> filters;
 
-        private CompositeFilter(Collection<Filter<Props>> filters) {
+        private ExportedFilter(Collection<Filter<Props>> filters) {
             this.filters = new ArrayList<>(filters);
         }
 
         @Override
         public void filter(FilterArgs<Props> args) {
             for (Filter<Props> filter : filters) {
-                filter.filter(args);
+                execute(filter, args);
             }
         }
 
         @Override
         public String toString() {
-            return "CompositeFilter{" +
+            return "ExportedFilter{" +
                     "filters=" + filters +
                     '}';
         }
     }
 
-    private static class CompositeCacheableFilter implements CacheableFilter<Props> {
+    private static class ExportedCacheableFilter implements CacheableFilter<Props>, Exported {
 
         private final ImmutableType type;
 
         private final List<CacheableFilter<Props>> filters;
 
-        private CompositeCacheableFilter(ImmutableType type, Collection<CacheableFilter<Props>> filters) {
+        private ExportedCacheableFilter(ImmutableType type, Collection<CacheableFilter<Props>> filters) {
             this.type = type;
             this.filters = new ArrayList<>(filters);
         }
@@ -751,7 +784,7 @@ public class FilterManager implements Filters {
         @Override
         public void filter(FilterArgs<Props> args) {
             for (Filter<Props> filter : filters) {
-                filter.filter(args);
+                execute(filter, args);
             }
         }
 
@@ -817,9 +850,11 @@ public class FilterManager implements Filters {
 
         @Override
         public String toString() {
-            return "CompositeCacheableFilter{" +
+            return "ExportedCacheableFilter{" +
                     "filters=" + filters +
                     '}';
         }
     }
+
+    public interface Exported {}
 }

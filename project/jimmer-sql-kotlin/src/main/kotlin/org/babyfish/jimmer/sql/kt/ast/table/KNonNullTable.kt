@@ -14,9 +14,3 @@ interface KNonNullTable<E: Any> : KTable<E>, KNonNullProps<E>, Selection<E> {
 
     override fun asTableEx(): KNonNullTableEx<E>
 }
-
-val <S: Any, T: Any> KNonNullTable<Association<S, T>>.source: KNonNullTable<S>
-    get() = join("source")
-
-val <S: Any, T: Any> KNonNullTable<Association<S, T>>.target: KNonNullTable<T>
-    get() = join("target")

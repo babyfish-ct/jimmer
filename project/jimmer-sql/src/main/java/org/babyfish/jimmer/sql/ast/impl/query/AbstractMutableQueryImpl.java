@@ -159,6 +159,12 @@ public abstract class AbstractMutableQueryImpl
         return this;
     }
 
+    public Predicate getHavingPredicate() {
+        freeze();
+        List<Predicate> ps = havingPredicates;
+        return ps.isEmpty() ? null : ps.get(0);
+    }
+
     @Override
     protected void onFrozen() {
         havingPredicates = mergePredicates(havingPredicates);
@@ -170,20 +176,24 @@ public abstract class AbstractMutableQueryImpl
             List<Selection<?>> overriddenSelections,
             boolean withoutSortingAndPaging
     ) {
-        Predicate predicate = getPredicate();
-        Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
+        List<Predicate> predicates = getPredicates();
+        List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
                     "Having clause cannot be used without group clause"
             );
         }
-        if (predicate != null) {
+        int modCount = modCount();
+        for (Predicate predicate : getPredicates()) {
             ((Ast)predicate).accept(visitor);
+            if (modCount != modCount()) {
+                break;
+            }
         }
         for (Expression<?> expression : groupByExpressions) {
             ((Ast)expression).accept(visitor);
         }
-        if (havingPredicate != null) {
+        for (Predicate havingPredicate : havingPredicates) {
             ((Ast)havingPredicate).accept(visitor);
         }
         AstContext astContext = visitor.getAstContext();
@@ -208,14 +218,14 @@ public abstract class AbstractMutableQueryImpl
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
 
         Predicate predicate = getPredicate();
-        Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
+        Predicate havingPredicate = getHavingPredicate();
 
         TableImplementor<?> tableImplementor = getTableImplementor();
         tableImplementor.renderTo(builder);
 
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
-            ((Ast)predicate).renderTo(builder);
+            ((Ast) predicate).renderTo(builder);
             builder.leave();
         }
         if (!groupByExpressions.isEmpty()) {
@@ -228,7 +238,7 @@ public abstract class AbstractMutableQueryImpl
         }
         if (havingPredicate != null) {
             builder.enter(SqlBuilder.ScopeType.HAVING);
-            ((Ast)havingPredicate).renderTo(builder);
+            ((Ast) havingPredicate).renderTo(builder);
             builder.leave();
         }
         if (!withoutSortingAndPaging && !orders.isEmpty()) {

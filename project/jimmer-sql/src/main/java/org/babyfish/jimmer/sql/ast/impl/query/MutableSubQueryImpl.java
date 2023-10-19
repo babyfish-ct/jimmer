@@ -44,13 +44,6 @@ public class MutableSubQueryImpl
 
     public MutableSubQueryImpl(
             JSqlClientImplementor sqlClient,
-            ImmutableType immutableType
-    ) {
-        super(sqlClient, immutableType);
-    }
-
-    public MutableSubQueryImpl(
-            JSqlClientImplementor sqlClient,
             TableProxy<?> table
     ) {
         super(sqlClient, table);

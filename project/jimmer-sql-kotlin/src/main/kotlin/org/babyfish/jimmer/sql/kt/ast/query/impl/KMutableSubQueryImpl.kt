@@ -21,14 +21,15 @@ import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
 import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 
 internal class KMutableSubQueryImpl<P: Any, E: Any>(
-    private val javaSubQuery: MutableSubQueryImpl
+    private val javaSubQuery: MutableSubQueryImpl,
+    parentTable: KNonNullTableEx<P>? = null
 ) : KMutableSubQuery<P, E> {
 
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaSubQuery.getTable())
 
     override val parentTable: KNonNullTableEx<P> =
-        KNonNullTableExImpl(javaSubQuery.parent.getTable())
+        parentTable ?: KNonNullTableExImpl(javaSubQuery.parent.getTable())
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
         javaSubQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())

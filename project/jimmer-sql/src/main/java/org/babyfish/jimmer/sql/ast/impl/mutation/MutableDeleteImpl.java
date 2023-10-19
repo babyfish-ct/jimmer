@@ -3,11 +3,13 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.ApplyFilterVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -117,9 +119,23 @@ public class MutableDeleteImpl
         AstContext astContext = new AstContext(sqlClient);
         astContext.pushStatement(deleteQuery);
         try {
-            Predicate predicate = deleteQuery.getPredicate();
-            if (predicate != null) {
-                ((Ast) predicate).accept(new UseTableVisitor(astContext));
+            FilterLevel level = getContext().getFilterLevel();
+            if (level != FilterLevel.IGNORE_ALL) {
+                AstVisitor visitor = new ApplyFilterVisitor(astContext, level);
+                int modCount = -1;
+                while (modCount != deleteQuery.modCount()) {
+                    modCount = deleteQuery.modCount();
+                    for (Predicate predicate : deleteQuery.getPredicates()) {
+                        ((Ast) predicate).accept(visitor);
+                        if (modCount != deleteQuery.modCount()) {
+                            break;
+                        }
+                    }
+                }
+            }
+            AstVisitor visitor = new UseTableVisitor(astContext);
+            for (Predicate predicate : deleteQuery.getPredicates()) {
+                ((Ast) predicate).accept(visitor);
             }
         } finally {
             astContext.popStatement();
@@ -154,7 +170,7 @@ public class MutableDeleteImpl
         MutationCache cache;
         if (binLogOnly) {
             ids = deleteQuery
-                    .select((Expression<Object>) table.get(table.getImmutableType().getIdProp().getName()))
+                    .select(table.get(table.getImmutableType().getIdProp()))
                     .distinct()
                     .execute(con);
             cache = null;

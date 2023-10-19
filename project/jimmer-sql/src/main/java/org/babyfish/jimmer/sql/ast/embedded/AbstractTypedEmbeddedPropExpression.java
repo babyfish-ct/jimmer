@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.embedded;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -20,6 +21,16 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     protected AbstractTypedEmbeddedPropExpression(PropExpression.Embedded<T> raw) {
         this.raw = raw;
+    }
+
+    @Override
+    public Class<T> getType() {
+        return ((PropExpressionImpl.EmbeddedImpl<T>)raw).getType();
+    }
+
+    @Override
+    public int precedence() {
+        return ((PropExpressionImpl.EmbeddedImpl<T>)raw).precedence();
     }
 
     public Predicate eq(Expression<T> other) {

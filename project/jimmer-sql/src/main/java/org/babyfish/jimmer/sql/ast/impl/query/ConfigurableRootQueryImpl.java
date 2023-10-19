@@ -30,7 +30,6 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
             MutableRootQueryImpl<T> baseQuery
     ) {
         super(data, baseQuery);
-        baseQuery.freeze();
     }
 
     @SuppressWarnings("unchecked")
@@ -247,8 +246,16 @@ public class ConfigurableRootQueryImpl<T extends Table<?>, R>
     }
 
     private Tuple3<String, List<Object>, List<Integer>> preExecute(SqlBuilder builder) {
-        AstVisitor visitor = new UseTableVisitor(builder.getAstContext());
-        accept(visitor);
+        FilterLevel level = getBaseQuery().getContext().getFilterLevel();
+        if (level != FilterLevel.IGNORE_ALL) {
+            MutableRootQueryImpl<T> baseQuery = getBaseQuery();
+            int modCount = -1;
+            while (modCount != baseQuery.modCount()) {
+                modCount = baseQuery.modCount();
+                accept(new ApplyFilterVisitor(builder.getAstContext(), level));
+            }
+        }
+        accept(new UseTableVisitor(builder.getAstContext()));
         renderTo(builder);
         return builder.build();
     }

@@ -250,8 +250,7 @@ public class MutableUpdateImpl
                     ((Ast) e.getValue()).accept(visitor);
                 }
             }
-            Predicate predicate = getPredicate();
-            if (predicate != null) {
+            for (Predicate predicate : getPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -394,7 +393,7 @@ public class MutableUpdateImpl
                         updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                         hasUsedChild(table, builder.getAstContext());
 
-        if (!hasTableCondition && ids == null && getPredicate() == null) {
+        if (!hasTableCondition && ids == null && getPredicates().isEmpty()) {
             return;
         }
 

@@ -982,6 +982,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
         public Builder addFilters(Collection<? extends Filter<?>> filters) {
             for (Filter<?> filter : filters) {
                 if (filter != null) {
+                    if (filter instanceof FilterManager.Exported) {
+                        throw new IllegalArgumentException("Cannot add filter which is exported by filter manager");
+                    }
                     this.filters.add(filter);
                 }
             }

@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 import org.babyfish.jimmer.sql.filter.common.FileFilter;
-import org.babyfish.jimmer.sql.model.filter.File;
-import org.babyfish.jimmer.sql.model.filter.FileFetcher;
-import org.babyfish.jimmer.sql.model.filter.FileTable;
+import org.babyfish.jimmer.sql.model.filter.*;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.junit.jupiter.api.Test;
 
@@ -337,6 +336,91 @@ public class QueryTest extends AbstractQueryTest {
                                         "--->--->--->}" +
                                         "--->--->]" +
                                         "--->}" +
+                                        "]"
+                        );
+                    }
+            );
+        });
+    }
+
+    @Test
+    public void testByAssociation() {
+        AssociationTable<File, FileTableEx, User, UserTableEx> table =
+                AssociationTable.of(FileTableEx.class, FileTableEx::users);
+        FileFilter.withUser(2L, () -> {
+            executeAndExpect(
+                    sqlClient
+                            .createAssociationQuery(table)
+                            .where(table.source().id().eq(20L))
+                            .select(table),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.FILE_ID, tb_1_.USER_ID " +
+                                        "from FILE_USER_MAPPING tb_1_ " +
+                                        "inner join FILE tb_2_ on tb_1_.FILE_ID = tb_2_.ID " +
+                                        "where tb_2_.ID = ? and exists(" +
+                                        "--->select 1 " +
+                                        "--->from FILE_USER_MAPPING tb_3_ " +
+                                        "--->where tb_3_.FILE_ID = tb_2_.ID and tb_3_.USER_ID = ?" +
+                                        ")"
+                        ).variables(20L, 2L);
+                        ctx.rows(rows -> {
+                            assertContentEquals(
+                                    "[" +
+                                            "Association{source={\"id\":20}, target={\"id\":1}}, " +
+                                            "Association{source={\"id\":20}, target={\"id\":2}}, " +
+                                            "Association{source={\"id\":20}, target={\"id\":4}}" +
+                                            "]",
+                                    rows
+                            );
+                        });
+                    }
+            );
+        });
+    }
+
+    @Test
+    public void testSubQuery() {
+        FileTable table = FileTable.$;
+        FileTable table2 = new FileTable();
+        FileFilter.withUser(2L, () -> {
+            executeAndExpect(
+                    sqlClient
+                            .createQuery(table)
+                            .where(
+                                    sqlClient
+                                            .createSubQuery(table2)
+                                            .where(table2.parentId().eq(table.id()))
+                                            .where(table2.name().ilike("a"))
+                                            .exists()
+                            )
+                            .select(table),
+                    ctx -> {
+                        ctx.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                                        "from FILE tb_1_ " +
+                                        "where exists(" +
+                                        "--->select 1 from FILE tb_2_ " +
+                                        "--->where tb_2_.PARENT_ID = tb_1_.ID and tb_2_.NAME ilike ? and exists(" +
+                                        "--->--->select 1 " +
+                                        "--->--->from FILE_USER_MAPPING tb_7_ " +
+                                        "--->--->where tb_7_.FILE_ID = " +
+                                        "--->--->tb_2_.ID and tb_7_.USER_ID = ?" +
+                                        "--->)" +
+                                        ") and exists(" +
+                                        "--->select 1 from " +
+                                        "--->--->FILE_USER_MAPPING tb_4_ " +
+                                        "--->--->where tb_4_.FILE_ID = tb_1_.ID and tb_4_.USER_ID = ?" +
+                                        ")"
+                        ).variables("%a%", 2L, 2L);
+                        ctx.rows(
+                                "[" +
+                                        "--->{\"id\":40,\"name\":\"etc\",\"parent\":null}," +
+                                        "--->{\"id\":1,\"name\":\"usr\",\"parent\":null}," +
+                                        "--->{\"id\":2,\"name\":\"bin\",\"parent\":{\"id\":1}}," +
+                                        "--->{\"id\":20,\"name\":\"share\",\"parent\":{\"id\":1}}," +
+                                        "--->{\"id\":28,\"name\":\"node\",\"parent\":{\"id\":27}}," +
+                                        "--->{\"id\":35,\"name\":\"node_modules\",\"parent\":{\"id\":34}}" +
                                         "]"
                         );
                     }

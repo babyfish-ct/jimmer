@@ -550,7 +550,6 @@ public class EntitiesImpl implements Entities {
             }
             query.orderBy(astOrder);
         }
-        query.freeze();
         return query.select(
                 fetcher != null ? table.fetch(fetcher) : table
         ).execute(con);
@@ -596,7 +595,6 @@ public class EntitiesImpl implements Entities {
             }
             query.orderBy(astOrder);
         }
-        query.freeze();
         return query.select(
                 new FetcherSelectionImpl<>(table, fetcher, converter)
         ).execute(con);

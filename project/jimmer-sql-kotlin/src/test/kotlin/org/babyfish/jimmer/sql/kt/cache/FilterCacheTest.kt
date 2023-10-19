@@ -4,16 +4,14 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.cache.Cache
 import org.babyfish.jimmer.sql.kt.KSqlClient
+import org.babyfish.jimmer.sql.kt.ast.expression.isNull
 import org.babyfish.jimmer.sql.kt.ast.table.isNull
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.common.createCache
 import org.babyfish.jimmer.sql.kt.common.createParameterizedCache
 import org.babyfish.jimmer.sql.kt.filter.common.CacheableFileFilter
 import org.babyfish.jimmer.sql.kt.filter.common.FileFilter
-import org.babyfish.jimmer.sql.kt.model.filter.File
-import org.babyfish.jimmer.sql.kt.model.filter.fetchBy
-import org.babyfish.jimmer.sql.kt.model.filter.id
-import org.babyfish.jimmer.sql.kt.model.filter.parent
+import org.babyfish.jimmer.sql.kt.model.filter.*
 import org.babyfish.jimmer.sql.runtime.ConnectionManager
 import java.sql.Connection
 import java.util.*
@@ -108,7 +106,7 @@ class FilterCacheTest : AbstractQueryTest() {
                 val useSql = i == 0
                 executeAndExpect(
                     _sqlClient.createQuery(File::class) {
-                        where(table.parent.isNull())
+                        where(table.parentId.isNull())
                         orderBy(table.id)
                         select(
                             table.fetchBy {

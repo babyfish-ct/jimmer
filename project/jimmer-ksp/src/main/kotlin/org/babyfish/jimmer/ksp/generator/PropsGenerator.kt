@@ -181,6 +181,13 @@ class PropsGenerator(
                                     innerFunName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
                                 )
+                            } else if (innerFunName == "get") {
+                                addCode(
+                                    "return get<%T>(%L) as %T",
+                                    prop.targetTypeName(overrideNullable = false),
+                                    StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
+                                    returnClassName
+                                )
                             } else {
                                 addCode(
                                     "return %L(%L)",
@@ -233,8 +240,10 @@ class PropsGenerator(
                     FunSpec
                         .getterBuilder()
                         .addStatement(
-                            "return getAssociatedId(%L)",
-                            StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
+                            "return getAssociatedId<%T>(%L) as %T",
+                            prop.targetType!!.idProp!!.targetTypeName(overrideNullable = false),
+                            StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
+                            returnClassName
                         )
                         .build()
                 )
@@ -290,18 +299,17 @@ class PropsGenerator(
     }
 
     private fun FileSpec.Builder.addRemoteId(type: ImmutableType, nullable: Boolean) {
+        val returnTypeName =
+            if (nullable) {
+                K_NULLABLE_PROP_EXPRESSION
+            } else {
+                K_NON_NULL_PROP_EXPRESSION
+            }.parameterizedBy(
+                type.idProp!!.typeName()
+            )
         addProperty(
             PropertySpec
-                .builder(
-                    type.idProp!!.name,
-                    if (nullable) {
-                        K_NULLABLE_PROP_EXPRESSION
-                    } else {
-                        K_NON_NULL_PROP_EXPRESSION
-                    }.parameterizedBy(
-                        type.idProp!!.typeName()
-                    )
-                )
+                .builder(type.idProp!!.name, returnTypeName)
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_REMOTE_REF
@@ -314,7 +322,12 @@ class PropsGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addCode("return (this as %T<*>).id()", K_REMOTE_REF_IMPLEMENTOR)
+                        .addCode(
+                            "return (this as %T<*>).id<%T>() as %T",
+                            K_REMOTE_REF_IMPLEMENTOR,
+                            type.idProp!!.targetTypeName(),
+                            returnTypeName
+                        )
                         .build()
                 )
                 .build()
