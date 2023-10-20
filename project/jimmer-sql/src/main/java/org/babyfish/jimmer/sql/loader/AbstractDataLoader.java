@@ -590,8 +590,8 @@ public abstract class AbstractDataLoader {
         }
         List<Tuple2<Object, Object>> tuples = Queries
                 .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, source) -> {
-                    Expression<Object> pkExpr = source.get(sourceIdProp.getName());
-                    Table<?> targetTable = source.join(prop.getName());
+                    Expression<Object> pkExpr = source.get(sourceIdProp);
+                    Table<?> targetTable = source.join(prop);
                     Expression<Object> fkExpr = source.getAssociatedId(prop);
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
@@ -694,7 +694,7 @@ public abstract class AbstractDataLoader {
                     "The table create by data loader must be table implementation or table wrapper"
             );
         }
-        query.applyGlobalFiler(tableImplementor, FilterLevel.DEFAULT);
+        query.applyDataLoaderGlobalFilters(tableImplementor);
     }
 
     @SuppressWarnings("unchecked")

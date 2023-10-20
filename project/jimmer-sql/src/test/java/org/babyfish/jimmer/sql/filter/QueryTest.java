@@ -403,14 +403,14 @@ public class QueryTest extends AbstractQueryTest {
                                         "--->select 1 from FILE tb_2_ " +
                                         "--->where tb_2_.PARENT_ID = tb_1_.ID and tb_2_.NAME ilike ? and exists(" +
                                         "--->--->select 1 " +
-                                        "--->--->from FILE_USER_MAPPING tb_7_ " +
-                                        "--->--->where tb_7_.FILE_ID = " +
-                                        "--->--->tb_2_.ID and tb_7_.USER_ID = ?" +
+                                        "--->--->from FILE_USER_MAPPING tb_4_ " +
+                                        "--->--->where tb_4_.FILE_ID = " +
+                                        "--->--->tb_2_.ID and tb_4_.USER_ID = ?" +
                                         "--->)" +
                                         ") and exists(" +
                                         "--->select 1 from " +
-                                        "--->--->FILE_USER_MAPPING tb_4_ " +
-                                        "--->--->where tb_4_.FILE_ID = tb_1_.ID and tb_4_.USER_ID = ?" +
+                                        "--->--->FILE_USER_MAPPING tb_7_ " +
+                                        "--->--->where tb_7_.FILE_ID = tb_1_.ID and tb_7_.USER_ID = ?" +
                                         ")"
                         ).variables("%a%", 2L, 2L);
                         ctx.rows(

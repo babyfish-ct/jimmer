@@ -176,19 +176,14 @@ public abstract class AbstractMutableQueryImpl
             List<Selection<?>> overriddenSelections,
             boolean withoutSortingAndPaging
     ) {
-        List<Predicate> predicates = getPredicates();
         List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
                     "Having clause cannot be used without group clause"
             );
         }
-        int modCount = modCount();
         for (Predicate predicate : getPredicates()) {
             ((Ast)predicate).accept(visitor);
-            if (modCount != modCount()) {
-                break;
-            }
         }
         for (Expression<?> expression : groupByExpressions) {
             ((Ast)expression).accept(visitor);

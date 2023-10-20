@@ -153,8 +153,8 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+        getBaseQuery().setParent(visitor.getAstContext().getStatement());
         if (visitor.visitSubQuery(this)) {
-            getBaseQuery().setParent(visitor.getAstContext().getStatement());
             super.accept(visitor);
         }
     }

@@ -8,8 +8,6 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.query.ApplyFilterVisitor;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -117,22 +115,11 @@ public class MutableDeleteImpl
         TableImplementor<?> table = getTableImplementor();
 
         AstContext astContext = new AstContext(sqlClient);
+
+        applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
+
         astContext.pushStatement(deleteQuery);
         try {
-            FilterLevel level = getContext().getFilterLevel();
-            if (level != FilterLevel.IGNORE_ALL) {
-                AstVisitor visitor = new ApplyFilterVisitor(astContext, level);
-                int modCount = -1;
-                while (modCount != deleteQuery.modCount()) {
-                    modCount = deleteQuery.modCount();
-                    for (Predicate predicate : deleteQuery.getPredicates()) {
-                        ((Ast) predicate).accept(visitor);
-                        if (modCount != deleteQuery.modCount()) {
-                            break;
-                        }
-                    }
-                }
-            }
             AstVisitor visitor = new UseTableVisitor(astContext);
             for (Predicate predicate : deleteQuery.getPredicates()) {
                 ((Ast) predicate).accept(visitor);
