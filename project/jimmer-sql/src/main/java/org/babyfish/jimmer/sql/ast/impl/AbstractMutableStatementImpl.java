@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.ast.impl.query.*;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.util.IdentityPairSet;
+import org.babyfish.jimmer.sql.ast.impl.util.IdentitySet;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Props;
@@ -27,8 +29,6 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private static final Predicate[] EMPTY_PREDICATES = new Predicate[0];
 
-    private static final Object PRESENT = new Object();
-
     private final JSqlClientImplementor sqlClient;
 
     private final ImmutableType type;
@@ -43,9 +43,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
     private int modCount;
 
-    private final IdentityHashMap<Object, Object> appliedItemMap = new IdentityHashMap<>();
-
-    private final IdentityHashMap<TableImplementor<?>, Object> appliedTableMap = new IdentityHashMap<>();
+    private final IdentitySet<TableImplementor<?>> appliedTables = new IdentitySet<>();
 
     public AbstractMutableStatementImpl(
             JSqlClientImplementor sqlClient,
@@ -183,10 +181,14 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         AstContext astContext = new AstContext(sqlClient);
         ApplyFilterVisitor visitor = new ApplyFilterVisitor(astContext, FilterLevel.DEFAULT);
         for (Predicate predicate : predicates) {
-            appliedItemMap.put(predicate, PRESENT);
+            visitor.apply(this, predicate);
         }
         for (Order order : getOrders()) {
-            appliedItemMap.put(order, PRESENT);
+            visitor.apply(this, order);
+        }
+        TableImplementor<?> root = getTableImplementor();
+        if (table != root) {
+            appliedTables.add(root);
         }
         applyGlobalFiltersImpl(visitor, null, table);
     }
@@ -194,67 +196,61 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
     private void applyGlobalFiltersImpl(
             ApplyFilterVisitor visitor,
             List<Selection<?>> selections,
-            TableImplementor<?> onlyFor
+            TableImplementor<?> start
     ) {
         AstContext astContext = visitor.getAstContext();
         astContext.pushStatement(this);
         try {
-            TableImplementor<?> root = getTableImplementor();
-            if (onlyFor == null || onlyFor == root) {
-                applyGlobalFilerImpl(root, visitor.level);
-            } else {
-                applyGlobalFilerImpl(onlyFor, visitor.level);
-                appliedTableMap.put(root, PRESENT);
-            }
+            applyGlobalFilerImpl(visitor, start != null ? start : getTableImplementor());
             int modCount = -1;
             __APPLY_STEP__:
             while (modCount != modCount()) {
                 modCount = modCount();
                 if (selections != null) {
                     for (Selection<?> selection : selections) {
-                        if (!appliedItemMap.containsKey(selection)) {
+                        if (!visitor.isApplied(this, selection)) {
                             Ast.from(selection, astContext).accept(visitor);
                             if (modCount != modCount()) {
                                 continue __APPLY_STEP__;
                             }
-                            appliedItemMap.put(selection, PRESENT);
+                            visitor.apply(this, selection);
                         }
                     }
                 }
                 for (Predicate predicate : predicates) {
-                    if (!appliedItemMap.containsKey(predicate)) {
+                    if (!visitor.isApplied(this, predicate)) {
                         ((Ast) predicate).accept(visitor);
                         if (modCount != modCount()) {
                             continue __APPLY_STEP__;
                         }
-                        appliedItemMap.put(predicate, PRESENT);
+                        visitor.apply(this, predicate);
                     }
                 }
                 for (Expression<?> groupExpr : getGroupExpressions()) {
-                    if (!appliedItemMap.containsKey(groupExpr)) {
+                    if (!visitor.isApplied(this, groupExpr)) {
                         ((Ast) groupExpr).accept(visitor);
                         if (modCount != modCount()) {
                             continue __APPLY_STEP__;
                         }
-                        appliedItemMap.put(groupExpr, PRESENT);
+                        visitor.apply(this, groupExpr);
                     }
                 }
                 for (Predicate havingPredicate : getHavingPredicates()) {
-                    if (!appliedItemMap.containsKey(havingPredicate)) {
+                    if (!visitor.isApplied(this, havingPredicate)) {
                         ((Ast) havingPredicate).accept(visitor);
                         if (modCount != modCount()) {
                             continue __APPLY_STEP__;
                         }
-                        appliedItemMap.put(havingPredicate, PRESENT);
+                        visitor.apply(this, havingPredicate);
                     }
                 }
                 for (Order order : getOrders()) {
-                    if (!appliedItemMap.containsKey(order)) {
+                    if (!visitor.isApplied(this, order)) {
                         ((Ast) order.getExpression()).accept(visitor);
                         if (modCount != modCount()) {
                             continue __APPLY_STEP__;
                         }
-                        appliedItemMap.put(order, PRESENT);
+                        visitor.apply(this, order);
                     }
                 }
             }
@@ -263,8 +259,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         }
     }
 
-    private void applyGlobalFilerImpl(TableImplementor<?> table, FilterLevel level) {
-        if (level == FilterLevel.IGNORE_ALL || appliedTableMap.put(table, PRESENT) != null) {
+    private void applyGlobalFilerImpl(ApplyFilterVisitor visitor, TableImplementor<?> table) {
+        FilterLevel level = visitor.level;
+        if (level == FilterLevel.IGNORE_ALL || !appliedTables.add(table)) {
             return;
         }
         Filter<Props> globalFilter;
@@ -338,18 +335,11 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
 
         final FilterLevel level;
 
-        final TableImplementor<?> onlyFor;
+        private final IdentityPairSet<AbstractMutableStatementImpl, Object> appliedSet = new IdentityPairSet<>();
 
         public ApplyFilterVisitor(AstContext ctx, FilterLevel level) {
             super(ctx);
             this.level = level;
-            this.onlyFor = null;
-        }
-
-        public ApplyFilterVisitor(AstContext ctx, TableImplementor<?> onlyFor) {
-            super(ctx);
-            this.level = FilterLevel.DEFAULT;
-            this.onlyFor = onlyFor;
         }
 
         @Override
@@ -369,9 +359,33 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
                 table = table.getParent();
             }
             while (table != null) {
-                table.getStatement().applyGlobalFilerImpl(table, level);
+                table.getStatement().applyGlobalFilerImpl(this, table);
                 table = table.getParent();
             }
+        }
+
+        public boolean isApplied(AbstractMutableStatementImpl statement, Selection<?> selection) {
+            return appliedSet.has(statement, selection);
+        }
+
+        public boolean isApplied(AbstractMutableStatementImpl statement, Expression<?> expression) {
+            return appliedSet.has(statement, expression);
+        }
+
+        public boolean isApplied(AbstractMutableStatementImpl statement, Order order) {
+            return appliedSet.has(statement, order);
+        }
+
+        public boolean apply(AbstractMutableStatementImpl statement, Selection<?> selection) {
+            return appliedSet.add(statement, selection);
+        }
+
+        public void apply(AbstractMutableStatementImpl statement, Expression<?> expression) {
+            appliedSet.add(statement, expression);
+        }
+
+        public void apply(AbstractMutableStatementImpl statement, Order order) {
+            appliedSet.add(statement, order);
         }
     }
 }
