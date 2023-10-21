@@ -46,7 +46,7 @@ public class SqlClientConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SqlClientConfig.class);
 
-    @Bean(name = "sqlClient")
+    @Bean(name = "sqlClient", initMethod = "initializeByDIFramework")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
     public JSqlClient javaSqlClient(
@@ -124,7 +124,7 @@ public class SqlClientConfig {
         return sqlClient;
     }
 
-    @Bean(name = "sqlClient")
+    @Bean(name = "sqlClient", initMethod = "initializeByDIFramework")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
     public KSqlClient kotlinSqlClient(

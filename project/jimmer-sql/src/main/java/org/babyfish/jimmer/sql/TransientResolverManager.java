@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.cache.Caches;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
+import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.runtime.StrategyProvider;
 import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
 
@@ -40,14 +41,14 @@ class TransientResolverManager {
         }
         this.sqlClient = sqlClient;
         if (provider.shouldResolversBeCreatedImmediately()) {
-            initializeForTrigger();
+            createResolvers();
         }
     }
 
     /**
      * Resolvers must be created because resolver many register listeners
      */
-    private void initializeForTrigger() {
+    void createResolvers() {
         Caches caches = sqlClient.getCaches();
         if (caches != null) {
             // Important, initialize necessary resolvers
@@ -78,7 +79,7 @@ class TransientResolverManager {
         TransientResolver<?, ?> resolver = createResolver0(prop);
         if (resolver != null) {
             Cache<Object, ?> cache = sqlClient.getCaches().getPropertyCache(prop);
-            if (cache != null && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(resolver, Entity.class)) {
+            if (cache != null && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(resolver, EntityEvent.class)) {
                 sqlClient.getTriggers().addEntityListener(e -> {
                     Collection<?> ids = resolver.getAffectedSourceIds(e);
                     if (ids != null && !ids.isEmpty()) {

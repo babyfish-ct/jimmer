@@ -566,6 +566,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
         return microServiceExchange;
     }
 
+    @Override
+    public void initializeByDIFramework() {
+        transientResolverManager.createResolvers();
+    }
+
     public static class BuilderImpl implements JSqlClient.Builder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);

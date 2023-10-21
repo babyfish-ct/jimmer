@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
@@ -140,4 +141,8 @@ internal class KSqlClientImpl(
 
     override val binLog: BinLog
         get() = javaClient.binLog
+
+    fun initializeByDIFramework() {
+        javaClient.initializeByDIFramework();
+    }
 }
