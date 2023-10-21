@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.kt.filter.common
 
 import org.babyfish.jimmer.sql.kt.ast.expression.eq
 import org.babyfish.jimmer.sql.kt.ast.expression.exists
-import org.babyfish.jimmer.sql.kt.ast.table.source
+import org.babyfish.jimmer.sql.kt.ast.table.sourceId
 import org.babyfish.jimmer.sql.kt.ast.table.targetId
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
@@ -15,13 +15,7 @@ open class FileFilter : KFilter<File> {
         args.where(
             exists(
                 args.wildSubQueries.forList(File::users) {
-                    try {
-                        parentTable.id
-                    } catch (ex: Throwable) {
-                        ex.printStackTrace()
-                        throw ex
-                    }
-                    where(table.source.id eq parentTable.id)
+                    where(table.sourceId eq parentTable.id)
                     where(table.targetId eq currentUserId)
                 }
             )

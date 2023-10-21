@@ -27,7 +27,6 @@ internal class KWildSubQueriesImpl<P: Any>(
         val subQuery = MutableSubQueryImpl(parent, immutableType)
         val wrappedQuery = KMutableSubQueryImpl<P, E>(subQuery, parentTable)
         wrappedQuery.block()
-        subQuery.freeze()
         return wrappedQuery
     }
 
@@ -53,7 +52,6 @@ internal class KWildSubQueriesImpl<P: Any>(
         val subQuery = MutableSubQueryImpl(parent, associationType)
         val wrappedQuery = KMutableSubQueryImpl<P, Association<S, T>>(subQuery, parentTable)
         wrappedQuery.block()
-        subQuery.freeze()
         return wrappedQuery
     }
 }

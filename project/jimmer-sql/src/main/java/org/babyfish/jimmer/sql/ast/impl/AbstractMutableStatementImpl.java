@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
@@ -346,7 +347,9 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
             if (subQuery instanceof ConfigurableSubQueryImpl<?>) {
                 AbstractMutableStatementImpl statement = ((ConfigurableSubQueryImpl<?>)subQuery).getBaseQuery();
-                statement.applyGlobalFiltersImpl(this, null, null);
+                FilterManager.executing(((MutableSubQueryImpl) statement).filterOwner(), () -> {
+                    statement.applyGlobalFiltersImpl(this, null, null);
+                });
                 return false;
             }
             return true;

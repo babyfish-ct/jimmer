@@ -12,6 +12,8 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.impl.FilterManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.util.Arrays;
@@ -26,6 +28,8 @@ public class MutableSubQueryImpl
     private AbstractMutableStatementImpl parent;
 
     private StatementContext ctx;
+
+    private final Filter<?> filterOwner = FilterManager.currentFilter();
 
     public MutableSubQueryImpl(
             AbstractMutableStatementImpl parent,
@@ -349,6 +353,10 @@ public class MutableSubQueryImpl
                     "The sub query cannot be added to parent query because it is belong to another parent query"
             );
         }
+    }
+
+    public Filter<?> filterOwner() {
+        return filterOwner;
     }
 }
 

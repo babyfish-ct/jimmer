@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -261,6 +262,16 @@ public abstract class AbstractMutableQueryImpl
 
     protected boolean isGroupByClauseUsed() {
         return !this.groupByExpressions.isEmpty();
+    }
+
+    @Override
+    protected List<Expression<?>> getGroupExpressions() {
+        return Collections.unmodifiableList(groupByExpressions);
+    }
+
+    @Override
+    public List<Predicate> getHavingPredicates() {
+        return Collections.unmodifiableList(havingPredicates);
     }
 
     @Override

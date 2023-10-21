@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 public class FilterManager implements Filters {
 
-    private final static ThreadLocal<Set<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
+    private final static ThreadLocal<LinkedList<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
 
     private final LogicalDeletedFilterProvider provider;
 
@@ -713,37 +713,46 @@ public class FilterManager implements Filters {
         return affectTypes;
     }
 
-    public static void executing(Runnable block) {
-        Set<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
-        if (executingFilters != null) {
+    public static Filter<?> currentFilter() {
+        LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        return executingFilters != null ? executingFilters.peek() : null;
+    }
+
+    public static void executing(Filter<?> filter, Runnable block) {
+        if (filter == null) {
             block.run();
-        } else {
-            executingFilters = new LinkedHashSet<>();
+            return;
+        }
+        if (filter instanceof Exported) {
+            throw new IllegalArgumentException("The filter cannot be exported filter");
+        }
+        LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        if (executingFilters == null) {
+            executingFilters = new LinkedList<>();
+            executingFilters.add(filter);
             EXECUTING_FILTERS_LOCAL.set(executingFilters);
             try {
                 block.run();
             } finally {
                 EXECUTING_FILTERS_LOCAL.remove();
             }
-        }
-    }
-
-    private static void execute(Filter<Props> filter, FilterArgs<Props> args) {
-        Set<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
-        if (executingFilters != null && !executingFilters.add(filter)) {
-            throw new IllegalStateException(
-                    "A dead recursion was discovered during the filter execution process, " +
-                            "where the filter \"" +
-                            filter +
-                            "\" to be executed is the same as the filters \"" +
-                            executingFilters +
-                            "\" currently being executed in the context."
-            );
-        }
-        try {
-            filter.filter(args);
-        } finally {
-            if (executingFilters != null) executingFilters.remove(filter);
+        } else {
+            if (executingFilters.contains(filter)) {
+                throw new IllegalStateException(
+                        "A dead recursion was discovered during the filter execution process, " +
+                                "where the filter \"" +
+                                filter +
+                                "\" to be executed is the same as the filters \"" +
+                                executingFilters +
+                                "\" currently being executed in the context."
+                );
+            }
+            executingFilters.push(filter);
+            try {
+                block.run();
+            } finally {
+                executingFilters.pop();
+            }
         }
     }
 
@@ -758,7 +767,9 @@ public class FilterManager implements Filters {
         @Override
         public void filter(FilterArgs<Props> args) {
             for (Filter<Props> filter : filters) {
-                execute(filter, args);
+                executing(filter, () -> {
+                    filter.filter(args);
+                });
             }
         }
 
@@ -784,7 +795,9 @@ public class FilterManager implements Filters {
         @Override
         public void filter(FilterArgs<Props> args) {
             for (Filter<Props> filter : filters) {
-                execute(filter, args);
+                executing(filter, () -> {
+                    filter.filter(args);
+                });
             }
         }
 

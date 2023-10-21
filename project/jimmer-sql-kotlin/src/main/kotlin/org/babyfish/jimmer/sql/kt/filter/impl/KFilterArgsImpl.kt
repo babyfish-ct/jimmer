@@ -62,25 +62,11 @@ internal class KFilterArgsImpl<E: Any>(
     }
 
     override val subQueries: KSubQueries<E> by lazy {
-        KSubQueriesImpl(javaStatement, subQueryParentTable())
+        KSubQueriesImpl(javaStatement, this.table as KNonNullTableEx<E>)
     }
 
-    override val wildSubQueries: KWildSubQueries<E> by lazy {
-        KWildSubQueriesImpl(javaStatement, )
-    }
-
-    private fun subQueryParentTable() : KNonNullTableEx<E>? {
-        val tableImplementor = (table as KTableImplementor<*>).javaTable
-        val associationType = tableImplementor.immutableType as? AssociationType ?: return null
-        return when (filteredType) {
-            associationType.sourceType -> table.join("source")
-            associationType.targetType -> table.join("target")
-            else -> throw IllegalStateException(
-                "The association property \"$associationType\" is illegal," +
-                    "either source type nor target type is not filtered type \"$filteredType\""
-            )
-        }
-    }
+    override val wildSubQueries: KWildSubQueries<E> =
+        KWildSubQueriesImpl(javaStatement, this.table as KNonNullTableEx<E>)
 
     companion object {
         @JvmStatic
