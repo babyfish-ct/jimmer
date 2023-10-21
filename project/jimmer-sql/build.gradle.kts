@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     `java-library`
     kotlin("jvm") version "1.6.10"
@@ -35,8 +37,8 @@ dependencies {
     testImplementation("org.springframework:spring-jdbc:5.3.20")
     testImplementation("com.fasterxml.uuid:java-uuid-generator:4.0.1")
 
-    testImplementation("org.projectlombok:lombok:1.18.28")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.28")
+    testImplementation("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
 
     testImplementation("com.h2database:h2:2.1.212")
     testImplementation("mysql:mysql-connector-java:8.0.29")
@@ -51,6 +53,14 @@ tasks.getByName<Test>("test") {
 
 tasks.withType<Javadoc>{
     options.encoding = "UTF-8"
+}
+
+tasks.withType<Jar>().configureEach {
+    dependsOn(tasks.withType<AntlrTask>())
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    dependsOn(tasks.withType<AntlrTask>())
 }
 
 tasks.withType<JavaCompile> {

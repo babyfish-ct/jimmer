@@ -80,7 +80,7 @@ public class QueryExecutors {
                             return q.select((Expression<Object>)(Expression<?>)table.count());
                         }
                         if (queryData.getAction() == Query.Action.EXISTS) {
-                            return q.select(table.<Expression<Object>>get(table.getImmutableType().getIdProp().getName()));
+                            return q.select(table.get(table.getImmutableType().getIdProp()));
                         }
                         return q.select((Table<Object>)table);
                     });
@@ -290,11 +290,11 @@ public class QueryExecutors {
         PropExpression<?> propExpr = null;
         for (ImmutableProp prop : path.getProps()) {
             if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-                table = table.join(prop.getName(), outerJoin ? JoinType.LEFT : JoinType.INNER);
+                table = table.join(prop, outerJoin ? JoinType.LEFT : JoinType.INNER);
             } else if (propExpr instanceof PropExpression.Embedded<?>) {
-                propExpr = ((PropExpression.Embedded<?>) propExpr).get(prop.getName());
+                propExpr = ((PropExpression.Embedded<?>) propExpr).get(prop);
             } else {
-                propExpr = table.get(prop.getName());
+                propExpr = table.get(prop);
             }
         }
         return propExpr != null ? propExpr : table;
