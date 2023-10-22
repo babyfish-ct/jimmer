@@ -9,20 +9,17 @@ import org.babyfish.jimmer.sql.example.model.BookStore
 import org.babyfish.jimmer.sql.example.repository.BookRepository
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
+import org.babyfish.jimmer.sql.kt.event.getUnchangedRef
 import org.babyfish.jimmer.sql.kt.event.getUnchangedValue
 import org.babyfish.jimmer.sql.kt.event.isChanged
-import org.springframework.beans.factory.annotation.Lookup
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.util.*
 
 @Component
 class BookStoreAvgPriceResolver(
+    private val bookRepository: BookRepository
 ) : KTransientResolver<Long, BigDecimal> { // ❶
-
-    @get:Lookup
-    open val bookRepository: BookRepository
-        get() = TODO()
 
     // You can also inject it directly
     private val sqlClient: KSqlClient
@@ -77,7 +74,7 @@ class BookStoreAvgPriceResolver(
             !e.isEvict &&
             e.getImmutableType().javaClass == Book::class.java
         ) {
-            val store = e.getUnchangedValue(Book::store)
+            val store = e.getUnchangedRef(Book::store)?.value
             if (store !== null && e.isChanged(Book::price)) {
                 return listOf(store.id)
             }

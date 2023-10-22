@@ -26,11 +26,12 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     private final BookRepository bookRepository;
 
-    private final JSqlClient sqlClient;
-
     public BookStoreAvgPriceResolver(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
-        this.sqlClient = bookRepository.sql(); // You can also inject it directly
+    }
+
+    private JSqlClient sqlClient() {
+        return bookRepository.sql();
     }
 
     @Override
@@ -63,7 +64,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // association cache `BookStore.books`, which is `{"tenant": ...}`
     @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef() { // ❹
-        return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
+        return sqlClient().getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
 
     // When a one-to-many association `BookStore.books` is modified
@@ -72,7 +73,7 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // the cache of the calculated property `BookStore.avgPrice` should be invalidated.
     @Override
     public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) { // ❺
-        if (sqlClient.getCaches().isAffectedBy(e) && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
+        if (sqlClient().getCaches().isAffectedBy(e) && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
             return Collections.singletonList(e.getSourceId());
         }
         return null;
@@ -83,13 +84,13 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // corresponding to `STORE_ID` should be invalidated.
     @Override
     public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) { // ❻
-        if (sqlClient.getCaches().isAffectedBy(e) &&
+        if (sqlClient().getCaches().isAffectedBy(e) &&
                 !e.isEvict() &&
                 e.getImmutableType().getJavaClass() == Book.class) {
 
-            BookStore store = e.getUnchangedValue(BookProps.STORE);
-            if (store != null && e.isChanged(BookProps.PRICE)) {
-                return Collections.singletonList(store.id());
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
+            if (storeRef != null && storeRef.getValue() != null && e.isChanged(BookProps.PRICE)) {
+                return Collections.singletonList(storeRef.getValue().id());
             }
         }
         return null;
