@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -299,6 +300,8 @@ public class SqlClientConfig {
         builder.addFilters(filters);
         builder.addCustomizers(customizers);
         builder.addInitializers(initializers);
+        
+        builder.setAopProxyProvider(AopUtils::getTargetClass);
 
         builder.setMicroServiceName(properties.getMicroServiceName());
         if (!properties.getMicroServiceName().isEmpty()) {
