@@ -417,6 +417,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setDatabaseValidationSchema(String schema);
 
         @OldChain
+        Builder setAopProxyProvider(AopProxyProvider provider);
+
+        @OldChain
         Builder setMicroServiceName(String microServiceName);
 
         @OldChain

@@ -27,6 +27,7 @@ import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.domain.*;
 import org.springframework.data.repository.NoRepositoryBean;
@@ -39,19 +40,24 @@ import java.util.stream.Collectors;
 @NoRepositoryBean
 public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
-    protected final JSqlClientImplementor sqlClient;
-
     protected final Class<E> entityType;
 
     protected final ImmutableType immutableType;
 
-    protected JRepositoryImpl(JSqlClient sqlClient) {
-        this(sqlClient, null);
+    private ApplicationContext ctx;
+
+    private final String sqlClientRef;
+
+    private JSqlClient sql;
+
+    protected JRepositoryImpl(ApplicationContext ctx, String sqlClientRef) {
+        this(ctx, sqlClientRef, null);
     }
 
     @SuppressWarnings("unchecked")
-    public JRepositoryImpl(JSqlClient sqlClient, Class<E> entityType) {
-        this.sqlClient = Utils.validateSqlClient(sqlClient);
+    public JRepositoryImpl(ApplicationContext ctx, String sqlClientRef, Class<E> entityType) {
+        this.ctx = ctx;
+        this.sqlClientRef = sqlClientRef;
         if (entityType != null) {
             this.entityType = entityType;
         } else {
@@ -80,7 +86,11 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public JSqlClient sql() {
-        return sqlClient;
+        JSqlClient sql = this.sql;
+        if (sql == null) {
+            this.sql = sql = ctx.getBean(sqlClientRef, JSqlClient.class);
+        }
+        return sql;
     }
 
     @Override
@@ -108,7 +118,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public E findNullable(ID id) {
-        return sqlClient.getEntities().findById(entityType, id);
+        return sql().getEntities().findById(entityType, id);
     }
 
     @Override
@@ -116,12 +126,12 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         if (fetcher == null) {
             return findNullable(id);
         }
-        return sqlClient.getEntities().findById(fetcher, id);
+        return sql().getEntities().findById(fetcher, id);
     }
 
     @Override
     public List<E> findByIds(Iterable<ID> ids) {
-        return sqlClient.getEntities().findByIds(entityType, Utils.toCollection(ids));
+        return sql().getEntities().findByIds(entityType, Utils.toCollection(ids));
     }
 
     @Override
@@ -129,12 +139,12 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         if (fetcher == null) {
             return findByIds(ids);
         }
-        return sqlClient.getEntities().findByIds(fetcher, Utils.toCollection(ids));
+        return sql().getEntities().findByIds(fetcher, Utils.toCollection(ids));
     }
 
     @Override
     public Map<ID, E> findMapByIds(Iterable<ID> ids) {
-        return sqlClient.getEntities().findMapByIds(entityType, Utils.toCollection(ids));
+        return sql().getEntities().findMapByIds(entityType, Utils.toCollection(ids));
     }
 
     @Override
@@ -142,7 +152,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
         if (fetcher == null) {
             return findMapByIds(ids);
         }
-        return sqlClient.getEntities().findMapByIds(fetcher, Utils.toCollection(ids));
+        return sql().getEntities().findMapByIds(fetcher, Utils.toCollection(ids));
     }
 
     @NotNull
@@ -237,7 +247,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public <S extends E> SimpleSaveResult<S> save(@NotNull S entity, SaveMode mode) {
-        return sqlClient
+        return sql()
                 .getEntities()
                 .saveCommand(entity)
                 .setMode(mode)
@@ -247,19 +257,19 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public SimpleEntitySaveCommand<E> saveCommand(@NotNull Input<E> input) {
-        return sqlClient.getEntities().saveCommand(input);
+        return sql().getEntities().saveCommand(input);
     }
 
     @NotNull
     @Override
     public <S extends E> SimpleEntitySaveCommand<S> saveCommand(@NotNull S entity) {
-        return sqlClient.getEntities().saveCommand(entity);
+        return sql().getEntities().saveCommand(entity);
     }
 
     @NotNull
     @Override
     public <S extends E> BatchSaveResult<S> saveAll(@NotNull Iterable<S> entities, SaveMode mode) {
-        return sqlClient
+        return sql()
                 .getEntities()
                 .batchSaveCommand(Utils.toCollection(entities))
                 .setMode(mode)
@@ -269,14 +279,14 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @NotNull
     @Override
     public <S extends E> BatchEntitySaveCommand<S> saveAllCommand(@NotNull Iterable<S> entities) {
-        return sqlClient
+        return sql()
                 .getEntities()
                 .batchSaveCommand(Utils.toCollection(entities));
     }
 
     @Override
     public int delete(@NotNull E entity, DeleteMode mode) {
-        return sqlClient.getEntities().delete(
+        return sql().getEntities().delete(
                 entityType,
                 ImmutableObjects.get(entity, immutableType.getIdProp().getId()),
                 mode
@@ -285,7 +295,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public int deleteAll(@NotNull Iterable<? extends E> entities, DeleteMode mode) {
-        return sqlClient.getEntities().batchDelete(
+        return sql().getEntities().batchDelete(
                 entityType,
                 Utils
                         .toCollection(entities)
@@ -298,7 +308,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public int deleteById(@NotNull ID id, DeleteMode mode) {
-        return sqlClient
+        return sql()
                 .getEntities()
                 .delete(entityType, id, mode)
                 .getAffectedRowCount(AffectedTable.of(immutableType));
@@ -306,7 +316,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
     @Override
     public int deleteByIds(Iterable<? extends ID> ids, DeleteMode mode) {
-        return sqlClient
+        return sql()
                 .getEntities()
                 .batchDelete(entityType, Utils.toCollection(ids), mode)
                 .getAffectedRowCount(AffectedTable.of(immutableType));
@@ -315,7 +325,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @Override
     public void deleteAll() {
         Mutations
-                .createDelete(sqlClient, immutableType, (d, t) -> d.enableDissociation())
+                .createDelete((JSqlClientImplementor) sql(), immutableType, (d, t) -> d.enableDissociation())
                 .execute();
     }
 
@@ -332,7 +342,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
             @Nullable Sort sort
     ) {
         MutableRootQueryImpl<Table<?>> query =
-                new MutableRootQueryImpl<>(sqlClient, immutableType, ExecutionPurpose.QUERY, FilterLevel.DEFAULT);
+                new MutableRootQueryImpl<>((JSqlClientImplementor) sql(), immutableType, ExecutionPurpose.QUERY, FilterLevel.DEFAULT);
         TableImplementor<?> table = query.getTableImplementor();
         if (sortedProps != null) {
             for (TypedProp.Scalar<?, ?> sortedProp : sortedProps) {
@@ -418,17 +428,17 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
 
         @Override
         public V findNullable(ID id) {
-            return sqlClient.getEntities().findById(viewType, id);
+            return sql().getEntities().findById(viewType, id);
         }
 
         @Override
         public List<V> findByIds(Iterable<ID> ids) {
-            return sqlClient.getEntities().findByIds(viewType, Utils.toCollection(ids));
+            return sql().getEntities().findByIds(viewType, Utils.toCollection(ids));
         }
 
         @Override
         public Map<ID, V> findMapByIds(Iterable<ID> ids) {
-            return sqlClient.getEntities().findMapByIds(viewType, Utils.toCollection(ids));
+            return sql().getEntities().findMapByIds(viewType, Utils.toCollection(ids));
         }
 
         @Override

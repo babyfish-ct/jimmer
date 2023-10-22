@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.runtime.AopProxyProvider;
 import org.babyfish.jimmer.sql.runtime.StrategyProvider;
 import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
 
@@ -24,15 +25,18 @@ import java.util.Map;
 
 class TransientResolverManager {
 
-    private final TransientResolverProvider provider;
+    private final TransientResolverProvider transientResolverProvider;
+
+    private final AopProxyProvider aopProxyProvider;
 
     private JSqlClient sqlClient;
 
     private final PropCache<TransientResolver<?, ?>> resolverCache =
             new PropCache<>(this::createResolver, true);
 
-    TransientResolverManager(TransientResolverProvider provider) {
-        this.provider = provider;
+    TransientResolverManager(TransientResolverProvider transientResolverProvider, AopProxyProvider aopProxyProvider) {
+        this.transientResolverProvider = transientResolverProvider;
+        this.aopProxyProvider = aopProxyProvider;
     }
 
     void initialize(JSqlClient sqlClient) {
@@ -40,7 +44,7 @@ class TransientResolverManager {
             throw new IllegalStateException("The current object has been initialized");
         }
         this.sqlClient = sqlClient;
-        if (provider.shouldResolversBeCreatedImmediately()) {
+        if (transientResolverProvider.shouldResolversBeCreatedImmediately()) {
             createResolvers();
         }
     }
@@ -71,15 +75,21 @@ class TransientResolverManager {
         return resolverCache.get(prop);
     }
 
-    public StrategyProvider<TransientResolver<?,?>> getProvider() {
-        return provider;
+    public StrategyProvider<TransientResolver<?,?>> getTransientResolverProvider() {
+        return transientResolverProvider;
     }
 
     private TransientResolver<?, ?> createResolver(ImmutableProp prop) {
         TransientResolver<?, ?> resolver = createResolver0(prop);
         if (resolver != null) {
             Cache<Object, ?> cache = sqlClient.getCaches().getPropertyCache(prop);
-            if (cache != null && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(resolver, EntityEvent.class)) {
+            if (cache != null &&
+                    PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                            resolver,
+                            EntityEvent.class,
+                            aopProxyProvider
+                    )
+            ) {
                 sqlClient.getTriggers().addEntityListener(e -> {
                     Collection<?> ids = resolver.getAffectedSourceIds(e);
                     if (ids != null && !ids.isEmpty()) {
@@ -95,7 +105,13 @@ class TransientResolverManager {
                     }
                 });
             }
-            if (cache != null && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(resolver, AssociationEvent.class)) {
+            if (cache != null &&
+                    PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                            resolver,
+                            AssociationEvent.class,
+                            aopProxyProvider
+                    )
+            ) {
                 sqlClient.getTriggers().addAssociationListener(e -> {
                     Collection<?> ids = resolver.getAffectedSourceIds(e);
                     if (ids != null && !ids.isEmpty()) {
@@ -132,13 +148,13 @@ class TransientResolverManager {
         TransientResolver<?, ?> resolver = null;
         if (!resolverRef.isEmpty()) {
             try {
-                resolver = provider.get(resolverRef, sqlClient);
+                resolver = transientResolverProvider.get(resolverRef, sqlClient);
             } catch (Exception ex) {
                 throw new ModelException(
                         "Illegal property \"" +
                                 this +
                                 "\", the \"" +
-                                provider.getClass().getName() +
+                                transientResolverProvider.getClass().getName() +
                                 ".get(String)\" throws exception",
                         ex
                 );
@@ -148,7 +164,7 @@ class TransientResolverManager {
                         "Illegal property \"" +
                                 this +
                                 "\", the \"" +
-                                provider.getClass().getName() +
+                                transientResolverProvider.getClass().getName() +
                                 ".get(String)\" returns null"
                 );
             }
@@ -253,7 +269,7 @@ class TransientResolverManager {
             return resolver;
         }
         try {
-            return provider.get((Class<TransientResolver<?,?>>) resolverType, sqlClient);
+            return transientResolverProvider.get((Class<TransientResolver<?,?>>) resolverType, sqlClient);
         } catch (Exception ex) {
             throw convertResolverConstructorError(prop, ex);
         }

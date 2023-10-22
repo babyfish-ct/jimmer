@@ -523,7 +523,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     @Override
     public StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider() {
-        return transientResolverManager.getProvider();
+        return transientResolverManager.getTransientResolverProvider();
     }
 
     @Override
@@ -653,6 +653,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private String databaseValidationCatalog;
 
         private String databaseValidationSchema;
+
+        private AopProxyProvider aopProxyProvider;
 
         private String microServiceName = "";
 
@@ -1175,6 +1177,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setAopProxyProvider(AopProxyProvider provider) {
+            this.aopProxyProvider = aopProxyProvider;
+            return this;
+        }
+
+        @Override
         public Builder setMicroServiceName(String microServiceName) {
             this.microServiceName = microServiceName != null ? microServiceName : "";
             return this;
@@ -1239,7 +1247,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     new TransientResolverManager(
                             transientResolverProvider != null ?
                                     transientResolverProvider :
-                                    DefaultTransientResolverProvider.INSTANCE
+                                    DefaultTransientResolverProvider.INSTANCE,
+                            aopProxyProvider
                     );
             JSqlClientImplementor sqlClient = new JSqlClientImpl(
                     connectionManager,
@@ -1317,6 +1326,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private FilterManager createFilterManager() {
             return new FilterManager(
+                    aopProxyProvider,
                     new LogicalDeletedFilterProvider(logicalDeletedBehavior, entityManager(), microServiceName),
                     filters,
                     disabledFilters

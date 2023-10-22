@@ -69,9 +69,8 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     @Nullable
     @Override
     public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) { // ❺
-        if (sqlClient.getCaches().isAffectedBy(e) &&
-                e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            return Collections.singleton(e.getSourceId());
+        if (sqlClient.getCaches().isAffectedBy(e) && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
+            return Collections.singletonList(e.getSourceId());
         }
         return null;
     }
@@ -86,9 +85,9 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
                 !e.isEvict() &&
                 e.getImmutableType().getJavaClass() == Book.class) {
 
-            Long storeId = e.getUnchangedValue(BookProps.STORE_ID);
-            if (storeId != null && e.isChanged(BookProps.EDITION)) {
-                return Collections.singleton(storeId);
+            BookStore store = e.getUnchangedValue(BookProps.STORE);
+            if (store != null && e.isChanged(BookProps.EDITION)) {
+                return Collections.singletonList(store.id());
             }
         }
         return null;

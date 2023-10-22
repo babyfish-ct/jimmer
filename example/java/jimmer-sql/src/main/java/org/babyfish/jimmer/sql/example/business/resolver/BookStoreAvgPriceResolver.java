@@ -70,12 +70,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // (for some records in the BOOK table, whether by modifying the foreign key field `STORE_ID` or
     // the field `TENANT` that the `TenantFilter` cares about),
     // the cache of the calculated property `BookStore.avgPrice` should be invalidated.
-    @Nullable
     @Override
     public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) { // ❺
-        if (sqlClient.getCaches().isAffectedBy(e) &&
-                e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
-            return Collections.singleton(e.getSourceId());
+        if (sqlClient.getCaches().isAffectedBy(e) && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
+            return Collections.singletonList(e.getSourceId());
         }
         return null;
     }
@@ -83,16 +81,15 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // Given that the foreign key `STORE_ID` of the current `Book` is not null and has not been modified,
     // if the `price` of the current `Book` changes, the cache of the computed property `BookStore.avgPrice`
     // corresponding to `STORE_ID` should be invalidated.
-    @Nullable
     @Override
     public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) { // ❻
         if (sqlClient.getCaches().isAffectedBy(e) &&
                 !e.isEvict() &&
                 e.getImmutableType().getJavaClass() == Book.class) {
 
-            Long storeId = e.getUnchangedValue(BookProps.STORE_ID);
-            if (storeId != null && e.isChanged(BookProps.PRICE)) {
-                return Collections.singleton(storeId);
+            BookStore store = e.getUnchangedValue(BookProps.STORE);
+            if (store != null && e.isChanged(BookProps.PRICE)) {
+                return Collections.singletonList(store.id());
             }
         }
         return null;

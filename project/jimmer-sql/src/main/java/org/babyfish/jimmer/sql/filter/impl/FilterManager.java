@@ -19,6 +19,7 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.event.impl.BackRefIds;
 import org.babyfish.jimmer.sql.event.impl.EvictContext;
 import org.babyfish.jimmer.sql.filter.*;
+import org.babyfish.jimmer.sql.runtime.AopProxyProvider;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 public class FilterManager implements Filters {
 
     private final static ThreadLocal<LinkedList<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
+
+    private final AopProxyProvider aopProxyProvider;
 
     private final LogicalDeletedFilterProvider provider;
 
@@ -57,10 +60,12 @@ public class FilterManager implements Filters {
 
     @SuppressWarnings("unchecked")
     public FilterManager(
+            AopProxyProvider aopProxyProvider,
             LogicalDeletedFilterProvider provider,
             List<Filter<?>> filters,
             Collection<Filter<?>> disabledFilters
     ) {
+        this.aopProxyProvider = aopProxyProvider;
         this.provider = provider;
         this.allFilters = standardFilters(filters);
         this.disabledFilters = standardDisabledFilters(null, disabledFilters, this.allFilters);
@@ -72,12 +77,14 @@ public class FilterManager implements Filters {
     }
 
     private FilterManager(
+            AopProxyProvider aopProxyProvider,
             LogicalDeletedFilterProvider provider,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
             Map<String, List<Filter<Props>>> filterMap,
             Map<String, List<CacheableFilter<Props>>> allCacheableFilterMap
     ) {
+        this.aopProxyProvider = aopProxyProvider;
         this.provider = provider;
         this.allFilters = filters;
         this.disabledFilters = disabledFilters;
@@ -168,6 +175,7 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
+                aopProxyProvider,
                 newProvider,
                 allFilters,
                 disabledFilters,
@@ -188,6 +196,7 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
+                aopProxyProvider,
                 provider,
                 allFilters,
                 disabledSet,
@@ -205,6 +214,7 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
+                aopProxyProvider,
                 provider,
                 allFilters,
                 disabledSet,
@@ -596,14 +606,26 @@ public class FilterManager implements Filters {
         for (Map.Entry<ImmutableType, LocatedCache<?, ?>> entry : caches.getObjectCacheMap().entrySet()) {
             ImmutableType type = entry.getKey();
             List<CacheableFilter<Props>> filters = allCacheableCache.get(type);
-            if (!filters.isEmpty() && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(filters, EntityEvent.class)) {
+            if (!filters.isEmpty() &&
+                    PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                            filters,
+                            EntityEvent.class,
+                            aopProxyProvider
+                    )
+            ) {
                 sqlClient.getTriggers().addEntityListener(e -> {
                     EvictContext.execute(() -> {
                         handleOtherChange(type, filters, e);
                     });
                 });
             }
-            if (!filters.isEmpty() && PropCacheInvalidators.isGetAffectedSourceIdsOverridden(filters, AssociationEvent.class)) {
+            if (!filters.isEmpty() &&
+                    PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                            filters,
+                            AssociationEvent.class,
+                            aopProxyProvider
+                    )
+            ) {
                 sqlClient.getTriggers().addAssociationListener(e -> {
                     EvictContext.execute(() -> {
                         handleOtherChange(type, filters, e);

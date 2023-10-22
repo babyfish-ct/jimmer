@@ -1,24 +1,34 @@
 package org.babyfish.jimmer.spring.repository.support;
 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 
-public class JimmerRepositoryFactoryBean<R extends Repository<E, ID>, E, ID> extends RepositoryFactoryBeanSupport<R, E, ID> {
+public class JimmerRepositoryFactoryBean<R extends Repository<E, ID>, E, ID> extends RepositoryFactoryBeanSupport<R, E, ID> implements ApplicationContextAware {
 
-    private Object sqlClient;
+    private ApplicationContext applicationContext;
+
+    private String sqlClientRef;
 
     public JimmerRepositoryFactoryBean(Class<? extends R> repositoryInterface) {
         super(repositoryInterface);
         this.setLazyInit(false);
     }
 
-    public void setSqlClient(Object sqlClient) {
-        this.sqlClient = sqlClient;
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    public void setSqlClientRef(String sqlClientRef) {
+        this.sqlClientRef = sqlClientRef;
     }
 
     @Override
     protected RepositoryFactorySupport createRepositoryFactory() {
-        return new JimmerRepositoryFactory(sqlClient);
+        return new JimmerRepositoryFactory(applicationContext, sqlClientRef);
     }
 }

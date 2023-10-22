@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.cache;
 
+import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.SortedMap;
 
 public class PropCacheInvalidatorTest {
@@ -22,52 +24,120 @@ public class PropCacheInvalidatorTest {
         Assertions.assertFalse(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new A(),
-                        EntityEvent.class
+                        EntityEvent.class,
+                        null
                 )
         );
         Assertions.assertFalse(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new A(),
-                        AssociationEvent.class
+                        AssociationEvent.class,
+                        null
                 )
         );
 
         Assertions.assertTrue(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new B(),
-                        EntityEvent.class
+                        EntityEvent.class,
+                        null
                 )
         );
         Assertions.assertFalse(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new B(),
-                        AssociationEvent.class
+                        AssociationEvent.class,
+                        null
                 )
         );
 
         Assertions.assertFalse(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new C(),
-                        EntityEvent.class
+                        EntityEvent.class,
+                        null
                 )
         );
         Assertions.assertTrue(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new C(),
-                        AssociationEvent.class
+                        AssociationEvent.class,
+                        null
                 )
         );
 
         Assertions.assertTrue(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new D(),
-                        EntityEvent.class
+                        EntityEvent.class,
+                        null
                 )
         );
         Assertions.assertTrue(
                 PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                         new D(),
-                        AssociationEvent.class
+                        AssociationEvent.class,
+                        null
+                )
+        );
+
+        Assertions.assertFalse(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new E(),
+                        EntityEvent.class,
+                        null
+                )
+        );
+        Assertions.assertFalse(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new E(),
+                        AssociationEvent.class,
+                        null
+                )
+        );
+
+        Assertions.assertTrue(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new F(),
+                        EntityEvent.class,
+                        null
+                )
+        );
+        Assertions.assertFalse(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new F(),
+                        AssociationEvent.class,
+                        null
+                )
+        );
+
+        Assertions.assertFalse(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new G(),
+                        EntityEvent.class,
+                        null
+                )
+        );
+        Assertions.assertTrue(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new G(),
+                        AssociationEvent.class,
+                        null
+                )
+        );
+
+        Assertions.assertTrue(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new H(),
+                        EntityEvent.class,
+                        null
+                )
+        );
+        Assertions.assertTrue(
+                PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                        new H(),
+                        AssociationEvent.class,
+                        null
                 )
         );
     }
@@ -153,6 +223,62 @@ public class PropCacheInvalidatorTest {
         @Override
         public void filter(FilterArgs<Props> args) {
 
+        }
+
+        @Nullable
+        @Override
+        public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public Collection<Object> getAffectedSourceIds(@NotNull AssociationEvent e) {
+            return null;
+        }
+    }
+
+    private static class E implements TransientResolver<Long, Long> {
+
+        @Override
+        public Map<Long, Long> resolve(Collection<Long> longs) {
+            return null;
+        }
+    }
+
+    private static class F implements TransientResolver<Long, Long> {
+
+        @Override
+        public Map<Long, Long> resolve(Collection<Long> longs) {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
+            return null;
+        }
+    }
+
+    private static class G implements TransientResolver<Long, Long> {
+
+        @Override
+        public Map<Long, Long> resolve(Collection<Long> longs) {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public Collection<Object> getAffectedSourceIds(@NotNull AssociationEvent e) {
+            return null;
+        }
+    }
+
+    private static class H implements TransientResolver<Long, Long> {
+
+        @Override
+        public Map<Long, Long> resolve(Collection<Long> longs) {
+            return null;
         }
 
         @Nullable
