@@ -141,7 +141,8 @@ public class SpringJSqlClient extends AbstractJSqlClientWrapper {
 
         builder.addDraftHandlers(handlers);
         builder.addDraftInterceptors(interceptors);
-        initLanguageConfigurations(builder);
+        initializeByLanguage(builder);
+        builder.addInitializers(new SpringEventInitializer(publisher));
 
         builder.setMicroServiceName(properties.getMicroServiceName());
         if (!properties.getMicroServiceName().isEmpty()) {
@@ -151,7 +152,7 @@ public class SpringJSqlClient extends AbstractJSqlClientWrapper {
         return builder;
     }
 
-    private void initLanguageConfigurations(JSqlClient.Builder builder) {
+    private void initializeByLanguage(JSqlClient.Builder builder) {
 
         Collection<Filter<?>> javaFilters = getObjects(Filter.class);
         Collection<Customizer> javaCustomizers = getObjects(Customizer.class);
@@ -239,14 +240,23 @@ public class SpringJSqlClient extends AbstractJSqlClientWrapper {
         return (Collection<E>) ctx.getBeansOfType(elementType).values();
     }
 
-    @Override
-    protected void afterCreate(JSqlClientImplementor sqlClient) {
-        Triggers[] triggersArr = sqlClient.getTriggerType() == TriggerType.BOTH ?
-                new Triggers[] { sqlClient.getTriggers(), sqlClient.getTriggers(true) } :
-                new Triggers[] { sqlClient.getTriggers() };
-        for (Triggers triggers : triggersArr) {
-            triggers.addEntityListener(publisher::publishEvent);
-            triggers.addAssociationListener(publisher::publishEvent);
+    private static class SpringEventInitializer implements Initializer {
+
+        private final ApplicationEventPublisher publisher;
+
+        private SpringEventInitializer(ApplicationEventPublisher publisher) {
+            this.publisher = publisher;
+        }
+
+        @Override
+        public void initialize(JSqlClient sqlClient) throws Exception {
+            Triggers[] triggersArr = ((JSqlClientImplementor)sqlClient).getTriggerType() == TriggerType.BOTH ?
+                    new Triggers[] { sqlClient.getTriggers(), sqlClient.getTriggers(true) } :
+                    new Triggers[] { sqlClient.getTriggers() };
+            for (Triggers triggers : triggersArr) {
+                triggers.addEntityListener(publisher::publishEvent);
+                triggers.addAssociationListener(publisher::publishEvent);
+            }
         }
     }
 }

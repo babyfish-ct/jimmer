@@ -5,11 +5,13 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.example.graphql.entities.Book;
 import org.babyfish.jimmer.sql.example.graphql.repository.BookRepository;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookProps;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStore;
 import org.babyfish.jimmer.sql.example.graphql.entities.BookStoreProps;
-import org.springframework.context.event.EventListener;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -47,39 +49,55 @@ public class BookStoreNewestBooksResolver implements TransientResolver<Long, Lis
     // its consistency requires manual assistance.
     // -----------------------------
 
-    @EventListener
-    public void onAssociationChanged(AssociationEvent e) {
-        // The association property `BookStore.books` is changed
-        //
-        // It is worth noting that
-        // not only modifying the `STORE_ID` field of the `BOOK` table can trigger the event,
-        // but also modifying the `TENANT` field of the BOOK table can trigger the event.
-        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookStoreProps.BOOKS)) {
-            sqlClient
-                    .getCaches()
-                    .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
-                    .delete(e.getSourceId());
-        }
-    }
 
-    @EventListener
-    public void onEntityChanged(EntityEvent<?> e) {
-        // The scalar property `Book.edition` is changed.
-        if (sqlClient.getCaches().isAffectedBy(e) && e.isChanged(BookProps.EDITION)) {
-            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
-            BookStore store = storeRef != null ? storeRef.getValue() : null;
-            if (store != null) { // foreign key does not change.
-                sqlClient
-                        .getCaches()
-                        .getPropertyCache(BookStoreProps.NEWEST_BOOKS)
-                        .delete(store.id());
-            }
-        }
-    }
 
-    // Contribute part of the secondary hash key to multiview-cache
+
+    // The calculated property `BookStore.newestBooks` depends on the one-to-many association `BookStore.books`,
+    // and `BookStore.books` adopts multi-view cache because its target type `Book` is processed by the
+    // filter `TenantFilter`, so `BookStore.newestBooks` should also adopt multi-view cache too.
+    //
+    // Since it is multi-view cache, sub key is needed.
+    // Here, we make the calculated cache `BookStore.newestBooks` have the same sub key as the
+    // association cache `BookStore.books`, which is `{"tenant": ...}`
     @Override
-    public Ref<SortedMap<String, Object>> getParameterMapRef() {
+    public Ref<SortedMap<String, Object>> getParameterMapRef() { // ❹
         return sqlClient.getFilters().getTargetParameterMapRef(BookStoreProps.BOOKS);
     }
+
+    // When a one-to-many association `BookStore.books` is modified
+    // (for some records in the BOOK table, whether by modifying the foreign key field `STORE_ID` or
+    // the field `TENANT` that the `TenantFilter` cares about),
+    // the cache of the calculated property `BookStore.newestBooks` should be invalidated.
+    @Nullable
+    @Override
+    public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) { // ❺
+        if (sqlClient.getCaches().isAffectedBy(e) && e.getImmutableProp() == BookStoreProps.BOOKS.unwrap()) {
+            return Collections.singletonList(e.getSourceId());
+        }
+        return null;
+    }
+
+    // Given that the foreign key `STORE_ID` of the current `Book` is not null and has not been modified,
+    // if the `edition` of the current `Book` changes, the cache of the computed property `BookStore.newestBooks`
+    // corresponding to `STORE_ID` should be invalidated.
+    @Nullable
+    @Override
+    public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) { // ❻
+        if (sqlClient.getCaches().isAffectedBy(e) &&
+                !e.isEvict() &&
+                e.getImmutableType().getJavaClass() == Book.class) {
+
+            Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE);
+            if (storeRef != null && storeRef.getValue() != null && e.isChanged(BookProps.EDITION)) {
+                return Collections.singletonList(storeRef.getValue().id());
+            }
+        }
+        return null;
+    }
 }
+
+/*----------------Documentation Links----------------
+❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/mapping/advanced/calculated/transient#associative-calculation-bookstorenewestbooks
+❹ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#subkey-of-calculated-properties
+❺ ❻ https://babyfish-ct.github.io/jimmer/docs/cache/multiview-cache/user-filter#consistency
+---------------------------------------------------*/

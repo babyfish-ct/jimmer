@@ -10,13 +10,17 @@ import org.babyfish.jimmer.sql.example.repository.BookRepository
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.KTransientResolver
 import org.babyfish.jimmer.sql.kt.event.*
+import org.springframework.beans.factory.annotation.Lookup
 import org.springframework.stereotype.Component
 import java.util.*
 
 @Component
 class BookStoreNewestBooksResolver(
-    private val bookRepository: BookRepository
 ) : KTransientResolver<Long, List<Long>> { // ❶
+
+    @get:Lookup
+    val bookRepository: BookRepository
+        get() = error("Not ready")
 
     private val sqlClient: KSqlClient
         get() = bookRepository.sql

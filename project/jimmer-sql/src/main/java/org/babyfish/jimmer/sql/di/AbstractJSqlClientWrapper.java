@@ -57,9 +57,8 @@ public abstract class AbstractJSqlClientWrapper implements JSqlClientImplementor
                 sqlClient = this.sqlClient;
                 if (sqlClient == null) {
                     JSqlClient.Builder builder = createBuilder();
-                    beforeCreate(builder);
+                    builder.setInitializationType(InitializationType.MANUAL);
                     sqlClient = (JSqlClientImplementor) builder.build();
-                    afterCreate(sqlClient);
                     this.sqlClient = sqlClient;
                 }
             } finally {
@@ -71,10 +70,6 @@ public abstract class AbstractJSqlClientWrapper implements JSqlClientImplementor
     }
 
     protected abstract JSqlClient.Builder createBuilder();
-
-    protected void beforeCreate(JSqlClient.Builder builder) {}
-
-    protected void afterCreate(JSqlClientImplementor sqlClient) {}
 
     @SuppressWarnings("unchecked")
     @Override
@@ -414,5 +409,10 @@ public abstract class AbstractJSqlClientWrapper implements JSqlClientImplementor
     @Override
     public Loaders getLoaders() {
         return sqlClient().getLoaders();
+    }
+
+    @Override
+    public void initialize() {
+        sqlClient().initialize();
     }
 }

@@ -12,9 +12,7 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
-import org.babyfish.jimmer.sql.di.AopProxyProvider;
-import org.babyfish.jimmer.sql.di.TransientResolverProvider;
-import org.babyfish.jimmer.sql.di.UserIdGeneratorProvider;
+import org.babyfish.jimmer.sql.di.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
@@ -27,7 +25,6 @@ import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
@@ -427,6 +424,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder setMicroServiceExchange(MicroServiceExchange exchange);
+
+        @OldChain
+        Builder setInitializationType(InitializationType type);
 
         JSqlClient build();
     }

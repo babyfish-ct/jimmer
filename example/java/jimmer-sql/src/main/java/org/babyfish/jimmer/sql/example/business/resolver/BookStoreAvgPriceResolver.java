@@ -55,6 +55,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
     // its consistency requires manual assistance.
     // -----------------------------
 
+
+
+
+
     // The calculated property `BookStore.avgPrice` depends on the one-to-many association `BookStore.books`,
     // and `BookStore.books` adopts multi-view cache because its target type `Book` is processed by the
     // filter `TenantFilter`, so `BookStore.avgPrice` should also adopt multi-view cache too.

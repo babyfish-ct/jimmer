@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.di.AopProxyProvider;
 import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.di.TransientResolverProvider;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ class TransientResolverManager {
     private TransientResolver<?, ?> createResolver(ImmutableProp prop) {
         TransientResolver<?, ?> resolver = createResolver0(prop);
         if (resolver != null) {
-            Cache<Object, ?> cache = sqlClient.getCaches().getPropertyCache(prop);
+            Cache<Object, ?> cache = sqlClient().getCaches().getPropertyCache(prop);
             if (cache != null &&
                     PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
                             resolver,
@@ -81,7 +82,7 @@ class TransientResolverManager {
                             aopProxyProvider
                     )
             ) {
-                sqlClient.getTriggers().addEntityListener(e -> {
+                sqlClient().getTriggers().addEntityListener(e -> {
                     Collection<?> ids = resolver.getAffectedSourceIds(e);
                     if (ids != null && !ids.isEmpty()) {
                         List<Object> nonNullIds = new ArrayList<>(ids.size());
@@ -103,7 +104,7 @@ class TransientResolverManager {
                             aopProxyProvider
                     )
             ) {
-                sqlClient.getTriggers().addAssociationListener(e -> {
+                sqlClient().getTriggers().addAssociationListener(e -> {
                     Collection<?> ids = resolver.getAffectedSourceIds(e);
                     if (ids != null && !ids.isEmpty()) {
                         List<Object> nonNullIds = new ArrayList<>(ids.size());
@@ -278,5 +279,16 @@ class TransientResolverManager {
                         "\"",
                 throwable
         );
+    }
+
+    private JSqlClient sqlClient() {
+        JSqlClient sqlClient = this.sqlClient;
+        if (sqlClient == null) {
+            throw new IllegalStateException(
+                    "The transient resolver manager is not ready because the initialization of sqlClient is 'MANUAL' " +
+                            "but the sqlClient is not initialized"
+            );
+        }
+        return sqlClient;
     }
 }

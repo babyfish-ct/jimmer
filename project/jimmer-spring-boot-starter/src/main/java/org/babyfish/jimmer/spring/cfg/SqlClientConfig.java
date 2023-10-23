@@ -17,14 +17,14 @@ import org.springframework.context.annotation.Import;
 @Import({TransactionCacheOperatorFlusherConfig.class, MicroServiceExchangeConfig.class})
 public class SqlClientConfig {
 
-    @Bean(name = "sqlClient")
+    @Bean(name = "sqlClient", initMethod = "initialize")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
     public JSqlClient javaSqlClient(ApplicationContext ctx, ApplicationEventPublisher publisher) {
         return new SpringJSqlClient(ctx, publisher, false);
     }
 
-    @Bean(name = "sqlClient")
+    @Bean(name = "sqlClient", initMethod = "initialize")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
     public KSqlClient kotlinSqlClient(ApplicationContext ctx, ApplicationEventPublisher publisher) {

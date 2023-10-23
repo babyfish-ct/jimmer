@@ -413,9 +413,9 @@ public class TriggersImpl implements Triggers {
                 }
             }
         }
-        MetadataStrategy metadataStrategy = sqlClient.getMetadataStrategy();
+        MetadataStrategy metadataStrategy = sqlClient().getMetadataStrategy();
         ImmutableType thisType = event.getImmutableType();
-        for (ImmutableProp backProp : sqlClient.getEntityManager().getAllBackProps(thisType)) {
+        for (ImmutableProp backProp : sqlClient().getEntityManager().getAllBackProps(thisType)) {
             if (!backProp.isAssociation(TargetLevel.PERSISTENT)) {
                 continue;
             }
@@ -444,5 +444,16 @@ public class TriggersImpl implements Triggers {
             }
         }
         return throwable;
+    }
+
+    private JSqlClientImplementor sqlClient() {
+        JSqlClientImplementor sqlClient = this.sqlClient;
+        if (sqlClient == null) {
+            throw new IllegalStateException(
+                    "The triggers are not ready because the initialization of sqlClient is 'MANUAL' " +
+                            "but the sqlClient is not initialized"
+            );
+        }
+        return sqlClient;
     }
 }

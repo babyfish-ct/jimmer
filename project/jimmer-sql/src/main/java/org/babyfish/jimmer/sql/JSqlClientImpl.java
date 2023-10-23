@@ -46,6 +46,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 class JSqlClientImpl implements JSqlClientImplementor {
@@ -78,9 +81,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final Caches caches;
 
-    private final Triggers triggers;
+    private final TriggersImpl triggers;
 
-    private final Triggers transactionTriggers;
+    private final TriggersImpl transactionTriggers;
 
     private final MetadataStrategy metadataStrategy;
 
@@ -106,6 +109,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final ReaderManager readerManager = new ReaderManager(this);
 
+    private final ReadWriteLock initializationLock = new ReentrantReadWriteLock();
+
+    private SqlClientInitializer sqlClientInitializer;
+
     private JSqlClientImpl(
             ConnectionManager connectionManager,
             ConnectionManager slaveConnectionManager,
@@ -121,8 +128,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
-            Triggers triggers,
-            Triggers transactionTriggers,
+            TriggersImpl triggers,
+            TriggersImpl transactionTriggers,
             MetadataStrategy metadataStrategy,
             BinLog binLog,
             FilterManager filterManager,
@@ -132,7 +139,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean saveCommandPessimisticLock,
             DraftHandlerManager draftHandlerManager,
             String microServiceName,
-            MicroServiceExchange microServiceExchange
+            MicroServiceExchange microServiceExchange,
+            SqlClientInitializer sqlClientInitializer
     ) {
         this.connectionManager =
                 connectionManager != null ?
@@ -175,6 +183,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.draftHandlerManager = draftHandlerManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
+        this.sqlClientInitializer = sqlClientInitializer;
     }
 
     @Override
@@ -438,7 +447,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 saveCommandPessimisticLock,
                 draftHandlerManager,
                 microServiceName,
-                microServiceExchange
+                microServiceExchange,
+                sqlClientInitializer
         );
     }
 
@@ -478,7 +488,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 saveCommandPessimisticLock,
                 draftHandlerManager,
                 microServiceName,
-                microServiceExchange
+                microServiceExchange,
+                sqlClientInitializer
         );
     }
 
@@ -513,7 +524,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 saveCommandPessimisticLock,
                 draftHandlerManager,
                 microServiceName,
-                microServiceExchange
+                microServiceExchange,
+                sqlClientInitializer
         );
     }
 
@@ -570,6 +582,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public MicroServiceExchange getMicroServiceExchange() {
         return microServiceExchange;
+    }
+
+    @Override
+    public void initialize() {
+        if (sqlClientInitializer != null) {
+            sqlClientInitializer.initialize();
+        }
     }
 
     public static class BuilderImpl implements JSqlClient.Builder {
@@ -660,6 +679,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private String microServiceName = "";
 
         private MicroServiceExchange microServiceExchange;
+
+        private InitializationType initializationType = InitializationType.IMMEDIATE;
 
         public BuilderImpl() {}
 
@@ -1196,7 +1217,18 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setInitializationType(InitializationType type) {
+            this.initializationType = type != null ? type : InitializationType.IMMEDIATE;
+            return this;
+        }
+
+        @Override
         public JSqlClient build() {
+            if (!microServiceName.isEmpty() && microServiceExchange == null) {
+                throw new IllegalStateException(
+                        "The `microServiceExchange` must be configured when `microServiceName` is configured"
+                );
+            }
             for (Customizer customizer : customizers) {
                 try {
                     customizer.customize(this);
@@ -1206,11 +1238,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                             ex
                     );
                 }
-            }
-            if (!microServiceName.isEmpty() && microServiceExchange == null) {
-                throw new IllegalStateException(
-                        "The `microServiceExchange` must be configured when `microServiceName` is configured"
-                );
             }
             ForeignKeyStrategy foreignKeyStrategy;
             if (!dialect.isForeignKeySupported()) {
@@ -1251,6 +1278,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
                                     DefaultTransientResolverProvider.INSTANCE,
                             aopProxyProvider
                     );
+            SqlClientInitializer sqlClientInitializer = null;
+            if (initializationType == InitializationType.MANUAL) {
+                sqlClientInitializer = new SqlClientInitializer();
+            }
             JSqlClientImplementor sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
@@ -1284,27 +1315,35 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     saveCommandPessimisticLock,
                     new DraftHandlerManager(handlers),
                     microServiceName,
-                    microServiceExchange
+                    microServiceExchange,
+                    sqlClientInitializer
             );
-            CachesImpl.initialize(caches, sqlClient);
-            filterManager.initialize(sqlClient);
-            binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
-            transientResolverManager.initialize(sqlClient);
-            triggers.initialize(sqlClient);
-            if (transactionTriggers != null && transactionTriggers != triggers) {
-                transactionTriggers.initialize(sqlClient);
-            }
-            for (Initializer initializer : initializers) {
-                try {
-                    initializer.initialize(sqlClient);
-                } catch (Exception ex) {
-                    throw new ExecutionException(
-                            "Failed to execute initializer after create sql client",
-                            ex
-                    );
+            Runnable initializationAction = () -> {
+                CachesImpl.initialize(caches, sqlClient);
+                filterManager.initialize(sqlClient);
+                binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
+                transientResolverManager.initialize(sqlClient);
+                triggers.initialize(sqlClient);
+                if (transactionTriggers != null && transactionTriggers != triggers) {
+                    transactionTriggers.initialize(sqlClient);
                 }
+                for (Initializer initializer : initializers) {
+                    try {
+                        initializer.initialize(sqlClient);
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Failed to execute initializer after create sql client",
+                                ex
+                        );
+                    }
+                }
+                validateDatabase(metadataStrategy);
+            };
+            if (sqlClientInitializer != null) {
+                sqlClientInitializer.setAction(initializationAction);
+            } else {
+                initializationAction.run();
             }
-            validateDatabase(metadataStrategy);
             return sqlClient;
         }
 
@@ -1396,6 +1435,47 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 }
             }
             return em;
+        }
+    }
+
+    private static class SqlClientInitializer {
+
+        private final ReadWriteLock rwl = new ReentrantReadWriteLock();
+
+        private Runnable action;
+
+        public void setAction(Runnable action) {
+            if (this.action != null) {
+                throw new IllegalStateException("action has already been set");
+            }
+            if (action == null) {
+                throw new IllegalArgumentException("action cannot be null");
+            }
+            this.action = action;
+        }
+
+        private void initialize() {
+            Lock lock;
+
+            (lock = rwl.readLock()).lock();
+            try {
+                if (action == null) {
+                    return;
+                }
+            } finally {
+                lock.unlock();
+            }
+
+            (lock = rwl.writeLock()).lock();
+            try {
+                if (action == null) {
+                    return;
+                }
+                action.run();
+                action = null;
+            } finally {
+                lock.unlock();
+            }
         }
     }
 }

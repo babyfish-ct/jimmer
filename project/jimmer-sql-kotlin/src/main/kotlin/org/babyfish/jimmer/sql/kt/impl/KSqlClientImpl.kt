@@ -141,4 +141,8 @@ internal class KSqlClientImpl(
 
     override val binLog: BinLog
         get() = javaClient.binLog
+
+    override fun initialize() {
+        javaClient.initialize()
+    }
 }
