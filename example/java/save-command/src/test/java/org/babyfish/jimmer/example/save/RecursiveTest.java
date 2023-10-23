@@ -265,13 +265,13 @@ public class RecursiveTest extends AbstractMutationTest {
                 new ExecutedStatement(
                         "select node_id " +
                                 "from TREE_NODE " +
-                                "where parent_id = ? and node_id not in (?)",
+                                "where parent_id = ? and node_id <> ?",
                         2L, 3L
                 ),
 
                 // Query child nodes of `child-1-2`
                 new ExecutedStatement(
-                        "select node_id from TREE_NODE where parent_id in (?)",
+                        "select node_id from TREE_NODE where parent_id = ?",
                         4L
                 ),
 
@@ -279,7 +279,7 @@ public class RecursiveTest extends AbstractMutationTest {
 
                 // Delete `child-1-2`
                 new ExecutedStatement(
-                        "delete from TREE_NODE where node_id in (?)",
+                        "delete from TREE_NODE where node_id = ?",
                         4L
                 ),
 
@@ -287,13 +287,13 @@ public class RecursiveTest extends AbstractMutationTest {
                 new ExecutedStatement(
                         "select node_id " +
                                 "from TREE_NODE " +
-                                "where parent_id = ? and node_id not in (?)",
+                                "where parent_id = ? and node_id <> ?",
                         1L, 2L
                 ),
 
                 // Query child nodes of `child-2`
                 new ExecutedStatement(
-                        "select node_id from TREE_NODE where parent_id in (?)",
+                        "select node_id from TREE_NODE where parent_id = ?",
                         5L
                 ),
 
@@ -313,7 +313,7 @@ public class RecursiveTest extends AbstractMutationTest {
 
                 // Delete `child-2`
                 new ExecutedStatement(
-                        "delete from TREE_NODE where node_id in (?)",
+                        "delete from TREE_NODE where node_id = ?",
                         5L
                 )
         );

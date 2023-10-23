@@ -3,7 +3,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.8.23"
+    jimmerVersion = "0.8.31"
 }
 
 group 'org.example'
@@ -11,6 +11,9 @@ version jimmerVersion
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+    }
 }
 
 dependencies {
