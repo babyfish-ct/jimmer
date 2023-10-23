@@ -19,7 +19,7 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.event.impl.BackRefIds;
 import org.babyfish.jimmer.sql.event.impl.EvictContext;
 import org.babyfish.jimmer.sql.filter.*;
-import org.babyfish.jimmer.sql.runtime.AopProxyProvider;
+import org.babyfish.jimmer.sql.di.AopProxyProvider;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
@@ -664,17 +664,26 @@ public class FilterManager implements Filters {
         if (!affected) {
             return;
         }
-        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
+        if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             ImmutableProp mappedBy = prop.getMappedBy();
             if (mappedBy != null && mappedBy.isColumnDefinition()) {
                 ImmutableSpi oe = (ImmutableSpi) e.getOldEntity();
                 ImmutableSpi ne = (ImmutableSpi) e.getNewEntity();
-                if (oe != null && ImmutableObjects.isLoaded(oe, mappedBy)) {
+                if (oe == null || ne == null) {
                     return;
                 }
-                if (ne != null && ImmutableObjects.isLoaded(ne, mappedBy)) {
+                Ref<ImmutableSpi> unchangedParentRef = e.getUnchangedRef(mappedBy);
+                if (unchangedParentRef == null) {
                     return;
                 }
+                ImmutableSpi unchangedParent = unchangedParentRef.getValue();
+                if (unchangedParent == null) {
+                    return;
+                }
+                ImmutableProp parentIdProp = mappedBy.getTargetType().getIdProp();
+                Object parentId = ImmutableObjects.get(unchangedParent, parentIdProp);
+                sqlClient.getTriggers().fireAssociationEvict(prop, parentId, e.getConnection(), e.getReason());
+                return;
             }
         }
         List<?> backRefIds = BackRefIds.findBackRefIds(sqlClient, prop, e.getId(), e.getConnection());
@@ -842,7 +851,7 @@ public class FilterManager implements Filters {
                     }
                     Object value = e.getValue();
                     if (value == null) {
-                        break;
+                        continue;
                     }
                     Object conflictValue = map.get(key);
                     if (conflictValue != null && !conflictValue.equals(value)) {

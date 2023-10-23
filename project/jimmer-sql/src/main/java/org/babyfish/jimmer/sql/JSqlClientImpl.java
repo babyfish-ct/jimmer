@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
+import org.babyfish.jimmer.sql.di.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
@@ -85,7 +86,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final BinLog binLog;
 
-    private final StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider;
+    private final UserIdGeneratorProvider userIdGeneratorProvider;
 
     private final TransientResolverManager transientResolverManager;
 
@@ -125,7 +126,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             MetadataStrategy metadataStrategy,
             BinLog binLog,
             FilterManager filterManager,
-            StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            UserIdGeneratorProvider userIdGeneratorProvider,
             TransientResolverManager transientResolverManager,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             boolean saveCommandPessimisticLock,
@@ -237,6 +238,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
             }
         }
         return userIdGenerator;
+    }
+
+    @Override
+    public <T extends SqlContext> T unwrap() {
+        return null;
     }
 
     @Override
@@ -517,7 +523,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider() {
+    public UserIdGeneratorProvider getUserIdGeneratorProvider() {
         return userIdGeneratorProvider;
     }
 
@@ -566,11 +572,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
         return microServiceExchange;
     }
 
-    @Override
-    public void initializeByDIFramework() {
-        transientResolverManager.createResolvers();
-    }
-
     public static class BuilderImpl implements JSqlClient.Builder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);
@@ -587,7 +588,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
 
-        private StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider;
+        private UserIdGeneratorProvider userIdGeneratorProvider;
 
         private TransientResolverProvider transientResolverProvider;
 
@@ -718,7 +719,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setUserIdGeneratorProvider(StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider) {
+        public Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider) {
             this.userIdGeneratorProvider = userIdGeneratorProvider;
             return this;
         }

@@ -13,9 +13,9 @@ import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.runtime.AopProxyProvider;
-import org.babyfish.jimmer.sql.runtime.StrategyProvider;
-import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
+import org.babyfish.jimmer.sql.di.AopProxyProvider;
+import org.babyfish.jimmer.sql.di.StrategyProvider;
+import org.babyfish.jimmer.sql.di.TransientResolverProvider;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
@@ -44,15 +44,6 @@ class TransientResolverManager {
             throw new IllegalStateException("The current object has been initialized");
         }
         this.sqlClient = sqlClient;
-        if (transientResolverProvider.shouldResolversBeCreatedImmediately()) {
-            createResolvers();
-        }
-    }
-
-    /**
-     * Resolvers must be created because resolver many register listeners
-     */
-    void createResolvers() {
         Caches caches = sqlClient.getCaches();
         if (caches != null) {
             // Important, initialize necessary resolvers

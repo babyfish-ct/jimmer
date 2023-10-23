@@ -20,6 +20,10 @@ public class EntityEvent<E> implements DatabaseEvent {
 
     private final E newEntity;
 
+    private final boolean oldLogicalDeleted;
+
+    private final boolean newLogicalDeleted;
+
     private final Connection con;
 
     private final Object reason;
@@ -31,6 +35,8 @@ public class EntityEvent<E> implements DatabaseEvent {
         this.immutableType = Objects.requireNonNull(immutableType, "immutable type cannot be null");
         this.oldEntity = null;
         this.newEntity = null;
+        this.oldLogicalDeleted = false;
+        this.newLogicalDeleted = false;
         this.con = con;
         this.reason = reason;
     }
@@ -75,6 +81,8 @@ public class EntityEvent<E> implements DatabaseEvent {
                 throw new IllegalArgumentException("oldEntity and newEntity must belong to same type");
             }
         }
+        oldLogicalDeleted = ImmutableObjects.isLogicalDeleted(oldEntity);
+        newLogicalDeleted = ImmutableObjects.isLogicalDeleted(newEntity);
         if (oe != null) {
             immutableType = oe.__type();
         } else {
@@ -115,7 +123,7 @@ public class EntityEvent<E> implements DatabaseEvent {
     @Nullable
     public E getOldEntity() {
         validateState();
-        return oldEntity;
+        return oldLogicalDeleted ? null : oldEntity;
     }
 
     /**
@@ -129,7 +137,7 @@ public class EntityEvent<E> implements DatabaseEvent {
     @Nullable
     public E getNewEntity() {
         validateState();
-        return newEntity;
+        return newLogicalDeleted ? null : newEntity;
     }
 
     @NotNull
@@ -191,12 +199,10 @@ public class EntityEvent<E> implements DatabaseEvent {
         if (ne == null) {
             return Type.DELETE;
         }
-        boolean oldDeleted = ImmutableObjects.isLogicalDeleted(oe);
-        boolean newDeleted = ImmutableObjects.isLogicalDeleted(ne);
-        if (oldDeleted && !newDeleted) {
+        if (oldLogicalDeleted && !newLogicalDeleted) {
             return Type.LOGICAL_INSERTED;
         }
-        if (!oldDeleted && newDeleted) {
+        if (!oldLogicalDeleted && newLogicalDeleted) {
             return Type.LOGICAL_DELETED;
         }
         return Type.UPDATE;
@@ -257,11 +263,8 @@ public class EntityEvent<E> implements DatabaseEvent {
             );
         }
         PropId propId = prop.getId();
-        ImmutableSpi oe = (ImmutableSpi) oldEntity;
-        if (ImmutableObjects.isLogicalDeleted(oe)) {
-            oe = null;
-        }
-        ImmutableSpi ne = (ImmutableSpi) newEntity;
+        ImmutableSpi oe = (ImmutableSpi) getOldEntity();
+        ImmutableSpi ne = (ImmutableSpi) getNewEntity();
         if (ImmutableObjects.isLogicalDeleted(ne)) {
             ne = null;
         }

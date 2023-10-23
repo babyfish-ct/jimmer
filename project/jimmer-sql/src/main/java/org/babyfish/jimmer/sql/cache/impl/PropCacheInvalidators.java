@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.cache.impl;
 
 import org.babyfish.jimmer.sql.cache.PropCacheInvalidator;
 import org.babyfish.jimmer.sql.filter.impl.FilterWrapper;
-import org.babyfish.jimmer.sql.runtime.AopProxyProvider;
+import org.babyfish.jimmer.sql.di.AopProxyProvider;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -57,8 +57,6 @@ public class PropCacheInvalidators {
         } catch (NoSuchMethodException ex) {
             throw new AssertionError("Internal bug: No `getAffectedSourceIds(" + eventType.getName() + ")`");
         }
-        Class<?> declaringClass = method.getDeclaringClass();
-        System.out.println(o.getClass() + ", " + declaringClass);
-        return declaringClass != PropCacheInvalidator.class;
+        return method.getDeclaringClass() != PropCacheInvalidator.class;
     }
 }

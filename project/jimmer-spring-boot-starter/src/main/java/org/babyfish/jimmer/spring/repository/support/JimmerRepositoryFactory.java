@@ -6,8 +6,9 @@ import org.babyfish.jimmer.spring.repository.bytecode.ClassCodeWriter;
 import org.babyfish.jimmer.spring.repository.bytecode.JavaClassCodeWriter;
 import org.babyfish.jimmer.spring.repository.bytecode.JavaClasses;
 import org.babyfish.jimmer.spring.repository.bytecode.KotlinClassCodeWriter;
+import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.context.ApplicationContext;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -18,13 +19,10 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 public class JimmerRepositoryFactory extends RepositoryFactorySupport {
 
-    private final ApplicationContext ctx;
+    private final Object sqlClient;
 
-    private final String sqlClientRef;
-
-    public JimmerRepositoryFactory(ApplicationContext ctx, String sqlClientRef) {
-        this.ctx = ctx;
-        this.sqlClientRef = sqlClientRef;
+    public JimmerRepositoryFactory(Object sqlClient) {
+        this.sqlClient = sqlClient;
     }
 
     @NotNull
@@ -50,6 +48,41 @@ public class JimmerRepositoryFactory extends RepositoryFactorySupport {
                             "\""
             );
         }
+        if (sqlClient instanceof JSqlClient) {
+            if (!jRepository) {
+                throw new IllegalStateException(
+                        "The type of current sqlClient object is \"" +
+                                JSqlClient.class.getName() +
+                                "\", but repository interface \"" +
+                                repositoryInterface.getName() +
+                                "\" does not extend  \"" +
+                                JRepository.class.getName() +
+                                "\""
+                );
+            }
+        } else if (sqlClient instanceof KSqlClient) {
+            if (!kRepository) {
+                throw new IllegalStateException(
+                        "The type of current sqlClient object is \"" +
+                                KSqlClient.class.getName() +
+                                "\", but repository interface \"" +
+                                repositoryInterface.getName() +
+                                "\" does not extend  \"" +
+                                KRepository.class.getName() +
+                                "\""
+                );
+            }
+        } else {
+            throw new IllegalStateException(
+                    "Illegal repository interface \"" +
+                            repositoryInterface.getName() +
+                            "\", it is neither \"" +
+                            JRepository.class.getName() +
+                            "\" nor \"" +
+                            KRepository.class.getName() +
+                            "\""
+            );
+        }
         Class<?> clazz = null;
         try {
             clazz = Class.forName(
@@ -68,7 +101,7 @@ public class JimmerRepositoryFactory extends RepositoryFactorySupport {
             clazz = JavaClasses.define(bytecode, repositoryInterface);
         }
         try {
-            return clazz.getConstructor(ApplicationContext.class, String.class).newInstance(ctx, sqlClientRef);
+            return clazz.getConstructor(jRepository ? JSqlClient.class : KSqlClient.class).newInstance(sqlClient);
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
             throw new AssertionError("Internal bug", ex);
         } catch (InvocationTargetException ex) {

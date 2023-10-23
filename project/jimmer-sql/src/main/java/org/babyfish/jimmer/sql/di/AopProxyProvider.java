@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql.di;
 
 public interface AopProxyProvider {
 

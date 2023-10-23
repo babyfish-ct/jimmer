@@ -31,6 +31,11 @@ public class SqlContextCache<T> {
 
     public T get(SqlContext strategy) {
 
+        SqlContext unwrapped = strategy.unwrap();
+        if (unwrapped != null) {
+            strategy = unwrapped;
+        }
+
         Lock lock;
         T value;
 

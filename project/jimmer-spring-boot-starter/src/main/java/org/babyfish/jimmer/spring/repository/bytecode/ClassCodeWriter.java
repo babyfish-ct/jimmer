@@ -22,6 +22,8 @@ public abstract class ClassCodeWriter implements Constants {
 
     final RepositoryInformation metadata;
 
+    private final Class<?> superType;
+
     private final String interfaceInternalName;
 
     private final String implInternalName;
@@ -42,6 +44,7 @@ public abstract class ClassCodeWriter implements Constants {
 
     protected ClassCodeWriter(RepositoryInformation metadata, Class<?> sqlClientType, Class<?> superType) {
         this.metadata = metadata;
+        this.superType = superType;
         this.interfaceInternalName = Type.getInternalName(metadata.getRepositoryInterface());
         this.implInternalName = interfaceInternalName + ASM_IMPL_SUFFIX;
         this.superInternalName = Type.getInternalName(superType);
@@ -117,20 +120,19 @@ public abstract class ClassCodeWriter implements Constants {
         MethodVisitor mv = cw.visitMethod(
                 Opcodes.ACC_PUBLIC,
                 "<init>",
-                "(" + APPLICATION_CONTEXT_DESCRIPTOR + "Ljava/lang/String;)V",
+                '(' + sqlClientDescriptor + ")V",
                 null,
                 null
         );
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitVarInsn(Opcodes.ALOAD, 1);
-        mv.visitVarInsn(Opcodes.ALOAD, 2);
         mv.visitLdcInsn(Type.getType(metadata.getDomainType()));
         mv.visitMethodInsn(
                 Opcodes.INVOKESPECIAL,
                 superInternalName,
                 "<init>",
-                "(" + APPLICATION_CONTEXT_DESCRIPTOR + "Ljava/lang/String;Ljava/lang/Class;)V",
+                "(" + sqlClientDescriptor + "Ljava/lang/Class;)V",
                 false
         );
         mv.visitInsn(Opcodes.RETURN);

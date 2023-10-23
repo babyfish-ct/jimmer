@@ -217,7 +217,7 @@ public abstract class AbstractDataLoader {
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
         Ref<SortedMap<String, Object>> parameterMapRef = resolver.getParameterMapRef();
         SortedMap<String, Object> parameterMap = parameterMapRef != null ?
-                parameterMapRef.getValue() :
+                standardResolveParameters(parameterMapRef.getValue()) :
                 null;
         Cache.Parameterized<Object, Object> parameterizedCache =
                 cache instanceof Cache.Parameterized<?, ?> ?
@@ -276,7 +276,7 @@ public abstract class AbstractDataLoader {
         );
         Map<Object, Object> valueMap =
                 parameterMap != null && !parameterMap.isEmpty() && parameterizedCache != null ?
-                        parameterizedCache.getAll(sourceIds, parameterMapRef.getValue(), env) :
+                        parameterizedCache.getAll(sourceIds, parameterMap, env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
@@ -807,7 +807,7 @@ public abstract class AbstractDataLoader {
         Filter<?> filter = globalFiler;
         if (filter instanceof CacheableFilter<?>) {
             SortedMap<String, Object> parameters = ((CacheableFilter<?>) filter).getParameters();
-            if (parameters == null || parameters.isEmpty()) {
+            if (parameters.isEmpty()) {
                 return null;
             }
             return parameters;
@@ -970,5 +970,29 @@ public abstract class AbstractDataLoader {
             throw new IllegalStateException("The current thread is not resolving any transient property");
         }
         return con;
+    }
+
+    private static SortedMap<String, Object> standardResolveParameters(SortedMap<String, Object> parameters) {
+        if (parameters == null || parameters.isEmpty()) {
+            return parameters;
+        }
+        boolean hasNullValue = false;
+        for (Object o : parameters.values()) {
+            if (o == null) {
+                hasNullValue = true;
+                break;
+            }
+        }
+        if (!hasNullValue) {
+            return parameters;
+        }
+        SortedMap<String, Object> withoutNullValueMap = new TreeMap<>();
+        for (Map.Entry<String, Object> e : parameters.entrySet()) {
+            Object value = e.getValue();
+            if (value != null) {
+                withoutNullValueMap.put(e.getKey(), value);
+            }
+        }
+        return withoutNullValueMap;
     }
 }

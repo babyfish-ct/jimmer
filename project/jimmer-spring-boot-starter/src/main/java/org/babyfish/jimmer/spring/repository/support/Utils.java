@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.spring.repository.support;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
+import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.Order;
@@ -10,6 +13,8 @@ import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
+import org.babyfish.jimmer.sql.runtime.ConnectionManager;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
@@ -33,6 +38,33 @@ public class Utils {
             list.add(e);
         }
         return list;
+    }
+
+    public static JSqlClientImplementor validateSqlClient(JSqlClient sqlClient) {
+        JSqlClientImplementor implementor = (JSqlClientImplementor) sqlClient;
+        if (!(implementor.getConnectionManager() instanceof SpringConnectionManager)) {
+            throw new IllegalArgumentException(
+                    "The connection manager of sql client must be instance of \"" +
+                            SpringConnectionManager.class.getName() +
+                            "\""
+            );
+        }
+        if (!(implementor.getTransientResolverProvider() instanceof SpringTransientResolverProvider)) {
+            throw new IllegalArgumentException(
+                    "The transient resolver provider of sql client must be instance of \"" +
+                            SpringConnectionManager.class.getName() +
+                            "\""
+            );
+        }
+        ConnectionManager slaveConnectionManager = implementor.getSlaveConnectionManager(false);
+        if (slaveConnectionManager != null && !(slaveConnectionManager instanceof SpringConnectionManager)) {
+            throw new IllegalArgumentException(
+                    "The slave connection manager of sql client must be null or instance of \"" +
+                            SpringConnectionManager.class.getName() +
+                            "\""
+            );
+        }
+        return implementor;
     }
 
     public static Sort toSort(List<Order> orders, MetadataStrategy strategy) {

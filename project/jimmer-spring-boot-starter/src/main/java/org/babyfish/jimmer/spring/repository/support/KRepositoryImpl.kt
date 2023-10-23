@@ -3,38 +3,32 @@ package org.babyfish.jimmer.spring.repository.support
 import org.babyfish.jimmer.ImmutableObjects
 import org.babyfish.jimmer.View
 import org.babyfish.jimmer.meta.ImmutableType
-import org.babyfish.jimmer.spring.repository.JRepository
-import org.babyfish.jimmer.spring.repository.KRepository
-import org.babyfish.jimmer.spring.repository.fetchPage
-import org.babyfish.jimmer.spring.repository.orderBy
-import org.babyfish.jimmer.sql.ast.mutation.DeleteMode
+import org.babyfish.jimmer.spring.repository.*
+import org.babyfish.jimmer.sql.ast.mutation.*
 import org.babyfish.jimmer.sql.fetcher.Fetcher
+import org.babyfish.jimmer.sql.fetcher.ViewMetadata
 import org.babyfish.jimmer.sql.kt.KSqlClient
 import org.babyfish.jimmer.sql.kt.ast.mutation.KBatchSaveResult
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSaveCommandDsl
 import org.babyfish.jimmer.sql.kt.ast.mutation.KSimpleSaveResult
-import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.SortDsl
-import org.springframework.context.ApplicationContext
+import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.springframework.core.GenericTypeResolver
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
+import org.springframework.data.domain.*
 import kotlin.reflect.KClass
 
 open class KRepositoryImpl<E: Any, ID: Any> (
-    private val ctx: ApplicationContext,
-    private val sqlClientRef: String,
+    override val sql: KSqlClient,
     entityType: KClass<E>? = null
 ) : KRepository<E, ID> {
 
-    // For bytecode
-    protected constructor(ctx: ApplicationContext, sqlClientRef: String, entityType: Class<E>) :
-        this(ctx, sqlClientRef, entityType.kotlin)
-
-    override val sql: KSqlClient by lazy {
-        ctx.getBean(sqlClientRef, KSqlClient::class.java)
+    init {
+        Utils.validateSqlClient(sql.javaClient)
     }
+
+    // For bytecode
+    protected constructor(sql: KSqlClient, entityType: Class<E>) :
+        this(sql, entityType.kotlin)
 
     @Suppress("UNCHECKED_CAST")
     final override val entityType: KClass<E> =

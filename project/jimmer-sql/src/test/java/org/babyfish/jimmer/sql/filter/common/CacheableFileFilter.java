@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.sql.filter.common;
 
-import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.ParameterMaps;
 import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.model.filter.FileProps;
-import org.babyfish.jimmer.sql.model.filter.FileTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

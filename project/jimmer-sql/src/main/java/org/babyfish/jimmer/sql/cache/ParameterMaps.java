@@ -1,44 +1,58 @@
 package org.babyfish.jimmer.sql.cache;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-/**
- * Helper class only for java
- */
 public class ParameterMaps {
 
-    private static final SortedMap<String, Object> EMPTY = Collections.emptySortedMap();
-
-    private ParameterMaps() {}
-
-    @NotNull
-    public static SortedMap<String, Object> of() {
-        return EMPTY;
+    public static <String, Object> SortedMap<String, Object> of() {
+        return Collections.emptySortedMap();
     }
 
-    /**
-     * Create parameter map.
-     *
-     * <ul>
-     *     <li>If the parameter `value` is null, create an empty map</li>
-     *     <li>Otherwise, create an map with one key/value pair</li>
-     * </ul>
-     * @param key Key
-     * @param value Value
-     * @return Created parameter map
-     */
-    @NotNull
-    public static SortedMap<String, Object> of(@NotNull String key, @Nullable Object value) {
+    public static <String, Object> SortedMap<String, Object> of(String key, Object value) {
         if (value == null) {
-            return EMPTY;
+            return Collections.emptySortedMap();
         }
         SortedMap<String, Object> map = new TreeMap<>();
         map.put(key, value);
+        return map;
+    }
+
+    public static <String, Object> SortedMap<String, Object> of(
+            String key1, Object value1, String key2, Object value2
+    ) {
+        if (value1 == null && value2 == null) {
+            return Collections.emptySortedMap();
+        }
+        SortedMap<String, Object> map = new TreeMap<>();
+        if (value1 != null) {
+            map.put(key1, value1);
+        }
+        if (value2 != null) {
+            map.put(key2, value2);
+        }
+        return map;
+    }
+
+    public static <String, Object> SortedMap<String, Object> of(
+            String key1, Object value1,
+            String key2, Object value2,
+            String key3, Object value3
+    ) {
+        if (value1 == null && value2 == null && value3 == null) {
+            return Collections.emptySortedMap();
+        }
+        SortedMap<String, Object> map = new TreeMap<>();
+        if (value1 != null) {
+            map.put(key1, value1);
+        }
+        if (value2 != null) {
+            map.put(key2, value2);
+        }
+        if (value3 != null) {
+            map.put(key3, value3);
+        }
         return map;
     }
 }

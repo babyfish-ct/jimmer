@@ -13,16 +13,11 @@ public class JavaMethodCodeWriter extends MethodCodeWriter {
     @Override
     protected void visitLoadJSqlClient() {
         mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
+        mv.visitFieldInsn(
+                Opcodes.GETFIELD,
                 parent.getImplInternalName(),
-                "sql",
-                "()" + J_SQL_CLIENT_DESCRIPTOR,
-                false
-        );
-        mv.visitTypeInsn(
-                Opcodes.CHECKCAST,
-                J_SQL_CLIENT_IMPLEMENTOR_INTERNAL_NAME
+                "sqlClient",
+                J_SQL_CLIENT_IMPLEMENTOR_DESCRIPTOR
         );
     }
 }

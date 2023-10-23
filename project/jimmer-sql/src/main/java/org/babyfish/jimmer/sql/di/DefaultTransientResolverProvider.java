@@ -1,8 +1,9 @@
-package org.babyfish.jimmer.sql.runtime;
+package org.babyfish.jimmer.sql.di;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.Transient;
 import org.babyfish.jimmer.sql.TransientResolver;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.Constructor;
 
@@ -72,11 +73,6 @@ public class DefaultTransientResolverProvider implements TransientResolverProvid
                         getClass().getName() +
                         "\""
         );
-    }
-
-    @Override
-    public boolean shouldResolversBeCreatedImmediately() {
-        return true;
     }
 
     static {

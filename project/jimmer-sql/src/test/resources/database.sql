@@ -7,6 +7,7 @@ drop alias contains_id if exists;
 drop table file_user_mapping if exists;
 drop table file_user if exists;
 drop table file if exists;
+drop table organization if exists;
 drop table task if exists;
 drop table worker if exists;
 drop table category if exists;
@@ -716,6 +717,22 @@ alter table task
 
 insert into worker(id, name) values(1, 'Alex'), (2, 'James');
 insert into task(id, name, owner_id) values(9, 'Release package', null), (10, 'Take photo', 2);
+
+
+
+create table organization(
+    id bigint not null,
+    name varchar(20) not null,
+    parent_id bigint,
+    tenant varchar(10) not null
+);
+alter table organization
+    add constraint pk_organization
+        primary key(id);
+alter table organization
+    add constraint fk_organization_parent
+        foreign key(parent_id)
+            references organization(id);
 
 
 

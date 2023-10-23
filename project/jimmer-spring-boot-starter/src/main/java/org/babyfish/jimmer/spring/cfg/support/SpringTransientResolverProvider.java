@@ -2,7 +2,7 @@ package org.babyfish.jimmer.spring.cfg.support;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
-import org.babyfish.jimmer.sql.runtime.TransientResolverProvider;
+import org.babyfish.jimmer.sql.di.TransientResolverProvider;
 import org.springframework.context.ApplicationContext;
 
 public class SpringTransientResolverProvider implements TransientResolverProvider {
@@ -34,10 +34,5 @@ public class SpringTransientResolverProvider implements TransientResolverProvide
             );
         }
         return (TransientResolver<?, ?>) bean;
-    }
-
-    @Override
-    public final boolean shouldResolversBeCreatedImmediately() {
-        return false;
     }
 }
