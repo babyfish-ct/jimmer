@@ -13,24 +13,34 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import java.util.List;
+
 @Configuration
 @Import({TransactionCacheOperatorFlusherConfig.class, MicroServiceExchangeConfig.class})
 public class SqlClientConfig {
 
-    @Bean(name = "sqlClient", initMethod = "initialize")
+    @Bean(name = "sqlClient")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "java", matchIfMissing = true)
     public JSqlClient javaSqlClient(ApplicationContext ctx, ApplicationEventPublisher publisher) {
         return new SpringJSqlClient(ctx, publisher, false);
     }
 
-    @Bean(name = "sqlClient", initMethod = "initialize")
+    @Bean(name = "sqlClient")
     @ConditionalOnMissingBean({JSqlClient.class, KSqlClient.class})
     @ConditionalOnProperty(name = "jimmer.language", havingValue = "kotlin")
     public KSqlClient kotlinSqlClient(ApplicationContext ctx, ApplicationEventPublisher publisher) {
         return KSqlClientKt.toKSqlClient(
                 new SpringJSqlClient(ctx, publisher, true)
         );
+    }
+
+    @Bean
+    public SqlClientInitializer sqlClientInitializer(
+            List<JSqlClient> javaSqlClients,
+            List<KSqlClient> kotlinSqlClients
+    ) {
+        return new SqlClientInitializer(javaSqlClients, kotlinSqlClients);
     }
 
     @ConditionalOnMissingBean(CacheAbandonedCallback.class)

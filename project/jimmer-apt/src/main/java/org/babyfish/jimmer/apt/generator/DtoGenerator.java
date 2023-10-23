@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.*;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
 import org.jetbrains.annotations.NotNull;
@@ -89,7 +90,6 @@ public class DtoGenerator {
                             .build()
             );
         }
-        typeBuilder.addAnnotation(Constants.LOMBOK_DATA_CLASS_NAME);
         for (Anno anno : dtoType.getAnnotations()) {
             typeBuilder.addAnnotation(annotationOf(anno));
         }
@@ -170,7 +170,19 @@ public class DtoGenerator {
             addConverterConstructor();
             addOf();
         }
+
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            addAccessors(prop);
+        }
+        for (UserProp prop : dtoType.getUserProps()) {
+            addAccessors(prop);
+        }
+
         addToEntity();
+
+        addHashCode();
+        addEquals();
+        addToString();
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.isNewTarget() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
@@ -269,7 +281,7 @@ public class DtoGenerator {
                 if (isCopyableAnnotation(annotationMirror, false)) {
                     builder.addAnnotation(AnnotationSpec.get(annotationMirror));
                     hasNullity |= isNullityAnnotation(
-                        annotationMirror.getAnnotationType().asElement().getSimpleName().toString()
+                            annotationMirror.getAnnotationType().asElement().getSimpleName().toString()
                     );
                 }
             }
@@ -289,6 +301,50 @@ public class DtoGenerator {
         typeBuilder.addField(builder.build());
     }
 
+    private void addAccessors(DtoProp<ImmutableType, ImmutableProp> prop) {
+        TypeName typeName = getPropTypeName(prop);
+        String suffix = prop.getName();
+        if (suffix.startsWith("is") &&
+                suffix.length() > 2 &&
+                Character.isUpperCase(suffix.charAt(2)) &&
+                typeName.equals(TypeName.BOOLEAN)) {
+            suffix = suffix.substring(2);
+        }
+        MethodSpec.Builder getterBuilder = MethodSpec
+                .methodBuilder(
+                        StringUtil.identifier(
+                                typeName.equals(TypeName.BOOLEAN) ? "is" : "get",
+                                suffix
+                        )
+                )
+                .addModifiers(Modifier.PUBLIC)
+                .returns(typeName);
+        if (!typeName.isPrimitive()) {
+            if (prop.isNullable()) {
+                getterBuilder.addAnnotation(Nullable.class);
+            } else {
+                getterBuilder.addAnnotation(NotNull.class);
+            }
+        }
+        getterBuilder.addStatement("return $L", prop.getName());
+        typeBuilder.addMethod(getterBuilder.build());
+
+        ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(typeName, prop.getName());
+        if (!typeName.isPrimitive()) {
+            if (prop.isNullable()) {
+                parameterBuilder.addAnnotation(Nullable.class);
+            } else {
+                parameterBuilder.addAnnotation(NotNull.class);
+            }
+        }
+        MethodSpec.Builder setterBuilder = MethodSpec
+                .methodBuilder(StringUtil.identifier("set", suffix))
+                .addParameter(parameterBuilder.build())
+                .addModifiers(Modifier.PUBLIC);
+        setterBuilder.addStatement("this.$L = $L", prop.getName(), prop.getName());
+        typeBuilder.addMethod(setterBuilder.build());
+    }
+
     private void addField(UserProp prop) {
         TypeName typeName = getTypeName(prop.getTypeRef());
         FieldSpec.Builder builder = FieldSpec
@@ -305,6 +361,50 @@ public class DtoGenerator {
             }
         }
         typeBuilder.addField(builder.build());
+    }
+
+    private void addAccessors(UserProp prop) {
+        TypeName typeName = getTypeName(prop.getTypeRef());
+        String suffix = prop.getAlias();
+        if (suffix.startsWith("is") &&
+                suffix.length() > 2 &&
+                Character.isUpperCase(suffix.charAt(2)) &&
+                typeName.equals(TypeName.BOOLEAN)) {
+            suffix = suffix.substring(2);
+        }
+        MethodSpec.Builder getterBuilder = MethodSpec
+                .methodBuilder(
+                        StringUtil.identifier(
+                                typeName.equals(TypeName.BOOLEAN) ? "is" : "get",
+                                suffix
+                        )
+                )
+                .addModifiers(Modifier.PUBLIC)
+                .returns(typeName);
+        if (!typeName.isPrimitive()) {
+            if (prop.getTypeRef().isNullable()) {
+                getterBuilder.addAnnotation(Nullable.class);
+            } else {
+                getterBuilder.addAnnotation(NotNull.class);
+            }
+        }
+        getterBuilder.addStatement("return $L", prop.getAlias());
+        typeBuilder.addMethod(getterBuilder.build());
+
+        ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(typeName, prop.getAlias());
+        if (!typeName.isPrimitive()) {
+            if (prop.getTypeRef().isNullable()) {
+                parameterBuilder.addAnnotation(Nullable.class);
+            } else {
+                parameterBuilder.addAnnotation(NotNull.class);
+            }
+        }
+        MethodSpec.Builder setterBuilder = MethodSpec
+                .methodBuilder(StringUtil.identifier("set", suffix))
+                .addParameter(parameterBuilder.build())
+                .addModifiers(Modifier.PUBLIC);
+        setterBuilder.addStatement("this.$L = $L", prop.getAlias(), prop.getAlias());
+        typeBuilder.addMethod(setterBuilder.build());
     }
 
     private void addOf() {
@@ -833,6 +933,128 @@ public class DtoGenerator {
                 (ClassName) typeName,
                 argTypeNames
         );
+    }
+
+    private void addHashCode() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("hashCode")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(TypeName.INT);
+        boolean first = true;
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            CodeBlock.Builder cb = CodeBlock.builder();
+            if (first) {
+                cb.add("int hash = ");
+                first = false;
+            } else {
+                cb.add("hash = hash * 31 + ");
+            }
+            TypeName typeName = getPropTypeName(prop);
+            if (typeName.isPrimitive()) {
+                cb.add(
+                        "$T.hashCode($L)",
+                        typeName.box(),
+                        prop.getName().equals("hash") ? "this." + prop.getName() : prop.getName()
+                );
+            } else {
+                cb.add("$T.hashCode($L)", Objects.class, prop.getName());
+            }
+            builder.addStatement(cb.build());
+        }
+        for (UserProp prop : dtoType.getUserProps()) {
+            CodeBlock.Builder cb = CodeBlock.builder();
+            if (first) {
+                cb.add("int hash = ");
+                first = false;
+            } else {
+                cb.add("hash = hash * 31 + ");
+            }
+            TypeName typeName = getTypeName(prop.getTypeRef());
+            if (typeName.isPrimitive()) {
+                cb.add(
+                        "$T.hashCode($L)",
+                        typeName.box(),
+                        prop.getAlias().equals("hash") ? "this." + prop.getAlias() : prop.getAlias()
+                );
+            } else {
+                cb.add("$T.hashCode($L)", Objects.class, prop.getAlias());
+            }
+            builder.addStatement(cb.build());
+        }
+        builder.addStatement("return hash");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addEquals() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("equals")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.OBJECT, "o")
+                .returns(TypeName.BOOLEAN);
+        builder.beginControlFlow("if (o == null || this.getClass() != o.getClass())")
+                .addStatement("return false")
+                .endControlFlow();
+        builder.addStatement("$L other = ($L) o", getSimpleName(), getSimpleName());
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            String propName = prop.getName();
+            String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
+            if (getPropTypeName(prop).isPrimitive()) {
+                builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
+            } else {
+                builder.beginControlFlow("if (!$T.equals($L, other.$L))", Objects.class, thisProp, propName);
+            }
+            builder.addStatement("return false");
+            builder.endControlFlow();
+        }
+        for (UserProp prop : dtoType.getUserProps()) {
+            String propName = prop.getAlias();
+            String thisProp = propName.equals("o") || propName.equals("other") ? "this" + propName : propName;
+            if (getTypeName(prop.getTypeRef()).isPrimitive()) {
+                builder.beginControlFlow("if ($L != other.$L)", thisProp, propName);
+            } else {
+                builder.beginControlFlow("if (!$T.equals($L, other.$L))", Objects.class, thisProp, propName);
+            }
+            builder.addStatement("return false");
+            builder.endControlFlow();
+        }
+        builder.addStatement("return true");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addToString() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("toString")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(Constants.STRING_CLASS_NAME);
+        builder.addStatement("StringBuilder builder = new StringBuilder()");
+        addSimpleName(builder, true);
+        String separator = "";
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            if (prop.getName().equals("builder")) {
+                builder.addStatement("builder.append($S).append(this.$L)", separator + prop.getName() + '=', prop.getName());
+            } else {
+                builder.addStatement("builder.append($S).append($L)", separator + prop.getName() + '=', prop.getName());
+            }
+            separator = ", ";
+        }
+        for (UserProp prop : dtoType.getUserProps()) {
+            if (prop.getAlias().equals("builder")) {
+                builder.addStatement("builder.append($S).append(this.$L)", separator + prop.getAlias() + '=', prop.getAlias());
+            } else {
+                builder.addStatement("builder.append($S).append($L)", separator + prop.getAlias() + '=', prop.getAlias());
+            }
+            separator = ", ";
+        }
+        builder.addStatement("builder.append(')')");
+        builder.addStatement("return builder.toString()");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addSimpleName(MethodSpec.Builder builder, boolean isLeaf) {
+        if (parent != null) {
+            parent.addSimpleName(builder, false);
+        }
+        builder.addStatement("builder.append($S).append('$L')", getSimpleName(), isLeaf ? "(" : ".");
     }
 
     public TypeName getPropElementName(DtoProp<ImmutableType, ImmutableProp> prop) {

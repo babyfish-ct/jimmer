@@ -56,9 +56,6 @@ class Constants {
     public static final ClassName VIEWABLE_INPUT_CLASS_NAME =
             ClassName.get(ViewableInput.class);
 
-    public static final ClassName LOMBOK_DATA_CLASS_NAME =
-            ClassName.get("lombok", "Data");
-
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
 
