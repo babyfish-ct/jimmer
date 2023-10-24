@@ -79,7 +79,7 @@ const ZH: ReactNode =
             和GraphQL比较
             <ul>
                 <li>GraphQL基于HTTP服务，该功能只有在跨越HTTP服务的边界才能呈现；而在Jimmer中，这是ORM的基础API，你可以在任何代码逻辑中使用此能力。</li>
-                <li>截止到目前为止，GraphQL协议不支持对深度无限的自关联属性的递归查询；而Jimer支持。</li>
+                <li>截止到目前为止，GraphQL协议不支持对深度无限的自关联属性的递归查询；而Jimmer支持。</li>
             </ul>
         </Admonition>
     </>;

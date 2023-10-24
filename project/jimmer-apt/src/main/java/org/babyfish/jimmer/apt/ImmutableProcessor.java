@@ -161,7 +161,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                     StandardLocation.CLASS_OUTPUT,
                     "",
                     "dummy.txt"
-            ).toUri().toString();
+            ).toUri().getPath();
         } catch (IOException ex) {
             throw new DtoException("Failed to guess base project dir", ex);
         }
@@ -171,7 +171,6 @@ public class ImmutableProcessor extends AbstractProcessor {
         if (File.separatorChar != '\\' && !basePath.startsWith("/")) {
             basePath = '/' + basePath;
         }
-
         basePath = basePath.substring(0, basePath.lastIndexOf('/'));
         File baseFile = new File(URLDecoder.decode(basePath, StandardCharsets.UTF_8));
         if (!baseFile.exists()) {
