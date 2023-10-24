@@ -40,7 +40,7 @@ class TenantFilterForCacheMode(
         }
 
     override fun isAffectedBy(e: EntityEvent<*>): Boolean = // ❸
-    e.isChanged(TenantAware::tenant)
+        e.isChanged(TenantAware::tenant)
 }
 
 /*----------------Documentation Links----------------

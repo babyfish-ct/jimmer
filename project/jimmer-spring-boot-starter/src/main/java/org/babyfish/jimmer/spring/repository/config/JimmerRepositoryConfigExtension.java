@@ -40,8 +40,8 @@ public class JimmerRepositoryConfigExtension extends RepositoryConfigurationExte
     @Override
     public void postProcess(@NotNull BeanDefinitionBuilder builder, RepositoryConfigurationSource source) {
         source.getAttribute("sqlClientRef") //
-        .filter(StringUtils::hasText) //
-        .ifPresent(s -> builder.addPropertyReference("sqlClient", s));
+                .filter(StringUtils::hasText) //
+                .ifPresent(s -> builder.addPropertyReference("sqlClient", s));
     }
 
     @NotNull

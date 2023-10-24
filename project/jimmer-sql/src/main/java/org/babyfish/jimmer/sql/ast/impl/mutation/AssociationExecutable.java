@@ -121,10 +121,7 @@ class AssociationExecutable implements Executable<Integer> {
         MiddleTableOperator operator = getMiddleTypeOperator(con, trigger);
         if (forDelete) {
             int affectedRowCount = operator
-                    .remove(
-                            new MiddleTableOperator.TupleReader(idTuples),
-                            trigger != null
-                    );
+                    .remove(idTuples, trigger != null);
             if (trigger != null) {
                 trigger.submit(sqlClient, con);
             }
@@ -140,9 +137,7 @@ class AssociationExecutable implements Executable<Integer> {
                 return 0;
             }
         }
-        int affectedRowCount = operator.add(
-                new MiddleTableOperator.TupleReader(addingPairs)
-        );
+        int affectedRowCount = operator.add(addingPairs);
         if (trigger != null) {
             trigger.submit(sqlClient, con);
         }

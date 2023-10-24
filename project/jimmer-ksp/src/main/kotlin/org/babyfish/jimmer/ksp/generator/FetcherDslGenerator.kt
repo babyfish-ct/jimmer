@@ -4,6 +4,8 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.sql.JoinTable
+import org.babyfish.jimmer.sql.ManyToOne
 
 class FetcherDslGenerator(
     private val type: ImmutableType,
@@ -28,6 +30,7 @@ class FetcherDslGenerator(
                             addAssociationProp(prop, false, true)
                             addAssociationProp(prop, true, false)
                             addAssociationProp(prop, true, true)
+                            addSimplePropWithFetchType(prop)
                         }
                     }
                 }
@@ -109,6 +112,32 @@ class FetcherDslGenerator(
                             addStatement("_fetcher.remove(%S)", prop.name)
                             endControlFlow()
                         }
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addSimplePropWithFetchType(prop: ImmutableProp) {
+        val associationProp = prop.idViewBaseProp ?: prop
+        if (associationProp.isTransient || !associationProp.isAssociation(true)) {
+            return
+        }
+        if (prop.isReverse && associationProp.annotation(ManyToOne::class) === null && associationProp.annotation(JoinTable::class) === null) {
+            return
+        }
+        addFunction(
+            FunSpec
+                .builder(prop.name)
+                .addParameter(
+                    ParameterSpec
+                        .builder("idOnlyFetchType", ID_ONLY_FETCH_TYPE)
+                        .build()
+                )
+                .addCode(
+                    CodeBlock
+                        .builder()
+                        .add("_fetcher = _fetcher.add(%S, idOnlyFetchType)", prop.name)
                         .build()
                 )
                 .build()

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -163,7 +164,7 @@ class TypedQueryData {
                 table = (Table<?>) selection;
             }
             if (table != null && table.getImmutableType().getSelectableProps().size() > 1) {
-                idOnlyExpression = table.get(table.getImmutableType().getIdProp().getName());
+                idOnlyExpression = (PropExpressionImpl<?>)table.get(table.getImmutableType().getIdProp());
             }
         }
         idOnlyExpressionResolved = true;

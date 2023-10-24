@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.event;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TypedProp;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -61,4 +62,6 @@ public interface DatabaseEvent {
 
     @Nullable
     Object getReason();
+
+    boolean isEvict();
 }

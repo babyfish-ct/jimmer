@@ -2,8 +2,8 @@ ApproverView {
 
     #allScalars
 
-    gender as sex {
-        MALE -> 100
-        FEMALE -> 200
+    gender as sex -> {
+        MALE: 100
+        FEMALE: 200
     }
 }

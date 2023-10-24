@@ -17,7 +17,7 @@ public abstract class AstVisitor {
         return ctx;
     }
 
-    public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {}
+    public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {}
 
     public boolean visitSubQuery(TypedSubQuery<?> subQuery) {
         return true;

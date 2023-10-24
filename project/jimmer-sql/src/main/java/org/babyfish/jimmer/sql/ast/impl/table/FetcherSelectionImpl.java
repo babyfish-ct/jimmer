@@ -55,7 +55,7 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
         for (Field field : fetcher.getFieldMap().values()) {
             ImmutableProp prop = field.getProp();
             if (prop.isColumnDefinition() || prop.getSqlTemplate() instanceof FormulaTemplate) {
-                visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop);
+                visitor.visitTableReference(TableProxies.resolve(table, visitor.getAstContext()), prop, field.isRawId());
             }
         }
     }

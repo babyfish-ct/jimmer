@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast;
 
+import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
 
 public interface PropExpression<T> extends Expression<T> {
@@ -43,6 +44,8 @@ public interface PropExpression<T> extends Expression<T> {
     interface Embedded<T> extends PropExpression<T> {
 
         <XE extends Expression<?>> XE get(String prop);
+
+        <XE extends Expression<?>> XE get(ImmutableProp prop);
 
         @Override
         default Expression<T> coalesce(T defaultValue) {

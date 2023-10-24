@@ -33,20 +33,20 @@ public class MutableRootQueryImpl<T extends Table<?>>
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType,
             ExecutionPurpose purpose,
-            boolean ignoreFilter
+            FilterLevel filterLevel
     ) {
         super(sqlClient, immutableType);
-        ctx = new StatementContext(purpose, ignoreFilter);
+        ctx = new StatementContext(purpose, filterLevel);
     }
 
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table,
             ExecutionPurpose purpose,
-            boolean ignoreFilter
+            FilterLevel filterLevel
     ) {
         super(sqlClient, table);
-        ctx = new StatementContext(purpose, ignoreFilter);
+        ctx = new StatementContext(purpose, filterLevel);
     }
 
     public MutableRootQueryImpl(
@@ -79,7 +79,6 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @Override
     public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
-        freeze();
         return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
@@ -283,28 +282,5 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> orderByIf(boolean condition, List<Order> orders) {
         return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
-    }
-
-    @Override
-    protected void onFrozen() {
-        Filter<Props> filter = getSqlClient().getFilters().getFilter(
-                getTable().getImmutableType(),
-                getContext().isFilterIgnored()
-        );
-        if (filter instanceof CacheableFilter<?>) {
-            disableSubQuery();
-            try {
-                filter.filter(
-                        new FilterArgsImpl<>(this, this.getTable(), true)
-                );
-            } finally {
-                enableSubQuery();
-            }
-        } else if (filter != null) {
-            filter.filter(
-                    new FilterArgsImpl<>(this, this.getTable(), false)
-            );
-        }
-        super.onFrozen();
     }
 }

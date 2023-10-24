@@ -46,6 +46,8 @@ public class ImmutableType implements BaseType {
 
     private Map<String, ImmutableProp> props;
 
+    private Map<String, String> idPropNameMap;
+
     private List<ImmutableProp> propsOrderById;
 
     private ImmutableProp idProp;
@@ -635,6 +637,47 @@ public class ImmutableType implements BaseType {
             this.props = Collections.unmodifiableMap(props);
         }
         return props;
+    }
+
+    public String getIdPropName(String prop) {
+        return getIdPropNameMap().get(prop);
+    }
+
+    private Map<String, String> getIdPropNameMap() {
+        Map<String, String> map = this.idPropNameMap;
+        if (map == null) {
+            map = new HashMap<>();
+            for (ImmutableProp prop : props.values()) {
+                ImmutableProp baseProp = prop.getIdViewBaseProp();
+                if (baseProp != null) {
+                    map.put(baseProp.getName(), prop.getName());
+                }
+            }
+            for (ImmutableProp prop : props.values()) {
+                if (prop.isReverse()) {
+                    continue;
+                }
+                if (prop.getAnnotation(OneToOne.class) == null && prop.getAnnotation(ManyToOne.class) == null) {
+                    continue;
+                }
+                if (map.containsKey(prop.getName())) {
+                    continue;
+                }
+                String expectedPropName = prop.getName() + "Id";
+                ImmutableProp expectedProp = getProps().get(expectedPropName);
+                if (expectedProp != null) {
+                    throw new MetaException(
+                            expectedProp.toElement(),
+                            "It looks like @IdView of association \"" +
+                                    prop +
+                                    "\", please add the @IdView annotation"
+                    );
+                }
+                map.put(prop.getName(), expectedPropName);
+            }
+            this.idPropNameMap = map;
+        }
+        return map;
     }
 
     public List<ImmutableProp> getPropsOrderById() {

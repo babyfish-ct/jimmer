@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.apt.generator;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
@@ -57,9 +55,6 @@ class Constants {
 
     public static final ClassName VIEWABLE_INPUT_CLASS_NAME =
             ClassName.get(ViewableInput.class);
-
-    public static final ClassName LOMBOK_DATA_CLASS_NAME =
-            ClassName.get("lombok", "Data");
 
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
@@ -189,6 +184,12 @@ class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher.spi",
                     "AbstractTypedFetcher"
+            );
+
+    public static final ClassName ID_ONLY_FETCH_TYPE =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "IdOnlyFetchType"
             );
 
     public static final ClassName FETCHER_CLASS_NAME =

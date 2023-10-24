@@ -66,7 +66,6 @@ public class ConfigurableSubQueryImpl<R>
             default:
                 throw new IllegalArgumentException("selection count must between 1 and 9");
         }
-        baseQuery.freeze();
     }
 
     @Override
@@ -154,8 +153,8 @@ public class ConfigurableSubQueryImpl<R>
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+        getBaseQuery().setParent(visitor.getAstContext().getStatement());
         if (visitor.visitSubQuery(this)) {
-            getBaseQuery().setParent(visitor.getAstContext().getStatement());
             super.accept(visitor);
         }
     }

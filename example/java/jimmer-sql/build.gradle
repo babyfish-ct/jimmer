@@ -5,7 +5,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.8.23"
+    jimmerVersion = "0.8.31"
 }
 
 group 'org.babyfish.jimmer.example.sql'
@@ -25,8 +25,8 @@ dependencies {
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
-    implementation 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+    implementation 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
 
@@ -42,4 +42,3 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// -------- Part-I: For SpringBoot 2.X --------

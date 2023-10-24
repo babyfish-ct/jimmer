@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
+import org.babyfish.jimmer.sql.di.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
@@ -24,11 +25,11 @@ import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.runtime.StrategyProvider;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -228,7 +229,7 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setSqlFormatter(SqlFormatter formatter);
 
         @OldChain
-        Builder setUserIdGeneratorProvider(StrategyProvider<UserIdGenerator<?>> idGeneratorProvider);
+        Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider);
 
         @OldChain
         Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);
@@ -325,6 +326,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setTriggerType(TriggerType triggerType);
 
         @OldChain
+        Builder setLogicalDeletedBehavior(LogicalDeletedBehavior behavior);
+
+        @OldChain
         Builder addFilters(Filter<?>... filters);
 
         @OldChain
@@ -332,9 +336,6 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder addDisabledFilters(Filter<?>... filters);
-
-        @OldChain
-        Builder ignoreBuiltInFilters();
 
         @OldChain
         Builder addDisabledFilters(Collection<? extends Filter<?>> filters);
@@ -349,15 +350,37 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setSaveCommandPessimisticLock(boolean lock);
 
         @OldChain
-        Builder addDraftInterceptor(DraftInterceptor<?> interceptor);
+        Builder addDraftHandler(DraftHandler<?, ?> handler);
 
         @OldChain
-        Builder addDraftInterceptors(DraftInterceptor<?>... interceptors);
+        Builder addDraftHandlers(DraftHandler<?, ?>... handlers);
 
         @OldChain
-        Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors);
+        Builder addDraftHandlers(Collection<? extends DraftHandler<?, ?>> handlers);
 
         @OldChain
+        default Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
+            return addDraftHandler(DraftInterceptor.wrap(interceptor));
+        }
+
+        @OldChain
+        default Builder addDraftInterceptors(DraftInterceptor<?>... interceptors) {
+            DraftHandler<?, ?>[] handlers = new DraftHandler[interceptors.length];
+            for (int i = interceptors.length - 1; i >= 0; --i) {
+                handlers[i] = DraftInterceptor.wrap(interceptors[i]);
+            }
+            return addDraftHandlers(handlers);
+        }
+
+        @OldChain
+        default Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors) {
+            List<DraftHandler<?, ?>> handlers = new ArrayList<>(interceptors.size());
+            for (DraftInterceptor<?> interceptor : interceptors) {
+                handlers.add(DraftInterceptor.wrap(interceptor));
+            }
+            return addDraftHandlers(handlers);
+        }
+
         Builder setDefaultBinLogObjectMapper(ObjectMapper mapper);
 
         @OldChain
@@ -394,10 +417,16 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setDatabaseValidationSchema(String schema);
 
         @OldChain
+        Builder setAopProxyProvider(AopProxyProvider provider);
+
+        @OldChain
         Builder setMicroServiceName(String microServiceName);
 
         @OldChain
         Builder setMicroServiceExchange(MicroServiceExchange exchange);
+
+        @OldChain
+        Builder setInitializationType(InitializationType type);
 
         JSqlClient build();
     }

@@ -15,7 +15,7 @@ internal open class KtFilter<E: Any>(
 ) : KFilter<E>, FilterWrapper {
 
     override fun filter(args: KFilterArgs<E>) {
-        val javaQuery = (args as KFilterArgsImpl<E>).javaQuery
+        val javaQuery = (args as KFilterArgsImpl<E>).javaStatement
         val javaArgs = FilterArgsImpl<Props>(
             javaQuery,
             javaQuery.getTable(),

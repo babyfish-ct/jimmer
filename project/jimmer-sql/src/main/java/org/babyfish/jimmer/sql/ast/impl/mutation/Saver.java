@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.UnloadedException;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -8,13 +9,18 @@ import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.ast.table.spi.UntypedJoinDisabledTableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple3;
 import org.babyfish.jimmer.sql.dialect.Dialect;
@@ -22,15 +28,17 @@ import org.babyfish.jimmer.sql.dialect.OracleDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.meta.impl.DatabaseIdentifiers;
 import org.babyfish.jimmer.sql.meta.impl.IdentityIdGenerator;
 import org.babyfish.jimmer.sql.meta.impl.SequenceIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 
 import java.sql.*;
 import java.util.*;
+import java.util.function.BiFunction;
 
 class Saver {
+
+    private static final String GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON = "Joining is disabled in general optimistic lock";
 
     private final AbstractEntitySaveCommandImpl.Data data;
 
@@ -117,7 +125,6 @@ class Saver {
     private void saveAssociations(DraftSpi currentDraftSpi, ObjectType currentObjectType, boolean forParent) {
 
         ImmutableType currentType = currentDraftSpi.__type();
-
         for (ImmutableProp prop : currentType.getProps().values()) {
             if (prop.isAssociation(TargetLevel.ENTITY) &&
                     prop.isColumnDefinition() == forParent &&
@@ -343,9 +350,9 @@ class Saver {
                             data.getSqlClient(),
                             prop.getTargetType(),
                             ExecutionPurpose.MUTATE,
-                            true,
+                            FilterLevel.DEFAULT,
                             (q, t) -> {
-                                PropExpression<Object> idExpr = t.get(prop.getTargetType().getIdProp().getName());
+                                Expression<Object> idExpr = t.get(prop.getTargetType().getIdProp());
                                 q.where(idExpr.in(illegalTargetIds));
                                 return q.select(idExpr);
                             }
@@ -386,22 +393,25 @@ class Saver {
             return ObjectType.NEW;
         }
 
+        DraftHandler<?, ?> handler = data.getSqlClient().getDraftHandlers(draftSpi.__type());
+        PropId idPropId = draftSpi.__type().getIdProp().getId();
+
         if (trigger == null &&
                 data.getMode() == SaveMode.UPDATE_ONLY &&
-                draftSpi.__isLoaded(draftSpi.__type().getIdProp().getId())) {
-            update(draftSpi, false);
+                draftSpi.__isLoaded(idPropId) &&
+                isKeyOnlyDraftHandler(handler, draftSpi.__type())) {
+            update(draftSpi, ImmutableObjects.makeIdOnly(draftSpi.__type(), draftSpi.__get(idPropId)), false);
             return ObjectType.EXISTING;
         }
 
         ImmutableSpi existingSpi = find(draftSpi);
         if (existingSpi != null) {
             boolean updated;
-            PropId idPropId = draftSpi.__type().getIdProp().getId();
             if (draftSpi.__isLoaded(idPropId)) {
-                updated = update(draftSpi, false);
+                updated = update(draftSpi, existingSpi, false);
             } else {
                 draftSpi.__set(idPropId, existingSpi.__get(idPropId));
-                updated = update(draftSpi, true);
+                updated = update(draftSpi, existingSpi, true);
             }
             if (updated && trigger != null) {
                 trigger.modifyEntityTable(existingSpi, draftSpi);
@@ -425,7 +435,7 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void insert(DraftSpi draftSpi) {
 
-        callInterceptor(draftSpi, true);
+        callInterceptor(draftSpi, null);
 
         ImmutableType type = draftSpi.__type();
         IdGenerator idGenerator = data.getSqlClient().getIdGenerator(type.getJavaClass());
@@ -610,12 +620,9 @@ class Saver {
         cache.save(draftSpi, true);
     }
 
-    private boolean update(DraftSpi draftSpi, boolean excludeKeyProps) {
-
-        callInterceptor(draftSpi, false);
+    private boolean update(DraftSpi draftSpi, ImmutableSpi original, boolean excludeKeyProps) {
 
         ImmutableType type = draftSpi.__type();
-
         Set<ImmutableProp> excludeProps = null;
         if (excludeKeyProps) {
             excludeProps = data.getKeyProps(type);
@@ -624,9 +631,28 @@ class Saver {
             excludeProps = Collections.emptySet();
         }
 
+        boolean needUpdated = false;
+        for (ImmutableProp prop : type.getProps().values()) {
+            if (!prop.isId() &&
+                    prop.isColumnDefinition() &&
+                    draftSpi.__isLoaded(prop.getId()) &&
+                    !excludeProps.contains(prop)
+            ) {
+                needUpdated = true;
+                break;
+            }
+        }
+
+        if (!needUpdated) {
+            return false;
+        }
+
+        callInterceptor(draftSpi, original);
+
         List<ImmutableProp> updatedProps = new ArrayList<>();
         List<Object> updatedValues = new ArrayList<>();
         Integer version = null;
+        BiFunction<Table<?>, Object, Predicate> lambda = data.optimisticLockLambda(type);
 
         for (ImmutableProp prop : type.getProps().values()) {
             if (prop.isColumnDefinition() && draftSpi.__isLoaded(prop.getId())) {
@@ -636,12 +662,15 @@ class Saver {
                     updatedProps.add(prop);
                     Object value = draftSpi.__get(prop.getId());
                     ScalarProvider<Object, Object> scalarProvider;
-                    if (prop.isReference(TargetLevel.ENTITY)) {
+                    if (lambda != null) {
+
+                        scalarProvider = null;
+                    } else if (prop.isReference(TargetLevel.ENTITY)) {
                         scalarProvider = data.getSqlClient().getScalarProvider(prop.getTargetType().getIdProp());
                         if (value != null) {
                             value = ((ImmutableSpi)value).__get(prop.getTargetType().getIdProp().getId());
                         }
-                    } else {
+                    } else  {
                         scalarProvider = data.getSqlClient().getScalarProvider(prop);
                     }
                     if (scalarProvider != null) {
@@ -676,6 +705,75 @@ class Saver {
         if (updatedProps.isEmpty() && version == null) {
             return false;
         }
+
+        int rowCount;
+        if (lambda != null) {
+            rowCount = executeUpdateWithLambda(draftSpi, updatedProps, updatedValues, version, lambda);
+        } else {
+            rowCount = executeUpdateWithoutLambda(draftSpi, updatedProps, updatedValues, version);
+        }
+        if (rowCount != 0) {
+            addOutput(AffectedTable.of(type), rowCount);
+            if (version != null) {
+                increaseDraftVersion(draftSpi);
+            }
+            cache.save(draftSpi, true);
+        } else if (version != null || lambda != null) {
+            throw new SaveException(
+                    SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
+                    path,
+                    "Cannot update the entity whose type is \"" +
+                            type +
+                            "\" and id is \"" +
+                            draftSpi.__get(type.getIdProp().getId()) +
+                            "\" when using optimistic lock"
+            );
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private int executeUpdateWithLambda(
+            DraftSpi draftSpi,
+            List<ImmutableProp> updatedProps,
+            List<Object> updatedValues,
+            Integer version,
+            BiFunction<Table<?>, Object, Predicate> lambda
+    ) {
+        ImmutableType type = draftSpi.__type();
+        ImmutableProp idProp = type.getIdProp();
+        MutableUpdateImpl update = new MutableUpdateImpl(data.getSqlClient(), type, true);
+        Table<?> table = update.getTable();
+        if (table instanceof TableImplementor<?>) {
+            table = new UntypedJoinDisabledTableProxy<>(
+                    (TableImplementor<Object>) table,
+                    GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON
+            );
+        } else {
+            table = ((TableProxy<?>)table).__disableJoin(GENERAL_OPTIMISTIC_DISABLED_JOIN_REASON);
+        }
+        int updatedCount = updatedProps.size();
+        for (int i = 0; i < updatedCount; i++) {
+            update.set((PropExpression<Object>) table.get(updatedProps.get(i)), updatedValues.get(i));
+        }
+        update.where(table.get(idProp).eq(draftSpi.__get(idProp.getId())));
+        if (version != null) {
+            ImmutableProp versionProp = type.getVersionProp();
+            assert  versionProp != null;
+            update.where(table.get(versionProp).eq(version));
+        }
+        update.where(lambda.apply(table, draftSpi));
+        return update.execute(con);
+    }
+
+    private int executeUpdateWithoutLambda(
+            DraftSpi draftSpi,
+            List<ImmutableProp> updatedProps,
+            List<Object> updatedValues,
+            Integer version
+    ) {
+        ImmutableType type = draftSpi.__type();
+        ImmutableProp idProp = type.getIdProp();
         SqlBuilder builder = new SqlBuilder(new AstContext(data.getSqlClient()));
         MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
         builder
@@ -702,7 +800,7 @@ class Saver {
                 .enter(SqlBuilder.ScopeType.WHERE)
                 .definition(null, type.getIdProp().getStorage(strategy), true)
                 .sql(" = ")
-                .variable(draftSpi.__get(type.getIdProp().getId()));
+                .variable(draftSpi.__get(idProp.getId()));
         if (versionColumName != null) {
             builder
                     .separator()
@@ -713,7 +811,7 @@ class Saver {
         builder.leave();
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
-        int rowCount = data.getSqlClient().getExecutor().execute(
+        return data.getSqlClient().getExecutor().execute(
                 new Executor.Args<>(
                         data.getSqlClient(),
                         con,
@@ -725,48 +823,24 @@ class Saver {
                         PreparedStatement::executeUpdate
                 )
         );
-        if (rowCount != 0) {
-            addOutput(AffectedTable.of(type), rowCount);
-            if (version != null) {
-                increaseDraftVersion(draftSpi);
-            }
-            cache.save(draftSpi, true);
-        } else if (version != null) {
-            throw new SaveException(
-                    SaveErrorCode.ILLEGAL_VERSION,
-                    path,
-                    "Cannot update the entity whose type is \"" +
-                            type +
-                            "\", id is \"" +
-                            draftSpi.__get(type.getIdProp().getId()) +
-                            "\" and version is \"" +
-                            version +
-                            "\""
-            );
-        }
-        return true;
     }
 
     @SuppressWarnings("unchecked")
-    private void callInterceptor(DraftSpi draftSpi, boolean insert) {
+    private void callInterceptor(DraftSpi draftSpi, ImmutableSpi original) {
         ImmutableType type = draftSpi.__type();
-        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        if (info != null) {
-            draftSpi.__set(info.getProp().getId(), info.getRestoredValue());
-        }
-        DraftInterceptor<?> interceptor = data.getSqlClient().getDraftInterceptor(type);
-        if (interceptor != null) {
+        DraftHandler<?, ?> handlers = data.getSqlClient().getDraftHandlers(type);
+        if (handlers != null) {
             PropId idPropId = type.getIdProp().getId();
             Object id = draftSpi.__isLoaded(idPropId) ?
                     draftSpi.__get(type.getIdProp().getId()) :
                     null;
-            ((DraftInterceptor<Draft>) interceptor).beforeSave(draftSpi, insert);
+            ((DraftHandler<Draft, ImmutableSpi>) handlers).beforeSave(draftSpi, original);
             if (id != null) {
                 if (!draftSpi.__isLoaded(idPropId)) {
-                    throw new IllegalStateException("Draft interceptor cannot be used to unload id");
+                    throw new IllegalStateException("Draft handlers cannot be used to unload id");
                 }
                 if (!id.equals(draftSpi.__get(idPropId))) {
-                    throw new IllegalStateException("Draft interceptor cannot be used to change id");
+                    throw new IllegalStateException("Draft handlers cannot be used to change id");
                 }
             }
         }
@@ -788,19 +862,16 @@ class Saver {
 
         ImmutableType type = example.__type();
         Collection<ImmutableProp> actualKeyProps = actualKeyProps(example, requiresKey);
-        if (actualKeyProps == null || actualKeyProps.isEmpty()) {
+        if (actualKeyProps.isEmpty()) {
             return null;
         }
 
         List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
-            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
+            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, table) -> {
                 for (ImmutableProp keyProp : actualKeyProps) {
                     if (keyProp.isReference(TargetLevel.ENTITY)) {
                         ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
-                        Expression<Object> targetIdExpression =
-                                table
-                                        .<Table<?>>join(keyProp.getName())
-                                        .get(targetIdProp.getName());
+                        Expression<Object> targetIdExpression = table.getAssociatedId(keyProp);
                         ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getId());
                         if (target != null) {
                             q.where(targetIdExpression.eq(target.__get(targetIdProp.getId())));
@@ -810,9 +881,9 @@ class Saver {
                     } else {
                         Object value = example.__get(keyProp.getId());
                         if (value != null) {
-                            q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
+                            q.where(table.get(keyProp).eq(value));
                         } else {
-                            q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
+                            q.where(table.get(keyProp).isNull());
                         }
                     }
                 }
@@ -821,7 +892,7 @@ class Saver {
                 }
                 return q.select(
                         ((Table<ImmutableSpi>)table).fetch(
-                                IdAndKeyFetchers.getFetcher(type)
+                                IdAndKeyFetchers.getFetcher(data.getSqlClient(), type)
                         )
                 );
             }).forUpdate(data.isPessimisticLockRequired()).execute(con);
@@ -856,8 +927,8 @@ class Saver {
         if (id != null) {
             return Collections.singleton(idProp);
         }
-        Set<ImmutableProp> keyProps = data.getKeyProps(type);
-        if (keyProps == null && requiresKey) {
+        Collection<ImmutableProp> keyProps = data.getKeyProps(type);
+        if (keyProps.isEmpty() && requiresKey) {
             throw new SaveException(
                     SaveErrorCode.NO_KEY_PROPS,
                     path,
@@ -932,6 +1003,17 @@ class Saver {
             );
         }
         spi.__set(idProp.getId(), convertedId);
+    }
+
+    private boolean isKeyOnlyDraftHandler(DraftHandler<?, ?> handler, ImmutableType type) {
+        if (handler == null) {
+            return true;
+        }
+        Collection<ImmutableProp> dependencies = handler.dependencies();
+        if (dependencies.isEmpty()) {
+            return true;
+        }
+        return data.getKeyProps(type).containsAll(dependencies);
     }
 
     private static void increaseDraftVersion(DraftSpi spi) {

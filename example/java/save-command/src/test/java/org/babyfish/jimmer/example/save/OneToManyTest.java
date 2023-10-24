@@ -62,7 +62,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Change the foreign key of child object
                 new ExecutedStatement(
-                        "update BOOK set STORE_ID = ? where ID in (?)",
+                        "update BOOK set STORE_ID = ? where ID = ?",
                         1L, 10L
                 )
         );
@@ -182,7 +182,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // In this test case, no more child objects will be found
                 new ExecutedStatement(
                         "select 1 from BOOK " +
-                                "where STORE_ID = ? and ID not in(?) " +
+                                "where STORE_ID = ? and ID <> ? " +
                                 "limit ?",
                         1L, 10L, 1
                 )
@@ -249,7 +249,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 //
                 // In this test case, no more child objects will be found
                 new ExecutedStatement(
-                        "select 1 from BOOK where STORE_ID = ? and ID not in(?) limit ?",
+                        "select 1 from BOOK where STORE_ID = ? and ID <> ? limit ?",
                         1L, 10L, 1
                 )
         );
@@ -309,7 +309,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Update the foreign key of child object(s)
                 new ExecutedStatement(
-                        "update BOOK set STORE_ID = ? where ID in (?)",
+                        "update BOOK set STORE_ID = ? where ID = ?",
                         1L, 10L
                 ),
 
@@ -321,7 +321,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // how to dissociate them so that error is raised
                 new ExecutedStatement(
                         "select 1 from BOOK " +
-                                "where STORE_ID = ? and ID not in(?) " +
+                                "where STORE_ID = ? and ID <> ? " +
                                 "limit ?",
                         1L, 10L, 1
                 )
@@ -371,7 +371,7 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Update foreign key of child object(s)
                 new ExecutedStatement(
-                        "update BOOK set STORE_ID = ? where ID in (?)",
+                        "update BOOK set STORE_ID = ? where ID = ?",
                         1L, 10L
                 ),
 
@@ -379,7 +379,7 @@ public class OneToManyTest extends AbstractMutationTest {
                 // clear the foreign key of them.
                 new ExecutedStatement(
                         "update BOOK set STORE_ID = null " +
-                                "where STORE_ID = ? and ID not in (?)",
+                                "where STORE_ID = ? and ID <> ?",
                         1L, 10L
                 )
         );
@@ -432,14 +432,14 @@ public class OneToManyTest extends AbstractMutationTest {
 
                 // Update foreign key of child objects.
                 new ExecutedStatement(
-                        "update BOOK set STORE_ID = ? where ID in (?)",
+                        "update BOOK set STORE_ID = ? where ID = ?",
                         1L, 10L
                 ),
 
                 // The aggregate-root exists, so there may be more child objects in the database,
                 // select id of them.
                 new ExecutedStatement(
-                        "select ID from BOOK where STORE_ID = ? and ID not in (?)",
+                        "select ID from BOOK where STORE_ID = ? and ID <> ?",
                         1L, 10L
                 ),
 
@@ -447,13 +447,13 @@ public class OneToManyTest extends AbstractMutationTest {
                 // Before doing this, the reference to `books-20` in the middle table of
                 // the many-to-many association `Book.authors` must be removed.
                 new ExecutedStatement(
-                        "delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?)",
+                        "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ?",
                         20L
                 ),
 
                 // Now, `book-20` can be deleted safely
                 new ExecutedStatement(
-                        "delete from BOOK where ID in (?)",
+                        "delete from BOOK where ID = ?",
                         20L
                 )
         );

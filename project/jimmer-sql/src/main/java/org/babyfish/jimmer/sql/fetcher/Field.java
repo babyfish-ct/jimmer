@@ -36,4 +36,6 @@ public interface Field {
     boolean isSimpleField();
 
     boolean isImplicit();
+
+    boolean isRawId();
 }

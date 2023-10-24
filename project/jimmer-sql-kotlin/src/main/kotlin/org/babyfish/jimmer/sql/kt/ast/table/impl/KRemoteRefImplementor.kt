@@ -5,5 +5,5 @@ import org.babyfish.jimmer.sql.kt.ast.table.KRemoteRef
 
 interface KRemoteRefImplementor<E: Any> : KRemoteRef<E> {
 
-    fun <X: Any, EXP: KPropExpression<X>> id(): EXP
+    fun <X: Any> id(): KPropExpression<X>
 }

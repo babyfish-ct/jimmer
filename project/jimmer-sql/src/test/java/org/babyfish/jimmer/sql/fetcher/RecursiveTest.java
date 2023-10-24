@@ -502,19 +502,19 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(10L);
                     ctx.statement(3).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(9L);
                     ctx.statement(4).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(1L);
                 }
@@ -556,19 +556,19 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(10L);
                     ctx.statement(3).sql(
                             "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(9L);
                     ctx.statement(4).sql(
                             "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(1L);
                 }

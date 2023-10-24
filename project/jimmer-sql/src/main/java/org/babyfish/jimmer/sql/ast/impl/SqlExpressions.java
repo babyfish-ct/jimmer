@@ -73,7 +73,7 @@ public class SqlExpressions {
         private final List<Object> parts;
 
         Any(Class<T> type, String sql, List<Expression<?>> expressions, List<Object> values) {
-            List<Expression> literals;
+            List<Expression<?>> literals;
             if (values.isEmpty()) {
                 literals = Collections.emptyList();
             } else {

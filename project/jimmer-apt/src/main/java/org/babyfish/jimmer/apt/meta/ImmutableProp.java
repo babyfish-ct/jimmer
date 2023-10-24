@@ -503,6 +503,9 @@ public class ImmutableProp implements BaseProp {
     }
 
     public boolean isDsl(boolean isTableEx) {
+        if (getIdViewBaseProp() != null) {
+            return false;
+        }
         if (isJavaFormula || isTransient || (getIdViewBaseProp() != null && isList)) {
             return false;
         }

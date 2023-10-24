@@ -34,6 +34,8 @@ public interface Filters {
 
     Filter<Props> getTargetFilter(TypedProp.Association<?, ?> prop, boolean shardingOnly);
 
+    Filter<Props> getLogicalDeletedFilter(ImmutableType type);
+
     /**
      * Returns the reference wrapper of parameterMap
      * @param type The filtered type
@@ -77,6 +79,4 @@ public interface Filters {
      * </ul>
      */
     Ref<SortedMap<String, Object>> getTargetParameterMapRef(TypedProp.Association<?, ?> prop);
-
-    BuiltInFilters builtIns();
 }

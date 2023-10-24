@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
@@ -22,6 +23,9 @@ public class SimpleEntitySaveCommandImpl<E>
         super(sqlClient, con, null);
         if (!(entity instanceof ImmutableSpi)) {
             throw new IllegalArgumentException("entity must be an immutable object");
+        }
+        if (entity instanceof DraftSpi) {
+            throw new IllegalArgumentException("entity cannot be a draft object");
         }
         this.entity = entity;
     }

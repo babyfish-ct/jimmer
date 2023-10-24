@@ -10,11 +10,13 @@ import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.impl.KMutableSubQueryImpl
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 internal class KWildSubQueriesImpl<P: Any>(
-    private val parent: AbstractMutableStatementImpl
+    private val parent: AbstractMutableStatementImpl,
+    private val parentTable: KNonNullTableEx<P>? = null
 ) : KWildSubQueries<P> {
 
     override fun <E : Any> forEntity(
@@ -23,9 +25,8 @@ internal class KWildSubQueriesImpl<P: Any>(
     ): KMutableSubQuery<P, E> {
         val immutableType = ImmutableType.get(entityType.java)
         val subQuery = MutableSubQueryImpl(parent, immutableType)
-        val wrappedQuery = KMutableSubQueryImpl<P, E>(subQuery)
+        val wrappedQuery = KMutableSubQueryImpl<P, E>(subQuery, parentTable)
         wrappedQuery.block()
-        subQuery.freeze()
         return wrappedQuery
     }
 
@@ -49,9 +50,8 @@ internal class KWildSubQueriesImpl<P: Any>(
     ): KMutableSubQuery<P, Association<S, T>> {
         val associationType = AssociationType.of(immutableProp)
         val subQuery = MutableSubQueryImpl(parent, associationType)
-        val wrappedQuery = KMutableSubQueryImpl<P, Association<S, T>>(subQuery)
+        val wrappedQuery = KMutableSubQueryImpl<P, Association<S, T>>(subQuery, parentTable)
         wrappedQuery.block()
-        subQuery.freeze()
         return wrappedQuery
     }
 }

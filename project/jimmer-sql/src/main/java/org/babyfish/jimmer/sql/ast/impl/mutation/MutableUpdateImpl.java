@@ -36,16 +36,26 @@ public class MutableUpdateImpl
 
     private final StatementContext ctx;
 
-    private Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
+    private final boolean triggerIgnored;
+
+    private final Map<Target, Expression<?>> assignmentMap = new LinkedHashMap<>();
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
+        this.triggerIgnored = false;
+    }
+
+    public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType, boolean triggerIgnored) {
+        super(sqlClient, immutableType);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
+        this.triggerIgnored = triggerIgnored;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
+        this.triggerIgnored = false;
     }
 
     @Override
@@ -74,7 +84,9 @@ public class MutableUpdateImpl
     public <X> MutableUpdate set(PropExpression<X> path, Expression<X> value) {
         validateMutable();
         Target target = Target.of(path, getSqlClient().getMetadataStrategy());
-        if (target.table != this.getTable() && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+        if (target.table != this.getTable() &&
+                target.table != this.getTableImplementor() &&
+                getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             throw new IllegalArgumentException(
                     "Only the primary table can be deleted when transaction trigger is supported"
             );
@@ -127,7 +139,7 @@ public class MutableUpdateImpl
             return 0;
         }
 
-        if (getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
+        if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
             return executeWithTrigger(con);
         }
 
@@ -238,8 +250,7 @@ public class MutableUpdateImpl
                     ((Ast) e.getValue()).accept(visitor);
                 }
             }
-            Predicate predicate = getPredicate();
-            if (predicate != null) {
+            for (Predicate predicate : getPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -333,6 +344,7 @@ public class MutableUpdateImpl
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
         impl.renderSelection(
                 target.prop,
+                true,
                 builder,
                 target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy()),
                 withPrefix
@@ -381,7 +393,7 @@ public class MutableUpdateImpl
                         updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                         hasUsedChild(table, builder.getAstContext());
 
-        if (!hasTableCondition && ids == null && getPredicate() == null) {
+        if (!hasTableCondition && ids == null && getPredicates().isEmpty()) {
             return;
         }
 
@@ -483,8 +495,8 @@ public class MutableUpdateImpl
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
-            super.visitTableReference(table, prop);
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+            super.visitTableReference(table, prop, rawId);
             if (dialect != null) {
                 validateTable(table);
             }

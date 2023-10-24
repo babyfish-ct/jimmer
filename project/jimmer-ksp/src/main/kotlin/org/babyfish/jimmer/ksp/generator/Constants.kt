@@ -12,6 +12,7 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.sql.collection.IdViewList
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
@@ -50,6 +51,7 @@ internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()
 internal val DRAFT_CONSUMER_CLASS_NAME = DraftConsumer::class.asClassName()
+internal val IMMUTABLE_PROP_CLASS_NAME = ImmutableProp::class.asClassName()
 internal val IMMUTABLE_SPI_CLASS_NAME = ImmutableSpi::class.asClassName()
 internal val IMMUTABLE_OBJECTS_CLASS_NAME = ImmutableObjects::class.asClassName()
 internal val UNLOADED_EXCEPTION_CLASS_NAME = UnloadedException::class.asClassName()
@@ -173,6 +175,10 @@ internal val K_RECURSIVE_LIST_FIELD_DSL = ClassName(
 internal val FETCHER_CREATOR_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
     "FetcherCreator"
+)
+internal val ID_ONLY_FETCH_TYPE = ClassName(
+    "org.babyfish.jimmer.sql.fetcher",
+    "IdOnlyFetchType"
 )
 internal val SELECTION_CLASS_NAME =
     ClassName(

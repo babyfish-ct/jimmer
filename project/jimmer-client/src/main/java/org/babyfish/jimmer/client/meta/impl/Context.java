@@ -725,7 +725,6 @@ class Context {
             );
         }
         Field constantField;
-        Map<String, EnumBasedError.Field> fieldMap = new LinkedHashMap<>();
         try {
             constantField = error.getClass().getField(error.name());
         } catch (NoSuchFieldException ex) {
@@ -737,25 +736,20 @@ class Context {
                             "\""
             );
         }
-        ErrorFields fields = constantField.getAnnotation(ErrorFields.class);
-        if (fields != null) {
-            for (ErrorField field : fields.value()) {
-                if (fieldMap.put(field.name(), parseErrorField(error, field)) != null) {
-                    throw new IllegalArgumentException(
-                            "Duplicated field name \"" +
-                                    field.name() +
-                                    "\" is declared on \"" +
-                                    error.getClass().getName() +
-                                    "." +
-                                    error.name() +
-                                    "\""
-                    );
-                }
-            }
-        } else {
-            ErrorField field = constantField.getAnnotation(ErrorField.class);
-            if (field != null) {
-                fieldMap.put(field.name(), parseErrorField(error, field));
+
+        List<ErrorField> errorFields = getErrorFields(constantField);
+        Map<String, EnumBasedError.Field> fieldMap = new LinkedHashMap<>();
+        for (ErrorField errorField : errorFields) {
+            if (fieldMap.put(errorField.name(), parseErrorField(error, errorField)) != null) {
+                throw new IllegalArgumentException(
+                        "Duplicated field name \"" +
+                                errorField.name() +
+                                "\" is declared on \"" +
+                                error.getClass().getName() +
+                                "." +
+                                error.name() +
+                                "\""
+                );
             }
         }
         return new EnumBasedError(error, fieldMap);
@@ -784,6 +778,32 @@ class Context {
             type = NullableTypeImpl.of(type);
         }
         return new EnumBasedError.Field(field.name(), type);
+    }
+
+    private static List<ErrorField> getErrorFields(Field constantField) {
+        ErrorFields typeFields = constantField.getDeclaringClass().getAnnotation(ErrorFields.class);
+        ErrorFields fields = constantField.getAnnotation(ErrorFields.class);
+        ErrorField typeField = constantField.getDeclaringClass().getAnnotation(ErrorField.class);
+        ErrorField field = constantField.getAnnotation(ErrorField.class);
+        List<ErrorField> list = new ArrayList<>(
+                (typeFields != null ? typeFields.value().length : 0) +
+                        (fields != null ? fields.value().length : 0) +
+                        (typeField != null ? 1 : 0) +
+                        (field != null ? 1 : 0)
+        );
+        if (typeFields != null) {
+            list.addAll(Arrays.asList(typeFields.value()));
+        }
+        if (fields != null) {
+            list.addAll(Arrays.asList(fields.value()));
+        }
+        if (typeField != null) {
+            list.add(typeField);
+        }
+        if (field != null) {
+            list.add(field);
+        }
+        return list;
     }
 
     private static class UnifiedTypeParameter {

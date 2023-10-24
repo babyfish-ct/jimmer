@@ -110,7 +110,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             );
         }
 
-        if (!positivePropMap.isEmpty()) {
+        if (!positivePropMap.isEmpty() || !negativePropAliasMap.isEmpty()) {
             throw ctx.exception(
                     allScalars.name.getLine(),
                     "`#allScalars` must be defined at the beginning"
@@ -146,7 +146,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Set<T> handledBaseTypes = new LinkedHashSet<>();
             for (DtoParser.QualifiedNameContext qnCtx : allScalars.args) {
                 String qualifiedName = qnCtx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
-                T baseType = qualifiedNameTypeMap.get(qualifiedName);
+                T baseType = qualifiedName.equals("this") ? this.baseType : qualifiedNameTypeMap.get(qualifiedName);
                 if (baseType == null) {
                     Set<T> baseTypes = nameTypeMap.get(qualifiedName);
                     if (baseTypes != null) {
@@ -165,13 +165,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         }
                     }
                     if (baseType == null) {
-                        throw ctx.exception(
-                                qnCtx.start.getLine(),
-                                "Illegal type name \"" + qualifiedName + "\", " +
-                                        "it is not super type of \"" +
-                                        this.baseType.getQualifiedName() +
-                                        "\""
-                        );
+                        if (qualifiedName.indexOf('.') == -1) {
+                            String imported;
+                            try {
+                                imported = ctx.resolve(qnCtx);
+                            } catch (Throwable ex) {
+                                imported = null;
+                            }
+                            if (imported != null) {
+                                baseType = qualifiedNameTypeMap.get(imported);
+                            }
+                        }
+                        if (baseType == null) {
+                            throw ctx.exception(
+                                    qnCtx.start.getLine(),
+                                    "Illegal type name \"" + qualifiedName + "\", " +
+                                            "it is not super type of \"" +
+                                            this.baseType.getQualifiedName() +
+                                            "\""
+                            );
+                        }
                     }
                 }
                 if (!handledBaseTypes.add(baseType)) {
@@ -307,13 +320,16 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 ctx.getTargetType(baseProp) == null;
     }
 
-    private static <T extends BaseType> void collectSuperTypes(
+    private void collectSuperTypes(
             T baseType,
             Map<String, T> qualifiedNameTypeMap,
             Map<String, Set<T>> nameTypeMap
     ) {
         qualifiedNameTypeMap.put(baseType.getQualifiedName(), baseType);
         nameTypeMap.computeIfAbsent(baseType.getName(), it -> new LinkedHashSet<>()).add(baseType);
+        for (T superType : ctx.getSuperTypes(baseType)) {
+            collectSuperTypes(superType, qualifiedNameTypeMap, nameTypeMap);
+        }
     }
 
     DtoType<T, P> build() {

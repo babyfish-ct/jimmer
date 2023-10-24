@@ -13,27 +13,18 @@ public final class LogicalDeletedInfo {
 
     private final ImmutableProp prop;
 
+    private final Action action;
+
     private final Object value;
-
-    private final Object restoredValue;
-
-    private final boolean isTwoOptionsOnly;
 
     private LogicalDeletedInfo(
             ImmutableProp prop,
-            Object value,
-            Object restoredValue
+            Action action,
+            Object value
     ) {
-        if (value == restoredValue) {
-            throw new IllegalArgumentException("`value` and `restoredValue` must be different");
-        }
         this.prop = prop;
+        this.action = action;
         this.value = value;
-        this.restoredValue = restoredValue;
-        Class<?> returnType = prop.getElementClass();
-        this.isTwoOptionsOnly =
-                returnType == boolean.class ||
-                        (returnType.isEnum() && returnType.getEnumConstants().length == 2);
     }
 
     public LogicalDeletedInfo to(ImmutableProp prop) {
@@ -55,31 +46,16 @@ public final class LogicalDeletedInfo {
             );
         }
         this.prop = prop;
+        this.action = base.action;
         this.value = base.value;
-        this.restoredValue = base.restoredValue;
-        this.isTwoOptionsOnly = base.isTwoOptionsOnly;
     }
 
     public ImmutableProp getProp() {
         return prop;
     }
 
-    public Action getNotDeletedAction() {
-        if (value != null && restoredValue != null) {
-            return Action.NE;
-        }
-        if (value == null) {
-            return Action.IS_NOT_NULL;
-        }
-        return Action.IS_NULL;
-    }
-
-    public boolean isTwoOptionsOnly() {
-        return isTwoOptionsOnly;
-    }
-
-    public boolean isMultiViewCacheUsed() {
-        return prop.getAnnotation(LogicalDeleted.class).useMultiViewCache();
+    public Action getAction() {
+        return action;
     }
 
     public Object getValue() {
@@ -89,19 +65,12 @@ public final class LogicalDeletedInfo {
         return value;
     }
 
-    public Object getRestoredValue() {
-        if (restoredValue instanceof Supplier<?>) {
-            return ((Supplier<?>)restoredValue).get();
-        }
-        return restoredValue;
-    }
-
     @Override
     public String toString() {
-        return "LogicalDeletedFlag{" +
+        return "LogicalDeletedInfo{" +
                 "prop=" + prop +
-                ", value=" + (value instanceof Supplier ? "<lambda>" : value) +
-                ", restoredValue=" + (value instanceof Supplier ? "<lambda>" : value) +
+                ", action=" + action +
+                ", value=" + value +
                 '}';
     }
 
@@ -158,50 +127,14 @@ public final class LogicalDeletedInfo {
             );
         }
 
-        if (deleted.value().equals(deleted.restoredValue())) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop +
-                            "\", it is decorated by `@" +
-                            LogicalDeleted.class.getName() +
-                            "` but the `value` and `restoredValue` are same"
-            );
-        }
-
         Object value = parseValue(prop, deleted.value(), "value");
-        Object restoredValue = deleted.restoredValue().isEmpty() ?
-                null :
-                parseValue(prop, deleted.restoredValue(), "restoredValue");
-        if (restoredValue == null) {
-            if (returnType == boolean.class) {
-                restoredValue = !(Boolean) value;
-            } else if (NOW_SUPPLIER_MAP.containsKey(returnType)) {
-                if (value == null) {
-                    restoredValue = NOW_SUPPLIER_MAP.get(returnType);
-                }
-            } else {
-                if (returnType.isEnum()) {
-                    Enum<?>[] constants = ((Class<Enum<?>>) returnType).getEnumConstants();
-                    if (constants.length == 2) {
-                        if (value == constants[0]) {
-                            restoredValue = constants[1];
-                        } else {
-                            restoredValue = constants[0];
-                        }
-                    }
-                }
-                throw new ModelException(
-                        "Illegal property \"" +
-                                prop +
-                                "\", it is decorated by `@" +
-                                LogicalDeleted.class.getName() +
-                                "` and returns \"" +
-                                returnType.getName() +
-                                "\" so that the `restoredValue` is required"
-                );
-            }
+        Action action;
+        if (prop.isNullable()) {
+            action = value != null ? Action.IS_NULL : Action.IS_NOT_NULL;
+        } else {
+            action = Action.NE;
         }
-        return new LogicalDeletedInfo(prop, value, restoredValue);
+        return new LogicalDeletedInfo(prop, action, value);
     }
 
     @SuppressWarnings("unchecked")

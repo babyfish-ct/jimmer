@@ -83,7 +83,7 @@ public class ImmutableProps {
 
         public FakeStatement(ImmutableType type) {
             super(null, type);
-            this.ctx = new StatementContext(ExecutionPurpose.QUERY, false);
+            this.ctx = new StatementContext(ExecutionPurpose.QUERY);
         }
 
         @Override

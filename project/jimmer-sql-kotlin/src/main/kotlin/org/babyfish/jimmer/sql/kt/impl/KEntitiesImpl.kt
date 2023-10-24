@@ -6,8 +6,10 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entities
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata
@@ -111,6 +113,7 @@ internal class KEntitiesImpl(
     ): List<V> =
         find(ViewMetadata.of(viewType.java), example, block as SortDsl<*>.() -> Unit)
 
+    @Suppress("UNCHECKED_CAST")
     private fun <E: Any> find(
         type: ImmutableType,
         fetcher: Fetcher<E>?,
@@ -128,9 +131,9 @@ internal class KEntitiesImpl(
             )
         }
         val entities = javaEntities as EntitiesImpl
-        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
-        val table = query.getTable<Table<E>>()
-        query.where(example?.toPredicate(query.getTable()))
+        val query = MutableRootQueryImpl<Table<E>>(entities.sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT)
+        val table = query.tableImplementor as TableImplementor<E>
+        query.where(example?.toPredicate(query.tableImplementor))
         if (block !== null) {
             val dsl = SortDsl<E>()
             dsl.block()
@@ -155,8 +158,11 @@ internal class KEntitiesImpl(
         val converter = metadata.getConverter() as Function<*, V>
         val type = fetcher.immutableType
         val entities = javaEntities as EntitiesImpl
-        val query = MutableRootQueryImpl<Table<*>>(entities.sqlClient, type, ExecutionPurpose.QUERY, false)
-        val table = query.getTable<Table<*>>()
+        val query = MutableRootQueryImpl<Table<*>>(entities.sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT)
+        val table = query.tableImplementor
+        if (example !== null) {
+            query.where(example.toPredicate(table))
+        }
         if (block !== null) {
             val dsl = SortDsl<Any>()
             dsl.block()

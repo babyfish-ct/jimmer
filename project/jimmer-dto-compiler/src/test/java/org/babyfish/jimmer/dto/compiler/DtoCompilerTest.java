@@ -15,8 +15,9 @@ import java.util.stream.Collectors;
 public class DtoCompilerTest {
 
     @Test
-    public void testSimple() {
+    public void testSimpleByAlias() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                        "import org.babyfish.jimmer.sql.model.{Book as B}" +
                         "input BookInput {\n" +
                         "    #allScalars\n" +
                         "    -tenant\n" +
@@ -24,7 +25,54 @@ public class DtoCompilerTest {
                         "    id(authors) as authorIds\n" +
                         "}\n" +
                         "input CompositeBookInput {\n" +
-                        "    #allScalars(Book)\n" +
+                        "    #allScalars(B)\n" +
+                        "    -tenant\n" +
+                        "    id(store)\n" +
+                        "    id(authors) as authorIds\n" +
+                        "    chapters {\n" +
+                        "        #allScalars\n" +
+                        "    }\n" +
+                        "}// End"
+        );
+        assertContentEquals(
+                ("[" +
+                        "--->input BookInput {" +
+                        "--->--->@optional id, " +
+                        "--->--->name, " +
+                        "--->--->edition, " +
+                        "--->--->price, " +
+                        "--->--->id(store) as storeId, " +
+                        "--->--->id(authors) as authorIds" +
+                        "--->}, " +
+                        "--->input CompositeBookInput {" +
+                        "--->--->@optional id, " +
+                        "--->--->name, " +
+                        "--->--->edition, " +
+                        "--->--->price, " +
+                        "--->--->id(store) as storeId, " +
+                        "--->--->id(authors) as authorIds, " +
+                        "--->--->chapters: input {" +
+                        "--->--->--->@optional id, " +
+                        "--->--->--->index, " +
+                        "--->--->--->title" +
+                        "--->--->}" +
+                        "--->}" +
+                        "]").replace("--->", ""),
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testSimpleByThis() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+                "input BookInput {\n" +
+                        "    #allScalars\n" +
+                        "    -tenant\n" +
+                        "    id(store)\n" +
+                        "    id(authors) as authorIds\n" +
+                        "}\n" +
+                        "input CompositeBookInput {\n" +
+                        "    #allScalars(this)\n" +
                         "    -tenant\n" +
                         "    id(store)\n" +
                         "    id(authors) as authorIds\n" +

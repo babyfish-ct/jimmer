@@ -1,19 +1,24 @@
 package org.babyfish.jimmer.sql.kt.ast.table
 
 import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
 import kotlin.reflect.KProperty1
 
 interface KProps<E: Any> {
 
-    fun <X: Any, EXP: KPropExpression<X>> get(prop: String): EXP
+    fun <X: Any> get(prop: String): KPropExpression<X>
+    fun <X: Any> get(prop: ImmutableProp): KPropExpression<X>
+    fun <X: Any> getId(): KPropExpression<X>
+    fun <X: Any> getAssociatedId(prop: String): KPropExpression<X>
+    fun <X: Any> getAssociatedId(prop: ImmutableProp): KPropExpression<X>
 
     fun <X: Any> join(prop: String): KNonNullTable<X>
+    fun <X: Any> join(prop: ImmutableProp): KNonNullTable<X>
     fun <X: Any> joinReference(prop: KProperty1<E, X?>): KNonNullTable<X>
     fun <X: Any> joinList(prop: KProperty1<E, List<X>>): KNonNullTable<X>
 
     fun <X: Any> outerJoin(prop: String): KNullableTable<X>
+    fun <X: Any> outerJoin(prop: ImmutableProp): KNullableTable<X>
     fun <X: Any> outerJoinReference(prop: KProperty1<E, X?>): KNullableTable<X>
     fun <X: Any> outerJoinList(prop: KProperty1<E, List<X>>): KNullableTable<X>
 

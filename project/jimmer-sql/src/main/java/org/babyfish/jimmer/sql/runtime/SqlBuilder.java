@@ -676,7 +676,7 @@ public class SqlBuilder {
         WHERE("?where?", "?and?", null),
         ORDER_BY("?order by?", ",?", null),
         GROUP_BY("?group by?", ",?", null),
-        HAVING("?having?", ",?", null),
+        HAVING("?having?", "?and?", null),
         SUB_QUERY("(\n", null, "\n)"),
         LIST("(\n", ",?", "\n)"),
         TUPLE("(", ", ", ")"),

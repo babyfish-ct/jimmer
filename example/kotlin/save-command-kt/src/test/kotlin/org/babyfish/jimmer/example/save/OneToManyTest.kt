@@ -68,7 +68,7 @@ class OneToManyTest() : AbstractMutationTest() {
             
             // Change the foreign key of child object
             ExecutedStatement(
-                "update BOOK set STORE_ID = ? where ID in (?)",
+                "update BOOK set STORE_ID = ? where ID = ?",
                 1L, 10L
             )
         )
@@ -191,7 +191,7 @@ class OneToManyTest() : AbstractMutationTest() {
             // In this test case, no more child objects will be found
             ExecutedStatement(
                 "select 1 from BOOK " +
-                    "where STORE_ID = ? and ID not in(?) " +
+                    "where STORE_ID = ? and ID <> ? " +
                     "limit ?",
                 1L, 10L, 1
             )
@@ -258,7 +258,7 @@ class OneToManyTest() : AbstractMutationTest() {
             //
             // In this test case, no more child objects will be found
             ExecutedStatement(
-                "select 1 from BOOK where STORE_ID = ? and ID not in(?) limit ?",
+                "select 1 from BOOK where STORE_ID = ? and ID <> ? limit ?",
                 1L, 10L, 1
             )
         )
@@ -323,7 +323,7 @@ class OneToManyTest() : AbstractMutationTest() {
 
             // Update the foreign key of child object(s)
             ExecutedStatement(
-                "update BOOK set STORE_ID = ? where ID in (?)",
+                "update BOOK set STORE_ID = ? where ID = ?",
                 1L, 10L
             ),
 
@@ -335,7 +335,7 @@ class OneToManyTest() : AbstractMutationTest() {
             // how to dissociate them so that error is raised
             ExecutedStatement(
                 "select 1 from BOOK " +
-                    "where STORE_ID = ? and ID not in(?) " +
+                    "where STORE_ID = ? and ID <> ? " +
                     "limit ?",
                 1L, 10L, 1
             )
@@ -387,7 +387,7 @@ class OneToManyTest() : AbstractMutationTest() {
 
             // Update foreign key of child object(s)
             ExecutedStatement(
-                "update BOOK set STORE_ID = ? where ID in (?)",
+                "update BOOK set STORE_ID = ? where ID = ?",
                 1L, 10L
             ),
 
@@ -395,7 +395,7 @@ class OneToManyTest() : AbstractMutationTest() {
             // clear the foreign key of them.
             ExecutedStatement(
                 "update BOOK set STORE_ID = null " +
-                    "where STORE_ID = ? and ID not in (?)",
+                    "where STORE_ID = ? and ID <> ?",
                 1L, 10L
             )
         )
@@ -450,14 +450,14 @@ class OneToManyTest() : AbstractMutationTest() {
 
             // Update foreign key of child objects.
             ExecutedStatement(
-                "update BOOK set STORE_ID = ? where ID in (?)",
+                "update BOOK set STORE_ID = ? where ID = ?",
                 1L, 10L
             ),
 
             // The aggregate-root exists, so there may be more child objects in the database,
             // select id of them.
             ExecutedStatement(
-                "select ID from BOOK where STORE_ID = ? and ID not in (?)",
+                "select ID from BOOK where STORE_ID = ? and ID <> ?",
                 1L, 10L
             ),
 
@@ -465,13 +465,13 @@ class OneToManyTest() : AbstractMutationTest() {
             // Before doing this, the reference to `books-20` in the middle table of
             // the many-to-many association `Book.authors` must be removed.
             ExecutedStatement(
-                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID in (?)",
+                "delete from BOOK_AUTHOR_MAPPING where BOOK_ID = ?",
                 20L
             ),
 
             // Now, `book-20` can be deleted safely
             ExecutedStatement(
-                "delete from BOOK where ID in (?)",
+                "delete from BOOK where ID = ?",
                 20L
             )
         )

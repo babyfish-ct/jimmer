@@ -2,7 +2,7 @@ package org.babyfish.jimmer.spring.cfg.support;
 
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.runtime.DefaultUserIdGeneratorProvider;
+import org.babyfish.jimmer.sql.di.DefaultUserIdGeneratorProvider;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Map;

@@ -4,7 +4,10 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.DissociateAction;
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.DeleteMode;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
@@ -13,6 +16,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.sql.Connection;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveCommand {
@@ -41,7 +45,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
     abstract AbstractEntitySaveCommand create(Data data);
 
-    static final class Data implements Cfg {
+    static final class Data implements SaveCommandCfgImplementor {
 
         private final JSqlClientImplementor sqlClient;
 
@@ -69,6 +73,8 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         private boolean pessimisticLock;
 
+        private Map<ImmutableType, BiFunction<Table<?>, Object, Predicate>> optimisticLockLambdaMap;
+
         Data(JSqlClientImplementor sqlClient) {
             this.sqlClient = sqlClient;
             this.triggers = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY ?
@@ -83,12 +89,13 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.appendOnlySet = new HashSet<>();
             this.dissociateActionMap = new LinkedHashMap<>();
             this.pessimisticLock = false;
+            this.optimisticLockLambdaMap = new LinkedHashMap<>();
         }
 
         Data(Data base) {
             this.sqlClient = base.sqlClient;
             this.triggers = base.triggers;
-            this.mode = SaveMode.UPSERT;
+            this.mode = base.mode;
             this.deleteMode = base.deleteMode;
             this.keyPropMultiMap = new LinkedHashMap<>(base.keyPropMultiMap);
             this.autoCheckingAll = base.autoCheckingAll;
@@ -98,6 +105,7 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
             this.appendOnlySet = base.appendOnlySet;
             this.dissociateActionMap = new LinkedHashMap<>(base.dissociateActionMap);
             this.pessimisticLock = base.pessimisticLock;
+            this.optimisticLockLambdaMap = base.optimisticLockLambdaMap;
             this.frozen = false;
         }
 
@@ -154,6 +162,10 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
 
         boolean isPessimisticLockRequired() {
             return pessimisticLock;
+        }
+
+        BiFunction<Table<?>, Object, Predicate> optimisticLockLambda(ImmutableType type) {
+            return optimisticLockLambdaMap.get(type);
         }
 
         @Override
@@ -274,6 +286,24 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
         public Cfg setPessimisticLock(boolean pessimisticLock) {
             this.pessimisticLock = pessimisticLock;
             return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <E, T extends Table<E>> Cfg setOptimisticLock(Class<T> tableType, BiFunction<T, E, Predicate> block) {
+            setEntityOptimisticLock(ImmutableType.get(tableType), (BiFunction<Table<?>, Object, Predicate>) block);
+            return this;
+        }
+
+        @Override
+        public void setEntityOptimisticLock(ImmutableType type, BiFunction<Table<?>, Object, Predicate> block) {
+            if (this.optimisticLockLambdaMap.put(type, block) != null) {
+                throw new IllegalStateException(
+                        "The optimistic lock of \"" +
+                                type +
+                                "\" has already been set"
+                );
+            }
         }
 
         @Override

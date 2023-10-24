@@ -135,8 +135,7 @@ public class CachesImpl implements Caches {
                 operator
         );
         triggers.addEntityListener(type, e -> {
-            ImmutableSpi oldEntity = (ImmutableSpi) e.getOldEntity();
-            if (oldEntity != null && isAffectedBy(e)) {
+            if (isAffectedBy(e)) {
                 Object id = e.getId();
                 wrapper.delete(id, e.getReason());
             }

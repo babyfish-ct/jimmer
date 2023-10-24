@@ -21,13 +21,24 @@ public class ParameterizedCaches {
     private ParameterizedCaches() {}
 
     public static <K, V> Cache<K, V> create(ImmutableProp prop) {
-        return create(prop, null);
+        return create(prop, null, null);
+    }
+
+    public static <K, V> Cache<K, V> create(
+            ImmutableProp prop,
+            Consumer<Collection<String>> onDelete
+    ) {
+        return create(prop, onDelete, null);
     }
     
-    public static <K, V> Cache<K, V> create(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
+    public static <K, V> Cache<K, V> create(
+            ImmutableProp prop,
+            Consumer<Collection<String>> onDelete,
+            Map<String, Map<String, byte[]>> valueMap
+    ) {
         return new ChainCacheBuilder<K, V>()
                 .add(new LevelOneBinder<>())
-                .add(new LevelTwoBinder<>(prop, onDelete))
+                .add(new LevelTwoBinder<>(prop, onDelete, valueMap))
                 .build();
     }
 
@@ -107,13 +118,13 @@ public class ParameterizedCaches {
 
     private static class LevelTwoBinder<K, V> extends AbstractRemoteHashBinder<K, V> {
 
-        private final Map<String, Map<String, byte[]>> valueMap = new HashMap<>();
-
+        private final Map<String, Map<String, byte[]>> valueMap;
 
         private final Consumer<Collection<String>> onDelete;
 
-        protected LevelTwoBinder(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
+        LevelTwoBinder(ImmutableProp prop, Consumer<Collection<String>> onDelete, Map<String, Map<String, byte[]>> valueMap) {
             super(null, null, prop, Duration.ofSeconds(10), 0);
+            this.valueMap = valueMap != null ? valueMap : new HashMap<>();
             this.onDelete = onDelete;
         }
 

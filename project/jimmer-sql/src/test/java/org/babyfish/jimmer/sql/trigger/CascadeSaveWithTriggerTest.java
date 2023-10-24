@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.trigger;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.model.*;
@@ -1591,9 +1590,9 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                         "from ADMINISTRATOR tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("a_5");
+                        it.variables("a_5", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1608,9 +1607,9 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "tb_1_.ID, tb_1_.NAME, tb_1_.DELETED, tb_1_.CREATED_TIME, " +
                                         "tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("am_5");
+                        it.variables("am_5", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1699,6 +1698,8 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
 
     @Test
     public void testCascadeUpdateWithOneToOne() {
+        setAutoIds(AdministratorMetadata.class, 10010L);
+        setAutoIds(Administrator.class, 10001L);
         executeAndExpectResult(
                 getSqlClient(it -> {
                     UserIdGenerator<?> idGenerator = this::autoId;
@@ -1720,17 +1721,16 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 "select tb_1_.ID, tb_1_.NAME, " +
                                         "tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME " +
                                         "from ADMINISTRATOR tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("a_4");
+                        it.variables("a_4", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ADMINISTRATOR " +
-                                        "set DELETED = ?, MODIFIED_TIME = ? " +
-                                        "where ID = ?"
+                                "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) " +
+                                        "values(?, ?, ?, ?, ?)"
                         );
-                        it.variables(false, Interceptor.TIME, 4L);
+                        it.variables("a_4", false, Interceptor.TIME, Interceptor.TIME, 10001L);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -1738,25 +1738,15 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                         "tb_1_.DELETED, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, " +
                                         "tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.ADMINISTRATOR_ID " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("am_4");
+                        it.variables("am_4", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ADMINISTRATOR_METADATA " +
-                                        "set DELETED = ?, MODIFIED_TIME = ?, EMAIL = ?, WEBSITE = ?, ADMINISTRATOR_ID = ? " +
-                                        "where ID = ?"
+                                "insert into ADMINISTRATOR_METADATA(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, ID) values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
-                        it.variables(false, Interceptor.TIME, "email_4+", "website_4+", 4L, 40L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select ID " +
-                                        "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ? and ID not in (?)"
-                        );
-                        it.variables(4L, 40L);
+                        it.variables("am_4", false, Interceptor.TIME, Interceptor.TIME, "email_4+", "website_4+", 10001L, 10010L);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -1773,17 +1763,19 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
                                 "{" +
                                         "--->\"name\":\"a_4\"," +
                                         "--->\"deleted\":false," +
+                                        "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
                                         "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                                         "--->\"metadata\":{" +
                                         "--->--->\"name\":\"am_4\"," +
                                         "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
                                         "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                                         "--->--->\"email\":\"email_4+\"," +
                                         "--->--->\"website\":\"website_4+\"," +
-                                        "--->--->\"administrator\":{\"id\":4}," +
-                                        "--->--->\"id\":40" +
+                                        "--->--->\"administrator\":{\"id\":10001}," +
+                                        "--->--->\"id\":10010" +
                                         "--->}," +
-                                        "--->\"id\":4" +
+                                        "--->\"id\":10001" +
                                         "}"
                         );
                     });
@@ -1791,45 +1783,42 @@ public class CascadeSaveWithTriggerTest extends AbstractTriggerTest {
         );
         assertEvents(
                 "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"name\":\"a_4\"," +
-                        "--->--->\"deleted\":true," +
-                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
-                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                        "--->--->\"id\":4" +
-                        "--->}, " +
+                        "--->oldEntity=null, " +
                         "--->newEntity={" +
                         "--->--->\"name\":\"a_4\"," +
                         "--->--->\"deleted\":false," +
+                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
                         "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
-                        "--->--->\"id\":4" +
+                        "--->--->\"id\":10001" +
                         "--->}, " +
                         "--->reason=null" +
                         "}",
                 "Event{" +
-                        "--->oldEntity={" +
-                        "--->--->\"name\":\"am_4\"," +
-                        "--->--->\"deleted\":true," +
-                        "--->--->\"createdTime\":\"2022-10-03 00:00:00\"," +
-                        "--->--->\"modifiedTime\":\"2022-10-03 00:10:00\"," +
-                        "--->--->\"email\":\"email_4\"," +
-                        "--->--->\"website\":\"website_4\"," +
-                        "--->--->\"administrator\":{" +
-                        "--->--->--->\"id\":4" +
-                        "--->--->}," +
-                        "--->--->\"id\":40" +
-                        "--->}, " +
+                        "--->oldEntity=null, " +
                         "--->newEntity={" +
                         "--->--->\"name\":\"am_4\"," +
                         "--->--->\"deleted\":false," +
+                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
                         "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                         "--->--->\"email\":\"email_4+\"," +
                         "--->--->\"website\":\"website_4+\"," +
-                        "--->--->\"administrator\":{" +
-                        "--->--->--->\"id\":4" +
-                        "--->--->}," +
-                        "--->--->\"id\":40" +
+                        "--->--->\"administrator\":{\"id\":10001}," +
+                        "--->--->\"id\":10010" +
                         "--->}, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator, " +
+                        "--->sourceId=10010, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=10001, " +
+                        "--->reason=null" +
+                        "}",
+                "AssociationEvent{" +
+                        "--->prop=org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata, " +
+                        "--->sourceId=10001, " +
+                        "--->detachedTargetId=null, " +
+                        "--->attachedTargetId=10010, " +
                         "--->reason=null" +
                         "}"
         );

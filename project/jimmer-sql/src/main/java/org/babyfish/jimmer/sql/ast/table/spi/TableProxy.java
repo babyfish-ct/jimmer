@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.table.spi;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
+import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 public interface TableProxy<E> extends Table<E> {
@@ -10,6 +11,8 @@ public interface TableProxy<E> extends Table<E> {
     Table<?> __parent();
 
     ImmutableProp __prop();
+
+    WeakJoinHandle __weakJoinHandle();
 
     boolean __isInverse();
 

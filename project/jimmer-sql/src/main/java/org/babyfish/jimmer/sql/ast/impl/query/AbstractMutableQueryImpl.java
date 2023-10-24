@@ -10,7 +10,9 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.query.*;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
+import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -21,13 +23,23 @@ import java.util.function.Supplier;
 
 public abstract class AbstractMutableQueryImpl
         extends AbstractMutableStatementImpl
-        implements MutableQuery, SortableImplementor {
+        implements MutableQuery {
+
+    public static final int ORDER_BY_PRIORITY_STATEMENT = 0;
+
+    public static final int ORDER_BY_PRIORITY_GLOBAL_FILTER = 1;
+
+    public static final int ORDER_BY_PRIORITY_PROP_FILTER = 2;
 
     private final List<Expression<?>> groupByExpressions = new ArrayList<>();
 
     private List<Predicate> havingPredicates = new ArrayList<>();
 
     private final List<Order> orders = new ArrayList<>();
+
+    private int orderByPriority = ORDER_BY_PRIORITY_STATEMENT;
+
+    private int acceptedByPriority = ORDER_BY_PRIORITY_STATEMENT;
 
     private int subQueryDisabledCount = 0;
 
@@ -116,9 +128,7 @@ public abstract class AbstractMutableQueryImpl
     public AbstractMutableQueryImpl orderBy(Order... orders) {
         validateMutable();
         for (Order order : orders) {
-            if (order != null) {
-                this.orders.add(order);
-            }
+            addOrder(order);
         }
         return this;
     }
@@ -136,9 +146,7 @@ public abstract class AbstractMutableQueryImpl
     public AbstractMutableQueryImpl orderBy(List<Order> orders) {
         validateMutable();
         for (Order order : orders) {
-            if (order != null) {
-                this.orders.add(order);
-            }
+            addOrder(order);
         }
         return this;
     }
@@ -152,25 +160,16 @@ public abstract class AbstractMutableQueryImpl
         return this;
     }
 
+    public Predicate getHavingPredicate() {
+        freeze();
+        List<Predicate> ps = havingPredicates;
+        return ps.isEmpty() ? null : ps.get(0);
+    }
+
     @Override
     protected void onFrozen() {
         havingPredicates = mergePredicates(havingPredicates);
         super.onFrozen();
-    }
-
-    @Override
-    public void disableSubQuery() {
-        this.subQueryDisabledCount++;
-    }
-
-    @Override
-    public void enableSubQuery() {
-        this.subQueryDisabledCount--;
-    }
-
-    @Override
-    public boolean isSubQueryDisabled() {
-        return subQueryDisabledCount != 0;
     }
 
     void accept(
@@ -178,20 +177,19 @@ public abstract class AbstractMutableQueryImpl
             List<Selection<?>> overriddenSelections,
             boolean withoutSortingAndPaging
     ) {
-        Predicate predicate = getPredicate();
-        Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
+        List<Predicate> havingPredicates = this.havingPredicates;
         if (groupByExpressions.isEmpty() && !havingPredicates.isEmpty()) {
             throw new IllegalStateException(
                     "Having clause cannot be used without group clause"
             );
         }
-        if (predicate != null) {
+        for (Predicate predicate : getPredicates()) {
             ((Ast)predicate).accept(visitor);
         }
         for (Expression<?> expression : groupByExpressions) {
             ((Ast)expression).accept(visitor);
         }
-        if (havingPredicate != null) {
+        for (Predicate havingPredicate : havingPredicates) {
             ((Ast)havingPredicate).accept(visitor);
         }
         AstContext astContext = visitor.getAstContext();
@@ -216,14 +214,14 @@ public abstract class AbstractMutableQueryImpl
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
 
         Predicate predicate = getPredicate();
-        Predicate havingPredicate = havingPredicates.isEmpty() ? null : havingPredicates.get(0);
+        Predicate havingPredicate = getHavingPredicate();
 
         TableImplementor<?> tableImplementor = getTableImplementor();
         tableImplementor.renderTo(builder);
 
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
-            ((Ast)predicate).renderTo(builder);
+            ((Ast) predicate).renderTo(builder);
             builder.leave();
         }
         if (!groupByExpressions.isEmpty()) {
@@ -236,7 +234,7 @@ public abstract class AbstractMutableQueryImpl
         }
         if (havingPredicate != null) {
             builder.enter(SqlBuilder.ScopeType.HAVING);
-            ((Ast)havingPredicate).renderTo(builder);
+            ((Ast) havingPredicate).renderTo(builder);
             builder.leave();
         }
         if (!withoutSortingAndPaging && !orders.isEmpty()) {
@@ -266,8 +264,40 @@ public abstract class AbstractMutableQueryImpl
         return !this.groupByExpressions.isEmpty();
     }
 
-    List<Order> getOrders() {
+    @Override
+    protected List<Expression<?>> getGroupExpressions() {
+        return Collections.unmodifiableList(groupByExpressions);
+    }
+
+    @Override
+    public List<Predicate> getHavingPredicates() {
+        return Collections.unmodifiableList(havingPredicates);
+    }
+
+    @Override
+    protected List<Order> getOrders() {
         return Collections.unmodifiableList(orders);
+    }
+
+    public int getAcceptedOrderByPriority() {
+        return acceptedByPriority;
+    }
+
+    public void setOrderByPriority(int priority) {
+        this.orderByPriority = priority;
+    }
+
+    private void addOrder(Order order) {
+        int priorityDiff = orderByPriority - acceptedByPriority;
+        if (order == null || priorityDiff < 0) {
+            return;
+        }
+        if (priorityDiff > 0) {
+            this.orders.clear();
+            acceptedByPriority = orderByPriority;
+        }
+        this.orders.add(order);
+        modify();
     }
 
     private static class UseJoinOfIgnoredClauseVisitor extends AstVisitor {
@@ -282,13 +312,17 @@ public abstract class AbstractMutableQueryImpl
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
-            handle(table, prop != null && prop.isId());
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+            handle(
+                    table,
+                    prop != null && prop.isId() &&
+                    (rawId || table.isRawIdAllowed(getAstContext().getSqlClient()))
+            );
         }
 
-        private void handle(TableImplementor<?> table, boolean isId) {
+        private void handle(TableImplementor<?> table, boolean isRawId) {
             if (table.getDestructive() != TableRowCountDestructive.NONE) {
-                if (isId) {
+                if (isRawId) {
                     getAstContext().useTableId(table);
                     use(table.getParent());
                 } else {

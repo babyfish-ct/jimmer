@@ -22,6 +22,9 @@ internal abstract class KTableExImpl<E: Any>(
     override fun <X : Any> outerJoin(prop: String): KNullableTableEx<X> =
         KNullableTableExImpl(javaTable.join(prop, JoinType.LEFT))
 
+    override fun <X : Any> outerJoin(prop: ImmutableProp): KNullableTableEx<X> =
+        KNullableTableExImpl(javaTable.join(prop, JoinType.LEFT))
+
     override fun <X : Any> outerJoinReference(prop: KProperty1<E, X?>): KNullableTableEx<X> =
         KNullableTableExImpl(javaTable.join(prop.name, JoinType.LEFT))
 

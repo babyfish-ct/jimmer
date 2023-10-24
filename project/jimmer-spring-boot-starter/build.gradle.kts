@@ -39,8 +39,8 @@ dependencies {
     testAnnotationProcessor(project(":jimmer-apt"))
     kspTest(project(":jimmer-ksp"))
 
-    testImplementation("org.projectlombok:lombok:1.18.28")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.28")
+    testImplementation("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test:2.7.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")

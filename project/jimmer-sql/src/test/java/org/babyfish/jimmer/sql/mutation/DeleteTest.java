@@ -26,7 +26,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID in (?)");
+                        it.sql("select ID from BOOK where STORE_ID = ?");
                         it.variables(manningId);
                     });
                     ctx.throwable(it -> {
@@ -60,7 +60,7 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_STORE where ID in (?)");
+                        it.sql("delete from BOOK_STORE where ID = ?");
                         it.variables(manningId);
                     });
                     ctx
@@ -85,7 +85,7 @@ public class DeleteTest extends AbstractMutationTest {
                 }),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select ID from BOOK where STORE_ID in (?)");
+                        it.sql("select ID from BOOK where STORE_ID = ?");
                         it.variables(manningId);
                     });
                     ctx.statement(it -> {
@@ -97,7 +97,7 @@ public class DeleteTest extends AbstractMutationTest {
                         it.unorderedVariables(graphQLInActionId1, graphQLInActionId2, graphQLInActionId3);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_STORE where ID in (?)");
+                        it.sql("delete from BOOK_STORE where ID = ?");
                         it.variables(manningId);
                     });
                     ctx.totalRowCount(7);
@@ -145,15 +145,15 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("delete from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID in (?)");
+                        it.sql("delete from AUTHOR_COUNTRY_MAPPING where AUTHOR_ID = ?");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID in (?)");
+                        it.sql("delete from BOOK_AUTHOR_MAPPING where AUTHOR_ID = ?");
                         it.variables(alexId);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from AUTHOR where ID in (?)");
+                        it.sql("delete from AUTHOR where ID = ?");
                         it.variables(alexId);
                     });
                     ctx.totalRowCount(5);
@@ -172,19 +172,23 @@ public class DeleteTest extends AbstractMutationTest {
                         .setMode(DeleteMode.PHYSICAL),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("delete from ADMINISTRATOR_ROLE_MAPPING where ADMINISTRATOR_ID in (?)");
+                        it.sql("delete from ADMINISTRATOR_ROLE_MAPPING where ADMINISTRATOR_ID = ?");
                         it.variables(1L);
                     });
                     ctx.statement(it -> {
-                        it.sql("select ID from ADMINISTRATOR_METADATA where ADMINISTRATOR_ID in (?)");
+                        it.sql(
+                                "select ID " +
+                                        "from ADMINISTRATOR_METADATA " +
+                                        "where ADMINISTRATOR_ID = ?"
+                        );
                         it.variables(1L);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from ADMINISTRATOR_METADATA where ID in (?)");
+                        it.sql("delete from ADMINISTRATOR_METADATA where ID = ?");
                         it.variables(10L);
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from ADMINISTRATOR where ID in (?)");
+                        it.sql("delete from ADMINISTRATOR where ID = ?");
                     });
                 }
         );
@@ -199,7 +203,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?)");
+                        it.sql("select NODE_ID from TREE_NODE where PARENT_ID = ?");
                     });
                     ctx.statement(it -> {
                         it.sql("select NODE_ID from TREE_NODE where PARENT_ID in (?, ?)");
@@ -226,7 +230,7 @@ public class DeleteTest extends AbstractMutationTest {
                         it.sql("delete from TREE_NODE where NODE_ID in (?, ?)");
                     });
                     ctx.statement(it -> {
-                        it.sql("delete from TREE_NODE where NODE_ID in (?)");
+                        it.sql("delete from TREE_NODE where NODE_ID = ?");
                     });
                     ctx.totalRowCount(24);
                 }
@@ -242,7 +246,7 @@ public class DeleteTest extends AbstractMutationTest {
                 ),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("update ADMINISTRATOR_METADATA set DELETED = ? where ID in (?)");
+                        it.sql("update ADMINISTRATOR_METADATA set DELETED = ? where ID = ?");
                         it.variables(true, 10L);
                     });
                     ctx.totalRowCount(1);

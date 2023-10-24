@@ -106,11 +106,6 @@ public class JTypeScriptTest {
                 "    } | \n" +
                 "    {\n" +
                 "        readonly family: \"SAVE_ERROR_CODE\",\n" +
-                "        readonly code: \"ILLEGAL_VERSION\",\n" +
-                "        readonly \"exportedPath\": ExportedSavePath\n" +
-                "    } | \n" +
-                "    {\n" +
-                "        readonly family: \"SAVE_ERROR_CODE\",\n" +
                 "        readonly code: \"KEY_NOT_UNIQUE\",\n" +
                 "        readonly \"exportedPath\": ExportedSavePath\n" +
                 "    } | \n" +
@@ -147,6 +142,11 @@ public class JTypeScriptTest {
                 "    {\n" +
                 "        readonly family: \"SAVE_ERROR_CODE\",\n" +
                 "        readonly code: \"NULL_TARGET\",\n" +
+                "        readonly \"exportedPath\": ExportedSavePath\n" +
+                "    } | \n" +
+                "    {\n" +
+                "        readonly family: \"SAVE_ERROR_CODE\",\n" +
+                "        readonly code: \"OPTIMISTIC_LOCK_ERROR\",\n" +
                 "        readonly \"exportedPath\": ExportedSavePath\n" +
                 "    } | \n" +
                 "    {\n" +
@@ -244,7 +244,7 @@ public class JTypeScriptTest {
                 "            } | \n" +
                 "            {\n" +
                 "                readonly family: 'SAVE_ERROR_CODE',\n" +
-                "                readonly code: 'ILLEGAL_VERSION',\n" +
+                "                readonly code: 'OPTIMISTIC_LOCK_ERROR',\n" +
                 "                readonly [key:string]: any\n" +
                 "            } | \n" +
                 "            {\n" +
@@ -331,7 +331,7 @@ public class JTypeScriptTest {
                 "            } | \n" +
                 "            {\n" +
                 "                readonly family: 'SAVE_ERROR_CODE',\n" +
-                "                readonly code: 'ILLEGAL_VERSION',\n" +
+                "                readonly code: 'OPTIMISTIC_LOCK_ERROR',\n" +
                 "                readonly [key:string]: any\n" +
                 "            } | \n" +
                 "            {\n" +

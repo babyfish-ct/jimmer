@@ -8,11 +8,12 @@ import org.babyfish.jimmer.apt.meta.ImmutableType;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 
 import java.io.IOException;
 
-import static org.babyfish.jimmer.apt.generator.Constants.PROPS_FOR_CLASS_NAME;
-import static org.babyfish.jimmer.apt.generator.Constants.PROP_EXPRESSION_CLASS_NAME;
+import static org.babyfish.jimmer.apt.generator.Constants.*;
 
 public class PropsGenerator {
 
@@ -94,6 +95,7 @@ public class PropsGenerator {
                         addProp(prop, false);
                         addProp(prop, true);
                     }
+                    addIdProp(prop, type.getIdPropName(prop.getName()));
                 }
             }
             return typeBuilder.build();
@@ -148,11 +150,24 @@ public class PropsGenerator {
             ImmutableProp prop,
             boolean withJoinType
     ) {
-        MethodSpec method = PropsGenerator.property(
+        MethodSpec method = property(
                 context,
                 false,
                 prop,
                 withJoinType,
+                false
+        );
+        if (method != null) {
+            typeBuilder.addMethod(method);
+        }
+    }
+
+    private void addIdProp(ImmutableProp prop, String idPropName) {
+        MethodSpec method = associatedIdProperty(
+                context,
+                false,
+                prop,
+                idPropName,
                 false
         );
         if (method != null) {
@@ -202,20 +217,49 @@ public class PropsGenerator {
                 if (withJoinType) {
                     builder
                             .beginControlFlow("if (raw != null)")
-                            .addStatement("return new $T(raw.joinImplementor($S, joinType))", returnType, prop.getName())
+                            .addStatement(
+                                    "return new $T(raw.joinImplementor($T.$L.unwrap(), joinType))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            )
                             .endControlFlow()
-                            .addStatement("return new $T(joinOperation($S, joinType))", returnType, prop.getName());
+                            .addStatement(
+                                    "return new $T(joinOperation($T.$L.unwrap(), joinType))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            );
                 } else {
                     builder
                             .beginControlFlow("if (raw != null)")
-                            .addStatement("return new $T(raw.joinImplementor($S))", returnType, prop.getName())
+                            .addStatement(
+                                    "return new $T(raw.joinImplementor($T.$L.unwrap()))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            )
                             .endControlFlow()
-                            .addStatement("return new $T(joinOperation($S))", returnType, prop.getName());
+                            .addStatement(
+                                    "return new $T(joinOperation($T.$L.unwrap()))",
+                                    returnType,
+                                    prop.getDeclaringType().getPropsClassName(),
+                                    Strings.upper(prop.getName())
+                            );
                 }
             } else if (prop.isAssociation(false)) {
-                builder.addStatement("return new $T(get($S))", returnType, prop.getName());
+                builder.addStatement(
+                        "return new $T(__get($T.$L.unwrap()))",
+                        returnType,
+                        prop.getDeclaringType().getPropsClassName(),
+                        Strings.upper(prop.getName())
+                );
             } else {
-                builder.addStatement("return get($S)", prop.getName());
+                builder.addStatement(
+                        "return __get($T.$L.unwrap())",
+                        prop.getDeclaringType().getPropsClassName(),
+                        Strings.upper(prop.getName())
+                );
             }
         }
         return builder.build();
@@ -248,30 +292,72 @@ public class PropsGenerator {
                     className.simpleName() + ImmutableType.PROP_EXPRESSION_SUFFIX
             );
         } else {
-            if (prop.getTypeName().isPrimitive() && !prop.getTypeName().equals(TypeName.BOOLEAN)) {
-                returnType = ParameterizedTypeName.get(
-                        Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName().box()
-                );
-            } else if (context.isString(prop.getReturnType())) {
-                returnType = Constants.PROP_STRING_EXPRESSION_CLASS_NAME;
-            } else if (context.isNumber(prop.getReturnType())) {
-                returnType = ParameterizedTypeName.get(
-                        Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName().box()
-                );
-            } else if (context.isComparable(prop.getReturnType())) {
-                returnType = ParameterizedTypeName.get(
-                        Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName().box()
-                );
-            } else {
-                returnType = ParameterizedTypeName.get(
-                        PROP_EXPRESSION_CLASS_NAME,
-                        prop.getTypeName().box()
-                );
-            }
+            returnType = propExpressionTypeName(prop.getReturnType(), context);
         }
         return returnType;
+    }
+
+    static MethodSpec associatedIdProperty(
+            Context context,
+            boolean isTableEx,
+            ImmutableProp prop,
+            String idPropName,
+            boolean withImplementation
+    ) {
+        if (idPropName == null) {
+            return null;
+        }
+        if (prop.isTransient() || !prop.isAssociation(true) || prop.isList() != isTableEx) {
+            return null;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(idPropName)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(
+                        propExpressionTypeName(prop.getTargetType().getIdProp().getReturnType(), context)
+                );
+        if (withImplementation) {
+            if (!isTableEx) {
+                builder.addAnnotation(Override.class);
+            }
+        } else {
+            builder.addModifiers(Modifier.ABSTRACT);
+        }
+        if (withImplementation) {
+            builder.addStatement(
+                    "return __getAssociatedId($T.$L.unwrap())",
+                    prop.getDeclaringType().getPropsClassName(),
+                    Strings.upper(prop.getName())
+            );
+        }
+        return builder.build();
+    }
+
+    private static TypeName propExpressionTypeName(TypeMirror typeMirror, Context context) {
+        TypeName typeName = TypeName.get(typeMirror);
+        if (typeMirror.getKind().isPrimitive() && typeMirror.getKind() != TypeKind.BOOLEAN) {
+            return ParameterizedTypeName.get(
+                    Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
+                    typeName.box()
+            );
+        }
+        if (typeName.equals(STRING_CLASS_NAME)) {
+            return Constants.PROP_STRING_EXPRESSION_CLASS_NAME;
+        } else if (context.isNumber(typeMirror)) {
+            return ParameterizedTypeName.get(
+                    Constants.PROP_NUMERIC_EXPRESSION_CLASS_NAME,
+                    typeName.box()
+            );
+        } else if (context.isComparable(typeMirror)) {
+            return ParameterizedTypeName.get(
+                    Constants.PROP_COMPARABLE_EXPRESSION_CLASS_NAME,
+                    typeName.box()
+            );
+        } else {
+            return ParameterizedTypeName.get(
+                    PROP_EXPRESSION_CLASS_NAME,
+                    typeName.box()
+            );
+        }
     }
 }

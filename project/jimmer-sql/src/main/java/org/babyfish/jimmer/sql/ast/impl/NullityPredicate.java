@@ -45,7 +45,7 @@ class NullityPredicate extends AbstractPredicate {
                 builder.enter(SqlBuilder.ScopeType.AND);
                 for (String column : partial) {
                     builder.separator();
-                    tableImplementor.renderSelection(prop, builder, new SingleColumn(column, false));
+                    tableImplementor.renderSelection(prop, propExpr.isRawId(), builder, new SingleColumn(column, false));
                     if (negative) {
                         builder.sql(" is not null");
                     } else {

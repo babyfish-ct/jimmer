@@ -61,11 +61,17 @@ public interface Triggers {
 
     void fireMiddleTableInsert(ImmutableProp prop, Object sourceId, Object targetId, Connection con, Object reason);
 
-    default void fireAssociationEvict(ImmutableProp prop, Object sourceId) {
-        fireAssociationEvict(prop, sourceId, null);
+    default void fireEntityEvict(ImmutableType type, Object sourceId, Connection con) {
+        fireEntityEvict(type, sourceId, con, null);
     }
 
-    void fireAssociationEvict(ImmutableProp prop, Object sourceId, Object reason);
+    void fireEntityEvict(ImmutableType type, Object sourceId, Connection con, Object reason);
+
+    default void fireAssociationEvict(ImmutableProp prop, Object sourceId, Connection con) {
+        fireAssociationEvict(prop, sourceId, con, null);
+    }
+
+    void fireAssociationEvict(ImmutableProp prop, Object sourceId, Connection con, Object reason);
 
     boolean isTransaction();
 }

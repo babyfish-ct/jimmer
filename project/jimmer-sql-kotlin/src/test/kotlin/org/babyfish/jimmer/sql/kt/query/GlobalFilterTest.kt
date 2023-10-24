@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.filter.KFilter
 import org.babyfish.jimmer.sql.kt.filter.KFilterArgs
 import org.babyfish.jimmer.sql.kt.model.inheritance.*
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -16,8 +17,7 @@ class GlobalFilterTest : AbstractQueryTest() {
     @BeforeTest
     fun initialize() {
         _sqlClientForDeleted = sqlClient.filters {
-            disable(sqlClient.filters.builtIns.getDeclaredNotDeletedFilter(NamedEntity::class))
-            enable(sqlClient.filters.builtIns.getDeclaredAlreadyDeletedFilter(NamedEntity::class))
+            setBehavior(LogicalDeletedBehavior.REVERSED)
         }
     }
 
@@ -40,13 +40,13 @@ class GlobalFilterTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ROLE tb_1_ 
-                    |where tb_1_.DELETED = ?""".trimMargin()
-            ).variables(false)
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(true)
             statement(1).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from PERMISSION tb_1_ 
-                    |where tb_1_.ROLE_ID = ? and tb_1_.DELETED = ?""".trimMargin()
-            ).variables(100L, false)
+                    |where tb_1_.ROLE_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(100L, true)
             rows(
                 """[
                     |--->{
@@ -89,13 +89,13 @@ class GlobalFilterTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED, tb_1_.ROLE_ID 
                     |from PERMISSION tb_1_ 
-                    |where tb_1_.DELETED = ?""".trimMargin()
-            ).variables(false)
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(true)
             statement(1).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ROLE tb_1_ where tb_1_.ID in (?, ?) 
-                    |and tb_1_.DELETED = ?""".trimMargin()
-            ).variables(100L, 200L, false)
+                    |and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(100L, 200L, true)
             rows(
                 """[
                     |--->{
@@ -143,14 +143,14 @@ class GlobalFilterTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ADMINISTRATOR tb_1_ 
-                    |where tb_1_.DELETED = ?""".trimMargin()
-            ).variables(false)
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(true)
             statement(1).sql(
                 """select tb_2_.ADMINISTRATOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ROLE tb_1_ 
                     |inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ROLE_ID 
-                    |where tb_2_.ADMINISTRATOR_ID in (?, ?) and tb_1_.DELETED = ?""".trimMargin()
-            ).variables(1L, 3L, false)
+                    |where tb_2_.ADMINISTRATOR_ID in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(1L, 3L, true)
             rows(
                 """[
                     |--->{
@@ -208,14 +208,14 @@ class GlobalFilterTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ROLE tb_1_ 
-                    |where tb_1_.DELETED = ?""".trimMargin()
-            ).variables(false)
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(true)
             statement(1).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ADMINISTRATOR tb_1_ 
                     |inner join ADMINISTRATOR_ROLE_MAPPING tb_2_ on tb_1_.ID = tb_2_.ADMINISTRATOR_ID 
-                    |where tb_2_.ROLE_ID = ? and tb_1_.DELETED = ?""".trimMargin()
-            ).variables(100L, false)
+                    |where tb_2_.ROLE_ID = ? and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(100L, true)
             rows(
                 """[
                     |--->{
@@ -264,13 +264,13 @@ class GlobalFilterTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ADMINISTRATOR tb_1_ 
-                    |where tb_1_.DELETED = ?""".trimMargin()
-            ).variables(false)
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(true)
             statement(1).sql(
                 """select tb_1_.ADMINISTRATOR_ID, tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.DELETED 
                     |from ADMINISTRATOR_METADATA tb_1_ 
-                    |where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_1_.DELETED = ?""".trimMargin()
-            ).variables(1L, 3L, false)
+                    |where tb_1_.ADMINISTRATOR_ID in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(1L, 3L, true)
             rows(
                 """[
                     |--->{
@@ -328,13 +328,13 @@ class GlobalFilterTest : AbstractQueryTest() {
             sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.EMAIL, tb_1_.WEBSITE, tb_1_.DELETED, tb_1_.ADMINISTRATOR_ID 
                     |from ADMINISTRATOR_METADATA tb_1_ 
-                    |where tb_1_.DELETED = ?""".trimMargin()
-            ).variables(false)
+                    |where tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(true)
             statement(1).sql(
                 """select tb_1_.ID, tb_1_.NAME, tb_1_.CREATED_TIME, tb_1_.MODIFIED_TIME, tb_1_.DELETED 
                     |from ADMINISTRATOR tb_1_ 
-                    |where tb_1_.ID in (?, ?) and tb_1_.DELETED = ?""".trimMargin()
-            ).variables(1L, 3L, false)
+                    |where tb_1_.ID in (?, ?) and tb_1_.DELETED <> ?""".trimMargin()
+            ).variables(1L, 3L, true)
             rows(
                 """[
                     |--->{

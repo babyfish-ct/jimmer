@@ -4,6 +4,10 @@ create schema if not exists C;
 create schema if not exists D;
 
 drop alias contains_id if exists;
+drop table file_user_mapping if exists;
+drop table file_user if exists;
+drop table file if exists;
+drop table organization if exists;
 drop table task if exists;
 drop table worker if exists;
 drop table category if exists;
@@ -35,6 +39,8 @@ drop table author if exists;
 drop table country if exists;
 drop table book_store if exists;
 drop table tree_node if exists;
+drop sequence file_user_id_seq if exists;
+drop sequence file_id_seq if exists;
 drop sequence tree_node_id_seq if exists;
 drop table D.TABLE_ if exists;
 drop table C.TABLE_ if exists;
@@ -280,11 +286,17 @@ create table administrator(
     name varchar(50) not null,
     deleted boolean not null,
     created_time timestamp not null,
-    modified_time timestamp not null
+    modified_time timestamp not null,
+    __deleted_constraint_part int as (
+        case deleted when false then 1 else null end
+    )
 );
 alter table administrator
     add constraint pk_administrator
         primary key(id);
+alter table administrator
+    add constraint uq_administrator
+        unique(name, __deleted_constraint_part);
 
 create table administrator_metadata(
     id bigint not null,
@@ -705,3 +717,173 @@ alter table task
 
 insert into worker(id, name) values(1, 'Alex'), (2, 'James');
 insert into task(id, name, owner_id) values(9, 'Release package', null), (10, 'Take photo', 2);
+
+
+
+create table organization(
+    id bigint not null,
+    name varchar(20) not null,
+    parent_id bigint,
+    tenant varchar(10) not null
+);
+alter table organization
+    add constraint pk_organization
+        primary key(id);
+alter table organization
+    add constraint fk_organization_parent
+        foreign key(parent_id)
+            references organization(id);
+
+
+
+create table file(
+    id bigint not null,
+    name varchar(20) not null,
+    parent_id bigint
+);
+
+alter table file
+    add constraint pk_file
+        primary key(id);
+alter table file
+    add constraint uq_file
+        unique(parent_id, name);
+alter table file
+    add constraint fk_file__parent
+        foreign key(parent_id)
+            references file(id);
+create sequence file_id_seq as bigint start with 100;
+
+create table file_user(
+    id bigint not null,
+    name varchar(20) not null,
+    deleted_time datetime
+);
+
+alter table file_user
+    add constraint pk_file_user
+        primary key(id);
+alter table file_user
+    add constraint uq_file_user
+        unique(name);
+create sequence file_user_id_seq as bigint start with 100;
+
+create table file_user_mapping(
+    file_id bigint not null,
+    user_id bigint not null
+);
+alter table file_user_mapping
+    add constraint pk_file_user_mapping
+        primary key(file_id, user_id);
+alter table file_user_mapping
+    add constraint fk_file_user_mapping__file
+        foreign key(file_id)
+            references file(id);
+alter table file_user_mapping
+    add constraint fk_file_user_mapping__user
+        foreign key(user_id)
+            references file_user(id);
+
+insert into file(id, name, parent_id) values
+    (1, 'usr', null),
+        (2, 'bin', 1),
+            (3, 'cd', 2),
+            (4, 'vim', 2),
+            (5, 'grep', 2),
+            (6, 'wait', 2),
+            (7, 'which', 2),
+        (8, 'sbin', 1),
+            (9, 'ipconfig', 8),
+            (10, 'mtree', 8),
+            (11, 'purge', 8),
+            (12, 'ssh', 8),
+            (13, 'tcpctl', 8),
+        (14, 'lib', 1),
+            (15, 'sqlite3', 14),
+            (16, 'zsh', 14),
+            (17, 'libstdc++.dylib', 14),
+            (18, 'dtrace', 14),
+            (19, 'libgmalloc.dylib', 14),
+        (20, 'share', 1),
+            (21, 'man', 20),
+            (22, 'dict', 20),
+            (23, 'sandbox', 20),
+            (24, 'httpd', 20),
+            (25, 'locale', 20),
+        (26, 'local', 1),
+            (27, 'include', 26),
+                (28, 'node', 27),
+                    (29, 'v8-external.h', 28),
+                    (30, 'v8-internal.h', 28),
+                    (31, 'v8-json.h', 28),
+                    (32, 'v8-object.h', 28),
+                    (33, 'v8-platform.h', 28),
+            (34, 'lib', 26),
+                (35, 'node_modules', 34),
+                    (36, 'npm', 35),
+                    (37, 'corepack', 35),
+                    (38, 'typescript', 35),
+                    (39, 'docsify-cli', 35),
+    (40, 'etc', null),
+        (41, 'passwd', 40),
+        (42, 'hosts', 40),
+        (43, 'ssh', 40),
+        (44, 'profile', 40),
+        (45, 'services', 40)
+;
+
+insert into file_user(id, name, deleted_time) values
+    (1, 'root', '2023-10-13 04:48:21'),
+    (2, 'bob', null),
+    (3, 'alex', null),
+    (4, 'jessica', null),
+    (5, 'linda', '2023-10-13 04:48:24')
+;
+
+insert into file_user_mapping(file_id, user_id) values
+    (1, 1), (1, 2), (1, 3), (1, 4),
+        (2, 1), (2, 2), (2, 3),
+            (3, 1), (3, 2),
+            (4, 2), (4, 3),
+            (5, 3), (5, 1),
+            (6, 1), (6, 2),
+            (7, 2), (7, 3),
+        (8, 2), (8, 3), (8, 4),
+            (9, 2), (9, 3),
+            (10, 3), (10, 4),
+            (11, 4), (11, 2),
+            (12, 2), (12, 3),
+            (13, 3), (13, 4),
+        (14, 3), (14, 4), (14, 1),
+            (15, 3), (15, 4),
+            (16, 4), (16, 1),
+            (17, 1), (17, 3),
+            (18, 3), (18, 4),
+            (19, 4), (19, 1),
+        (20, 4), (20, 1), (20, 2),
+            (21, 4), (21, 1),
+            (22, 1), (22, 2),
+            (23, 2), (23, 4),
+            (24, 4), (24, 1),
+            (25, 1), (25, 2),
+        (26, 1), (26, 2), (26, 3),
+            (27, 1), (27, 2), (27, 3),
+                (28, 1), (28, 2), (28, 3),
+                    (29, 1), (29, 2),
+                    (30, 2), (30, 3),
+                    (31, 3), (31, 1),
+                    (32, 1), (32, 2),
+                    (33, 2), (33, 3),
+            (34, 1), (34, 2), (34, 3),
+                (35, 1), (35, 2), (35, 3),
+                    (36, 1), (36, 2),
+                    (37, 2), (37, 3),
+                    (38, 3), (38, 1),
+                    (39, 1), (39, 2),
+    (40, 2), (40, 3), (40, 4), (40, 5),
+        (41, 2), (41, 3), (41, 4),
+        (42, 3), (42, 4), (42, 5),
+        (43, 4), (43, 5), (43, 2),
+        (44, 5), (44, 2), (44, 3),
+        (45, 2), (45, 3), (45, 4)
+;

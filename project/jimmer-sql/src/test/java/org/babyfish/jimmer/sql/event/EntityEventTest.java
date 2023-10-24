@@ -113,7 +113,7 @@ public class EntityEventTest {
         );
         Assertions.assertEquals(
                 manningId,
-                event.<BookStore>getUnchangedRef(BookProps.STORE).getValue().id()
+                event.getUnchangedRef(BookProps.STORE).getValue().id()
         );
     }
 

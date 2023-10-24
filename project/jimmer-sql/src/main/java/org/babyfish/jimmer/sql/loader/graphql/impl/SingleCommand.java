@@ -79,7 +79,8 @@ class SingleCommand<T> implements Executable<T> {
                 prop,
                 filter,
                 limit,
-                offset
+                offset,
+                false
         ).load(Collections.singleton(source)).get(source);
         return result != null ? result : defaultValue;
     }

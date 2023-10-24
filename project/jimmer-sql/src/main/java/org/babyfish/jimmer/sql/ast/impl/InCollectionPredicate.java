@@ -44,20 +44,30 @@ class InCollectionPredicate extends AbstractPredicate {
             builder.sql(negative ? "1 = 1" : "1 = 0");
         } else {
             renderChild((Ast) expression, builder);
-            builder.sql(negative ? " not in " : " in ").enter(SqlBuilder.ScopeType.LIST);
             Collection<?> convertedValues = this.convertedValues;
             if (convertedValues == null) {
                 convertedValues = Literals.convert(values, expression, builder.getAstContext().getSqlClient());
                 this.convertedValues = convertedValues;
             }
-            for (Object value : convertedValues) {
+            if (convertedValues.size() == 1) {
+                Object value = convertedValues.iterator().next();
+                builder.sql(negative ? " <> " : " = ");
                 if (value != null) {
-                    builder.separator().variable(value);
+                    builder.variable(value);
                 } else {
-                    builder.separator().nullVariable(((ExpressionImplementor<?>)expression).getType());
+                    builder.nullVariable(((ExpressionImplementor<?>)expression).getType());
                 }
+            } else {
+                builder.sql(negative ? " not in " : " in ").enter(SqlBuilder.ScopeType.LIST);
+                for (Object value : convertedValues) {
+                    if (value != null) {
+                        builder.separator().variable(value);
+                    } else {
+                        builder.separator().nullVariable(((ExpressionImplementor<?>) expression).getType());
+                    }
+                }
+                builder.leave();
             }
-            builder.leave();
         }
     }
 

@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.event;
 
+import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.TestUtils;
+import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +40,8 @@ public class TriggersTest {
     @BeforeEach
     public void initialize() {
 
-        triggers = new TriggersImpl(false);
+        JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
+        triggers = (TriggersImpl) sqlClient.getTriggers();
         bookEvents = new ArrayList<>();
         bookStoreEvents = new ArrayList<>();
         storeBookListEvents = new ArrayList<>();

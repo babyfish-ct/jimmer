@@ -2,9 +2,11 @@ package org.babyfish.jimmer.sql.kt.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
+import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.event.binlog.BinLog
@@ -42,7 +44,7 @@ internal class KSqlClientImpl(
             javaClient,
             ImmutableType.get(entityType.java),
             ExecutionPurpose.QUERY,
-            false
+            FilterLevel.DEFAULT
         )
         return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
@@ -139,4 +141,8 @@ internal class KSqlClientImpl(
 
     override val binLog: BinLog
         get() = javaClient.binLog
+
+    override fun initialize() {
+        javaClient.initialize()
+    }
 }

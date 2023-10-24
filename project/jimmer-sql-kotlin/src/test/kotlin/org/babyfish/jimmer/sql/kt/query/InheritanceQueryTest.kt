@@ -6,13 +6,14 @@ import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.inheritance.Role
 import org.babyfish.jimmer.sql.kt.model.inheritance.createdTime
 import org.babyfish.jimmer.sql.kt.model.inheritance.fetchBy
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior
 import java.time.LocalDateTime
 import kotlin.test.Test
 
 class InheritanceQueryTest : AbstractQueryTest() {
 
     private val _sqlClient: KSqlClient = sqlClient {
-        ignoreBuiltInFilters()
+        setLogicalDeletedBehavior(LogicalDeletedBehavior.IGNORED)
     }
 
     @Test

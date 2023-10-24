@@ -19,10 +19,29 @@ internal class KNullableTableExImpl<E: Any>(
 ) : KTableExImpl<E>(javaTable), KNullableTableEx<E> {
 
     @Suppress("UNCHECKED_CAST")
-    override fun <X : Any, EXP : KPropExpression<X>> get(prop: String): EXP =
-        NullablePropExpressionImpl(javaTable.get<PropExpressionImpl<X>>(prop)) as EXP
+    override fun <X: Any> get(prop: String): KPropExpression<X> =
+        NullablePropExpressionImpl(javaTable.get<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X: Any> get(prop: ImmutableProp): KPropExpression<X> =
+        NullablePropExpressionImpl(javaTable.get<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X: Any> getId(): KPropExpression<X> =
+        NullablePropExpressionImpl(javaTable.getId<PropExpressionImpl<X>>() as PropExpressionImpl<X>)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X: Any> getAssociatedId(prop: String): KPropExpression<X> =
+        NullablePropExpressionImpl(javaTable.getAssociatedId<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <X: Any> getAssociatedId(prop: ImmutableProp): KPropExpression<X> =
+        NullablePropExpressionImpl(javaTable.getAssociatedId<PropExpressionImpl<X>>(prop) as PropExpressionImpl<X>)
 
     override fun <X : Any> join(prop: String): KNonNullTableEx<X> =
+        KNonNullTableExImpl(javaTable.join(prop))
+
+    override fun <X : Any> join(prop: ImmutableProp): KNonNullTableEx<X> =
         KNonNullTableExImpl(javaTable.join(prop))
 
     override fun <X : Any> joinReference(prop: KProperty1<E, X?>): KNonNullTableEx<X> =

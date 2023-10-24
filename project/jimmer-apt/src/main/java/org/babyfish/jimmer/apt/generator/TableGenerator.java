@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -104,6 +105,7 @@ public class TableGenerator {
                     addProperty(prop, false);
                     addProperty(prop, true);
                 }
+                addIdProperty(prop, type.getIdPropName(prop.getName()));
             }
             addAsTableEx();
             addDisableJoin();
@@ -192,6 +194,19 @@ public class TableGenerator {
                 isTableEx,
                 prop,
                 withJoinType,
+                true
+        );
+        if (method != null) {
+            typeBuilder.addMethod(method);
+        }
+    }
+
+    private void addIdProperty(ImmutableProp prop, String idPropName) {
+        MethodSpec method = PropsGenerator.associatedIdProperty(
+                context,
+                isTableEx,
+                prop,
+                idPropName,
                 true
         );
         if (method != null) {
@@ -351,7 +366,11 @@ public class TableGenerator {
                 .methodBuilder(type.getIdProp().getName())
                 .addModifiers(Modifier.PUBLIC)
                 .returns(PropsGenerator.returnTypeName(context, false, type.getIdProp()))
-                .addStatement("return get($S)", type.getIdProp().getName());
+                .addStatement(
+                        "return __get($T.$L.unwrap())",
+                        type.getPropsClassName(),
+                        StringUtil.snake(type.getIdProp().getName(), StringUtil.SnakeCase.UPPER)
+                );
         typeBuilder.addMethod(builder.build());
     }
 
