@@ -13,9 +13,9 @@ class JimmerConfig {
     // Jimmer uses this load balanced client to fetch data across microservices
     @LoadBalanced
     @Bean
-    fun restTemplate() =
+    fun restTemplate(): RestTemplate =
         RestTemplateBuilder()
             .setConnectTimeout(Duration.ofSeconds(1))
-            .setReadTimeout(Duration.ofSeconds(1))
+            .setReadTimeout(Duration.ofSeconds(2))
             .build()
 }
