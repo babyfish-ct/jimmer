@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
@@ -134,7 +135,6 @@ public class MutableUpdateImpl
     }
 
     private int executeImpl(Connection con) {
-        freeze();
         if (assignmentMap.isEmpty()) {
             return 0;
         }
@@ -144,6 +144,7 @@ public class MutableUpdateImpl
         }
 
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
+        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
         renderTo(builder);
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return getSqlClient()

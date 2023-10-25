@@ -173,7 +173,12 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
 
         basePath = basePath.substring(0, basePath.lastIndexOf('/'));
-        File baseFile = new File(URLDecoder.decode(basePath, StandardCharsets.UTF_8));
+        File baseFile = null;
+        try {
+            baseFile = new File(URLDecoder.decode(basePath, "utf-8"));
+        } catch (UnsupportedEncodingException ex) {
+            throw new AssertionError("UTF-8 is not supported by url decorder");
+        }
         if (!baseFile.exists()) {
             throw new AssertionError("The target directory \"" + basePath + "\" does not exists");
         }
@@ -265,7 +270,6 @@ public class ImmutableProcessor extends AbstractProcessor {
     private boolean include(TypeElement typeElement) {
         String qualifiedName = typeElement.getQualifiedName().toString();
         if (includes != null) {
-            boolean matched = false;
             for (String include : includes) {
                 if (qualifiedName.startsWith(include)) {
                     return true;

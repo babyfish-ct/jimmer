@@ -99,6 +99,10 @@ public interface Entities {
 
     DeleteCommand deleteCommand(Class<?> type, Object id);
 
+    default DeleteCommand deleteCommand(Class<?> type, Object id, DeleteMode mode) {
+        return deleteCommand(type, id).setMode(mode);
+    }
+
     default DeleteResult deleteAll(Class<?> type, Collection<?> ids) {
         return deleteAllCommand(type, ids).execute();
     }

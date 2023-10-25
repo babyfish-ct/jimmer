@@ -528,7 +528,8 @@ insert into animal(id, name) values(1, 'Trigger'), (2, 'Lion');
 
 create table department(
     id bigint not null,
-    name varchar(20) not null
+    name varchar(20) not null,
+    deleted_time datetime
 );
 alter table department
     add constraint pk_department
@@ -537,7 +538,8 @@ alter table department
 create table employee(
     id bigint not null,
     name varchar(20) not null,
-    department_id bigint not null
+    department_id bigint,
+    deleted_time datetime
 );
 alter table employee
     add constraint pk_employee

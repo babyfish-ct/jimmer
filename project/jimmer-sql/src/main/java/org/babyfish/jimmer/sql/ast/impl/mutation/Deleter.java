@@ -6,7 +6,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.LogicalDeleted;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -30,8 +29,6 @@ import java.util.*;
 public class Deleter {
 
     private final DeleteCommandImpl.Data data;
-
-    private final DeleteCommandImpl.Data cascadeData;
 
     private final Connection con;
 
@@ -58,8 +55,6 @@ public class Deleter {
             Map<AffectedTable, Integer> affectedRowCountMap
     ) {
         this.data = data;
-        this.cascadeData = new DeleteCommandImpl.Data(data);
-        this.cascadeData.setMode(DeleteMode.PHYSICAL);
         this.con = con;
         this.cache = cache;
         this.trigger = trigger;
@@ -125,10 +120,11 @@ public class Deleter {
         if (ids.isEmpty()) {
             return;
         }
-        if (logical(immutableType)) {
-            addPostHandleInput(immutableType, ids);
-            return;
-        }
+
+//        if (logical(immutableType)) {
+//            addPostHandleInput(immutableType, ids);
+//            return;
+//        }
 
         DissociationInfo dissociationInfo = data.getSqlClient().getEntityManager().getDissociationInfo(immutableType);
         if (dissociationInfo != null) {
@@ -199,7 +195,7 @@ public class Deleter {
                         );
                         int affectedRowCount = childTableOperator.unsetParents(ids);
                         addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
-                    } else {
+                    } else if (dissociateAction != DissociateAction.NONE || !logical(backProp.getTargetType())) {
                         tryDeleteFromChildTable(backProp, ids);
                     }
                 }
@@ -213,9 +209,15 @@ public class Deleter {
 
         ImmutableType childType = backProp.getDeclaringType();
 
+        FilterLevel filterLevel;
+        if (data.getMode() != DeleteMode.PHYSICAL && logical(backProp.getDeclaringType())) {
+            filterLevel = FilterLevel.DEFAULT;
+        } else {
+            filterLevel = FilterLevel.IGNORE_ALL;
+        }
         List<Object> childIds;
-        if (trigger != null) {
-            childIds = findChildIdsWithoutFiltersByDsl(backProp, ids);
+        if (trigger != null || filterLevel != FilterLevel.IGNORE_ALL) {
+            childIds = findChildIdsByDsl(backProp, ids, filterLevel);
         } else {
             MetadataStrategy strategy = data.getSqlClient().getMetadataStrategy();
             ColumnDefinition definition = backProp.getStorage(strategy);
@@ -281,7 +283,7 @@ public class Deleter {
             }
             Deleter childDeleter = childDeleterMap.computeIfAbsent(
                     backProp.toString(),
-                    it -> new Deleter(cascadeData, con, cache, trigger, affectedRowCountMap)
+                    it -> new Deleter(data, con, cache, trigger, affectedRowCountMap)
             );
             childDeleter.addPreHandleInput(childType, childIds);
             childDeleter.preHandle();
@@ -289,16 +291,19 @@ public class Deleter {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Object> findChildIdsWithoutFiltersByDsl(ImmutableProp backProp, Collection<?> ids) {
+    private List<Object> findChildIdsByDsl(ImmutableProp backProp, Collection<?> ids, FilterLevel filterLevel) {
         ImmutableType childType = backProp.getDeclaringType();
-        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(data.getSqlClient(), childType, ExecutionPurpose.MUTATE, FilterLevel.IGNORE_ALL);
+        MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(data.getSqlClient(), childType, ExecutionPurpose.MUTATE, filterLevel);
         TableImplementor<?> table = query.getTableImplementor();
         query.where(table.getAssociatedId(backProp).in((Collection<Object>)ids));
         List<Object> childRows = (List<Object>) query.select(table).execute(con);
         List<Object> childIds = new ArrayList<>(childRows.size());
         PropId childIdProp = childType.getIdProp().getId();
+        MutationCache cache = this.cache;
         for (Object childRow : childRows) {
-            cache.save((ImmutableSpi) childRow, false);
+            if (cache != null) {
+                cache.save((ImmutableSpi) childRow, false);
+            }
             childIds.add(((ImmutableSpi) childRow).__get(childIdProp));
         }
         return childIds;
