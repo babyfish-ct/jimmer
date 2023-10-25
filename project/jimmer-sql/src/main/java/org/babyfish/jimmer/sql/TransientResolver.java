@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.sql.cache.PropCacheInvalidator;
 import org.babyfish.jimmer.sql.loader.AbstractDataLoader;
+import org.babyfish.jimmer.sql.loader.TransientResolverContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -58,6 +59,10 @@ public interface TransientResolver<ID, V> extends PropCacheInvalidator {
      */
     @NotNull
     static Connection currentConnection() {
-        return AbstractDataLoader.transientResolverConnection();
+        TransientResolverContext ctx = TransientResolverContext.peek();
+        if (ctx == null) {
+            throw new IllegalStateException("The current thread is not resolving transient resolver");
+        }
+        return ctx.getConnection();
     }
 }

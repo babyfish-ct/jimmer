@@ -32,6 +32,11 @@ BookView : Key {
     }
 }
 
+BookView2 {
+    #allScalars
+    authorIds
+}
+
 input-only BookSpecification {
     #allScalars(Book)?
 

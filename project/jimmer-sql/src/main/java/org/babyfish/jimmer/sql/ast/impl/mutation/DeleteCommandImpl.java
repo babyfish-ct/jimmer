@@ -151,7 +151,15 @@ public class DeleteCommandImpl implements DeleteCommand {
 
         public DissociateAction getDissociateAction(ImmutableProp prop) {
             DissociateAction action = dissociateActionMap.get(prop);
-            return action != null ? action : prop.getDissociateAction();
+            if (action == null) {
+                action = prop.getDissociateAction();
+            }
+            if (action == DissociateAction.NONE) {
+                action = sqlClient.isDefaultDissociationActionCheckable() ?
+                        DissociateAction.CHECK :
+                        DissociateAction.LAX;
+            }
+            return action;
         }
 
         public Data freeze() {

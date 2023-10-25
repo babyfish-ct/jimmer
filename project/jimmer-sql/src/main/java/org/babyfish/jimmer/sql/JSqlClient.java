@@ -25,7 +25,6 @@ import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -339,6 +338,9 @@ public interface JSqlClient extends SubQueryProvider {
 
         @OldChain
         Builder addDisabledFilters(Collection<? extends Filter<?>> filters);
+
+        @OldChain
+        Builder setDefaultDissociateActionCheckable(boolean checkable);
 
         @OldChain
         Builder setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel checkingLevel);

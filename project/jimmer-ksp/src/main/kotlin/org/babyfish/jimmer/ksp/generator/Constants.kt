@@ -17,6 +17,7 @@ import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.sql.collection.IdViewList
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import org.babyfish.jimmer.sql.collection.MutableIdViewList
+import java.io.Serializable
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.LocalDate
@@ -35,6 +36,7 @@ internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
+internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()

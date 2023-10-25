@@ -54,7 +54,8 @@ create table A.TABLE_(
 
 create table B.TABLE_(
     id bigint not null primary key,
-    status varchar(7) not null
+    status varchar(7) not null,
+    a_id bigint
 );
 
 create table C.TABLE_(
@@ -528,7 +529,8 @@ insert into animal(id, name) values(1, 'Trigger'), (2, 'Lion');
 
 create table department(
     id bigint not null,
-    name varchar(20) not null
+    name varchar(20) not null,
+    deleted_time datetime
 );
 alter table department
     add constraint pk_department
@@ -537,7 +539,8 @@ alter table department
 create table employee(
     id bigint not null,
     name varchar(20) not null,
-    department_id bigint not null
+    department_id bigint,
+    deleted_time datetime
 );
 alter table employee
     add constraint pk_employee

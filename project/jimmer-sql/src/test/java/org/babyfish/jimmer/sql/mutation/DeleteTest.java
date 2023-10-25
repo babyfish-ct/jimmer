@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.hr.Department;
+import org.babyfish.jimmer.sql.model.hr.EmployeeProps;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
@@ -250,6 +252,134 @@ public class DeleteTest extends AbstractMutationTest {
                         it.variables(true, 10L);
                     });
                     ctx.totalRowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeLogicalDeleteWithLax() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Department.class,
+                        1L
+                ).setDissociateAction(EmployeeProps.DEPARTMENT, DissociateAction.LAX),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
+                    });
+                    ctx.totalRowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeLogicalDeleteWithCheck() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Department.class,
+                        1L
+                ).setDissociateAction(EmployeeProps.DEPARTMENT, DissociateAction.CHECK),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_TIME, tb_1_.DEPARTMENT_ID " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_TIME is null"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Cannot delete entities whose type are \"org.babyfish.jimmer.sql.model.hr.Department\" " +
+                                        "because there are some child entities whose type are \"org.babyfish.jimmer.sql.model.hr.Employee\", " +
+                                        "these child entities use the association property \"org.babyfish.jimmer.sql.model.hr.Employee.department\" " +
+                                        "to reference current entities."
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeLogicalDeleteWithSetNull() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Department.class,
+                        1L
+                ).setDissociateAction(
+                        EmployeeProps.DEPARTMENT,
+                        DissociateAction.SET_NULL
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update EMPLOYEE tb_1_ " +
+                                        "set DEPARTMENT_ID = null " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_TIME is null"
+                        );
+                        it.variables(1L);
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
+                    });
+                    ctx.totalRowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeForceDeleteWithDelete() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Department.class,
+                        1L,
+                        DeleteMode.PHYSICAL
+                ).setDissociateAction(
+                        EmployeeProps.DEPARTMENT,
+                        DissociateAction.DELETE
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select ID from EMPLOYEE where DEPARTMENT_ID = ?"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from EMPLOYEE where ID in (?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("delete from DEPARTMENT where ID = ?");
+                    });
+                    ctx.totalRowCount(3);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeForceWithDelete() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Department.class,
+                        1L
+                ).setDissociateAction(
+                        EmployeeProps.DEPARTMENT,
+                        DissociateAction.DELETE
+                ),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_TIME, tb_1_.DEPARTMENT_ID " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and " +
+                                        "tb_1_.DELETED_TIME is null"
+                        );
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update EMPLOYEE set DELETED_TIME = ? where ID in (?, ?)");
+                    });
+                    ctx.statement(it -> {
+                        it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
+                    });
+                    ctx.totalRowCount(3);
                 }
         );
     }

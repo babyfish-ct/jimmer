@@ -1145,7 +1145,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setAppendOnlyAll(),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID from DEPARTMENT tb_1_ where tb_1_.ID = ?");
+                        it.sql(
+                                "select tb_1_.ID from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.ID = ? and " +
+                                        "tb_1_.DELETED_TIME is null"
+                        );
                         it.variables(1L);
                     });
                     ctx.statement(it -> {

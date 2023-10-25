@@ -8,7 +8,6 @@ import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
@@ -253,20 +252,20 @@ class ChildTableOperator {
 
     public int unsetParent(Object parentId, Collection<Object> retainedChildIds) {
         if (trigger != null) {
-            return unsetParentAndPrepareEvents(Collections.singleton(parentId), retainedChildIds);
+            return unsetParentsAndPrepareEvents(Collections.singleton(parentId), retainedChildIds);
         }
-        return unsetParentImpl(Collections.singleton(parentId), retainedChildIds);
+        return unsetParentsImpl(Collections.singleton(parentId), retainedChildIds);
     }
 
     public int unsetParents(Collection<Object> parentIds) {
         if (trigger != null) {
-            return unsetParentAndPrepareEvents(parentIds, Collections.emptyList());
+            return unsetParentsAndPrepareEvents(parentIds, Collections.emptyList());
         }
-        return unsetParentImpl(parentIds, Collections.emptyList());
+        return unsetParentsImpl(parentIds, Collections.emptyList());
     }
 
     @SuppressWarnings("unchecked")
-    private int unsetParentAndPrepareEvents(Collection<Object> parentIds, Collection<Object> retainedChildIds) {
+    private int unsetParentsAndPrepareEvents(Collection<Object> parentIds, Collection<Object> retainedChildIds) {
         assert trigger != null;
         PropId parentPropId = parentProp.getId();
         ImmutableType childType = parentProp.getDeclaringType();
@@ -301,10 +300,10 @@ class ChildTableOperator {
         return setParentImpl(null, affectedChildIds);
     }
     
-    private int unsetParentImpl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
+    private int unsetParentsImpl(Collection<Object> parentIds, Collection<Object> retainedChildIds) {
 
         if (hasFilter) {
-            return unsetParentImplByDsl(parentId, retainedChildIds);
+            return unsetParentImplByDsl(parentIds, retainedChildIds);
         }
 
         SqlBuilder builder = new SqlBuilder(new AstContext(sqlClient));
@@ -323,7 +322,7 @@ class ChildTableOperator {
         }
         builder.leave();
 
-        addDetachConditions(builder, parentId, retainedChildIds);
+        addDetachConditions(builder, parentIds, retainedChildIds);
 
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return sqlClient.getExecutor().execute(
@@ -340,14 +339,12 @@ class ChildTableOperator {
         );
     }
 
-    private int unsetParentImplByDsl(Collection<Object> parentId, Collection<Object> retainedChildIds) {
+    private int unsetParentImplByDsl(Collection<Object> parentIds, Collection<Object> retainedChildIds) {
         ImmutableType childType = parentProp.getDeclaringType();
-        ImmutableType parentType = parentProp.getTargetType();
-        ImmutableProp parentIdProp = parentType.getIdProp();
         MutableUpdateImpl update = new MutableUpdateImpl(sqlClient, childType);
         TableImplementor<?> table = update.getTableImplementor();
-        update.set((PropExpression<Object>)table.getAssociatedId(parentProp), (Object) null);
-        update.where(table.getAssociatedId(parentProp).eq(parentId));
+        update.set(table.getAssociatedId(parentProp), (Object) null);
+        update.where(table.getAssociatedId(parentProp).in(parentIds));
         if (retainedChildIds != null && !retainedChildIds.isEmpty()) {
             update.where(table.get(childType.getIdProp()).notIn(retainedChildIds));
         }
