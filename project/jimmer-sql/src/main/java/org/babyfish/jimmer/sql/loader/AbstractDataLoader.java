@@ -45,8 +45,6 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractDataLoader {
 
-    private static final ThreadLocal<Connection> TRANSIENT_RESOLVER_CON_LOCAL = new ThreadLocal<>();
-
     /* For globalFilter is not null but not `Filter.Parameterized` */
     private static final SortedMap<String, Object> ILLEGAL_PARAMETERS =
             Collections.unmodifiableSortedMap(new TreeMap<>());
@@ -211,7 +209,7 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, Object> loadTransients(Collection<ImmutableSpi> sources) {
 
-        Collection<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         TransientResolver<Object, Object> resolver =
                 ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
@@ -248,11 +246,11 @@ public abstract class AbstractDataLoader {
 
         if (!useCache) {
             Map<Object, Object> resolvedMap;
-            TRANSIENT_RESOLVER_CON_LOCAL.set(con);
+            TransientResolverContext ctx = TransientResolverContext.push(con, resolver, sourceIds);
             try {
                 resolvedMap = translateResolvedMap(resolver.resolve(sourceIds), sourceIds);
             } finally {
-                TRANSIENT_RESOLVER_CON_LOCAL.remove();
+                TransientResolverContext.pop(ctx);
             }
             return Utils.joinCollectionAndMap(
                     sources,
@@ -265,11 +263,11 @@ public abstract class AbstractDataLoader {
                 sqlClient,
                 con,
                 (ids) -> {
-                    TRANSIENT_RESOLVER_CON_LOCAL.set(con);
+                    TransientResolverContext ctx = TransientResolverContext.push(con, resolver, ids);
                     try {
                         return resolver.resolve(ids);
                     } finally {
-                        TRANSIENT_RESOLVER_CON_LOCAL.remove();
+                        TransientResolverContext.pop(ctx);
                     }
                 },
                 false
@@ -434,7 +432,7 @@ public abstract class AbstractDataLoader {
                     Tuple2.toMap(tuples)
             );
         }
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, Object> idMap;
         if (remote) {
             idMap = Tuple2.toMap(querySourceTargetIdPairs(sourceIds));
@@ -463,7 +461,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, ImmutableSpi> targetMap;
         if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMap(
@@ -513,7 +511,7 @@ public abstract class AbstractDataLoader {
                     Tuple2.toMultiMap(tuples)
             );
         }
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<Object>> idMultiMap;
         if (remote) {
             idMultiMap = Tuple2.toMultiMap(
@@ -552,7 +550,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<ImmutableSpi>> targetMap;
         if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMultiMap(
@@ -740,11 +738,12 @@ public abstract class AbstractDataLoader {
         return source.__get(sourceIdProp.getId());
     }
 
-    private List<Object> toSourceIds(Collection<ImmutableSpi> sources) {
-        return sources
-                .stream()
-                .map(this::toSourceId)
-                .collect(Collectors.toList());
+    private Set<Object> toSourceIds(Collection<ImmutableSpi> sources) {
+        Set<Object> sourceIds = new LinkedHashSet<>((sources.size() * 4 + 2) / 3);
+        for (ImmutableSpi source : sources) {
+            sourceIds.add(toSourceId(source));
+        }
+        return sourceIds;
     }
 
     private Object toTargetId(ImmutableSpi target) {
@@ -962,14 +961,6 @@ public abstract class AbstractDataLoader {
         return !remote && (
                 (!rawValue && (globalFiler != null || propFilter != null)) || !((ColumnDefinition)storage).isForeignKey()
         );
-    }
-
-    public static Connection transientResolverConnection() {
-        Connection con = TRANSIENT_RESOLVER_CON_LOCAL.get();
-        if (con == null) {
-            throw new IllegalStateException("The current thread is not resolving any transient property");
-        }
-        return con;
     }
 
     private static SortedMap<String, Object> standardResolveParameters(SortedMap<String, Object> parameters) {
