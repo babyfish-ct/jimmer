@@ -464,7 +464,6 @@ public class FilterManager implements Filters {
             }
             return ImmutableType.get((Class<?>) entityType);
         } else if (Props.class.isAssignableFrom(propsClass)) {
-            PropsFor propsFor = propsClass.getAnnotation(PropsFor.class);
             if (Props.class == propsClass) {
                 throw new IllegalStateException(
                         "`" +
@@ -474,6 +473,7 @@ public class FilterManager implements Filters {
                                 "`"
                 );
             }
+            PropsFor propsFor = propsClass.getAnnotation(PropsFor.class);
             if (propsFor == null) {
                 throw new IllegalStateException(
                         "`" +

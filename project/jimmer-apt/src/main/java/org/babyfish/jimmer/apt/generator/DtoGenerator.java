@@ -1080,7 +1080,7 @@ public class DtoGenerator {
         }
         TypeName typeName = tailProp.isIdOnly() ?
                 tailProp.getBaseProp().getTargetType().getIdProp().getTypeName() :
-                tailProp.getBaseProp().getTypeName();
+                tailProp.getBaseProp().getElementTypeName();
         if (typeName.isPrimitive() && prop.isNullable()) {
             return typeName.box();
         }

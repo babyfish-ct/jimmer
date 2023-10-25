@@ -115,6 +115,10 @@ class MiddleTableOperator {
         return null;
     }
 
+    boolean isBackRefRealForeignKey() {
+        return middleTable.getColumnDefinition().isForeignKey();
+    }
+
     List<Object> getTargetIds(Object id) {
 
         if (hasFilter) {

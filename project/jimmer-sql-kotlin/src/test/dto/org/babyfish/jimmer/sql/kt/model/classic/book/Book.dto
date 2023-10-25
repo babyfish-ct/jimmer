@@ -89,3 +89,8 @@ input BookNullableIdInput {
     #allScalars
     id(store)
 }
+
+BookView2 {
+    #allScalars(this)
+    authorIds
+}

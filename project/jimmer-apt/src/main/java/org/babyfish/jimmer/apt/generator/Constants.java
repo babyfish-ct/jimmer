@@ -15,6 +15,7 @@ import org.babyfish.jimmer.sql.collection.IdViewList;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
 import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -22,6 +23,9 @@ class Constants {
 
     public static final ClassName CLONEABLE_CLASS_NAME =
             ClassName.get(Cloneable.class);
+
+    public static final ClassName SERIALIZABLE_CLASS_NAME =
+            ClassName.get(Serializable.class);
 
     public static final ClassName CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME =
             ClassName.get(CloneNotSupportedException.class);

@@ -257,17 +257,44 @@ public class DeleteTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testCascadeLogicalDeleteWithoutAction() {
+    public void testCascadeLogicalDeleteWithLax() {
         executeAndExpectResult(
                 getSqlClient().getEntities().deleteCommand(
                         Department.class,
                         1L
-                ),
+                ).setDissociateAction(EmployeeProps.DEPARTMENT, DissociateAction.LAX),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql("update DEPARTMENT set DELETED_TIME = ? where ID = ?");
                     });
                     ctx.totalRowCount(1);
+                }
+        );
+    }
+
+    @Test
+    public void testCascadeLogicalDeleteWithCheck() {
+        executeAndExpectResult(
+                getSqlClient().getEntities().deleteCommand(
+                        Department.class,
+                        1L
+                ).setDissociateAction(EmployeeProps.DEPARTMENT, DissociateAction.CHECK),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "select tb_1_.ID, tb_1_.NAME, tb_1_.DELETED_TIME, tb_1_.DEPARTMENT_ID " +
+                                        "from EMPLOYEE tb_1_ " +
+                                        "where tb_1_.DEPARTMENT_ID = ? and tb_1_.DELETED_TIME is null"
+                        );
+                    });
+                    ctx.throwable(it -> {
+                        it.message(
+                                "Cannot delete entities whose type are \"org.babyfish.jimmer.sql.model.hr.Department\" " +
+                                        "because there are some child entities whose type are \"org.babyfish.jimmer.sql.model.hr.Employee\", " +
+                                        "these child entities use the association property \"org.babyfish.jimmer.sql.model.hr.Employee.department\" " +
+                                        "to reference current entities."
+                        );
+                    });
                 }
         );
     }

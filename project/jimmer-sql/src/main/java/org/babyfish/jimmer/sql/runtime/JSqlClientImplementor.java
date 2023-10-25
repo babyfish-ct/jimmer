@@ -62,6 +62,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
 
     StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider();
+    
+    boolean isDefaultDissociationActionCheckable();
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
 

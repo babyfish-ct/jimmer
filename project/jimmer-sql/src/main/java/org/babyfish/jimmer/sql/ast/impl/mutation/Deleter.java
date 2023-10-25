@@ -121,11 +121,6 @@ public class Deleter {
             return;
         }
 
-//        if (logical(immutableType)) {
-//            addPostHandleInput(immutableType, ids);
-//            return;
-//        }
-
         DissociationInfo dissociationInfo = data.getSqlClient().getEntityManager().getDissociationInfo(immutableType);
         if (dissociationInfo != null) {
             for (ImmutableProp prop : dissociationInfo.getProps()) {
@@ -135,22 +130,24 @@ public class Deleter {
                         prop,
                         trigger
                 );
-                int affectedRowCount;
-                try {
-                    affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
-                } catch (MiddleTableOperator.DeletionPreventedException ex) {
-                    throw new ExecutionException(
-                            "Cannot delete rows from middle table \"" +
-                                    ex.middleTable.getTableName() +
-                                    "\" when the object of \"" +
-                                    immutableType +
-                                    "\" is being deleted, because the " +
-                                    "`@JoinTable.preventDeletionBySource` of \"" +
-                                    prop.getMappedBy() +
-                                    "\" is true"
-                    );
+                if (!logical(immutableType) && middleTableOperator.isBackRefRealForeignKey()) {
+                    int affectedRowCount;
+                    try {
+                        affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
+                    } catch (MiddleTableOperator.DeletionPreventedException ex) {
+                        throw new ExecutionException(
+                                "Cannot delete rows from middle table \"" +
+                                        ex.middleTable.getTableName() +
+                                        "\" when the object of \"" +
+                                        immutableType +
+                                        "\" is being deleted, because the " +
+                                        "`@JoinTable.preventDeletionBySource` of \"" +
+                                        prop.getMappedBy() +
+                                        "\" is true"
+                        );
+                    }
+                    addOutput(AffectedTable.of(prop), affectedRowCount);
                 }
-                addOutput(AffectedTable.of(prop), affectedRowCount);
             }
             for (ImmutableProp backProp : dissociationInfo.getBackProps()) {
                 MiddleTableOperator middleTableOperator = MiddleTableOperator.tryGetByBackProp(
@@ -159,7 +156,7 @@ public class Deleter {
                         backProp,
                         trigger
                 );
-                if (middleTableOperator != null) {
+                if (middleTableOperator != null && !logical(immutableType) && middleTableOperator.isBackRefRealForeignKey()) {
                     int affectedRowCount;
                     try {
                         affectedRowCount = middleTableOperator.physicallyDeleteBySourceIds(ids);
@@ -195,7 +192,10 @@ public class Deleter {
                         );
                         int affectedRowCount = childTableOperator.unsetParents(ids);
                         addOutput(AffectedTable.of(backProp.getDeclaringType()), affectedRowCount);
-                    } else if (dissociateAction != DissociateAction.NONE || !logical(backProp.getTargetType())) {
+                    } else if (dissociateAction != DissociateAction.LAX ||
+                            (!logical(backProp.getTargetType()) &&
+                            backProp.isTargetForeignKeyReal(data.getSqlClient().getMetadataStrategy()))
+                    ) {
                         tryDeleteFromChildTable(backProp, ids);
                     }
                 }

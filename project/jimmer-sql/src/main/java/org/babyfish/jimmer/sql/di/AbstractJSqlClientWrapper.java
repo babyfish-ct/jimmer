@@ -360,6 +360,11 @@ public abstract class AbstractJSqlClientWrapper implements JSqlClientImplementor
     }
 
     @Override
+    public boolean isDefaultDissociationActionCheckable() {
+        return sqlClient().isDefaultDissociationActionCheckable();
+    }
+
+    @Override
     public IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel() {
         return sqlClient().getIdOnlyTargetCheckingLevel();
     }

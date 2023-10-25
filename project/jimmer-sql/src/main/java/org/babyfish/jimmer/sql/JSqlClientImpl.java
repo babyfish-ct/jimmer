@@ -95,6 +95,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final FilterManager filterManager;
 
+    private final boolean defaultDissociationActionCheckable;
+
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
     private final boolean saveCommandPessimisticLock;
@@ -135,6 +137,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             FilterManager filterManager,
             UserIdGeneratorProvider userIdGeneratorProvider,
             TransientResolverManager transientResolverManager,
+            boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             boolean saveCommandPessimisticLock,
             DraftHandlerManager draftHandlerManager,
@@ -178,6 +181,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 userIdGeneratorProvider :
                 new DefaultUserIdGeneratorProvider();
         this.transientResolverManager = transientResolverManager;
+        this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
         this.saveCommandPessimisticLock = saveCommandPessimisticLock;
         this.draftHandlerManager = draftHandlerManager;
@@ -443,6 +447,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 filterManager,
                 userIdGeneratorProvider,
                 transientResolverManager,
+                defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
                 draftHandlerManager,
@@ -484,6 +489,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 cfg.getFilterManager(),
                 userIdGeneratorProvider,
                 transientResolverManager,
+                defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
                 draftHandlerManager,
@@ -520,6 +526,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 filterManager,
                 userIdGeneratorProvider,
                 transientResolverManager,
+                defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
                 draftHandlerManager,
@@ -547,6 +554,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     @Override
     public Filters getFilters() {
         return filterManager;
+    }
+
+    @Override
+    public boolean isDefaultDissociationActionCheckable() {
+        return defaultDissociationActionCheckable;
     }
 
     @Override
@@ -648,6 +660,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private final List<Filter<?>> filters = new ArrayList<>();
 
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
+
+        private boolean defaultDissociationActionCheckable = true;
 
         private IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel =
                 IdOnlyTargetCheckingLevel.NONE;
@@ -1037,6 +1051,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setDefaultDissociateActionCheckable(boolean checkable) {
+            defaultDissociationActionCheckable = checkable;
+            return this;
+        }
+
+        @Override
         public Builder setIdOnlyTargetCheckingLevel(IdOnlyTargetCheckingLevel checkingLevel) {
             idOnlyTargetCheckingLevel = checkingLevel != null ?
                     checkingLevel :
@@ -1311,6 +1331,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     filterManager,
                     userIdGeneratorProvider,
                     transientResolverManager,
+                    defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,
                     saveCommandPessimisticLock,
                     new DraftHandlerManager(handlers),
@@ -1404,6 +1425,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         return DatabaseValidators.validate(
                                 entityManager(),
                                 microServiceName,
+                                defaultDissociationActionCheckable,
                                 metadataStrategy,
                                 databaseValidationCatalog,
                                 databaseValidationSchema,

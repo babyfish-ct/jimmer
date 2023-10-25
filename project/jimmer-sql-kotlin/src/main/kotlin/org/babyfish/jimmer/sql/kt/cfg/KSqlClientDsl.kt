@@ -197,6 +197,10 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setLogicalDeletedBehavior(behavior)
     }
 
+    fun setDefaultDissociateActionChecking(checkable: Boolean) {
+        javaBuilder.setDefaultDissociateActionCheckable(checkable)
+    }
+
     fun setIdOnlyTargetCheckingLevel(checkingLevel: IdOnlyTargetCheckingLevel) {
         javaBuilder.setIdOnlyTargetCheckingLevel(checkingLevel)
     }

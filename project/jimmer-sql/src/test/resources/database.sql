@@ -54,7 +54,8 @@ create table A.TABLE_(
 
 create table B.TABLE_(
     id bigint not null primary key,
-    status varchar(7) not null
+    status varchar(7) not null,
+    a_id bigint
 );
 
 create table C.TABLE_(

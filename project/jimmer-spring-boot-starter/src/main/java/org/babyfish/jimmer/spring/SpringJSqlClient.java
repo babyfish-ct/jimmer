@@ -105,6 +105,7 @@ public class SpringJSqlClient extends AbstractJSqlClientWrapper {
 
         builder.setDialect(dialect != null ? dialect : properties.getDialect());
         builder.setTriggerType(properties.getTriggerType());
+        builder.setDefaultDissociateActionCheckable(properties.isDefaultDissociationActionCheckable());
         builder.setIdOnlyTargetCheckingLevel(properties.getIdOnlyTargetCheckingLevel());
         builder.setDefaultEnumStrategy(properties.getDefaultEnumStrategy());
         builder.setDefaultBatchSize(properties.getDefaultBatchSize());
