@@ -1,4 +1,4 @@
-val jimmerVersion by extra { "0.8.21" }
+val jimmerVersion by extra { "0.8.32" }
 
 allprojects {
     group = "org.babyfish.jimmer.example.cloud.kt"
