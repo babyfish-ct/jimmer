@@ -94,3 +94,22 @@ BookView2 {
     #allScalars(this)
     authorIds
 }
+
+dynamic input DynamicBookInput {
+    name?
+    edition?
+    price?
+    id(store) as storeId
+}
+
+dynamic input DynamicBookInput2 {
+    name?
+    edition?
+    price?
+    flat(store) {
+        as(^ -> parent) {
+            name
+            website
+        }
+    }
+}

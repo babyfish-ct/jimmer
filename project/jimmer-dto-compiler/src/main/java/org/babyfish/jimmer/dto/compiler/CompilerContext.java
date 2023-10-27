@@ -63,11 +63,14 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                     }
                     dtoTypeModifier = DtoTypeModifier.INPUT_ONLY;
                     break;
+                case "dynamic":
+                    dtoTypeModifier = DtoTypeModifier.DYNAMIC;
+                    break;
                 default:
                     throw exception(
                             modifier.getLine(),
                             "If the modifier of dto type is specified, it must be " +
-                                    "'abstract', 'input', 'inputOnly' or 'input-only'"
+                                    "'abstract', 'input', 'inputOnly', 'input-only' or 'dynamic'"
                     );
             }
             if (!modifiers.add(dtoTypeModifier)) {
@@ -76,6 +79,14 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                         "Duplicated modifier \"" + modifier.getText() + "\""
                 );
             }
+        }
+        if (modifiers.contains(DtoTypeModifier.DYNAMIC) &&
+                !modifiers.contains(DtoTypeModifier.INPUT) &&
+                !modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+            throw exception(
+                    type.name.getLine(),
+                    "If modifier 'dynamic' can only be used with 'input' or 'input-only'"
+            );
         }
         Set<String> superSet = new LinkedHashSet<>();
         for (Token superName : type.superNames) {

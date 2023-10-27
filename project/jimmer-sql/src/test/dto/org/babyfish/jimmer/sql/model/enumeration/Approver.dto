@@ -8,3 +8,12 @@ ApproverView {
     }
 }
 
+dynamic input DynamicApproverInput {
+
+    #allScalars
+
+    gender as sex -> {
+        MALE: 100
+        FEMALE: 200
+    }
+}

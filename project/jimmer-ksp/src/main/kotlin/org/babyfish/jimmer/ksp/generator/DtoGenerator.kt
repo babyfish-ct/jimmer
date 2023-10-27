@@ -594,9 +594,14 @@ class DtoGenerator private constructor(
     }
 
     private fun CodeBlock.Builder.addFlatSetting(prop: DtoProp<ImmutableType, ImmutableProp>) {
-        val that = (if (prop.isOnlyDtoNullable) "that_" else "that.") + prop.name
-        if (prop.isOnlyDtoNullable) {
+
+        val isThatRequired = prop.isOnlyDtoNullable(dtoType)
+        val that = (if (isThatRequired) "that_" else "that.") + prop.name
+        if (isThatRequired) {
             addStatement("val that_%L = that.%N", prop.name, prop.name)
+        }
+        if (dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)) {
+            beginControlFlow("if (%L !== null)", that)
         }
         add("%T.set(\n", FLAT_UTILS_CLASS_NAME)
         indent()
@@ -629,10 +634,13 @@ class DtoGenerator private constructor(
         add("\n")
         unindent()
         add(")\n")
+        if (dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)) {
+            endControlFlow()
+        }
     }
 
     private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
-        if (prop.isOnlyDtoNullable) {
+        if (prop.isOnlyDtoNullable(dtoType)) {
             addStatement("val %L = that.%L", prop.name, prop.name)
             beginControlFlow("if (%L !== null)", prop.name)
             addAssignment(prop, prop.name, ".")
@@ -680,17 +688,11 @@ class DtoGenerator private constructor(
                     CodeBlock
                         .builder()
                         .apply {
-                            if (prop.isNullable) {
-                                beginControlFlow("if ($right !== null)")
-                            }
                             add("this.%N = $right", prop.baseProp.name)
                             apply {
                                 appendValueToEnum(prop)
                             }
                             add("\n")
-                            if (prop.isNullable) {
-                                endControlFlow()
-                            }
                         }
                         .build()
                 )
@@ -1054,7 +1056,7 @@ class DtoGenerator private constructor(
             }
         }
 
-        private val DtoProp<*, *>.isOnlyDtoNullable: Boolean
-            get() = isNullable && !baseProp.isNullable
+        private fun DtoProp<*, *>.isOnlyDtoNullable(declaringType: DtoType<*, *>): Boolean
+            = isNullable && (!baseProp.isNullable || declaringType.modifiers.contains(DtoTypeModifier.DYNAMIC))
     }
 }
