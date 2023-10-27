@@ -10,11 +10,9 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
 import org.babyfish.jimmer.dto.compiler.*
-import org.babyfish.jimmer.dto.compiler.Anno.AnnoValue
-import org.babyfish.jimmer.dto.compiler.Anno.ArrayValue
-import org.babyfish.jimmer.dto.compiler.Anno.EnumValue
-import org.babyfish.jimmer.dto.compiler.Anno.LiteralValue
-import org.babyfish.jimmer.dto.compiler.Anno.Value
+import org.babyfish.jimmer.dto.compiler.Anno.*
+import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
@@ -188,12 +186,17 @@ class DtoGenerator private constructor(
 
         addToEntity()
 
-        if (!isInputOnly) {
+        if (!isInputOnly || dtoType.dtoProps.any { !isSimpleProp(it) }) {
             typeBuilder.addType(
                 TypeSpec
                     .companionObjectBuilder()
                     .apply {
-                        addMetadata()
+                        if (!isInputOnly) {
+                            addMetadata()
+                        }
+                        for (prop in dtoType.dtoProps) {
+                            addAccessorField(prop)
+                        }
                     }
                     .build()
             )
@@ -414,135 +417,16 @@ class DtoGenerator private constructor(
                             .add("\n")
                             .apply {
                                 if (prop is DtoProp<*, *>) {
-                                    prop as DtoProp<ImmutableType, ImmutableProp>
-                                    val targetType = prop.targetType
-                                    when {
-                                        prop.nextProp !== null -> {
-                                            if (prop.enumType != null) {
-                                                if (prop.isNullable) {
-                                                    add("%T.get<Any?>(\n", FLAT_UTILS_CLASS_NAME)
-                                                } else {
-                                                    add("%T.get<Any>(\n", FLAT_UTILS_CLASS_NAME)
-                                                }
-                                            } else {
-                                                add("%T.get(\n", FLAT_UTILS_CLASS_NAME)
-                                            }
-                                            indent()
-                                            add("base,\n")
-                                            add("intArrayOf(\n")
-                                            indent()
-                                            var p: DtoProp<ImmutableType, ImmutableProp>? = prop
-                                            while (p !== null) {
-                                                add(
-                                                    "%T.%N,\n",
-                                                    p.baseProp.declaringType.draftClassName("$"),
-                                                    p.baseProp.slotName
-                                                )
-                                                p = p.nextProp
-                                            }
-                                            unindent()
-                                            add("),\n")
-                                            if (prop.targetType == null) {
-                                                add("null\n")
-                                            }
-                                            unindent()
-                                            add(")")
-                                            prop.targetType?.let {
-                                                add(" {\n")
-                                                indent()
-                                                addStatement(
-                                                    "%T(it as %T)\n",
-                                                    propTypeName(prop),
-                                                    prop.toTailProp().baseProp.targetType!!.className
-                                                )
-                                                unindent()
-                                                add("}")
-                                            }
-                                            prop.enumType?.let {
-                                                appendEnumToValue(prop, false)
-                                            }
-                                            if (!prop.isNullable) {
-                                                add(
-                                                    " ?: error(%S)",
-                                                    "The property chain \"${prop.basePath}\" is null or unloaded"
-                                                )
-                                            }
-                                        }
-
-                                        targetType !== null ->
-                                            if (prop.isNullable) {
-                                                appendTakeIf(prop)
-                                                addStatement(
-                                                    "?.%N?.%N { %T(it) }",
-                                                    prop.baseProp.name,
-                                                    if (prop.baseProp.isList) "map" else "let",
-                                                    propElementName(prop)
-                                                )
-                                                if (prop.baseProp.isList) {
-                                                    if (!prop.isRecursive && prop.baseProp.isList && prop.isNullable) {
-                                                        add("?.takeIf { it.isNotEmpty() }")
-                                                    }
-                                                }
-                                            } else {
-                                                add(
-                                                    "base.%N%L%N { %T(it) }",
-                                                    prop.baseProp.name,
-                                                    if (prop.baseProp.isNullable) "?." else ".",
-                                                    if (prop.baseProp.isList) "map" else "let",
-                                                    propElementName(prop)
-                                                )
-                                            }
-
-                                        prop.enumType !== null -> {
-                                            add("base")
-                                            if (prop.isNullable) {
-                                                appendTakeIf(prop, "")
-                                                add("?.")
-                                            } else {
-                                                add(".")
-                                            }
-                                            add(prop.baseProp.name)
-                                            appendEnumToValue(prop, true)
-                                        }
-
-                                        prop.isIdOnly -> {
-                                            add("base")
-                                            if (prop.isNullable) {
-                                                appendTakeIf(prop, "")
-                                            }
-                                            add(
-                                                "%L%N%L%L",
-                                                if (prop.isNullable) "?." else ".",
-                                                prop.baseProp.name,
-                                                if (prop.isNullable) "?." else ".",
-                                                if (prop.baseProp.isList) {
-                                                    "map { it.${prop.baseProp.targetType!!.idProp!!.name} }"
-                                                } else {
-                                                    prop.baseProp.targetType!!.idProp!!.name
-                                                }
-                                            )
-                                            if (!prop.isRecursive && prop.isNullable && prop.baseProp.isList) {
-                                                add("?.takeIf { it.isNotEmpty() }")
-                                            }
-                                        }
-
-                                        else ->
-                                            if (prop.isNullable) {
-                                                appendTakeIf(prop)
-                                                addStatement("?.%N", prop.baseProp.name)
-                                            } else {
-                                                add(
-                                                    "base%L%N",
-                                                    if (prop.baseProp.isNullable) "?." else ".",
-                                                    prop.baseProp.name
-                                                )
-                                            }
-                                    }
-                                    if (!prop.isNullable && prop.baseProp.isNullable) {
-                                        add(" ?: error(%S)", "\"base.${prop.basePath}\" cannot be null or unloaded")
+                                    if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
+                                        add("base.%L", prop.name)
+                                    } else {
+                                        add(
+                                            "%L.get(base)",
+                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER)
+                                        )
                                     }
                                 } else {
-                                    addStatement("%N", prop.alias)
+                                    add("%N", prop.alias)
                                 }
                             }
                             .unindent()
@@ -574,17 +458,32 @@ class DtoGenerator private constructor(
                         }
                     )
                     for (prop in dtoType.dtoProps) {
-                        if (prop.nextProp !== null) {
-                            addCode(
-                                CodeBlock
-                                    .builder()
-                                    .apply {
-                                        addFlatSetting(prop)
-                                    }
-                                    .build()
-                            )
+                        val baseProp = prop.toTailProp().baseProp
+                        if (isSimpleProp(prop)) {
+                            if (prop.isNullable && baseProp.let { it.isList && it.isAssociation(true) }) {
+                                addStatement("%L = that.%L ?: emptyList()", baseProp.name, prop.name)
+                            } else {
+                                addStatement("%L = that.%L", baseProp.name, prop.name)
+                            }
                         } else {
-                            addAssignment(prop)
+                            if (prop.isNullable && baseProp.let { it.isList && it.isAssociation(true) }) {
+                                addStatement(
+                                    "%L.set(this, that.%L ?: emptyList<%T>())",
+                                    StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                    prop.name,
+                                    if (prop.isIdOnly) {
+                                        baseProp.targetType!!.idProp!!.typeName()
+                                    } else {
+                                        baseProp.targetType!!.className
+                                    }
+                                )
+                            } else {
+                                addStatement(
+                                    "%L.set(this, that.%L)",
+                                    StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                    prop.name
+                                )
+                            }
                         }
                     }
                 }
@@ -593,170 +492,150 @@ class DtoGenerator private constructor(
         )
     }
 
-    private fun CodeBlock.Builder.addFlatSetting(prop: DtoProp<ImmutableType, ImmutableProp>) {
-
-        val isThatRequired = prop.isOnlyDtoNullable(dtoType)
-        val that = (if (isThatRequired) "that_" else "that.") + prop.name
-        if (isThatRequired) {
-            addStatement("val that_%L = that.%N", prop.name, prop.name)
+    private fun isSimpleProp(prop: DtoProp<ImmutableType, ImmutableProp>): Boolean {
+        if (prop.getNextProp() != null) {
+            return false
         }
-        if (dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)) {
-            beginControlFlow("if (%L !== null)", that)
-        }
-        add("%T.set(\n", FLAT_UTILS_CLASS_NAME)
-        indent()
-        add("this,\n")
-        add("intArrayOf(\n")
-        indent()
-        var p: DtoProp<ImmutableType, ImmutableProp>? = prop
-        while (p != null) {
-            add(
-                "%T.%N,\n",
-                p.baseProp.declaringType.draftClassName("$"),
-                p.baseProp.slotName
-            )
-            p = p.nextProp
-        }
-        unindent()
-        add("),\n")
-        add(that)
-        if (prop.targetType !== null) {
-            if (prop.isNullable) {
-                add("?")
-            }
-            add(".toEntity()")
-        } else if (prop.enumType != null) {
-            if (prop.isNullable) {
-                add("?")
-            }
-            appendValueToEnum(prop)
-        }
-        add("\n")
-        unindent()
-        add(")\n")
-        if (dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)) {
-            endControlFlow()
-        }
-    }
-
-    private fun FunSpec.Builder.addAssignment(prop: DtoProp<ImmutableType, ImmutableProp>) {
-        if (prop.isOnlyDtoNullable(dtoType)) {
-            addStatement("val %L = that.%L", prop.name, prop.name)
-            beginControlFlow("if (%L !== null)", prop.name)
-            addAssignment(prop, prop.name, ".")
-            if (prop.baseProp.isList) {
-                nextControlFlow("else")
-                addStatement("this.%L = emptyList()", prop.baseProp.name)
-            }
-            endControlFlow()
+        return if (prop.isNullable() && (!prop.getBaseProp().isNullable || dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC))) {
+            false
         } else {
-            addAssignment(prop, "that.${prop.name}", if (prop.isNullable) "?." else ".")
+            propTypeName(prop) == prop.getBaseProp().typeName()
         }
     }
 
-    private fun FunSpec.Builder.addAssignment(
-        prop: DtoProp<ImmutableType, ImmutableProp>,
-        right: String,
-        dot: String
-    ) {
-        val targetType = prop.targetType
-        when {
-            targetType !== null ->
-                if (prop.baseProp.isList) {
-                    addStatement("this.%N = $right%Lmap { it.toEntity() }", prop.baseProp.name, dot)
-                } else {
-                    addStatement("this.%N = $right%LtoEntity()", prop.baseProp.name, dot)
-                }
-            prop.isIdOnly -> {
-                beginControlFlow(
-                    "this.%N = $right%L%N",
-                    prop.baseProp.name,
-                    dot,
-                    if (prop.baseProp.isList) "map" else "let"
-                )
-                beginControlFlow(
-                    "%M(%T::class).by",
-                    NEW,
-                    prop.baseProp.targetType!!.className,
-                )
-                addStatement("this.%N = it", prop.baseProp.targetType!!.idProp!!.name)
-                endControlFlow()
-                endControlFlow()
-            }
-            prop.enumType !== null ->
-                addCode(
-                    CodeBlock
-                        .builder()
-                        .apply {
-                            add("this.%N = $right", prop.baseProp.name)
-                            apply {
-                                appendValueToEnum(prop)
+    private fun TypeSpec.Builder.addAccessorField(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        if (isSimpleProp(prop)) {
+            return
+        }
+
+        val builder = PropertySpec.builder(
+            StringUtil.snake("${prop.name}Accessor", StringUtil.SnakeCase.UPPER),
+            DTO_PROP_ACCESSOR,
+            KModifier.PRIVATE
+        ).initializer(
+            CodeBlock
+                .builder()
+                .apply {
+                    add("%T(", DTO_PROP_ACCESSOR)
+                    indent()
+
+                    val mustNonNull = prop.isNullable && prop.toTailProp().baseProp.let {
+                        !it.isNullable || dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)
+                    }
+                    add("\n%L", !mustNonNull)
+
+                    if (prop.nextProp === null) {
+                        add(
+                            ",\nintArrayOf(%T.%L)",
+                            dtoType.baseType.draftClassName("$"),
+                            prop.baseProp.slotName
+                        )
+                    } else {
+                        add(",\nintArrayOf(")
+                        indent()
+                        var p: DtoProp<ImmutableType, ImmutableProp>? = prop
+                        while (p !== null) {
+                            if (p !== prop) {
+                                add(",")
                             }
-                            add("\n")
+                            add(
+                                "\n%T.%L",
+                                p.baseProp.declaringType.draftClassName("$"),
+                                p.baseProp.slotName
+                            )
+                            p = p.nextProp
                         }
-                        .build()
-                )
-            else ->
-                addStatement("this.%N = $right", prop.baseProp.name)
-        }
-    }
+                        unindent()
+                        add("\n)")
+                    }
 
-    private fun CodeBlock.Builder.appendTakeIf(prop: DtoProp<ImmutableType, ImmutableProp>, prefix: String = "base") {
-        beginControlFlow("%L.takeIf", prefix)
-        addStatement(
-            "(it as %T).__isLoaded(%T.byIndex(%T.%L))",
-            IMMUTABLE_SPI_CLASS_NAME,
-            PROP_ID_CLASS_NAME,
-            dtoType.baseType.draftClassName("$"),
-            prop.baseProp.slotName
+                    val tailProp = prop.toTailProp()
+                    val tailBaseProp = tailProp.baseProp
+                    if (prop.isIdOnly) {
+                        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                            add(",\nnull")
+                        } else {
+                            add(
+                                ",\n%T.%L(%T::class.java)",
+                                DTO_PROP_ACCESSOR,
+                                if (tailBaseProp.isList) "idListGetter" else "idReferenceGetter",
+                                tailBaseProp.targetTypeName(overrideNullable = false)
+                            )
+                        }
+                        add(
+                            ",\n%T.%L(%T::class.java)",
+                            DTO_PROP_ACCESSOR,
+                            if (tailBaseProp.isList) "idListSetter" else "idReferenceSetter",
+                            tailBaseProp.targetTypeName(overrideNullable = false)
+                        )
+                    } else if (tailBaseProp.targetType !== null) {
+                        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                            add(",\nnull")
+                        } else {
+                            add(
+                                ",\n%T.%L<%T, %L> {",
+                                DTO_PROP_ACCESSOR,
+                                if (tailBaseProp.isList) "objectListGetter" else "objectReferenceGetter",
+                                tailBaseProp.targetTypeName(overrideNullable = false),
+                                targetSimpleName(prop)
+                            )
+                            indent()
+                            add("\n%L(it)", targetSimpleName(prop))
+                            unindent()
+                            add("\n}")
+                        }
+                        add(
+                            ",\n%T.%L<%T, %L> {",
+                            DTO_PROP_ACCESSOR,
+                            if (tailBaseProp.isList) "objectListSetter" else "objectReferenceSetter",
+                            tailBaseProp.targetTypeName(overrideNullable = false),
+                            targetSimpleName(prop)
+                        )
+                        indent()
+                        add("\nit.toEntity()")
+                        unindent()
+                        add("\n}")
+                    } else if (prop.enumType !== null) {
+                        val enumType = prop.enumType!!
+                        val enumTypeName = tailBaseProp.targetTypeName(overrideNullable = false)
+                        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                            add(",\nnull")
+                        } else {
+                            add(",\n{\n")
+                            indent()
+                            beginControlFlow("when (it as %T)", enumTypeName)
+                            for ((en, v) in enumType.valueMap) {
+                                addStatement("%T.%L -> %L", enumTypeName, en, v)
+                            }
+                            endControlFlow()
+                            unindent()
+                            add("}")
+                        }
+                        add(",\n{\n")
+                        indent()
+                        beginControlFlow(
+                            "when (it as %T)",
+                            if (propTypeName(prop).copy(nullable = false) == INT) INT else STRING
+                        )
+                        for ((v, en) in enumType.constantMap) {
+                            addStatement("%L -> %T.%L", v, enumTypeName, en)
+                        }
+                        addStatement("else -> IllegalArgumentException(")
+                        indent()
+                        addStatement("%S", "Illegal value \${it} for the enum type $enumTypeName")
+                        unindent()
+                        add(")\n")
+                        endControlFlow()
+                        unindent()
+                        add("}")
+                    }
+
+                    unindent()
+                    add("\n)")
+                }
+                .build()
         )
-        endControlFlow()
-    }
-
-    private fun CodeBlock.Builder.appendEnumToValue(
-        prop: DtoProp<ImmutableType, ImmutableProp>,
-        parameterIsEnum: Boolean,
-        prefix: String = ""
-    ) {
-        val enumTypeName = prop.toTailProp().baseProp.typeName(overrideNullable = false)
-        add(prefix)
-        if (prop.isNullable) {
-            add("?")
-        }
-        add(".let {\n")
-        indent()
-        if (parameterIsEnum) {
-            beginControlFlow("when (it)")
-        } else {
-            beginControlFlow("when (it as %T)", enumTypeName)
-        }
-        for ((constant, value) in prop.enumType!!.valueMap) {
-            addStatement("%T.%L -> %L", enumTypeName, constant, value)
-        }
-        endControlFlow()
-        unindent()
-        add("}")
-    }
-
-    private fun CodeBlock.Builder.appendValueToEnum(
-        prop: DtoProp<ImmutableType, ImmutableProp>
-    ) {
-        val enumTypeName = prop.toTailProp().baseProp.typeName(overrideNullable = false)
-        add(".let {\n")
-        indent()
-        beginControlFlow("when (it)")
-        for ((value, constant) in prop.enumType!!.constantMap) {
-            addStatement("%L -> %T.%L", value, enumTypeName, constant)
-        }
-        add("else -> throw IllegalArgumentException(")
-        indent()
-        addStatement("\"Illegal value '\" + it + ")
-        addStatement("\"' for enum type %L\"", enumTypeName.toString())
-        unindent()
-        addStatement(")")
-        endControlFlow()
-        unindent()
-        add("}")
+        addProperty(builder.build())
     }
 
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
@@ -1055,8 +934,5 @@ class DtoGenerator private constructor(
                 }
             }
         }
-
-        private fun DtoProp<*, *>.isOnlyDtoNullable(declaringType: DtoType<*, *>): Boolean
-            = isNullable && (!baseProp.isNullable || declaringType.modifiers.contains(DtoTypeModifier.DYNAMIC))
     }
 }

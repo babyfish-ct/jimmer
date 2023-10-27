@@ -1,12 +1,11 @@
 package org.babyfish.jimmer.ksp.generator
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
-import org.babyfish.jimmer.impl.util.FlatUtils
+import org.babyfish.jimmer.impl.util.DtoPropAccessor
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
@@ -48,7 +47,7 @@ internal val VIEW_METADATA_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
     "ViewMetadata"
 )
-internal val FLAT_UTILS_CLASS_NAME = FlatUtils::class.asClassName()
+internal val DTO_PROP_ACCESSOR = DtoPropAccessor::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()

@@ -264,14 +264,14 @@ public class DtoGenerator {
             return;
         }
         FieldSpec.Builder builder = FieldSpec.builder(
-                DtoPropAccessor.class,
+                Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                 StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
                 Modifier.PRIVATE,
                 Modifier.STATIC,
                 Modifier.FINAL
         );
         CodeBlock.Builder cb = CodeBlock.builder();
-        cb.add("new $T(", DtoPropAccessor.class);
+        cb.add("new $T(", Constants.DTO_PROP_ACCESSOR_CLASS_NAME);
         cb.indent();
 
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
@@ -308,14 +308,14 @@ public class DtoGenerator {
             } else {
                 cb.add(
                         ",\n$T.$L($T.class)",
-                        DtoPropAccessor.class,
+                        Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().isList() ? "idListGetter" : "idReferenceGetter",
                         tailProp.getBaseProp().getTargetType().getClassName()
                 );
             }
             cb.add(
                     ",\n$T.$L($T.class)",
-                    DtoPropAccessor.class,
+                    Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "idListSetter" : "idReferenceSetter",
                     tailProp.getBaseProp().getTargetType().getClassName()
             );
@@ -325,7 +325,7 @@ public class DtoGenerator {
             } else {
                 cb.add(
                         ",\n$T.<$T, $L>$L($L::new)",
-                        DtoPropAccessor.class,
+                        Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().getTargetType().getClassName(),
                         targetSimpleName(tailProp),
                         tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
@@ -334,7 +334,7 @@ public class DtoGenerator {
             }
             cb.add(
                     ",\n$T.$L($L::toEntity)",
-                    DtoPropAccessor.class,
+                    Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
                     targetSimpleName(tailProp)
             );

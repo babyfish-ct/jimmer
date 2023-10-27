@@ -165,7 +165,7 @@ class NullityTest {
                 |--->name=TURING, 
                 |--->version=1, 
                 |--->website=null, 
-                |--->books=null
+                |--->books=[]
                 |)""".trimMargin(),
             BookStoreNullableInput(entity)
         )
@@ -193,7 +193,7 @@ class NullityTest {
                 |--->name=TURING, 
                 |--->version=1, 
                 |--->website=null, 
-                |--->books=null
+                |--->books=[]
                 |)""".trimMargin(),
             BookStoreNullableInput(entity)
         )
@@ -337,7 +337,7 @@ class NullityTest {
                 |--->name=TURING, 
                 |--->version=1, 
                 |--->website=null, 
-                |--->bookIds=null
+                |--->bookIds=[]
                 |)""".trimMargin(),
             BookStoreNullableIdInput(entity)
         )
@@ -365,7 +365,7 @@ class NullityTest {
                 |--->name=TURING, 
                 |--->version=1, 
                 |--->website=null, 
-                |--->bookIds=null
+                |--->bookIds=[]
                 |)""".trimMargin(),
             BookStoreNullableIdInput(entity)
         )
