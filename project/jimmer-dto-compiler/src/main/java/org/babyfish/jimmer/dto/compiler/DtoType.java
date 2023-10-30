@@ -129,14 +129,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         for (Anno anno : annotations) {
             builder.append(anno).append(' ');
         }
-        if (modifiers.contains(DtoTypeModifier.ABSTRACT)) {
-            builder.append("abstract ");
-        }
-        if (modifiers.contains(DtoTypeModifier.INPUT)) {
-            builder.append("input ");
-        }
-        if (modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
-            builder.append("inputOnly ");
+        for (DtoTypeModifier modifier : modifiers) {
+            builder.append(modifier.name().toLowerCase()).append(' ');
         }
         if (name != null) {
             builder.append(name).append(' ');

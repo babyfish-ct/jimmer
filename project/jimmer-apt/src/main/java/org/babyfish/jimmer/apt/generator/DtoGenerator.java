@@ -5,7 +5,6 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.*;
-import org.babyfish.jimmer.impl.util.DtoPropAccessor;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Id;
@@ -20,7 +19,6 @@ import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DtoGenerator {
 
@@ -71,7 +69,7 @@ public class DtoGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
                         ParameterizedTypeName.get(
-                                dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY) ?
+                                dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
                                         Constants.INPUT_CLASS_NAME :
                                         dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
                                                 Constants.VIEWABLE_INPUT_CLASS_NAME :
@@ -154,7 +152,7 @@ public class DtoGenerator {
 
     private void addMembers() {
 
-        boolean inputOnly = dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY);
+        boolean inputOnly = dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
         if (!inputOnly) {
             addMetadata();
         }
@@ -260,7 +258,7 @@ public class DtoGenerator {
     }
 
     private void addAccessorField(DtoProp<ImmutableType, ImmutableProp> prop) {
-        if (isSimpleProp(prop)) {
+        if (prop.isUnmapped() || isSimpleProp(prop)) {
             return;
         }
         FieldSpec.Builder builder = FieldSpec.builder(
@@ -277,7 +275,7 @@ public class DtoGenerator {
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
         if (prop.isNullable() && (
                 !tailProp.getBaseProp().isNullable() ||
-                        dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
+                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))
         ) {
             cb.add("\nfalse");
         } else {
@@ -303,7 +301,7 @@ public class DtoGenerator {
         }
 
         if (prop.isIdOnly()) {
-            if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(
@@ -320,7 +318,7 @@ public class DtoGenerator {
                     tailProp.getBaseProp().getTargetType().getClassName()
             );
         } else if (tailProp.getTargetType() != null) {
-            if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(
@@ -341,7 +339,7 @@ public class DtoGenerator {
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
             TypeName enumTypName = tailProp.getBaseProp().getTypeName();
-            if (dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(",\narg -> {\n");
@@ -397,7 +395,7 @@ public class DtoGenerator {
             return false;
         }
         if (prop.isNullable() && (
-                !prop.getBaseProp().isNullable() || dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))) {
+                !prop.getBaseProp().isNullable() || dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))) {
             return false;
         }
         return getPropTypeName(prop).equals(prop.getBaseProp().getTypeName());
@@ -646,6 +644,9 @@ public class DtoGenerator {
                 "$"
         );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            if (prop.isUnmapped()) {
+                continue;
+            }
             if (isSimpleProp(prop)) {
                 builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
             } else {

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
@@ -25,6 +26,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     @Override
     public P getBaseProp() {
         return baseProp;
+    }
+
+    @Override
+    public Map<String, P> getBasePropMap() {
+        return Collections.singletonMap(baseProp.getName(), baseProp);
     }
 
     @Override
@@ -54,6 +60,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
 
     @Override
     public boolean isFlat() {
+        return false;
+    }
+
+    @Override
+    public boolean isUnmapped() {
         return false;
     }
 

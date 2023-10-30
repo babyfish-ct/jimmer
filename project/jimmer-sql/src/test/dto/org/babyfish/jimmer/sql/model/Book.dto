@@ -113,3 +113,40 @@ dynamic input DynamicBookInput2 {
         }
     }
 }
+
+dynamic input-only BookSpecification2 {
+    #allScalars(this)?
+    min(price)?
+    max(price)?
+    idInList(store)
+    idInList(authors)? as authorIds
+}
+
+dynamic input-only BookSpecification3 {
+    #allScalars(this)?
+    min(price)?
+    max(price)?
+    store {
+        #allScalars(this)
+        min(name)
+        max(name)
+    }
+    authors {
+        #allScalars(this)
+        ilike(firstName)
+        ilike(lastName)
+    }
+}
+
+dynamic input-only BookSpecification4 {
+    #allScalars(this)?
+    min(price)?
+    max(price)?
+    flat(store) {
+        as(^ -> parent) {
+            min(name)
+            max(name)
+            website
+        }
+    }
+}

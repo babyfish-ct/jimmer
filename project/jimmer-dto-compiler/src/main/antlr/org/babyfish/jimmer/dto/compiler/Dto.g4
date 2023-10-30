@@ -82,7 +82,14 @@ positiveProp
     :
     (annotations += annotation)*
     '+'?
-    (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
+    (
+        (negative = '!')?
+        func = Identifier
+        (':' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?
+        '(' props += Identifier (',' props += Identifier)* ','? ')'
+        |
+        props += Identifier
+    )
     (optional = '?' | required = '!')?
     ('as' alias=Identifier)?
     (

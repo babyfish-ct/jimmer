@@ -167,7 +167,7 @@ class DtoGenerator private constructor(
 
         typeBuilder.addSuperinterface(
             when {
-                dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY) ->
+                dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION) ->
                     INPUT_CLASS_NAME
                 dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
                     VIEWABLE_INPUT_CLASS_NAME
@@ -178,7 +178,7 @@ class DtoGenerator private constructor(
             )
         )
 
-        val isInputOnly = dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)
+        val isInputOnly = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
         addPrimaryConstructor()
         if (!isInputOnly) {
             addConverterConstructor()
@@ -496,7 +496,8 @@ class DtoGenerator private constructor(
         if (prop.getNextProp() != null) {
             return false
         }
-        return if (prop.isNullable() && (!prop.getBaseProp().isNullable || dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC))) {
+        return if (prop.isNullable() && (!prop.getBaseProp().isNullable ||
+                dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION))) {
             false
         } else {
             propTypeName(prop) == prop.getBaseProp().typeName()
@@ -520,7 +521,7 @@ class DtoGenerator private constructor(
                     indent()
 
                     val mustNonNull = prop.isNullable && prop.toTailProp().baseProp.let {
-                        !it.isNullable || dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC)
+                        !it.isNullable || dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
                     }
                     add("\n%L", !mustNonNull)
 
@@ -552,7 +553,7 @@ class DtoGenerator private constructor(
                     val tailProp = prop.toTailProp()
                     val tailBaseProp = tailProp.baseProp
                     if (prop.isIdOnly) {
-                        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
                             add(
@@ -569,7 +570,7 @@ class DtoGenerator private constructor(
                             tailBaseProp.targetTypeName(overrideNullable = false)
                         )
                     } else if (tailBaseProp.targetType !== null) {
-                        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
                             add(
@@ -598,7 +599,7 @@ class DtoGenerator private constructor(
                     } else if (prop.enumType !== null) {
                         val enumType = prop.enumType!!
                         val enumTypeName = tailBaseProp.targetTypeName(overrideNullable = false)
-                        if (dtoType.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                             add(",\nnull")
                         } else {
                             add(",\n{\n")

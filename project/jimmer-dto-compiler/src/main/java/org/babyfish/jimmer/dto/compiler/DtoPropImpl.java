@@ -6,11 +6,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.management.ThreadInfo;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
 
-    private final P baseProp;
+    private final Map<String, P> basePropMap;
 
     @Nullable
     private final DtoProp<T, P> nextProp;
@@ -39,7 +41,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     private final DtoProp<T, P> tail;
 
     DtoPropImpl(
-            P baseProp,
+            Map<String, P> basePropMap,
             int baseLine,
             @Nullable String alias,
             int aliasLine,
@@ -50,7 +52,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             String funcName,
             boolean recursive
     ) {
-        this.baseProp = baseProp;
+        this.basePropMap = basePropMap;
         this.nextProp = null;
         this.baseLine = baseLine;
         this.annotations = annotations;
@@ -61,12 +63,22 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.mandatory = mandatory;
         this.funcName = funcName;
         this.recursive = recursive;
-        this.basePath = baseProp.getName();
+        if (basePropMap.size() == 1) {
+            this.basePath = getBaseProp().getName();
+        } else {
+            this.basePath = '(' +
+                    basePropMap
+                            .values()
+                            .stream()
+                            .map(BaseProp::getName)
+                            .collect(Collectors.joining("|")) +
+                    ')';
+        }
         this.tail = this;
     }
 
     DtoPropImpl(DtoProp<T, P> head, DtoProp<T, P> next) {
-        this.baseProp = head.getBaseProp();
+        this.basePropMap = head.getBasePropMap();
         this.nextProp = next;
         this.baseLine = next.getBaseLine();
         this.alias = next.getAlias();
@@ -83,10 +95,18 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         }
         this.funcName = next.getFuncName();
         this.recursive = false;
-        StringBuilder builder = new StringBuilder(baseProp.getName());
+        StringBuilder builder = new StringBuilder();
+        if (basePropMap.size() == 1) {
+            builder.append(basePropMap.values().iterator().next().getName());
+        } else {
+            builder
+                    .append('(')
+                    .append(basePropMap.values().stream().map(BaseProp::getName).collect(Collectors.joining(", ")))
+                    .append(')');
+        }
         DtoProp<T, P> tail = this;
         for (DtoProp<T, P> n = next; n != null; n = n.getNextProp()) {
-            builder.append('.').append(n.getBaseProp().getName());
+            builder.append('.').append(n.getBasePath());
             tail = n;
         }
         this.basePath = builder.toString();
@@ -94,24 +114,29 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     DtoPropImpl(DtoProp<T, P> original, DtoType<T, P> targetType) {
-        this.baseProp = original.getBaseProp();
+        this.basePropMap = original.getBasePropMap();
         this.nextProp = null;
         this.baseLine = original.getBaseLine();
         this.annotations = original.getAnnotations();
-        this.alias = baseProp.getName();
+        this.alias = getBaseProp().getName();
         this.aliasLine = original.getAliasLine();
         this.targetType = targetType;
         this.enumType = null;
         this.mandatory = original.getMandatory();
         this.funcName = "flat";
         this.recursive = false;
-        this.basePath = baseProp.getName();
+        this.basePath = getBaseProp().getName();
         this.tail = this;
     }
 
     @Override
     public P getBaseProp() {
-        return baseProp;
+        return basePropMap.values().iterator().next();
+    }
+
+    @Override
+    public Map<String, P> getBasePropMap() {
+        return basePropMap;
     }
 
     @Override
@@ -142,7 +167,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     @Override
     public String getName() {
-        return alias != null ? alias : baseProp.getName();
+        return alias != null ? alias : getBaseProp().getName();
     }
 
     @Override
@@ -158,7 +183,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             case REQUIRED:
                 return false;
             default:
-                return baseProp.isNullable();
+                return getBaseProp().isNullable();
         }
     }
 
@@ -175,6 +200,13 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public boolean isFlat() {
         return "flat".equals(funcName);
+    }
+
+    @Override
+    public boolean isUnmapped() {
+        return "min".equals(funcName) ||
+                "max".equals(funcName) ||
+                "idInList".equals(funcName);
     }
 
     @Nullable

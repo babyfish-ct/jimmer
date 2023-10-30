@@ -3,20 +3,16 @@ package org.babyfish.jimmer.dto.compiler;
 import org.antlr.v4.runtime.Token;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropImplementor, AbstractPropBuilder {
 
     private final DtoTypeBuilder<T, P> parent;
 
-    @NotNull
-    private final P baseProp;
+    private final Map<String, P> basePropMap;
 
     private final int baseLine;
 
@@ -36,6 +32,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final boolean recursive;
 
+    private final boolean negative;
+
+    private final Set<LikeOption> likeOptions;
+
     DtoPropBuilder(
             DtoTypeBuilder<T, P> parent,
             P baseProp,
@@ -43,7 +43,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             Mandatory mandatory
     ) {
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
-        this.baseProp = Objects.requireNonNull(baseProp, "baseProp cannot be null");
+        this.basePropMap = Collections.singletonMap(
+                Objects.requireNonNull(baseProp, "basePropMap cannot be null").getName(),
+                baseProp
+        );
         this.aliasLine = line;
         this.alias = parent.currentAliasGroup() != null ?
                 parent.currentAliasGroup().alias(baseProp.getName(), 0) :
@@ -59,15 +62,131 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.targetTypeBuilder = null;
         this.enumType = null;
         this.recursive = false;
+        this.negative = false;
+        this.likeOptions = Collections.emptySet();
     }
 
     DtoPropBuilder(
         DtoTypeBuilder<T, P> parent,
         DtoParser.PositivePropContext prop
     ) {
+        CompilerContext<T, P> ctx = parent.ctx;
+        String funcName = null;
+        boolean isQbeFunc = false;
+        Map<String, P> basePropMap = new LinkedHashMap<>();
+        if (prop.func != null) {
+            funcName = prop.func.getText();
+            isQbeFunc = Constants.QBE_FUNC_MAP.containsKey(funcName);
+            if (isQbeFunc) {
+                if (!parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                    throw ctx.exception(
+                            prop.func.getLine(),
+                            "Illegal function \"" +
+                                    funcName +
+                                    "\", it can only be declared in specification"
+                    );
+                }
+            } else if (prop.props.size() > 1) {
+                throw ctx.exception(
+                        prop.func.getLine(),
+                        "Illegal function \"" +
+                                funcName +
+                                "\", it can only be declared in specification"
+                );
+            }
+        }
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
-        this.baseLine = prop.prop.getLine();
-        this.aliasLine = prop.alias != null ? prop.alias.getLine() : prop.prop.getLine();
+        this.baseLine = prop.props.get(0).getLine();
+        this.aliasLine = prop.alias != null ? prop.alias.getLine() : prop.props.get(0).getLine();
+
+        Iterator<Token> itr = prop.props.iterator();
+        P firstBaseProp = getBaseProp(parent, itr.next());
+        basePropMap.put(firstBaseProp.getName(), firstBaseProp);
+        while (itr.hasNext()) {
+            Token token = itr.next();
+            P baseProp = getBaseProp(parent, token);
+            P conflictBaseProp = basePropMap.put(baseProp.getName(), baseProp);
+            if (conflictBaseProp != null) {
+                throw ctx.exception(
+                        prop.func.getLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", it is duplicated"
+                );
+            }
+            if (!ctx.isSameType(firstBaseProp, baseProp)) {
+                throw ctx.exception(
+                        prop.func.getLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", its type is not same as the type of \"" +
+                                firstBaseProp.getName() +
+                                "\""
+                );
+            }
+        }
+        if (prop.negative != null) {
+            if (isQbeFunc) {
+                String negativeFuncName = Constants.QBE_FUNC_MAP.get(funcName);
+                if (negativeFuncName != null) {
+                    throw ctx.exception(
+                            prop.func.getLine(),
+                            "Illegal function \"" +
+                                    funcName +
+                                    "\", it does not accept `!`, please use \"" +
+                                    negativeFuncName +
+                                    "\""
+                    );
+                }
+            } else {
+                throw ctx.exception(
+                        prop.func.getLine(),
+                        "Illegal function \"" +
+                                funcName +
+                                "\", it does not accept `!`"
+                );
+            }
+        }
+        this.basePropMap = Collections.unmodifiableMap(basePropMap);
+
+        EnumSet<LikeOption> likeOptions = EnumSet.noneOf(LikeOption.class);
+        if (prop.insensitive != null) {
+            if (!prop.insensitive.getText().equals("i")) {
+                throw ctx.exception(
+                        prop.insensitive.getLine(),
+                        "Illegal function option identifier `" +
+                                prop.insensitive +
+                                "`, it can only be `i`"
+                );
+            }
+            if (!"like".equals(funcName)) {
+                throw ctx.exception(
+                        prop.insensitive.getLine(),
+                        "`i` can only be used to decorate the function `like`"
+                );
+            }
+            likeOptions.add(LikeOption.INSENSITIVE);
+        }
+        if (prop.prefix != null) {
+            if (!"like".equals(funcName)) {
+                throw ctx.exception(
+                        prop.prefix.getLine(),
+                        "`^` can only be used to decorate the function `like`"
+                );
+            }
+            likeOptions.add(LikeOption.PREFIX);
+        }
+        if (prop.suffix != null) {
+            if (!"like".equals(funcName)) {
+                throw ctx.exception(
+                        prop.suffix.getLine(),
+                        "`$` can only be used to decorate the function `like`"
+                );
+            }
+            likeOptions.add(LikeOption.SUFFIX);
+        }
+        this.negative = prop.negative != null;
+        this.likeOptions = Collections.unmodifiableSet(likeOptions);
 
         List<Anno> annotations;
         if (prop.annotations.isEmpty()) {
@@ -82,19 +201,9 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
         this.annotations = annotations;
 
-        CompilerContext<T, P> ctx = parent.ctx;
-        P baseProp = getBaseProp(parent, prop.prop);
-        this.baseProp = baseProp;
+        P baseProp = basePropMap.values().iterator().next();
 
-        String funcName = null;
-        if (prop.func != null) {
-            if (parent.currentAliasGroup() != null) {
-                throw ctx.exception(
-                        prop.func.getLine(),
-                        "Function invocation is forbidden in alias group"
-                );
-            }
-            funcName = prop.func.getText();
+        if (funcName != null) {
             switch (funcName) {
                 case "id":
                     if (!baseProp.isAssociation(true)) {
@@ -124,7 +233,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                         "\" is not association"
                         );
                     }
-                    if (baseProp.isList()) {
+                    if (baseProp.isList() && !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 "Cannot call the function \"flat\" because the current prop \"" +
@@ -133,10 +242,54 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         );
                     }
                     break;
+                case "like":
+                    if (!ctx.isStringProp(baseProp)) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                "Cannot call the function \"like\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is not string"
+                        );
+                    }
+                    break;
+                case "eq":
+                case "ne":
+                case "lt":
+                case "le":
+                case "gt":
+                case "ge":
+                case "valueIn":
+                    if (baseProp.isAssociation(true)) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                "Cannot call the function \"" +
+                                        funcName +
+                                        "\" the current prop \"" +
+                                        baseProp +
+                                        "\" cannot be association"
+                        );
+                    }
+                    break;
+                case "associatedIdIn":
+                    if (!baseProp.isAssociation(true)) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                "Cannot call the function \"associatedIdIn\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is not association"
+                        );
+                    }
+                    break;
                 default:
                     throw ctx.exception(
                             prop.func.getLine(),
-                            "The function name must be \"id\" or \"flat\""
+                            "Illegal function name \"" +
+                                    funcName +
+                                    "\", " +
+                                    (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
+                                    "the function name of specification type must be \"id\", \"flat\", " +
+                                            Constants.QBE_FUNC_MAP.keySet().stream().collect(Collectors.joining(", ")) :
+                                    "the function name must be \"id\" or \"flat\"")
                     );
             }
         }
@@ -157,21 +310,54 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 );
             }
             alias = prop.alias.getText();
-        } else if (parent.currentAliasGroup() != null) {
-            alias = parent.currentAliasGroup().alias(prop.prop);
+        } else if (basePropMap.size() > 1) {
+            throw ctx.exception(
+                    prop.props.get(prop.props.size() - 1).getLine(),
+                    "The alias must be specified when the function has multiple arguments"
+            );
         } else if ("id".equals(funcName)) {
-            if (baseProp.getName().equals("s")) {
+            if (baseProp.isAssociation(true) && baseProp.isList()) {
                 throw ctx.exception(
-                        prop.prop.getLine(),
+                        prop.props.get(0).getLine(),
                         "The alias must be specified for the property with " +
-                                "`id` function when the base property name ends with 's'"
+                                "`id` function when the base property is list association"
                 );
             }
             alias = baseProp.getName() + "Id";
         } else if ("flat".equals(funcName)) {
             alias = null;
+        } else if ("ne".equals(funcName)) {
+            throw ctx.exception(
+                    prop.props.get(0).getLine(),
+                    "The alias must be specified for `ne` function"
+            );
+        } else if ("lt".equals(funcName)) {
+            alias = baseProp.getName();
+            alias = "max" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1) + "Exclusive";
+        } else if ("le".equals(funcName)) {
+            alias = baseProp.getName();
+            alias = "max" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
+        } else if ("gt".equals(funcName)) {
+            alias = baseProp.getName();
+            alias = "min" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1) + "Exclusive";
+        } else if ("ge".equals(funcName)) {
+            alias = baseProp.getName();
+            alias = "min" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
+        } else if ("associatedIdIn".equals(funcName)) {
+            if (baseProp.isAssociation(true) && baseProp.isList()) {
+                throw ctx.exception(
+                        prop.props.get(0).getLine(),
+                        "The alias must be specified for `associatedIdIn` function"
+                );
+            }
+            alias = baseProp.getName() + "Ids";
         } else {
             alias = baseProp.getName();
+        }
+
+        if (parent.currentAliasGroup() != null) {
+            int line = prop.alias != null ? prop.alias.getLine() : prop.props.get(prop.props.size() - 1).getLine();
+            alias = parent.currentAliasGroup().alias(alias != null ? alias : prop.props.get(prop.props.size() - 1).getText(), line);
         }
 
         if (prop.optional != null) {
@@ -192,7 +378,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 throw ctx.exception(
                         prop.optional.getLine(),
                         "Illegal optional modifier '?' because the flat parent property \"" +
-                                nullableFlatParent.baseProp +
+                                nullableFlatParent.basePropMap.values().iterator().next() +
                                 "\" is already nullable"
                 );
             }
@@ -206,19 +392,19 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             }
             if (baseProp.isId()) {
                 if (!parent.modifiers.contains(DtoTypeModifier.INPUT) &&
-                        !parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                        !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             "Illegal required modifier '!' for id property, " +
-                                    "it can only be used in input/input-only type"
+                                    "it can only be used in input/specification type"
                     );
                 }
             } else {
-                if (!parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+                if (!parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             "Illegal required modifier '!' for non-id property, " +
-                                    "it can only be used in input-only type"
+                                    "it can only be used in specification type"
                     );
                 }
                 if (!baseProp.isNullable() && getNullableFlatParent() == null) {
@@ -290,15 +476,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     prop.annotations,
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
                             Collections.singleton(DtoTypeModifier.INPUT) :
-                            parent.modifiers.contains(DtoTypeModifier.INPUT_ONLY) ?
-                            Collections.singleton(DtoTypeModifier.INPUT_ONLY) :
+                            parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
+                            Collections.singleton(DtoTypeModifier.SPECIFICATION) :
                             Collections.emptySet(),
                     Collections.emptyList(),
                     prop.recursive != null ? baseProp : null,
                     prop.recursive != null ? alias : null,
                     ctx
             );
-        } else if (baseProp.isAssociation(false) && !"id".equals(funcName)) {
+        } else if (baseProp.isAssociation(false) && !"id".equals(funcName) && !"idInList".equals(funcName)) {
             throw ctx.exception(
                     prop.stop.getLine(),
                     "Illegal property \"" +
@@ -341,7 +527,12 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     @Override
     public P getBaseProp() {
-        return baseProp;
+        return basePropMap.values().iterator().next();
+    }
+
+    @Override
+    public Map<String, P> getBasePropMap() {
+        return basePropMap;
     }
 
     @Override
@@ -456,7 +647,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
     @Override
     public DtoProp<T, P> build() {
         return new DtoPropImpl<>(
-                baseProp,
+                basePropMap,
                 baseLine,
                 alias,
                 aliasLine,

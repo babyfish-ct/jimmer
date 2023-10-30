@@ -31,7 +31,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Map<String, DtoPropBuilder<T, P>> autoScalarPropMap = new LinkedHashMap<>();
 
-    final Map<P, DtoPropBuilder<T, P>> positivePropMap = new LinkedHashMap<>();
+    final Map<P, List<DtoPropBuilder<T, P>>> positivePropMap = new LinkedHashMap<>();
 
     final Map<String, AbstractPropBuilder> aliasPositivePropMap = new LinkedHashMap<>();
 
@@ -227,25 +227,49 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private void handlePositiveProp(DtoParser.PositivePropContext prop) {
         DtoPropBuilder<T, P> builder = new DtoPropBuilder<>(this, prop);
-        if (positivePropMap.put(builder.getBaseProp(), builder) != null) {
-            throw ctx.exception(
-                    builder.getBaseLine(),
-                    "Base property \"" +
-                            builder.getBaseProp() +
-                            "\" cannot be referenced twice"
-            );
+        for (P baseProp : builder.getBasePropMap().values()) {
+            handlePositiveProp0(builder, baseProp);
         }
-        if (builder.getAlias() != null) {
-            if (aliasPositivePropMap.put(builder.getAlias(), builder) != null) {
+    }
+
+    private void handlePositiveProp0(DtoPropBuilder<T, P> propBuilder, P baseProp) {
+        List<DtoPropBuilder<T, P>> builders = positivePropMap.get(baseProp);
+        if (builders == null) {
+            builders = new ArrayList<>();
+            positivePropMap.put(baseProp, builders);
+        } else {
+            boolean valid = false;
+            if (builders.size() < 2) {
+                String oldFuncName = builders.get(0).getFuncName();
+                String newFuncName = propBuilder.getFuncName();
+                if (!Objects.equals(oldFuncName, newFuncName) &&
+                        Constants.QBE_FUNC_MAP.containsKey(oldFuncName) &&
+                        (Constants.QBE_FUNC_MAP.containsKey(newFuncName))) {
+                    valid = true;
+                }
+            }
+            if (!valid) {
                 throw ctx.exception(
-                        builder.getAliasLine(),
+                        propBuilder.getBaseLine(),
+                        "Base property \"" +
+                                baseProp +
+                                "\" cannot be referenced too many times"
+                );
+            }
+        }
+        builders.add(propBuilder);
+        if (propBuilder.getAlias() != null) {
+            AbstractPropBuilder conflictPropBuilder = aliasPositivePropMap.put(propBuilder.getAlias(), propBuilder);
+            if (conflictPropBuilder != null && conflictPropBuilder != propBuilder) {
+                throw ctx.exception(
+                        propBuilder.getAliasLine(),
                         "Duplicated property alias \"" +
-                                builder.getAlias() +
+                                propBuilder.getAlias() +
                                 "\""
                 );
             }
         } else {
-            flatPositiveProps.add(builder);
+            flatPositiveProps.add(propBuilder);
         }
     }
 
@@ -290,14 +314,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
         TypeRef typeRef = ctx.resolve(prop.typeRef());
         if (!typeRef.isNullable() &&
-                !modifiers.contains(DtoTypeModifier.INPUT_ONLY) &&
+                !modifiers.contains(DtoTypeModifier.SPECIFICATION) &&
                 !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
             throw ctx.exception(
                     prop.prop.getLine(),
                     "Illegal user defined property \"" +
                             prop.prop.getText() +
                             "\", it is not null but its default value cannot be determined, " +
-                            "so it must be declared in dto type with the modifier 'inputOnly'"
+                            "so it must be declared in dto type with the modifier 'specification'"
             );
         }
         UserProp userProp = new UserProp(prop.prop, typeRef, annotations);
@@ -364,25 +388,25 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     superType.getName() +
                                     "\" is not input"
                     );
-                } else if (modifiers.contains(DtoTypeModifier.INPUT_ONLY) && !superType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+                } else if (modifiers.contains(DtoTypeModifier.SPECIFICATION) && !superType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                     assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
                                     name.getText() +
-                                    "\", it is inputOnly type but the super type \"" +
+                                    "\", it is specification type but the super type \"" +
                                     superType.getName() +
-                                    "\" is not inputOnly"
+                                    "\" is not specification"
                     );
-                } else if (!modifiers.contains(DtoTypeModifier.INPUT_ONLY) && superType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+                } else if (!modifiers.contains(DtoTypeModifier.SPECIFICATION) && superType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                     assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
                                     name.getText() +
-                                    "\", it is not inputOnly type but the super type \"" +
+                                    "\", it is not specification type but the super type \"" +
                                     superType.getName() +
-                                    "\" is inputOnly"
+                                    "\" is specification"
                     );
                 }
                 superTypes.add(superType);
