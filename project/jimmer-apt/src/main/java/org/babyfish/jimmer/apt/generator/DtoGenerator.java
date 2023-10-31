@@ -68,14 +68,18 @@ public class DtoGenerator {
                 .classBuilder(simpleName)
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
-                        ParameterizedTypeName.get(
-                                dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
-                                        Constants.INPUT_CLASS_NAME :
+                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
+                                ParameterizedTypeName.get(
+                                        Constants.SPECIFICATION_IMPLEMENTOR_CLASS_NAME,
+                                        dtoType.getBaseType().getClassName(),
+                                        dtoType.getBaseType().getTableClassName()
+                                ) :
+                                ParameterizedTypeName.get(
                                         dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
                                                 Constants.VIEWABLE_INPUT_CLASS_NAME :
                                                 Constants.VIEW_CLASS_NAME,
-                                dtoType.getBaseType().getClassName()
-                        )
+                                        dtoType.getBaseType().getClassName()
+                                )
                 );
         if (parent == null) {
             typeBuilder.addAnnotation(
@@ -152,8 +156,8 @@ public class DtoGenerator {
 
     private void addMembers() {
 
-        boolean inputOnly = dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
-        if (!inputOnly) {
+        boolean isSpecification = dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
+        if (!isSpecification) {
             addMetadata();
         }
 
@@ -168,7 +172,7 @@ public class DtoGenerator {
         }
 
         addDefaultConstructor();
-        if (!inputOnly) {
+        if (!isSpecification) {
             addConverterConstructor();
             addOf();
         }
@@ -180,7 +184,12 @@ public class DtoGenerator {
             addAccessors(prop);
         }
 
-        addToEntity();
+        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            addGetEntityType();
+            addApplyTo();
+        } else {
+            addToEntity();
+        }
 
         addHashCode();
         addEquals();
@@ -258,7 +267,7 @@ public class DtoGenerator {
     }
 
     private void addAccessorField(DtoProp<ImmutableType, ImmutableProp> prop) {
-        if (prop.isUnmapped() || isSimpleProp(prop)) {
+        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) || prop.isUnmapped() || isSimpleProp(prop)) {
             return;
         }
         FieldSpec.Builder builder = FieldSpec.builder(
@@ -672,7 +681,169 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
+    private void addGetEntityType() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("getEntityType")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                dtoType.getBaseType().getClassName()
+                        )
+                );
+        builder.addStatement("return $T.class", dtoType.getBaseType().getClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addApplyTo() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("applyTo")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        ParameterSpec.builder(
+                                ParameterizedTypeName.get(
+                                        Constants.SPECIFICATION_ARGS_CLASS_NAME,
+                                        dtoType.getBaseType().getClassName(),
+                                        dtoType.getBaseType().getTableClassName()
+                                ),
+                                "args"
+                        ).build()
+                );
+        List<ImmutableProp> stack = Collections.emptyList();
+        builder.addStatement("$T __applier = args.getApplier()", Constants.PREDICATE_APPLIER_CLASS_NAME);
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            List<ImmutableProp> newStack = new ArrayList<>(stack.size() + 2);
+            DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+            for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
+                if (p != tailProp || p.getTargetType() != null) {
+                    newStack.add(p.getBaseProp());
+                }
+            }
+            stack = addStackOperations(builder, stack, newStack);
+            addPredicateOperation(builder, tailProp);
+        }
+        addStackOperations(builder, stack, Collections.emptyList());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private List<ImmutableProp> addStackOperations(
+            MethodSpec.Builder builder,
+            List<ImmutableProp> stack,
+            List<ImmutableProp> newStack
+    ) {
+        int size = Math.min(stack.size(), newStack.size());
+        int sameCount = size;
+        for (int i = 0; i < size; i++) {
+            if (stack.get(i) != newStack.get(i)) {
+                sameCount = i;
+                break;
+            }
+        }
+        for (int i = stack.size() - sameCount; i > 0; --i) {
+            builder.addStatement("__applier.pop()");
+        }
+        for (ImmutableProp prop : newStack.subList(sameCount, newStack.size())) {
+            builder.addStatement(
+                    "__applier.push($T.$L.unwrap())",
+                    prop.getDeclaringType().getPropsClassName(),
+                    StringUtil.snake(prop.getName(), StringUtil.SnakeCase.UPPER)
+            );
+        }
+        return newStack;
+    }
+
+    private void addPredicateOperation(MethodSpec.Builder builder, DtoProp<ImmutableType, ImmutableProp> prop) {
+        String funcName = prop.getFuncName();
+        if (funcName == null) {
+            funcName = "eq";
+        } else if ("null".equals(funcName)) {
+            funcName = "isNull";
+        } else if ("notNull".equals(funcName)) {
+            funcName = "isNotNull";
+        } else if ("id".equals(funcName)) {
+            funcName = "associatedIdEq";
+        }
+
+        if (prop.getTargetType() != null) {
+            builder.beginControlFlow("if (this.$L != null)", prop.getName());
+            builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
+            builder.endControlFlow();
+            return;
+        }
+
+        CodeBlock.Builder cb = CodeBlock.builder();
+        if (org.babyfish.jimmer.dto.compiler.Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
+            cb.add("__applier.$L(new $T[] { ", funcName, Constants.IMMUTABLE_PROP_CLASS_NAME);
+            boolean addComma = false;
+            for (ImmutableProp baseProp : prop.getBasePropMap().values()) {
+                if (addComma) {
+                    cb.add(", ");
+                } else {
+                    addComma = true;
+                }
+                cb.add(
+                        "$T.$L.unwrap()",
+                        baseProp.getDeclaringType().getPropsClassName(),
+                        StringUtil.snake(baseProp.getName(), StringUtil.SnakeCase.UPPER)
+                );
+            }
+            cb.add(" }, ");
+        } else {
+            cb.add(
+                    "__applier.$L($T.$L.unwrap(), ",
+                    funcName,
+                    prop.getBaseProp().getDeclaringType().getPropsClassName(),
+                    StringUtil.snake(prop.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
+            );
+        }
+        cb.add("this.");
+        cb.add(prop.getName());
+        if ("like".equals(funcName) || "notLike".equals(funcName)) {
+            cb.add(", ");
+            cb.add(prop.getLikeOptions().contains(LikeOption.INSENSITIVE) ? "true" : "false");
+            cb.add(", ");
+            cb.add(prop.getLikeOptions().contains(LikeOption.MATCH_START) ? "true" : "false");
+            cb.add(", ");
+            cb.add(prop.getLikeOptions().contains(LikeOption.MATCH_END) ? "true" : "false");
+        }
+        cb.addStatement(")");
+        builder.addCode(cb.build());
+    }
+
     public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        ImmutableProp baseProp = prop.toTailProp().getBaseProp();
+        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            String funcName = prop.toTailProp().getFuncName();
+            if (funcName != null) {
+                switch (funcName) {
+                    case "null":
+                    case "notNull":
+                        return TypeName.BOOLEAN;
+                    case "valueIn":
+                    case "valueNotIn":
+                        return ParameterizedTypeName.get(
+                                Constants.COLLECTION_CLASS_NAME,
+                                getPropElementName(prop)
+                        );
+                    case "id":
+                    case "associatedIdEq":
+                    case "associatedIdNe":
+                        return baseProp.getTargetType().getIdProp().getTypeName();
+                    case "associatedIdIn":
+                    case "associatedIdNotIn":
+                        return ParameterizedTypeName.get(
+                                Constants.COLLECTION_CLASS_NAME,
+                                baseProp.getTargetType().getIdProp().getTypeName()
+                        );
+                }
+            }
+            if (baseProp.isAssociation(true)) {
+                return getPropElementName(prop);
+            }
+        }
+
         EnumType enumType = prop.getEnumType();
         if (enumType != null) {
             if (enumType.isNumeric()) {
@@ -681,7 +852,7 @@ public class DtoGenerator {
             return Constants.STRING_CLASS_NAME;
         }
         TypeName elementTypeName = getPropElementName(prop);
-        return prop.toTailProp().getBaseProp().isList() ?
+        return baseProp.isList() ?
                 ParameterizedTypeName.get(
                         Constants.LIST_CLASS_NAME,
                         elementTypeName.isPrimitive() ?

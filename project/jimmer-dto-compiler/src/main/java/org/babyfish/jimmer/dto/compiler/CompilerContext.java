@@ -47,6 +47,9 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 case "input":
                     dtoTypeModifier = DtoTypeModifier.INPUT;
                     break;
+                case "unsafe":
+                    dtoTypeModifier = DtoTypeModifier.UNSAFE;
+                    break;
                 case "specification":
                     dtoTypeModifier = DtoTypeModifier.SPECIFICATION;
                     break;
@@ -69,6 +72,13 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             throw exception(
                     type.name.getLine(),
                     "If modifiers 'input' and 'specification' cannot appear at the same time"
+            );
+        }
+        if (modifiers.contains(DtoTypeModifier.UNSAFE) &&
+                !modifiers.contains(DtoTypeModifier.INPUT)) {
+            throw exception(
+                    type.name.getLine(),
+                    "If modifiers 'unsafe' can only be used for input"
             );
         }
         Set<String> superSet = new LinkedHashSet<>();

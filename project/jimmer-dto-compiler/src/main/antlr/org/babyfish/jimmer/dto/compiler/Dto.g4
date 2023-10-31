@@ -30,7 +30,7 @@ importedType
 dtoType
     :
     (annotations += annotation)*
-    (modifiers += (Identifier | 'input-only'))*
+    (modifiers += Identifier)*
     name=Identifier
     (':' superNames += Identifier (',' superNames += Identifier)*)?
     body=dtoBody
@@ -83,7 +83,6 @@ positiveProp
     (annotations += annotation)*
     '+'?
     (
-        (negative = '!')?
         func = Identifier
         (':' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?
         '(' props += Identifier (',' props += Identifier)* ','? ')'

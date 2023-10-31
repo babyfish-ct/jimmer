@@ -243,8 +243,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 String oldFuncName = builders.get(0).getFuncName();
                 String newFuncName = propBuilder.getFuncName();
                 if (!Objects.equals(oldFuncName, newFuncName) &&
-                        Constants.QBE_FUNC_MAP.containsKey(oldFuncName) &&
-                        (Constants.QBE_FUNC_MAP.containsKey(newFuncName))) {
+                        Constants.QBE_FUNC_NAMES.contains(oldFuncName) &&
+                        (Constants.QBE_FUNC_NAMES.contains(newFuncName))) {
                     valid = true;
                 }
             }
@@ -378,35 +378,30 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             superTypes = new ArrayList<>(superTypeBuilders.size());
             for (DtoTypeBuilder<T, P> superTypeBuilder : superTypeBuilders) {
                 DtoType<T, P> superType = superTypeBuilder.build();
-                if (modifiers.contains(DtoTypeModifier.INPUT) && !superType.getModifiers().contains(DtoTypeModifier.INPUT)) {
+                String category = category(modifiers);
+                String superCategory = category(superType.getModifiers());
+                if (!category.equals(superCategory)) {
                     assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
                                     name.getText() +
-                                    "\", it is input type but the super type \"" +
+                                    "\", it is \"" +
+                                    category +
+                                    "\", but its super type \"" +
                                     superType.getName() +
-                                    "\" is not input"
+                                    "\" is not"
                     );
-                } else if (modifiers.contains(DtoTypeModifier.SPECIFICATION) && !superType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
-                    assert name != null;
+                }
+                if (!modifiers.contains(DtoTypeModifier.UNSAFE) &&
+                        superType.getModifiers().contains(DtoTypeModifier.UNSAFE)) {
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
                                     name.getText() +
-                                    "\", it is specification type but the super type \"" +
+                                    "\", its super type \"" +
                                     superType.getName() +
-                                    "\" is not specification"
-                    );
-                } else if (!modifiers.contains(DtoTypeModifier.SPECIFICATION) && superType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
-                    assert name != null;
-                    throw ctx.exception(
-                            name.getLine(),
-                            "Illegal type \"" +
-                                    name.getText() +
-                                    "\", it is not specification type but the super type \"" +
-                                    superType.getName() +
-                                    "\" is specification"
+                                    "\" is unsafe so that it must unsafe too"
                     );
                 }
                 superTypes.add(superType);
@@ -605,5 +600,15 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 );
             }
         }
+    }
+
+    private static String category(Set<DtoTypeModifier> modifiers) {
+        if (modifiers.contains(DtoTypeModifier.INPUT)) {
+            return "input";
+        }
+        if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            return "specification";
+        }
+        return "view(neither input nor specification)";
     }
 }

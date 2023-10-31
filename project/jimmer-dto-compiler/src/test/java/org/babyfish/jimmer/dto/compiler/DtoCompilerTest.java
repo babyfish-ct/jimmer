@@ -774,7 +774,7 @@ public class DtoCompilerTest {
         Assertions.assertEquals(
                 "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
                         "Illegal required modifier '!' for non-id property, " +
-                        "it can only be used in specification type",
+                        "the declared type is neither unsafe input nor specification",
                 ex.getMessage()
         );
     }

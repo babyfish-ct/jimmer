@@ -5,6 +5,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Set;
 
 public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoPropImplementor {
 
@@ -43,4 +44,6 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     boolean isRecursive();
 
     boolean isNewTarget();
+
+    Set<LikeOption> getLikeOptions();
 }

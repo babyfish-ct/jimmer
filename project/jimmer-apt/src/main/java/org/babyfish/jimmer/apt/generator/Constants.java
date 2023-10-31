@@ -45,6 +45,9 @@ class Constants {
     public static final ClassName MAP_CLASS_NAME =
             ClassName.get(Map.class);
 
+    public static final ClassName COLLECTION_CLASS_NAME =
+            ClassName.get(Collection.class);
+
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
 
@@ -56,6 +59,24 @@ class Constants {
 
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
+
+    public static final ClassName SPECIFICATION_IMPLEMENTOR_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query.specification",
+                    "SpecificationImplementor"
+            );
+
+    public static final ClassName SPECIFICATION_ARGS_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query.specification",
+                    "SpecificationArgs"
+            );
+
+    public static final ClassName PREDICATE_APPLIER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query.specification",
+                    "PredicateApplier"
+            );
 
     public static final ClassName VIEWABLE_INPUT_CLASS_NAME =
             ClassName.get(ViewableInput.class);
@@ -270,6 +291,12 @@ class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "ViewMetadata"
+            );
+
+    public static final ClassName IMMUTABLE_PROP_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "ImmutableProp"
             );
 
     public static final String DRAFT_FIELD_CTX =

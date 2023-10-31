@@ -8,13 +8,12 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
+import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
+import org.babyfish.jimmer.sql.ast.query.specification.SpecificationImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -37,6 +36,7 @@ public class MutableRootQueryImpl<T extends Table<?>>
     ) {
         super(sqlClient, immutableType);
         ctx = new StatementContext(purpose, filterLevel);
+        getTableImplementor();
     }
 
     public MutableRootQueryImpl(
@@ -216,6 +216,17 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> where(Predicate... predicates) {
         return (MutableRootQueryImpl<T>) super.where(predicates);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public MutableRootQuery<T> where(SpecificationImplementor<?, T> specification) {
+        SpecificationArgs<Object, Table<Object>> args =
+                new SpecificationArgs<>(new PredicateApplier(this));
+        SpecificationImplementor<Object, Table<Object>> implementor =
+                (SpecificationImplementor<Object, Table<Object>>)specification;
+        implementor.applyTo(args);
+        return this;
     }
 
     @OldChain

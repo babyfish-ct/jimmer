@@ -32,8 +32,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final boolean recursive;
 
-    private final boolean negative;
-
     private final Set<LikeOption> likeOptions;
 
     DtoPropBuilder(
@@ -62,7 +60,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.targetTypeBuilder = null;
         this.enumType = null;
         this.recursive = false;
-        this.negative = false;
         this.likeOptions = Collections.emptySet();
     }
 
@@ -76,22 +73,22 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         Map<String, P> basePropMap = new LinkedHashMap<>();
         if (prop.func != null) {
             funcName = prop.func.getText();
-            isQbeFunc = Constants.QBE_FUNC_MAP.containsKey(funcName);
-            if (isQbeFunc) {
-                if (!parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
-                    throw ctx.exception(
-                            prop.func.getLine(),
-                            "Illegal function \"" +
-                                    funcName +
-                                    "\", it can only be declared in specification"
-                    );
-                }
-            } else if (prop.props.size() > 1) {
+            isQbeFunc = Constants.QBE_FUNC_NAMES.contains(funcName);
+            if (isQbeFunc && !parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         prop.func.getLine(),
                         "Illegal function \"" +
                                 funcName +
                                 "\", it can only be declared in specification"
+                );
+            }
+            if (prop.props.size() > 1 && !Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
+                throw ctx.exception(
+                        prop.func.getLine(),
+                        "Illegal function \"" +
+                                funcName +
+                                "\", it can not have multiple arguments, the functions support multiple arguments are " +
+                                Constants.MULTI_ARGS_FUNC_NAMES
                 );
             }
         }
@@ -125,28 +122,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 );
             }
         }
-        if (prop.negative != null) {
-            if (isQbeFunc) {
-                String negativeFuncName = Constants.QBE_FUNC_MAP.get(funcName);
-                if (negativeFuncName != null) {
-                    throw ctx.exception(
-                            prop.func.getLine(),
-                            "Illegal function \"" +
-                                    funcName +
-                                    "\", it does not accept `!`, please use \"" +
-                                    negativeFuncName +
-                                    "\""
-                    );
-                }
-            } else {
-                throw ctx.exception(
-                        prop.func.getLine(),
-                        "Illegal function \"" +
-                                funcName +
-                                "\", it does not accept `!`"
-                );
-            }
-        }
         this.basePropMap = Collections.unmodifiableMap(basePropMap);
 
         EnumSet<LikeOption> likeOptions = EnumSet.noneOf(LikeOption.class);
@@ -174,7 +149,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         "`^` can only be used to decorate the function `like`"
                 );
             }
-            likeOptions.add(LikeOption.PREFIX);
+            likeOptions.add(LikeOption.MATCH_START);
         }
         if (prop.suffix != null) {
             if (!"like".equals(funcName)) {
@@ -183,9 +158,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         "`$` can only be used to decorate the function `like`"
                 );
             }
-            likeOptions.add(LikeOption.SUFFIX);
+            likeOptions.add(LikeOption.MATCH_END);
         }
-        this.negative = prop.negative != null;
         this.likeOptions = Collections.unmodifiableSet(likeOptions);
 
         List<Anno> annotations;
@@ -259,6 +233,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 case "gt":
                 case "ge":
                 case "valueIn":
+                case "valueNotIn":
                     if (baseProp.isAssociation(true)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
@@ -271,14 +246,18 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     }
                     break;
                 case "associatedIdIn":
+                case "associatedIdNotIn":
                     if (!baseProp.isAssociation(true)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
-                                "Cannot call the function \"associatedIdIn\" because the current prop \"" +
+                                "Cannot call the function \"" + funcName + "\" because the current prop \"" +
                                         baseProp +
                                         "\" is not association"
                         );
                     }
+                    break;
+                case "null":
+                case "nonNull":
                     break;
                 default:
                     throw ctx.exception(
@@ -288,7 +267,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                     "\", " +
                                     (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
                                     "the function name of specification type must be \"id\", \"flat\", " +
-                                            Constants.QBE_FUNC_MAP.keySet().stream().collect(Collectors.joining(", ")) :
+                                            Constants.QBE_FUNC_NAMES.stream().collect(Collectors.joining(", ")) :
                                     "the function name must be \"id\" or \"flat\"")
                     );
             }
@@ -306,53 +285,96 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             if ("flat".equals(funcName)) {
                 throw ctx.exception(
                         prop.alias.getLine(),
-                        "The alias cannot be specified when the function `flat` is used"
+                        "The alias cannot be specified when the function `" + funcName + "` is used"
                 );
             }
             alias = prop.alias.getText();
-        } else if (basePropMap.size() > 1) {
-            throw ctx.exception(
-                    prop.props.get(prop.props.size() - 1).getLine(),
-                    "The alias must be specified when the function has multiple arguments"
-            );
-        } else if ("id".equals(funcName)) {
-            if (baseProp.isAssociation(true) && baseProp.isList()) {
-                throw ctx.exception(
-                        prop.props.get(0).getLine(),
-                        "The alias must be specified for the property with " +
-                                "`id` function when the base property is list association"
-                );
-            }
-            alias = baseProp.getName() + "Id";
-        } else if ("flat".equals(funcName)) {
-            alias = null;
-        } else if ("ne".equals(funcName)) {
-            throw ctx.exception(
-                    prop.props.get(0).getLine(),
-                    "The alias must be specified for `ne` function"
-            );
-        } else if ("lt".equals(funcName)) {
-            alias = baseProp.getName();
-            alias = "max" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1) + "Exclusive";
-        } else if ("le".equals(funcName)) {
-            alias = baseProp.getName();
-            alias = "max" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
-        } else if ("gt".equals(funcName)) {
-            alias = baseProp.getName();
-            alias = "min" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1) + "Exclusive";
-        } else if ("ge".equals(funcName)) {
-            alias = baseProp.getName();
-            alias = "min" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
-        } else if ("associatedIdIn".equals(funcName)) {
-            if (baseProp.isAssociation(true) && baseProp.isList()) {
-                throw ctx.exception(
-                        prop.props.get(0).getLine(),
-                        "The alias must be specified for `associatedIdIn` function"
-                );
-            }
-            alias = baseProp.getName() + "Ids";
         } else {
-            alias = baseProp.getName();
+            if (basePropMap.size() > 1) {
+                throw ctx.exception(
+                        prop.props.get(prop.props.size() - 1).getLine(),
+                        "The alias must be specified when the function has multiple arguments"
+                );
+            }
+            if (funcName == null) {
+                alias = baseProp.getName();
+            } else {
+                switch (funcName) {
+                    case "id":
+                        if (baseProp.isAssociation(true) && baseProp.isList()) {
+                            throw ctx.exception(
+                                    prop.props.get(0).getLine(),
+                                    "The alias must be specified for the property with " +
+                                            "`id` function when the base property is list association"
+                            );
+                        }
+                        alias = baseProp.getName() + "Id";
+                        break;
+                    case "flat":
+                        alias = null;
+                        break;
+                    case "ne":
+                    case "valueIn":
+                    case "valueNotIn":
+                        throw ctx.exception(
+                                prop.props.get(0).getLine(),
+                                "The alias must be specified for `" +
+                                        funcName +
+                                        "` function"
+                        );
+                    case "gt":
+                        alias = baseProp.getName();
+                        alias = "min" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1) + "Exclusive";
+                        break;
+                    case "ge":
+                        alias = baseProp.getName();
+                        alias = "min" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
+                        break;
+                    case "lt":
+                        alias = baseProp.getName();
+                        alias = "max" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1) + "Exclusive";
+                        break;
+                    case "le":
+                        alias = baseProp.getName();
+                        alias = "max" + Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
+                        break;
+                    case "null":
+                        alias = baseProp.getName();
+                        if (!alias.startsWith("is") || alias.length() < 3 || !Character.isUpperCase(alias.charAt(2))) {
+                            alias = Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
+                        }
+                        alias = "is" + alias + "Null";
+                        break;
+                    case "notNull":
+                        alias = baseProp.getName();
+                        if (!alias.startsWith("is") || alias.length() < 3 || !Character.isUpperCase(alias.charAt(2))) {
+                            alias = Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
+                        }
+                        alias = "is" + alias + "NotNull";
+                        break;
+                    case "associatedIdIn":
+                        if (baseProp.isAssociation(true) && baseProp.isList()) {
+                            throw ctx.exception(
+                                    prop.props.get(0).getLine(),
+                                    "The alias must be specified for `associatedIdIn` function when base property is list"
+                            );
+                        }
+                        alias = baseProp.getName() + "Ids";
+                        break;
+                    case "associatedIdNotIn":
+                        if (baseProp.isAssociation(true) && baseProp.isList()) {
+                            throw ctx.exception(
+                                    prop.props.get(0).getLine(),
+                                    "The alias must be specified for `associatedIdNotIn` function when base property is list"
+                            );
+                        }
+                        alias = "excluded" + Character.toUpperCase(baseProp.getName().charAt(0)) + baseProp.getName().substring(1) + "Ids";
+                        break;
+                    default:
+                        alias = baseProp.getName();
+                        break;
+                }
+            }
         }
 
         if (parent.currentAliasGroup() != null) {
@@ -396,15 +418,16 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     throw ctx.exception(
                             prop.required.getLine(),
                             "Illegal required modifier '!' for id property, " +
-                                    "it can only be used in input/specification type"
+                                    "the declared type is neither input nor specification"
                     );
                 }
             } else {
-                if (!parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                if (!parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) &&
+                !parent.modifiers.contains(DtoTypeModifier.UNSAFE)) {
                     throw ctx.exception(
                             prop.required.getLine(),
                             "Illegal required modifier '!' for non-id property, " +
-                                    "it can only be used in specification type"
+                                    "the declared type is neither unsafe input nor specification"
                     );
                 }
                 if (!baseProp.isNullable() && getNullableFlatParent() == null) {
@@ -484,7 +507,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     prop.recursive != null ? alias : null,
                     ctx
             );
-        } else if (baseProp.isAssociation(false) && !"id".equals(funcName) && !"idInList".equals(funcName)) {
+        } else if (baseProp.isAssociation(false) &&
+                !"id".equals(funcName) &&
+                !"associatedIdIn".equals(funcName) &&
+                !"associatedIdNotIn".equals(funcName)) {
             throw ctx.exception(
                     prop.stop.getLine(),
                     "Illegal property \"" +
@@ -656,7 +682,8 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 enumType,
                 mandatory,
                 funcName,
-                recursive
+                recursive,
+                likeOptions
         );
     }
 }

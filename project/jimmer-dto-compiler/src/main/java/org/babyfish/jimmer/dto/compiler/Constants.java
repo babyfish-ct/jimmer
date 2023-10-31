@@ -1,24 +1,42 @@
 package org.babyfish.jimmer.dto.compiler;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Constants {
 
-    public static final Map<String, String> QBE_FUNC_MAP;
+    public static final Set<String> QBE_FUNC_NAMES;
+
+    public static final Set<String> MULTI_ARGS_FUNC_NAMES;
 
     static {
-        Map<String, String> qbeFuncMap = new HashMap<>();
-        qbeFuncMap.put("eq", "ne");
-        qbeFuncMap.put("ne", "eq");
-        qbeFuncMap.put("gt", "le");
-        qbeFuncMap.put("ge", "lt");
-        qbeFuncMap.put("lt", "ge");
-        qbeFuncMap.put("le", "gt");
-        qbeFuncMap.put("like", null);
-        qbeFuncMap.put("valueIn", null);
-        qbeFuncMap.put("associatedIdIn", null);
-        QBE_FUNC_MAP = Collections.unmodifiableMap(qbeFuncMap);
+        Set<String> qbeFuncNames = new HashSet<>();
+        qbeFuncNames.add("eq");
+        qbeFuncNames.add("ne");
+        qbeFuncNames.add("gt");
+        qbeFuncNames.add("ge");
+        qbeFuncNames.add("lt");
+        qbeFuncNames.add("le");
+        qbeFuncNames.add("like");
+        qbeFuncNames.add("notLike");
+        qbeFuncNames.add("null");
+        qbeFuncNames.add("notNull");
+        qbeFuncNames.add("valueIn");
+        qbeFuncNames.add("valueNotIn");
+        qbeFuncNames.add("associatedIdEq");
+        qbeFuncNames.add("associatedIdNe");
+        qbeFuncNames.add("associatedIdIn");
+        qbeFuncNames.add("associatedIdNotIn");
+        QBE_FUNC_NAMES = Collections.unmodifiableSet(qbeFuncNames);
+
+        Set<String> multiArgsFuncNames = new HashSet<>();
+        multiArgsFuncNames.add("eq");
+        multiArgsFuncNames.add("like");
+        multiArgsFuncNames.add("null");
+        multiArgsFuncNames.add("notNull");
+        multiArgsFuncNames.add("valueIn");
+        multiArgsFuncNames.add("associatedIdEq");
+        multiArgsFuncNames.add("associatedIdIn");
+
+        MULTI_ARGS_FUNC_NAMES = Collections.unmodifiableSet(multiArgsFuncNames);
     }
 }

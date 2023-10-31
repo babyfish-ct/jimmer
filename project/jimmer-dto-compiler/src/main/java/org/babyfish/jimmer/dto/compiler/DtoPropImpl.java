@@ -4,10 +4,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.management.ThreadInfo;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
@@ -38,6 +35,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final String basePath;
 
+    private final Set<LikeOption> likeOptions;
+
     private final DtoProp<T, P> tail;
 
     DtoPropImpl(
@@ -50,7 +49,8 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable EnumType enumType,
             Mandatory mandatory,
             String funcName,
-            boolean recursive
+            boolean recursive,
+            Set<LikeOption> likeOptions
     ) {
         this.basePropMap = basePropMap;
         this.nextProp = null;
@@ -74,6 +74,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
                             .collect(Collectors.joining("|")) +
                     ')';
         }
+        this.likeOptions = Collections.unmodifiableSet(likeOptions);
         this.tail = this;
     }
 
@@ -110,6 +111,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             tail = n;
         }
         this.basePath = builder.toString();
+        this.likeOptions = Collections.emptySet();
         this.tail = tail;
     }
 
@@ -126,6 +128,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.funcName = "flat";
         this.recursive = false;
         this.basePath = getBaseProp().getName();
+        this.likeOptions = original.getLikeOptions();
         this.tail = this;
     }
 
@@ -241,6 +244,11 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public boolean isNewTarget() {
         return true;
+    }
+
+    @Override
+    public Set<LikeOption> getLikeOptions() {
+        return likeOptions;
     }
 
     @Override
