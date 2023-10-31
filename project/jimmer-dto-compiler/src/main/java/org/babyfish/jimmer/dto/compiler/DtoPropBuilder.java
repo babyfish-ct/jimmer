@@ -383,6 +383,12 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         }
 
         if (prop.optional != null) {
+            if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                throw ctx.exception(
+                        prop.optional.getLine(),
+                        "Unnecessary optional modifier '?', all properties of specification are automatically optional"
+                );
+            }
             if ("flat".equals(funcName)) {
                 throw ctx.exception(
                         prop.optional.getLine(),
@@ -538,7 +544,10 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.alias = alias;
         if (prop.required != null) {
             this.mandatory = Mandatory.REQUIRED;
-        } else if (prop.optional != null || prop.recursive != null || ctx.isImplicitId(baseProp, parent.modifiers)) {
+        } else if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ||
+                prop.optional != null ||
+                prop.recursive != null ||
+                ctx.isImplicitId(baseProp, parent.modifiers)) {
             this.mandatory = Mandatory.OPTIONAL;
         } else {
             this.mandatory = Mandatory.DEFAULT;

@@ -199,6 +199,18 @@ internal val ENTITY_MANAGER_CLASS_NAME =
         "EntityManager"
     )
 
+internal val K_SPECIFICATION_CLASS_NAME =
+    ClassName(
+        "org.babyfish.jimmer.sql.kt.ast.query.specification",
+        "KSpecification"
+    )
+
+internal val K_SPECIFICATION_ARGS_CLASS_NAME =
+    ClassName(
+        "org.babyfish.jimmer.sql.kt.ast.query.specification",
+        "KSpecificationArgs"
+    )
+
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"
 internal const val JIMMER_MODULE = "JimmerModule"
 

@@ -60,10 +60,10 @@ class Constants {
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
 
-    public static final ClassName SPECIFICATION_IMPLEMENTOR_CLASS_NAME =
+    public static final ClassName SPECIFICATION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.query.specification",
-                    "SpecificationImplementor"
+                    "Specification"
             );
 
     public static final ClassName SPECIFICATION_ARGS_CLASS_NAME =

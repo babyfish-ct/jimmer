@@ -86,9 +86,7 @@ class PropsGenerator(
                         addFetchByFun(type, false)
                         addFetchByFun(type, true)
                     }
-                    for (prop in type.properties.values) {
-                        addPropMeta(type, prop)
-                    }
+                    addObjectMeta(type)
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
             fileSpec.writeTo(writer)
@@ -176,22 +174,25 @@ class PropsGenerator(
                         .apply {
                             if (prop.isRemote) {
                                 addCode(
-                                    "return %L.protect(%L(%L))",
+                                    "return %L.protect(%L(%T.%L))",
                                     K_REMOTE_REF,
                                     innerFunName,
+                                    type.propsClassName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
                                 )
                             } else if (innerFunName == "get") {
                                 addCode(
-                                    "return get<%T>(%L) as %T",
+                                    "return get<%T>(%T.%L) as %T",
                                     prop.targetTypeName(overrideNullable = false),
+                                    type.propsClassName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
                                     returnClassName
                                 )
                             } else {
                                 addCode(
-                                    "return %L(%L)",
+                                    "return %L(%T.%L)",
                                     innerFunName,
+                                    type.propsClassName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
                                 )
                             }
@@ -240,8 +241,9 @@ class PropsGenerator(
                     FunSpec
                         .getterBuilder()
                         .addStatement(
-                            "return getAssociatedId<%T>(%L) as %T",
+                            "return getAssociatedId<%T>(%T.%L) as %T",
                             prop.targetType!!.idProp!!.targetTypeName(overrideNullable = false),
+                            type.propsClassName,
                             StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
                             returnClassName
                         )
@@ -369,16 +371,25 @@ class PropsGenerator(
         )
     }
 
-    private fun FileSpec.Builder.addPropMeta(type: ImmutableType, prop: ImmutableProp) {
-        if (!prop.isDsl(false) && !prop.isDsl(true)) {
-            return
-        }
+    private fun FileSpec.Builder.addObjectMeta(type: ImmutableType) {
+        addType(
+            TypeSpec
+                .objectBuilder(type.propsClassName)
+                .apply {
+                    for (prop in type.properties.values) {
+                        addPropMeta(type, prop)
+                    }
+                }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addPropMeta(type: ImmutableType, prop: ImmutableProp) {
         addProperty(
             PropertySpec
                 .builder(
                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
-                    IMMUTABLE_PROP_CLASS_NAME,
-                    KModifier.PRIVATE
+                    IMMUTABLE_PROP_CLASS_NAME
                 )
                 .initializer(
                     "%T::%N.%M()",

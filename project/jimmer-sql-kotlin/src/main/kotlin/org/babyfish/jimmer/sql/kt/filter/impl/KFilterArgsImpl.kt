@@ -41,24 +41,12 @@ internal class KFilterArgsImpl<E: Any>(
         (javaStatement as? Sortable)?.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
-    override fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?) {
-        (javaStatement as? Sortable)?.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
-    }
-
     override fun orderBy(vararg orders: Order?) {
         (javaStatement as? Sortable)?.orderBy(*orders)
     }
 
-    override fun orderByIf(condition: Boolean, vararg orders: Order?) {
-        (javaStatement as? Sortable)?.orderByIf(condition, *orders)
-    }
-
     override fun orderBy(orders: List<Order?>) {
         (javaStatement as? Sortable)?.orderBy(orders)
-    }
-
-    override fun orderByIf(condition: Boolean, orders: List<Order?>) {
-        (javaStatement as? Sortable)?.orderByIf(condition, orders)
     }
 
     override val subQueries: KSubQueries<E> by lazy {

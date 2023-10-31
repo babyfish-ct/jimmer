@@ -70,7 +70,7 @@ public class DtoGenerator {
                 .addSuperinterface(
                         dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
                                 ParameterizedTypeName.get(
-                                        Constants.SPECIFICATION_IMPLEMENTOR_CLASS_NAME,
+                                        Constants.SPECIFICATION_CLASS_NAME,
                                         dtoType.getBaseType().getClassName(),
                                         dtoType.getBaseType().getTableClassName()
                                 ) :
@@ -185,7 +185,6 @@ public class DtoGenerator {
         }
 
         if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
-            addGetEntityType();
             addApplyTo();
         } else {
             addToEntity();
@@ -284,7 +283,8 @@ public class DtoGenerator {
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
         if (prop.isNullable() && (
                 !tailProp.getBaseProp().isNullable() ||
-                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))
+                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ||
+                        dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
         ) {
             cb.add("\nfalse");
         } else {
@@ -681,21 +681,6 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addGetEntityType() {
-        MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("getEntityType")
-                .addAnnotation(Override.class)
-                .addModifiers(Modifier.PUBLIC)
-                .returns(
-                        ParameterizedTypeName.get(
-                                Constants.CLASS_CLASS_NAME,
-                                dtoType.getBaseType().getClassName()
-                        )
-                );
-        builder.addStatement("return $T.class", dtoType.getBaseType().getClassName());
-        typeBuilder.addMethod(builder.build());
-    }
-
     private void addApplyTo() {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("applyTo")
@@ -755,6 +740,14 @@ public class DtoGenerator {
     }
 
     private void addPredicateOperation(MethodSpec.Builder builder, DtoProp<ImmutableType, ImmutableProp> prop) {
+
+        if (prop.getTargetType() != null) {
+            builder.beginControlFlow("if (this.$L != null)", prop.getName());
+            builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
+            builder.endControlFlow();
+            return;
+        }
+
         String funcName = prop.getFuncName();
         if (funcName == null) {
             funcName = "eq";
@@ -764,13 +757,6 @@ public class DtoGenerator {
             funcName = "isNotNull";
         } else if ("id".equals(funcName)) {
             funcName = "associatedIdEq";
-        }
-
-        if (prop.getTargetType() != null) {
-            builder.beginControlFlow("if (this.$L != null)", prop.getName());
-            builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
-            builder.endControlFlow();
-            return;
         }
 
         CodeBlock.Builder cb = CodeBlock.builder();

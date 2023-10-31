@@ -71,14 +71,14 @@ input BookNullableIdInput {
     id(store)
 }
 
-input DynamicBookInput {
+dynamic input DynamicBookInput {
     name?
     edition?
     price?
     id(store) as storeId
 }
 
-input DynamicBookInput2 {
+dynamic input DynamicBookInput2 {
     name?
     edition?
     price?
@@ -91,7 +91,7 @@ input DynamicBookInput2 {
 }
 
 specification BookSpecification {
-    #allScalars(Book)?
+    #allScalars(Book)
 
     @Job(value = [
         Task("Prepare environment", priority = Priority.HIGH, estimation = 4),
@@ -100,7 +100,7 @@ specification BookSpecification {
         Task(value = "Develop UI", priority = Priority.LOW, estimation = 100)
     ])
     tag1: Int
-    tag2: Int?
+    tag2: Int
     tag3: Map<String, Set<String>>
     tag4: MutableMap<String, MutableSet<String>>
     tag5: Array<Int>
@@ -116,21 +116,21 @@ specification BookSpecification {
 }
 
 specification BookSpecification2 {
-    #allScalars(this)?
-    valueIn(id)? as ids
-    ge(price)?
-    le(price)?
+    #allScalars(this)
+    valueIn(id) as ids
+    ge(price)
+    le(price)
     associatedIdIn(store)
     associatedIdNotIn(store)
-    associatedIdIn(authors)? as authorIds
-    associatedIdNotIn(authors)? as excludedAuthorIds
+    associatedIdIn(authors) as authorIds
+    associatedIdNotIn(authors) as excludedAuthorIds
 }
 
 specification BookSpecification3 {
-    #allScalars(this)?
-    valueIn(id)? as ids
-    ge(price)?
-    le(price)?
+    #allScalars(this)
+    valueIn(id) as ids
+    ge(price)
+    le(price)
     store {
         #allScalars(this)
         ge(name)
@@ -143,10 +143,10 @@ specification BookSpecification3 {
 }
 
 specification BookSpecification4 {
-    #allScalars(this)?
-    valueIn(id)? as ids
-    ge(price)?
-    le(price)?
+    #allScalars(this)
+    valueIn(id) as ids
+    ge(price)
+    le(price)
     flat(store) {
         as(^ -> parent) {
             ge(name)

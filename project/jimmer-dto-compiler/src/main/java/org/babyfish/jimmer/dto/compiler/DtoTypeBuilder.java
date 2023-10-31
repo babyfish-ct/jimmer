@@ -117,16 +117,23 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             );
         }
 
+        Mandatory mandatory;
+        if (allScalars.required != null) {
+            mandatory = Mandatory.REQUIRED;
+        } else if (allScalars.optional != null) {
+            if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                throw ctx.exception(
+                        allScalars.name.getLine(),
+                        "Unnecessary optional modifier '?', all properties of specification are automatically optional"
+                );
+            }
+            mandatory = Mandatory.OPTIONAL;
+        } else {
+            mandatory = modifiers.contains(DtoTypeModifier.SPECIFICATION) ? Mandatory.OPTIONAL : Mandatory.DEFAULT;
+        }
+
         if (allScalars.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
-                Mandatory mandatory;
-                if (allScalars.required != null) {
-                    mandatory = Mandatory.REQUIRED;
-                } else if (allScalars.optional != null) {
-                    mandatory = Mandatory.OPTIONAL;
-                } else {
-                    mandatory = Mandatory.DEFAULT;
-                }
                 if (isAutoScalar(baseProp)) {
                     autoScalarPropMap.put(
                             baseProp.getName(),
@@ -197,14 +204,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     );
                 }
                 for (P baseProp : ctx.getDeclaredProps(baseType).values()) {
-                    Mandatory mandatory;
-                    if (allScalars.required != null) {
-                        mandatory = Mandatory.REQUIRED;
-                    } else if (allScalars.optional != null) {
-                        mandatory = Mandatory.OPTIONAL;
-                    } else {
-                        mandatory = Mandatory.DEFAULT;
-                    }
                     if (isAutoScalar(baseProp) && !autoScalarPropMap.containsKey(baseProp.getName())) {
                         autoScalarPropMap.put(
                                 baseProp.getName(),

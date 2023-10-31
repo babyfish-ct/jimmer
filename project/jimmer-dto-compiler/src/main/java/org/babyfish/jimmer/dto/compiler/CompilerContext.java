@@ -41,23 +41,26 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         for (Token modifier : type.modifiers) {
             DtoTypeModifier dtoTypeModifier;
             switch (modifier.getText()) {
-                case "abstract":
-                    dtoTypeModifier = DtoTypeModifier.ABSTRACT;
-                    break;
                 case "input":
                     dtoTypeModifier = DtoTypeModifier.INPUT;
+                    break;
+                case "specification":
+                    dtoTypeModifier = DtoTypeModifier.SPECIFICATION;
+                    break;
+                case "abstract":
+                    dtoTypeModifier = DtoTypeModifier.ABSTRACT;
                     break;
                 case "unsafe":
                     dtoTypeModifier = DtoTypeModifier.UNSAFE;
                     break;
-                case "specification":
-                    dtoTypeModifier = DtoTypeModifier.SPECIFICATION;
+                case "dynamic":
+                    dtoTypeModifier = DtoTypeModifier.DYNAMIC;
                     break;
                 default:
                     throw exception(
                             modifier.getLine(),
                             "If the modifier of dto type is specified, it must be " +
-                                    "'abstract', 'input', 'specification'"
+                                    "'input', 'specification', 'abstract', 'unsafe' or 'dynamic'"
                     );
             }
             if (!modifiers.add(dtoTypeModifier)) {
@@ -79,6 +82,13 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             throw exception(
                     type.name.getLine(),
                     "If modifiers 'unsafe' can only be used for input"
+            );
+        }
+        if (modifiers.contains(DtoTypeModifier.DYNAMIC) &&
+                !modifiers.contains(DtoTypeModifier.INPUT)) {
+            throw exception(
+                    type.name.getLine(),
+                    "If modifiers 'dynamic' can only be used for input"
             );
         }
         Set<String> superSet = new LinkedHashSet<>();

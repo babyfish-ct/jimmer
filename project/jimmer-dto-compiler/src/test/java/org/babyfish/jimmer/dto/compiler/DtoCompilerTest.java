@@ -577,11 +577,11 @@ public class DtoCompilerTest {
         ).get(0);
         assertContentEquals(
                 "specification BookSpecification {" +
-                        "--->gt(price) as minPriceExclusive, " +
-                        "--->lt(price) as maxPriceExclusive, " +
+                        "--->@optional gt(price) as minPriceExclusive, " +
+                        "--->@optional lt(price) as maxPriceExclusive, " +
                         "--->@optional ge(store.name) as parentMinName, " +
                         "--->@optional le(store.name) as parentMaxName, " +
-                        "--->like(authors.(firstName|lastName)) as authorName" +
+                        "--->@optional like(authors.(firstName|lastName)) as authorName" +
                         "}",
                 dtoType.toString()
         );

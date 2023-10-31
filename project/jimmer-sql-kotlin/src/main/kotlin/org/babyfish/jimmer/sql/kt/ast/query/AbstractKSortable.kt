@@ -8,13 +8,7 @@ interface AbstractKSortable<E: Any, P: KProps<E>> : AbstractKFilterable<E, P> {
 
     fun orderBy(vararg expressions: KExpression<*>?)
 
-    fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?)
-
     fun orderBy(vararg orders: Order?)
 
-    fun orderByIf(condition: Boolean, vararg orders: Order?)
-
     fun orderBy(orders: List<Order?>)
-
-    fun orderByIf(condition: Boolean, orders: List<Order?>)
 }

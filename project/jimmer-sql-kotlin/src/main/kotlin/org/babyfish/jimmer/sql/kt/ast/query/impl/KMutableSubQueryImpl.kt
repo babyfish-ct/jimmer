@@ -39,24 +39,12 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
         javaSubQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
-    override fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?) {
-        javaSubQuery.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
-    }
-
     override fun orderBy(vararg orders: Order?) {
         javaSubQuery.orderBy(*orders)
     }
 
-    override fun orderByIf(condition: Boolean, vararg orders: Order?) {
-        javaSubQuery.orderByIf(condition, *orders)
-    }
-
     override fun orderBy(orders: List<Order?>) {
         javaSubQuery.orderBy(orders)
-    }
-
-    override fun orderByIf(condition: Boolean, orders: List<Order?>) {
-        javaSubQuery.orderByIf(condition, orders)
     }
 
     override fun groupBy(vararg expressions: KExpression<*>) {

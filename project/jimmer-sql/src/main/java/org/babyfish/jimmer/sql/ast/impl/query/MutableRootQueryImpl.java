@@ -9,8 +9,8 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
 import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
+import org.babyfish.jimmer.sql.ast.query.specification.Specification;
 import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
-import org.babyfish.jimmer.sql.ast.query.specification.SpecificationImplementor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -220,11 +220,11 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @SuppressWarnings("unchecked")
     @Override
-    public MutableRootQuery<T> where(SpecificationImplementor<?, T> specification) {
+    public MutableRootQuery<T> where(Specification<?, T> specification) {
         SpecificationArgs<Object, Table<Object>> args =
                 new SpecificationArgs<>(new PredicateApplier(this));
-        SpecificationImplementor<Object, Table<Object>> implementor =
-                (SpecificationImplementor<Object, Table<Object>>)specification;
+        Specification<Object, Table<Object>> implementor =
+                (Specification<Object, Table<Object>>)specification;
         implementor.applyTo(args);
         return this;
     }

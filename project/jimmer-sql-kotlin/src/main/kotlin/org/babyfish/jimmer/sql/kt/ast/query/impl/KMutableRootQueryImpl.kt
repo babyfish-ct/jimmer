@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.query.Order
+import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier
 import org.babyfish.jimmer.sql.ast.table.Table
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.KSubQueries
@@ -13,6 +14,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableRootQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableRootQuery
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KNonNullTableExImpl
 import org.babyfish.jimmer.sql.kt.impl.KSubQueriesImpl
@@ -29,28 +32,21 @@ internal class KMutableRootQueryImpl<E: Any>(
         javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun orderBy(vararg expressions: KExpression<*>?) {
-        javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    override fun where(specification: KSpecification<E>) {
+        val args = KSpecificationArgs<E>(PredicateApplier(javaQuery))
+        specification.applyTo(args)
     }
 
-    override fun orderByIf(condition: Boolean, vararg expressions: KExpression<*>?) {
-        javaQuery.orderByIf(condition, *expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
+    override fun orderBy(vararg expressions: KExpression<*>?) {
+        javaQuery.orderBy(*expressions.mapNotNull { it as Expression<*>? }.toTypedArray())
     }
 
     override fun orderBy(vararg orders: Order?) {
         javaQuery.orderBy(*orders)
     }
 
-    override fun orderByIf(condition: Boolean, vararg orders: Order?) {
-        javaQuery.orderByIf(condition, *orders)
-    }
-
     override fun orderBy(orders: List<Order?>) {
         javaQuery.orderBy(orders)
-    }
-
-    override fun orderByIf(condition: Boolean, orders: List<Order?>) {
-        javaQuery.orderByIf(condition, orders)
     }
 
     @Suppress("UNCHECKED_CAST")

@@ -18,6 +18,7 @@ import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
 import java.io.OutputStreamWriter
 import java.util.*
+import kotlin.math.min
 
 class DtoGenerator private constructor(
     private val dtoType: DtoType<ImmutableType, ImmutableProp>,
@@ -165,10 +166,11 @@ class DtoGenerator private constructor(
 
     private fun addMembers(allFiles: List<KSFile>) {
 
+        val isSpecification = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
         typeBuilder.addSuperinterface(
             when {
-                dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION) ->
-                    INPUT_CLASS_NAME
+                isSpecification ->
+                    K_SPECIFICATION_CLASS_NAME
                 dtoType.modifiers.contains(DtoTypeModifier.INPUT) ->
                     VIEWABLE_INPUT_CLASS_NAME
                 else ->
@@ -178,22 +180,23 @@ class DtoGenerator private constructor(
             )
         )
 
-        val isInputOnly = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
         addPrimaryConstructor()
-        if (!isInputOnly) {
+        if (!isSpecification) {
             addConverterConstructor()
         }
 
-        addToEntity()
+        if (isSpecification) {
+            addApplyTo()
+        } else {
+            addToEntity()
+        }
 
-        if (!isInputOnly || dtoType.dtoProps.any { !isSimpleProp(it) }) {
+        if (!isSpecification) {
             typeBuilder.addType(
                 TypeSpec
                     .companionObjectBuilder()
                     .apply {
-                        if (!isInputOnly) {
-                            addMetadata()
-                        }
+                        addMetadata()
                         for (prop in dtoType.dtoProps) {
                             addAccessorField(prop)
                         }
@@ -492,6 +495,114 @@ class DtoGenerator private constructor(
         )
     }
 
+    private fun addApplyTo() {
+        typeBuilder.addFunction(
+            FunSpec
+                .builder("applyTo")
+                .addParameter("args", K_SPECIFICATION_ARGS_CLASS_NAME.parameterizedBy(dtoType.baseType.className))
+                .addModifiers(KModifier.OVERRIDE)
+                .apply {
+                    addStatement("val __applier = args.applier")
+                    var stack = emptyList<ImmutableProp>()
+                    for (prop in dtoType.dtoProps) {
+                        val newStack = mutableListOf<ImmutableProp>()
+                        val tailProp = prop.toTailProp()
+                        var p: DtoProp<ImmutableType, ImmutableProp>? = prop
+                        while (p != null) {
+                            if (p !== tailProp || p.getTargetType() != null) {
+                                newStack.add(p.getBaseProp())
+                            }
+                            p = p.getNextProp()
+                        }
+                        stack = addStackOperations(stack, newStack)
+                        addPredicateOperation(prop.toTailProp())
+                    }
+                    addStackOperations(stack, emptyList())
+                }
+                .build()
+        )
+    }
+
+    private fun FunSpec.Builder.addStackOperations(
+        stack: List<ImmutableProp>,
+        newStack: List<ImmutableProp>
+    ): List<ImmutableProp> {
+        val size = min(stack.size, newStack.size)
+        var sameCount = size
+        for (i in 0 until size) {
+            if (stack[i] !== newStack[i]) {
+                sameCount = i
+                break
+            }
+        }
+        for (i in stack.size - sameCount downTo 1) {
+            addStatement("__applier.pop()")
+        }
+        for (prop in newStack.subList(sameCount, newStack.size)) {
+            addStatement(
+                "__applier.push(%T.%L)",
+                prop.declaringType.propsClassName,
+                StringUtil.snake(prop.name, SnakeCase.UPPER)
+            )
+        }
+        return newStack
+    }
+
+    private fun FunSpec.Builder.addPredicateOperation(prop: DtoProp<ImmutableType, ImmutableProp>) {
+
+        val targetType = prop.targetType
+        if (targetType !== null) {
+            addStatement("this.%L?.let { it.applyTo(args.child()) }", prop.name)
+            return
+        }
+
+        val funcName = when (prop.funcName) {
+            null -> "eq"
+            "null" -> "isNull"
+            "notNull" -> "isNotNull"
+            "id" -> "associatedIdEq"
+            else -> prop.funcName
+        }
+
+        addCode(
+            CodeBlock.builder()
+                .apply {
+                    add("__applier.%L(", funcName)
+                    if (Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
+                        add("arrayOf(")
+                        prop.basePropMap.values.forEachIndexed { index, baseProp ->
+                            if (index != 0) {
+                                add(", ")
+                            }
+                            add(
+                                "%T.%L",
+                                baseProp.declaringType.propsClassName,
+                                StringUtil.snake(baseProp.name, SnakeCase.UPPER)
+                            )
+                        }
+                        add(")")
+                    } else {
+                        add(
+                            "%T.%L",
+                            prop.baseProp.declaringType.propsClassName,
+                            StringUtil.snake(prop.baseProp.name, SnakeCase.UPPER)
+                        )
+                    }
+                    add(", this.%L", prop.name)
+                    if (funcName == "like") {
+                        add(", ")
+                        add(if (prop.likeOptions.contains(LikeOption.INSENSITIVE)) "true" else "false")
+                        add(", ")
+                        add(if (prop.likeOptions.contains(LikeOption.MATCH_START)) "true" else "false")
+                        add(", ")
+                        add(if (prop.likeOptions.contains(LikeOption.MATCH_END)) "true" else "false")
+                    }
+                    add(")\n")
+                }
+                .build()
+        )
+    }
+
     private fun isSimpleProp(prop: DtoProp<ImmutableType, ImmutableProp>): Boolean {
         if (prop.getNextProp() != null) {
             return false
@@ -520,11 +631,15 @@ class DtoGenerator private constructor(
                     add("%T(", DTO_PROP_ACCESSOR)
                     indent()
 
-                    val mustNonNull = prop.isNullable && prop.toTailProp().baseProp.let {
-                        !it.isNullable || dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
+                    if (prop.isNullable() && (!prop.toTailProp().getBaseProp().isNullable ||
+                            dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION) ||
+                            dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC))
+                    ) {
+                        add("\nfalse")
+                    } else {
+                        add("\ntrue")
                     }
-                    add("\n%L", !mustNonNull)
-
+                    
                     if (prop.nextProp === null) {
                         add(
                             ",\nintArrayOf(%T.%L)",
@@ -640,12 +755,37 @@ class DtoGenerator private constructor(
     }
 
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
+
+        val baseProp = prop.toTailProp().baseProp
+        if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            val funcName = prop.toTailProp().getFuncName()
+            if (funcName != null) {
+                when (funcName) {
+                    "null", "notNull" ->
+                        return BOOLEAN
+
+                    "valueIn", "valueNotIn" ->
+                        return COLLECTION.parameterizedBy(propElementName(prop)).copy(nullable = prop.isNullable)
+
+                    "id", "associatedIdEq", "associatedIdNe" ->
+                        return baseProp.targetType!!.idProp!!.typeName().copy(nullable = prop.isNullable)
+
+                    "associatedIdIn", "associatedIdNotIn" ->
+                        return COLLECTION.parameterizedBy(baseProp.targetType!!.idProp!!.typeName())
+                            .copy(nullable = prop.isNullable)
+                }
+            }
+            if (baseProp.isAssociation(true)) {
+                return propElementName(prop).copy(nullable = prop.isNullable)
+            }
+        }
+
         val enumType = prop.enumType
         if (enumType !== null) {
             return (if (enumType.isNumeric) INT else STRING).copy(nullable = prop.isNullable)
         }
         val elementTypeName: TypeName = propElementName(prop)
-        return if (prop.baseProp.isList) {
+        return if (baseProp.isList) {
             LIST.parameterizedBy(elementTypeName)
         } else {
             elementTypeName

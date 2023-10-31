@@ -30,32 +30,6 @@ BookView : Key {
     }
 }
 
-input-only BookSpecification {
-
-    #allScalars(Book)?
-
-    @Job(value = [
-        Task("Prepare environment", priority = Priority.HIGH, estimation = 4),
-        Task("Install intellij", estimation = 1),
-        Task("Develop Service", estimation = 800),
-        Task(value = "Develop UI", priority = Priority.LOW, estimation = 100)
-    ])
-    tag1: Int
-    tag2: Int?
-    tag3: Map<String, Set<String>>
-    tag4: MutableMap<String, MutableSet<String>>
-    tag5: Array<Int>
-    tag6: Array<Int?>
-    tag7: LocalDateTime
-    tag8: Any
-    tag9: Array<*>
-    tag10: Array<Any>
-    tag11: List<*>
-    tag12: MutableList<*>
-    tag13: List<Any>
-    tag14: MutableList<Any>
-}
-
 input BookInput {
     #allScalars
 
@@ -66,7 +40,7 @@ input BookInput {
     id(authors) as authorIds
 }
 
-input-only CompositeBookInput {
+unsafe input CompositeBookInput {
     #allScalars
     store! {
         #allScalars
@@ -111,5 +85,75 @@ dynamic input DynamicBookInput2 {
             name
             website
         }
+    }
+}
+
+specification BookSpecification {
+
+    #allScalars(Book)
+
+    @Job(value = [
+        Task("Prepare environment", priority = Priority.HIGH, estimation = 4),
+        Task("Install intellij", estimation = 1),
+        Task("Develop Service", estimation = 800),
+        Task(value = "Develop UI", priority = Priority.LOW, estimation = 100)
+    ])
+    tag1: Int
+    tag2: Int
+    tag3: Map<String, Set<String>>
+    tag4: MutableMap<String, MutableSet<String>>
+    tag5: Array<Int>
+    tag6: Array<Int?>
+    tag7: LocalDateTime
+    tag8: Any
+    tag9: Array<*>
+    tag10: Array<Any>
+    tag11: List<*>
+    tag12: MutableList<*>
+    tag13: List<Any>
+    tag14: MutableList<Any>
+}
+
+specification BookSpecification2 {
+    #allScalars(this)
+    valueIn(id) as ids
+    ge(price)
+    le(price)
+    associatedIdIn(store)
+    associatedIdNotIn(store)
+    associatedIdIn(authors) as authorIds
+    associatedIdNotIn(authors) as excludedAuthorIds
+}
+
+specification BookSpecification3 {
+    #allScalars(this)
+    valueIn(id) as ids
+    ge(price)
+    le(price)
+    store {
+        #allScalars(this)
+        ge(name)
+        le(name)
+    }
+    authors {
+        #allScalars(this)
+        like:i(firstName, lastName) as name
+    }
+}
+
+specification BookSpecification4 {
+    #allScalars(this)
+    valueIn(id) as ids
+    ge(price)
+    le(price)
+    flat(store) {
+        as(^ -> parent) {
+            ge(name)
+            le(name)
+            website
+        }
+    }
+    flat(authors) {
+        like:i(firstName, lastName) as authorName
     }
 }
