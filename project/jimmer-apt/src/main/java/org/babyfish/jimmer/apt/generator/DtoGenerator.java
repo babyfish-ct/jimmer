@@ -70,7 +70,7 @@ public class DtoGenerator {
                 .addSuperinterface(
                         dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
                                 ParameterizedTypeName.get(
-                                        Constants.SPECIFICATION_CLASS_NAME,
+                                        Constants.JSPECIFICATION_CLASS_NAME,
                                         dtoType.getBaseType().getClassName(),
                                         dtoType.getBaseType().getTableClassName()
                                 ) :
@@ -185,6 +185,7 @@ public class DtoGenerator {
         }
 
         if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            addGetEntityType();
             addApplyTo();
         } else {
             addToEntity();
@@ -678,6 +679,21 @@ public class DtoGenerator {
             }
         }
         builder.addCode("$<});\n");
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addGetEntityType() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("getEntityType")
+                .returns(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                dtoType.getBaseType().getClassName()
+                        )
+                )
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addStatement("return $T.class", dtoType.getBaseType().getClassName());
         typeBuilder.addMethod(builder.build());
     }
 

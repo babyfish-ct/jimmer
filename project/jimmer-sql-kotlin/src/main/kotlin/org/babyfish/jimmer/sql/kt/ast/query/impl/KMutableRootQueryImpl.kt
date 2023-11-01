@@ -49,7 +49,6 @@ internal class KMutableRootQueryImpl<E: Any>(
         javaQuery.orderBy(orders)
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun groupBy(vararg expressions: KExpression<*>) {
         javaQuery.groupBy(*expressions.map { it as Expression<*>}.toTypedArray())
     }

@@ -34,6 +34,7 @@ internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
+internal val CLASS_CLASS_NAME = Class::class.asClassName()
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
 internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()

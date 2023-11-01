@@ -394,6 +394,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 }
                 if (!modifiers.contains(DtoTypeModifier.UNSAFE) &&
                         superType.getModifiers().contains(DtoTypeModifier.UNSAFE)) {
+                    assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +

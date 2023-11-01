@@ -18,6 +18,7 @@ import org.babyfish.jimmer.spring.datasource.DataSources;
 import org.babyfish.jimmer.spring.datasource.TxCallback;
 import org.babyfish.jimmer.spring.java.dal.BookStoreRepository;
 import org.babyfish.jimmer.spring.java.model.*;
+import org.babyfish.jimmer.spring.java.model.dto.BookSpecification;
 import org.babyfish.jimmer.spring.java.model.dto.BookStoreView;
 import org.babyfish.jimmer.spring.java.model.dto.BookView;
 import org.babyfish.jimmer.spring.model.SortUtils;
@@ -734,6 +735,43 @@ public class SpringJavaTest extends AbstractTest {
                         "--->]" +
                         ")",
                 views.get(0)
+        );
+    }
+
+    @Test
+    public void testSpecification() {
+        BookSpecification specification = new BookSpecification();
+        specification.setMinPrice(new BigDecimal(46));
+        specification.setMaxPrice(new BigDecimal(48));
+        specification.setAuthorName("Boris");
+        List<Book> books = bookRepository.findAll(specification);
+        assertSQLs(
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                        "from BOOK tb_1_ " +
+                        "where tb_1_.PRICE >= ? and tb_1_.PRICE <= ? and exists(" +
+                        "--->select 1 " +
+                        "--->from AUTHOR tb_2_ " +
+                        "--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID " +
+                        "--->where tb_1_.ID = tb_3_.BOOK_ID and " +
+                        "--->(tb_2_.FIRST_NAME ilike ? or tb_2_.LAST_NAME ilike ?)" +
+                        ")"
+        );
+        assertContent(
+                "[" +
+                        "--->{\"id\":\"914c8595-35cb-4f67-bbc7-8029e9e6245a\"," +
+                        "--->\"name\":\"Programming TypeScript\"," +
+                        "--->\"edition\":1," +
+                        "--->\"price\":47.50," +
+                        "--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                        "}, {" +
+                        "--->\"id\":\"782b9a9d-eac8-41c4-9f2d-74a5d047f45a\"," +
+                        "--->\"name\":\"Programming TypeScript\"," +
+                        "--->\"edition\":3," +
+                        "--->\"price\":48.00," +
+                        "--->\"store\":{\"id\":\"d38c10da-6be8-4924-b9b9-5e81899612a0\"}" +
+                        "}" +
+                        "]",
+                books
         );
     }
 

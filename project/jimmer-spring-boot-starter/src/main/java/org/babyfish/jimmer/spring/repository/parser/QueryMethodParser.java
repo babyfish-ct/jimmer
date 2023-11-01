@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.repository.parser;
 
 import kotlin.reflect.KClass;
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.impl.util.Classes;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -33,6 +34,8 @@ class QueryMethodParser {
 
     private final int sortParamIndex;
 
+    private final int specificationIndex;
+
     private final int fetcherParamIndex;
 
     private Class<?> viewType;
@@ -51,6 +54,7 @@ class QueryMethodParser {
         this.genericParameterTypes = method.getGenericParameterTypes();
         this.pageableParamIndex = implicitParameterIndex(Pageable.class);
         this.sortParamIndex = implicitParameterIndex(Sort.class);
+        this.specificationIndex = implicitParameterIndex(Specification.class);
         this.fetcherParamIndex = implicitParameterIndex(Fetcher.class);
         int vtpIndex = implicitParameterIndex(Class.class);
         if (vtpIndex == -1) {
@@ -219,9 +223,29 @@ class QueryMethodParser {
                 throw new IllegalArgumentException("The return type must be int or void");
             }
         }
+        if (specificationIndex != -1) {
+            if (query.getAction() != Query.Action.FIND && query.getAction() != Query.Action.COUNT && query.getAction() != Query.Action.EXISTS) {
+                throw new IllegalArgumentException("The method must be query method when there is a specification parameter");
+            }
+            Type specificationType = genericParameterTypes[specificationIndex];
+            if (!(specificationType instanceof ParameterizedType)) {
+                throw new IllegalArgumentException("The specification parameter must be parameterized type");
+            }
+            ParameterizedType parameterizedType = (ParameterizedType) specificationType;
+            if (parameterizedType.getRawType() != Specification.class) {
+                throw new IllegalArgumentException("The raw type of specification parameter must be \"" + Specification.class.getName() + "\"");
+            }
+            if (parameterizedType.getActualTypeArguments()[0] != type.getJavaClass()) {
+                throw new IllegalArgumentException(
+                        "The type argument of specification parameter must be \"" +
+                                type.getJavaClass() +
+                                "\""
+                );
+            }
+        }
         if (fetcherParamIndex != -1) {
             if (query.getAction() != Query.Action.FIND) {
-                throw new IllegalArgumentException("The method must be query method when there is a fetcher parameter");
+                throw new IllegalArgumentException("The method must be object finding method when there is a fetcher parameter");
             }
             if (query.getSelectedPath() != null) {
                 throw new IllegalArgumentException("Cannot explicitly select columns when there is a fetcher parameter");
@@ -255,6 +279,7 @@ class QueryMethodParser {
                 viewType,
                 pageableParamIndex,
                 sortParamIndex,
+                specificationIndex,
                 fetcherParamIndex,
                 viewTypeParamIndex
         );
@@ -430,6 +455,7 @@ class QueryMethodParser {
     private static boolean isImplicitParameterType(Class<?> type) {
         return Pageable.class.isAssignableFrom(type) ||
                 Sort.class.isAssignableFrom(type) ||
+                Specification.class.isAssignableFrom(type) ||
                 Fetcher.class.isAssignableFrom(type) ||
                 Class.class.isAssignableFrom(type) ||
                 KClass.class.isAssignableFrom(type);

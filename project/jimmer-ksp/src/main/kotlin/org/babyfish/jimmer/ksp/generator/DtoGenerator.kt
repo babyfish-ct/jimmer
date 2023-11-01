@@ -186,6 +186,7 @@ class DtoGenerator private constructor(
         }
 
         if (isSpecification) {
+            addGetEntityType()
             addApplyTo()
         } else {
             addToEntity()
@@ -491,6 +492,21 @@ class DtoGenerator private constructor(
                     }
                 }
                 .endControlFlow()
+                .build()
+        )
+    }
+
+    private fun addGetEntityType() {
+        typeBuilder.addFunction(
+            FunSpec
+                .builder("getEntityType")
+                .addModifiers(KModifier.OVERRIDE)
+                .returns(
+                    CLASS_CLASS_NAME.parameterizedBy(
+                        dtoType.baseType.className
+                    )
+                )
+                .addStatement("return %T::class.java", dtoType.baseType.className)
                 .build()
         )
     }
