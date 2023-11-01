@@ -50,3 +50,15 @@ input CompositeBookInput: AbstractBookInput {
         -id // Remove id
     }
 }
+
+specification BookSpecification {
+    like:i(name)
+    ge(price)
+    le(price)
+    flat(store) {
+        like:i(name) as storeName
+    }
+    flat(authors) {
+        like:i(firstName, lastName) as authorName
+    }
+}

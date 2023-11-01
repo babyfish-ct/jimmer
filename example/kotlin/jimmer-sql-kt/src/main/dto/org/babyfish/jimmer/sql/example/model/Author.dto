@@ -12,26 +12,24 @@
 import java.time.LocalDateTime
 import org.springframework.format.annotation.DateTimeFormat
 
-AuthorSpecification {
+specification AuthorSpecification {
 
     /*
      * For `QBE(Query By Example)`
      *
      * #allScalars: All scalar fields of `Author` and `BaseEntity`
      *
-     * #allScalars(Author): All scalar fields of `Author`, exclude `BaseEntity`
-     *
-     * #allScalars(Author)?: like `#allScalars(Author)`, but all fields are nullable
+     * #allScalars(Author)/#allScalars(this):
+     *     All scalar fields of `Author`, exclude `BaseEntity`
      */
-    #allScalars(Author)? - id // Remove id
+    #allScalars(Author) - id // Remove id
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    ge(createdTime)
 
     // For `whereIf`
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    minCreatedTime: LocalDateTime?
-
-    // For `whereIf`
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    maxCreatedTimeExclusive: LocalDateTime?
+    le(createdTime)
 }
 
 input AuthorInput {

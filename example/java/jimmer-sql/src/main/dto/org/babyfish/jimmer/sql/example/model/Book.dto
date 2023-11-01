@@ -58,7 +58,7 @@ specification BookSpecification {
     flat(store) {
         like:i(name) as storeName
     }
-    authors {
+    flat(authors) {
         like:i(firstName, lastName) as authorName
     }
 }

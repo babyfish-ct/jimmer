@@ -47,7 +47,7 @@ public class BookService {
 
     /**
      * The functionality of this method is the same as
-     * {@link #fin}
+     * {@link #findBooksBySuperQBE(int, int, String, BookSpecification)}
      */
     @GetMapping("/list")
     public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks( // ❷
@@ -72,8 +72,12 @@ public class BookService {
         );
     }
 
+    /**
+     * The functionality of this method is the same as
+     * {@link #findBooks(int, int, String, String, BigDecimal, BigDecimal, String, String)}
+     */
     @GetMapping("/list/bySuperQBE")
-    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks(
+    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooksBySuperQBE(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
             // The `sortCode` also support implicit join, like `store.name asc`

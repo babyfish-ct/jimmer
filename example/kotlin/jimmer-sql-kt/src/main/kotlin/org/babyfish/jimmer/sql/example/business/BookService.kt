@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.example.repository.BookRepository
 import org.babyfish.jimmer.sql.example.model.*
 import org.babyfish.jimmer.spring.model.SortUtils
 import org.babyfish.jimmer.sql.example.model.dto.BookInput
+import org.babyfish.jimmer.sql.example.model.dto.BookSpecification
 import org.babyfish.jimmer.sql.example.model.dto.CompositeBookInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import java.math.BigDecimal
 
 /*
  * Why add spring web annotations to the service class?
@@ -37,6 +39,9 @@ class BookService(
             asc(Book::name)
         }
 
+    /**
+     * The functionality of this method is the same as .[findBooksBySuperQBE]
+     */
     @GetMapping("/list")
     fun findBooks(
         @RequestParam(defaultValue = "0") pageIndex: Int,
@@ -44,14 +49,35 @@ class BookService(
         // The `sortCode` also support implicit join, like `store.name asc`
         @RequestParam(defaultValue = "name asc, edition desc") sortCode: String,
         @RequestParam name: String?,
+        @RequestParam minPrice: BigDecimal?,
+        @RequestParam maxPrice: BigDecimal?,
         @RequestParam storeName: String?,
         @RequestParam authorName: String?,
     ): Page<@FetchBy("DEFAULT_FETCHER") Book> = // ❷
         bookRepository.findBooks(
             PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
             name,
+            minPrice,
+            maxPrice,
             storeName,
             authorName,
+            DEFAULT_FETCHER
+        )
+
+    /**
+     * The functionality of this method is the same as .[findBooks]
+     */
+    @GetMapping("/listBySuperQBE")
+    fun findBooksBySuperQBE(
+        @RequestParam(defaultValue = "0") pageIndex: Int,
+        @RequestParam(defaultValue = "5") pageSize: Int,
+        // The `sortCode` also support implicit join, like `store.name asc`
+        @RequestParam(defaultValue = "name asc, edition desc") sortCode: String,
+        specification: BookSpecification
+    ): Page<@FetchBy("DEFAULT_FETCHER") Book> =
+        bookRepository.find(
+            PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
+            specification,
             DEFAULT_FETCHER
         )
 
