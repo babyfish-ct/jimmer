@@ -229,16 +229,29 @@ class QueryMethodParser {
             }
             Type specificationType = genericParameterTypes[specificationIndex];
             if (!(specificationType instanceof ParameterizedType)) {
+                if (specificationType != Specification.class) {
+                    throw new IllegalArgumentException(
+                            "The specification parameter must be \"" +
+                                    Specification.class.getName() +
+                                    "<" +
+                                    type.getJavaClass().getName() +
+                                    ">\""
+                    );
+                }
                 throw new IllegalArgumentException("The specification parameter must be parameterized type");
             }
             ParameterizedType parameterizedType = (ParameterizedType) specificationType;
             if (parameterizedType.getRawType() != Specification.class) {
-                throw new IllegalArgumentException("The raw type of specification parameter must be \"" + Specification.class.getName() + "\"");
+                throw new IllegalArgumentException(
+                        "The raw type of specification parameter must be \"" +
+                                Specification.class.getName() +
+                                "\""
+                );
             }
             if (parameterizedType.getActualTypeArguments()[0] != type.getJavaClass()) {
                 throw new IllegalArgumentException(
                         "The type argument of specification parameter must be \"" +
-                                type.getJavaClass() +
+                                type.getJavaClass().getName() +
                                 "\""
                 );
             }

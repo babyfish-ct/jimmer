@@ -13,8 +13,8 @@ interface KSpecification<E: Any> : Specification<E> {
 fun <E: Any> KSpecification<E>.toJavaSpecification(): JSpecification<E, Table<E>> =
     object : JSpecification<E, Table<E>> {
 
-        override fun getEntityType(): Class<E> =
-            this@toJavaSpecification.entityType
+        override fun entityType(): Class<E> =
+            this@toJavaSpecification.entityType()
 
         override fun applyTo(args: SpecificationArgs<E, Table<E>>) {
             this@toJavaSpecification.applyTo(KSpecificationArgs(args.applier))

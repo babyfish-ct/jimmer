@@ -186,7 +186,7 @@ class DtoGenerator private constructor(
         }
 
         if (isSpecification) {
-            addGetEntityType()
+            addEntityType()
             addApplyTo()
         } else {
             addToEntity()
@@ -496,10 +496,10 @@ class DtoGenerator private constructor(
         )
     }
 
-    private fun addGetEntityType() {
+    private fun addEntityType() {
         typeBuilder.addFunction(
             FunSpec
-                .builder("getEntityType")
+                .builder("entityType")
                 .addModifiers(KModifier.OVERRIDE)
                 .returns(
                     CLASS_CLASS_NAME.parameterizedBy(

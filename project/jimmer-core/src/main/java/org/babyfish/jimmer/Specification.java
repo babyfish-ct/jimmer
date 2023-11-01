@@ -2,5 +2,5 @@ package org.babyfish.jimmer;
 
 public interface Specification<E> {
 
-    Class<E> getEntityType();
+    Class<E> entityType();
 }

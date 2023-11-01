@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example.business;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
+import org.babyfish.jimmer.sql.example.model.dto.BookSpecification;
 import org.babyfish.jimmer.sql.example.repository.BookRepository;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.model.dto.BookInput;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /*
@@ -43,6 +45,10 @@ public class BookService {
         return bookRepository.findAll(SIMPLE_FETCHER, BookProps.NAME, BookProps.EDITION.desc());
     }
 
+    /**
+     * The functionality of this method is the same as
+     * {@link #fin}
+     */
     @GetMapping("/list")
     public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks( // ❷
             @RequestParam(defaultValue = "0") int pageIndex,
@@ -50,14 +56,33 @@ public class BookService {
             // The `sortCode` also support implicit join, like `store.name asc`
             @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String storeName,
             @RequestParam(required = false) String authorName
     ) {
         return bookRepository.findBooks(
                 PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
                 name,
+                minPrice,
+                maxPrice,
                 storeName,
                 authorName,
+                DEFAULT_FETCHER
+        );
+    }
+
+    @GetMapping("/list/bySuperQBE")
+    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks(
+            @RequestParam(defaultValue = "0") int pageIndex,
+            @RequestParam(defaultValue = "5") int pageSize,
+            // The `sortCode` also support implicit join, like `store.name asc`
+            @RequestParam(defaultValue = "name asc, edition desc") String sortCode,
+            BookSpecification specification
+    ) {
+        return bookRepository.find(
+                PageRequest.of(pageIndex, pageSize, SortUtils.toSort(sortCode)),
+                specification,
                 DEFAULT_FETCHER
         );
     }

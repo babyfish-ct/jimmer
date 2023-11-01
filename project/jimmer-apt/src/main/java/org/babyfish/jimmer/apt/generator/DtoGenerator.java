@@ -185,7 +185,7 @@ public class DtoGenerator {
         }
 
         if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
-            addGetEntityType();
+            addEntityType();
             addApplyTo();
         } else {
             addToEntity();
@@ -682,9 +682,9 @@ public class DtoGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addGetEntityType() {
+    private void addEntityType() {
         MethodSpec.Builder builder = MethodSpec
-                .methodBuilder("getEntityType")
+                .methodBuilder("entityType")
                 .returns(
                         ParameterizedTypeName.get(
                                 Constants.CLASS_CLASS_NAME,

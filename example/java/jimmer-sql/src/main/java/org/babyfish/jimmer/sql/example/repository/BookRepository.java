@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.repository;
 
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.sql.ast.Expression;
@@ -22,9 +23,17 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
 
     BookTable table = BookTable.$;
 
+    /**
+     * Manually implement complex query.
+     *
+     * <p>The functionality of this method is the same as the super QBE method
+     * {@link #find(Pageable, Specification, Fetcher)}</p>
+     */
     default Page<Book> findBooks( // ❷
             Pageable pageable,
             @Nullable String name,
+            @Nullable BigDecimal minPrice,
+            @Nullable BigDecimal maxPrice,
             @Nullable String storeName,
             @Nullable String authorName,
             @Nullable Fetcher<Book> fetcher
@@ -38,6 +47,8 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
                                         name != null && !name.isEmpty(),
                                         table.name().ilike(name)
                                 )
+                                .whereIf(minPrice != null, () -> table.price().ge(minPrice))
+                                .whereIf(maxPrice != null, () -> table.price().le(maxPrice))
                                 .whereIf( // ❺
                                         storeName != null && !storeName.isEmpty(),
                                         table.store().name().ilike(storeName) // ❻
@@ -59,6 +70,18 @@ public interface BookRepository extends JRepository<Book, Long> { // ❶
                                 .select(table.fetch(fetcher)) // ⓫
                 );
     }
+
+    /**
+     * Super QBE.
+     *
+     * <p>The functionality of this method is the same as the manual method
+     * {@link #findBooks(Pageable, String, BigDecimal, BigDecimal, String, String, Fetcher)}</p>
+     */
+    Page<Book> find(
+            Pageable pageable,
+            Specification<Book> specification,
+            @Nullable Fetcher<Book> fetcher
+    );
 
     default Map<Long, BigDecimal> findAvgPriceGroupByStoreId(Collection<Long> storeIds) {
         return Tuple2.toMap(
