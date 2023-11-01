@@ -9,6 +9,7 @@ import org.babyfish.jimmer.spring.client.MetadataFactoryBean
 import org.babyfish.jimmer.spring.client.TypeScriptController
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
+import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeSpecification
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView
 import org.babyfish.jimmer.spring.repository.EnableJimmerRepositories
 import org.babyfish.jimmer.sql.runtime.*
@@ -226,6 +227,32 @@ open class SpringKotlinTest : AbstractTest() {
                 "id=4, name=Coca Cola, " +
                 "parentId=3, parentName=Drinks, " +
                 "grandParentId=2, grandParentName=Food)]",
+            treeNodes.toString()
+        )
+    }
+
+    @Test
+    open fun testSpecification() {
+        val treeNodes = treeNodeRepository.find(
+            TreeNodeSpecification("a", "a")
+        )
+        assertSQLs(
+            "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
+                "from TREE_NODE tb_1_ " +
+                "inner join TREE_NODE tb_2_ on tb_1_.PARENT_ID = tb_2_.NODE_ID " +
+                "where lower(tb_1_.NAME) like ? and lower(tb_2_.NAME) like ?"
+        )
+        Assertions.assertEquals(
+            "[" +
+                "{\"id\":7,\"name\":\"Baguette\",\"parent\":{\"id\":6}}, " +
+                "{\"id\":8,\"name\":\"Ciabatta\",\"parent\":{\"id\":6}}, " +
+                "{\"id\":19,\"name\":\"Casual wear\",\"parent\":{\"id\":18}}, " +
+                "{\"id\":22,\"name\":\"Formal wear\",\"parent\":{\"id\":18}}, " +
+                "{\"id\":11,\"name\":\"Casual wear\",\"parent\":{\"id\":10}}, " +
+                "{\"id\":15,\"name\":\"Formal wear\",\"parent\":{\"id\":10}}, " +
+                "{\"id\":14,\"name\":\"Jeans\",\"parent\":{\"id\":11}}, " +
+                "{\"id\":20,\"name\":\"Jacket\",\"parent\":{\"id\":19}}, " +
+                "{\"id\":21,\"name\":\"Jeans\",\"parent\":{\"id\":19}}]",
             treeNodes.toString()
         )
     }

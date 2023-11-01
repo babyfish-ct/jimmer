@@ -162,15 +162,15 @@ public class DtoCompilerTest {
     }
 
     @Test
-    public void testInputOnlyRequired() {
+    public void testSpecificationRequired() {
         List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
-                "inputOnly BookInput {\n" +
+                "specification BookInput {\n" +
                         "    id!\n" +
                         "    id(store)!\n" +
                         "}\n"
         );
         assertContentEquals(
-                "inputOnly BookInput {@required id, @required id(store) as storeId}",
+                "specification BookInput {@required id, @required id(store) as storeId}",
                 dtoTypes.get(0).toString()
         );
     }
@@ -453,7 +453,7 @@ public class DtoCompilerTest {
                         "import java.util.SequencedSet as _OSet\n" +
                         "import com.company.pkg.TopLevel as _T\n" +
                         "\n" +
-                        "input-only Customer {\n" +
+                        "specification Customer {\n" +
                         "    a: Int\n" +
                         "    b: User?\n" +
                         "    c: MutableList<Cfg>\n" +
@@ -462,7 +462,7 @@ public class DtoCompilerTest {
                         "}"
         );
         assertContentEquals(
-                "inputOnly Customer {" +
+                "specification Customer {" +
                         "    a: Int, " +
                         "    b: com.company.pkg.data.User?, " +
                         "    c: MutableList<com.company.pkg.data.Configuration>, " +
@@ -555,6 +555,35 @@ public class DtoCompilerTest {
                         "--->alias: MutableList<String>" +
                         "}",
                 dtoTypes.get(0).toString()
+        );
+    }
+
+    @Test
+    public void testQbeSpecification() {
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book().compile(
+                "specification BookSpecification {\n" +
+                        "    gt(price)\n" +
+                        "    lt(price)\n" +
+                        "    flat(store) {" +
+                        "        as(^ -> parent) {\n" +
+                        "            ge(name)\n" +
+                        "            le(name)\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "    flat(authors) {\n" +
+                        "        like:i(firstName, lastName) as authorName\n" +
+                        "    }\n" +
+                        "}"
+        ).get(0);
+        assertContentEquals(
+                "specification BookSpecification {" +
+                        "--->@optional gt(price) as minPriceExclusive, " +
+                        "--->@optional lt(price) as maxPriceExclusive, " +
+                        "--->@optional ge(store.name) as parentMinName, " +
+                        "--->@optional le(store.name) as parentMaxName, " +
+                        "--->@optional like(authors.(firstName|lastName)) as authorName" +
+                        "}",
+                dtoType.toString()
         );
     }
 
@@ -659,7 +688,7 @@ public class DtoCompilerTest {
         });
         Assertions.assertEquals(
                 "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
-                        "Base property \"entity::authors\" cannot be referenced twice",
+                        "Base property \"entity::authors\" cannot be referenced too many times",
                 ex.getMessage()
         );
     }
@@ -745,7 +774,7 @@ public class DtoCompilerTest {
         Assertions.assertEquals(
                 "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
                         "Illegal required modifier '!' for non-id property, " +
-                        "it can only be used in input-only type",
+                        "the declared type is neither unsafe input nor specification",
                 ex.getMessage()
         );
     }
@@ -1106,6 +1135,16 @@ public class DtoCompilerTest {
         @Override
         protected List<String> getEnumConstants(BaseProp baseProp) {
             return null;
+        }
+
+        @Override
+        protected boolean isSameType(BaseProp baseProp1, BaseProp baseProp2) {
+            return true;
+        }
+
+        @Override
+        protected boolean isStringProp(BaseProp baseProp) {
+            return true;
         }
 
         static {

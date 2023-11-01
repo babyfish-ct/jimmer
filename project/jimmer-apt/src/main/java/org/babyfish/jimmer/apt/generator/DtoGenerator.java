@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DtoGenerator {
 
@@ -69,14 +68,18 @@ public class DtoGenerator {
                 .classBuilder(simpleName)
                 .addModifiers(Modifier.PUBLIC)
                 .addSuperinterface(
-                        ParameterizedTypeName.get(
-                                dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY) ?
-                                        Constants.INPUT_CLASS_NAME :
+                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ?
+                                ParameterizedTypeName.get(
+                                        Constants.JSPECIFICATION_CLASS_NAME,
+                                        dtoType.getBaseType().getClassName(),
+                                        dtoType.getBaseType().getTableClassName()
+                                ) :
+                                ParameterizedTypeName.get(
                                         dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
                                                 Constants.VIEWABLE_INPUT_CLASS_NAME :
                                                 Constants.VIEW_CLASS_NAME,
-                                dtoType.getBaseType().getClassName()
-                        )
+                                        dtoType.getBaseType().getClassName()
+                                )
                 );
         if (parent == null) {
             typeBuilder.addAnnotation(
@@ -153,11 +156,14 @@ public class DtoGenerator {
 
     private void addMembers() {
 
-        boolean inputOnly = dtoType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY);
-        if (!inputOnly) {
+        boolean isSpecification = dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION);
+        if (!isSpecification) {
             addMetadata();
         }
 
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            addAccessorField(prop);
+        }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             addField(prop);
         }
@@ -166,7 +172,7 @@ public class DtoGenerator {
         }
 
         addDefaultConstructor();
-        if (!inputOnly) {
+        if (!isSpecification) {
             addConverterConstructor();
             addOf();
         }
@@ -178,7 +184,12 @@ public class DtoGenerator {
             addAccessors(prop);
         }
 
-        addToEntity();
+        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            addEntityType();
+            addApplyTo();
+        } else {
+            addToEntity();
+        }
 
         addHashCode();
         addEquals();
@@ -253,6 +264,151 @@ public class DtoGenerator {
                 cb.add("\n.$N()", prop.getBaseProp().getName());
             }
         }
+    }
+
+    private void addAccessorField(DtoProp<ImmutableType, ImmutableProp> prop) {
+        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) || prop.isUnmapped() || isSimpleProp(prop)) {
+            return;
+        }
+        FieldSpec.Builder builder = FieldSpec.builder(
+                Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
+                Modifier.PRIVATE,
+                Modifier.STATIC,
+                Modifier.FINAL
+        );
+        CodeBlock.Builder cb = CodeBlock.builder();
+        cb.add("new $T(", Constants.DTO_PROP_ACCESSOR_CLASS_NAME);
+        cb.indent();
+
+        DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+        if (prop.isNullable() && (
+                !tailProp.getBaseProp().isNullable() ||
+                        dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ||
+                        dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
+        ) {
+            cb.add("\nfalse");
+        } else {
+            cb.add("\ntrue");
+        }
+
+        if (prop.getNextProp() == null) {
+            cb.add(",\nnew int[] { $T.$L }", dtoType.getBaseType().getProducerClassName(), prop.getBaseProp().getSlotName());
+        } else {
+            cb.add(",\nnew int[] {");
+            cb.indent();
+            boolean addComma = false;
+            for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
+                if (addComma) {
+                    cb.add(",");
+                } else {
+                    addComma = true;
+                }
+                cb.add("\n$T.$L", p.getBaseProp().getDeclaringType().getProducerClassName(), p.getBaseProp().getSlotName());
+            }
+            cb.unindent();
+            cb.add("\n}");
+        }
+
+        if (prop.isIdOnly()) {
+            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+                cb.add(",\nnull");
+            } else {
+                cb.add(
+                        ",\n$T.$L($T.class)",
+                        Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                        tailProp.getBaseProp().isList() ? "idListGetter" : "idReferenceGetter",
+                        tailProp.getBaseProp().getTargetType().getClassName()
+                );
+            }
+            cb.add(
+                    ",\n$T.$L($T.class)",
+                    Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                    tailProp.getBaseProp().isList() ? "idListSetter" : "idReferenceSetter",
+                    tailProp.getBaseProp().getTargetType().getClassName()
+            );
+        } else if (tailProp.getTargetType() != null) {
+            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+                cb.add(",\nnull");
+            } else {
+                cb.add(
+                        ",\n$T.<$T, $L>$L($L::new)",
+                        Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                        tailProp.getBaseProp().getTargetType().getClassName(),
+                        targetSimpleName(tailProp),
+                        tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
+                        targetSimpleName(tailProp)
+                );
+            }
+            cb.add(
+                    ",\n$T.$L($L::toEntity)",
+                    Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
+                    tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
+                    targetSimpleName(tailProp)
+            );
+        } else if (prop.getEnumType() != null) {
+            EnumType enumType = prop.getEnumType();
+            TypeName enumTypName = tailProp.getBaseProp().getTypeName();
+            if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+                cb.add(",\nnull");
+            } else {
+                cb.add(",\narg -> {\n");
+                cb.indent();
+                cb.beginControlFlow("switch (($T)arg)", enumTypName);
+                for (Map.Entry<String, String> e: enumType.getValueMap().entrySet()) {
+                    cb.add("case $L:\n", e.getKey());
+                    cb.indent();
+                    cb.addStatement("return $L", e.getValue());
+                    cb.unindent();
+                }
+                cb.add("default:\n");
+                cb.indent();
+                cb.addStatement(
+                        "throw new AssertionError($S)",
+                        "Internal bug"
+                );
+                cb.unindent();
+                cb.endControlFlow();
+                cb.unindent();
+                cb.add("}");
+            }
+            cb.add(",\narg -> {\n");
+            cb.indent();
+            cb.beginControlFlow("switch (($T)arg)", enumType.isNumeric() ? TypeName.INT : Constants.STRING_CLASS_NAME);
+            for (Map.Entry<String, String> e: enumType.getConstantMap().entrySet()) {
+                cb.add("case $L:\n", e.getKey());
+                cb.indent();
+                cb.addStatement("return $T.$L", enumTypName, e.getValue());
+                cb.unindent();
+            }
+            cb.add("default:\n");
+            cb.indent();
+            cb.addStatement(
+                    "throw new IllegalArgumentException($S + arg + $S)",
+                    "Illegal value `\"",
+                    "\"`for enum type: \"" + enumTypName + "\""
+            );
+            cb.unindent();
+            cb.endControlFlow();
+            cb.unindent();
+            cb.add("}");
+        }
+
+        cb.unindent();
+        cb.add("\n)");
+        builder.initializer(cb.build());
+        typeBuilder.addField(builder.build());
+    }
+
+    private boolean isSimpleProp(DtoProp<ImmutableType, ImmutableProp> prop) {
+        if (prop.getNextProp() != null) {
+            return false;
+        }
+        if (prop.isNullable() && (
+                !prop.getBaseProp().isNullable() || dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))) {
+            return false;
+        }
+        return getPropTypeName(prop).equals(prop.getBaseProp().getTypeName());
     }
 
     private void addHiddenFetcherField(DtoProp<ImmutableType, ImmutableProp> prop, CodeBlock.Builder cb) {
@@ -439,246 +595,46 @@ public class DtoGenerator {
                                 .addAnnotation(NotNull.class)
                                 .build()
                 );
-        if (dtoType.getDtoProps().stream().anyMatch(it -> it.isNullable() || it.getNextProp() != null)) {
-            builder.addStatement("$T spi = ($T)base", ImmutableSpi.class, ImmutableSpi.class);
-        }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            if (prop.getNextProp() != null) {
-                builder.addCode(
-                        "this.$L = $T.get(\n$>spi,\n",
-                        prop.getName(),
-                        Constants.FLAT_UTILS_CLASS_NAME
-                );
-                builder.addCode("new int[] {$>\n");
-                for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
-                    builder.addCode(
-                            "$T.$N",
-                            p.getBaseProp().getDeclaringType().getProducerClassName(),
-                            p.getBaseProp().getSlotName()
-                    );
-                    if (p.getNextProp() != null) {
-                        builder.addCode(",\n");
-                    } else {
-                        builder.addCode("\n");
-                    }
-                }
-                builder.addCode("$<},\n");
-                if (prop.getTargetType() != null) {
-                    builder.addCode(
-                            "it -> new $T(($T)it)\n",
-                            getPropTypeName(prop),
-                            prop.toTailProp().getBaseProp().getTypeName()
-                    );
-                } else if (prop.getEnumType() != null) {
-                    builder.addCode("it -> ");
-                    builder.beginControlFlow("");
-                    appendEnumToValue(builder, prop, "it", false);
-                    builder.addStatement("return __$L", prop.getName());
-                    builder.endControlFlow();
-                } else {
-                    builder.addCode("null\n");
-                }
-                builder.addCode("$<);\n");
-            } else if (prop.isIdOnly()) {
-                if (prop.getBaseProp().isList()) {
-                    if (prop.isNullable()) {
-                        builder.addStatement(
-                                "this.$L = spi.__isLoaded($T.$L.unwrap().getId())$L ? \n" +
-                                        "    base.$L().stream().map($T::$L).collect($T.toList()) : \n" +
-                                        "    $L",
-                                prop.getName(),
-                                dtoType.getBaseType().getPropsClassName(),
-                                Strings.upper(prop.getBaseProp().getName()),
-                                prop.isRecursive() ? "" : " && !base." + prop.getBaseProp().getGetterName() + "().isEmpty()",
-                                prop.getBaseProp().getGetterName(),
-                                prop.getBaseProp().getTargetType().getClassName(),
-                                prop.getBaseProp().getTargetType().getIdProp().getName(),
-                                Collectors.class,
-                                defaultValue(prop)
-                        );
-                    } else if (prop.getBaseProp().isNullable()) {
-                        builder.addStatement(
-                                "this.$L = $T.requireNonNull(base.$L(), $S).stream().map($T::$L).collect($T.toList())",
-                                Objects.class,
-                                prop.getName(),
-                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\"",
-                                prop.getBaseProp().getGetterName(),
-                                prop.getBaseProp().getTargetType().getClassName(),
-                                prop.getBaseProp().getTargetType().getIdProp().getName(),
-                                Collectors.class
-                        );
-                    } else {
-                        builder.addStatement(
-                                "this.$L = base.$L().stream().map($T::$L).collect($T.toList())",
-                                prop.getName(),
-                                prop.getBaseProp().getGetterName(),
-                                prop.getBaseProp().getTargetType().getClassName(),
-                                prop.getBaseProp().getTargetType().getIdProp().getName(),
-                                Collectors.class
-                        );
-                    }
-                } else {
-                    if (prop.isNullable()) {
-                        builder.addStatement(
-                                "$T _tmp_$L = spi.__isLoaded($T.$L.unwrap().getId()) ? base.$L() : null",
-                                prop.getBaseProp().getTypeName(),
-                                prop.getBaseProp().getName(),
-                                dtoType.getBaseType().getPropsClassName(),
-                                Strings.upper(prop.getBaseProp().getName()),
-                                prop.getBaseProp().getGetterName()
-                        );
-                    } else if (prop.getBaseProp().isNullable()) {
-                        builder.addStatement(
-                                "$T _tmp_$L = $T.requireNonNull(base.$L(), $S)",
-                                prop.getBaseProp().getTypeName(),
-                                prop.getBaseProp().getName(),
-                                Objects.class,
-                                prop.getBaseProp().getGetterName(),
-                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\""
-                        );
-                    } else {
-                        builder.addStatement(
-                                "$T _tmp_$L = base.$L()",
-                                prop.getBaseProp().getTypeName(),
-                                prop.getBaseProp().getName(),
-                                prop.getBaseProp().getGetterName()
-                        );
-                    }
-                    if (prop.isNullable()) {
-                        builder.addStatement(
-                                "this.$L = _tmp_$L != null ? _tmp_$L.$L() : null",
-                                prop.getName(),
-                                prop.getBaseProp().getName(),
-                                prop.getBaseProp().getName(),
-                                prop.getBaseProp().getTargetType().getIdProp().getGetterName()
-                        );
-                    } else {
-                        builder.addStatement(
-                                "this.$L = _tmp_$L.$L()",
-                                prop.getName(),
-                                prop.getBaseProp().getName(),
-                                prop.getBaseProp().getTargetType().getIdProp().getGetterName()
-                        );
-                    }
-                }
-            } else if (prop.getTargetType() != null) {
-                if (prop.getBaseProp().isList()) {
-                    if (prop.isNullable()) {
-                        builder.addStatement(
-                                "this.$L = spi.__isLoaded($T.$L.unwrap().getId())$L ? \n" +
-                                        "    base.$L().stream().map($T::new).collect($T.toList()) : \n" +
-                                        "    $L",
-                                prop.getName(),
-                                dtoType.getBaseType().getPropsClassName(),
-                                Strings.upper(prop.getBaseProp().getName()),
-                                prop.isRecursive() ? "" : " && !base." + prop.getBaseProp().getGetterName() + "().isEmpty()",
-                                prop.getBaseProp().getGetterName(),
-                                getPropElementName(prop),
-                                Collectors.class,
-                                defaultValue(prop)
-                        );
-                    } else if (prop.getBaseProp().isNullable()) {
-                        builder.addStatement(
-                                "this.$L = $T.requireNonNull(base.$L(), $S).stream().map($T::new).collect($T.toList())",
-                                prop.getName(),
-                                Objects.class,
-                                prop.getBaseProp().getGetterName(),
-                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\"",
-                                getPropElementName(prop),
-                                Collectors.class
-                        );
-                    } else {
-                        builder.addStatement(
-                                "this.$L = base.$L().stream().map($T::new).collect($T.toList())",
-                                prop.getName(),
-                                prop.getBaseProp().getGetterName(),
-                                getPropElementName(prop),
-                                Collectors.class
-                        );
-                    }
-                } else {
-                    if (prop.isNullable()) {
-                        builder.addStatement(
-                                "$T _tmp_$L = spi.__isLoaded($T.$L.unwrap().getId()) ? base.$L() : null",
-                                prop.getBaseProp().getTypeName(),
-                                prop.getBaseProp().getName(),
-                                dtoType.getBaseType().getPropsClassName(),
-                                Strings.upper(prop.getBaseProp().getName()),
-                                prop.getBaseProp().getGetterName()
-                        );
-                    } else if (prop.getBaseProp().isNullable()) {
-                        builder.addStatement(
-                                "$T _tmp_$L = $T.requireNonNull(base.$L(), $L)",
-                                prop.getBaseProp().getTypeName(),
-                                prop.getBaseProp().getName(),
-                                Objects.class,
-                                prop.getBaseProp().getGetterName(),
-                                "\"`base." + prop.getBaseProp().getGetterName() + "()` cannot be null\""
-                        );
-                    } else {
-                        builder.addStatement(
-                                "$T _tmp_$L = base.$L()",
-                                prop.getBaseProp().getTypeName(),
-                                prop.getBaseProp().getName(),
-                                prop.getBaseProp().getGetterName()
-                        );
-                    }
-                    if (prop.isNullable()) {
-                        builder.addStatement(
-                                "this.$L = _tmp_$L != null ? new $T(_tmp_$L) : null",
-                                prop.getName(),
-                                prop.getBaseProp().getName(),
-                                getPropElementName(prop),
-                                prop.getBaseProp().getName()
-                        );
-                    } else {
-                        builder.addStatement(
-                                "this.$L = new $T(_tmp_$L)",
-                                prop.getName(),
-                                getPropElementName(prop),
-                                prop.getBaseProp().getName()
-                        );
-                    }
-                }
-            } else if (prop.getEnumType() != null) {
-                if (prop.isNullable()) {
-                    builder.beginControlFlow(
-                            "if (!spi.__isLoaded($T.$L.unwrap().getId()))",
-                            dtoType.getBaseType().getPropsClassName(),
-                            Strings.upper(prop.getBaseProp().getName())
-                    );
-                    builder.addStatement("this.$L = null", prop.getName());
-                    builder.nextControlFlow("else");
-                }
-                appendEnumToValue(
-                        builder,
-                        prop,
-                        "base." + prop.getBaseProp().getGetterName() + "()",
-                        true
-                );
-                builder.addStatement(
-                        "this.$L = __$L",
-                        prop.getName(),
-                        prop.getName()
-                );
-                if (prop.isNullable()) {
-                    builder.endControlFlow();
-                }
-            } else {
+            if (isSimpleProp(prop)) {
                 if (prop.isNullable()) {
                     builder.addStatement(
-                            "this.$L = spi.__isLoaded($T.$L.unwrap().getId()) ? base.$L() : $L",
+                            "this.$L = (($T)base).__isLoaded($T.byIndex($T.$L)) ? base.$L() : null",
                             prop.getName(),
-                            dtoType.getBaseType().getPropsClassName(),
-                            Strings.upper(prop.getBaseProp().getName()),
-                            prop.getBaseProp().getGetterName(),
-                            defaultValue(prop)
+                            ImmutableSpi.class,
+                            Constants.PROP_ID_CLASS_NAME,
+                            dtoType.getBaseType().getProducerClassName(),
+                            prop.getBaseProp().getSlotName(),
+                            prop.getBaseProp().getGetterName()
                     );
                 } else {
                     builder.addStatement(
                             "this.$L = base.$L()",
                             prop.getName(),
                             prop.getBaseProp().getGetterName()
+                    );
+                }
+            } else {
+                ImmutableProp tailBaseProp = prop.toTailProp().getBaseProp();
+                if (!prop.isNullable() && tailBaseProp.isAssociation(true) && tailBaseProp.isList()) {
+                    builder.addStatement(
+                            "$T __$L = $L.get(base)",
+                            getPropTypeName(prop),
+                            prop.getName(),
+                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER)
+                    );
+                    builder.addStatement(
+                            "this.$L = __$L != null ? __$L : $T.emptyList()",
+                            prop.getName(),
+                            prop.getName(),
+                            prop.getName(),
+                            Constants.COLLECTIONS_CLASS_NAME
+                    );
+                } else {
+                    builder.addStatement(
+                            "this.$L = $L.get(base)",
+                            prop.getName(),
+                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER)
                     );
                 }
             }
@@ -693,142 +649,203 @@ public class DtoGenerator {
                 .addAnnotation(Override.class)
                 .returns(dtoType.getBaseType().getClassName());
         builder.addCode(
-                "return $T.$L.produce(draft -> {$>\n",
+                "return $T.$L.produce(__draft -> {$>\n",
                 dtoType.getBaseType().getDraftClassName(),
                 "$"
         );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            if (prop.getEnumType() != null) {
-                appendValueToEnum(
-                        builder,
-                        prop,
-                        "this." + prop.getName()
-                );
+            if (prop.isUnmapped()) {
+                continue;
             }
-            if (prop.getNextProp() != null) {
-                builder.addCode("$T.set(\n$>", Constants.FLAT_UTILS_CLASS_NAME);
-                builder.addCode("draft,\n");
-                builder.addCode("new int[] {\n$>");
-                for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
-                    builder.addCode(
-                            "$T.$N",
-                            p.getBaseProp().getDeclaringType().getProducerClassName(),
-                            p.getBaseProp().getSlotName()
-                    );
-                    if (p.getNextProp() != null) {
-                        builder.addCode(",\n");
-                    } else {
-                        builder.addCode("\n");
-                    }
-                }
-                builder.addCode("$<},\n");
-                if (prop.getTargetType() != null) {
-                    builder.addCode("this.$L != null ? this.$L.toEntity() : null\n", prop.getName(), prop.getName());
-                } else if (prop.getEnumType() != null) {
-                    builder.addCode("__$L\n", prop.getName());
-                } else {
-                    builder.addCode("this.$L\n", prop.getName());
-                }
-                builder.addCode("$<);\n");
-            } else if (prop.isNullable() && (prop.getBaseProp().isAssociation(false) || !prop.getBaseProp().isNullable())) {
-                builder.beginControlFlow("if ($L != null)", prop.getName());
-                addAssignment(prop, builder);
-                if (prop.getBaseProp().isAssociation(true)) {
-                    if (prop.getBaseProp().isList()) {
-                        builder.nextControlFlow("else");
-                        builder.addStatement(
-                                "draft.$L($T.emptyList())",
-                                prop.getBaseProp().getSetterName(),
-                                Constants.COLLECTIONS_CLASS_NAME
-                        );
-                    } else if (prop.getBaseProp().isNullable()) {
-                        builder.nextControlFlow("else");
-                        builder.addStatement(
-                                "draft.$L(($T)null)",
-                                prop.getBaseProp().getSetterName(),
-                                prop.getBaseProp().getTargetType().getClassName()
-                        );
-                    }
-                }
-                builder.endControlFlow();
-            } else if (prop.getEnumType() != null) {
-                builder.addStatement("draft.$L(__$L)", prop.getBaseProp().getSetterName(), prop.getName());
+            if (isSimpleProp(prop)) {
+                builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
             } else {
-                addAssignment(prop, builder);
+                ImmutableProp tailBaseProp = prop.toTailProp().getBaseProp();
+                if (tailBaseProp.isList() && tailBaseProp.isAssociation(true)) {
+                    builder.addStatement(
+                            "$L.set(__draft, $L != null ? $L : $T.emptyList())",
+                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
+                            prop.getName(),
+                            prop.getName(),
+                            Constants.COLLECTIONS_CLASS_NAME
+                    );
+                } else {
+                    builder.addStatement(
+                            "$L.set(__draft, $L)",
+                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
+                            prop.getName()
+                    );
+                }
             }
         }
         builder.addCode("$<});\n");
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addAssignment(DtoProp<ImmutableType, ImmutableProp> prop, MethodSpec.Builder builder) {
-        ImmutableProp immutableProp = prop.getBaseProp();
-        if (prop.isIdOnly()) {
-            if (immutableProp.isList()) {
-                builder.beginControlFlow("if ($L.isEmpty())", prop.getName());
-                builder.addStatement(
-                        "draft.$L($T.emptyList())",
-                        immutableProp.getSetterName(),
-                        Collections.class
+    private void addEntityType() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("entityType")
+                .returns(
+                        ParameterizedTypeName.get(
+                                Constants.CLASS_CLASS_NAME,
+                                dtoType.getBaseType().getClassName()
+                        )
+                )
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addStatement("return $T.class", dtoType.getBaseType().getClassName());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addApplyTo() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("applyTo")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        ParameterSpec.builder(
+                                ParameterizedTypeName.get(
+                                        Constants.SPECIFICATION_ARGS_CLASS_NAME,
+                                        dtoType.getBaseType().getClassName(),
+                                        dtoType.getBaseType().getTableClassName()
+                                ),
+                                "args"
+                        ).build()
                 );
-                builder.nextControlFlow("else");
-                builder.beginControlFlow(
-                        "for ($T __e : $L)",
-                        getPropElementName(prop),
-                        prop.getName()
-                );
-                builder.addStatement(
-                        "draft.$L(targetDraft -> targetDraft.$L($L))",
-                        immutableProp.getAdderByName(),
-                        immutableProp.getTargetType().getIdProp().getSetterName(),
-                        "__e"
-                );
-                builder.endControlFlow();
-                builder.endControlFlow();
-            } else {
-                builder.addStatement(
-                        "draft.$L(targetDraft -> targetDraft.$L($L))",
-                        immutableProp.getApplierName(),
-                        immutableProp.getTargetType().getIdProp().getSetterName(),
-                        prop.getName()
-                );
+        List<ImmutableProp> stack = Collections.emptyList();
+        builder.addStatement("$T __applier = args.getApplier()", Constants.PREDICATE_APPLIER_CLASS_NAME);
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            List<ImmutableProp> newStack = new ArrayList<>(stack.size() + 2);
+            DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
+            for (DtoProp<ImmutableType, ImmutableProp> p = prop; p != null; p = p.getNextProp()) {
+                if (p != tailProp || p.getTargetType() != null) {
+                    newStack.add(p.getBaseProp());
+                }
             }
-        } else if (prop.getTargetType() != null) {
-            if (immutableProp.isList()) {
-                builder.beginControlFlow("if ($L.isEmpty())", prop.getName());
-                builder.addStatement(
-                        "draft.$L($T.emptyList())",
-                        immutableProp.getSetterName(),
-                        Collections.class
-                );
-                builder.nextControlFlow("else");
-                builder.beginControlFlow(
-                        "for ($T __e : $L)",
-                        getPropElementName(prop),
-                        prop.getName()
-                );
-                builder.addStatement(
-                        "draft.$L(true).add(($T)__e.toEntity())",
-                        immutableProp.getGetterName(),
-                        immutableProp.getTargetType().getDraftClassName()
-                );
-                builder.endControlFlow();
-                builder.endControlFlow();
-            } else {
-                builder.addStatement(
-                        "draft.$L($L.toEntity())",
-                        immutableProp.getSetterName(),
-                        prop.getName()
-                );
-            }
-        } else if (prop.getEnumType() != null) {
-            builder.addStatement("draft.$L(__$L)", prop.getBaseProp().getSetterName(), prop.getName());
-        } else {
-            builder.addStatement("draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
+            stack = addStackOperations(builder, stack, newStack);
+            addPredicateOperation(builder, tailProp);
         }
+        addStackOperations(builder, stack, Collections.emptyList());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private List<ImmutableProp> addStackOperations(
+            MethodSpec.Builder builder,
+            List<ImmutableProp> stack,
+            List<ImmutableProp> newStack
+    ) {
+        int size = Math.min(stack.size(), newStack.size());
+        int sameCount = size;
+        for (int i = 0; i < size; i++) {
+            if (stack.get(i) != newStack.get(i)) {
+                sameCount = i;
+                break;
+            }
+        }
+        for (int i = stack.size() - sameCount; i > 0; --i) {
+            builder.addStatement("__applier.pop()");
+        }
+        for (ImmutableProp prop : newStack.subList(sameCount, newStack.size())) {
+            builder.addStatement(
+                    "__applier.push($T.$L.unwrap())",
+                    prop.getDeclaringType().getPropsClassName(),
+                    StringUtil.snake(prop.getName(), StringUtil.SnakeCase.UPPER)
+            );
+        }
+        return newStack;
+    }
+
+    private void addPredicateOperation(MethodSpec.Builder builder, DtoProp<ImmutableType, ImmutableProp> prop) {
+
+        if (prop.getTargetType() != null) {
+            builder.beginControlFlow("if (this.$L != null)", prop.getName());
+            builder.addStatement("this.$L.applyTo(args.child())", prop.getName());
+            builder.endControlFlow();
+            return;
+        }
+
+        String funcName = prop.getFuncName();
+        if (funcName == null) {
+            funcName = "eq";
+        } else if ("null".equals(funcName)) {
+            funcName = "isNull";
+        } else if ("notNull".equals(funcName)) {
+            funcName = "isNotNull";
+        } else if ("id".equals(funcName)) {
+            funcName = "associatedIdEq";
+        }
+
+        CodeBlock.Builder cb = CodeBlock.builder();
+        if (org.babyfish.jimmer.dto.compiler.Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
+            cb.add("__applier.$L(new $T[] { ", funcName, Constants.IMMUTABLE_PROP_CLASS_NAME);
+            boolean addComma = false;
+            for (ImmutableProp baseProp : prop.getBasePropMap().values()) {
+                if (addComma) {
+                    cb.add(", ");
+                } else {
+                    addComma = true;
+                }
+                cb.add(
+                        "$T.$L.unwrap()",
+                        baseProp.getDeclaringType().getPropsClassName(),
+                        StringUtil.snake(baseProp.getName(), StringUtil.SnakeCase.UPPER)
+                );
+            }
+            cb.add(" }, ");
+        } else {
+            cb.add(
+                    "__applier.$L($T.$L.unwrap(), ",
+                    funcName,
+                    prop.getBaseProp().getDeclaringType().getPropsClassName(),
+                    StringUtil.snake(prop.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
+            );
+        }
+        cb.add("this.");
+        cb.add(prop.getName());
+        if ("like".equals(funcName) || "notLike".equals(funcName)) {
+            cb.add(", ");
+            cb.add(prop.getLikeOptions().contains(LikeOption.INSENSITIVE) ? "true" : "false");
+            cb.add(", ");
+            cb.add(prop.getLikeOptions().contains(LikeOption.MATCH_START) ? "true" : "false");
+            cb.add(", ");
+            cb.add(prop.getLikeOptions().contains(LikeOption.MATCH_END) ? "true" : "false");
+        }
+        cb.addStatement(")");
+        builder.addCode(cb.build());
     }
 
     public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+        ImmutableProp baseProp = prop.toTailProp().getBaseProp();
+        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            String funcName = prop.toTailProp().getFuncName();
+            if (funcName != null) {
+                switch (funcName) {
+                    case "null":
+                    case "notNull":
+                        return TypeName.BOOLEAN;
+                    case "valueIn":
+                    case "valueNotIn":
+                        return ParameterizedTypeName.get(
+                                Constants.COLLECTION_CLASS_NAME,
+                                getPropElementName(prop)
+                        );
+                    case "id":
+                    case "associatedIdEq":
+                    case "associatedIdNe":
+                        return baseProp.getTargetType().getIdProp().getTypeName();
+                    case "associatedIdIn":
+                    case "associatedIdNotIn":
+                        return ParameterizedTypeName.get(
+                                Constants.COLLECTION_CLASS_NAME,
+                                baseProp.getTargetType().getIdProp().getTypeName()
+                        );
+                }
+            }
+            if (baseProp.isAssociation(true)) {
+                return getPropElementName(prop);
+            }
+        }
+
         EnumType enumType = prop.getEnumType();
         if (enumType != null) {
             if (enumType.isNumeric()) {
@@ -837,7 +854,7 @@ public class DtoGenerator {
             return Constants.STRING_CLASS_NAME;
         }
         TypeName elementTypeName = getPropElementName(prop);
-        return prop.toTailProp().getBaseProp().isList() ?
+        return baseProp.isList() ?
                 ParameterizedTypeName.get(
                         Constants.LIST_CLASS_NAME,
                         elementTypeName.isPrimitive() ?
@@ -1186,91 +1203,5 @@ public class DtoGenerator {
             default:
                 return false;
         }
-    }
-
-    private static String defaultValue(DtoProp<?, ImmutableProp> prop) {
-        TypeName typeName = prop.getBaseProp().getTypeName();
-        return defaultValue(typeName);
-    }
-
-    private static String defaultValue(TypeName typeName) {
-        if (typeName.isPrimitive()) {
-            if (typeName.equals(TypeName.BOOLEAN)) {
-                return "false";
-            }
-            if (typeName.equals(TypeName.CHAR)) {
-                return "'\0'";
-            }
-            return "0";
-        }
-        return "null";
-    }
-
-    private String appendEnumToValue(
-            MethodSpec.Builder builder,
-            DtoProp<ImmutableType, ImmutableProp> prop,
-            String parameterName,
-            boolean parameterIsEnum
-    ) {
-        EnumType enumType = prop.getEnumType();
-        if (enumType == null) {
-            return null;
-        }
-        builder.addStatement("$T __$L", getPropTypeName(prop), prop.getName());
-        if (prop.isNullable()) {
-            builder.beginControlFlow("if ($L != null)", parameterName);
-        }
-        if (parameterIsEnum) {
-            builder.beginControlFlow("switch ($L)", parameterName);
-        } else {
-            builder.beginControlFlow("switch (($T)$L)", prop.toTailProp().getBaseProp().getTypeName(),  parameterName);
-        }
-        for (Map.Entry<String, String> e : enumType.getValueMap().entrySet()) {
-            builder.addStatement("case $L: __$L = $L; break", e.getKey(), prop.getName(), e.getValue());
-        }
-        builder.addStatement("default: throw new AssertionError($S)", "Internal bug");
-        builder.endControlFlow();
-        if (prop.isNullable()) {
-            builder.nextControlFlow("else");
-            builder.addStatement("__$L = null", prop.getName());
-            builder.endControlFlow();
-        }
-        return null;
-    }
-
-    private String appendValueToEnum(
-            MethodSpec.Builder builder,
-            DtoProp<ImmutableType, ImmutableProp> prop,
-            String parameterName
-    ) {
-        EnumType enumType = prop.getEnumType();
-        if (enumType == null) {
-            return null;
-        }
-        builder.addStatement("$T __$L", prop.toTailProp().getBaseProp().getTypeName(), prop.getName());
-        if (prop.isNullable()) {
-            builder.beginControlFlow("if ($L != null)", parameterName);
-        }
-        TypeName enumTypeName = prop.toTailProp().getBaseProp().getTypeName();
-        builder.beginControlFlow("switch ($L)", parameterName);
-        for (Map.Entry<String, String> e : enumType.getConstantMap().entrySet()) {
-            builder.addStatement("case $L: __$L = $T.$L; break", e.getKey(), prop.getName(), enumTypeName, e.getValue());
-        }
-        builder.addStatement(
-                "default: throw new IllegalArgumentException($>" +
-                        "\"Illegal value '\" + " +
-                        "$L + " +
-                        "\"' for enum type $L\"" +
-                        "$<)",
-                parameterName,
-                enumTypeName.toString()
-        );
-        builder.endControlFlow();
-        if (prop.isNullable()) {
-            builder.nextControlFlow("else");
-            builder.addStatement("__$L = null", prop.getName());
-            builder.endControlFlow();
-        }
-        return null;
     }
 }

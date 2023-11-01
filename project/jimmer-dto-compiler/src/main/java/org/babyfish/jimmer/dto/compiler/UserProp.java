@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.dto.compiler;
 
 import org.antlr.v4.runtime.Token;
+import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 
 import java.util.List;
 import java.util.Objects;

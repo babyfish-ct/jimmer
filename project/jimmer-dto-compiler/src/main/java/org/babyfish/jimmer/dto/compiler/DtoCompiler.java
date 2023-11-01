@@ -85,6 +85,10 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract List<String> getEnumConstants(P baseProp);
 
+    protected abstract boolean isStringProp(P baseProp);
+
+    protected abstract boolean isSameType(P baseProp1, P baseProp2);
+
     DtoAstException exception(int line, String message) {
         return new DtoAstException(dtoFilePath, line, message);
     }

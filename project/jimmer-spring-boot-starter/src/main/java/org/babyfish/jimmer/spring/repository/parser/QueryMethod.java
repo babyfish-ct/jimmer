@@ -16,6 +16,8 @@ public class QueryMethod {
 
     private final int sortParamIndex;
 
+    private final int specificationParamIndex;
+
     private final int fetcherParamIndex;
 
     private final int viewTypeParamIndex;
@@ -26,6 +28,7 @@ public class QueryMethod {
             Class<?> viewType,
             int pageableParamIndex,
             int sortParamIndex,
+            int specificationParamIndex,
             int fetcherParamIndex,
             int viewTypeParamIndex
     ) {
@@ -34,6 +37,7 @@ public class QueryMethod {
         this.viewType = viewType;
         this.pageableParamIndex = pageableParamIndex;
         this.sortParamIndex = sortParamIndex;
+        this.specificationParamIndex = specificationParamIndex;
         this.fetcherParamIndex = fetcherParamIndex;
         this.viewTypeParamIndex = viewTypeParamIndex;
     }
@@ -60,6 +64,10 @@ public class QueryMethod {
 
     public int getSortParamIndex() {
         return sortParamIndex;
+    }
+
+    public int getSpecificationParamIndex() {
+        return specificationParamIndex;
     }
 
     public int getFetcherParamIndex() {

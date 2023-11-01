@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.flat;
 
-import org.babyfish.jimmer.impl.util.FlatUtils;
+import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.impl.util.DtoPropAccessor;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.flat.*;
 import org.junit.jupiter.api.Test;
@@ -11,10 +12,10 @@ public class FlatTest extends Tests {
     public void testChildToParent() {
 
         Company company = CompanyDraft.$.produce(draft -> {
-            FlatUtils.set(
-                    draft,
+            set(
+                    draft, 
                     new int[] {
-                            CompanyDraft.Producer.SLOT_COMPANY_NAME
+                        CompanyDraft.Producer.SLOT_COMPANY_NAME
                     },
                     "myCompany"
             );
@@ -27,7 +28,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -47,7 +48,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -71,7 +72,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -99,7 +100,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -134,7 +135,7 @@ public class FlatTest extends Tests {
     public void testParentToChild() {
 
         Company company = CompanyDraft.$.produce(draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -162,7 +163,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -190,7 +191,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -218,7 +219,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_STREET,
@@ -246,7 +247,7 @@ public class FlatTest extends Tests {
         );
 
         company = CompanyDraft.$.produce(company, draft -> {
-            FlatUtils.set(
+            set(
                     draft,
                     new int[] {
                             CompanyDraft.Producer.SLOT_COMPANY_NAME,
@@ -272,5 +273,9 @@ public class FlatTest extends Tests {
                         "}",
                 company
         );
+    }
+
+    private static void set(Draft draft, int[] propIds, Object value) {
+        new DtoPropAccessor(false, propIds).set(draft, value);
     }
 }

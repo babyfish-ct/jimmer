@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository.support;
 
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -16,8 +17,11 @@ import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification;
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationKt;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.springframework.data.domain.Page;
@@ -40,6 +44,7 @@ public class QueryExecutors {
             QueryMethod queryMethod,
             Pageable pageable,
             Sort sort,
+            Specification<?> specification,
             Fetcher<?> fetcher,
             Class<?> viewType,
             Object[] args
@@ -54,6 +59,16 @@ public class QueryExecutors {
             ConfigurableRootQuery<?, Object> query = Queries
                     .createQuery(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT, (q, table) -> {
                         q.where(astPredicate(table, queryData.getPredicate(), args));
+                        if (specification != null) {
+                            if (specification instanceof KSpecification<?>) {
+                                JSpecification<?, Table<?>> spec =
+                                        (JSpecification<?, Table<?>>)(JSpecification<?, ?>)
+                                                KSpecificationKt.toJavaSpecification(((KSpecification<Object>)specification));
+                                q.where(spec);
+                            } else {
+                                q.where((JSpecification<?, Table<?>>) specification);
+                            }
+                        }
                         for (Query.Order order : queryData.getOrders()) {
                             q.orderBy(
                                     order.getOrderMode() == OrderMode.DESC ?

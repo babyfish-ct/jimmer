@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.java.dal;
 
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.spring.java.model.dto.BookView;
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.java.model.*;
@@ -76,4 +77,6 @@ public interface BookRepository extends JRepository<Book, Long> {
                         .select(table.fetch(fetcher))
         );
     }
+
+    List<Book> findAll(Specification<Book> specification);
 }

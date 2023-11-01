@@ -4,6 +4,7 @@ import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.query.selectable.RootSelectable;
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.table.Table;
 
 import java.util.List;
@@ -14,6 +15,9 @@ public interface MutableRootQuery<T extends Table<?>> extends MutableQuery, Root
     @OldChain
     @Override
     MutableRootQuery<T> where(Predicate... predicates);
+
+    @OldChain
+    MutableRootQuery<T> where(JSpecification<?, T> specification);
 
     @OldChain
     @Override

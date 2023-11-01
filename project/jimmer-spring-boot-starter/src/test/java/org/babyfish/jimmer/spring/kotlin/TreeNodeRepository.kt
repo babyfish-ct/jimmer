@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.kotlin
 
+import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView2
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.fetcher.Fetcher
@@ -21,4 +22,6 @@ interface TreeNodeRepository : KRepository<TreeNode, Long> {
     fun findByNameAndParentId(name: String, parentId: Long): TreeNode?
 
     fun findByNameLike(name: String?): List<TreeNodeView2>
+
+    fun find(specification: Specification<TreeNode>): List<TreeNode>
 }

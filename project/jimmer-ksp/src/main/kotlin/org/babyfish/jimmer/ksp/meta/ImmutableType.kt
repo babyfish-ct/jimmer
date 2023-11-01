@@ -12,6 +12,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
+import org.babyfish.jimmer.ksp.generator.PROPS
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
@@ -48,6 +49,8 @@ class ImmutableType(
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
+
+    val propsClassName: ClassName = classDeclaration.className { "$it$PROPS" }
 
     val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT" }
 

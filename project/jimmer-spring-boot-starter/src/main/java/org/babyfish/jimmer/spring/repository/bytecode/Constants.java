@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository.bytecode;
 
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.impl.asm.Type;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.spring.repository.parser.Context;
@@ -54,6 +55,7 @@ interface Constants {
             QUERY_METHOD_DESCRIPTOR +
             Type.getDescriptor(Pageable.class) +
             Type.getDescriptor(Sort.class) +
+            Type.getDescriptor(Specification.class) +
             Type.getDescriptor(Fetcher.class) +
             Type.getDescriptor(Class.class) +
             "[Ljava/lang/Object;)Ljava/lang/Object;";

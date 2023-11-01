@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example.repository
 
+import org.babyfish.jimmer.Specification
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.spring.repository.fetchPage
 import org.babyfish.jimmer.spring.repository.orderBy
@@ -12,9 +13,16 @@ import java.math.BigDecimal
 
 interface BookRepository : KRepository<Book, Long> { // ❶
 
+    /**
+     * Manually implement complex query.
+     *
+     * <p>The functionality of this method is the same as the super QBE method.[find]</p>
+     */
     fun findBooks( // ❷
         pageable: Pageable,
         name: String?,
+        minPrice: BigDecimal?,
+        maxPrice: BigDecimal?,
         storeName: String?,
         authorName: String?,
         fetcher: Fetcher<Book>?
@@ -23,6 +31,12 @@ interface BookRepository : KRepository<Book, Long> { // ❶
             .createQuery(Book::class) {
                 name?.takeIf { it.isNotEmpty() }?.let { // ❸
                     where(table.name ilike it)
+                }
+                minPrice?.let {
+                    where(table.price ge it)
+                }
+                maxPrice?.let {
+                    where(table.price le it)
                 }
                 storeName?.takeIf { it.isNotEmpty() }?.let { // ❹
                     where(table.store.name ilike it) // ❺
@@ -44,6 +58,18 @@ interface BookRepository : KRepository<Book, Long> { // ❶
                 select(table.fetch(fetcher)) // ❿
             }
             .fetchPage(pageable) // ⓫
+
+    /**
+     * Super QBE.
+     *
+     * <p>The functionality of this method is the same as the manual method .[findBooks]
+     * </p>
+     */
+    fun find(
+        pageable: Pageable,
+        specification: Specification<Book>,
+        fetcher: Fetcher<Book>?
+    ): Page<Book>
 
     fun findAvgPriceGroupByStoreIds(storeIds: Collection<Long>): Map<Long, BigDecimal> =
         sql

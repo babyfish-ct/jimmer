@@ -41,33 +41,26 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         for (Token modifier : type.modifiers) {
             DtoTypeModifier dtoTypeModifier;
             switch (modifier.getText()) {
+                case "input":
+                    dtoTypeModifier = DtoTypeModifier.INPUT;
+                    break;
+                case "specification":
+                    dtoTypeModifier = DtoTypeModifier.SPECIFICATION;
+                    break;
                 case "abstract":
                     dtoTypeModifier = DtoTypeModifier.ABSTRACT;
                     break;
-                case "input":
-                    if (modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
-                        throw exception(
-                                modifier.getLine(),
-                                "'input' and 'inputOnly' cannot used together"
-                        );
-                    }
-                    dtoTypeModifier = DtoTypeModifier.INPUT;
+                case "unsafe":
+                    dtoTypeModifier = DtoTypeModifier.UNSAFE;
                     break;
-                case "inputOnly":
-                case "input-only":
-                    if (modifiers.contains(DtoTypeModifier.INPUT)) {
-                        throw exception(
-                                modifier.getLine(),
-                                "'input' and 'inputOnly' cannot used together"
-                        );
-                    }
-                    dtoTypeModifier = DtoTypeModifier.INPUT_ONLY;
+                case "dynamic":
+                    dtoTypeModifier = DtoTypeModifier.DYNAMIC;
                     break;
                 default:
                     throw exception(
                             modifier.getLine(),
                             "If the modifier of dto type is specified, it must be " +
-                                    "'abstract', 'input', 'inputOnly' or 'input-only'"
+                                    "'input', 'specification', 'abstract', 'unsafe' or 'dynamic'"
                     );
             }
             if (!modifiers.add(dtoTypeModifier)) {
@@ -76,6 +69,27 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                         "Duplicated modifier \"" + modifier.getText() + "\""
                 );
             }
+        }
+        if (modifiers.contains(DtoTypeModifier.INPUT) &&
+                modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            throw exception(
+                    type.name.getLine(),
+                    "If modifiers 'input' and 'specification' cannot appear at the same time"
+            );
+        }
+        if (modifiers.contains(DtoTypeModifier.UNSAFE) &&
+                !modifiers.contains(DtoTypeModifier.INPUT)) {
+            throw exception(
+                    type.name.getLine(),
+                    "If modifiers 'unsafe' can only be used for input"
+            );
+        }
+        if (modifiers.contains(DtoTypeModifier.DYNAMIC) &&
+                !modifiers.contains(DtoTypeModifier.INPUT)) {
+            throw exception(
+                    type.name.getLine(),
+                    "If modifiers 'dynamic' can only be used for input"
+            );
         }
         Set<String> superSet = new LinkedHashSet<>();
         for (Token superName : type.superNames) {
@@ -122,7 +136,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
     }
 
     public boolean isImplicitId(P baseProp, Set<DtoTypeModifier> modifiers) {
-        if (modifiers.contains(DtoTypeModifier.INPUT) || modifiers.contains(DtoTypeModifier.INPUT_ONLY)) {
+        if (modifiers.contains(DtoTypeModifier.INPUT) || modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
             return baseProp.isId() && compiler.isGeneratedValue(baseProp);
         }
         return false;
@@ -130,6 +144,14 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     public T getTargetType(P baseProp) {
         return compiler.getTargetType(baseProp);
+    }
+
+    public boolean isSameType(P baseProp1, P baseProp2) {
+        return compiler.isSameType(baseProp1, baseProp2);
+    }
+
+    public boolean isStringProp(P baseProp) {
+        return compiler.isStringProp(baseProp);
     }
 
     public String getDtoFilePath() {
