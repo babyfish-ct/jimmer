@@ -425,11 +425,29 @@ class DtoGenerator private constructor(
                                     if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
                                         add("base.%L", prop.name)
                                     } else {
-                                        add(
-                                            "%L.get<%T>(base)",
-                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
-                                            propTypeName(prop)
-                                        )
+                                        if (!prop.isNullable && prop.isBaseNullable) {
+                                            add(
+                                                "%L.get<%T>(\n",
+                                                StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                                propTypeName(prop)
+                                            )
+                                            indent()
+                                            add("base,\n")
+                                            add(
+                                                "%S\n",
+                                                "Cannot convert \"${dtoType.baseType.className}\" to " +
+                                                    "\"${getDtoClassName()}\" because the cannot get non-null " +
+                                                    "value for \"${prop.name}\""
+                                            )
+                                            unindent()
+                                            add(")")
+                                        } else {
+                                            add(
+                                                "%L.get<%T>(base)",
+                                                StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                                propTypeName(prop)
+                                            )
+                                        }
                                     }
                                 } else {
                                     add("%N", prop.alias)
@@ -639,7 +657,7 @@ class DtoGenerator private constructor(
         }
 
         val builder = PropertySpec.builder(
-            StringUtil.snake("${prop.name}Accessor", StringUtil.SnakeCase.UPPER),
+            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
             DTO_PROP_ACCESSOR,
             KModifier.PRIVATE
         ).initializer(

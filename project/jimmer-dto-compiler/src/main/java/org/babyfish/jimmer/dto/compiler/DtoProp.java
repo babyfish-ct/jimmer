@@ -32,8 +32,6 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
 
     boolean isFlat();
 
-    boolean isUnmapped();
-
     @Nullable
     String getAlias();
 

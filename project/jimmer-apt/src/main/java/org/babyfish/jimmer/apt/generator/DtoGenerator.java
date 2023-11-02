@@ -162,8 +162,10 @@ public class DtoGenerator {
             addMetadata();
         }
 
-        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            addAccessorField(prop);
+        if (!dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+                addAccessorField(prop);
+            }
         }
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             addField(prop);
@@ -268,7 +270,7 @@ public class DtoGenerator {
     }
 
     private void addAccessorField(DtoProp<ImmutableType, ImmutableProp> prop) {
-        if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) || prop.isUnmapped() || isSimpleProp(prop)) {
+        if (isSimpleProp(prop)) {
             return;
         }
         FieldSpec.Builder builder = FieldSpec.builder(
@@ -284,7 +286,7 @@ public class DtoGenerator {
 
         DtoProp<ImmutableType, ImmutableProp> tailProp = prop.toTailProp();
         if (prop.isNullable() && (
-                !tailProp.getBaseProp().isNullable() ||
+                !prop.toTailProp().getBaseProp().isNullable() ||
                         dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION) ||
                         dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC))
         ) {
@@ -406,7 +408,7 @@ public class DtoGenerator {
             return false;
         }
         if (prop.isNullable() && (
-                !prop.getBaseProp().isNullable() || dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))) {
+                !prop.isBaseNullable() || dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION))) {
             return false;
         }
         return getPropTypeName(prop).equals(prop.getBaseProp().getTypeName());
@@ -616,20 +618,23 @@ public class DtoGenerator {
                     );
                 }
             } else {
-                ImmutableProp tailBaseProp = prop.toTailProp().getBaseProp();
-                if (!prop.isNullable() && tailBaseProp.isAssociation(true) && tailBaseProp.isList()) {
+                if (!prop.isNullable() && prop.isBaseNullable()) {
                     builder.addStatement(
-                            "$T __$L = $L.get(base)",
-                            getPropTypeName(prop),
+                            "this.$L = $L.get($>\n" +
+                                    "base,\n" +
+                                    "$S\n" +
+                                    "$<)",
                             prop.getName(),
-                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER)
-                    );
-                    builder.addStatement(
-                            "this.$L = __$L != null ? __$L : $T.emptyList()",
-                            prop.getName(),
-                            prop.getName(),
-                            prop.getName(),
-                            Constants.COLLECTIONS_CLASS_NAME
+                            StringUtil.snake(prop.getName() + "Accessor", StringUtil.SnakeCase.UPPER),
+                            "Cannot convert \"" +
+                                    dtoType.getBaseType().getClassName() +
+                                    "\" to " +
+                                    "\"" +
+                                    getDtoClassName() +
+                                    "\" because the cannot get non-null " +
+                                    "value for \"" +
+                                    prop.getName() +
+                                    "\""
                     );
                 } else {
                     builder.addStatement(
@@ -655,9 +660,6 @@ public class DtoGenerator {
                 "$"
         );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
-            if (prop.isUnmapped()) {
-                continue;
-            }
             if (isSimpleProp(prop)) {
                 builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
             } else {
