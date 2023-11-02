@@ -191,6 +191,16 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     }
 
     @Override
+    public boolean isBaseNullable() {
+        for (DtoProp<T, P> p = this; p != null; p = p.getNextProp()) {
+            if (p.getBaseProp().isNullable()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public Mandatory getMandatory() {
         return mandatory;
     }

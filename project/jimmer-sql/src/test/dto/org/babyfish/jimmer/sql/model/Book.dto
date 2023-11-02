@@ -158,3 +158,19 @@ specification BookSpecification4 {
         like:i(firstName, lastName) as authorName
     }
 }
+
+BookDeepView {
+    authors {
+        gender
+        books {
+            authors {
+                gender
+                books {
+                    authors {
+                        gender
+                    }
+                }
+            }
+        }
+    }
+}

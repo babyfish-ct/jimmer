@@ -55,6 +55,14 @@ public class DtoPropAccessor {
         this.setterConverter = setterConverter;
     }
 
+    public <T> T get(Object immutable, String nullMessage) {
+        T value = get(immutable);
+        if (value == null) {
+            throw new IllegalArgumentException(nullMessage);
+        }
+        return value;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T get(Object immutable) {
         ImmutableSpi spi = (ImmutableSpi) immutable;

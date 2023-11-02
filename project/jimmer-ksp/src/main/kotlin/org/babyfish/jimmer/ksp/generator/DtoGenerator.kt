@@ -29,6 +29,8 @@ class DtoGenerator private constructor(
 ) {
     private val root: DtoGenerator = parent?.root ?: this
 
+    private val depth: Int = parent?.depth?.let { it + 1 } ?:0
+
     init {
         if ((codeGenerator === null) == (parent === null)) {
             throw IllegalArgumentException("The nullity values of `codeGenerator` and `parent` cannot be same")
@@ -48,11 +50,10 @@ class DtoGenerator private constructor(
     val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
 
-    private fun getDtoClassName(vararg nestedNames: String): ClassName {
+    private fun getDtoClassName(): ClassName {
             if (innerClassName !== null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
-                list.addAll(nestedNames.toList())
                 return ClassName(
                     root.packageName(),
                     list[0],
@@ -61,13 +62,13 @@ class DtoGenerator private constructor(
             }
             return ClassName(
                 root.packageName(),
-                dtoType.name!!,
-                *nestedNames
+                dtoType.name!!
             )
         }
 
     private fun packageName() =
-        dtoType
+        root
+            .dtoType
             .baseType
             .className
             .packageName
@@ -425,8 +426,9 @@ class DtoGenerator private constructor(
                                         add("base.%L", prop.name)
                                     } else {
                                         add(
-                                            "%L.get(base)",
-                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER)
+                                            "%L.get<%T>(base)",
+                                            StringUtil.snake("${prop.name}Accessor", SnakeCase.UPPER),
+                                            propTypeName(prop)
                                         )
                                     }
                                 } else {
@@ -928,12 +930,18 @@ class DtoGenerator private constructor(
         }
     }
 
-    companion object {
-        @JvmStatic
-        private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
-            prop.targetType ?: throw IllegalArgumentException("prop is not association")
-            return "TargetOf_${prop.name}"
+    private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
+        prop.targetType ?: throw IllegalArgumentException("prop is not association")
+        return "TargetOf_${prop.name}".let {
+            when {
+                prop.isRecursive && depth > 1 -> "${it}_$depth"
+                !prop.isRecursive && depth > 0 -> "${it}_${depth + 1}"
+                else -> it
+            }
         }
+    }
+
+    companion object {
 
         @JvmStatic
         private val NEW = MemberName("org.babyfish.jimmer.kt", "new")

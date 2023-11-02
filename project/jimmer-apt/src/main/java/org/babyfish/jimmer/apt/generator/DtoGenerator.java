@@ -32,6 +32,8 @@ public class DtoGenerator {
 
     private final DtoGenerator root;
 
+    private final int depth;
+
     private final String innerClassName;
 
     private TypeSpec.Builder typeBuilder;
@@ -59,6 +61,7 @@ public class DtoGenerator {
         this.filer = filer;
         this.parent = parent;
         this.root = parent != null ? parent.root : this;
+        this.depth = parent == null ? 0 : parent.depth + 1;
         this.innerClassName = innerClassName;
     }
 
@@ -128,7 +131,7 @@ public class DtoGenerator {
     }
 
     public String getPackageName() {
-        String pkg = dtoType.getBaseType().getPackageName();
+        String pkg = root.dtoType.getBaseType().getPackageName();
         return pkg.isEmpty() ? "dto" : pkg + ".dto";
     }
 
@@ -136,11 +139,10 @@ public class DtoGenerator {
         return innerClassName != null ? innerClassName : dtoType.getName();
     }
 
-    public ClassName getDtoClassName(String ... nestedNames) {
+    private ClassName getDtoClassName() {
         if (innerClassName != null) {
             List<String> list = new ArrayList<>();
             collectNames(list);
-            list.addAll(Arrays.asList(nestedNames));
             return ClassName.get(
                     root.getPackageName(),
                     list.get(0),
@@ -149,8 +151,7 @@ public class DtoGenerator {
         }
         return ClassName.get(
                 root.getPackageName(),
-                dtoType.getName(),
-                nestedNames
+                dtoType.getName()
         );
     }
 
@@ -1113,7 +1114,7 @@ public class DtoGenerator {
         }
     }
 
-    private static String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop) {
+    private String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop) {
         DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
         if (targetType == null) {
             throw new IllegalArgumentException("prop is not association");
@@ -1121,7 +1122,15 @@ public class DtoGenerator {
         if (targetType.getName() != null) {
             return targetType.getName();
         }
-        return "TargetOf_" + prop.getName();
+        String simpleName = "TargetOf_" + prop.getName();
+        if (prop.isRecursive()) {
+            if (depth > 1) {
+                simpleName += "_" + depth;
+            }
+        } else if (depth > 0) {
+            simpleName += "_" + (depth + 1);
+        }
+        return simpleName;
     }
 
     private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {

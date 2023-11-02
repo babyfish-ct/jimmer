@@ -20,8 +20,8 @@ public class MixedCompanyViewTest extends Tests {
         province.setProvinceName("myProvince");
         view.setProvince(province);
 
-        MixedCompanyView.TargetOf_province.TargetOf_country country =
-                new MixedCompanyView.TargetOf_province.TargetOf_country();
+        MixedCompanyView.TargetOf_province.TargetOf_country_2 country =
+                new MixedCompanyView.TargetOf_province.TargetOf_country_2();
         country.setCountryName("myCountry");
         province.setCountry(country);
 
@@ -74,7 +74,7 @@ public class MixedCompanyViewTest extends Tests {
                         "--->cityName=myCity, " +
                         "--->province=MixedCompanyView.TargetOf_province(" +
                         "--->--->provinceName=myProvince, " +
-                        "--->--->country=MixedCompanyView.TargetOf_province.TargetOf_country(" +
+                        "--->--->country=MixedCompanyView.TargetOf_province.TargetOf_country_2(" +
                         "--->--->--->countryName=myCountry" +
                         "--->--->)" +
                         "--->)" +
