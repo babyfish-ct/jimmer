@@ -125,40 +125,30 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.basePropMap = Collections.unmodifiableMap(basePropMap);
 
         EnumSet<LikeOption> likeOptions = EnumSet.noneOf(LikeOption.class);
-        if (prop.insensitive != null) {
-            if (!prop.insensitive.getText().equals("i")) {
-                throw ctx.exception(
-                        prop.insensitive.getLine(),
-                        "Illegal function option identifier `" +
-                                prop.insensitive +
-                                "`, it can only be `i`"
-                );
-            }
+        if (prop.flag != null) {
             if (!"like".equals(funcName)) {
                 throw ctx.exception(
-                        prop.insensitive.getLine(),
-                        "`i` can only be used to decorate the function `like`"
+                        prop.flag.getLine(),
+                        "`/` can only be used to decorate the function `like`"
                 );
             }
-            likeOptions.add(LikeOption.INSENSITIVE);
-        }
-        if (prop.prefix != null) {
-            if (!"like".equals(funcName)) {
-                throw ctx.exception(
-                        prop.prefix.getLine(),
-                        "`^` can only be used to decorate the function `like`"
-                );
+            if (prop.insensitive != null) {
+                if (!prop.insensitive.getText().equals("i")) {
+                    throw ctx.exception(
+                            prop.insensitive.getLine(),
+                            "Illegal function option identifier `" +
+                                    prop.insensitive +
+                                    "`, it can only be `i`"
+                    );
+                }
+                likeOptions.add(LikeOption.INSENSITIVE);
             }
-            likeOptions.add(LikeOption.MATCH_START);
-        }
-        if (prop.suffix != null) {
-            if (!"like".equals(funcName)) {
-                throw ctx.exception(
-                        prop.suffix.getLine(),
-                        "`$` can only be used to decorate the function `like`"
-                );
+            if (prop.prefix != null) {
+                likeOptions.add(LikeOption.MATCH_START);
             }
-            likeOptions.add(LikeOption.MATCH_END);
+            if (prop.suffix != null) {
+                likeOptions.add(LikeOption.MATCH_END);
+            }
         }
         this.likeOptions = Collections.unmodifiableSet(likeOptions);
 

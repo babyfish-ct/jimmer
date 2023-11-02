@@ -138,7 +138,7 @@ specification BookSpecification3 {
     }
     authors {
         #allScalars(this)
-        like:i(firstName, lastName) as name
+        like/i(firstName, lastName) as name
     }
 }
 
@@ -155,7 +155,7 @@ specification BookSpecification4 {
         }
     }
     flat(authors) {
-        like:i(firstName, lastName) as authorName
+        like/i(firstName, lastName) as authorName
     }
 }
 

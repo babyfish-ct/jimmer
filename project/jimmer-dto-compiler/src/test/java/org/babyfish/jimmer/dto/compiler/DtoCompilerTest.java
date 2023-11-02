@@ -571,7 +571,7 @@ public class DtoCompilerTest {
                         "        }\n" +
                         "    }\n" +
                         "    flat(authors) {\n" +
-                        "        like:i(firstName, lastName) as authorName\n" +
+                        "        like/i(firstName, lastName) as authorName\n" +
                         "    }\n" +
                         "}"
         ).get(0);

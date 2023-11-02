@@ -22,8 +22,8 @@ TreeNodeView2 {
 }
 
 specification TreeNodeSpecification {
-    like:i(name)
+    like/i(name)
     flat(parent) {
-        like:i(name) as parentName
+        like/i(name) as parentName
     }
 }

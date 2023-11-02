@@ -84,7 +84,7 @@ positiveProp
     '+'?
     (
         func = Identifier
-        (':' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?
+        (flag = '/' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?
         '(' props += Identifier (',' props += Identifier)* ','? ')'
         |
         props += Identifier
