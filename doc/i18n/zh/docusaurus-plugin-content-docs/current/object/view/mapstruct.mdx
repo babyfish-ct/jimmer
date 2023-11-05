@@ -8,38 +8,55 @@ import TabItem from '@theme/TabItem';
 import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
 
+## 简介
+
+Jimmer拓展了[MapStruct](https://mapstruct.org/)，支持使用mapstruct来完成Jimmer动态实体对象和静态DTO对象之间的相互转化。
+
+### 注意事项
+
+Jimmer的实体对象是动态的 *(和Hibernate3引入的标量属性惰性化比较类似)*，这是较早的[MapStruct](https://mapstruct.org/)未曾考虑过的模式。
+
+和[MapStruct](https://mapstruct.org/)交流后，[MapStruct](https://mapstruct.org/)会从`1.6.0`开始支持这种行为。
+
 :::caution
-除非为了兼容遗留系统中已有的DTO类型，否则不推荐使用MapStruct，更推荐使用[DTO语言](./dto-language)，原因如下
+因此，请尽可能使用`1.6.0`或更高版本的[MapStruct](https://mapstruct.org/)。
+:::
+
+### 优点
+
+-   和追求快速开发但支持固定转化逻辑的[DTO语言](./dto-language)不同，[mapstruct](https://mapstruct.org/)可以实现任意复杂的转化逻辑。
+
+-   和[DTO语言](./dto-language)直接生成全新的DTO类型不同，[mapstruct](https://mapstruct.org/)可以整合现有的DTO类型。
+
+### 缺点
+
+更推荐使用[DTO语言](./dto-language)，原因如下
 
 -   不可忽略的开发成本
 
-    Jimmer以可以表达任意形状数据结构的动态实体对象为系统核心，让系统同时具备便捷性和灵活性。
-    
-    因此，Jimmer的DTO只是为兼容JVM现有生态的而创建的极其廉价的装饰物，并非系统核心，即使需要，也追求可以忽略不计的开发成本。
+    [DTO语言](./dto-language)为Jimmer量身定制的方案，开发效率是结合其他任何技术方案无法比拟的。
 
-    然而，手动定义DTO并利用MapStruct完成映射，明显具备不可忽略的开发成本。
+-   不太适合Output DTO
 
--   只能作为Input DTO
-
-    DTO语言自动生成的DTO类型具备内置的[对象抓取器](../../query/object-fetcher)，因此可以作为查询的输出类型，请参见：
+    DTO语言自动生成的DTO类型具备内置的[对象抓取器](../../query/object-fetcher)，因此可以作为查询的输出类型 *(虽然不推荐)*，请参见：
 
     -   [对象抓取器/DTO查询](../../query/object-fetcher/dto)
 
     -   [Spring Data/查询DTO](../../spring/repository/dto)
 
-    然而，手动定义并采用MapStruct映射的DTO没有对应的[对象抓取器](../../query/object-fetcher)定义，只支持和动态实体相互转化。
-    所以仅适合作为Input DTO使用，不适合作为Output DTO。
+    然而，手动定义的DTO类型没有对应的[对象抓取器](../../query/object-fetcher)定义，只支持和动态实体相互转化。
+    虽然可以为此手动定义[对象抓取器](../../query/object-fetcher)，但是存在DTO和[对象抓取器](../../query/object-fetcher)形状不一致的风险。
+    所以，不适合作为Output DTO。
 
--   和Kotlin项目配合的问题
+-   Kotlin风险
 
-    -   [mapstruct框架](https://mapstruct.org/)是基于`apt`*(Annotation Processor)* 的。
+    -   [mapstruct](https://mapstruct.org/)是基于`apt`*(Annotation Processor)* 的。
 
         因此，这需要在kotlin中使用`kapt`，这会明显降低kotlin项目的编译速度。
 
     -   Kotlin已经废弃了[kapt](https://kotlinlang.org/docs/kapt.html)，而主张使用[ksp](https://kotlinlang.org/docs/ksp-overview.html)。
 
-        因此，随着Kotlin的演化，未来使用`kapt`可能会遇到越来越多的问题。
-:::
+        因此，随着Kotlin的演化，未来使用`kapt`可能会遇到问题。
 
 ## 依赖和预编译器
 

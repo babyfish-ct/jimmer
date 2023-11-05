@@ -172,7 +172,7 @@ public class ImmutableProcessor extends AbstractProcessor {
             basePath = '/' + basePath;
         }
         basePath = basePath.substring(0, basePath.lastIndexOf('/'));
-        File baseFile = null;
+        File baseFile;
         try {
             baseFile = new File(URLDecoder.decode(basePath, "utf-8"));
         } catch (UnsupportedEncodingException ex) {
