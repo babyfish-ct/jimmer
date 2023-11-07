@@ -215,7 +215,7 @@ class DtoGenerator private constructor(
                     mutable,
                     null,
                     this,
-                    targetSimpleName(prop, true)
+                    targetSimpleName(prop)
                 ).generate(allFiles)
             }
         }
@@ -844,8 +844,8 @@ class DtoGenerator private constructor(
             if (targetType.name === null) {
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
-                if (tailProp.isNewTarget) {
-                    list.add(targetSimpleName(tailProp, true))
+                if (prop.isNewTarget) {
+                    list.add(targetSimpleName(tailProp))
                 }
                 return ClassName(
                     packageName(),
@@ -951,14 +951,13 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>, declaration: Boolean = false): String {
+    private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
         prop.targetType ?: throw IllegalArgumentException("prop is not association")
-        val recursive = !declaration && prop.isRecursive
         return "TargetOf_${prop.name}".let {
-            when {
-                recursive && depth > 1 -> "${it}_$depth"
-                !recursive && depth > 0 -> "${it}_${depth + 1}"
-                else -> it
+            if (prop.isNewTarget) {
+                if (depth >= 1) "${it}_${depth + 1}" else it
+            } else {
+                if (depth >= 2) "${it}_${depth}" else it
             }
         }
     }

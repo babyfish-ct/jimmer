@@ -192,7 +192,7 @@ public class DtoCompilerTest {
                         "--->--->@optional childNodes: input {" +
                         "--->--->--->name, " +
                         "--->--->--->@optional childNodes: ..." +
-                        "--->--->}" +
+                        "--->--->}*" +
                         "--->}" +
                         "]",
                 dtoTypes.toString()
@@ -220,7 +220,7 @@ public class DtoCompilerTest {
                         "--->--->name, " +
                         "--->--->@optional childNodes: input {" +
                         "--->--->--->name, @optional childNodes: ..." +
-                        "--->--->}" +
+                        "--->--->}*" +
                         "--->}" +
                         "}" +
                         "]",

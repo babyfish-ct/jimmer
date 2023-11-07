@@ -204,7 +204,7 @@ public class DtoGenerator {
                         prop.getTargetType(),
                         null,
                         this,
-                        targetSimpleName(prop, true)
+                        targetSimpleName(prop)
                 ).generate();
             }
         }
@@ -338,16 +338,16 @@ public class DtoGenerator {
                         ",\n$T.<$T, $L>$L($L::new)",
                         Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().getTargetType().getClassName(),
-                        targetSimpleName(tailProp, false),
+                        targetSimpleName(tailProp),
                         tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
-                        targetSimpleName(tailProp, false)
+                        targetSimpleName(tailProp)
                 );
             }
             cb.add(
                     ",\n$T.$L($L::toEntity)",
                     Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
-                    targetSimpleName(tailProp, false)
+                    targetSimpleName(tailProp)
             );
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
@@ -1091,7 +1091,7 @@ public class DtoGenerator {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
                 if (tailProp.isNewTarget()) {
-                    list.add(targetSimpleName(tailProp, true));
+                    list.add(targetSimpleName(tailProp));
                 }
                 return ClassName.get(
                         getPackageName(),
@@ -1122,7 +1122,7 @@ public class DtoGenerator {
         }
     }
 
-    private String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop, boolean declaration) {
+    private String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop) {
         DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
         if (targetType == null) {
             throw new IllegalArgumentException("prop is not association");
@@ -1131,12 +1131,14 @@ public class DtoGenerator {
             return targetType.getName();
         }
         String simpleName = "TargetOf_" + prop.getName();
-        if (!declaration && prop.isRecursive()) {
-            if (depth > 1) {
-                simpleName += "_" + depth;
+        if (prop.isNewTarget()) {
+            if (depth >= 1) {
+                return simpleName + '_' + (depth + 1);
             }
-        } else if (depth > 0) {
-            simpleName += "_" + (depth + 1);
+        } else {
+            if (depth >= 2) {
+                return simpleName + '_' + depth;
+            }
         }
         return simpleName;
     }
