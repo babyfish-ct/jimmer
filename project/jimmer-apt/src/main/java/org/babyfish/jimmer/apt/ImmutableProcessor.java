@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.Immutable",
         "org.babyfish.jimmer.sql.Entity",
         "org.babyfish.jimmer.sql.MappedSuperclass",
+        "org.babyfish.jimmer.sql.Embeddable",
         "org.babyfish.jimmer.error.ErrorFamily"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
