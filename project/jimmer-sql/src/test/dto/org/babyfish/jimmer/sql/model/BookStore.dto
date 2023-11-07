@@ -1,3 +1,11 @@
+BookStoreView {
+    avgPrice
+    newestBooks {
+        name
+        edition
+    }
+}
+
 input BookStoreNullableInput {
     #allScalars
     books? {

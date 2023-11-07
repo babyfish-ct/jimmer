@@ -58,6 +58,7 @@ public class Keywords {
                             "__beforeJoin",
                             "__disableJoin",
                             "joinOperation",
+                            "__currentJoinType",
                             "__refEquals",
 
                             // AbstractTypedFetcher

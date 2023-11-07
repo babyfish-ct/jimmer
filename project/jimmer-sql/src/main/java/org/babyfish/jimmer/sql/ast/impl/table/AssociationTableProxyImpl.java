@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
-import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.Association;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.AssociationTable;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
@@ -58,5 +56,10 @@ public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends 
     @Override
     public <P extends TableProxy<Association<SE, TE>>> P __disableJoin(String reason) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public JoinType __currentJoinType() {
+        return JoinType.INNER;
     }
 }

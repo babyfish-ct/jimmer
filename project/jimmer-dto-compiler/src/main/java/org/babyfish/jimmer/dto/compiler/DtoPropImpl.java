@@ -31,8 +31,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final String funcName;
 
-    private final boolean recursive;
-
     private final String basePath;
 
     private final Set<LikeOption> likeOptions;
@@ -62,7 +60,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.enumType = enumType;
         this.mandatory = mandatory;
         this.funcName = funcName;
-        this.recursive = recursive;
         if (basePropMap.size() == 1) {
             this.basePath = getBaseProp().getName();
         } else {
@@ -95,7 +92,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             this.mandatory = Mandatory.DEFAULT;
         }
         this.funcName = next.getFuncName();
-        this.recursive = false;
         StringBuilder builder = new StringBuilder();
         if (basePropMap.size() == 1) {
             builder.append(basePropMap.values().iterator().next().getName());
@@ -126,7 +122,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.enumType = null;
         this.mandatory = original.getMandatory();
         this.funcName = "flat";
-        this.recursive = false;
         this.basePath = getBaseProp().getName();
         this.likeOptions = original.getLikeOptions();
         this.tail = this;
@@ -241,7 +236,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     @Override
     public boolean isRecursive() {
-        return recursive;
+        return false;
     }
 
     @Override
@@ -276,9 +271,6 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (targetType != null) {
             builder.append(": ");
             builder.append(targetType);
-        }
-        if (recursive) {
-            builder.append('*');
         }
         return builder.toString();
     }

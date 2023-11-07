@@ -137,13 +137,25 @@ infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean>
     }
 
 infix fun <T: Any> KExpression<T>.eq(right: KExpression<T>): KNonNullExpression<Boolean> =
-    ComparisonPredicate.Eq(this, right)
+    if (right is NullExpression<*>) {
+        IsNullPredicate(this)
+    } else if (this is NullExpression<*>) {
+        IsNullPredicate(right)
+    } else {
+        ComparisonPredicate.Eq(this, right)
+    }
 
 infix fun <T: Any> KExpression<T>.eq(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Eq(this, value(right))
 
 infix fun <T: Any> KExpression<T>.ne(right: KExpression<T>): KNonNullExpression<Boolean> =
-    ComparisonPredicate.Ne(this, right)
+    if (right is NullExpression<*>) {
+        IsNotNullPredicate(this)
+    } else if (this is NullExpression<*>) {
+        IsNotNullPredicate(right)
+    } else {
+        ComparisonPredicate.Ne(this, right)
+    }
 
 infix fun <T: Any> KExpression<T>.ne(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ne(this, value(right))

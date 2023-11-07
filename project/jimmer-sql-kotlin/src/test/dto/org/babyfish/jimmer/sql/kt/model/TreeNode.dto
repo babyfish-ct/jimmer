@@ -5,6 +5,16 @@ input RecursiveTree {
     }*
 }
 
+input RecursiveTree2 {
+    name
+    childNodes {
+        name
+        childNodes {
+            name
+        }*
+    }
+}
+
 input TreeNodeInput {
     #allScalars(TreeNode)
     id!

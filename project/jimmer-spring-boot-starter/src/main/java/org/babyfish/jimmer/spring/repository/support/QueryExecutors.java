@@ -147,6 +147,7 @@ public class QueryExecutors {
             PropPredicate propPredicate = (PropPredicate) predicate;
             Selection<?> astSelection;
             switch (propPredicate.getOp()) {
+                case NULL:
                 case NOT_IN:
                 case NOT_NULL:
                     astSelection = astSelection(table, propPredicate.getPath(), true);

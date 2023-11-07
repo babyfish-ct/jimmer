@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.table.spi;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.WeakJoinHandle;
@@ -21,4 +22,6 @@ public interface TableProxy<E> extends Table<E> {
     TableImplementor<E> __resolve(RootTableResolver resolver);
 
     <P extends TableProxy<E>> P __disableJoin(String reason);
+
+    JoinType __currentJoinType();
 }

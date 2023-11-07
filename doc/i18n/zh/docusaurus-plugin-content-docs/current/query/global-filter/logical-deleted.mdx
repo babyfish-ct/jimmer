@@ -6,6 +6,10 @@ title: 逻辑删除
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::caution
+在本文中，读者无法发现和全局过滤器相关的内容，这是因为逻辑删除所需要的过滤器是内置的，且被Jimmer隐藏起来了。
+:::
+
 ## 映射
 
 逻辑删除也称软删除，表示并不真正从数据库中删除数据，而是通过隐藏数据来达到数据被删除的假象。这可以为误操作留下一次恢复的机会。
@@ -20,7 +24,7 @@ import TabItem from '@theme/TabItem';
 public interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(value = "true", useMultiViewCache = true)
+    @LogicalDeleted("true")
     boolean isDeleted();
 
     ...省略其他代码...
@@ -35,7 +39,7 @@ public interface Book {
 interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(value = "true", useMultiViewCache = true)
+    @LogicalDeleted("true")
     val isDeleted: Boolean
 
     ...省略其他代码...
@@ -44,10 +48,6 @@ interface Book {
 
 </TabItem>
 </Tabs>
-
-:::info
-这里的`useMultiViewCache`将会在[多视角缓存](./multiview-cache)中介绍，这里请读者先忽略之。
-:::
 
 ## 使用
 
@@ -92,7 +92,7 @@ select
 from BOOK tb_1_
 where
     /* highlight-next-line */
-    tb_1_.DELETED = ? /* false */
+    tb_1_.DELETED <> ? /* true */
 ```
 
 ### 过滤关联对象
@@ -170,7 +170,7 @@ val authors = sqlClient
             )
         and
             /* highlight-next-line */
-            tb_1_.DELETED = ? /* false */
+            tb_1_.DELETED <> ? /* true */
     ```
 
 ## 忽略逻辑删除过滤器
@@ -183,12 +183,7 @@ BookTable table = BookTable.$;
 
 List<Book> books = sqlClient
     .filters(cfg -> { ❶
-        cfg.disable( ❷
-            cfg
-                .getFilterManager() ❸
-                .builtIns() ❹
-                .getDeclaredNotDeletedFilter(Book.class) ❺
-        );
+        cfg.setBehavior(LogicalDeletedBehavior.IGNORED); ❷
     })
     .createQuery(table)
     .select(table)
@@ -201,11 +196,7 @@ List<Book> books = sqlClient
 ```kotlin
 val books = sqlClient
     .filters { ❶
-        disable( ❷
-            filterManager ❸
-                .builtIns ❹
-                .getDeclaredNotDeletedFilter(Book::class) ❺
-        )
+        cfg.setBehavior(LogicalDeletedBehavior.IGNORED)
     }
     .createQuery(table)
     .select(table)
@@ -217,11 +208,7 @@ val books = sqlClient
 
 -   ❶ 在不影响当前`sqlClient`的前提下，调整过滤器配置，创建新的临时`sqlClient`
 
--   ❷ 禁用参数所代表的全局过滤器
-
--   当前过滤管理器为❸，其中，Jimmer内置过滤管理器为❹
-
--   ❺ 处获取针对`Book`实体的过滤器，该过滤器查询未被删除的过滤器。
+-   ❷ 忽略软删除标志
 
 这次，生成的SQL不再包含
 
@@ -238,16 +225,6 @@ from BOOK tb_1_
 
 ## 反转逻辑删除过滤器
 
-事实上，Jimmer为逻辑删除提供了两个过滤器
-
--   `NotDeletedFilter`: 查询未被删除的数据，默认启用
-    
-    这也是上一个例子我们手动禁用的过滤器
-
--   `AlreadyDeletedFilter`: 查询已经被删除的数据，默认禁用
-
-接下来，我们继续禁用`NotDeletedFilter`，同时启用`AlreadyDeletedFilter`
-
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
@@ -255,19 +232,8 @@ from BOOK tb_1_
 BookTable table = BookTable.$;
 
 List<Book> books = sqlClient
-    .filters(cfg -> {
-        cfg.disable(
-            cfg
-                .getFilterManager()
-                .builtIns()
-                .getDeclaredNotDeletedFilter(Book.class)
-        );
-        cfg.enable(
-            cfg
-                .getFilterManager()
-                .builtIns()
-                .getDeclaredAlreadyDeletedFilter(Book.class)
-        );
+    .filters(cfg -> { ❶
+        cfg.setBehavior(LogicalDeletedBehavior.REVERSED); ❷
     })
     .createQuery(table)
     .select(table)
@@ -279,18 +245,8 @@ List<Book> books = sqlClient
 
 ```kotlin
 val books = sqlClient
-    .filters {
-        disable(
-            filterManager
-                .builtIns
-                .getDeclaredNotDeletedFilter(Book::class)
-        )
-        enable(
-            cfg
-                .getFilterManager()
-                .builtIns()
-                .getDeclaredAlreadyDeletedFilter(Book.class)
-        )
+    .filters { ❶
+        cfg.setBehavior(LogicalDeletedBehavior.REVERSED)
     }
     .createQuery(table)
     .select(table)
@@ -299,6 +255,10 @@ val books = sqlClient
 
 </TabItem>
 </Tabs>
+
+-   ❶ 在不影响当前`sqlClient`的前提下，调整过滤器配置，创建新的临时`sqlClient`
+
+-   ❷ 反转软删除标志，即查询被删除的数据
 
 再次执行，生成的SQL为
 

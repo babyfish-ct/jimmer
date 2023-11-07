@@ -29,7 +29,7 @@ class DtoGenerator private constructor(
 ) {
     private val root: DtoGenerator = parent?.root ?: this
 
-    private val depth: Int = parent?.depth?.let { it + 1 } ?:0
+    private val depth: Int = parent?.depth?.let { it + 1 } ?: 0
 
     init {
         if ((codeGenerator === null) == (parent === null)) {
@@ -215,7 +215,7 @@ class DtoGenerator private constructor(
                     mutable,
                     null,
                     this,
-                    targetSimpleName(prop)
+                    targetSimpleName(prop, true)
                 ).generate(allFiles)
             }
         }
@@ -483,6 +483,9 @@ class DtoGenerator private constructor(
                     )
                     for (prop in dtoType.dtoProps) {
                         val baseProp = prop.toTailProp().baseProp
+                        if (baseProp.isKotlinFormula) {
+                            continue
+                        }
                         if (isSimpleProp(prop)) {
                             if (prop.isNullable && baseProp.let { it.isList && it.isAssociation(true) }) {
                                 addStatement("%L = that.%L ?: emptyList()", baseProp.name, prop.name)
@@ -772,9 +775,9 @@ class DtoGenerator private constructor(
                         for ((v, en) in enumType.constantMap) {
                             addStatement("%L -> %T.%L", v, enumTypeName, en)
                         }
-                        addStatement("else -> IllegalArgumentException(")
+                        addStatement("else -> throw IllegalArgumentException(")
                         indent()
-                        addStatement("%S", "Illegal value \${it} for the enum type $enumTypeName")
+                        addStatement("%S + it + %S", "Illegal value \"", "\" for the enum type \"$enumTypeName\"")
                         unindent()
                         add(")\n")
                         endControlFlow()
@@ -842,7 +845,7 @@ class DtoGenerator private constructor(
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
                 if (tailProp.isNewTarget) {
-                    list.add(targetSimpleName(tailProp))
+                    list.add(targetSimpleName(tailProp, true))
                 }
                 return ClassName(
                     packageName(),
@@ -948,12 +951,13 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>): String {
+    private fun targetSimpleName(prop: DtoProp<ImmutableType, ImmutableProp>, declaration: Boolean = false): String {
         prop.targetType ?: throw IllegalArgumentException("prop is not association")
+        val recursive = !declaration && prop.isRecursive
         return "TargetOf_${prop.name}".let {
             when {
-                prop.isRecursive && depth > 1 -> "${it}_$depth"
-                !prop.isRecursive && depth > 0 -> "${it}_${depth + 1}"
+                recursive && depth > 1 -> "${it}_$depth"
+                !recursive && depth > 0 -> "${it}_${depth + 1}"
                 else -> it
             }
         }

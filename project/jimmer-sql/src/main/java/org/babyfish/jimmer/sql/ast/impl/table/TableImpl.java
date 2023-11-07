@@ -42,6 +42,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     private JoinType joinType;
 
+    private JoinType currentJoinType;
+
     private final String alias;
 
     private final String middleTableAlias;
@@ -75,6 +77,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         this.joinProp = joinProp;
         this.weakJoinHandle = weakJoinHandle;
         this.joinType = joinType;
+        this.currentJoinType = joinType;
 
         if (joinProp != null) {
             if (joinProp.isMiddleTableDefinition()) {
@@ -121,14 +124,14 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         if (prop == null) {
             return false;
         }
-        if (prop.isRemote()) {
-            return true;
-        }
         if (isInverse) {
             prop = prop.getOpposite();
             if (prop == null) {
                 return false;
             }
+        }
+        if (prop.isRemote()) {
+            return true;
         }
         if (!prop.isTargetForeignKeyReal(sqlClient.getMetadataStrategy())) {
             return false;
@@ -150,6 +153,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     @Override
     public JoinType getJoinType() {
         return joinType;
+    }
+
+    @Override
+    public JoinType getCurrentJoinType() {
+        return currentJoinType;
     }
 
     @Override
@@ -254,13 +262,13 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public <X> PropExpression<X> getAssociatedId(String prop) {
-        TableImplementor<?> joinedTable = joinImplementor(prop);
-        return joinedTable.get(joinedTable.getImmutableType().getIdProp(), true);
+        ImmutableProp immutableProp = immutableType.getProp(prop);
+        return getAssociatedId(immutableProp);
     }
 
     @Override
     public <X> PropExpression<X> getAssociatedId(ImmutableProp prop) {
-        TableImplementor<?> joinedTable = joinImplementor(prop);
+        TableImplementor<?> joinedTable = joinImplementor(prop, prop.isNullable() ? JoinType.LEFT : JoinType.INNER);
         return joinedTable.get(joinedTable.getImmutableType().getIdProp(), true);
     }
 
@@ -296,7 +304,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
-        TableImplementor<?> joinedTable = inverseJoinImplementor(prop);
+        ImmutableProp oppositeProp = prop.getOpposite();
+        TableImplementor<?> joinedTable = inverseJoinImplementor(
+                prop,
+                oppositeProp != null && oppositeProp.isNullable() ? JoinType.LEFT : JoinType.INNER
+        );
         return joinedTable.get(joinedTable.getImmutableType().getIdProp(), true);
     }
 
@@ -488,6 +500,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (existing.joinType != joinType) {
                 existing.joinType = JoinType.INNER;
             }
+            existing.currentJoinType = joinType;
             return existing;
         }
         TableImpl<?> newTable = new TableImpl<>(
@@ -517,6 +530,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (existing.joinType != joinType) {
                 existing.joinType = JoinType.INNER;
             }
+            existing.currentJoinType = joinType;
             return existing;
         };
         TableImpl<X> newTable = new TableImpl<>(

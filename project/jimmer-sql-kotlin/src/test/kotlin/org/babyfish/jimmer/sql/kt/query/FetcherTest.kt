@@ -229,7 +229,7 @@ class FetcherTest : AbstractQueryTest() {
     fun testFetchTwoLayers() {
         executeAndExpect(
             sqlClient.createQuery(TreeNode::class) {
-                where(table.parent.isNull())
+                where(table.`parent?`.isNull())
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -297,7 +297,7 @@ class FetcherTest : AbstractQueryTest() {
     fun testRecursive() {
         executeAndExpect(
             sqlClient.createQuery(TreeNode::class) {
-                where(table.parent.isNull())
+                where(table.`parent?`.isNull())
                 select(
                     table.fetchBy {
                         allScalarFields()
@@ -493,7 +493,7 @@ class FetcherTest : AbstractQueryTest() {
     fun testRecursiveExceptClothing() {
         executeAndExpect(
             sqlClient.createQuery(TreeNode::class) {
-                where(table.parent.isNull())
+                where(table.`parent?`.isNull())
                 select(
                     table.fetchBy {
                         allScalarFields()

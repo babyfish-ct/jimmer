@@ -5,7 +5,6 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
@@ -33,6 +32,8 @@ public interface TableImplementor<E> extends TableEx<E>, Ast, TableSelection, It
     WeakJoinHandle getWeakJoinHandle();
 
     JoinType getJoinType();
+
+    JoinType getCurrentJoinType();
 
     String getAlias();
 

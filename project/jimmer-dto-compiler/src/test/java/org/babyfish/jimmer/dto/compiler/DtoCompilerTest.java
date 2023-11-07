@@ -192,8 +192,37 @@ public class DtoCompilerTest {
                         "--->--->@optional childNodes: input {" +
                         "--->--->--->name, " +
                         "--->--->--->@optional childNodes: ..." +
-                        "--->--->}*" +
+                        "--->--->}" +
                         "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
+    public void testRecursive2() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
+                "input TreeNodeInput {\n" +
+                        "    name\n" +
+                        "    childNodes {\n" +
+                        "        name\n" +
+                        "        childNodes {\n" +
+                        "            name\n" +
+                        "        }*\n" +
+                        "    }\n" +
+                        "}"
+        );
+        assertContentEquals(
+                "[" +
+                        "input TreeNodeInput {" +
+                        "--->name, " +
+                        "--->childNodes: input {" +
+                        "--->--->name, " +
+                        "--->--->@optional childNodes: input {" +
+                        "--->--->--->name, @optional childNodes: ..." +
+                        "--->--->}" +
+                        "--->}" +
+                        "}" +
                         "]",
                 dtoTypes.toString()
         );
