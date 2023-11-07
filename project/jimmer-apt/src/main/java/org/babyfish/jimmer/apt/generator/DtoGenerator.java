@@ -204,7 +204,7 @@ public class DtoGenerator {
                         prop.getTargetType(),
                         null,
                         this,
-                        targetSimpleName(prop)
+                        targetSimpleName(prop, true)
                 ).generate();
             }
         }
@@ -338,16 +338,16 @@ public class DtoGenerator {
                         ",\n$T.<$T, $L>$L($L::new)",
                         Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().getTargetType().getClassName(),
-                        targetSimpleName(tailProp),
+                        targetSimpleName(tailProp, false),
                         tailProp.getBaseProp().isList() ? "objectListGetter" : "objectReferenceGetter",
-                        targetSimpleName(tailProp)
+                        targetSimpleName(tailProp, false)
                 );
             }
             cb.add(
                     ",\n$T.$L($L::toEntity)",
                     Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "objectListSetter" : "objectReferenceSetter",
-                    targetSimpleName(tailProp)
+                    targetSimpleName(tailProp, false)
             );
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
@@ -660,6 +660,9 @@ public class DtoGenerator {
                 "$"
         );
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            if (prop.getBaseProp().isJavaFormula()) {
+                continue;
+            }
             if (isSimpleProp(prop)) {
                 builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
             } else {
@@ -959,6 +962,7 @@ public class DtoGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("hashCode")
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
                 .returns(TypeName.INT);
         boolean first = true;
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
@@ -1001,7 +1005,7 @@ public class DtoGenerator {
             }
             builder.addStatement(cb.build());
         }
-        builder.addStatement("return hash");
+        builder.addStatement(first ? "return 0" : "return hash");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -1010,6 +1014,7 @@ public class DtoGenerator {
                 .methodBuilder("equals")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(TypeName.OBJECT, "o")
+                .addAnnotation(Override.class)
                 .returns(TypeName.BOOLEAN);
         builder.beginControlFlow("if (o == null || this.getClass() != o.getClass())")
                 .addStatement("return false")
@@ -1045,6 +1050,7 @@ public class DtoGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder("toString")
                 .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
                 .returns(Constants.STRING_CLASS_NAME);
         builder.addStatement("StringBuilder builder = new StringBuilder()");
         addSimpleName(builder, true);
@@ -1085,7 +1091,7 @@ public class DtoGenerator {
                 List<String> list = new ArrayList<>();
                 collectNames(list);
                 if (tailProp.isNewTarget()) {
-                    list.add(targetSimpleName(tailProp));
+                    list.add(targetSimpleName(tailProp, true));
                 }
                 return ClassName.get(
                         getPackageName(),
@@ -1116,7 +1122,7 @@ public class DtoGenerator {
         }
     }
 
-    private String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop) {
+    private String targetSimpleName(DtoProp<ImmutableType, ImmutableProp> prop, boolean declaration) {
         DtoType<ImmutableType, ImmutableProp> targetType = prop.getTargetType();
         if (targetType == null) {
             throw new IllegalArgumentException("prop is not association");
@@ -1125,7 +1131,7 @@ public class DtoGenerator {
             return targetType.getName();
         }
         String simpleName = "TargetOf_" + prop.getName();
-        if (prop.isRecursive()) {
+        if (!declaration && prop.isRecursive()) {
             if (depth > 1) {
                 simpleName += "_" + depth;
             }

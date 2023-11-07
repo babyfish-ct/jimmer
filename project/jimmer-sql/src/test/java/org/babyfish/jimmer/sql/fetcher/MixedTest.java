@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
@@ -18,7 +19,7 @@ public class MixedTest extends AbstractQueryTest {
     public void test() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(

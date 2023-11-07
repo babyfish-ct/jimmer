@@ -18,16 +18,8 @@ import TabItem from '@theme/TabItem';
 
 -   默认情况下，所有针对实体的SQL查询都会被自动加上`where 软删除标志 <> 已经被删除`的条件，从而营造出某些数据已经被删除的假象。
 
-    其他情况：
-
-    -   Jimmer提供了一些便捷性API，无需用户创建查询，提供根据id *(或id集合)* 查询实体*(或id集合)* 的能力。这一簇API较为特殊，无视软删除规则。
-
-    -   Jimmer可以忽略逻辑删除过滤规则 *(不添加过滤条件)*；甚至反转逻辑删除过滤规则 *(添加相反的过滤条件，专查已经被删除的数据)*
-
 :::info
-逻辑删除是一个相对固定的功能，在自动加入查询过滤条件这方面，更通用的的功能是[全局过滤器](../../query/global-filter)。
-
-事实上，逻辑删除本身也是[全局过滤器](../../query/global-filter)，是Jimmer内置提供的，无需开发人员实现。
+本文只介绍逻辑删除标志字段的映射，至于逻辑删除功能的的使用，请参见[全局过滤器/逻辑删除](../../query/global-filter/logical-deleted)。
 :::
 
 ## 用法
@@ -111,32 +103,6 @@ import TabItem from '@theme/TabItem';
     </TabItem>
     </Tabs>
 
-这里，我们配置`@LogicalDeleted`的`value`参数，其实，该注解还有另外一个参数`restoredValue`
-
--   `value`: 对象处于被删除状态时，该字段的取值
-
--   `restoredValue`: 对象处于未被删除状态时，该字段的取值
-
-很明显，`value`和`restoredValue`不能相等。
-
-:::tip
-当此属性只有两种取值可能时 *(boolean或只有两个选项的枚举类型)*，`restoredValue`可以省略
-:::
-
-因此，上面代码中示范的注解，其实是省略了`restoredValue`参数的写法
-
--   `@LogicalDeleted("true")`其实是`@LogicalDeleted(value = "true", restoredValue = "false")`的简写
-
--   `@LogicalDeleted("false")`其实是`@LogicalDeleted(value = "false", restoredValue = "true")`的简写
-
-:::info
-无论被省略，还是被开发人员明确指定，`restoredValue`参数有两个作用
-
--   对象首次被保存时，该属性的默认值
-
--   处于已删除状态的的数据被再次保存时，其状态需要恢复成正常状态，此时，该属性被自动复位的值
-:::
-
 ### int类型
 
 <Tabs groupId="language">
@@ -147,7 +113,7 @@ import TabItem from '@theme/TabItem';
 public interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(value = "1", restoredValue = "0")
+    @LogicalDeleted("4")
     int state();
 
     ...省略其他代码...
@@ -162,7 +128,7 @@ public interface Book {
 interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(value = "1", restoredValue = "0")
+    @LogicalDeleted("4")
     val state: Int
 
     ...省略其他代码...
@@ -211,10 +177,7 @@ enum class BookState {
 public interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(
-        value = "DELETED", 
-        restoredValue = "INTIALIZED"
-    )
+    @LogicalDeleted("DELETED")
     BookState state();
 
     ...省略其他代码...
@@ -229,10 +192,7 @@ public interface Book {
 interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(
-        value = "DELETED", 
-        restoredValue = "INTIALIZED"
-    )
+    @LogicalDeleted("DELETED")
     val state: BookState
 
     ...省略其他代码...
@@ -242,17 +202,13 @@ interface Book {
 </TabItem>
 </Tabs>
 
-:::tip
-如果枚举只有两个选项，可以省略`restoredValue`
-:::
-
 :::info
 至于Jimmer保存枚举属性的相关配置，请参见[Enum映射](./enum)
 :::
 
 ### 日期
 
--   用非null表示已删除，null表示未删除
+-   用非null表示已删除，null表示未删除。
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
@@ -262,7 +218,7 @@ interface Book {
     public interface Book {
 
         // highlight-next-line
-        @LogicalDeleted(value = "now", restoredValue = "null")
+        @LogicalDeleted("now")
         @Nullable
         LocalDateTime deletedTime();
 
@@ -278,7 +234,7 @@ interface Book {
     interface Book {
 
         // highlight-next-line
-        @LogicalDeleted(value = "now", restoredValue = "null")
+        @LogicalDeleted("now")
         val deletedTime: LocalDateTime?
 
         ...省略其他代码...
@@ -287,6 +243,10 @@ interface Book {
 
     </TabItem>
     </Tabs>
+
+    :::info
+    其中，`"now"`表示相关数据被逻辑删除时，`deletedTime`属性会被自动设置为JVM的当前时间。
+    :::
 
 -   用null表示已删除，非null表示未删除
 
@@ -298,7 +258,7 @@ interface Book {
     public interface Book {
 
         // highlight-next-line
-        @LogicalDeleted(value = "null", restoredValue = "now")
+        @LogicalDeleted("null")
         @Nullable
         LocalDateTime createdTime();
 
@@ -314,7 +274,7 @@ interface Book {
     interface Book {
 
         // highlight-next-line
-        @LogicalDeleted(value = "null", restoredValue = "now")
+        @LogicalDeleted("null")
         val createdTime: LocalDateTime?
 
         ...省略其他代码...
@@ -324,53 +284,17 @@ interface Book {
     </TabItem>
     </Tabs>
 
-其中，`now`是`@LogicalDeleted`规定的特殊取值，表示当前时间。
+    :::info
+    其中，`"null"`表示相关数据被逻辑删除时，`createdTime`属性会被自动设置为null。
+    :::
 
-## 多视角缓存支持
+## 多版本问题
 
-:::caution
-逻辑删除本身是一个很简单的功能，如果仅仅在SQL操作的层面使用它，它就仅仅是一个简单的查询条件添加功能。
+逻辑删除并不会导致数据被真正删除，只会导致数据被隐藏，这代表着数据出现多版本问题。
 
-然而，如果和Jimmer的缓存能力一起使用，由于逻辑删除本身是一种内置的[全局过滤器](../../query/global-filter)，这会涉及到[多视角缓存](../../cache/multiview-cache)问题，这点需要开发人员知悉。
-:::
+因此，推荐id采用自动生成策略，而非由用户指定。因为被逻辑删除的数据仍然存在于数据库中，具备相同id的数据再也无法被成功插入。
 
-本文不会讨论[多视角缓存](../../cache/multiview-cache)企图解决什么问题以及如何解决问题，这部分内容请参考[多视角缓存](../../cache/multiview-cache)相关文档。本文简单介绍如何为逻辑删除属性开启多视角缓存
+一旦id采用了自动生成策略，就失去了业务意义。所以，开发人员应该在主键约束之外，基于其他字段建立唯一性约束/索引，来保证数据在业务层面的唯一性。
+很显然，数据的多版本化会增加用户建立唯一性约束/索引的复杂性。
 
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java title="Book.java"
-@Entity
-public interface Book {
-
-    @LogicalDeleted(
-        value = "true",
-        // highlight-next-line
-        useMultiViewCache = true
-    )
-    boolean isDeleted();
-
-    ...省略其他代码...
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="Book.kt"
-@Entity
-interface Book {
-
-    @LogicalDeleted(
-        value = "true",
-        // highlight-next-line
-        useMultiViewCache = true
-    )
-    val isDeleted: Boolean
-
-    ...省略其他代码...
-}
-```
-
-</TabItem>
-</Tabs>
+本文关注逻辑删除的映射配置，故仅指出这问题但不予以讨论，对该问题的深入探讨请参见[Key/多版本支持](./key#多版本支持)。

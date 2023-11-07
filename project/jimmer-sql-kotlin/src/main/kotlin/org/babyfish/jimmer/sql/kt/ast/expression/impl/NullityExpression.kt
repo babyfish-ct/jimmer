@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.table.JoinUtils
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -52,6 +53,18 @@ internal abstract class NullityPredicate(
 internal class IsNullPredicate(
     expression: KExpression<*>
 ) : NullityPredicate(expression) {
+
+    init {
+        if (expression is PropExpressionImplementor<*>) {
+            if (!expression.prop.isNullable && !JoinUtils.hasLeftJoin(expression.table)) {
+                throw IllegalArgumentException(
+                    "Unable to instantiate `is null` predicate which attempts to check if a " +
+                        "non-null property is null, this non-property must belong to a join table " +
+                        "and table join path needs to have at least one left join."
+                )
+            }
+        }
+    }
 
     override fun isNegative(): Boolean = false
 

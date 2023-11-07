@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
@@ -13,7 +14,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindTwoLevel() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -72,7 +73,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindThreeLevel() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -169,7 +170,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindUnlimitedLevel() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -304,7 +305,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindByDynamicalRecursionStrategy() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -444,7 +445,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void findOnlyRoot() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(

@@ -15,7 +15,7 @@ interface TreeNodeRepository : KRepository<TreeNode, Long> {
 
     fun findRootNodes(): List<TreeNode> =
         sql.createQuery(TreeNode::class) {
-            where(table.parent.isNull())
+            where(table.`parent?`.isNull())
             select(table)
         }.execute()
 

@@ -221,6 +221,11 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
+    public JoinType __currentJoinType() {
+        return table.getCurrentJoinType();
+    }
+
+    @Override
     public int hashCode() {
         return table.hashCode();
     }

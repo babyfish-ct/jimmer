@@ -1,11 +1,17 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
+import org.babyfish.jimmer.meta.TargetLevel;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.impl.table.JoinUtils;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
 import org.babyfish.jimmer.sql.meta.SingleColumn;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -20,6 +26,18 @@ class NullityPredicate extends AbstractPredicate {
     private final boolean negative;
 
     public NullityPredicate(Expression<?> expression, boolean negative) {
+        if (!negative) {
+            if (expression instanceof PropExpression<?>) {
+                PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>) expression;
+                if (!propExpr.getProp().isNullable() && !JoinUtils.hasLeftJoin(propExpr.getTable())) {
+                    throw new IllegalArgumentException(
+                            "Unable to instantiate `is null` predicate which attempts to check if a " +
+                                    "non-null property is null, this non-property must belong to a join table " +
+                                    "and table join path needs to have at least one left join or full join."
+                    );
+                }
+            }
+        }
         this.expression = expression;
         this.negative = negative;
     }
@@ -31,7 +49,7 @@ class NullityPredicate extends AbstractPredicate {
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        if (expression instanceof PropExpressionImplementor<?>) {
+        if (expression instanceof PropExpression<?>) {
             PropExpressionImplementor<?> propExpr = (PropExpressionImplementor<?>)expression;
             EmbeddedColumns.Partial partial = propExpr.getPartial(
                     builder.getAstContext().getSqlClient().getMetadataStrategy()

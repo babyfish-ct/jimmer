@@ -479,6 +479,20 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
         return resolver.resolveRootTable(this);
     }
 
+    @Override
+    public JoinType __currentJoinType() {
+        if (raw != null) {
+            return raw.getCurrentJoinType();
+        }
+        if (delayedOperation instanceof DelayJoin<?>) {
+            return ((DelayJoin<?>)delayedOperation).joinType;
+        }
+        if (delayedOperation instanceof DelayInverseJoin<?>) {
+            return ((DelayInverseJoin<?>)delayedOperation).joinType;
+        }
+        return JoinType.INNER;
+    }
+
     protected void __beforeJoin() {
         if (joinDisabledReason != null) {
             throw new IllegalStateException("Table join is disabled because " + joinDisabledReason);
