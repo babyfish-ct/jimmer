@@ -1158,14 +1158,14 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 除了映射属性外，DTO类型还支持映射自定义属性
 
 ```sh title="Author.dto"
-import java.util.LocaleDateTime ❶
+import java.time.LocalDateTime ❶
 
 AuthorSpecification {
     
     #allScalars(Author)? - id
 
-    minCreatedTime: LocaleDateTime?  ❷
-    maxCreatedTimeExclusive: LocaleDateTime?  ❸
+    minCreatedTime: LocalDateTime?  ❷
+    maxCreatedTimeExclusive: LocalDateTime?  ❸
 }
 ```
 
