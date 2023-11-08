@@ -1071,14 +1071,14 @@ In the examples we have discussed so far, all DTO properties are mapped from ent
 In addition to mapping properties, DTO types also support custom properties:
 
 ```sh title="Author.dto"
-import java.util.LocaleDateTime ❶
+import java.time.LocalDateTime ❶
 
 AuthorSpecification {
     
     #allScalars(Author)? - id
 
-    minCreatedTime: LocaleDateTime?  ❷
-    maxCreatedTimeExclusive: LocaleDateTime?  ❸
+    minCreatedTime: LocalDateTime?  ❷
+    maxCreatedTimeExclusive: LocalDateTime?  ❸
 }
 ```
 
