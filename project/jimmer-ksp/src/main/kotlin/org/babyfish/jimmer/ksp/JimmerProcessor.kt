@@ -1,17 +1,18 @@
 package org.babyfish.jimmer.ksp
 
+import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.isPrivate
 import com.google.devtools.ksp.isProtected
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
-import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFile
+import com.google.devtools.ksp.symbol.*
 import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoType
+import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.error.ErrorFamily
+import org.babyfish.jimmer.ksp.dto.DtoContext
+import org.babyfish.jimmer.ksp.dto.DtoException
 import org.babyfish.jimmer.ksp.generator.*
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
@@ -19,13 +20,11 @@ import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
-import java.io.File
-import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 import kotlin.math.min
 
-class ImmutableProcessor(
+class JimmerProcessor(
     private val environment: SymbolProcessorEnvironment
 ) : SymbolProcessor {
 
@@ -45,7 +44,7 @@ class ImmutableProcessor(
                 it.trim().split("\\s*[,;]\\s*").toTypedArray()
             }
 
-    private val dtoDirs: Set<String> =
+    private val dtoDirs: Collection<String> =
         environment.options["jimmer.dto.dirs"]
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
@@ -62,10 +61,13 @@ class ImmutableProcessor(
                     .filterNotNull()
                     .toSet()
             }
-            ?: setOf("src/main/dto")
+            ?.let { DtoUtils.standardDtoDirs(it) }
+            ?: listOf("src/main/dto")
 
     private val dtoMutable: Boolean =
         environment.options["jimmer.dto.mutable"]?.trim() == "true"
+
+    private val processedDtoPaths = mutableSetOf<String>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (!processed.compareAndSet(false, true)) {
@@ -76,10 +78,10 @@ class ImmutableProcessor(
             val ctx = Context(resolver)
 
             val classDeclarationMultiMap = findModelMap(ctx)
-            val dtoTypeMap = findDtoTypeMap(ctx, classDeclarationMultiMap)
+            val dtoTypeMap = findDtoTypeMap(ctx)
             val errorDeclarations = findErrorTypes(resolver)
 
-            generateJimmerTypes(resolver, ctx, classDeclarationMultiMap)
+            generateJimmerTypes(ctx, classDeclarationMultiMap)
             generateDtoTypes(resolver, dtoTypeMap)
             generateErrorTypes(resolver, errorDeclarations)
 
@@ -121,86 +123,75 @@ class ImmutableProcessor(
                 }
             }
         }
-        var step = 0
-        while (true) {
-            var hasNext = false
-            for (declarations in modelMap.values) {
-                for (declaration in declarations) {
-                    hasNext = hasNext or ctx.typeOf(declaration).resolve(ctx, step)
-                }
+        for (declarations in modelMap.values) {
+            for (declaration in declarations) {
+                ctx.typeOf(declaration)
             }
-            if (!hasNext) {
-                break
-            }
-            step++
         }
+        ctx.resolve()
         return modelMap
     }
 
     private fun findDtoTypeMap(
-        ctx: Context,
-        classDeclarationMultiMap: Map<KSFile, List<KSClassDeclaration>>
-    ): Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> {
-        if (classDeclarationMultiMap.isEmpty()) {
-            return emptyMap()
-        }
-        var file: File? = File(classDeclarationMultiMap.keys.iterator().next().filePath).parentFile
-        val actualPathMap = mutableMapOf<String, String>()
-        while (file != null) {
-            collectActualDtoDir(file, actualPathMap)
-            file = file.parentFile
-        }
-
-        val dtoMap = mutableMapOf<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>>()
-        for (classDeclarations in classDeclarationMultiMap.values) {
-            for (classDeclaration in classDeclarations) {
-                val immutableType = ctx.typeOf(classDeclaration)
-                for (e in actualPathMap) {
-                    val relativePath = immutableType.qualifiedName.replace('.', '/') + ".dto"
-                    val dtoFile = File(
-                        "${e.key}/$relativePath"
-                    )
-                    if (dtoFile.exists()) {
-                        dtoMap[immutableType] = try {
-                            dtoFile.reader(Charsets.UTF_8).use {
-                                KspDtoCompiler(immutableType, "${e.value}/$relativePath").compile(it)
-                            }
-                        } catch (ex: DtoAstException) {
-                            throw DtoException(
-                                "Failed to parse \"${dtoFile.absolutePath}\": ${ex.message}",
-                                ex
-                            )
-                        } catch (ex: IOException) {
-                            throw DtoException(
-                                "Failed to parse \"${dtoFile.absolutePath}\": ${ex.message}",
-                                ex
-                            )
-                        }
-                    }
-                }
+        ctx: Context
+    ): Map<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>> {
+        val dtoTypeMap = mutableMapOf<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>>()
+        val newCtx = Context(ctx)
+        val dtoCtx = DtoContext(newCtx.resolver.getAllFiles().firstOrNull(), dtoDirs)
+        val immutableTypeMap = mutableMapOf<KspDtoCompiler, ImmutableType>()
+        for (dtoFile in dtoCtx.dtoFiles) {
+            if (!processedDtoPaths.add(dtoFile.path)) {
+                continue
             }
-        }
-        for ((type, dtoTypes) in dtoMap) {
-            for (dtoType in dtoTypes) {
-                for ((otherType, otherDtoTypes) in dtoMap) {
-                    for (otherDtoType in otherDtoTypes) {
-                        if (type != otherType && dtoType.name == otherDtoType.name) {
-                            throw DtoException(
-                                "Conflict dto type name, the \"" +
-                                    type.qualifiedName +
-                                    "\" and \"" +
-                                    otherType.qualifiedName +
-                                    "\" are belong to same package, " +
-                                    "but they have define a dto type named \"" +
-                                    dtoType.name +
-                                    "\""
-                            )
-                        }
-                    }
-                }
+            val compiler = try {
+                KspDtoCompiler(dtoFile)
+            } catch (ex: DtoAstException) {
+                throw DtoException(
+                    "Failed to parse \"" +
+                        dtoFile.path +
+                        "\": " +
+                        ex.message,
+                    ex
+                )
+            } catch (ex: Throwable) {
+                throw DtoException(
+                    "Failed to read \"" +
+                        dtoFile.path +
+                        "\": " +
+                        ex.message,
+                    ex
+                )
             }
+            val classDeclaration = newCtx.resolver.getClassDeclarationByName(compiler.sourceTypeName)
+            if (classDeclaration === null) {
+                throw DtoException(
+                    "Failed to parse \"" +
+                        dtoFile.path +
+                        "\": No entity type \"" +
+                        compiler.sourceTypeName +
+                        "\""
+                )
+            }
+            if (classDeclaration.annotation(Entity::class) == null) {
+                throw DtoException(
+                    "Failed to parse \"" +
+                        dtoFile.path +
+                        "\": the \"" +
+                        compiler.sourceTypeName +
+                        "\" is not decorated by \"@" +
+                        Entity::class.qualifiedName +
+                        "\""
+                )
+            }
+            immutableTypeMap[compiler] = newCtx.typeOf(classDeclaration)
         }
-        return dtoMap
+        newCtx.resolve()
+        for ((compiler, immutableType) in immutableTypeMap) {
+            dtoTypeMap.computeIfAbsent(immutableType) {
+                mutableListOf()
+            } += compiler.compile(immutableType)
+        }
+        return dtoTypeMap
     }
 
     private fun findErrorTypes(resolver: Resolver): List<KSClassDeclaration> =
@@ -219,11 +210,10 @@ class ImmutableProcessor(
             .toList()
 
     private fun generateJimmerTypes(
-        resolver: Resolver,
         ctx: Context,
         classDeclarationMultiMap: Map<KSFile, List<KSClassDeclaration>>
     ) {
-        val allFiles = resolver.getAllFiles().toList()
+        val allFiles = ctx.resolver.getAllFiles().toList()
         for ((file, classDeclarations) in classDeclarationMultiMap) {
             DraftGenerator(environment.codeGenerator, ctx, file, classDeclarations)
                 .generate(allFiles)
@@ -299,29 +289,6 @@ class ImmutableProcessor(
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
                 DtoGenerator(dtoType, dtoMutable, environment.codeGenerator).generate(allFiles)
-            }
-        }
-    }
-
-    private fun collectActualDtoDir(baseFile: File, actualPathMap: MutableMap<String, String>) {
-        for (dtoDir in dtoDirs) {
-            var subFile: File? = baseFile
-            for (part in dtoDir.split("/").toTypedArray()) {
-                subFile = File(subFile, part)
-                if (!subFile.isDirectory) {
-                    subFile = null
-                    break
-                }
-            }
-            if (subFile != null) {
-                val path = subFile.absolutePath.let {
-                    if (it.endsWith("/")) {
-                        it.substring(0, it.length - 1)
-                    } else {
-                        it
-                    }
-                }
-                actualPathMap[path] = dtoDir
             }
         }
     }

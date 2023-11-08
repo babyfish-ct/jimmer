@@ -1,11 +1,10 @@
 package org.babyfish.jimmer.sql.dto;
 
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
-import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.TreeNode;
 import org.babyfish.jimmer.sql.model.TreeNodeDraft;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
-import org.babyfish.jimmer.sql.model.dto.RecursiveTree2;
+import org.babyfish.jimmer.sql.model.mydto.RecursiveTree2;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

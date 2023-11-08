@@ -1,22 +1,14 @@
-input RecursiveTree {
-    name
-    childNodes {
-        name
-    }*
-}
+export org.babyfish.jimmer.sql.model.TreeNode
 
-input RecursiveTree2 {
+RecursiveTree {
     name
     childNodes {
         name
-        childNodes {
-            name
-        }*
-    }
+    }* // '*' means recursive
 }
 
 input TreeNodeInput {
-    #allScalars(TreeNode)
+    #allScalars
     id!
     id(parent)
 }

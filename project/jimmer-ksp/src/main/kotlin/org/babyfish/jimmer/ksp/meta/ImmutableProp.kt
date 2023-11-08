@@ -377,14 +377,17 @@ class ImmutableProp(
                 resolveTargetType(ctx)
                 true
             }
+
             1 -> {
                 resolveIdViewBaseProp()
                 true
             }
+
             2 -> {
                 resolveFormulaDependencies()
                 true
             }
+
             3 -> {
                 resolveManyToManyBaseViewProp()
                 true

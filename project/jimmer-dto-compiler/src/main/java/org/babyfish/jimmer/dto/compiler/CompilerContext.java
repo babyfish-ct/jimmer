@@ -158,6 +158,10 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         return compiler.getDtoFilePath();
     }
 
+    public String getTargetPackageName() {
+        return compiler.getTargetPackageName();
+    }
+
     public T getBaseType() {
         return compiler.getBaseType();
     }

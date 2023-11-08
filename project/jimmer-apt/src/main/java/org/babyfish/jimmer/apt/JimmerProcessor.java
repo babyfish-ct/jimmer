@@ -1,24 +1,25 @@
 package org.babyfish.jimmer.apt;
 
+import org.babyfish.jimmer.apt.dto.AptDtoCompiler;
+import org.babyfish.jimmer.apt.dto.DtoContext;
+import org.babyfish.jimmer.apt.dto.DtoException;
 import org.babyfish.jimmer.apt.generator.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
+import org.babyfish.jimmer.dto.compiler.DtoFile;
 import org.babyfish.jimmer.dto.compiler.DtoType;
+import org.babyfish.jimmer.dto.compiler.DtoUtils;
 import org.babyfish.jimmer.error.ErrorFamily;
+import org.babyfish.jimmer.sql.Entity;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
-import javax.tools.StandardLocation;
-import java.io.*;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.error.ErrorFamily"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class ImmutableProcessor extends AbstractProcessor {
+public class JimmerProcessor extends AbstractProcessor {
 
     private Context context;
 
@@ -47,7 +48,11 @@ public class ImmutableProcessor extends AbstractProcessor {
 
     private boolean jimmerModuleGenerated;
 
-    private Set<String> dtoDirs;
+    private Collection<String> dtoDirs;
+
+    private Elements elements;
+
+    private final Set<String> processedDtoPaths = new HashSet<>();
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -78,11 +83,9 @@ public class ImmutableProcessor extends AbstractProcessor {
                     dirs.add(path);
                 }
             }
-            this.dtoDirs = dirs;
+            this.dtoDirs = DtoUtils.standardDtoDirs(dirs);
         } else {
-            Set<String> dirs = new LinkedHashSet<>();
-            dirs.add("src/main/dto");
-            this.dtoDirs = dirs;
+            this.dtoDirs = Collections.singletonList("src/main/dto");
         }
         context = new Context(
                 processingEnv.getElementUtils(),
@@ -90,6 +93,7 @@ public class ImmutableProcessor extends AbstractProcessor {
                 "true".equals(processingEnv.getOptions().get("jimmer.keepIsPrefix"))
         );
         filer = processingEnv.getFiler();
+        elements = processingEnv.getElementUtils();
     }
 
     @Override
@@ -110,9 +114,8 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
 
         try {
-            Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
-            Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap =
-                    parseDtoTypes(immutableTypeMap.values());
+            Map<TypeElement, ImmutableType> immutableTypeMap =
+                    parseImmutableTypes(roundEnv);
             generateJimmerTypes(
                     roundEnv.getRootElements()
                             .stream()
@@ -122,6 +125,9 @@ public class ImmutableProcessor extends AbstractProcessor {
                             .collect(Collectors.toList()),
                     roundEnv
             );
+
+            Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap =
+                    parseDtoTypes(immutableTypeMap);
             generateDtoTypes(dtoTypeMap);
 
             List<TypeElement> errorElements = getErrorFamilies(roundEnv);
@@ -152,100 +158,69 @@ public class ImmutableProcessor extends AbstractProcessor {
         }
         return map;
     }
-
+    
     private Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> parseDtoTypes(
-            Collection<ImmutableType> immutableTypes
+            Map<TypeElement, ImmutableType> immutableTypeMap
     ) {
-        String basePath;
-        try {
-            basePath = filer.getResource(
-                    StandardLocation.CLASS_OUTPUT,
-                    "",
-                    "dummy.txt"
-            ).toUri().getPath();
-        } catch (IOException ex) {
-            throw new DtoException("Failed to guess base project dir", ex);
-        }
-        if (basePath.startsWith("file:")) {
-            basePath = basePath.substring(5);
-        }
-        if (File.separatorChar != '\\' && !basePath.startsWith("/")) {
-            basePath = '/' + basePath;
-        }
-        basePath = basePath.substring(0, basePath.lastIndexOf('/'));
-        File baseFile;
-        try {
-            baseFile = new File(URLDecoder.decode(basePath, "utf-8"));
-        } catch (UnsupportedEncodingException ex) {
-            throw new AssertionError("UTF-8 is not supported by url decorder");
-        }
-        if (!baseFile.exists()) {
-            throw new AssertionError("The target directory \"" + basePath + "\" does not exists");
-        }
-        Map<String, String> actualPathMap = new HashMap<>();
-        while (baseFile != null) {
-            collectActualDtoDir(baseFile, actualPathMap);
-            baseFile = baseFile.getParentFile();
-        }
+        Map<TypeElement, ImmutableType> typeMap = new HashMap<>(immutableTypeMap);
+        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoTypeMap = new LinkedHashMap<>();
+        DtoContext dtoContext = new DtoContext(filer, dtoDirs);
+        AptDtoCompiler compiler;
 
-        Map<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> dtoMap = new HashMap<>();
-        for (ImmutableType immutableType : immutableTypes) {
-            if (immutableType.isEntity()) {
-                for (Map.Entry<String, String> e : actualPathMap.entrySet()) {
-                    String relativePath = immutableType.getQualifiedName().replace('.', '/') + ".dto";
-                    File dtoFile = new File(e.getKey() + '/' + relativePath);
-                    if (dtoFile.exists()) {
-                        List<DtoType<ImmutableType, ImmutableProp>> dtoTypes;
-                        try (Reader in = Files.newBufferedReader(dtoFile.toPath(), Charset.forName("utf-8"))) {
-                            dtoTypes = new AptDtoCompiler(
-                                    immutableType,
-                                    e.getValue() + '/' + relativePath
-                            ).compile(in);
-                        } catch (DtoAstException ex) {
-                            throw new DtoException(
-                                    "Failed to parse \"" +
-                                            dtoFile.getAbsolutePath() +
-                                            "\": " +
-                                            ex.getMessage(),
-                                    ex
-                            );
-                        } catch (IOException ex) {
-                            throw new DtoException(
-                                    "Failed to read \"" +
-                                            dtoFile.getAbsolutePath() +
-                                            "\": " +
-                                            ex.getMessage(),
-                                    ex
-                            );
-                        }
-                        dtoMap.put(immutableType, dtoTypes);
-                    }
-                }
+        for (DtoFile dtoFile : dtoContext.getDtoFiles()) {
+            if (!processedDtoPaths.add(dtoFile.getPath())) {
+                continue;
             }
-        }
-        for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> e : dtoMap.entrySet()) {
-            ImmutableType type = e.getKey();
-            for (DtoType<ImmutableType, ImmutableProp> dtoType : e.getValue()) {
-                for (Map.Entry<ImmutableType, List<DtoType<ImmutableType, ImmutableProp>>> otherEntry : dtoMap.entrySet()) {
-                    ImmutableType otherType = otherEntry.getKey();
-                    for (DtoType<ImmutableType, ImmutableProp> otherDtoType : otherEntry.getValue()) {
-                        if (type != otherType && Objects.equals(dtoType.getName(), otherDtoType.getName())) {
-                            throw new DtoException(
-                                    "Conflict dto type name, the \"" +
-                                            type.getQualifiedName() +
-                                            "\" and \"" +
-                                            otherType.getQualifiedName() +
-                                            "\" are belong to same package, " +
-                                            "but they have define a dto type named \"" +
-                                            dtoType.getName() +
-                                            "\""
-                            );
-                        }
-                    }
-                }
+            try {
+                compiler = new AptDtoCompiler(dtoFile);
+            } catch (DtoAstException ex) {
+                throw new DtoException(
+                        "Failed to parse \"" +
+                                dtoFile.getPath() +
+                                "\": " +
+                                ex.getMessage(),
+                        ex
+                );
+            } catch (Throwable ex) {
+                throw new DtoException(
+                        "Failed to read \"" +
+                                dtoFile.getPath() +
+                                "\": " +
+                                ex.getMessage(),
+                        ex
+                );
             }
+            TypeElement typeElement = elements.getTypeElement(compiler.getSourceTypeName());
+            if (typeElement == null) {
+                throw new DtoException(
+                        "Failed to parse \"" +
+                                dtoFile.getPath() +
+                                "\": No entity type \"" +
+                                compiler.getSourceTypeName() +
+                                "\""
+                );
+            }
+            if (typeElement.getAnnotation(Entity.class) == null) {
+                throw new DtoException(
+                        "Failed to parse \"" +
+                                dtoFile.getPath() +
+                                "\": the \"" +
+                                compiler.getSourceTypeName() +
+                                "\" is not decorated by \"@" +
+                                Entity.class.getName() +
+                                "\""
+                );
+            }
+            ImmutableType immutableType = typeMap.get(typeElement);
+            if (immutableType == null) {
+                immutableType = context.getImmutableType(typeElement);
+                typeMap.put(typeElement, immutableType);
+            }
+            dtoTypeMap
+                    .computeIfAbsent(immutableType, it -> new ArrayList<>())
+                    .addAll(compiler.compile(immutableType));
         }
-        return dtoMap;
+        return dtoTypeMap;
     }
 
     private List<TypeElement> getErrorFamilies(RoundEnvironment roundEnv) {
@@ -344,26 +319,6 @@ public class ImmutableProcessor extends AbstractProcessor {
         for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
             for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
                 new DtoGenerator(dtoType, filer).generate();
-            }
-        }
-    }
-
-    private void collectActualDtoDir(File baseFile, Map<String, String> actualPathMap) {
-        for (String dtoDir : dtoDirs) {
-            File subFile = baseFile;
-            for (String part : dtoDir.split("/")) {
-                subFile = new File(subFile, part);
-                if (!subFile.isDirectory()) {
-                    subFile = null;
-                    break;
-                }
-            }
-            if (subFile != null) {
-                String path = subFile.getAbsolutePath();
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-                actualPathMap.put(path, dtoDir);
             }
         }
     }

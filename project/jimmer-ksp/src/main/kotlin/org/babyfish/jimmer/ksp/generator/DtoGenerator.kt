@@ -55,37 +55,27 @@ class DtoGenerator private constructor(
                 val list: MutableList<String> = ArrayList()
                 collectNames(list)
                 return ClassName(
-                    root.packageName(),
+                    root.dtoType.packageName,
                     list[0],
                     *list.subList(1, list.size).toTypedArray()
                 )
             }
             return ClassName(
-                root.packageName(),
+                root.dtoType.packageName,
                 dtoType.name!!
             )
         }
-
-    private fun packageName() =
-        root
-            .dtoType
-            .baseType
-            .className
-            .packageName
-            .takeIf { it.isNotEmpty() }
-            ?.let { "$it.dto" }
-            ?: "dto"
 
     fun generate(allFiles: List<KSFile>) {
         if (codeGenerator != null) {
             codeGenerator.createNewFile(
                 Dependencies(false, *allFiles.toTypedArray()),
-                packageName(),
+                root.dtoType.packageName,
                 dtoType.name!!
             ).use {
                 val fileSpec = FileSpec
                     .builder(
-                        packageName(),
+                        root.dtoType.packageName,
                         dtoType.name!!
                     ).apply {
                         indent("    ")
@@ -94,7 +84,7 @@ class DtoGenerator private constructor(
                             .classBuilder(dtoType.name!!)
                             .addModifiers(KModifier.DATA)
                             .apply {
-                                dtoType.path?.let { path ->
+                                dtoType.dtoFilePath?.let { path ->
                                     addAnnotation(
                                         AnnotationSpec
                                             .builder(GENERATED_BY_CLASS_NAME)
@@ -848,13 +838,13 @@ class DtoGenerator private constructor(
                     list.add(targetSimpleName(tailProp))
                 }
                 return ClassName(
-                    packageName(),
+                    root.dtoType.packageName,
                     list[0],
                     *list.subList(1, list.size).toTypedArray()
                 )
             }
             return ClassName(
-                packageName(),
+                root.dtoType.packageName,
                 targetType.name!!
             )
         }

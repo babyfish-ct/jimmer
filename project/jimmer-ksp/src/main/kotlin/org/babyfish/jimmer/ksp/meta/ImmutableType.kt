@@ -429,15 +429,13 @@ class ImmutableType(
     override fun toString(): String =
         classDeclaration.fullName
 
-    internal fun resolve(ctx: Context, step: Int): Boolean {
-        var hasNext = false
+    internal fun resolve(ctx: Context, step: Int) {
         for (prop in declaredProperties.values) {
-            hasNext = hasNext or prop.resolve(ctx, step)
+            prop.resolve(ctx, step)
         }
         for (prop in redefinedProps.values) {
-            hasNext = hasNext or prop.resolve(ctx, step)
+            prop.resolve(ctx, step)
         }
-        return hasNext
     }
 
     companion object {

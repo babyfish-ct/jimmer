@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.apt;
+package org.babyfish.jimmer.apt.dto;
 
 public class DtoException extends RuntimeException {
 

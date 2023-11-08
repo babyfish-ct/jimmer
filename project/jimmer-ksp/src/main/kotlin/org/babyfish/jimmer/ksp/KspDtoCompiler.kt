@@ -4,14 +4,16 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.STRING
 import org.babyfish.jimmer.dto.compiler.DtoCompiler
+import org.babyfish.jimmer.dto.compiler.DtoFile
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 
-class KspDtoCompiler(
-    immutableType: ImmutableType,
-    dtoFilePath: String
-) : DtoCompiler<ImmutableType, ImmutableProp>(immutableType, dtoFilePath) {
+class KspDtoCompiler : DtoCompiler<ImmutableType, ImmutableProp> {
+
+    constructor(immutableType: ImmutableType, dtoFilePath: String): super(immutableType, dtoFilePath)
+
+    constructor(dtoFile: DtoFile): super(dtoFile)
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes

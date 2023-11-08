@@ -91,7 +91,7 @@ public class DtoGenerator {
                             .addMember(
                                     "file",
                                     "$S",
-                                    dtoType.getPath()
+                                    dtoType.getDtoFilePath()
                             )
                             .build()
             );
@@ -111,7 +111,7 @@ public class DtoGenerator {
             try {
                 JavaFile
                         .builder(
-                                getPackageName(),
+                                root.dtoType.getPackageName(),
                                 typeBuilder.build()
                         )
                         .indent("    ")
@@ -130,11 +130,6 @@ public class DtoGenerator {
         }
     }
 
-    public String getPackageName() {
-        String pkg = root.dtoType.getBaseType().getPackageName();
-        return pkg.isEmpty() ? "dto" : pkg + ".dto";
-    }
-
     public String getSimpleName() {
         return innerClassName != null ? innerClassName : dtoType.getName();
     }
@@ -144,13 +139,13 @@ public class DtoGenerator {
             List<String> list = new ArrayList<>();
             collectNames(list);
             return ClassName.get(
-                    root.getPackageName(),
+                    root.dtoType.getPackageName(),
                     list.get(0),
                     list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
             );
         }
         return ClassName.get(
-                root.getPackageName(),
+                root.dtoType.getPackageName(),
                 dtoType.getName()
         );
     }
@@ -1094,13 +1089,13 @@ public class DtoGenerator {
                     list.add(targetSimpleName(tailProp));
                 }
                 return ClassName.get(
-                        getPackageName(),
+                        root.dtoType.getPackageName(),
                         list.get(0),
                         list.subList(1, list.size()).toArray(EMPTY_STR_ARR)
                 );
             }
             return ClassName.get(
-                    getPackageName(),
+                    root.dtoType.getPackageName(),
                     targetType.getName()
             );
         }

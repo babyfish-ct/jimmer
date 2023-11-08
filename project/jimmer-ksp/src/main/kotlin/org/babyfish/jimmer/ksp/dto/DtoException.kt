@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp
+package org.babyfish.jimmer.ksp.dto
 
 import java.lang.RuntimeException
 

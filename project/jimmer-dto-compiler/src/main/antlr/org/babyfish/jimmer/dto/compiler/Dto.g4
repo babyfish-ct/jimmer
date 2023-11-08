@@ -8,9 +8,16 @@ package org.babyfish.jimmer.dto.compiler;
 
 dto
     :
+    exportStatement?
     (importStatements += importStatement)*
     (dtoTypes+=dtoType)*
     EOF
+    ;
+
+exportStatement
+    :
+    'export' typeParts += Identifier ('.' typeParts += Identifier)*
+    ('->' 'package' packageParts += Identifier ('.' packageParts += Identifier)*)?
     ;
 
 importStatement

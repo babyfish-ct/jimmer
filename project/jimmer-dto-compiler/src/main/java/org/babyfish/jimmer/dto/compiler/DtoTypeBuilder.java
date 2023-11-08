@@ -363,6 +363,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
         dtoType = new DtoType<>(
                 baseType,
+                ctx.getTargetPackageName(),
                 annotations,
                 modifiers,
                 name != null ? name.getText() : null,

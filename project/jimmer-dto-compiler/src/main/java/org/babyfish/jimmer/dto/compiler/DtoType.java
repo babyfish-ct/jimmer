@@ -10,6 +10,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private final T baseType;
 
+    private final String packageName;
+
     private final List<Anno> annotations;
 
     private final Set<DtoTypeModifier> modifiers;
@@ -18,7 +20,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     private final String name;
 
     @Nullable
-    private final String path;
+    private final String dtoFilePath;
 
     private List<AbstractProp> props;
 
@@ -28,22 +30,30 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private List<DtoProp<T, P>> hiddenFlatProps;
 
+    private Set<String> generatedDtoTypeNames = new HashSet<>();
+
     DtoType(
             T baseType,
+            @Nullable String packageName,
             List<Anno> annotations,
             Set<DtoTypeModifier> modifiers,
             @Nullable String name,
-            @Nullable String path
+            @Nullable String dtoFilePath
     ) {
         this.baseType = baseType;
+        this.packageName = packageName != null ? packageName : defaultPackageName(baseType.getPackageName());
         this.annotations = annotations;
         this.modifiers = modifiers;
         this.name = name;
-        this.path = path;
+        this.dtoFilePath = dtoFilePath;
     }
 
     public T getBaseType() {
         return baseType;
+    }
+
+    public String getPackageName() {
+        return packageName;
     }
 
     public Set<DtoTypeModifier> getModifiers() {
@@ -56,8 +66,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     }
 
     @Nullable
-    public String getPath() {
-        return path;
+    public String getDtoFilePath() {
+        return dtoFilePath;
     }
 
     public List<AbstractProp> getProps() {
@@ -97,7 +107,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     public List<DtoProp<T, P>> getHiddenFlatProps() {
         List<DtoProp<T, P>> hfps = this.hiddenFlatProps;
         if (hfps == null) {
-            FlatDtoBuilder<T, P> builder = new FlatDtoBuilder<>(modifiers, null);
+            FlatDtoBuilder<T, P> builder = new FlatDtoBuilder<>(packageName, modifiers, null);
             for (DtoProp<T, P> prop : getDtoProps()) {
                 if (prop.getNextProp() != null) {
                     builder.add(prop);
@@ -151,6 +161,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private class FlatDtoBuilder<T extends BaseType, P extends BaseProp> {
 
+        private final String packageName;
+
         private final Set<DtoTypeModifier> modifiers;
 
         private final DtoProp<T, P> prop;
@@ -158,7 +170,8 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         // Value: FlatDtoBuilder | DtoProp
         private final Map<String, Object> childNodes = new LinkedHashMap<>();
 
-        FlatDtoBuilder(Set<DtoTypeModifier> modifiers, DtoProp<T, P> prop) {
+        FlatDtoBuilder(String packageName, Set<DtoTypeModifier> modifiers, DtoProp<T, P> prop) {
+            this.packageName = packageName;
             this.modifiers = modifiers;
             this.prop = prop;
         }
@@ -171,7 +184,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
             } else {
                 FlatDtoBuilder<T, P> child = (FlatDtoBuilder<T, P>) childNodes.get(baseName);
                 if (child == null) {
-                    child = new FlatDtoBuilder<>(modifiers, prop);
+                    child = new FlatDtoBuilder<>(packageName, modifiers, prop);
                     childNodes.put(baseName, child);
                 }
                 child.add(prop.getNextProp());
@@ -199,9 +212,23 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
                 }
                 props = Collections.unmodifiableList(props);
             }
-            DtoType<T, P> dtoType = new DtoType<>(null, annotations, modifiers, null, null);
+            DtoType<T, P> dtoType = new DtoType<>(
+                    null,
+                    packageName,
+                    annotations,
+                    modifiers,
+                    null,
+                    null
+            );
             dtoType.setProps(props);
             return dtoType;
         }
+    }
+
+    private static String defaultPackageName(String entityPackageName) {
+        if (entityPackageName == null || entityPackageName.isEmpty()) {
+            return "dto";
+        }
+        return entityPackageName + ".dto";
     }
 }
