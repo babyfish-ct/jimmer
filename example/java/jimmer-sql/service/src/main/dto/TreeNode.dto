@@ -6,17 +6,17 @@ FlatTreeNodeView {
     /*
      * #allScalars: All scalar fields of `TreeNode` and `BaseEntity`
      *
-     * #allScalars(TreeNode): All scalar fields of `TreeNode`, exclude `BaseEntity`
+     * #allScalars(this)/#allScalars(TreeNode): All scalar fields of `TreeNode`, exclude `BaseEntity`
      */
-    #allScalars(TreeNode)
+    #allScalars(this)
 
     flat(parent) {
         as(^ -> parent) {
-            #allScalars(TreeNode)
+            #allScalars(this)
         }
         flat(parent) {
             as(^ -> grandParent) {
-                #allScalars(TreeNode)
+                #allScalars(this)
             }
         }
     }

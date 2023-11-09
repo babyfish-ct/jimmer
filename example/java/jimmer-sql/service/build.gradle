@@ -4,10 +4,6 @@ plugins {
     id 'java'
 }
 
-ext {
-    jimmerVersion = "0.8.38"
-}
-
 repositories {
     mavenCentral()
 }
@@ -15,7 +11,7 @@ repositories {
 dependencies {
 
     implementation project(":repository")
-    runtimeOnly project(":model-extension")
+    runtimeOnly project(":runtime")
 
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"

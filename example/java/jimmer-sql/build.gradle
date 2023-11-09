@@ -1,9 +1,9 @@
 ext {
-    jimmerVersion = "0.8.38"
+    jimmerVersion = "0.8.39"
     springBootVersion = "2.7.0"
 }
 
 allprojects {
-    group = "org.babyfish.jimmer.example.cloud"
+    group = "org.babyfish.jimmer.sql.example"
     version = jimmerVersion
 }

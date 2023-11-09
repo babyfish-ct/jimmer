@@ -7,7 +7,7 @@ abstract input AbstractBookInput {
     /*
      * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
      *
-     * #allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
+     * #allScalars(this)/#allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
      */
     #allScalars(Book)
 }
@@ -32,12 +32,12 @@ input BookInput : AbstractBookInput {
 input CompositeBookInput: AbstractBookInput {
 
     store {
-        #allScalars(BookStore)
+        #allScalars(this) // or `#allScalars(BookStore)`
         -id // Remove id
     }
 
     authors {
-        #allScalars(Author)
+        #allScalars(this) // or `#allScalars(Author)`
         -id // Remove id
     }
 }

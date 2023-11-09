@@ -1,0 +1,37 @@
+/**
+ * 1. If any other Kotlin code is modified,
+ * you can directly click the `Run` button of Intellij
+ *
+ * 2. Otherwise, the project must be rebuilt
+ */
+
+export org.babyfish.jimmer.sql.example.kt.model.TreeNode
+    -> package org.babyfish.jimmer.sql.example.kt.service.dto
+
+FlatTreeNodeView {
+
+    /*
+     * #allScalars: All scalar fields of `TreeNode` and `BaseEntity`
+     *
+     * #allScalars(this): All scalar fields of `TreeNode`, exclude `BaseEntity`
+     */
+    #allScalars(this)
+
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars(this)
+        }
+        flat(parent) {
+            as(^ -> grandParent) {
+                #allScalars(this)
+            }
+        }
+    }
+}
+
+input RecursiveTreeInput {
+    name
+    childNodes {
+        name
+    }* // '*' means recursive
+}

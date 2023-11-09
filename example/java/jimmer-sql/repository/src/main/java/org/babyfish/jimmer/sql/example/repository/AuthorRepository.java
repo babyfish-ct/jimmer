@@ -2,9 +2,9 @@ package org.babyfish.jimmer.sql.example.repository;
 
 import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.repository.SpringOrders;
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.example.model.Author;
 import org.babyfish.jimmer.sql.example.model.AuthorTable;
-import org.babyfish.jimmer.sql.example.repository.dto.AuthorSpecification;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Sort;
 
@@ -15,7 +15,7 @@ public interface AuthorRepository extends JRepository<Author, Long> { // ❶
     AuthorTable table = AuthorTable.$;
 
     default List<Author> find( // ❷
-            AuthorSpecification specification,
+            JSpecification<?, AuthorTable> specification,
             Sort sort,
             Fetcher<Author> fetcher
     ) {

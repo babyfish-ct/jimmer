@@ -1,5 +1,5 @@
 rootProject.name = 'jimmer-sql'
 include 'model'
-include 'model-extension'
+include 'runtime'
 include 'repository'
 include 'service'
