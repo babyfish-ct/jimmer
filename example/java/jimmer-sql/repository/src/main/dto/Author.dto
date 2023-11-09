@@ -1,0 +1,22 @@
+import java.time.LocalDateTime
+import org.springframework.format.annotation.DateTimeFormat
+
+specification AuthorSpecification {
+
+    /*
+     * For `QBE(Query By Example)`
+     *
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(Author)/allScalars(this): All scalar fields of `Author`, exclude `BaseEntity`
+     */
+    #allScalars(this) - id // Remove id
+
+    // For `whereIf`
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    ge(createdTime)
+
+    // For `whereIf`
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    le(createdTime)
+}

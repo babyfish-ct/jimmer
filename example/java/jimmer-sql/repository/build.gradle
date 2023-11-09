@@ -1,0 +1,43 @@
+plugins {
+    id 'org.springframework.boot' version '2.7.0'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+ext {
+    jimmerVersion = "0.8.38"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    project(":model")
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.data:spring-data-redis'
+    implementation 'org.springframework.kafka:spring-kafka:2.9.0'
+    implementation 'org.apache.kafka:connect-api:0.10.0.0'
+
+    implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
+
+    implementation 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
+
+    runtimeOnly 'com.h2database:h2:2.1.212'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.30'
+    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+    runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
+    runtimeOnly 'com.github.ben-manes.caffeine:caffeine:2.9.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
