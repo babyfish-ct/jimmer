@@ -21,10 +21,6 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
     private static final ClassName STRING = ClassName.get(String.class);
 
-    public AptDtoCompiler(ImmutableType baseType, String dtoFilePath) {
-        super(baseType, dtoFilePath);
-    }
-
     public AptDtoCompiler(DtoFile dtoFile) throws IOException {
         super(dtoFile);
     }

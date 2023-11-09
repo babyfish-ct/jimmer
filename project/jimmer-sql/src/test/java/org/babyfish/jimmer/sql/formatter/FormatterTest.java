@@ -137,6 +137,7 @@ public class FormatterTest extends AbstractFormatterTest {
                                 )
                                 .exists()
                 )
+                .disableDissociation()
                 .execute();
 
         assertSqlStatements(

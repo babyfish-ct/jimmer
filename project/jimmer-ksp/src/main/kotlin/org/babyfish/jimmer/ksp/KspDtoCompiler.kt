@@ -9,11 +9,7 @@ import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 
-class KspDtoCompiler : DtoCompiler<ImmutableType, ImmutableProp> {
-
-    constructor(immutableType: ImmutableType, dtoFilePath: String): super(immutableType, dtoFilePath)
-
-    constructor(dtoFile: DtoFile): super(dtoFile)
+class KspDtoCompiler(dtoFile: DtoFile) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes

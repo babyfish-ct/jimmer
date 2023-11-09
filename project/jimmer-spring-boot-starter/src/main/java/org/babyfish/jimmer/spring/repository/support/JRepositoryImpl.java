@@ -315,7 +315,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @Override
     public void deleteAll() {
         Mutations
-                .createDelete(sqlClient, immutableType, (d, t) -> d.enableDissociation())
+                .createDelete(sqlClient, immutableType, (d, t) -> {})
                 .execute();
     }
 

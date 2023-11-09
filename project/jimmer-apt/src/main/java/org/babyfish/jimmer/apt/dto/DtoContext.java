@@ -1,14 +1,14 @@
 package org.babyfish.jimmer.apt.dto;
 
 import org.babyfish.jimmer.dto.compiler.DtoFile;
-import org.babyfish.jimmer.dto.compiler.DtoUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.processing.Filer;
 import javax.tools.StandardLocation;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 public class DtoContext {
@@ -19,13 +19,13 @@ public class DtoContext {
 
     public DtoContext(Filer filer, Collection<String> dtoDirs) {
         this.filer = filer;
-        Map<String, File> dtoDirFileMap = getDtoDirFileMap(dtoDirs);
+        DtoDirInfo dtoDirInfo = getDtoDirInfo(dtoDirs);
         List<DtoFile> dtoFiles = new ArrayList<>();
-        for (Map.Entry<String, File> e : dtoDirFileMap.entrySet()) {
+        for (Map.Entry<String, File> e : dtoDirInfo.dtoDirFileMap.entrySet()) {
             File[] subFiles = e.getValue().listFiles();
             if (subFiles != null) {
                 for (File subFile : subFiles){
-                    collectDtoFiles(e.getKey(), subFile, new ArrayList<>(), dtoFiles);
+                    collectDtoFiles(dtoDirInfo.projectDir, e.getKey(), subFile, new ArrayList<>(), dtoFiles);
                 }
             }
         }
@@ -36,7 +36,7 @@ public class DtoContext {
         return Collections.unmodifiableList(dtoFiles);
     }
 
-    private Map<String, File> getDtoDirFileMap(Collection<String> dtoDirs) {
+    private DtoDirInfo getDtoDirInfo(Collection<String> dtoDirs) {
         String basePath;
         try {
             basePath = filer.getResource(
@@ -64,14 +64,19 @@ public class DtoContext {
             throw new AssertionError("The target directory \"" + basePath + "\" does not exists");
         }
         Map<String, File> dtoDirFileMap = new LinkedHashMap<>();
+        String projectDir = null;
         while (baseFile != null) {
-            collectDtoDirFiles(baseFile, dtoDirs, dtoDirFileMap);
+            String prjDir = collectDtoDirFiles(baseFile, dtoDirs, dtoDirFileMap);
+            if (projectDir == null) {
+                projectDir = prjDir;
+            }
             baseFile = baseFile.getParentFile();
         }
-        return dtoDirFileMap;
+        return new DtoDirInfo(projectDir, dtoDirFileMap);
     }
 
-    private static void collectDtoDirFiles(File baseFile, Collection<String> dtoDirs, Map<String, File> dtoDirFileMap) {
+    private static String collectDtoDirFiles(@NotNull File baseFile, Collection<String> dtoDirs, Map<String, File> dtoDirFileMap) {
+        String projectDir = null;
         for (String dtoDir : dtoDirs) {
             File subFile = baseFile;
             for (String part : dtoDir.split("/")) {
@@ -83,23 +88,40 @@ public class DtoContext {
             }
             if (subFile != null) {
                 dtoDirFileMap.put(dtoDir, subFile);
+                projectDir = baseFile.getName();
             }
         }
+        return projectDir;
     }
 
-    private static void collectDtoFiles(String dtoDir, File file, List<String> paths, List<DtoFile> dtoFiles) {
-
+    private static void collectDtoFiles(String projectDir, String dtoDir, File file, List<String> paths, List<DtoFile> dtoFiles) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
-            dtoFiles.add(new DtoFile(dtoDir, paths, file));
+            dtoFiles.add(
+                    new DtoFile(projectDir, dtoDir, paths, file.getName(), () ->
+                            new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8)
+                    )
+            );
         } else {
             File[] subFiles = file.listFiles();
             if (subFiles != null) {
                 paths.add(file.getName());
                 for (File subFile : subFiles) {
-                    collectDtoFiles(dtoDir, subFile, paths, dtoFiles);
+                    collectDtoFiles(projectDir, dtoDir, subFile, paths, dtoFiles);
                 }
                 paths.remove(paths.size() - 1);
             }
+        }
+    }
+
+    private static class DtoDirInfo {
+
+        final String projectDir;
+
+        final Map<String, File> dtoDirFileMap;
+
+        DtoDirInfo(String projectDir, Map<String, File> dtoDirFileMap) {
+            this.projectDir = projectDir;
+            this.dtoDirFileMap = dtoDirFileMap;
         }
     }
 }

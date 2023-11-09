@@ -57,7 +57,6 @@ internal class KSqlClientImpl(
     ): KExecutable<Int> {
         val update = MutableUpdateImpl(javaClient, ImmutableType.get(entityType.java))
         block(KMutableUpdateImpl(update))
-        update.freeze()
         return KExecutableImpl(update)
     }
 
@@ -67,7 +66,6 @@ internal class KSqlClientImpl(
     ): KExecutable<Int> {
         val delete = MutableDeleteImpl(javaClient, ImmutableType.get(entityType.java))
         block(KMutableDeleteImpl(delete))
-        delete.freeze()
         return KExecutableImpl(delete)
     }
 

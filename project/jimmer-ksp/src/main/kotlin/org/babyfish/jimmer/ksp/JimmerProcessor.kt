@@ -172,6 +172,9 @@ class JimmerProcessor(
                         "\""
                 )
             }
+            if (!include(classDeclaration)) {
+                continue
+            }
             if (classDeclaration.annotation(Entity::class) == null) {
                 throw DtoException(
                     "Failed to parse \"" +

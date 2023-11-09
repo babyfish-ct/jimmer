@@ -7,5 +7,5 @@ interface KMutableDelete<E: Any> : KFilterable<E> {
 
     override val table: KNonNullTableEx<E>
 
-    fun enableDissociation()
+    fun disableDissociation()
 }

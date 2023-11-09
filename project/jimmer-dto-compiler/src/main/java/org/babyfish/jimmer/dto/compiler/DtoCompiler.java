@@ -17,20 +17,15 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     private T baseType;
 
-    private DtoParser.DtoContext ast;
+    private final DtoParser.DtoContext ast;
 
-    private String sourceTypeName;
+    private final String sourceTypeName;
 
-    private String targetPackageName;
-
-    protected DtoCompiler(T baseType, String dtoFilePath) {
-        this.baseType = baseType;
-        this.dtoFilePath = dtoFilePath;
-    }
+    private final String targetPackageName;
 
     protected DtoCompiler(DtoFile dtoFile) throws IOException {
         this.dtoFilePath = dtoFile.getPath();
-        try (FileReader reader = new FileReader(dtoFile.getFile())) {
+        try (Reader reader = dtoFile.openReader()) {
             DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
             DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
             DtoErrorListener listener = new DtoErrorListener();
@@ -58,7 +53,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                 }
             }
             if (sourceTypeName == null) {
-                String name = dtoFile.getFile().getName();
+                String name = dtoFile.getName();
                 sourceTypeName = dtoFile.getPackageName() + '.' + name.substring(0, name.length() - 4);
             }
             this.sourceTypeName = sourceTypeName;
@@ -67,6 +62,9 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     }
 
     public T getBaseType() {
+        if (baseType == null) {
+            throw new IllegalStateException("baseType has not be set");
+        }
         return baseType;
     }
 
@@ -89,51 +87,6 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
             ctx.importStatement(importStatement);
         }
         for (DtoParser.DtoTypeContext dtoType : ast.dtoTypes) {
-            ctx.add(dtoType);
-        }
-        return ctx.getDtoTypes();
-    }
-
-    public List<DtoType<T, P>> compile(String code) {
-        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(code));
-        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-        DtoErrorListener listener = new DtoErrorListener();
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(listener);
-        parser.removeErrorListeners();
-        parser.addErrorListener(listener);
-        return parse(parser);
-    }
-
-    public List<DtoType<T, P>> compile(Reader reader) throws IOException {
-        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
-        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-        DtoErrorListener listener = new DtoErrorListener();
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(listener);
-        parser.removeErrorListeners();
-        parser.addErrorListener(listener);
-        return parse(parser);
-    }
-
-    public List<DtoType<T, P>> compile(InputStream input) throws IOException {
-        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(input));
-        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-        DtoErrorListener listener = new DtoErrorListener();
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(listener);
-        parser.removeErrorListeners();
-        parser.addErrorListener(listener);
-        return parse(parser);
-    }
-
-    private List<DtoType<T, P>> parse(DtoParser parser) {
-        CompilerContext<T, P> ctx = new CompilerContext<>(this);
-        DtoParser.DtoContext dto = parser.dto();
-        for (DtoParser.ImportStatementContext importStatement : dto.importStatements) {
-            ctx.importStatement(importStatement);
-        }
-        for (DtoParser.DtoTypeContext dtoType : dto.dtoTypes) {
             ctx.add(dtoType);
         }
         return ctx.getDtoTypes();

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -16,8 +18,8 @@ public class DtoCompilerTest {
 
     @Test
     public void testSimpleByAlias() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
-                        "import org.babyfish.jimmer.sql.model.{Book as B}" +
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
+                "import org.babyfish.jimmer.sql.model.{Book as B}" +
                         "input BookInput {\n" +
                         "    #allScalars\n" +
                         "    -tenant\n" +
@@ -64,7 +66,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testSimpleByThis() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "input BookInput {\n" +
                         "    #allScalars\n" +
                         "    -tenant\n" +
@@ -111,7 +113,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testOptionalAllScalars() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "input BookSpecification {\n" +
                         "    #allScalars?" +
                         "}\n"
@@ -130,7 +132,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testRequiredAllScalars() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "input BookSpecification {\n" +
                         "    #allScalars!" +
                         "}\n"
@@ -149,7 +151,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testInputRequired() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "input BookInput {\n" +
                         "    id!\n" +
                         "    id(store)\n" +
@@ -163,7 +165,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testSpecificationRequired() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "specification BookInput {\n" +
                         "    id!\n" +
                         "    id(store)!\n" +
@@ -177,7 +179,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testRecursive() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "input TreeNodeInput {" +
                         "    name" +
                         "    childNodes {" +
@@ -201,7 +203,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testRecursive2() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "input TreeNodeInput {\n" +
                         "    name\n" +
                         "    childNodes {\n" +
@@ -230,7 +232,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testExtends() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "abstract input BookKeyInput {\n" +
                         "    name\n" +
                         "    edition\n" +
@@ -279,7 +281,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testOverride() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "abstract A {\n" +
                         "    store {\n" +
                         "        id\n" +
@@ -302,7 +304,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testOverride2() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "abstract A {\n" +
                         "    id as data\n" +
                         "}\n" +
@@ -324,7 +326,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testFlat1() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "BookFlatView {\n" +
                         "    id\n" +
                         "    name?\n" +
@@ -361,7 +363,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testFlat2() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
                 "FlatTreeNode {\n" +
                         "    #allScalars\n" +
                         "    flat(parent) {\n" +
@@ -384,7 +386,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testFlat3() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "BookFlatView {\n" +
                         "    id\n" +
                         "    name\n" +
@@ -420,7 +422,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testFlat4() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "BookFlatView {\n" +
                         "    id\n" +
                         "    name\n" +
@@ -472,7 +474,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testUserProp() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import com.company.pkg.data.User\n" +
                         "import com.company.pkg.data.Configuration as Cfg\n" +
                         "import com.company.pkg.data.{\n" +
@@ -511,7 +513,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testAnnotation() {
-        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book().compile(
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.book(
                 "import org.framework.annotations.{A, B, C, D}\n" +
                         "import org.framework.annotations.{Shallow, Deep}\n" +
                         "import org.framework.enums.{A as EnumA, B as EnumB}\n" +
@@ -589,7 +591,7 @@ public class DtoCompilerTest {
 
     @Test
     public void testQbeSpecification() {
-        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book().compile(
+        DtoType<BaseType, BaseProp> dtoType = MyDtoCompiler.book(
                 "specification BookSpecification {\n" +
                         "    gt(price)\n" +
                         "    lt(price)\n" +
@@ -619,14 +621,14 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    city\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "There is no property \"city\" in \"org.babyfish.jimmer.sql.model.Book\" or its super types",
                 ex.getMessage()
         );
@@ -635,14 +637,14 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalSyntax() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    #<allScalars>\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "extraneous input '<' expecting Identifier",
                 ex.getMessage()
         );
@@ -651,7 +653,7 @@ public class DtoCompilerTest {
     @Test
     public void testDuplicateAlias() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    id\n" +
                             "    name as id\n" +
@@ -659,7 +661,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 3 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Duplicated property alias \"id\"",
                 ex.getMessage()
         );
@@ -668,7 +670,7 @@ public class DtoCompilerTest {
     @Test
     public void testDuplicateAlias2() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    id\n" +
                             "    name\n" +
@@ -679,7 +681,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 5 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Duplicated property alias \"name\"",
                 ex.getMessage()
         );
@@ -688,7 +690,7 @@ public class DtoCompilerTest {
     @Test
     public void testDuplicateAlias3() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    id\n" +
                             "    name as myName\n" +
@@ -697,7 +699,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 4 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 4 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Duplicated property alias \"myName\"",
                 ex.getMessage()
         );
@@ -706,7 +708,7 @@ public class DtoCompilerTest {
     @Test
     public void testReferenceTwice() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    authors {\n" +
                             "        #allScalars\n" +
@@ -716,7 +718,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 5 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Base property \"entity::authors\" cannot be referenced too many times",
                 ex.getMessage()
         );
@@ -725,14 +727,14 @@ public class DtoCompilerTest {
     @Test
     public void testNoBody() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    flat(store)\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal property \"store\", the child body is required",
                 ex.getMessage()
         );
@@ -741,7 +743,7 @@ public class DtoCompilerTest {
     @Test
     public void testUnnecessaryBody() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    id(store) {\n" +
                             "        id\n" +
@@ -750,7 +752,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal property \"store\", child body cannot be specified by it is id view property",
                 ex.getMessage()
         );
@@ -759,14 +761,14 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalIdFunc() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    id(name)\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Cannot call the function \"id\" because the current " +
                         "prop \"entity::name\" is not entity level association property",
                 ex.getMessage()
@@ -776,14 +778,14 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalFlatFunc() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    flat(authors)\n" +
                             "}"
             );
         });
         Assertions.assertEquals(
-                "Error at line 2 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Cannot call the function \"flat\" " +
                         "because the current prop \"entity::authors\" is list",
                 ex.getMessage()
@@ -793,7 +795,7 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalRequired() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "input BookSpecification {\n" +
                             "    id\n" +
                             "    id(store)!\n" +
@@ -801,7 +803,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 3 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal required modifier '!' for non-id property, " +
                         "the declared type is neither unsafe input nor specification",
                 ex.getMessage()
@@ -811,7 +813,7 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalRecursiveFunc() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "    store {\n" +
                             "        name\n" +
@@ -820,7 +822,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 4 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 4 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal symbol \"*\", the property \"store\" is not recursive",
                 ex.getMessage()
         );
@@ -829,7 +831,7 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalRecursiveFunc2() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "Book {\n" +
                             "    name\n" +
                             "    flat(store) {\n" +
@@ -839,7 +841,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 5 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 5 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal symbol \"*\", the property \"store\" is not recursive",
                 ex.getMessage()
         );
@@ -848,7 +850,7 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalAlias() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "Book {\n" +
                             "    name\n" +
                             "    flat(store) as parent {\n" +
@@ -858,7 +860,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 3 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "The alias cannot be specified when the function `flat` is used",
                 ex.getMessage()
         );
@@ -867,7 +869,7 @@ public class DtoCompilerTest {
     @Test
     public void testMustOverride() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "abstract A { id(store) }\n" +
                             "abstract B { store {name} }\n" +
                             "Book : A, B {\n" +
@@ -875,7 +877,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 3 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal dto type \"Book\", the base property \"store\" is defined differently " +
                         "by multiple super type so that it must be overridden",
                 ex.getMessage()
@@ -885,7 +887,7 @@ public class DtoCompilerTest {
     @Test
     public void testMustOverride2() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "abstract A { id as value }\n" +
                             "abstract B { name as value }\n" +
                             "BookView : A, B {\n" +
@@ -893,7 +895,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 3 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Illegal dto type \"BookView\", " +
                         "the property alias \"value\" is defined differently " +
                         "by multiple super type so that it must be overridden",
@@ -904,7 +906,7 @@ public class DtoCompilerTest {
     @Test
     public void testIllegalNegativeProp() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
-            MyDtoCompiler.book().compile(
+            MyDtoCompiler.book(
                     "BookView {\n" +
                             "#allScalars\n" +
                             "-tag\n" +
@@ -912,7 +914,7 @@ public class DtoCompilerTest {
             );
         });
         Assertions.assertEquals(
-                "Error at line 3 of \"src/main/dto/pkg/Book.dto\": " +
+                "Error at line 3 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "There is no property alias \"tag\" that is need to be removed",
                 ex.getMessage()
         );
@@ -1124,16 +1126,42 @@ public class DtoCompilerTest {
                 new BasePropImpl("gender")
         );
 
-        private MyDtoCompiler(BaseType baseType, String dtoFilePath) {
-            super(baseType, dtoFilePath);
+        private MyDtoCompiler(DtoFile dtoFile) throws IOException {
+            super(dtoFile);
         }
         
-        static MyDtoCompiler book() {
-            return new MyDtoCompiler(BOOK_TYPE, "src/main/dto/pkg/Book.dto");
+        static List<DtoType<BaseType, BaseProp>> book(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "Book.dto",
+                                () -> new StringReader(code)
+                        )
+                ).compile(BOOK_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
         }
         
-        static MyDtoCompiler treeNode() {
-            return new MyDtoCompiler(TREE_NODE_TYPE, "src/main/dto/pkg/TreeNode.dto");
+        static List<DtoType<BaseType, BaseProp>> treeNode(String code) {
+            try {
+                return new MyDtoCompiler(
+                        new DtoFile(
+                                "project",
+                                "src/main/dto",
+                                Arrays.asList("org", "babyfish", "jimmer", "sql", "model"),
+                                "TreeNode.dto",
+                                () -> new StringReader(code)
+                        )
+                ).compile(TREE_NODE_TYPE);
+            } catch (IOException ex) {
+                Assertions.fail(ex);
+                return null;
+            }
         }
 
         @Override

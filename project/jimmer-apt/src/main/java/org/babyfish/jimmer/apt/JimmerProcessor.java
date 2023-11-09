@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.sql.Entity",
         "org.babyfish.jimmer.sql.MappedSuperclass",
         "org.babyfish.jimmer.sql.Embeddable",
-        "org.babyfish.jimmer.error.ErrorFamily"
+        "org.babyfish.jimmer.error.ErrorFamily",
+        "org.babyfish.jimmer.sql.EnableDtoGeneration"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class JimmerProcessor extends AbstractProcessor {
@@ -200,6 +201,9 @@ public class JimmerProcessor extends AbstractProcessor {
                                 "\""
                 );
             }
+            if (!include(typeElement)) {
+                continue;
+            }
             if (typeElement.getAnnotation(Entity.class) == null) {
                 throw new DtoException(
                         "Failed to parse \"" +
@@ -243,6 +247,9 @@ public class JimmerProcessor extends AbstractProcessor {
     }
 
     private boolean include(TypeElement typeElement) {
+        if (typeElement.getAnnotation(kotlin.Metadata.class) != null) {
+            return false;
+        }
         String qualifiedName = typeElement.getQualifiedName().toString();
         if (includes != null) {
             for (String include : includes) {
