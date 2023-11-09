@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.sql.example.model.Author
+    -> package org.babyfish.jimmer.sql.example.service.dto
+
+input AuthorInput {
+
+    /*
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(Author)/#allScalars(this): All scalar fields of `Author`, exclude `BaseEntity`
+     */
+    #allScalars(this)
+}

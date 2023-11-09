@@ -1,4 +1,6 @@
-import java.time.LocalDateTime
+export org.babyfish.jimmer.sql.example.model.Author
+    -> package org.babyfish.jimmer.sql.example.repository.dto
+
 import org.springframework.format.annotation.DateTimeFormat
 
 specification AuthorSpecification {
@@ -12,11 +14,9 @@ specification AuthorSpecification {
      */
     #allScalars(this) - id // Remove id
 
-    // For `whereIf`
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     ge(createdTime)
 
-    // For `whereIf`
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     le(createdTime)
 }

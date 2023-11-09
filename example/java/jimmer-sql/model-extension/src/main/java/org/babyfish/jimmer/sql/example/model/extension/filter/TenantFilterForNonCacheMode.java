@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.example.model.extension.filter;
 
-import org.babyfish.jimmer.sql.example.business.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
+import org.babyfish.jimmer.sql.example.model.extension.TenantProvider;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterArgs;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

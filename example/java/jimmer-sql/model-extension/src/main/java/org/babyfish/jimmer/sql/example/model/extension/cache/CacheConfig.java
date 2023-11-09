@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cfg.cache;
+package org.babyfish.jimmer.sql.example.model.extension.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.meta.ImmutableProp;

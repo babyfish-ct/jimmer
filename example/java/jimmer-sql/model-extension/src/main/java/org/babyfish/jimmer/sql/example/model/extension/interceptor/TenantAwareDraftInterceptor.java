@@ -2,9 +2,9 @@ package org.babyfish.jimmer.sql.example.model.extension.interceptor;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.example.business.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareDraft;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
+import org.babyfish.jimmer.sql.example.model.extension.TenantProvider;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

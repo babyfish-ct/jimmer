@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.example.model.extension.filter;
 
 import org.babyfish.jimmer.sql.event.EntityEvent;
-import org.babyfish.jimmer.sql.example.business.interceptor.TenantProvider;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
+import org.babyfish.jimmer.sql.example.model.extension.TenantProvider;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;

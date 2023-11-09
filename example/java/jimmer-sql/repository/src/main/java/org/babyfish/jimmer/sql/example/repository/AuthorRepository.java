@@ -4,7 +4,7 @@ import org.babyfish.jimmer.spring.repository.JRepository;
 import org.babyfish.jimmer.spring.repository.SpringOrders;
 import org.babyfish.jimmer.sql.example.model.Author;
 import org.babyfish.jimmer.sql.example.model.AuthorTable;
-import org.babyfish.jimmer.sql.example.model.dto.AuthorSpecification;
+import org.babyfish.jimmer.sql.example.repository.dto.AuthorSpecification;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.springframework.data.domain.Sort;
 

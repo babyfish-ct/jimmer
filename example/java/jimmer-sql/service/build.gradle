@@ -14,19 +14,13 @@ repositories {
 
 dependencies {
 
-    project(":repository")
-    project(":model-extension")
-
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.data:spring-data-redis'
-    implementation 'org.springframework.kafka:spring-kafka:2.9.0'
-    implementation 'org.apache.kafka:connect-api:0.10.0.0'
+    implementation project(":repository")
+    runtimeOnly project(":model-extension")
 
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
-    implementation 'org.projectlombok:lombok:1.18.30'
-    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
 
     implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
 

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cfg.cache;
+package org.babyfish.jimmer.sql.example.model.extension.cache;
 
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;

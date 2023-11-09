@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.sql.example.model;
 
 import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.example.business.resolver.BookStoreAvgPriceResolver;
-import org.babyfish.jimmer.sql.example.business.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.sql.example.model.common.BaseEntity;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,7 +34,7 @@ public interface BookStore extends BaseEntity {
     // As for the simple calculated properties, you can view `Author.fullName`
     // -----------------------------
 
-    @Transient(BookStoreAvgPriceResolver.class) // ❹
+    @Transient(ref = "bookStoreAvgPriceResolver") // ❹
     BigDecimal avgPrice();
 
     /*
@@ -50,7 +48,7 @@ public interface BookStore extends BaseEntity {
      * It is worth noting that if the calculated property returns entity object
      * or entity list, the shape can be controlled by the deeper child fetcher
      */
-    @Transient(BookStoreNewestBooksResolver.class) // ❺
+    @Transient(ref = "bookStoreNewestBooksResolver") // ❺
     List<Book> newestBooks();
 }
 
