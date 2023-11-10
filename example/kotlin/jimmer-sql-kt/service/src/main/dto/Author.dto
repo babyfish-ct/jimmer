@@ -1,0 +1,41 @@
+/**
+ * 1. If any other Kotlin code is modified,
+ * you can directly click the `Run` button of Intellij
+ *
+ * 2. Otherwise, the project must be rebuilt
+ */
+
+export org.babyfish.jimmer.sql.example.kt.model.Author
+    -> package org.babyfish.jimmer.sql.example.kt.service.dto
+
+import org.springframework.format.annotation.DateTimeFormat
+
+specification AuthorSpecification {
+
+    /*
+     * For `QBE(Query By Example)`
+     *
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(this)/#allScalars(Author):
+     *     All scalar fields of `Author`, exclude `BaseEntity`
+     */
+    #allScalars(this) - id // Remove id
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    ge(createdTime)
+
+    // For `whereIf`
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    le(createdTime)
+}
+
+input AuthorInput {
+
+    /*
+     * #allScalars: All scalar fields of `Author` and `BaseEntity`
+     *
+     * #allScalars(this)/#allScalars(Author): All scalar fields of `Author`, exclude `BaseEntity`
+     */
+    #allScalars(this)
+}

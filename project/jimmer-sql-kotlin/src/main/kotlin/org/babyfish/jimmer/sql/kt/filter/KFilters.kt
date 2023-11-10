@@ -14,6 +14,4 @@ interface KFilters {
     fun getParameterMapRef(type: KClass<*>): Ref<SortedMap<String, Any>?>?
 
     fun getTargetParameterMapRef(prop: KProperty1<*, *>): Ref<SortedMap<String, Any>?>?
-
-    val builtIns: KBuiltInFilters
 }

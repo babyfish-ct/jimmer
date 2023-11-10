@@ -31,7 +31,7 @@ jimmer-core定义了一个jackson模块：`org.babyfish.jimmer.jackson.Immutable
     }
     ```
 
-    因此，Spring默认的`ObjectMapper`已经可以序列化/反序列化Jimmer动态对象，而绝大部分对象的序列化/序列化工作都是在HTTP交互时由Spring自动完成的，所以无需任何开发。
+    因此，Spring默认的`ObjectMapper`已经可以序列化/反序列化Jimmer动态对象，而绝大部分对象的序列化/反序列化工作都是在HTTP交互时由Spring自动完成的，所以无需任何开发。
 
     :::caution
     Spring默认的Json处理库就是[jackson](https://github.com/FasterXML/jackson)，勿替换。

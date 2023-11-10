@@ -78,7 +78,8 @@ public class StatementTest extends AbstractMutationTest {
         executeAndExpectRowCount(
                 getSqlClient()
                         .createDelete(order)
-                        .where(order.id().eq(OrderIdDraft.$.produce(id -> id.setX("001").setY("001")))),
+                        .where(order.id().eq(OrderIdDraft.$.produce(id -> id.setX("001").setY("001"))))
+                        .disableDissociation(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

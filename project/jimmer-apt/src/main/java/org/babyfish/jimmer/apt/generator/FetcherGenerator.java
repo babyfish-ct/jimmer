@@ -6,7 +6,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
 import org.babyfish.jimmer.lang.NewChain;
-import org.babyfish.jimmer.sql.Id;
+import org.babyfish.jimmer.sql.*;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -89,10 +89,11 @@ public class FetcherGenerator {
                                 addAssociationPropByFieldConfig(prop);
                             }
                         }
+                        addPropByIdOnlyFetchType(prop);
                     }
                 }
             }
-            addConstructorByBoolean();
+            addConstructorByNegativeAndReferenceType();
             addConstructorByFieldConfig();
             addCreatorByBoolean();
             addCreatorByFieldConfig();
@@ -250,14 +251,42 @@ public class FetcherGenerator {
         typeBuilder.addMethod(builder.build());
     }
 
-    private void addConstructorByBoolean() {
+    private void addPropByIdOnlyFetchType(ImmutableProp prop) {
+        ImmutableProp associationProp = prop.getIdViewBaseProp();
+        if (associationProp == null) {
+            associationProp = prop;
+        }
+        if (associationProp.isTransient() || !associationProp.isAssociation(true)) {
+            return;
+        }
+        if (prop.isReverse() && prop.getAnnotation(ManyToMany.class) == null && prop.getAnnotation(JoinTable.class) == null) {
+            return;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(NewChain.class)
+                .addParameter(
+                        Constants.ID_ONLY_FETCH_TYPE,
+                        "idOnlyFetchType"
+                )
+                .returns(type.getFetcherClassName())
+                .addStatement(
+                        "return add($S, idOnlyFetchType)",
+                        prop.getName()
+                );
+        typeBuilder.addMethod(builder.build());
+    }
+
+    private void addConstructorByNegativeAndReferenceType() {
         MethodSpec.Builder builder = MethodSpec
                 .constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
                 .addParameter(type.getFetcherClassName(), "prev")
                 .addParameter(org.babyfish.jimmer.meta.ImmutableProp.class, "prop")
                 .addParameter(boolean.class, "negative")
-                .addStatement("super(prev, prop, negative)");
+                .addParameter(Constants.ID_ONLY_FETCH_TYPE, "idOnlyFetchType")
+                .addStatement("super(prev, prop, negative, idOnlyFetchType)");
         typeBuilder.addMethod(builder.build());
     }
 
@@ -293,9 +322,10 @@ public class FetcherGenerator {
                         "prop"
                 )
                 .addParameter(boolean.class, "negative")
+                .addParameter(Constants.ID_ONLY_FETCH_TYPE, "idOnlyFetchType")
                 .returns(type.getFetcherClassName())
                 .addAnnotation(Override.class)
-                .addStatement("return new $T(this, prop, negative)", type.getFetcherClassName());
+                .addStatement("return new $T(this, prop, negative, idOnlyFetchType)", type.getFetcherClassName());
         typeBuilder.addMethod(builder.build());
     }
 

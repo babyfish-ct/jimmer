@@ -18,23 +18,26 @@ public interface TableSelection {
 
     default void renderSelection(
             ImmutableProp prop,
+            boolean rawId,
             SqlBuilder builder,
             ColumnDefinition optionalDefinition
     ) {
-        renderSelection(prop, builder, optionalDefinition, true, null);
+        renderSelection(prop, rawId, builder, optionalDefinition, true, null);
     }
 
     default void renderSelection(
             ImmutableProp prop,
+            boolean rawId,
             SqlBuilder builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix
     ) {
-        renderSelection(prop, builder, optionalDefinition, withPrefix, null);
+        renderSelection(prop, rawId, builder, optionalDefinition, withPrefix, null);
     }
 
     void renderSelection(
             ImmutableProp prop,
+            boolean rawId,
             SqlBuilder builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,

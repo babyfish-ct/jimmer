@@ -15,6 +15,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.ConstantExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.LiteralExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullExpression
 import org.babyfish.jimmer.sql.kt.ast.query.*
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
+import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
 import kotlin.reflect.KClass
@@ -69,7 +71,11 @@ fun KExpression<*>.isNotNull(): KNonNullExpression<Boolean> =
 
 
 fun <T: Any> value(value: T): KNonNullExpression<T> =
-    LiteralExpression(value)
+    when (value) {
+        is KNonNullExpression<*> -> value as KNonNullExpression<T>
+        is KNullableTableEx<*> -> (value as KNullableExpression<T>).asNonNull()
+        else -> LiteralExpression(value)
+    }
 
 fun <T: Any> nullValue(type: KClass<T>): KNullableExpression<T> =
     NullExpression(type.java)
@@ -131,13 +137,25 @@ infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean>
     }
 
 infix fun <T: Any> KExpression<T>.eq(right: KExpression<T>): KNonNullExpression<Boolean> =
-    ComparisonPredicate.Eq(this, right)
+    if (right is NullExpression<*>) {
+        IsNullPredicate(this)
+    } else if (this is NullExpression<*>) {
+        IsNullPredicate(right)
+    } else {
+        ComparisonPredicate.Eq(this, right)
+    }
 
 infix fun <T: Any> KExpression<T>.eq(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Eq(this, value(right))
 
 infix fun <T: Any> KExpression<T>.ne(right: KExpression<T>): KNonNullExpression<Boolean> =
-    ComparisonPredicate.Ne(this, right)
+    if (right is NullExpression<*>) {
+        IsNotNullPredicate(this)
+    } else if (this is NullExpression<*>) {
+        IsNotNullPredicate(right)
+    } else {
+        ComparisonPredicate.Ne(this, right)
+    }
 
 infix fun <T: Any> KExpression<T>.ne(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ne(this, value(right))
@@ -262,8 +280,7 @@ fun count(expression: KExpression<*>, distinct: Boolean = false): KNonNullExpres
     }
 
 fun count(table: KTable<*>, distinct: Boolean = false): KNonNullExpression<Long> {
-    val idProp = (table as TableSelection).immutableType.idProp
-    val idExpr = table.get<Any, KPropExpression<Any>>(idProp!!.name)
+    val idExpr = table.getId<Any>()
     return count(idExpr, distinct)
 }
 

@@ -23,6 +23,8 @@ public class DatabaseValidators {
 
     private final String microServiceName;
 
+    private final boolean defaultDissociationActionCheckable;
+
     private final MetadataStrategy strategy;
 
     private final String catalog;
@@ -41,17 +43,27 @@ public class DatabaseValidators {
     public static DatabaseValidationException validate(
             EntityManager entityManager,
             String microServiceName,
+            boolean defaultDissociationActionCheckable,
             MetadataStrategy strategy,
             String catalog,
             String schema,
             Connection con
     ) throws SQLException {
-        return new DatabaseValidators(entityManager, microServiceName, strategy, catalog, schema, con).validate();
+        return new DatabaseValidators(
+                entityManager,
+                microServiceName,
+                defaultDissociationActionCheckable,
+                strategy,
+                catalog,
+                schema,
+                con
+        ).validate();
     }
 
     private DatabaseValidators(
             EntityManager entityManager,
             String microServiceName,
+            boolean defaultDissociationActionCheckable,
             MetadataStrategy strategy,
             String catalog,
             String schema,
@@ -59,6 +71,7 @@ public class DatabaseValidators {
     ) {
         this.entityManager = entityManager;
         this.microServiceName = microServiceName;
+        this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.strategy = strategy;
         this.catalog = catalog != null && !catalog.isEmpty() ? catalog : null;
         this.schema = schema != null && !schema.isEmpty() ? schema : null;
@@ -178,13 +191,21 @@ public class DatabaseValidators {
                 if (middleTable != null) {
                     MiddleTable middleTableMeta = (MiddleTable) storage;
                     if (middleTableMeta.getColumnDefinition().isForeignKey()) {
-                        ForeignKey thisForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getColumnDefinition());
+                        ForeignKey thisForeignKey = middleTable.getForeignKey(
+                                ctx,
+                                middleTableMeta.getColumnDefinition(),
+                                defaultDissociationActionCheckable
+                        );
                         if (thisForeignKey != null) {
                             thisForeignKey.assertReferencedColumns(ctx, type);
                         }
                     }
                     if (middleTableMeta.getTargetColumnDefinition().isForeignKey()) {
-                        ForeignKey targetForeignKey = middleTable.getForeignKey(ctx, middleTableMeta.getTargetColumnDefinition());
+                        ForeignKey targetForeignKey = middleTable.getForeignKey(
+                                ctx,
+                                middleTableMeta.getTargetColumnDefinition(),
+                                defaultDissociationActionCheckable
+                        );
                         if (targetForeignKey != null) {
                             targetForeignKey.assertReferencedColumns(ctx, prop.getTargetType());
                         }
@@ -193,7 +214,11 @@ public class DatabaseValidators {
             } else if (storage != null && prop.isReference(TargetLevel.PERSISTENT)) {
                 ColumnDefinition columnDefinition = prop.getStorage(strategy);
                 if (columnDefinition.isForeignKey()) {
-                    ForeignKey foreignKey = table.getForeignKey(ctx, columnDefinition);
+                    ForeignKey foreignKey = table.getForeignKey(
+                            ctx,
+                            columnDefinition,
+                            defaultDissociationActionCheckable
+                    );
                     if (foreignKey != null) {
                         foreignKey.assertReferencedColumns(ctx, prop.getTargetType());
                     }
@@ -468,7 +493,11 @@ public class DatabaseValidators {
             this.primaryKeyColumns = primaryKeyColumns;
         }
 
-        public ForeignKey getForeignKey(ForeignKeyContext ctx, ColumnDefinition columnDefinition) throws SQLException{
+        public ForeignKey getForeignKey(
+                ForeignKeyContext ctx,
+                ColumnDefinition columnDefinition,
+                boolean defaultDissociationActionCheckable
+        ) throws SQLException{
             ForeignKey foreignKey;
             if (columnDefinition instanceof MultipleJoinColumns) {
                 MultipleJoinColumns multipleJoinColumns = (MultipleJoinColumns) columnDefinition;
@@ -484,16 +513,29 @@ public class DatabaseValidators {
                         )
                 );
             }
-            if (foreignKey == null) {
+            if (columnDefinition.isForeignKey() && foreignKey == null) {
                 ctx.databaseValidators.items.add(
                         new DatabaseValidationException.Item(
                                 ctx.type,
                                 ctx.prop,
-                                "No foreign key for columns: " + columnDefinition.toColumnNames() +
-                                        ". If this column is a real foreign key, " +
+                                "No foreign key constraint for columns: " + columnDefinition.toColumnNames() +
+                                        ". If this column(s) is(are) a real foreign key, " +
                                         "please add foreign key constraint in database" +
                                         "; If this column is a fake foreign key, " +
                                         "please use `@JoinColumn(foreignKey = false, ...)`"
+                        )
+                );
+            }
+            if (!defaultDissociationActionCheckable && !columnDefinition.isForeignKey() && foreignKey != null) {
+                ctx.databaseValidators.items.add(
+                        new DatabaseValidationException.Item(
+                                ctx.type,
+                                ctx.prop,
+                                "Unnecessary foreign key constraint for columns: " + columnDefinition.toColumnNames() +
+                                        ". If this column(s) is(are) a fake foreign key, " +
+                                        "please remove foreign key constraint in database" +
+                                        "; If this column is a real foreign key, " +
+                                        "please use `@JoinColumn(foreignKey = true, ...)`"
                         )
                 );
             }

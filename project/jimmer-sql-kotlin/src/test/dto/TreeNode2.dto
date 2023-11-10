@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.sql.kt.model.TreeNode
+    -> package org.babyfish.jimmer.sql.kt.model.mydto
+
+RecursiveTree2 {
+    name
+    childNodes {
+        name
+        childNodes {
+            name
+        }*
+    }
+}

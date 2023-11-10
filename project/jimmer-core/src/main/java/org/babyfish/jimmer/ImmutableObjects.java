@@ -342,6 +342,30 @@ public class ImmutableObjects {
         return mapper.readValue(json, type);
     }
 
+    public static boolean isLogicalDeleted(Object o) {
+        if (!(o instanceof ImmutableSpi)) {
+            return false;
+        }
+        ImmutableSpi spi = (ImmutableSpi) o;
+        LogicalDeletedInfo info = spi.__type().getLogicalDeletedInfo();
+        if (info == null) {
+            return false;
+        }
+        PropId propId = info.getProp().getId();
+        if (!spi.__isLoaded(propId)) {
+            return false;
+        }
+        switch (info.getAction()) {
+            case NE:
+                return spi.__get(propId).equals(info.getValue());
+            case IS_NULL:
+                return spi.__get(propId) != null;
+            case IS_NOT_NULL:
+                return spi.__get(propId) == null;
+        }
+        return false;
+    }
+
     static {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

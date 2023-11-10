@@ -73,7 +73,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from ROLE tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -86,7 +86,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -99,7 +99,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -169,7 +169,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
-                                        "from ROLE tb_1_ where tb_1_.NAME = ?"
+                                        "from ROLE tb_1_ where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                     });
                     ctx.statement(it -> {
@@ -182,7 +182,7 @@ public class InheritanceMutationTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from PERMISSION tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
                     });
                     ctx.statement(it -> {

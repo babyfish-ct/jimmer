@@ -10,6 +10,7 @@ import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.Scalar
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp
+import org.babyfish.jimmer.impl.util.Keywords
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
@@ -35,7 +36,14 @@ class ImmutableProp(
         }
     }
 
-    override val name: String = propDeclaration.name
+    override val name: String = propDeclaration.name.also {
+        if (Keywords.ILLEGAL_PROP_NAMES.contains(it)) {
+            throw MetaException(
+                propDeclaration,
+                "Illegal property \"$it\" which is jimmer keyword"
+            )
+        }
+    }
 
     val slotName: String = "SLOT_${upper(name)}"
 
@@ -86,6 +94,7 @@ class ImmutableProp(
 
     fun isDsl(isTableEx: Boolean): Boolean =
         when {
+            idViewBaseProp != null -> false
             isKotlinFormula || isTransient || (idViewBaseProp !== null && idViewBaseProp!!.isList)-> false
             isRemote && isReverse -> false
             isList && isAssociation(true) -> isTableEx
@@ -368,14 +377,17 @@ class ImmutableProp(
                 resolveTargetType(ctx)
                 true
             }
+
             1 -> {
                 resolveIdViewBaseProp()
                 true
             }
+
             2 -> {
                 resolveFormulaDependencies()
                 true
             }
+
             3 -> {
                 resolveManyToManyBaseViewProp()
                 true

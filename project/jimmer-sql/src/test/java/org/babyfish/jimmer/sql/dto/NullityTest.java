@@ -174,7 +174,7 @@ public class NullityTest extends Tests {
                         "--->name=TURING, " +
                         "--->website=null, " +
                         "--->version=1, " +
-                        "--->books=null" +
+                        "--->books=[]" +
                         ")",
                 new BookStoreNullableInput(entity)
         );
@@ -202,7 +202,7 @@ public class NullityTest extends Tests {
                         "--->name=TURING, " +
                         "--->website=null, " +
                         "--->version=1, " +
-                        "--->books=null" +
+                        "--->books=[]" +
                         ")",
                 new BookStoreNullableInput(entity)
         );
@@ -343,7 +343,7 @@ public class NullityTest extends Tests {
                         "--->name=TURING, " +
                         "--->website=null, " +
                         "--->version=1, " +
-                        "--->bookIds=null" +
+                        "--->bookIds=[]" +
                         ")",
                 new BookStoreNullableIdInput(entity)
         );
@@ -371,7 +371,7 @@ public class NullityTest extends Tests {
                         "--->name=TURING, " +
                         "--->website=null, " +
                         "--->version=1, " +
-                        "--->bookIds=null" +
+                        "--->bookIds=[]" +
                         ")",
                 new BookStoreNullableIdInput(entity)
         );

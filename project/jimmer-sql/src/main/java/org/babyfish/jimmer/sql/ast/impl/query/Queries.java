@@ -32,7 +32,7 @@ public class Queries {
                 sqlClient,
                 immutableType,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
         );
         return block.apply(query, query.getTable());
     }
@@ -42,21 +42,21 @@ public class Queries {
             ImmutableType immutableType,
             BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
-        return createQuery(sqlClient, immutableType, ExecutionPurpose.QUERY, false, block);
+        return createQuery(sqlClient, immutableType, ExecutionPurpose.QUERY, FilterLevel.DEFAULT, block);
     }
 
     public static <R> ConfigurableRootQuery<Table<?>, R> createQuery(
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType,
             ExecutionPurpose purpose,
-            boolean ignoreFilter,
+            FilterLevel filterLevel,
             BiFunction<MutableRootQuery<Table<?>>, Table<?>, ConfigurableRootQuery<Table<?>, R>> block
     ) {
         MutableRootQueryImpl<Table<?>> query = new MutableRootQueryImpl<>(
                 sqlClient,
                 immutableType,
                 purpose,
-                ignoreFilter
+                filterLevel
         );
         return block.apply(query, query.getTable());
     }
@@ -79,7 +79,7 @@ public class Queries {
                 sqlClient,
                 associationType,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
         );
         return block.apply(query, query.getTable());
     }
@@ -99,7 +99,7 @@ public class Queries {
                 sqlClient,
                 associationType,
                 purpose,
-                false
+                FilterLevel.DEFAULT
         );
         return block.apply(query, query.getTable());
     }

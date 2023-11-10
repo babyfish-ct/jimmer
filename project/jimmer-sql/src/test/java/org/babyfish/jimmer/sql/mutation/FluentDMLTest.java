@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -166,6 +167,27 @@ public class FluentDMLTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateWithFilter() {
+        AdministratorTable table = AdministratorTable.$;
+        executeAndExpectRowCount(
+                getSqlClient()
+                        .createUpdate(table)
+                        .set(table.name(), table.name().concat("*"))
+                        .where(table.name().ilike("2")),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR tb_1_ " +
+                                        "set NAME = concat(tb_1_.NAME, ?) " +
+                                        "where tb_1_.NAME ilike ? " +
+                                        "and tb_1_.DELETED <> ?"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testDelete() {
         BookTable book = BookTable.$;
         AuthorTableEx author = AuthorTableEx.$;
@@ -180,7 +202,8 @@ public class FluentDMLTest extends AbstractMutationTest {
                                                 .where(author.firstName().eq("Alex"))
                                                 .select(author.books().id())
                                 )
-                        ),
+                        )
+                        .disableDissociation(),
                 ctx -> {
                     ctx.statement(it -> {
                         it.sql(

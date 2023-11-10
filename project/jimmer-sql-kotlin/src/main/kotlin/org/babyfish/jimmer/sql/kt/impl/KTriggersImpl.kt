@@ -50,8 +50,8 @@ internal class KTriggersImpl(
         javaTriggers.fireMiddleTableInsert(prop, sourceId, targetId, con, reason)
     }
 
-    override fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, reason: Any?) {
-        javaTriggers.fireAssociationEvict(prop, sourceId, reason);
+    override fun fireAssociationEvict(prop: ImmutableProp, sourceId: Any, con: Connection?, reason: Any?) {
+        javaTriggers.fireAssociationEvict(prop, sourceId, con, reason)
     }
 
     override val isTransaction: Boolean

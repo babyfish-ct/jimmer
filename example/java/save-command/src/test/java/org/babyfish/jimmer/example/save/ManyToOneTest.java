@@ -120,7 +120,7 @@ public class ManyToOneTest extends AbstractMutationTest {
 
                 // Is target id valid?
                 new ExecutedStatement(
-                        "select tb_1_.ID from BOOK_STORE tb_1_ where tb_1_.ID in (?)",
+                        "select tb_1_.ID from BOOK_STORE tb_1_ where tb_1_.ID = ?",
                         99999L
                 )
         );

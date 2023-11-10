@@ -4,10 +4,14 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public abstract class CompositePredicate extends AbstractPredicate {
+
+    private static final Predicate[] EMPTY_PREDICATE_ARR = new Predicate[0];
 
     private final Predicate[] predicates;
 
@@ -16,25 +20,47 @@ public abstract class CompositePredicate extends AbstractPredicate {
     }
 
     public static Predicate and(Predicate ... predicates) {
-        Predicate[] arr = Arrays
-                .stream(predicates)
-                .filter(Objects::nonNull)
-                .toArray(Predicate[]::new
-                );
+        Predicate[] arr = predicates;
+        for (Predicate p : predicates) {
+            if (p == null) {
+                List<Predicate> list = new ArrayList<>(predicates.length - 1);
+                for (Predicate p2 : predicates) {
+                    if (p2 != null) {
+                        list.add(p2);
+                    }
+                }
+                arr = list.toArray(EMPTY_PREDICATE_ARR);
+                break;
+            }
+        }
         if (arr.length == 0) {
             return null;
+        }
+        if (arr.length == 1) {
+            return predicates[0];
         }
         return new And(arr);
     }
 
     public static Predicate or(Predicate ... predicates) {
-        Predicate[] arr = Arrays
-                .stream(predicates)
-                .filter(Objects::nonNull)
-                .toArray(Predicate[]::new
-                );
+        Predicate[] arr = predicates;
+        for (Predicate p : predicates) {
+            if (p == null) {
+                List<Predicate> list = new ArrayList<>(predicates.length - 1);
+                for (Predicate p2 : predicates) {
+                    if (p2 != null) {
+                        list.add(p2);
+                    }
+                }
+                arr = list.toArray(EMPTY_PREDICATE_ARR);
+                break;
+            }
+        }
         if (arr.length == 0) {
             return null;
+        }
+        if (arr.length == 1) {
+            return predicates[0];
         }
         return new Or(arr);
     }

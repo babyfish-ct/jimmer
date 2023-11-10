@@ -2,12 +2,12 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.Entities;
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -61,9 +61,9 @@ public class MicroServiceExporter {
                         sqlClient,
                         prop.getDeclaringType(),
                         ExecutionPurpose.EXPORT,
-                        false
+                        FilterLevel.DEFAULT
                 );
-        PropExpression<Object> targetIdExpr = query
+        Expression<Object> targetIdExpr = query
                 .getTable()
                 .join(prop.getName())
                 .get(prop.getTargetType().getIdProp().getName());

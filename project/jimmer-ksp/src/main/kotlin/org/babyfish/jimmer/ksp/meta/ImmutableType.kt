@@ -12,11 +12,9 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
+import org.babyfish.jimmer.ksp.generator.PROPS
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.sql.Embeddable
-import org.babyfish.jimmer.sql.Entity
-import org.babyfish.jimmer.sql.Id
-import org.babyfish.jimmer.sql.MappedSuperclass
+import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
 class ImmutableType(
@@ -51,6 +49,8 @@ class ImmutableType(
     val simpleName: String = classDeclaration.simpleName.asString()
 
     val className: ClassName = classDeclaration.className()
+
+    val propsClassName: ClassName = classDeclaration.className { "$it$PROPS" }
 
     val draftClassName: ClassName = classDeclaration.className { "$it$DRAFT" }
 
@@ -358,6 +358,39 @@ class ImmutableType(
             map
         }
 
+    private val idPropNameMap: Map<String, String> by lazy {
+        mutableMapOf<String, String>().also { map ->
+            for (prop in properties.values) {
+                val baseProp = prop.idViewBaseProp
+                if (baseProp !== null) {
+                    map[baseProp.name] = prop.name
+                }
+            }
+            for (prop in properties.values) {
+                if (prop.isReverse) {
+                    continue
+                }
+                if (prop.annotation(OneToOne::class) === null && prop.annotation(ManyToOne::class) === null) {
+                    continue
+                }
+                if (map.containsKey(prop.name)) {
+                    continue
+                }
+                val expectedPropName = "${prop.name}Id"
+                properties[expectedPropName]?.let {
+                    throw MetaException(
+                        it.propDeclaration,
+                        "It looks like @IdView of association \"${it}\", please add the @IdView annotation"
+                    )
+                }
+                map[prop.name] = expectedPropName
+            }
+        }
+    }
+
+    fun getIdPropName(prop: String): String? =
+        idPropNameMap[prop]
+
     val propsOrderById: List<ImmutableProp> by lazy {
         properties.values.sortedBy { it.id }
     }
@@ -396,15 +429,13 @@ class ImmutableType(
     override fun toString(): String =
         classDeclaration.fullName
 
-    internal fun resolve(ctx: Context, step: Int): Boolean {
-        var hasNext = false
+    internal fun resolve(ctx: Context, step: Int) {
         for (prop in declaredProperties.values) {
-            hasNext = hasNext or prop.resolve(ctx, step)
+            prop.resolve(ctx, step)
         }
         for (prop in redefinedProps.values) {
-            hasNext = hasNext or prop.resolve(ctx, step)
+            prop.resolve(ctx, step)
         }
-        return hasNext
     }
 
     companion object {

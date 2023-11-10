@@ -4,11 +4,11 @@ import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.DraftHandler;
-import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
+import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
@@ -62,6 +62,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider();
 
     StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider();
+    
+    boolean isDefaultDissociationActionCheckable();
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
 
@@ -87,4 +89,6 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     JSqlClientImplementor disableSlaveConnectionManager();
 
     Loaders getLoaders();
+
+    void initialize();
 }

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.loader;
 
+import org.babyfish.jimmer.impl.util.CollectionUtils;
 import org.babyfish.jimmer.lang.Ref;
 import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -11,12 +12,14 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
-import org.babyfish.jimmer.sql.ast.impl.query.SortableImplementor;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.Table;
+import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
@@ -25,17 +28,15 @@ import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherFactory;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
 import org.babyfish.jimmer.sql.meta.Storage;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.util.*;
@@ -43,10 +44,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractDataLoader {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataLoader.class);
-
-    private static final ThreadLocal<Connection> TRANSIENT_RESOLVER_CON_LOCAL = new ThreadLocal<>();
 
     /* For globalFilter is not null but not `Filter.Parameterized` */
     private static final SortedMap<String, Object> ILLEGAL_PARAMETERS =
@@ -61,9 +58,9 @@ public abstract class AbstractDataLoader {
     private final Storage storage;
 
     private final boolean remote;
-    
+
     private final ImmutableProp sourceIdProp;
-    
+
     private final ImmutableProp targetIdProp;
 
     private final org.babyfish.jimmer.sql.filter.Filter<Props> globalFiler;
@@ -74,9 +71,11 @@ public abstract class AbstractDataLoader {
 
     private final long offset;
 
+    private final boolean rawValue;
+
     private final TransientResolver<?, ?> resolver;
 
-    private final Fetcher<ImmutableSpi> fetcher;
+    private final FetcherImplementor<ImmutableSpi> fetcher;
 
     @SuppressWarnings("unchecked")
     protected AbstractDataLoader(
@@ -87,7 +86,8 @@ public abstract class AbstractDataLoader {
             Fetcher<?> fetcher,
             FieldFilter<?> propFilter,
             int limit,
-            int offset
+            int offset,
+            boolean rawValue
     ) {
         if (!prop.isAssociation(TargetLevel.ENTITY) && !prop.hasTransientResolver()) {
             throw new IllegalArgumentException(
@@ -168,16 +168,17 @@ public abstract class AbstractDataLoader {
         }
         this.limit = limit;
         this.offset = offset;
+        this.rawValue = rawValue;
         if (prop.isAssociation(TargetLevel.PERSISTENT)) {
             this.resolver = null;
             this.fetcher = fetcher != null ?
-                    (Fetcher<ImmutableSpi>) fetcher :
+                    (FetcherImplementor<ImmutableSpi>) fetcher :
                     new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
         } else {
             this.resolver = sqlClient.getResolver(prop);
             if (prop.isAssociation(TargetLevel.ENTITY)) {
                 this.fetcher = fetcher != null ?
-                        (Fetcher<ImmutableSpi>) fetcher :
+                        (FetcherImplementor<ImmutableSpi>) fetcher :
                         new FetcherImpl<>((Class<ImmutableSpi>) prop.getTargetType().getJavaClass());
             } else {
                 this.fetcher = null;
@@ -208,13 +209,13 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private Map<ImmutableSpi, Object> loadTransients(Collection<ImmutableSpi> sources) {
 
-        Collection<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         TransientResolver<Object, Object> resolver =
                 ((TransientResolver<Object, Object>) this.resolver);
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
         Ref<SortedMap<String, Object>> parameterMapRef = resolver.getParameterMapRef();
         SortedMap<String, Object> parameterMap = parameterMapRef != null ?
-                parameterMapRef.getValue() :
+                standardResolveParameters(parameterMapRef.getValue()) :
                 null;
         Cache.Parameterized<Object, Object> parameterizedCache =
                 cache instanceof Cache.Parameterized<?, ?> ?
@@ -245,11 +246,11 @@ public abstract class AbstractDataLoader {
 
         if (!useCache) {
             Map<Object, Object> resolvedMap;
-            TRANSIENT_RESOLVER_CON_LOCAL.set(con);
+            TransientResolverContext ctx = TransientResolverContext.push(con, resolver, sourceIds);
             try {
                 resolvedMap = translateResolvedMap(resolver.resolve(sourceIds), sourceIds);
             } finally {
-                TRANSIENT_RESOLVER_CON_LOCAL.remove();
+                TransientResolverContext.pop(ctx);
             }
             return Utils.joinCollectionAndMap(
                     sources,
@@ -262,18 +263,18 @@ public abstract class AbstractDataLoader {
                 sqlClient,
                 con,
                 (ids) -> {
-                    TRANSIENT_RESOLVER_CON_LOCAL.set(con);
+                    TransientResolverContext ctx = TransientResolverContext.push(con, resolver, ids);
                     try {
                         return resolver.resolve(ids);
                     } finally {
-                        TRANSIENT_RESOLVER_CON_LOCAL.remove();
+                        TransientResolverContext.pop(ctx);
                     }
                 },
                 false
         );
         Map<Object, Object> valueMap =
                 parameterMap != null && !parameterMap.isEmpty() && parameterizedCache != null ?
-                        parameterizedCache.getAll(sourceIds, parameterMapRef.getValue(), env) :
+                        parameterizedCache.getAll(sourceIds, parameterMap, env) :
                         cache.getAll(sourceIds, env);
         return Utils.joinCollectionAndMap(
                 sources,
@@ -431,7 +432,7 @@ public abstract class AbstractDataLoader {
                     Tuple2.toMap(tuples)
             );
         }
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, Object> idMap;
         if (remote) {
             idMap = Tuple2.toMap(querySourceTargetIdPairs(sourceIds));
@@ -460,7 +461,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, ImmutableSpi> loadTargetMapDirectly(Collection<ImmutableSpi> sources) {
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, ImmutableSpi> targetMap;
         if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMap(
@@ -510,7 +511,7 @@ public abstract class AbstractDataLoader {
                     Tuple2.toMultiMap(tuples)
             );
         }
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<Object>> idMultiMap;
         if (remote) {
             idMultiMap = Tuple2.toMultiMap(
@@ -549,7 +550,7 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<ImmutableSpi, List<ImmutableSpi>> loadTargetMultiMapDirectly(Collection<ImmutableSpi> sources) {
-        List<Object> sourceIds = toSourceIds(sources);
+        Set<Object> sourceIds = toSourceIds(sources);
         Map<Object, List<ImmutableSpi>> targetMap;
         if (globalFiler != null || propFilter != null || fetcher.getFieldMap().size() > 1) {
             targetMap = Tuple2.toMultiMap(
@@ -569,32 +570,32 @@ public abstract class AbstractDataLoader {
     }
 
     private Map<Object, Object> queryForeignKeyMap(Collection<Object> sourceIds) {
-        
+
         if (sourceIds.size() == 1) {
-            Object sourceId = sourceIds.iterator().next();
-            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, true, (q, source) -> {
-                Expression<Object> pkExpr = source.get(sourceIdProp.getName());
-                Table<?> targetTable = source.join(prop.getName());
-                Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
+            Object sourceId = CollectionUtils.first(sourceIds);
+            List<Object> targetIds = Queries.createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, source) -> {
+                Expression<Object> pkExpr = source.get(sourceIdProp);
+                Table<?> targetTable = source.join(prop);
+                Expression<Object> fkExpr = source.getAssociatedId(prop);
                 q.where(pkExpr.eq(sourceId));
                 q.where(fkExpr.isNotNull());
-                if (!applyPropFilter(q, targetTable, sourceIds) & !applyGlobalFilter(q, targetTable)) {
-                    applyDefaultOrder(q, targetTable);
-                }
+                applyPropFilter(q, targetTable, sourceIds);
+                applyGlobalFilter(q, targetTable);
+                applyDefaultOrder(q, targetTable);
                 return q.select(fkExpr);
             }).limit(limit, offset).execute(con);
             return Utils.toMap(sourceId, targetIds);
         }
         List<Tuple2<Object, Object>> tuples = Queries
-                .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, true, (q, source) -> {
-                    Expression<Object> pkExpr = source.get(sourceIdProp.getName());
-                    Table<?> targetTable = source.join(prop.getName());
-                    Expression<Object> fkExpr = targetTable.get(targetIdProp.getName());
+                .createQuery(sqlClient, prop.getDeclaringType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, source) -> {
+                    Expression<Object> pkExpr = source.get(sourceIdProp);
+                    Table<?> targetTable = source.join(prop);
+                    Expression<Object> fkExpr = source.getAssociatedId(prop);
                     q.where(pkExpr.in(sourceIds));
                     q.where(fkExpr.isNotNull());
-                    if (!applyPropFilter(q, targetTable, sourceIds) & !applyGlobalFilter(q, targetTable)) {
-                        applyDefaultOrder(q, targetTable);
-                    }
+                    applyPropFilter(q, targetTable, sourceIds);
+                    applyGlobalFilter(q, targetTable);
+                    applyDefaultOrder(q, targetTable);
                     return q.select(pkExpr, fkExpr);
                 }).execute(con);
         return Tuple2.toMap(tuples);
@@ -603,25 +604,25 @@ public abstract class AbstractDataLoader {
     private List<Tuple2<Object, Object>> querySourceTargetIdPairs(Collection<Object> sourceIds) {
         if (propFilter == null && prop.getReal().isMiddleTableDefinition()) {
             if (sourceIds.size() == 1) {
-                Object sourceId = sourceIds.iterator().next();
+                Object sourceId = CollectionUtils.first(sourceIds);
                 List<Object> targetIds = Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
-                    Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
-                    Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
+                    Expression<Object> sourceIdExpr = association.sourceId();
+                    Expression<Object> targetIdExpr = association.targetId();
                     q.where(sourceIdExpr.eq(sourceId));
-                    if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
-                        applyDefaultOrder(q, association.target());
-                    }
+                    applyPropFilter(q, association.target(), sourceIds);
+                    applyGlobalFilter(q, association.target());
+                    applyDefaultOrder(q, association.target());
                     return q.select(targetIdExpr);
                 }).limit(limit, offset).execute(con);
                 return Utils.toTuples(sourceId, targetIds);
             }
             return Queries.createAssociationQuery(sqlClient, AssociationType.of(prop), ExecutionPurpose.LOAD, (q, association) -> {
-                Expression<Object> sourceIdExpr = association.source(prop.getDeclaringType()).get(sourceIdProp.getName());
-                Expression<Object> targetIdExpr = association.target().get(targetIdProp.getName());
+                Expression<Object> sourceIdExpr = association.sourceId();
+                Expression<Object> targetIdExpr = association.targetId();
                 q.where(sourceIdExpr.in(sourceIds));
-                if (!applyPropFilter(q, association.target(), sourceIds) && !applyGlobalFilter(q, association.target())) {
-                    applyDefaultOrder(q, association.target());
-                }
+                applyPropFilter(q, association.target(), sourceIds);
+                applyGlobalFilter(q, association.target());
+                applyDefaultOrder(q, association.target());
                 return q.select(sourceIdExpr, targetIdExpr);
             }).execute(con);
         }
@@ -638,12 +639,12 @@ public abstract class AbstractDataLoader {
     @SuppressWarnings("unchecked")
     private List<ImmutableSpi> queryTargets(Collection<Object> targetIds) {
 
-        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, true, (q, target) -> {
+        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
             Expression<Object> idExpr = target.get(targetIdProp.getName());
             q.where(idExpr.in(targetIds));
-            if (!applyPropFilter(q, target, targetIds) & !applyGlobalFilter(q, target)) {
-                applyDefaultOrder(q, target);
-            }
+            applyPropFilter(q, target, targetIds);
+            applyGlobalFilter(q, target);
+            applyDefaultOrder(q, target);
             return q.select(
                     ((Table<ImmutableSpi>)target).fetch(fetcher)
             );
@@ -656,56 +657,46 @@ public abstract class AbstractDataLoader {
             Function<Table<ImmutableSpi>, Selection<?>> valueExpressionGetter
     ) {
         if (sourceIds.size() == 1) {
-            Object sourceId = sourceIds.iterator().next();
-            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, true, (q, target) -> {
-                Expression<Object> sourceIdExpr = target
-                        .inverseJoin(prop)
-                        .get(sourceIdProp.getName());
+            Object sourceId = CollectionUtils.first(sourceIds);
+            List<R> results = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
+                Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);
                 q.where(sourceIdExpr.eq(sourceId));
-                if (!applyPropFilter(q, target, sourceIds) & !applyGlobalFilter(q, target) ) {
-                    applyDefaultOrder(q, target);
-                }
+                applyPropFilter(q, target, sourceIds);
+                applyGlobalFilter(q, target);
+                applyDefaultOrder(q, target);
                 return q.select((Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
             }).limit(limit, offset).execute(con);
             return Utils.toTuples(sourceId, results);
         }
-        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, true, (q, target) -> {
-            Expression<Object> sourceIdExpr = target
-                    .inverseJoin(prop)
-                    .get(sourceIdProp.getName());
+        return Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
+            Expression<Object> sourceIdExpr = target.inverseGetAssociatedId(prop);
             q.where(sourceIdExpr.in(sourceIds));
-            if (!applyPropFilter(q, target, sourceIds) & !applyGlobalFilter(q, target)) {
-                applyDefaultOrder(q, target);
-            }
+            applyPropFilter(q, target, sourceIds);
+            applyGlobalFilter(q, target);
+            applyDefaultOrder(q, target);
             return q.select(sourceIdExpr, (Selection<R>) valueExpressionGetter.apply((Table<ImmutableSpi>) target));
         }).execute(con);
     }
 
-    private boolean applyGlobalFilter(Sortable sortable, Table<?> table) {
-        if (remote) {
-            return false;
+    private void applyGlobalFilter(Sortable sortable, Table<?> table) {
+        AbstractMutableQueryImpl query = (AbstractMutableQueryImpl) sortable;
+        query.setOrderByPriority(AbstractMutableQueryImpl.ORDER_BY_PRIORITY_GLOBAL_FILTER);
+        TableImplementor<?> tableImplementor = null;
+        if (table instanceof TableImplementor<?>) {
+            tableImplementor = (TableImplementor<?>) table;
+        } else if (table instanceof TableProxy<?>) {
+            tableImplementor = ((TableProxy<?>) table).__unwrap();
         }
-        SortableImplementor sortableImplementor = (SortableImplementor)sortable;
-        Filter<Props> globalFiler = this.globalFiler;
-        if (globalFiler instanceof CacheableFilter<?>) {
-            sortableImplementor.disableSubQuery();
-            try {
-                FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, true);
-                globalFiler.filter(args);
-                return args.isSorted();
-            } finally {
-                sortableImplementor.enableSubQuery();
-            }
-        } else if (globalFiler != null) {
-            FilterArgsImpl<Props> args = new FilterArgsImpl<>(sortableImplementor, table, false);
-            globalFiler.filter(args);
-            return args.isSorted();
+        if (tableImplementor == null) {
+            throw new AssertionError(
+                    "The table create by data loader must be table implementation or table wrapper"
+            );
         }
-        return false;
+        query.applyDataLoaderGlobalFilters(tableImplementor);
     }
 
     @SuppressWarnings("unchecked")
-    private boolean applyPropFilter(
+    private void applyPropFilter(
             MutableQuery query,
             Table<?> table,
             Collection<Object> keys
@@ -716,16 +707,20 @@ public abstract class AbstractDataLoader {
                     (Table<ImmutableSpi>) table,
                     keys
             );
+            ((AbstractMutableQueryImpl)query)
+                    .setOrderByPriority(AbstractMutableQueryImpl.ORDER_BY_PRIORITY_PROP_FILTER);
             propFilter.apply(args);
-            return args.isSorted();
         }
-        return false;
     }
 
     private void applyDefaultOrder(
             MutableQuery query,
             Table<?> table
     ) {
+        if (((AbstractMutableQueryImpl)query).getAcceptedOrderByPriority() >
+                AbstractMutableQueryImpl.ORDER_BY_PRIORITY_STATEMENT) {
+            return;
+        }
         List<OrderedItem> orderedItems = prop.getOrderedItems();
         if (!orderedItems.isEmpty() && !remote) {
             for (OrderedItem orderedItem : orderedItems) {
@@ -743,11 +738,12 @@ public abstract class AbstractDataLoader {
         return source.__get(sourceIdProp.getId());
     }
 
-    private List<Object> toSourceIds(Collection<ImmutableSpi> sources) {
-        return sources
-                .stream()
-                .map(this::toSourceId)
-                .collect(Collectors.toList());
+    private Set<Object> toSourceIds(Collection<ImmutableSpi> sources) {
+        Set<Object> sourceIds = new LinkedHashSet<>((sources.size() * 4 + 2) / 3);
+        for (ImmutableSpi source : sources) {
+            sourceIds.add(toSourceId(source));
+        }
+        return sourceIds;
     }
 
     private Object toTargetId(ImmutableSpi target) {
@@ -810,7 +806,7 @@ public abstract class AbstractDataLoader {
         Filter<?> filter = globalFiler;
         if (filter instanceof CacheableFilter<?>) {
             SortedMap<String, Object> parameters = ((CacheableFilter<?>) filter).getParameters();
-            if (parameters != null && parameters.isEmpty()) {
+            if (parameters.isEmpty()) {
                 return null;
             }
             return parameters;
@@ -895,7 +891,7 @@ public abstract class AbstractDataLoader {
         if (noFilter) {
             targets = findTargets(targetIds);
         } else {
-            targets = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, true, (q, target) -> {
+            targets = Queries.createQuery(sqlClient, prop.getTargetType(), ExecutionPurpose.LOAD, FilterLevel.IGNORE_ALL, (q, target) -> {
                 Expression<Object> pkExpr = target.get(targetIdProp.getName());
                 q.where(pkExpr.in(targetIds));
                 applyPropFilter(q, target, map.keySet());
@@ -962,14 +958,32 @@ public abstract class AbstractDataLoader {
     }
 
     private boolean isUnreliableParentId() {
-        return !remote && (globalFiler != null || propFilter != null || !((ColumnDefinition)storage).isForeignKey());
+        return !remote && (
+                (!rawValue && (globalFiler != null || propFilter != null)) || !((ColumnDefinition)storage).isForeignKey()
+        );
     }
 
-    public static Connection transientResolverConnection() {
-        Connection con = TRANSIENT_RESOLVER_CON_LOCAL.get();
-        if (con == null) {
-            throw new IllegalStateException("The current thread is not resolving any transient property");
+    private static SortedMap<String, Object> standardResolveParameters(SortedMap<String, Object> parameters) {
+        if (parameters == null || parameters.isEmpty()) {
+            return parameters;
         }
-        return con;
+        boolean hasNullValue = false;
+        for (Object o : parameters.values()) {
+            if (o == null) {
+                hasNullValue = true;
+                break;
+            }
+        }
+        if (!hasNullValue) {
+            return parameters;
+        }
+        SortedMap<String, Object> withoutNullValueMap = new TreeMap<>();
+        for (Map.Entry<String, Object> e : parameters.entrySet()) {
+            Object value = e.getValue();
+            if (value != null) {
+                withoutNullValueMap.put(e.getKey(), value);
+            }
+        }
+        return withoutNullValueMap;
     }
 }

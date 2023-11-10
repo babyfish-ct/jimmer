@@ -10,11 +10,12 @@ import java.util.*
 
 fun <K, V> createParameterizedCache(
     prop: ImmutableProp? = null,
-    onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null
+    onDelete: ((ImmutableProp, Collection<K>) -> Unit)? = null,
+    valueMap: MutableMap<K, MutableMap<SortedMap<String, Any>, V>>? = null
 ): Cache.Parameterized<K, V> =
     ChainCacheBuilder<K, V>()
         .add(LevelOneParameterizedBinder())
-        .add(LevelTwoParameterizedBinder(prop, onDelete))
+        .add(LevelTwoParameterizedBinder(prop, onDelete, valueMap))
         .build() as Cache.Parameterized<K, V>
 
 @Suppress("UNCHECKED_CAST")
@@ -87,10 +88,11 @@ private class LevelOneParameterizedBinder<K, V> : KLoadingBinder.Parameterized<K
 
 private class LevelTwoParameterizedBinder<K, V>(
     private val prop: ImmutableProp?,
-    private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)?
+    private val onDelete: ((ImmutableProp, Collection<K>) -> Unit)?,
+    valueMap: MutableMap<K, MutableMap<SortedMap<String, Any>, V>>?
 ) : KSimpleBinder.Parameterized<K, V> {
 
-    private val valueMap = mutableMapOf<K, MutableMap<SortedMap<String, Any>, V>>()
+    private val valueMap = valueMap ?: mutableMapOf<K, MutableMap<SortedMap<String, Any>, V>>()
 
     override fun getAll(
         keys: Collection<K>,

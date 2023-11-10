@@ -1,0 +1,23 @@
+export org.babyfish.jimmer.sql.model.TreeNode
+
+RecursiveTree {
+    name
+    childNodes {
+        name
+    }* // '*' means recursive
+}
+
+input TreeNodeInput {
+    #allScalars
+    id!
+    id(parent)
+}
+
+FlatTreeNode {
+    #allScalars
+    flat(parent) {
+        as(^ -> parent) {
+            #allScalars
+        }
+    }
+}

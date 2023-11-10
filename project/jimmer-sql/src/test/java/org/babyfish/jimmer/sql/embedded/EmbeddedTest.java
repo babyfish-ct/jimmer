@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.embedded;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.embedded.*;
 import org.junit.jupiter.api.Test;
@@ -298,7 +299,7 @@ public class EmbeddedTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(orderItem)
-                        .where(orderItem.order().isNull())
+                        .where(orderItem.order(JoinType.LEFT).isNull())
                         .select(orderItem),
                 ctx -> {
                     ctx.sql(
@@ -318,7 +319,7 @@ public class EmbeddedTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(orderItem)
-                        .where(orderItem.order().id().x().isNull())
+                        .where(orderItem.order(JoinType.LEFT).id().x().isNull())
                         .select(orderItem),
                 ctx -> {
                     ctx.sql(

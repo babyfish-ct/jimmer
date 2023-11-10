@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.association.Association
 import org.babyfish.jimmer.sql.association.meta.AssociationType
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl
 import org.babyfish.jimmer.sql.ast.table.AssociationTable
 import org.babyfish.jimmer.sql.ast.table.Table
@@ -30,7 +31,7 @@ internal class KQueriesImpl(
             sqlClient,
             ImmutableType.get(entityType.java),
             ExecutionPurpose.QUERY,
-            false
+            FilterLevel.DEFAULT
         )
         return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<E>>
@@ -62,7 +63,7 @@ internal class KQueriesImpl(
                 sqlClient,
                 associationType,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
             )
         return KMutableRootQueryImpl(
             query as MutableRootQueryImpl<Table<Association<S, T>>>

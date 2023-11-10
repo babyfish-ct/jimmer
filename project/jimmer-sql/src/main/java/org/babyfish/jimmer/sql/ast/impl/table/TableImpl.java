@@ -1,15 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
-import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.query.Example;
@@ -17,12 +14,12 @@ import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.WeakJoin;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
+import org.babyfish.jimmer.sql.filter.Filter;
+import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.meta.*;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.NumericExpression;
-import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 import org.jetbrains.annotations.NotNull;
@@ -45,9 +42,11 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     private JoinType joinType;
 
+    private JoinType currentJoinType;
+
     private final String alias;
 
-    private String middleTableAlias;
+    private final String middleTableAlias;
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -78,13 +77,18 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         this.joinProp = joinProp;
         this.weakJoinHandle = weakJoinHandle;
         this.joinType = joinType;
+        this.currentJoinType = joinType;
 
         if (joinProp != null) {
             if (joinProp.isMiddleTableDefinition()) {
                 middleTableAlias = statement.getContext().allocateTableAlias();
             } else if (joinProp.getSqlTemplate() == null && !joinProp.hasStorage()) {
                 throw new AssertionError("Internal bug: Join property has not storage");
+            } else {
+                middleTableAlias = null;
             }
+        } else {
+            middleTableAlias = null;
         }
         alias = statement.getContext().allocateTableAlias();
     }
@@ -94,6 +98,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         return immutableType;
     }
 
+    @Override
     public AbstractMutableStatementImpl getStatement() {
         return statement;
     }
@@ -114,13 +119,45 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     }
 
     @Override
+    public boolean isRawIdAllowed(JSqlClientImplementor sqlClient) {
+        ImmutableProp prop = joinProp;
+        if (prop == null) {
+            return false;
+        }
+        if (isInverse) {
+            prop = prop.getOpposite();
+            if (prop == null) {
+                return false;
+            }
+        }
+        if (prop.isRemote()) {
+            return true;
+        }
+        if (!prop.isTargetForeignKeyReal(sqlClient.getMetadataStrategy())) {
+            return false;
+        }
+        Filter<?> filter = sqlClient.getFilters().getFilter(prop.getTargetType());
+        return filter == null || filter instanceof LogicalDeletedFilterProvider.IgnoredFilter;
+    }
+
+    @Override
     public ImmutableProp getJoinProp() {
         return joinProp;
     }
 
     @Override
+    public WeakJoinHandle getWeakJoinHandle() {
+        return weakJoinHandle;
+    }
+
+    @Override
     public JoinType getJoinType() {
         return joinType;
+    }
+
+    @Override
+    public JoinType getCurrentJoinType() {
+        return currentJoinType;
     }
 
     @Override
@@ -133,8 +170,8 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         if (other.getImmutableType() != immutableType) {
             throw new IllegalArgumentException("Cannot compare tables of different types");
         }
-        String idPropName = immutableType.getIdProp().getName();
-        return this.<Expression<Object>>get(idPropName).eq(other.get(idPropName));
+        ImmutableProp idProp = immutableType.getIdProp();
+        return this.get(idProp).eq(other.get(idProp));
     }
 
     @Override
@@ -179,63 +216,120 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @SuppressWarnings("unchecked")
     @Override
-    public <XE extends Expression<?>> XE get(String prop) {
-        if (isRemote() && !immutableType.getIdProp().getName().equals(prop)) {
+    public <X> PropExpression<X> get(String prop) {
+        return get(immutableType.getProp(prop));
+    }
+
+    @Override
+    public <X> PropExpression<X> get(ImmutableProp prop) {
+        return get(prop, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <X> PropExpression<X> get(ImmutableProp prop, boolean rawId) {
+        if (isRemote() && immutableType.getIdProp() != prop) {
             throw new IllegalArgumentException(
                     "The current table is remote so that only the id property \"" +
                             immutableType.getIdProp() +
                             "\" can be accessed"
             );
         }
-        ImmutableProp immutableProp = immutableType.getProp(prop);
-        ImmutableProp idViewBaseProp = immutableProp.getIdViewBaseProp();
-        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
-            return join(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
-                    .get(idViewBaseProp.getTargetType().getIdProp().getName());
+        if (prop.getDeclaringType() != immutableType) {
+            if (!prop.getDeclaringType().isAssignableFrom(immutableType)) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" does not belong to the current type \"" +
+                                immutableType +
+                                "\""
+                );
+            }
+            prop = immutableType.getProp(prop.getName());
         }
-        return (XE) PropExpressionImpl.of(this, immutableProp);
+        ImmutableProp idViewBaseProp = prop.getIdViewBaseProp();
+        if (idViewBaseProp != null && idViewBaseProp.isReference(TargetLevel.ENTITY)) {
+            return joinImplementor(idViewBaseProp.getName(), idViewBaseProp.isNullable() ? JoinType.LEFT : JoinType.INNER)
+                    .get(idViewBaseProp.getTargetType().getIdProp(), true);
+        }
+        return (PropExpression<X>) PropExpressionImpl.of(this, prop, rawId);
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public <X> PropExpression<X> getId() {
+        return get(immutableType.getIdProp());
+    }
+
+    @Override
+    public <X> PropExpression<X> getAssociatedId(String prop) {
+        ImmutableProp immutableProp = immutableType.getProp(prop);
+        return getAssociatedId(immutableProp);
+    }
+
+    @Override
+    public <X> PropExpression<X> getAssociatedId(ImmutableProp prop) {
+        TableImplementor<?> joinedTable = joinImplementor(prop, prop.isNullable() ? JoinType.LEFT : JoinType.INNER);
+        return joinedTable.get(joinedTable.getImmutableType().getIdProp(), true);
+    }
+
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop) {
+        return TableProxies.wrap(joinImplementor(prop));
+    }
+
     @Override
     public <XT extends Table<?>> XT join(String prop) {
-        return (XT) TableProxies.wrap(joinImplementor(prop));
+        return TableProxies.wrap(joinImplementor(prop));
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType) {
+        return TableProxies.wrap(joinImplementor(prop, joinType));
+    }
+
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType) {
-        return (XT) TableProxies.wrap(joinImplementor(prop, joinType));
+        return TableProxies.wrap(joinImplementor(prop, joinType));
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> XT join(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
+        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs));
+    }
+
     @Override
     public <XT extends Table<?>> XT join(String prop, JoinType joinType, ImmutableType treatedAs) {
-        return (XT) TableProxies.wrap(joinImplementor(prop, joinType, treatedAs));
+        return TableProxies.wrap(joinImplementor(prop, joinType, treatedAs));
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public <X> PropExpression<X> inverseGetAssociatedId(ImmutableProp prop) {
+        ImmutableProp oppositeProp = prop.getOpposite();
+        TableImplementor<?> joinedTable = inverseJoinImplementor(
+                prop,
+                oppositeProp != null && oppositeProp.isNullable() ? JoinType.LEFT : JoinType.INNER
+        );
+        return joinedTable.get(joinedTable.getImmutableType().getIdProp(), true);
+    }
+
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop) {
-        return (XT) TableProxies.wrap(inverseJoinImplementor(prop));
+        return TableProxies.wrap(inverseJoinImplementor(prop));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT inverseJoin(ImmutableProp prop, JoinType joinType) {
-        return (XT) TableProxies.wrap(inverseJoinImplementor(prop, joinType));
+        return TableProxies.wrap(inverseJoinImplementor(prop, joinType));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop) {
-        return (XT) TableProxies.wrap(inverseJoinImplementor(prop));
+        return TableProxies.wrap(inverseJoinImplementor(prop));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <XT extends Table<?>> XT inverseJoin(TypedProp.Association<?, ?> prop, JoinType joinType) {
-        return (XT) TableProxies.wrap(inverseJoinImplementor(prop, joinType));
+        return TableProxies.wrap(inverseJoinImplementor(prop, joinType));
     }
 
     @Override
@@ -257,35 +351,61 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop) {
-        return joinImplementor(prop, JoinType.INNER);
+        return joinImplementor(immutableType.getProp(prop), JoinType.INNER, null);
+    }
+
+    @Override
+    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop) {
+        return joinImplementor(prop, JoinType.INNER, null);
     }
 
     @Override
     public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType) {
+        return joinImplementor(immutableType.getProp(prop), joinType, null);
+    }
+
+    @Override
+    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType) {
         return joinImplementor(prop, joinType, null);
+    }
+
+    @Override
+    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs) {
+        return joinImplementor(immutableType.getProp(prop), joinType, treatedAs);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <X> TableImplementor<X> joinImplementor(String prop, JoinType joinType, ImmutableType treatedAs) {
-        ImmutableProp immutableProp = immutableType.getProp(prop);
-        ImmutableProp manyToManyViewProp = immutableProp.getManyToManyViewBaseProp();
+    public <X> TableImplementor<X> joinImplementor(ImmutableProp prop, JoinType joinType, ImmutableType treatedAs) {
+        if (prop.getDeclaringType() != immutableType) {
+            if (!prop.getDeclaringType().isAssignableFrom(immutableType)) {
+                throw new IllegalArgumentException(
+                        "The property \"" +
+                                prop +
+                                "\" does not belong to the current type \"" +
+                                immutableType +
+                                "\""
+                );
+            }
+            prop = immutableType.getProp(prop.getName());
+        }
+        ImmutableProp manyToManyViewProp = prop.getManyToManyViewBaseProp();
         if (manyToManyViewProp != null) {
             return (TableImplementor<X>) ((TableImpl<?>)join0(false, manyToManyViewProp, joinType))
-                    .join0(false, immutableProp.getManyToManyViewBaseDeeperProp(), joinType);
+                    .join0(false, prop.getManyToManyViewBaseDeeperProp(), joinType);
         }
-        if (!immutableProp.isAssociation(TargetLevel.ENTITY)) {
+        if (!prop.isAssociation(TargetLevel.ENTITY)) {
             if (isRemote()) {
                 throw new IllegalStateException(
                         "The current table is remote so that join is not supported"
                 );
             }
-            if (immutableProp.isTransient()) {
+            if (prop.isTransient()) {
                 throw new IllegalArgumentException(
                         "\"" + prop + "\" cannot be transient"
                 );
             }
-            if (immutableProp.isRemote() && immutableProp.getMappedBy() != null) {
+            if (prop.isRemote() && prop.getMappedBy() != null) {
                 throw new IllegalArgumentException(
                         "\"" + prop + "\" cannot be remote and reversed(with `mappedBy`)"
                 );
@@ -298,7 +418,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                             "\""
             );
         }
-        return (TableImplementor<X>) join0(false, immutableProp, joinType);
+        return (TableImplementor<X>) join0(false, prop, joinType);
     }
 
     @Override
@@ -380,6 +500,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (existing.joinType != joinType) {
                 existing.joinType = JoinType.INNER;
             }
+            existing.currentJoinType = joinType;
             return existing;
         }
         TableImpl<?> newTable = new TableImpl<>(
@@ -409,6 +530,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             if (existing.joinType != joinType) {
                 existing.joinType = JoinType.INNER;
             }
+            existing.currentJoinType = joinType;
             return existing;
         };
         TableImpl<X> newTable = new TableImpl<>(
@@ -467,7 +589,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        visitor.visitTableReference(this, null);
+        visitor.visitTableReference(this, null, false);
     }
 
     @Override
@@ -744,13 +866,15 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
     @Override
     public void renderSelection(
             ImmutableProp prop,
+            boolean rawId,
             SqlBuilder builder,
             ColumnDefinition optionalDefinition,
             boolean withPrefix,
             Function<Integer, String> asBlock
     ) {
         MetadataStrategy strategy = builder.getAstContext().getSqlClient().getMetadataStrategy();
-        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate)) {
+        if (prop.isId() && joinProp != null && !(joinProp.getSqlTemplate() instanceof JoinTemplate) &&
+                (rawId || isRawIdAllowed(builder.getAstContext().getSqlClient()))) {
             MiddleTable middleTable;
             if (joinProp.isMiddleTableDefinition()) {
                 middleTable = joinProp.getStorage(strategy);

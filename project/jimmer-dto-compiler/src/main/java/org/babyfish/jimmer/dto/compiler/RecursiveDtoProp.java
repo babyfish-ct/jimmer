@@ -4,9 +4,7 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoProp<T, P> {
 
@@ -28,6 +26,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public Map<String, P> getBasePropMap() {
+        return Collections.singletonMap(baseProp.getName(), baseProp);
+    }
+
+    @Override
     public String getBasePath() {
         return baseProp.getName();
     }
@@ -45,6 +48,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     @Override
     public boolean isNullable() {
         return true;
+    }
+
+    @Override
+    public boolean isBaseNullable() {
+        return baseProp.isNullable();
     }
 
     @Override
@@ -97,6 +105,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     @Override
     public boolean isNewTarget() {
         return false;
+    }
+
+    @Override
+    public Set<LikeOption> getLikeOptions() {
+        return Collections.emptySet();
     }
 
     @Override

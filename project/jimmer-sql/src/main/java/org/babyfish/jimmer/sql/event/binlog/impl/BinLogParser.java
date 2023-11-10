@@ -78,7 +78,7 @@ public class BinLogParser {
             return null;
         }
         try {
-            return mapper.readValue(json, type);
+            return mapper().readValue(json, type);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("Illegal json: " + json, ex);
         }
@@ -215,7 +215,7 @@ public class BinLogParser {
         }
         JsonNode data;
         try {
-            data = mapper.readTree(json);
+            data = mapper().readTree(json);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("Illegal json: " + json, ex);
         }
@@ -270,5 +270,16 @@ public class BinLogParser {
             return reader;
         }
         return typeReaderMap.get(prop.getElementClass());
+    }
+
+    private ObjectMapper mapper() {
+        ObjectMapper mapper = this.mapper;
+        if (mapper == null) {
+            throw new IllegalStateException(
+                    "The binlog is not ready because the initialization of sqlClient is 'MANUAL' " +
+                            "but the sqlClient is not initialized"
+            );
+        }
+        return mapper;
     }
 }

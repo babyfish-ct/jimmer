@@ -6,25 +6,26 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.sql.association.meta.AssociationProp;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableDeleteImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.MutableUpdateImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.query.MutableSubQuery;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.cache.*;
+import org.babyfish.jimmer.sql.di.*;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.event.TriggersImpl;
+import org.babyfish.jimmer.sql.event.impl.TriggersImpl;
 import org.babyfish.jimmer.sql.event.binlog.BinLog;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogImpl;
 import org.babyfish.jimmer.sql.event.binlog.impl.BinLogParser;
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader;
-import org.babyfish.jimmer.sql.filter.BuiltInFilters;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.filter.FilterConfig;
 import org.babyfish.jimmer.sql.filter.Filters;
-import org.babyfish.jimmer.sql.filter.impl.BuiltinFiltersImpl;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
+import org.babyfish.jimmer.sql.filter.impl.LogicalDeletedFilterProvider;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.loader.graphql.impl.LoadersImpl;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
@@ -45,6 +46,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 class JSqlClientImpl implements JSqlClientImplementor {
@@ -77,19 +81,21 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final Caches caches;
 
-    private final Triggers triggers;
+    private final TriggersImpl triggers;
 
-    private final Triggers transactionTriggers;
+    private final TriggersImpl transactionTriggers;
 
     private final MetadataStrategy metadataStrategy;
 
     private final BinLog binLog;
 
-    private final StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider;
+    private final UserIdGeneratorProvider userIdGeneratorProvider;
 
     private final TransientResolverManager transientResolverManager;
 
     private final FilterManager filterManager;
+
+    private final boolean defaultDissociationActionCheckable;
 
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
@@ -104,6 +110,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
     private final Loaders loaders = new LoadersImpl(this);
 
     private final ReaderManager readerManager = new ReaderManager(this);
+
+    private final ReadWriteLock initializationLock = new ReentrantReadWriteLock();
+
+    private SqlClientInitializer sqlClientInitializer;
 
     private JSqlClientImpl(
             ConnectionManager connectionManager,
@@ -120,18 +130,20 @@ class JSqlClientImpl implements JSqlClientImplementor {
             EntitiesImpl entities,
             EntityManager entityManager,
             Caches caches,
-            Triggers triggers,
-            Triggers transactionTriggers,
+            TriggersImpl triggers,
+            TriggersImpl transactionTriggers,
             MetadataStrategy metadataStrategy,
             BinLog binLog,
             FilterManager filterManager,
-            StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider,
+            UserIdGeneratorProvider userIdGeneratorProvider,
             TransientResolverManager transientResolverManager,
+            boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             boolean saveCommandPessimisticLock,
             DraftHandlerManager draftHandlerManager,
             String microServiceName,
-            MicroServiceExchange microServiceExchange
+            MicroServiceExchange microServiceExchange,
+            SqlClientInitializer sqlClientInitializer
     ) {
         this.connectionManager =
                 connectionManager != null ?
@@ -169,11 +181,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 userIdGeneratorProvider :
                 new DefaultUserIdGeneratorProvider();
         this.transientResolverManager = transientResolverManager;
+        this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
         this.saveCommandPessimisticLock = saveCommandPessimisticLock;
         this.draftHandlerManager = draftHandlerManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
+        this.sqlClientInitializer = sqlClientInitializer;
     }
 
     @Override
@@ -240,6 +254,11 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public <T extends SqlContext> T unwrap() {
+        return null;
+    }
+
+    @Override
     public UserIdGenerator<?> getUserIdGenerator(String ref) throws Exception {
         return userIdGeneratorProvider.get(ref, this);
     }
@@ -273,7 +292,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 this,
                 table,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
         );
     }
 
@@ -299,7 +318,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 this,
                 (TableProxy<?>) table,
                 ExecutionPurpose.QUERY,
-                false
+                FilterLevel.DEFAULT
         );
     }
 
@@ -428,11 +447,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 filterManager,
                 userIdGeneratorProvider,
                 transientResolverManager,
+                defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
                 draftHandlerManager,
                 microServiceName,
-                microServiceExchange
+                microServiceExchange,
+                sqlClientInitializer
         );
     }
 
@@ -468,11 +489,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 cfg.getFilterManager(),
                 userIdGeneratorProvider,
                 transientResolverManager,
+                defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
                 draftHandlerManager,
                 microServiceName,
-                microServiceExchange
+                microServiceExchange,
+                sqlClientInitializer
         );
     }
 
@@ -503,11 +526,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 filterManager,
                 userIdGeneratorProvider,
                 transientResolverManager,
+                defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
                 draftHandlerManager,
                 microServiceName,
-                microServiceExchange
+                microServiceExchange,
+                sqlClientInitializer
         );
     }
 
@@ -517,18 +542,23 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
-    public StrategyProvider<UserIdGenerator<?>> getUserIdGeneratorProvider() {
+    public UserIdGeneratorProvider getUserIdGeneratorProvider() {
         return userIdGeneratorProvider;
     }
 
     @Override
     public StrategyProvider<TransientResolver<?, ?>> getTransientResolverProvider() {
-        return transientResolverManager.getProvider();
+        return transientResolverManager.getTransientResolverProvider();
     }
 
     @Override
     public Filters getFilters() {
         return filterManager;
+    }
+
+    @Override
+    public boolean isDefaultDissociationActionCheckable() {
+        return defaultDissociationActionCheckable;
     }
 
     @Override
@@ -566,6 +596,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
         return microServiceExchange;
     }
 
+    @Override
+    public void initialize() {
+        if (sqlClientInitializer != null) {
+            sqlClientInitializer.initialize();
+        }
+    }
+
     public static class BuilderImpl implements JSqlClient.Builder {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(BuilderImpl.class);
@@ -582,7 +619,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
 
-        private StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider;
+        private UserIdGeneratorProvider userIdGeneratorProvider;
 
         private TransientResolverProvider transientResolverProvider;
 
@@ -614,15 +651,17 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private TriggerType triggerType = TriggerType.BINLOG_ONLY;
 
-        private Triggers triggers;
+        private TriggersImpl triggers;
 
-        private Triggers transactionTriggers;
+        private TriggersImpl transactionTriggers;
+
+        private LogicalDeletedBehavior logicalDeletedBehavior = LogicalDeletedBehavior.DEFAULT;
 
         private final List<Filter<?>> filters = new ArrayList<>();
 
         private final Set<Filter<?>> disabledFilters = new HashSet<>();
 
-        private boolean ignoreBuiltInFilters = false;
+        private boolean defaultDissociationActionCheckable = true;
 
         private IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel =
                 IdOnlyTargetCheckingLevel.NONE;
@@ -649,9 +688,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private String databaseValidationSchema;
 
+        private AopProxyProvider aopProxyProvider;
+
         private String microServiceName = "";
 
         private MicroServiceExchange microServiceExchange;
+
+        private InitializationType initializationType = InitializationType.IMMEDIATE;
 
         public BuilderImpl() {}
 
@@ -711,7 +754,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder setUserIdGeneratorProvider(StrategyProvider<UserIdGenerator<?>> userIdGeneratorProvider) {
+        public Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider) {
             this.userIdGeneratorProvider = userIdGeneratorProvider;
             return this;
         }
@@ -968,6 +1011,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setLogicalDeletedBehavior(LogicalDeletedBehavior behavior) {
+            this.logicalDeletedBehavior = behavior != null ? behavior : LogicalDeletedBehavior.DEFAULT;
+            return this;
+        }
+
+        @Override
         public Builder addFilters(Filter<?>... filters) {
             return addFilters(Arrays.asList(filters));
         }
@@ -976,6 +1025,9 @@ class JSqlClientImpl implements JSqlClientImplementor {
         public Builder addFilters(Collection<? extends Filter<?>> filters) {
             for (Filter<?> filter : filters) {
                 if (filter != null) {
+                    if (filter instanceof FilterManager.Exported) {
+                        throw new IllegalArgumentException("Cannot add filter which is exported by filter manager");
+                    }
                     this.filters.add(filter);
                 }
             }
@@ -999,8 +1051,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder ignoreBuiltInFilters() {
-            ignoreBuiltInFilters = true;
+        public Builder setDefaultDissociateActionCheckable(boolean checkable) {
+            defaultDissociationActionCheckable = checkable;
             return this;
         }
 
@@ -1167,6 +1219,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setAopProxyProvider(AopProxyProvider provider) {
+            this.aopProxyProvider = aopProxyProvider;
+            return this;
+        }
+
+        @Override
         public Builder setMicroServiceName(String microServiceName) {
             this.microServiceName = microServiceName != null ? microServiceName : "";
             return this;
@@ -1179,7 +1237,18 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        public Builder setInitializationType(InitializationType type) {
+            this.initializationType = type != null ? type : InitializationType.IMMEDIATE;
+            return this;
+        }
+
+        @Override
         public JSqlClient build() {
+            if (!microServiceName.isEmpty() && microServiceExchange == null) {
+                throw new IllegalStateException(
+                        "The `microServiceExchange` must be configured when `microServiceName` is configured"
+                );
+            }
             for (Customizer customizer : customizers) {
                 try {
                     customizer.customize(this);
@@ -1189,11 +1258,6 @@ class JSqlClientImpl implements JSqlClientImplementor {
                             ex
                     );
                 }
-            }
-            if (!microServiceName.isEmpty() && microServiceExchange == null) {
-                throw new IllegalStateException(
-                        "The `microServiceExchange` must be configured when `microServiceName` is configured"
-                );
             }
             ForeignKeyStrategy foreignKeyStrategy;
             if (!dialect.isForeignKeySupported()) {
@@ -1231,8 +1295,13 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     new TransientResolverManager(
                             transientResolverProvider != null ?
                                     transientResolverProvider :
-                                    DefaultTransientResolverProvider.INSTANCE
+                                    DefaultTransientResolverProvider.INSTANCE,
+                            aopProxyProvider
                     );
+            SqlClientInitializer sqlClientInitializer = null;
+            if (initializationType == InitializationType.MANUAL) {
+                sqlClientInitializer = new SqlClientInitializer();
+            }
             JSqlClientImplementor sqlClient = new JSqlClientImpl(
                     connectionManager,
                     slaveConnectionManager,
@@ -1262,27 +1331,40 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     filterManager,
                     userIdGeneratorProvider,
                     transientResolverManager,
+                    defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,
                     saveCommandPessimisticLock,
                     new DraftHandlerManager(handlers),
                     microServiceName,
-                    microServiceExchange
+                    microServiceExchange,
+                    sqlClientInitializer
             );
-            CachesImpl.initialize(caches, sqlClient);
-            filterManager.initialize(sqlClient);
-            binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
-            transientResolverManager.initialize(sqlClient);
-            for (Initializer initializer : initializers) {
-                try {
-                    initializer.initialize(sqlClient);
-                } catch (Exception ex) {
-                    throw new ExecutionException(
-                            "Failed to execute initializer after create sql client",
-                            ex
-                    );
+            Runnable initializationAction = () -> {
+                CachesImpl.initialize(caches, sqlClient);
+                filterManager.initialize(sqlClient);
+                binLogParser.initialize(sqlClient, binLogObjectMapper, binLogPropReaderMap, typeBinLogPropReaderMap);
+                transientResolverManager.initialize(sqlClient);
+                triggers.initialize(sqlClient);
+                if (transactionTriggers != null && transactionTriggers != triggers) {
+                    transactionTriggers.initialize(sqlClient);
                 }
+                for (Initializer initializer : initializers) {
+                    try {
+                        initializer.initialize(sqlClient);
+                    } catch (Exception ex) {
+                        throw new ExecutionException(
+                                "Failed to execute initializer after create sql client",
+                                ex
+                        );
+                    }
+                }
+                validateDatabase(metadataStrategy);
+            };
+            if (sqlClientInitializer != null) {
+                sqlClientInitializer.setAction(initializationAction);
+            } else {
+                initializationAction.run();
             }
-            validateDatabase(metadataStrategy);
             return sqlClient;
         }
 
@@ -1304,24 +1386,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         private FilterManager createFilterManager() {
-            BuiltInFilters builtInFilters = new BuiltinFiltersImpl();
-            if (ignoreBuiltInFilters) {
-                return new FilterManager(builtInFilters, filters, disabledFilters);
-            }
-            List<Filter<?>> mergedFilters = new ArrayList<>(filters);
-            List<Filter<?>> mergedDisabledFilters = new ArrayList<>(disabledFilters);
-            for (ImmutableType type : entityManager().getAllTypes(microServiceName)) {
-                Filter<?> notDeletedFilter = builtInFilters.getDeclaredNotDeletedFilter(type);
-                Filter<?> alreadyDeletedFilter = builtInFilters.getDeclaredAlreadyDeletedFilter(type);
-                if (notDeletedFilter != null) {
-                    mergedFilters.add(notDeletedFilter);
-                }
-                if (alreadyDeletedFilter != null) {
-                    mergedFilters.add(alreadyDeletedFilter);
-                    mergedDisabledFilters.add(alreadyDeletedFilter);
-                }
-            }
-            return new FilterManager(builtInFilters, mergedFilters, mergedDisabledFilters);
+            return new FilterManager(
+                    aopProxyProvider,
+                    new LogicalDeletedFilterProvider(logicalDeletedBehavior, entityManager(), microServiceName),
+                    filters,
+                    disabledFilters
+            );
         }
 
         private void validateAssociations(FilterManager filterManager) {
@@ -1355,6 +1425,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                         return DatabaseValidators.validate(
                                 entityManager(),
                                 microServiceName,
+                                defaultDissociationActionCheckable,
                                 metadataStrategy,
                                 databaseValidationCatalog,
                                 databaseValidationSchema,
@@ -1386,6 +1457,47 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 }
             }
             return em;
+        }
+    }
+
+    private static class SqlClientInitializer {
+
+        private final ReadWriteLock rwl = new ReentrantReadWriteLock();
+
+        private Runnable action;
+
+        public void setAction(Runnable action) {
+            if (this.action != null) {
+                throw new IllegalStateException("action has already been set");
+            }
+            if (action == null) {
+                throw new IllegalArgumentException("action cannot be null");
+            }
+            this.action = action;
+        }
+
+        private void initialize() {
+            Lock lock;
+
+            (lock = rwl.readLock()).lock();
+            try {
+                if (action == null) {
+                    return;
+                }
+            } finally {
+                lock.unlock();
+            }
+
+            (lock = rwl.writeLock()).lock();
+            try {
+                if (action == null) {
+                    return;
+                }
+                action.run();
+                action = null;
+            } finally {
+                lock.unlock();
+            }
         }
     }
 }

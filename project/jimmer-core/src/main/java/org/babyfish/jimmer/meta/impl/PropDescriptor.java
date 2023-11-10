@@ -201,9 +201,9 @@ public class PropDescriptor {
                                 annotationType == PropOverride.class ?
                                 VALUE_ANNOTATION_TYPES :
                                 REF_ANNOTATION_TYPES;
-                if (!declaringTypes.contains(typeAnnotationType)) {
+                if (annotationType != Scalar.class && !declaringTypes.contains(typeAnnotationType)) {
                     throw exceptionCreator.apply(
-                            "it cannot be decorated by @" +
+                            "It cannot be decorated by @" +
                                     annotationType.getName() +
                                     " because the declaring type \"" +
                                     typeText +

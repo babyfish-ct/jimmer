@@ -3,22 +3,26 @@ sidebar_position: 5
 title: DTO转换 
 ---
 
-必要时，我们不得不在Jimmer动态对象和静态DTO对象之间彼此转换，为此Jimmer提供了两种方法
+即使实体对象支持了动态性以表达任意形状的数据结构，和DTO之间的转换也是无法完全避免的。
 
--   使用Jimmer附带的DTO语言。
+Jimmer提供动态实体，可以很好地解决很大一部分DTO爆炸问题。所以，一般情况下不需要定义输出型的DTO类型来表达查询返回结果。
 
-    这是首选方案，基于实体类型快速定义若干个数据结构的形状，经过Jimmer编译后，自动生成
-    
-    -   DTO类型的Java/Kotlin定义
-    
-    -   DTO对象和实体对象之间的相互转换逻辑
-    
-    -   与之形状匹配的[对象抓取器](../../query/object-fetcher)
+然而，并非所有DTO类型都可以被消灭，其中，输入型的DTO对象很难去除。
 
--   对于遗留项目中已经定义好的DTO类型，使用[mapstruct](https://mapstruct.org/)彼此转换。
+>   以GraphQL为例，虽然从output的角度讲，为客户端返回动态的`GraphQLObject`数据；但是，从input的角度讲，接受客户端提交的静态的`GraphQLInput`数据。
+>   
+>   GraphQL协议为什么将`GraphQLInput`定义为静态类型呢？是因为API的明确性和系统的安全性是非常重要需求，请参考[动态对象作为输入参数的问题](../../mutation/save-command/input-dto/problem)。
+>
+>   GraphQL协议面对的问题，Jimmer也同样需要面对，必须给出完整的解决方案。
 
-:::tip
-无论是代表任何数据结构形状的动态实体对象，还是根据特定据结构形状对应的静态DTO对象，二者在Jimmer看来是等价的，都能被作为一个整体使用一行代码查询或使用一行代码保存。
+作为一个综合性解决方案，Jimmer不局限于ORM本身，而是为整个项目的考虑，为解决此问题，提供了两种途径。
 
-因此，开发人员只需负责动态实体和静态DTO对象之间彼此转换即可。从数据库和缓存操作的角度来看，无任何额外成本。
-:::
+-   DTO语言
+
+    为Jimmer量身定制的方案，具有极高的开发效率。
+
+    [DTO语言](./dto-language.mdx)是为了无法被消灭的那部分DTO类型而设计，目的是为了它们变得极其廉价。
+
+-   MapStruct
+
+    结合[MapStruct](https://mapstruct.org/)框架的方案，能实现任意复杂的转化逻辑。

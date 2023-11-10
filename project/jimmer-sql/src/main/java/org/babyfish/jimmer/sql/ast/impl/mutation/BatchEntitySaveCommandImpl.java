@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.mutation;
 
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.mutation.*;
@@ -26,6 +27,9 @@ public class BatchEntitySaveCommandImpl<E>
                 throw new IllegalArgumentException(
                         "All the elements of entities must be an immutable object"
                 );
+            }
+            if (entity instanceof DraftSpi) {
+                throw new IllegalArgumentException("Each element of entity cannot be a draft object");
             }
             ImmutableType entityType = ((ImmutableSpi) entity).__type();
             if (entityType != null && entityType != entityType) {

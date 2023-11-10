@@ -41,7 +41,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from ROLE tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
             }
             statement {
@@ -54,7 +54,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from PERMISSION tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
             }
             statement {
@@ -67,7 +67,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from PERMISSION tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
             }
             statement {
@@ -124,7 +124,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from ROLE tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
             }
             statement {
@@ -137,7 +137,7 @@ class InheritanceMutationTest : AbstractMutationTest() {
                 sql(
                     """select tb_1_.ID, tb_1_.NAME 
                         |from PERMISSION tb_1_ 
-                        |where tb_1_.NAME = ?""".trimMargin()
+                        |where tb_1_.NAME = ? and tb_1_.DELETED <> ?""".trimMargin()
                 )
             }
             statement {

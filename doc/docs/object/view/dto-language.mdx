@@ -112,7 +112,7 @@ BookView {
     ...omit...
 }
 
-AnnotherBookView {
+AnotherBookView {
     ...omit... 
 }
 
@@ -120,20 +120,20 @@ input BookInput {
     ...omit...
 }
 
-input AnnotherBookInput {
+input AnotherBookInput {
     ...omit...
 }
 ```
 
 This means:
 
--   `BookView` and `AnnotherBookView` are used as query outputs. The generated Java/Kotlin types implement the `org.babyfish.jimmer.View<E>` interface
+-   `BookView` and `AnotherBookView` are used as query outputs. The generated Java/Kotlin types implement the `org.babyfish.jimmer.View<E>` interface
 
     :::note
     It is recommended that output shapes end with `View`
     :::
 
--   `BookInput` and `AnnotherBookInput` are used as save inputs. The generated Java/Kotlin types implement the `org.babyfish.jimmer.Input<E>` interface
+-   `BookInput` and `AnotherBookInput` are used as save inputs. The generated Java/Kotlin types implement the `org.babyfish.jimmer.Input<E>` interface
 
     :::note
     It is recommended that input shapes end with `Input`
@@ -219,11 +219,11 @@ The purpose of the `input-only`/`inputOnly` modifier is described in [7. Nullabi
 BookView {
     id
     name
-    editon
+    edition
 }
 ```
 
-This means that the DTO only maps the three properties `id`, `name` and `editon` of the entity, as follows:
+This means that the DTO only maps the three properties `id`, `name` and `edition` of the entity, as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">  

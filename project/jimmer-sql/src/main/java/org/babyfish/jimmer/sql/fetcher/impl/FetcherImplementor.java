@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldConfig;
+import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,10 @@ public interface FetcherImplementor<E> extends Fetcher<E> {
             Fetcher<?> childFetcher,
             Consumer<? extends FieldConfig<?, ? extends Table<?>>> loaderBlock
     );
+
+    @Override
+    @NewChain
+    FetcherImplementor<E> add(String prop, IdOnlyFetchType idOnlyFetchType);
 
     @Override
     @NewChain

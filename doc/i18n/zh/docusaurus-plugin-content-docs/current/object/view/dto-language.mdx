@@ -11,6 +11,26 @@ import { ViewMore } from '@site/src/components/ViewMore';
 
 ## 1. 概念
 
+### 1.1. 痛点
+
+Jimmer提供动态实体，可以很好地解决很大一部分DTO爆炸问题。所以，一般情况下不需要定义输出型的DTO类型来表达查询返回结果。
+
+然而，并非所有DTO类型都可以被消灭，其中，输入型的DTO对象很难去除。
+
+>   以GraphQL为例，虽然从output的角度讲，为客户端返回动态的`GraphQLObject`数据；但是，从input的角度讲，接受客户端提交的静态的`GraphQLInput`数据。
+>   
+>   GraphQL协议为什么将`GraphQLInput`定义为静态类型呢？是因为API的明确性和系统的安全性是非常重要需求，请参考[动态对象作为输入参数的问题](../../mutation/save-command/input-dto/problem)。
+>
+>   GraphQL协议面对的问题，Jimmer也同样需要面对，必须给出完整的解决方案。
+
+:::tip
+DTO语言是为了无法被消灭的那部分DTO类型而设计，目的是为了它们变得极其廉价。
+:::
+
+### 1.2. 方案
+
+作为一个综合性解决方案，Jimmer不局限于ORM本身，而是为整个项目的考虑，为解决此问题，提供了DTO语言。
+
 DTO语言是Jimmer提供的一个非常强大的功能，是一个和[对象抓取器](../../query/object-fetcher)高度类似的概念，但在编译过程中位于更早的阶段。
 
 DTO语言用于快速定义数据结构的形状，根据这些形状，DTO可以在编译时
@@ -19,13 +39,19 @@ DTO语言用于快速定义数据结构的形状，根据这些形状，DTO可�
 
 -   生成DTO静态对象和Jimmer动态对象之间的相互转换逻辑
 
--   生成该形状所定义的[对象抓取器](../../query/object-fetcher)
+-   生成与DTO形状定义完全契合的[对象抓取器](../../query/object-fetcher)
 
-这种方法的开发效率很高，为Jimmer量身设计，远快于使用[mapstruct](./mapstruct)，是优先推荐的方式。
+使用DTO语言快速构建DTO类型，是为Jimmer量身设计的方案，开发效率极高，远快于使用[mapstruct](./mapstruct)，是优先推荐的方式。
 
-:::tip
-即使某些特殊场景下，我们无法直接使用统一的ORM实体，不得不使用DTO对象，开发代价也仅仅是定义这些DTO的形状而已，剩下的所有工作 *(DTO相关Java/Kotlin定义、和实体之间的彼此转化逻辑、和数据库的交互逻辑)* 都是全自动的，完全感觉不到传统技术方案中因DTO爆炸带来的痛苦。
-:::
+### 1.3. 应用场景
+
+DTO语言的应用场景
+
+-   [在查询API中充当返回结果 *(可选，不推荐，非必要不用)*](../../query/object-fetcher/dto)
+
+-   [在保存API中充当输入参数 *(必须)*](../../mutation/save-command/input-dto/dto-lang)
+
+-   [在超级QBE查询中作为输入参数 *(可选，建议使用)*](../../query/super_qbe)
 
 ## 2. 创建文件
 
@@ -34,7 +60,7 @@ DTO语言的代码体现为扩展名为`dto`的文件，一旦编译完成，这
 因此，第一件事，是在`src/main`下建立`dto`子目录。
 
 :::warning
-dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译。因此，有两点注意事项
+dto文件由Jimmer的Annotation Processor *(Java)* 或 Ksp *(Kotlin)* 编译。因此，有两点注意事项
 
 -   对于多工程结构的项目而言，dto文件需要定义在实体类型所在子项目中。
 
@@ -53,7 +79,7 @@ dto文件由Jimmer的Annotation Processor *(Java)* 或Kotlin *(Kotlin)* 编译�
 
 2.  在上一步建立的目录中新文件`Book.dto`，该文件必须和类同名，且扩展名为`dto`
 
-用户可以编辑`Book.dto`文件，定义任意个以`Book`类型为聚合根的形状。这里，我们先定一个DTO形状：
+用户可以编辑`Book.dto`文件，定义任意个以`Book`类型为聚合根的所有DTO类型。这里，我们先定一个DTO类型：
 
 ```sh title="Book.dto"
 BookView {
@@ -103,16 +129,30 @@ data class BookView(
 -   对于Java而言，其生产的类型假设用户使用了lombok。
 :::
 
-## 3. input、input-only修饰符
+## 3. view、input和specification
 
-形状可以被`input`修饰符修饰，例如
+前文提到，DTO语言有三种使用场景
+
+-   [在查询API中充当返回值 *(可选，不推荐，非必要不用)*](../../query/object-fetcher/dto)
+
+-   [在保存API中充当输入参数 *(必须)*](../../mutation/save-command/input-dto/dto-lang)
+
+-   [在超级QBE查询中作为输入参数 *(可选，建议使用)*](../../query/super_qbe)
+
+所以，DTO语言可以定义三种DTO
+
+-   view: 既不使用`input`关键字也不使用`specification`关键字，可以被理解为Output DTO。
+
+-   input: 使用`input`关键字声明，可以被理解为Input DTO。
+
+-   specification: 使用`specification`关键字声明，本身和DTO关系不够大，但可以用于做查询参数，支持[超级QBE查询](../../query/super_qbe)。
 
 ```sh title="Book.dto"
 BookView {
     ...略...
 }
 
-AnnotherBookView {
+AnotherBookView {
     ...略...
 }
 
@@ -120,44 +160,44 @@ input BookInput {
     ...略...
 }
 
-input AnnotherBookInput {
+input AnotherBookInput {
+    ...略...
+}
+
+specification BookSpecification {
+    ...略...
+}
+
+specification AnotherBookSpecification {
     ...略...
 }
 ```
 
 这表示
 
--   `BookView`和`AnnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View&lt;E&gt;`接口
+-   `BookView`和`AnotherBookView`用作查询输出，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.View<E>`接口
 
     :::note
-    建议输出形状为`View`结尾
+    建议输出DTO以`View`结尾
     :::
 
--   `BookInput`和`AnnotherBookInput`用作保存输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input&lt;E&gt;`接口
+-   `BookInput`和`AnotherBookInput`用作保存指令输入，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Input<E>`接口
 
     :::note
-    建议输入形状为`Input`结尾
+    建议输入DTO以`Input`结尾
     :::
 
--   事实上，还有另外一种没有直接的Input/Output语义的DTO对象，往往用做复杂动态查询API的查询规格参数。
-    如例子中的[AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto)类型定义。
+-   `BookSpecification`和`AnotherBookSpecification`用作查询参数，生成的Java/Kotlin类型会实现`org.babyfish.jimmer.Specification<E>`接口
 
     :::note
-    Jimmer对这种查询规则参数类型是否应该定义为input类型不做任何建议，但是建议这种类型以`Specification`/`Spec`结尾。
+    建议查询参数DTO以`Specification`结尾
     :::
 
-:::info
-和Output DTO相比，Input DTO存在如下不同
+### 3.1 view和input共有的功能
 
--   如果实体id属性配置了自动增长策略，那么input DTO中的id属性是nullable的。
+对于view和input而言，其生成的Java/Kotlin类型可以和实体相互转化，具备如下功能
 
--   input DTO中只能定义可以保存的属性，如简单属性、普通ORM关联属性和id-view属性。
-    不能定义无法保存的属性，如transient属性、公式属性、计算属性和远程关联，否则会导致编译错误。
-:::
-
-无论是输出形状还是输入形状，其生成的Java/Kotlin类型具备如下功能
-
--   构造方法：将Jimmer动态实体对象转化为静态DTO对象
+-   以原始实体类型为参数的构造方法：将Jimmer动态实体对象转化为静态DTO对象
 
 -   `toEntity()`：将静态DTO对象转化为Jimmer动态实体对象
 
@@ -192,37 +232,35 @@ val anotherEntity: Book = dto.toEntity()
 </TabItem>
 </Tabs>
 
-除了`input`外，还可以使用`input-only`或`inputOnly`修饰符修饰，例如
+### 3.2 input特有功能
 
-```sh title="Book.dto"
-input-only BookUpdateInfo {
-    ...略...
-}
-```
+和Output DTO相比，Input DTO存在如下不同
 
-或
+-   如果实体id属性配置了自动增长策略，那么input DTO中的id属性是nullable的。
 
-```sh title="Book.dto"
-inputOnly BookUpdateInfo {
-    ...略...
-}
-```
+-   input DTO中只能定义可以保存的属性，如简单属性、普通ORM关联属性和id-view属性。 不能定义无法保存的属性，如transient属性、公式属性、计算属性和远程关联，否则会导致编译错误。
 
-`input-only`/`inputOnly`和`input`的作用类似，用于修饰输入类型，但只提供从DTO对象转化为实体对象的功能，不提供从实体对象转化为DTO对象的功能。
+### 3.3 specification特有功能
 
-`input-only`/`inputOnly`修饰符的用途，请参见[7. 可空性](#7-可空性)
+`specification`和`input`的作用类似，用于修饰输入类型，但`specification`不提供和实体对象相互转化的能力，而是被用作支持[超级QBE查询](../../query/super_qbe)。
+
+:::tip
+[超级QBE查询](../../query/super_qbe)是Jimmer的一个非常强大的功能，本文不做阐述，请参见[相关章节](../../query/super_qbe)。
+:::
 
 ## 4. 简单属性
+
+可以为DTO类型属性，用于映射原始实体类型中属性，例如
 
 ```sh title="Book.dto"
 BookView {
     id
     name 
-    editon
+    edition
 }
 ```
 
-这表示，DTO只映射实体中的三个属性：`id`、`name`和`editon`，如下
+这表示，DTO只映射实体中的三个属性：`id`、`name`和`edition`，如下
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -291,20 +329,28 @@ BookView {
 
 `#allScalars`表示自动映射实体所有标量属性，包括继承的。
 
-如果这不是你所要的行为，那么可以使用`allScalars(Book)`，表示只映射Book类型本身定义的所有标量属性，不包含继承的属性。
+如果这不是你所要的行为，那么
+
+-   可以使用`allScalars(Book)`，表示只映射Book类型本身定义的所有标量属性，不包含继承的属性。
+
+-   也可以使用`allScalars(TenantAware)`和`allScalars(CommonEntity)`表示特定超类型的属性。
+
+:::tip
+对于当前类型`Book`而言，#allScalars(Book)也可以写作`#allScalars(this)`。
+:::
 
 事实上，`#allScalars`支持多个参数，举例如下
 
 |宏表达式|自动映射的属性|
 |---|---|
 |#allScalars|createdTime, modifiedTime, tenant, id, name, edition, price|
-|#allScalars(Book)|id, name, edition, price|
+|#allScalars(this)|id, name, edition, price|
 |#allScalars(TenantAware)|tenant|
 |#allScalars(CommonEntity)|createdTime、modifiedTime|
-|#allScalars(Book, TenantAware)|tenant, id, name, edition, price|
-|#allScalars(Book, CommonEntity)|createdTime、modifiedTime, id, name, edition, price|
+|#allScalars(this, TenantAware)|tenant, id, name, edition, price|
+|#allScalars(this, CommonEntity)|createdTime、modifiedTime, id, name, edition, price|
 |#allScalars(TenantAware, CommonEntity)|createdTime、modifiedTime, tenant|
-|#allScalars(Book, TenantAware, CommonEntity)|createdTime, modifiedTime, tenant, id, name, edition, price|
+|#allScalars(this, TenantAware, CommonEntity)|createdTime, modifiedTime, tenant, id, name, edition, price|
 
 :::info
 -   如果使用`#allScalars`宏，则它必须被定义成第一个属性，否则，否则会导致编译报错。
@@ -326,7 +372,7 @@ BookView {
 
 和上面一样，如果按官方例子中`Book`类型的继承关系来理解的话，`#allScalars`会加入属性`createdTime`、`modifiedTime`、`tenant`、`id`、`name`、`edition`和`price`。
 
-而`-teant`从中减去了`tenant`属性，最终加入属性`createdTime`、`modifiedTime`、`id`、`name`、`edition`和`price`。
+而`-tenant`从中减去了`tenant`属性，最终加入属性`createdTime`、`modifiedTime`、`id`、`name`、`edition`和`price`。
 
 :::info
 负属性指定的其实不是实体属性名，而是DTO中对应属性的名称，在这里二者相同，并无差异。
@@ -345,12 +391,23 @@ BookView {
 
 ## 7. 可空性
 
-默认情况下，DTO属性的可空性和原始属性的可空性一样。但是我们可以采用问号`?`或`!`修饰DTO属性，改变DTO属性的可空性。
+默认情况下，
 
-### 7.1 `?`
+-   `specification`中所有属性都默认可null
+
+-   否则，DTO属性的可空性和实体中原始属性的可空性一样。
+
+我们可以采用问号`?`或`!`修饰DTO属性，改变DTO属性的可空性。
+
+### 7.1. `?`
 
 我们可以采用`?`修饰DTO属性，让其可null。
 
+:::warning
+如果实体中原属性已经可null，则会导致编译错误
+:::
+
+例如
 ```sh title="Book.dto"
 input UpdateBookInput {
     #allScalars
@@ -358,11 +415,6 @@ input UpdateBookInput {
     price?
 }
 ```
-在实体中`Book.price`不能为null，而对应的DTO属性`UpdateBookInput.price`可以为null，看似矛盾，但Jimmer可以处理这样的矛盾 *(暂不讨论特定场景下使用该功能是否妥当)*。
-
--   把实体转化为DTO时，如果`Book.price`未加载 *(虽然该属性不能为null，但动态对象可以拥有未加载属性)*，那么转化后的`UpdateBookInput.price`为null。
-
--   把DTO转化为实体时，如果`UpdateBookInput.price`为null，那么转化后的`Book.price`处于未加载状态，即，动态对象的这个属性根本不会被赋值。
 
 你甚至可以对`allScalars`采用`?`，让所有自动映射的非关联属性全部可以为null
 
@@ -373,28 +425,48 @@ input UpdateBookInput {
 }
 ```
 
-:::caution
-然而，此功能需要谨慎使用，静态类型的意义就应该固定和明确的，而非去追求如动态类型一般的灵活多变。
+-   Specification类型不允许使用`?`
 
-对于本身就可以为null的实体属性而言，具有三种状态: 非null、null和unloaded *(未知)*；而静态DTO属性只有两种状态：非null和null。即，引入静态DTO类型这件事本身就已经导致了信息丢失。
+    :::warning
+    由于`speciciation`默认所有属性可以为null，所以在specification内部为属性指定修饰符`?`将会导致编译错误。
+    :::
 
-所以，对于本身就可以为null的实体属性而言，无论对应的DTO属性如何设置，经过DTO转化后的动态实体对象，其可空的属性一定为被赋值 *(可能为null)*，但不可能出现unloaded的情况。如果将其传递给[保存指令](../../mutation/save-command)，null一定会导致表中对应字段被update，而无法如同未被赋值的非null属性一样做到根本不更新。
+-   当实体的原属性不允许为null时
 
-对于没有直接Input/Output语义的查询规格参数`Specification`而言，比如[AuthorSpecification](https://github.com/babyfish-ct/jimmer/blob/main/example/java/jimmer-sql/src/main/dto/org/babyfish/jimmer/sql/example/model/Author.dto)，
-这个功能是非常适合的，这是因为动态查询的每个查询参数都应该是可选的，除非因性能问题而不得不要求用户必须给出部分查询条件。
+    对于实体中的不允许为null原始属性而言，如果DTO对象的对应属性为null，那么将改DTO对象转化为实体对象后，实体对象中原始属性不会被赋值。
 
-但是，对于其他具备`Input`/`Output`语义的DTO类型而言，不推荐使用此功能。
+-   当实体的原属性允许为null时
+
+    对于实体中的本就允许为null原始属性而言，如果DTO对象的对应属性为null，那么将改DTO对象转化为实体对象后：
+
+    -   如果`input`类型未被`dynamic`关键字修饰，那么实体对象中原始属性会被赋为null。
+
+    -   如果`input`类型被`dynamic`关键字修饰，例如
+
+        ```sh title="BookStroe.dto"
+        #highlight-next-line
+        dynamic input BookInput {
+            #allScalars(this)?
+        }
+        ```
+
+        那么，实体对象中原始属性不会被赋值。
+
+### 7.2. `!`
+
+我们可以采用`!`修饰DTO属性，让其非null。
+
+:::warning
+如果实体中原属性已经非null，则会导致编译错误
 :::
 
-### 7.2 `!`
+其使用场景受限，只能用于以下三种情况。
 
-我们可以采用`!`修饰DTO属性，让其非null。但其使用场景受限，只能用于以下两种情况。
+-   在`input`类型中修饰id属性
 
--   在`input`/`input-only`类型中修饰id属性
+    如果id属性被配置自动增长策略，那么对应的input DTO类型将会把id属性设置为可null。
 
-    前文提过，如果id属性被配置自动增长策略，那么对应的input DTO类型将会把id属性设置为可null。
-
-    然而，这种行为并不总是符合用户预期，可以在`input`/`input-only`类型中使用`!`修饰id属性，让其非null，例如
+    然而，这种行为并不总是符合用户预期，可以在`input`类型中使用`!`修饰id属性，让其非null，例如
 
     ```sh  title="Book.dto"
     input BookUpdateInfo {
@@ -404,10 +476,14 @@ input UpdateBookInput {
     }
     ```
 
--   在`input-only`中将可null的实体属性转化为非null，例如
+    :::warning
+    如果用`?`修饰其它属性，将会导致编译错误
+    :::
+
+-   如果`input`被`unsafe`关键字修饰，则可以将任何可null的实体属性转化为非null，例如
 
     ```sh  title="Book.dto"
-    input-only BookUpdateInfo {
+    unsafe input BookUpdateInfo {
         #allScalars
         #highlight-next-line
         store! {
@@ -415,12 +491,22 @@ input UpdateBookInput {
         }
     }
     ```
-    :::info
-    实体中属性可以为null，但是DTO中对应属性非null，所以，无法支持将实体对象转化为DTO对象，只能把DTO对象转化为实体对象。
 
-    这也是`input-only`或`inputOnly`关键字的含义。
+    :::info
+    对于一个实体对象而言，如果改属性对应的值为null，在使用Input DTO的构造方法将其转化为Input DTO对象是，由于DTO中对应的属性不允许为null，将会导致一场。
+
+    这就是`unsafe`关键字的意义。
     :::
 
+-   对于`specification`而言，由于所有属性都被默认为null，所以可以将任何可null的实体属性转化为非null，例如
+
+    ```sh  title="Book.dto"
+    specification BookSpecification {
+        #allScalars
+        #highlight-next-line
+        edition!
+    }
+    ```
 
 ## 8. 重命名
 
@@ -538,9 +624,9 @@ RobotView {
     ```sh
     AuthorView {
         #allScalars
-        gender {
-            MALE -> 100
-            FEMALE -> 101
+        gender -> {
+            MALE: 100
+            FEMALE: 101
         }
     }
     ```
@@ -580,9 +666,9 @@ RobotView {
     ```sh
     AuthorView {
         #allScalars
-        gender {
-            MALE -> "Male"
-            FEMALE -> "Female"
+        gender -> {
+            MALE: "Male"
+            FEMALE: "Female"
         }
     }
     ```
@@ -1004,7 +1090,17 @@ DTO类型定义之间支持继承，具备如下特色
 
 -   DTO类型之间的继承是多继承，即，一个DTO类型定义，可以从多个DTO类型继承。
 
--   input类型定义只能继承自input类型定义。
+-   DTO类型分为三种
+
+    -   view *(既无`input`关键字也无`speciciation`关键字)*
+
+    -   input
+
+    -   speciciation
+
+    只有相同类型的DTO类型之间才可以继承。
+
+-   如果任何一个超类型被`unsafe`关键字修饰，那么派生类必须被`unsafe`关键字修饰。
 
 例子如下:
 
@@ -1059,7 +1155,7 @@ DefaultRobotView : BaseRobotView1, BaseRobotView2 {
 
 前面我们所讲的例子中，所有DTO属性都是由实体属性映射而来，成为映射属性。
 
-除了映射属性外，DTO类型还支持映射属性
+除了映射属性外，DTO类型还支持映射自定义属性
 
 ```sh title="Author.dto"
 import java.util.LocaleDateTime ❶
@@ -1439,9 +1535,3 @@ Java和Kotlin的注解语法存在一些微弱的差异，DTO语言混合了二�
     ```
 
 以上四种写法是等价的。你可以随意选择你喜欢的系法。
-
-## 14. 实际应用
-
--   [在查询API中充当输出参数 *(可选)*](../../query/object-fetcher/dto)
-
--   [在保存API中充当输入参数 *(必须)*](../../mutation/save-command/input-dto/dto-lang)

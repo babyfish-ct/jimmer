@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.sql.example.model.BookStore
+    -> package org.babyfish.jimmer.sql.example.service.dto
+
+input BookStoreInput {
+
+    /*
+     * #allScalars: All scalar fields of `BookStore` and `BaseEntity`
+     *
+     * #allScalars(this)/#allScalars(BookStore): All scalar fields of `BookStore`, exclude `BaseEntity`
+     */
+    #allScalars(this)
+}

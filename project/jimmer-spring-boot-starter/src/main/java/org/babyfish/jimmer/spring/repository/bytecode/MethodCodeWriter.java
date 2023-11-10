@@ -93,6 +93,12 @@ public abstract class MethodCodeWriter implements Constants {
             mv.visitInsn(Opcodes.ACONST_NULL);
         }
 
+        if (queryMethod.getSpecificationParamIndex() != -1) {
+            mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getSpecificationParamIndex()));
+        } else {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+        }
+
         if (queryMethod.getFetcherParamIndex() != -1) {
             mv.visitVarInsn(Opcodes.ALOAD, slots.get(queryMethod.getFetcherParamIndex()));
         } else {

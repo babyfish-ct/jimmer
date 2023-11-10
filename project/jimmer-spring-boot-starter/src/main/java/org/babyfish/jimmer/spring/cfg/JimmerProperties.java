@@ -38,6 +38,8 @@ public class JimmerProperties {
     @NotNull
     private final TriggerType triggerType;
 
+    private final boolean defaultDissociationActionCheckable;
+
     @NotNull
     private final IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel;
 
@@ -78,6 +80,7 @@ public class JimmerProperties {
             @Deprecated @Nullable DatabaseValidationMode databaseValidationMode,
             @Nullable DatabaseValidation databaseValidation,
             @Nullable TriggerType triggerType,
+            @Nullable Boolean defaultDissociationActionCheckable, // Default value is true, so use `Boolean`
             @Nullable IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             @Nullable Integer transactionCacheOperatorFixedDelay,
             @Nullable EnumType.Strategy defaultEnumStrategy,
@@ -170,6 +173,10 @@ public class JimmerProperties {
                     );
         }
         this.triggerType = triggerType != null ? triggerType : TriggerType.BINLOG_ONLY;
+        this.defaultDissociationActionCheckable =
+                defaultDissociationActionCheckable != null ?
+                        defaultDissociationActionCheckable :
+                        true;
         this.idOnlyTargetCheckingLevel =
                 idOnlyTargetCheckingLevel != null ?
                         idOnlyTargetCheckingLevel :
@@ -247,6 +254,10 @@ public class JimmerProperties {
     @NotNull
     public TriggerType getTriggerType() {
         return triggerType;
+    }
+
+    public boolean isDefaultDissociationActionCheckable() {
+        return defaultDissociationActionCheckable;
     }
 
     @NotNull

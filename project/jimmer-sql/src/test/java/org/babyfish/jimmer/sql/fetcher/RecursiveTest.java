@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.fetcher;
 
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.model.TreeNodeTable;
@@ -13,7 +14,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindTwoLevel() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -72,7 +73,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindThreeLevel() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -169,7 +170,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindUnlimitedLevel() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -304,7 +305,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void testFindByDynamicalRecursionStrategy() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -444,7 +445,7 @@ public class RecursiveTest extends AbstractQueryTest {
     public void findOnlyRoot() {
         executeAndExpect(
                 getLambdaClient().createQuery(TreeNodeTable.class, (q, node) -> {
-                    q.where(node.parent().isNull());
+                    q.where(node.parent(JoinType.LEFT).isNull());
                     return q.select(
                             node.fetch(
                                     TreeNodeFetcher.$.name().childNodes(
@@ -502,19 +503,19 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(10L);
                     ctx.statement(3).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(9L);
                     ctx.statement(4).sql(
                             "select tb_1_.NODE_ID, tb_1_.NAME, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(1L);
                 }
@@ -556,19 +557,19 @@ public class RecursiveTest extends AbstractQueryTest {
                     ctx.statement(2).sql(
                             "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(10L);
                     ctx.statement(3).sql(
                             "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(9L);
                     ctx.statement(4).sql(
                             "select tb_1_.NODE_ID, tb_1_.PARENT_ID " +
                                     "from TREE_NODE tb_1_ " +
-                                    "where tb_1_.NODE_ID in (?) " +
+                                    "where tb_1_.NODE_ID = ? " +
                                     "order by tb_1_.NODE_ID asc"
                     ).variables(1L);
                 }

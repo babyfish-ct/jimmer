@@ -248,7 +248,8 @@ public abstract class AbstractMutationTest extends AbstractTest {
             Assertions.assertEquals(
                     values.length,
                     execution.getVariables().size(),
-                    "statements[" + index + "].variables.size."
+                    "statements[" + index + "].variables.size is error, actual variables: " +
+                            execution.getVariables()
             );
             for (int i = 0; i < values.length; i++) {
                 Object exp = values[i];
@@ -256,13 +257,15 @@ public abstract class AbstractMutationTest extends AbstractTest {
                 if (exp instanceof byte[]) {
                     Assertions.assertTrue(
                             Arrays.equals((byte[])exp, (byte[])act),
-                            "statements[" + index + "].variables[" + i + "]."
+                            "statements[" + index + "].variables[" + i + "] is error, actual variables: " +
+                                    execution.getVariables()
                     );
                 } else {
                     Assertions.assertEquals(
                             exp,
                             act,
-                            "statements[" + index + "].variables[" + i + "]."
+                            "statements[" + index + "].variables[" + i + "]is error, actual variables: " +
+                                    execution.getVariables()
                     );
                 }
             }

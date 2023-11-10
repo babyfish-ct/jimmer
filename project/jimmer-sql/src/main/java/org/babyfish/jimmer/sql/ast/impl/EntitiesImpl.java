@@ -4,6 +4,7 @@ import org.babyfish.jimmer.Input;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -13,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.impl.mutation.BatchEntitySaveCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.DeleteCommandImpl;
 import org.babyfish.jimmer.sql.ast.impl.mutation.SimpleEntitySaveCommandImpl;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
@@ -180,18 +182,13 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Class<E> type, Collection<ID> ids, Connection con) {
-        ImmutableProp idProp = immutableTypeOf(type).getIdProp();
-        return this.findByIds(type, null, ids, con)
-                .stream()
-                .filter(Objects::nonNull)
-                .collect(
-                        Collectors.toMap(
-                                it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
-                                Function.identity(),
-                                (a, b) -> { throw new IllegalStateException("Objects with same id"); },
-                                LinkedHashMap::new
-                        )
-                );
+        PropId idPropId = immutableTypeOf(type).getIdProp().getId();
+        List<E> entities = findByIds(type, null, ids, con);
+        Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (E entity : entities) {
+            map.put((ID)((ImmutableSpi) entity).__get(idPropId), entity);
+        }
+        return map;
     }
 
     private <E> E findById(Fetcher<E> fetcher, Object id, Connection con) {
@@ -210,18 +207,14 @@ public class EntitiesImpl implements Entities {
 
     @SuppressWarnings("unchecked")
     private <ID, E> Map<ID, E> findMapByIds(Fetcher<E> fetcher, Collection<ID> ids, Connection con) {
-        ImmutableProp idProp = immutableTypeOf(fetcher.getJavaClass()).getIdProp();
-        return this.findByIds(fetcher.getJavaClass(), fetcher, ids, con)
-                .stream()
-                .filter(Objects::nonNull)
-                .collect(
-                        Collectors.toMap(
-                                it -> (ID)((ImmutableSpi) it).__get(idProp.getId()),
-                                Function.identity(),
-                                (a, b) -> { throw new IllegalStateException("Objects with same id"); },
-                                LinkedHashMap::new
-                        )
-                );
+        ImmutableType type = fetcher.getImmutableType();
+        PropId idPropId = type.getIdProp().getId();
+        List<E> entities = findByIds((Class<E>)type.getJavaClass(), fetcher, ids, con);
+        Map<ID, E> map = new LinkedHashMap<>((entities.size() * 4 + 2) / 3);
+        for (E entity : entities) {
+            map.put((ID)((ImmutableSpi) entity).__get(idPropId), entity);
+        }
+        return map;
     }
 
     @SuppressWarnings("unchecked")
@@ -261,30 +254,32 @@ public class EntitiesImpl implements Entities {
         }
         Cache<Object, E> cache = sqlClient.getCaches().getObjectCache(immutableType);
         if (cache != null) {
-            List<E> entities = new ArrayList<>(
-                    cache.getAll(
-                            distinctIds,
-                            new CacheEnvironment<>(
+            Collection<E> cachedEntities = cache.getAll(
+                    distinctIds,
+                    new CacheEnvironment<>(
+                            sqlClient,
+                            con,
+                            CacheLoader.objectLoader(
                                     sqlClient,
                                     con,
-                                    CacheLoader.objectLoader(
-                                            sqlClient,
-                                            con,
-                                            (Class<E>) immutableType.getJavaClass()
-                                    ),
-                                    true
-                            )
-                    ).values()
-            );
+                                    (Class<E>) immutableType.getJavaClass()
+                            ),
+                            true
+                    )
+            ).values();
+            List<E> entities = new ArrayList<>(cachedEntities.size());
+            for (E entity : cachedEntities) {
+                if (entity != null) {
+                    entities.add(entity);
+                }
+            }
             if (fetcher != null && !entities.isEmpty()) {
                 boolean needUnload = false;
                 for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-                    if (spi != null) {
-                        for (ImmutableProp prop : immutableType.getProps().values()) {
-                            if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                needUnload = true;
-                                break;
-                            }
+                    for (ImmutableProp prop : immutableType.getProps().values()) {
+                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                            needUnload = true;
+                            break;
                         }
                     }
                 }
@@ -292,19 +287,17 @@ public class EntitiesImpl implements Entities {
                     ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
                     while (itr.hasNext()) {
                         ImmutableSpi spi = itr.next();
-                        if (spi != null) {
-                            itr.set(
-                                    (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
-                                        for (ImmutableProp prop : immutableType.getProps().values()) {
-                                            if (!prop.isView() &&
-                                                    spi.__isLoaded(prop.getId()) &&
-                                                    !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                                ((DraftSpi) draft).__unload(prop.getId());
-                                            }
+                        itr.set(
+                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
+                                    for (ImmutableProp prop : immutableType.getProps().values()) {
+                                        if (!prop.isView() &&
+                                                spi.__isLoaded(prop.getId()) &&
+                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                            ((DraftSpi) draft).__unload(prop.getId());
                                         }
-                                    })
-                            );
-                        }
+                                    }
+                                })
+                        );
                     }
                 }
                 Fetchers.fetch(
@@ -330,7 +323,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, purpose, true, (q, table) -> {
+                sqlClient, immutableType, purpose, FilterLevel.DEFAULT, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -376,30 +369,32 @@ public class EntitiesImpl implements Entities {
         }
         Cache<Object, E> cache = sqlClient.getCaches().getObjectCache(immutableType);
         if (cache != null) {
-            List<E> entities = new ArrayList<>(
-                    cache.getAll(
-                            distinctIds,
-                            new CacheEnvironment<>(
+            Collection<E> cachedEntities = cache.getAll(
+                    distinctIds,
+                    new CacheEnvironment<>(
+                            sqlClient,
+                            con,
+                            CacheLoader.objectLoader(
                                     sqlClient,
                                     con,
-                                    CacheLoader.objectLoader(
-                                            sqlClient,
-                                            con,
-                                            (Class<E>) immutableType.getJavaClass()
-                                    ),
-                                    true
-                            )
-                    ).values()
-            );
+                                    (Class<E>) immutableType.getJavaClass()
+                            ),
+                            true
+                    )
+            ).values();
+            List<E> entities = new ArrayList<>(cachedEntities.size());
+            for (E entity : cachedEntities) {
+                if (entity != null) {
+                    entities.add(entity);
+                }
+            }
             if (!entities.isEmpty()) {
                 boolean needUnload = false;
                 for (ImmutableSpi spi : (List<ImmutableSpi>) entities) {
-                    if (spi != null) {
-                        for (ImmutableProp prop : immutableType.getProps().values()) {
-                            if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                needUnload = true;
-                                break;
-                            }
+                    for (ImmutableProp prop : immutableType.getProps().values()) {
+                        if (spi.__isLoaded(prop.getId()) && !fetcher.getFieldMap().containsKey(prop.getName())) {
+                            needUnload = true;
+                            break;
                         }
                     }
                 }
@@ -407,19 +402,17 @@ public class EntitiesImpl implements Entities {
                     ListIterator<ImmutableSpi> itr = (ListIterator<ImmutableSpi>) entities.listIterator();
                     while (itr.hasNext()) {
                         ImmutableSpi spi = itr.next();
-                        if (spi != null) {
-                            itr.set(
-                                    (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
-                                        for (ImmutableProp prop : immutableType.getProps().values()) {
-                                            if (!prop.isView() &&
-                                                    spi.__isLoaded(prop.getId()) &&
-                                                    !fetcher.getFieldMap().containsKey(prop.getName())) {
-                                                ((DraftSpi) draft).__unload(prop.getId());
-                                            }
+                        itr.set(
+                                (ImmutableSpi) Internal.produce(immutableType, spi, draft -> {
+                                    for (ImmutableProp prop : immutableType.getProps().values()) {
+                                        if (!prop.isView() &&
+                                                spi.__isLoaded(prop.getId()) &&
+                                                !fetcher.getFieldMap().containsKey(prop.getName())) {
+                                            ((DraftSpi) draft).__unload(prop.getId());
                                         }
-                                    })
-                            );
-                        }
+                                    }
+                                })
+                        );
                     }
                 }
                 Fetchers.fetch(
@@ -445,7 +438,7 @@ public class EntitiesImpl implements Entities {
             return entities;
         }
         ConfigurableRootQuery<?, E> query = Queries.createQuery(
-                sqlClient, immutableType, purpose, true, (q, table) -> {
+                sqlClient, immutableType, purpose, FilterLevel.DEFAULT, (q, table) -> {
                     Expression<Object> idProp = table.get(immutableType.getIdProp().getName());
                     if (distinctIds.size() == 1) {
                         q.where(idProp.eq(distinctIds.iterator().next()));
@@ -527,7 +520,7 @@ public class EntitiesImpl implements Entities {
             );
         }
         MutableRootQueryImpl<Table<E>> query =
-                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, false);
+                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT);
         Table<E> table = query.getTable();
         if (example != null) {
             example.applyTo(query);
@@ -557,7 +550,6 @@ public class EntitiesImpl implements Entities {
             }
             query.orderBy(astOrder);
         }
-        query.freeze();
         return query.select(
                 fetcher != null ? table.fetch(fetcher) : table
         ).execute(con);
@@ -573,7 +565,7 @@ public class EntitiesImpl implements Entities {
         Function<?, V> converter = (Function<?, V>) metadata.getConverter();
         ImmutableType type = fetcher.getImmutableType();
         MutableRootQueryImpl<Table<?>> query =
-                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, false);
+                new MutableRootQueryImpl<>(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT);
         if (example != null) {
             example.applyTo(query);
         }
@@ -603,7 +595,6 @@ public class EntitiesImpl implements Entities {
             }
             query.orderBy(astOrder);
         }
-        query.freeze();
         return query.select(
                 new FetcherSelectionImpl<>(table, fetcher, converter)
         ).execute(con);

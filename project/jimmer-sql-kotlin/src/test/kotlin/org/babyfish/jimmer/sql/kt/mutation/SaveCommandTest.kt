@@ -103,7 +103,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """delete from BOOK_AUTHOR_MAPPING 
-                        |where (BOOK_ID, AUTHOR_ID) in ((?, ?))""".trimMargin()
+                        |where (BOOK_ID, AUTHOR_ID) = (?, ?)""".trimMargin()
                 )
                 variables(12L, 5L)
             }
@@ -250,7 +250,7 @@ class SaveCommandTest : AbstractMutationTest() {
             statement {
                 sql(
                     """delete from BOOK_AUTHOR_MAPPING 
-                        |where (BOOK_ID, AUTHOR_ID) in ((?, ?))""".trimMargin()
+                        |where (BOOK_ID, AUTHOR_ID) = (?, ?)""".trimMargin()
                 )
                 variables(12L, 5L)
             }

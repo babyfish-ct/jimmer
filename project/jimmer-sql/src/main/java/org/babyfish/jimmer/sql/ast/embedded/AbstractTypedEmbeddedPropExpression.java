@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.embedded;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -20,6 +21,16 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
 
     protected AbstractTypedEmbeddedPropExpression(PropExpression.Embedded<T> raw) {
         this.raw = raw;
+    }
+
+    @Override
+    public Class<T> getType() {
+        return ((PropExpressionImpl.EmbeddedImpl<T>)raw).getType();
+    }
+
+    @Override
+    public int precedence() {
+        return ((PropExpressionImpl.EmbeddedImpl<T>)raw).precedence();
     }
 
     public Predicate eq(Expression<T> other) {
@@ -82,6 +93,10 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
         return raw.get(prop);
     }
 
+    public <XE extends Expression<?>> XE get(ImmutableProp prop) {
+        return raw.get(prop);
+    }
+
     public Expression<T> coalesce(T defaultValue) {
         return raw.coalesce(defaultValue);
     }
@@ -105,6 +120,11 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
+    public boolean isRawId() {
+        return ((PropExpressionImplementor<?>)raw).isRawId();
+    }
+
+    @Override
     public EmbeddedColumns.Partial getPartial(MetadataStrategy strategy) {
         return ((PropExpressionImplementor<?>)raw).getPartial(strategy);
     }
@@ -125,5 +145,9 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
             return (T)((AbstractTypedEmbeddedPropExpression<?>)selection).raw;
         }
         return (T)selection;
+    }
+
+    public <EXP extends PropExpression<?>> EXP __get(ImmutableProp prop) {
+        return raw.get(prop);
     }
 }

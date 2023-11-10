@@ -18,6 +18,7 @@ public class DatabaseValidatorTest extends AbstractTest {
             DatabaseValidationException ex = DatabaseValidators.validate(
                     JimmerModule.ENTITY_MANAGER,
                     "",
+                    true,
                     new MetadataStrategy(DefaultDatabaseNamingStrategy.UPPER_CASE, ForeignKeyStrategy.REAL),
                     null,
                     null,

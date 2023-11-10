@@ -9,6 +9,8 @@ import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
+import org.babyfish.jimmer.sql.di.TransientResolverProvider
+import org.babyfish.jimmer.sql.di.UserIdGeneratorProvider
 import org.babyfish.jimmer.sql.dialect.Dialect
 import org.babyfish.jimmer.sql.event.TriggerType
 import org.babyfish.jimmer.sql.event.binlog.BinLogPropReader
@@ -20,7 +22,6 @@ import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.meta.DatabaseNamingStrategy
 import org.babyfish.jimmer.sql.meta.IdGenerator
-import org.babyfish.jimmer.sql.meta.UserIdGenerator
 import org.babyfish.jimmer.sql.runtime.*
 import java.sql.Connection
 import java.util.function.Function
@@ -97,7 +98,7 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setSqlFormatter(fFormatter)
     }
 
-    fun setUserIdGeneratorProvider(provider: StrategyProvider<UserIdGenerator<*>>) {
+    fun setUserIdGeneratorProvider(provider: UserIdGeneratorProvider) {
         javaBuilder.setUserIdGeneratorProvider(provider)
     }
 
@@ -192,8 +193,12 @@ class KSqlClientDsl internal constructor(
         javaBuilder.addDisabledFilters(filters.map { it.toJavaFilter() })
     }
 
-    fun ignoreBuiltInFilters() {
-        javaBuilder.ignoreBuiltInFilters()
+    fun setLogicalDeletedBehavior(behavior: LogicalDeletedBehavior) {
+        javaBuilder.setLogicalDeletedBehavior(behavior)
+    }
+
+    fun setDefaultDissociateActionChecking(checkable: Boolean) {
+        javaBuilder.setDefaultDissociateActionCheckable(checkable)
     }
 
     fun setIdOnlyTargetCheckingLevel(checkingLevel: IdOnlyTargetCheckingLevel) {

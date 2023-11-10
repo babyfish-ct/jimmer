@@ -3,7 +3,6 @@ package org.babyfish.jimmer.sql.mutation;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
-import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
@@ -16,15 +15,20 @@ import org.babyfish.jimmer.sql.model.hr.Employee;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 public class CascadeSaveTest extends AbstractMutationTest {
+
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Test
     public void testCascadeInsertWithManyToOne() {
@@ -774,9 +778,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME from " +
                                         "ADMINISTRATOR tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("a_5");
+                        it.variables("a_5", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -789,9 +793,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("am_5");
+                        it.variables("am_5", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
@@ -836,7 +840,9 @@ public class CascadeSaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testCascadeUpdateWithOneToOne() {
+    public void testCascadeInsertWithLogicalDeletedAndOneToOne() {
+        setAutoIds(Administrator.class, 10001L);
+        setAutoIds(AdministratorMetadata.class, 10010L);
         executeAndExpectResult(
                 getSqlClient(it -> {
                     UserIdGenerator<?> idGenerator = this::autoId;
@@ -857,33 +863,45 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from ADMINISTRATOR tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("a_4");
+                        it.variables("a_4", true);
+                    });
+                    ctx.statement(it -> {
+                        it.sql(
+                                "insert into ADMINISTRATOR(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, ID) values(?, ?, ?, ?, ?)"
+                        );
+                        it.variables(
+                                "a_4",
+                                false,
+                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
+                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
+                                10001L
+                        );
                     });
                     ctx.statement(it -> {
                         it.sql(
                                 "select tb_1_.ID, tb_1_.NAME " +
                                         "from ADMINISTRATOR_METADATA tb_1_ " +
-                                        "where tb_1_.NAME = ?"
+                                        "where tb_1_.NAME = ? and tb_1_.DELETED <> ?"
                         );
-                        it.variables("am_4");
+                        it.variables("am_4", true);
                     });
                     ctx.statement(it -> {
                         it.sql(
-                                "update ADMINISTRATOR_METADATA " +
-                                        "set DELETED = ?, MODIFIED_TIME = ?, EMAIL = ?, WEBSITE = ?, ADMINISTRATOR_ID = ? " +
-                                        "where ID = ?"
+                                "insert into ADMINISTRATOR_METADATA(NAME, DELETED, CREATED_TIME, MODIFIED_TIME, EMAIL, WEBSITE, ADMINISTRATOR_ID, ID) " +
+                                        "values(?, ?, ?, ?, ?, ?, ?, ?)"
                         );
-                        it.variables(false, Interceptor.TIME, "email_4+", "website_4+", 4L, 40L);
-                    });
-                    ctx.statement(it -> {
-                        it.sql(
-                                "select ID " +
-                                        "from ADMINISTRATOR_METADATA " +
-                                        "where ADMINISTRATOR_ID = ? and ID not in (?)"
+                        it.variables(
+                                "am_4",
+                                false,
+                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
+                                LocalDateTime.parse("2022-10-15 16:55:00", FORMATTER),
+                                "email_4+",
+                                "website_4+",
+                                10001L,
+                                10010L
                         );
-                        it.variables(4L, 40L);
                     });
                     ctx.entity(it -> {
                         it.original(
@@ -899,16 +917,20 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         it.modified(
                                 "{" +
                                         "--->\"name\":\"a_4\"," +
+                                        "--->\"deleted\":false," +
+                                        "--->\"createdTime\":\"2022-10-15 16:55:00\"," +
+                                        "--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                                         "--->\"metadata\":{" +
                                         "--->--->\"name\":\"am_4\"," +
                                         "--->--->\"deleted\":false," +
+                                        "--->--->\"createdTime\":\"2022-10-15 16:55:00\"," +
                                         "--->--->\"modifiedTime\":\"2022-10-15 16:55:00\"," +
                                         "--->--->\"email\":\"email_4+\"," +
                                         "--->--->\"website\":\"website_4+\"," +
-                                        "--->--->\"administrator\":{\"id\":4}," +
-                                        "--->--->\"id\":40" +
+                                        "--->--->\"administrator\":{\"id\":10001}," +
+                                        "--->--->\"id\":10010" +
                                         "--->}," +
-                                        "--->\"id\":4" +
+                                        "--->\"id\":10001" +
                                         "}"
                         );
                     });
@@ -1123,7 +1145,11 @@ public class CascadeSaveTest extends AbstractMutationTest {
                 ).setAppendOnlyAll(),
                 ctx -> {
                     ctx.statement(it -> {
-                        it.sql("select tb_1_.ID from DEPARTMENT tb_1_ where tb_1_.ID = ?");
+                        it.sql(
+                                "select tb_1_.ID from DEPARTMENT tb_1_ " +
+                                        "where tb_1_.ID = ? and " +
+                                        "tb_1_.DELETED_TIME is null"
+                        );
                         it.variables(1L);
                     });
                     ctx.statement(it -> {

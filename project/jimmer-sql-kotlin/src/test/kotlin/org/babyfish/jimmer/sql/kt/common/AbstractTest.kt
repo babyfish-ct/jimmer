@@ -28,7 +28,7 @@ abstract class AbstractTest {
 
     protected val sqlClient: KSqlClient = sqlClient()
 
-    protected fun sqlClient(block: KSqlClientDsl.() -> Unit = {}): KSqlClient =
+    protected open fun sqlClient(block: KSqlClientDsl.() -> Unit = {}): KSqlClient =
         newKSqlClient {
             setEntityManager(ENTITY_MANAGER)
             setExecutor(object : Executor {

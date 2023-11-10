@@ -9,7 +9,7 @@ import TabItem from '@theme/TabItem';
 Jimmer提供了一系列静态工具方法，用于操作动态对象或其Draft。
 
 :::info
-这些方法既然有强类型重构版本，也有弱类型的重构版本。为节省篇幅，本文仅列举强类型用法。
+这些方法既有强类型重构版本，也有弱类型的重构版本。为节省篇幅，本文仅列举强类型用法。
 :::
 
 ## 操作不可变对象
@@ -116,7 +116,7 @@ Book book = makeIdOnly(Book::class, 1L)
 :::tip
 -   对于kotlin而言，参数id不得为null，返回值也不为null。
 
-    如果要要接受可能为null的id，并在id真为null时直接返回null，请调用`makeNullableIdOnly`
+    如果要接受可能为null的id，并在id真为null时直接返回null，请调用`makeNullableIdOnly`
 
 -   Java的`makeIdOnly`，其实和Kotlin的`makeNullableIdOnly`等价。
 

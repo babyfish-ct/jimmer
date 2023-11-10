@@ -9,3 +9,27 @@ BookView {
         -id
     }
 }
+
+specification BookSpecification {
+    ge(price)
+    le(price)
+    flat(authors) {
+        like/i(firstName, lastName) as authorName
+    }
+}
+
+BookDeepView {
+    authors {
+        gender
+        books {
+            authors {
+                gender
+                books {
+                    authors {
+                        gender
+                    }
+                }
+            }
+        }
+    }
+}

@@ -37,7 +37,7 @@ public class ImplGenerator {
                 .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
                 .addSuperinterface(type.getImplementorClassName())
                 .addSuperinterface(CLONEABLE_CLASS_NAME)
-                .addSuperinterface(Serializable.class);
+                .addSuperinterface(SERIALIZABLE_CLASS_NAME);
         addFields();
         addConstructor();
         for (ImmutableProp prop : type.getProps().values()) {

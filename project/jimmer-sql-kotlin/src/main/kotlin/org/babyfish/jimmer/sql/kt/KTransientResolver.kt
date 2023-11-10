@@ -47,6 +47,6 @@ interface KTransientResolver<ID: Any, V> : TransientResolver<ID, V> {
          */
         @JvmStatic
         val currentConnection: Connection
-            get() = AbstractDataLoader.transientResolverConnection()
+            get() = TransientResolver.currentConnection()
     }
 }

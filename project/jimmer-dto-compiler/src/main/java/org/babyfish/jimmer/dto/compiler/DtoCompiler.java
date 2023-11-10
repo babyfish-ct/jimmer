@@ -4,23 +4,67 @@ import org.antlr.v4.runtime.*;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.dto.compiler.spi.BaseType;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
-    private final T baseType;
-
     private final String dtoFilePath;
 
-    protected DtoCompiler(T baseType, String dtoFilePath) {
-        this.baseType = baseType;
-        this.dtoFilePath = dtoFilePath;
+    private T baseType;
+
+    private final DtoParser.DtoContext ast;
+
+    private final String sourceTypeName;
+
+    private final String targetPackageName;
+
+    protected DtoCompiler(DtoFile dtoFile) throws IOException {
+        this.dtoFilePath = dtoFile.getPath();
+        try (Reader reader = dtoFile.openReader()) {
+            DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
+            DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
+            DtoErrorListener listener = new DtoErrorListener();
+            lexer.removeErrorListeners();
+            lexer.addErrorListener(listener);
+            parser.removeErrorListeners();
+            parser.addErrorListener(listener);
+            this.ast = parser.dto();
+            DtoParser.ExportStatementContext export = ast.exportStatement();
+            String sourceTypeName = null;
+            String targetPackageName = null;
+            if (export != null) {
+                List<Token> typeParts = export.typeParts;
+                if (typeParts.size() == 1) {
+                    sourceTypeName = dtoFile.getPackageName() + '.' + typeParts.get(0).getText();
+                } else {
+                    sourceTypeName = typeParts.stream().map(Token::getText).collect(Collectors.joining("."));
+                }
+                List<Token> packageParts = export.packageParts;
+                if (packageParts.isEmpty()) {
+                    int lastIndex = sourceTypeName.lastIndexOf('.');
+                    targetPackageName = lastIndex != -1 ? sourceTypeName.substring(0, lastIndex) + ".dto" : "";
+                } else {
+                    targetPackageName = packageParts.stream().map(Token::getText).collect(Collectors.joining("."));
+                }
+            }
+            if (sourceTypeName == null) {
+                String name = dtoFile.getName();
+                sourceTypeName = dtoFile.getPackageName() + '.' + name.substring(0, name.length() - 4);
+            }
+            this.sourceTypeName = sourceTypeName;
+            this.targetPackageName = targetPackageName;
+        }
     }
 
     public T getBaseType() {
+        if (baseType == null) {
+            throw new IllegalStateException("baseType has not be set");
+        }
         return baseType;
     }
 
@@ -28,46 +72,21 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
         return dtoFilePath;
     }
 
-    public List<DtoType<T, P>> compile(String code) {
-        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(code));
-        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-        DtoErrorListener listener = new DtoErrorListener();
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(listener);
-        parser.removeErrorListeners();
-        parser.addErrorListener(listener);
-        return parse(parser);
+    public String getSourceTypeName() {
+        return sourceTypeName;
     }
 
-    public List<DtoType<T, P>> compile(Reader reader) throws IOException {
-        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
-        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-        DtoErrorListener listener = new DtoErrorListener();
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(listener);
-        parser.removeErrorListeners();
-        parser.addErrorListener(listener);
-        return parse(parser);
+    public String getTargetPackageName() {
+        return targetPackageName;
     }
 
-    public List<DtoType<T, P>> compile(InputStream input) throws IOException {
-        DtoLexer lexer = new DtoLexer(new ANTLRInputStream(input));
-        DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
-        DtoErrorListener listener = new DtoErrorListener();
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(listener);
-        parser.removeErrorListeners();
-        parser.addErrorListener(listener);
-        return parse(parser);
-    }
-
-    private List<DtoType<T, P>> parse(DtoParser parser) {
+    public List<DtoType<T, P>> compile(T baseType) {
+        this.baseType = baseType;
         CompilerContext<T, P> ctx = new CompilerContext<>(this);
-        DtoParser.DtoContext dto = parser.dto();
-        for (DtoParser.ImportStatementContext importStatement : dto.importStatements) {
+        for (DtoParser.ImportStatementContext importStatement : ast.importStatements) {
             ctx.importStatement(importStatement);
         }
-        for (DtoParser.DtoTypeContext dtoType : dto.dtoTypes) {
+        for (DtoParser.DtoTypeContext dtoType : ast.dtoTypes) {
             ctx.add(dtoType);
         }
         return ctx.getDtoTypes();
@@ -84,6 +103,10 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     protected abstract boolean isGeneratedValue(P baseProp);
 
     protected abstract List<String> getEnumConstants(P baseProp);
+
+    protected abstract boolean isStringProp(P baseProp);
+
+    protected abstract boolean isSameType(P baseProp1, P baseProp2);
 
     DtoAstException exception(int line, String message) {
         return new DtoAstException(dtoFilePath, line, message);

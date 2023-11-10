@@ -57,4 +57,9 @@ public class AssociationTableProxyImpl<SE, ST extends Table<SE>, TE, TT extends 
     public <P extends TableProxy<Association<SE, TE>>> P __disableJoin(String reason) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public JoinType __currentJoinType() {
+        return JoinType.INNER;
+    }
 }

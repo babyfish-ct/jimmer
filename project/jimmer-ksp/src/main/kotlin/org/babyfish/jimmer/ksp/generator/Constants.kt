@@ -1,21 +1,22 @@
 package org.babyfish.jimmer.ksp.generator
 
-import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.*
-import org.babyfish.jimmer.impl.util.FlatUtils
+import org.babyfish.jimmer.impl.util.DtoPropAccessor
 import org.babyfish.jimmer.meta.ImmutablePropCategory
 import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
+import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.sql.collection.IdViewList
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import org.babyfish.jimmer.sql.collection.MutableIdViewList
+import java.io.Serializable
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.LocalDate
@@ -33,7 +34,9 @@ internal const val PROPS = "Props"
 internal const val FETCHER = "Fetcher"
 internal const val FETCHER_DSL = "FetcherDsl"
 
+internal val CLASS_CLASS_NAME = Class::class.asClassName()
 internal val CLONEABLE_CLASS_NAME = Cloneable::class.asClassName()
+internal val SERIALIZABLE_CLASS_NAME = Serializable::class.asClassName()
 internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
@@ -45,11 +48,12 @@ internal val VIEW_METADATA_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
     "ViewMetadata"
 )
-internal val FLAT_UTILS_CLASS_NAME = FlatUtils::class.asClassName()
+internal val DTO_PROP_ACCESSOR = DtoPropAccessor::class.asClassName()
 internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()
 internal val DRAFT_CONSUMER_CLASS_NAME = DraftConsumer::class.asClassName()
+internal val IMMUTABLE_PROP_CLASS_NAME = ImmutableProp::class.asClassName()
 internal val IMMUTABLE_SPI_CLASS_NAME = ImmutableSpi::class.asClassName()
 internal val IMMUTABLE_OBJECTS_CLASS_NAME = ImmutableObjects::class.asClassName()
 internal val UNLOADED_EXCEPTION_CLASS_NAME = UnloadedException::class.asClassName()
@@ -174,6 +178,10 @@ internal val FETCHER_CREATOR_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.kt.fetcher",
     "FetcherCreator"
 )
+internal val ID_ONLY_FETCH_TYPE = ClassName(
+    "org.babyfish.jimmer.sql.fetcher",
+    "IdOnlyFetchType"
+)
 internal val SELECTION_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.ast",
@@ -190,6 +198,18 @@ internal val ENTITY_MANAGER_CLASS_NAME =
     ClassName(
         "org.babyfish.jimmer.sql.runtime",
         "EntityManager"
+    )
+
+internal val K_SPECIFICATION_CLASS_NAME =
+    ClassName(
+        "org.babyfish.jimmer.sql.kt.ast.query.specification",
+        "KSpecification"
+    )
+
+internal val K_SPECIFICATION_ARGS_CLASS_NAME =
+    ClassName(
+        "org.babyfish.jimmer.sql.kt.ast.query.specification",
+        "KSpecificationArgs"
     )
 
 internal const val KEY_FULL_NAME = "org.babyfish.jimmer.sql.Key"

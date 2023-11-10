@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class CacheImpl<T> implements Cache<Object, T> {
 
@@ -16,12 +18,26 @@ public class CacheImpl<T> implements Cache<Object, T> {
 
     private final ValueSerializer<T> valueSerializer;
 
+    private String logPrefix;
+
+    private final Consumer<Collection<String>> onDelete;
+
     public CacheImpl(ImmutableType type) {
         valueSerializer = new ValueSerializer<>(type);
+        logPrefix = null;
+        onDelete = null;
     }
 
     public CacheImpl(ImmutableProp prop) {
         valueSerializer = new ValueSerializer<>(prop);
+        logPrefix = null;
+        this.onDelete = null;
+    }
+
+    public CacheImpl(ImmutableProp prop, Consumer<Collection<String>> onDelete) {
+        valueSerializer = new ValueSerializer<>(prop);
+        logPrefix = prop.getDeclaringType().getJavaClass().getSimpleName() + '.' + prop.getName() + '-';
+        this.onDelete = onDelete;
     }
 
     @NotNull
@@ -50,6 +66,9 @@ public class CacheImpl<T> implements Cache<Object, T> {
 
     @Override
     public void deleteAll(@NotNull Collection<Object> keys, @Nullable Object reason) {
+        if (onDelete != null) {
+            onDelete.accept(keys.stream().map(it -> logPrefix + it).collect(Collectors.toList()));
+        }
         map.keySet().removeAll(keys);
     }
 }

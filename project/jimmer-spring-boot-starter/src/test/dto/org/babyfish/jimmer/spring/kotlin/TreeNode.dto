@@ -20,3 +20,10 @@ TreeNodeView2 {
         }
     }
 }
+
+specification TreeNodeSpecification {
+    like/i(name)
+    flat(parent) {
+        like/i(name) as parentName
+    }
+}

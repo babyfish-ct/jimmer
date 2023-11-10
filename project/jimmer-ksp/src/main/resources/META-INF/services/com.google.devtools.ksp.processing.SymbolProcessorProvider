@@ -1,1 +1,1 @@
-org.babyfish.jimmer.ksp.ImmutableProcessorProvider
+org.babyfish.jimmer.ksp.JimmerProcessorProvider

@@ -19,7 +19,7 @@ class ImplGenerator(
                 .addModifiers(KModifier.PRIVATE)
                 .addSuperinterface(type.draftClassName(PRODUCER, IMPLEMENTOR))
                 .addSuperinterface(CLONEABLE_CLASS_NAME)
-                .addSuperinterface(Serializable::class)
+                .addSuperinterface(SERIALIZABLE_CLASS_NAME)
                 .apply {
                     addProperty(
                         PropertySpec

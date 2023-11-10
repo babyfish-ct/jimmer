@@ -67,7 +67,7 @@ class AssociationMutationTest : AbstractMutationTest() {
             statement {
                 sql(
                     """delete from BOOK_AUTHOR_MAPPING 
-                        |where (AUTHOR_ID, BOOK_ID) in ((?, ?))""".trimMargin()
+                        |where (AUTHOR_ID, BOOK_ID) = (?, ?)""".trimMargin()
                 )
                 variables(5L, 12L)
             }

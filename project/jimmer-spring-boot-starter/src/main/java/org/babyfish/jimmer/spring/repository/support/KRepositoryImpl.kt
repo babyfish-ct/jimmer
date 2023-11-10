@@ -172,7 +172,6 @@ open class KRepositoryImpl<E: Any, ID: Any> (
 
     override fun deleteAll() {
         sql.createDelete(entityType) {
-            enableDissociation()
         }.execute()
     }
 

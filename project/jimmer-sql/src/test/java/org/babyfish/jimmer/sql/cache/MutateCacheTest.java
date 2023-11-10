@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.cache;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.CacheImpl;
@@ -453,7 +454,7 @@ public class MutateCacheTest extends AbstractQueryTest {
     public void testChangeTreeNode() {
         executeAndExpect(
                 lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
-                    q.where(treeNode.parent().isNull());
+                    q.where(treeNode.parent(JoinType.LEFT).isNull());
                     return q.select(
                             treeNode.fetch(
                                     TreeNodeFetcher.$.childNodes(
@@ -483,7 +484,7 @@ public class MutateCacheTest extends AbstractQueryTest {
         );
         executeAndExpect(
                 lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
-                    q.where(treeNode.parent().isNull());
+                    q.where(treeNode.parent(JoinType.LEFT).isNull());
                     return q.select(
                             treeNode.fetch(
                                     TreeNodeFetcher.$.childNodes(
@@ -513,7 +514,7 @@ public class MutateCacheTest extends AbstractQueryTest {
         );
         executeAndExpect(
                 lambdaClient.createQuery(TreeNodeTable.class, (q, treeNode) -> {
-                    q.where(treeNode.parent().isNull());
+                    q.where(treeNode.parent(JoinType.LEFT).isNull());
                     return q.select(
                             treeNode.fetch(
                                     TreeNodeFetcher.$.childNodes(

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.generator.Strings;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
+import org.babyfish.jimmer.impl.util.Keywords;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
@@ -161,6 +162,12 @@ public class ImmutableProp implements BaseProp {
             adderByName = "addInto" + suffix;
             beanStyle = false;
             beanGetterName = (returnType.getKind() == TypeKind.BOOLEAN ? "is" : "get") + suffix;
+        }
+        if (Keywords.ILLEGAL_PROP_NAMES.contains(name)) {
+            throw new MetaException(
+                    executableElement,
+                    "Illegal property \"" + name + "\" which is jimmer keyword"
+            );
         }
 
         slotName = "SLOT_" + Strings.upper(name);
@@ -503,6 +510,9 @@ public class ImmutableProp implements BaseProp {
     }
 
     public boolean isDsl(boolean isTableEx) {
+        if (getIdViewBaseProp() != null) {
+            return false;
+        }
         if (isJavaFormula || isTransient || (getIdViewBaseProp() != null && isList)) {
             return false;
         }

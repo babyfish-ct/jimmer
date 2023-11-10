@@ -217,7 +217,7 @@ class ManyToManyTest : AbstractMutationTest() {
             // The mapping references to `Author-200` must be deleted
             ExecutedStatement(
                 "delete from BOOK_AUTHOR_MAPPING " +
-                    "where (BOOK_ID, AUTHOR_ID) in ((?, ?))",
+                    "where (BOOK_ID, AUTHOR_ID) = (?, ?)",
                 10L, 200L
             )
         )

@@ -3,11 +3,16 @@ package org.babyfish.jimmer.sql.kt.filter
 import org.babyfish.jimmer.sql.filter.FilterConfig
 import org.babyfish.jimmer.sql.filter.impl.FilterManager
 import org.babyfish.jimmer.sql.kt.filter.impl.toJavaFilter
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior
 import kotlin.reflect.KClass
 
 class KFilterDsl internal constructor(
     private val javaConfig: FilterConfig
 ) {
+    fun setBehavior(behavior: LogicalDeletedBehavior) {
+        javaConfig.setBehavior(behavior)
+    }
+
     fun enable(vararg filters: KFilter<*>?) {
         javaConfig.enable(filters.map { it?.toJavaFilter() })
     }

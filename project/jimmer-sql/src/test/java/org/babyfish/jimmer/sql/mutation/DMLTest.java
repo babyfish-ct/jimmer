@@ -8,6 +8,7 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.dialect.MySqlDialect;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.model.*;
+import org.babyfish.jimmer.sql.model.inheritance.AdministratorTable;
 import org.babyfish.jimmer.sql.runtime.ExecutionException;
 import org.junit.jupiter.api.Test;
 
@@ -145,10 +146,31 @@ public class DMLTest extends AbstractMutationTest {
     }
 
     @Test
+    public void testUpdateWithFilter() {
+        executeAndExpectRowCount(
+                getLambdaClient().createUpdate(AdministratorTable.class, (u, admin) -> {
+                    u.set(admin.name(), admin.name().concat("*"));
+                    u.where(admin.name().ilike("2"));
+                }),
+                ctx -> {
+                    ctx.statement(it -> {
+                        it.sql(
+                                "update ADMINISTRATOR tb_1_ " +
+                                        "set NAME = concat(tb_1_.NAME, ?) " +
+                                        "where tb_1_.NAME ilike ? " +
+                                        "and tb_1_.DELETED <> ?"
+                        );
+                    });
+                }
+        );
+    }
+
+    @Test
     public void testDelete() {
         executeAndExpectRowCount(
                 getLambdaClient().createDelete(BookTable.class, (d, book) -> {
                     d.where(book.name().eq("Learning GraphQL"));
+                    d.disableDissociation();
                 }),
                 ctx -> {
                     ctx.statement(it -> {
@@ -200,6 +222,7 @@ public class DMLTest extends AbstractMutationTest {
                         it -> it.setDialect(new MySqlDialect())
                 ).createDelete(BookTable.class, (d, book) -> {
                     d.where(book.name().eq("Learning GraphQL"));
+                    d.disableDissociation();
                 }),
                 ctx -> {
                     ctx.statement(it -> {

@@ -8,13 +8,12 @@ import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.Props;
+import org.babyfish.jimmer.sql.ast.query.specification.PredicateApplier;
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
+import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.ast.tuple.*;
-import org.babyfish.jimmer.sql.filter.CacheableFilter;
-import org.babyfish.jimmer.sql.filter.Filter;
-import org.babyfish.jimmer.sql.filter.impl.FilterArgsImpl;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
@@ -33,20 +32,21 @@ public class MutableRootQueryImpl<T extends Table<?>>
             JSqlClientImplementor sqlClient,
             ImmutableType immutableType,
             ExecutionPurpose purpose,
-            boolean ignoreFilter
+            FilterLevel filterLevel
     ) {
         super(sqlClient, immutableType);
-        ctx = new StatementContext(purpose, ignoreFilter);
+        ctx = new StatementContext(purpose, filterLevel);
+        getTableImplementor();
     }
 
     public MutableRootQueryImpl(
             JSqlClientImplementor sqlClient,
             TableProxy<?> table,
             ExecutionPurpose purpose,
-            boolean ignoreFilter
+            FilterLevel filterLevel
     ) {
         super(sqlClient, table);
-        ctx = new StatementContext(purpose, ignoreFilter);
+        ctx = new StatementContext(purpose, filterLevel);
     }
 
     public MutableRootQueryImpl(
@@ -79,7 +79,6 @@ public class MutableRootQueryImpl<T extends Table<?>>
 
     @Override
     public <R> ConfigurableRootQuery<T, R> select(Selection<R> selection) {
-        freeze();
         return new ConfigurableRootQueryImpl<>(
                 new TypedQueryData(Collections.singletonList(selection)),
                 this
@@ -219,6 +218,17 @@ public class MutableRootQueryImpl<T extends Table<?>>
         return (MutableRootQueryImpl<T>) super.where(predicates);
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public MutableRootQuery<T> where(JSpecification<?, T> specification) {
+        SpecificationArgs<Object, Table<Object>> args =
+                new SpecificationArgs<>(new PredicateApplier(this));
+        JSpecification<Object, Table<Object>> implementor =
+                (JSpecification<Object, Table<Object>>)specification;
+        implementor.applyTo(args);
+        return this;
+    }
+
     @OldChain
     @Override
     public MutableRootQueryImpl<T> whereIf(boolean condition, Predicate predicate) {
@@ -283,28 +293,5 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @Override
     public MutableRootQueryImpl<T> orderByIf(boolean condition, List<Order> orders) {
         return (MutableRootQueryImpl<T>)super.orderByIf(condition, orders);
-    }
-
-    @Override
-    protected void onFrozen() {
-        Filter<Props> filter = getSqlClient().getFilters().getFilter(
-                getTable().getImmutableType(),
-                getContext().isFilterIgnored()
-        );
-        if (filter instanceof CacheableFilter<?>) {
-            disableSubQuery();
-            try {
-                filter.filter(
-                        new FilterArgsImpl<>(this, this.getTable(), true)
-                );
-            } finally {
-                enableSubQuery();
-            }
-        } else if (filter != null) {
-            filter.filter(
-                    new FilterArgsImpl<>(this, this.getTable(), false)
-            );
-        }
-        super.onFrozen();
     }
 }

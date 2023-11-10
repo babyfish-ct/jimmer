@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.repository.support;
 
+import org.babyfish.jimmer.Specification;
 import org.babyfish.jimmer.View;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -10,11 +11,17 @@ import org.babyfish.jimmer.spring.repository.parser.Predicate;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
 import org.babyfish.jimmer.sql.ast.impl.mutation.Mutations;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification;
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationKt;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.springframework.data.domain.Page;
@@ -37,6 +44,7 @@ public class QueryExecutors {
             QueryMethod queryMethod,
             Pageable pageable,
             Sort sort,
+            Specification<?> specification,
             Fetcher<?> fetcher,
             Class<?> viewType,
             Object[] args
@@ -49,8 +57,18 @@ public class QueryExecutors {
             return queryMethod.getJavaMethod().getReturnType() == int.class ? rowCount : null;
         } else {
             ConfigurableRootQuery<?, Object> query = Queries
-                    .createQuery(sqlClient, type, ExecutionPurpose.QUERY, false, (q, table) -> {
+                    .createQuery(sqlClient, type, ExecutionPurpose.QUERY, FilterLevel.DEFAULT, (q, table) -> {
                         q.where(astPredicate(table, queryData.getPredicate(), args));
+                        if (specification != null) {
+                            if (specification instanceof KSpecification<?>) {
+                                JSpecification<?, Table<?>> spec =
+                                        (JSpecification<?, Table<?>>)(JSpecification<?, ?>)
+                                                KSpecificationKt.toJavaSpecification(((KSpecification<Object>)specification));
+                                q.where(spec);
+                            } else {
+                                q.where((JSpecification<?, Table<?>>) specification);
+                            }
+                        }
                         for (Query.Order order : queryData.getOrders()) {
                             q.orderBy(
                                     order.getOrderMode() == OrderMode.DESC ?
@@ -77,7 +95,7 @@ public class QueryExecutors {
                             return q.select((Expression<Object>)(Expression<?>)table.count());
                         }
                         if (queryData.getAction() == Query.Action.EXISTS) {
-                            return q.select(table.<Expression<Object>>get(table.getImmutableType().getIdProp().getName()));
+                            return q.select(table.get(table.getImmutableType().getIdProp()));
                         }
                         return q.select((Table<Object>)table);
                     });
@@ -129,6 +147,7 @@ public class QueryExecutors {
             PropPredicate propPredicate = (PropPredicate) predicate;
             Selection<?> astSelection;
             switch (propPredicate.getOp()) {
+                case NULL:
                 case NOT_IN:
                 case NOT_NULL:
                     astSelection = astSelection(table, propPredicate.getPath(), true);
@@ -287,11 +306,11 @@ public class QueryExecutors {
         PropExpression<?> propExpr = null;
         for (ImmutableProp prop : path.getProps()) {
             if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-                table = table.join(prop.getName(), outerJoin ? JoinType.LEFT : JoinType.INNER);
+                table = table.join(prop, outerJoin ? JoinType.LEFT : JoinType.INNER);
             } else if (propExpr instanceof PropExpression.Embedded<?>) {
-                propExpr = ((PropExpression.Embedded<?>) propExpr).get(prop.getName());
+                propExpr = ((PropExpression.Embedded<?>) propExpr).get(prop);
             } else {
-                propExpr = table.get(prop.getName());
+                propExpr = table.get(prop);
             }
         }
         return propExpr != null ? propExpr : table;

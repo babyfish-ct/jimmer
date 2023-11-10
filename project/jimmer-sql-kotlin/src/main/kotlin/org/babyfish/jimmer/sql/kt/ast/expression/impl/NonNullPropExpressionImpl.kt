@@ -46,6 +46,9 @@ internal class NonNullPropExpressionImpl<T: Any>(
     override fun getProp(): ImmutableProp =
         javaPropExpression.prop
 
+    override fun isRawId(): Boolean =
+        javaPropExpression.isRawId
+
     override fun getPartial(strategy: MetadataStrategy): EmbeddedColumns.Partial? =
         javaPropExpression.getPartial(strategy)
 }

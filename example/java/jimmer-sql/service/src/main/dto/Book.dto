@@ -1,0 +1,55 @@
+export org.babyfish.jimmer.sql.example.model.Book
+    -> package org.babyfish.jimmer.sql.example.service.dto
+
+// Abstract type will not generate java/kt code
+abstract input AbstractBookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(this)/#allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
+     */
+    #allScalars(Book)
+}
+
+input BookInput : AbstractBookInput {
+
+    /*
+     * You can also write `storeId` because the @IdView property `Book.storeId` has already been defined.
+     *
+     * However, this is better way to not assume that `@IdView` property must be present.
+     */
+    id(store)
+
+    /*
+     * You can also write `authorIds` because the @IdView property `Book.authorIds` has already been defined.
+     *
+     * However, this is better way to not assume that `@IdView` property must be present.
+     */
+    id(authors) as authorIds // Override default alias `authorsId`
+}
+
+input CompositeBookInput: AbstractBookInput {
+
+    store {
+        #allScalars(this) // or `#allScalars(BookStore)`
+        -id // Remove id
+    }
+
+    authors {
+        #allScalars(this) // or `#allScalars(Author)`
+        -id // Remove id
+    }
+}
+
+specification BookSpecification {
+    like/i(name)
+    ge(price)
+    le(price)
+    flat(store) {
+        like/i(name) as storeName
+    }
+    flat(authors) {
+        like/i(firstName, lastName) as authorName
+    }
+}

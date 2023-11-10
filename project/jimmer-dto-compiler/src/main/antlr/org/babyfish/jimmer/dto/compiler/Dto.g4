@@ -8,9 +8,16 @@ package org.babyfish.jimmer.dto.compiler;
 
 dto
     :
+    exportStatement?
     (importStatements += importStatement)*
     (dtoTypes+=dtoType)*
     EOF
+    ;
+
+exportStatement
+    :
+    'export' typeParts += Identifier ('.' typeParts += Identifier)*
+    ('->' 'package' packageParts += Identifier ('.' packageParts += Identifier)*)?
     ;
 
 importStatement
@@ -30,7 +37,7 @@ importedType
 dtoType
     :
     (annotations += annotation)*
-    (modifiers += (Identifier | 'input-only'))*
+    (modifiers += Identifier)*
     name=Identifier
     (':' superNames += Identifier (',' superNames += Identifier)*)?
     body=dtoBody
@@ -82,13 +89,19 @@ positiveProp
     :
     (annotations += annotation)*
     '+'?
-    (func = Identifier '(' prop = Identifier ')' | prop = Identifier)
+    (
+        func = Identifier
+        (flag = '/' (insensitive = Identifier)? (prefix = '^')? (suffix = '$')?)?
+        '(' props += Identifier (',' props += Identifier)* ','? ')'
+        |
+        props += Identifier
+    )
     (optional = '?' | required = '!')?
     ('as' alias=Identifier)?
     (
         (annotations += annotation)* dtoBody (recursive='*')?
         |
-        enumBody
+        '->' enumBody
     )?
     ;
 
@@ -176,7 +189,7 @@ enumBody
 
 enumMapping
     :
-    constant = Identifier '->' value = (StringLiteral | IntegerLiteral)
+    constant = Identifier ':' value = (StringLiteral | IntegerLiteral)
     ;
 
 // Lexer --------

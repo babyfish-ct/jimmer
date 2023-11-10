@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
@@ -42,19 +43,19 @@ public class MutableUpdateImpl
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
         this.triggerIgnored = false;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType, boolean triggerIgnored) {
         super(sqlClient, immutableType);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
         this.triggerIgnored = triggerIgnored;
     }
 
     public MutableUpdateImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
-        this.ctx = new StatementContext(ExecutionPurpose.UPDATE, false);
+        this.ctx = new StatementContext(ExecutionPurpose.UPDATE);
         this.triggerIgnored = false;
     }
 
@@ -134,7 +135,6 @@ public class MutableUpdateImpl
     }
 
     private int executeImpl(Connection con) {
-        freeze();
         if (assignmentMap.isEmpty()) {
             return 0;
         }
@@ -144,6 +144,7 @@ public class MutableUpdateImpl
         }
 
         SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
+        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
         renderTo(builder);
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return getSqlClient()
@@ -250,8 +251,7 @@ public class MutableUpdateImpl
                     ((Ast) e.getValue()).accept(visitor);
                 }
             }
-            Predicate predicate = getPredicate();
-            if (predicate != null) {
+            for (Predicate predicate : getPredicates()) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -345,6 +345,7 @@ public class MutableUpdateImpl
         TableImplementor<?> impl = TableProxies.resolve(target.table, builder.getAstContext());
         impl.renderSelection(
                 target.prop,
+                true,
                 builder,
                 target.expr.getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy()),
                 withPrefix
@@ -393,7 +394,7 @@ public class MutableUpdateImpl
                         updateJoin.getFrom() == UpdateJoin.From.AS_JOIN &&
                         hasUsedChild(table, builder.getAstContext());
 
-        if (!hasTableCondition && ids == null && getPredicate() == null) {
+        if (!hasTableCondition && ids == null && getPredicates().isEmpty()) {
             return;
         }
 
@@ -495,8 +496,8 @@ public class MutableUpdateImpl
         }
 
         @Override
-        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop) {
-            super.visitTableReference(table, prop);
+        public void visitTableReference(TableImplementor<?> table, ImmutableProp prop, boolean rawId) {
+            super.visitTableReference(table, prop, rawId);
             if (dialect != null) {
                 validateTable(table);
             }

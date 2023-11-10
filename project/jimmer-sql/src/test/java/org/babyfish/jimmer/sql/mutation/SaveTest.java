@@ -937,45 +937,6 @@ public class SaveTest extends AbstractMutationTest {
     }
 
     @Test
-    public void testRestoreLogicalDeleted() {
-        jdbc(null, true, con -> {
-            PreparedStatement statement = con.prepareStatement(
-                    "update ADMINISTRATOR_METADATA set DELETED = ? where ID in (?)"
-            );
-            statement.setBoolean(1, true);
-            statement.setLong(2, 10L);
-            clearExecutions();
-            statement.execute();
-            SimpleSaveResult<AdministratorMetadata> result = null;
-            Throwable throwable = null;
-            try {
-                result = getSqlClient().getEntities().saveCommand(
-                        AdministratorMetadataDraft.$.produce(draft -> {
-                            draft.setId(10L);
-                            draft.setName("am_10");
-                        })
-                ).execute(con);
-            } catch (Throwable ex) {
-                throwable = ex;
-            }
-            ExpectDSLWithResult ctx = new ExpectDSLWithResult(getExecutions(), throwable, result);
-            ctx.statement(it -> {
-                it.sql("select tb_1_.ID, tb_1_.NAME from ADMINISTRATOR_METADATA tb_1_ where tb_1_.ID = ?");
-                it.variables(10L);
-            });
-            ctx.statement(it -> {
-                it.sql("update ADMINISTRATOR_METADATA set NAME = ?, DELETED = ? where ID = ?");
-                it.variables("am_10", false, 10L);
-            });
-            ctx.entity(it -> {
-                it.original("{\"name\":\"am_10\",\"id\":10}");
-                it.modified("{\"name\":\"am_10\",\"deleted\":false,\"id\":10}");
-            });
-            ctx.close();
-        });
-    }
-
-    @Test
     public void testIgnoreAssociatedInterceptor() {
         executeAndExpectResult(
                 getSqlClient(cfg -> {

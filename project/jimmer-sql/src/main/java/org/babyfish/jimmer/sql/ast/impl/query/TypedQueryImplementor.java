@@ -8,4 +8,5 @@ import java.util.List;
 interface TypedQueryImplementor extends Ast {
 
     List<Selection<?>> getSelections();
+
 }

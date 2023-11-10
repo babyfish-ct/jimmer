@@ -145,6 +145,9 @@ public class Literals {
         if (value instanceof Comparable<?>) {
             return (Expression<T>) comparable((Comparable)value);
         }
+        if (value instanceof Expression<?>) {
+            return (Expression<T>) value;
+        }
         return new Any<>(value);
     }
 

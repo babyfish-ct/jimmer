@@ -11,7 +11,9 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 public class TableProxies {
 
@@ -21,12 +23,15 @@ public class TableProxies {
     private static final TypeCache<Constructor<?>> FLUENT_CACHE =
             new TypeCache<>(TableProxies::createFluentConstructor);
 
+    private static final StaticCache<Class<?>, TableProxy<?>> ROOT_PROXY_CACHE =
+            new StaticCache<>(TableProxies::createRootProxy);
+
     private TableProxies() {}
 
     @SuppressWarnings("unchecked")
-    public static <T extends TableEx<?>> T wrap(Table<?> table) {
+    public static <T extends Table<?>> T wrap(Table<?> table) {
         ImmutableType immutableType = table.getImmutableType();
-        if (immutableType instanceof AssociationType || immutableType.isKotlinClass()) {
+        if (immutableType instanceof AssociationType || immutableType.isKotlinClass() || table instanceof AbstractTypedTable<?>) {
             return (T)table;
         }
         Class<?> javaClass = immutableType.getJavaClass();
@@ -35,6 +40,11 @@ public class TableProxies {
             return (T) table;
         }
         return invokeConstructor(constructor, table);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Table<?>> T fluent(Class<?> type) {
+        return (T) ROOT_PROXY_CACHE.get(type);
     }
 
     public static <T extends Table<?>> T fluent(
@@ -56,6 +66,27 @@ public class TableProxies {
             throw new IllegalStateException("\"" + type + "\" cannot be AssociationType");
         }
         return createConstructor(type, new Class[]{AbstractTypedTable.DelayedOperation.class});
+    }
+
+    private static TableProxy<?> createRootProxy(Class<?> javaClass) {
+        Class<?> tableClass = tableWrapperClass(javaClass);
+        if (tableClass == null) {
+            return null;
+        }
+        Field field;
+        try {
+            field = tableClass.getField("$");
+        } catch (NoSuchFieldException ex) {
+            return null;
+        }
+        if (Modifier.isStatic(field.getModifiers())) {
+            try {
+                return (TableProxy<?>) field.get(null);
+            } catch (IllegalAccessException ex) {
+                return null;
+            }
+        }
+        return null;
     }
 
     static Class<?> tableWrapperClass(Class<?> entityType) {

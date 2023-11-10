@@ -42,7 +42,7 @@ public class SpringCloudExchange implements MicroServiceExchange {
                         "={fetcher}",
                 String.class,
                 mapper.writeValueAsString(ids),
-                fetcher.toString(true)
+                fetcher.toString()
         );
         return mapper.readValue(
                 json,
@@ -74,7 +74,7 @@ public class SpringCloudExchange implements MicroServiceExchange {
                 String.class,
                 prop.getName(),
                 mapper.writeValueAsString(targetIds),
-                fetcher.toString(true)
+                fetcher.toString()
         );
         TypeFactory typeFactory = mapper.getTypeFactory();
         return mapper.readValue(

@@ -31,7 +31,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Map<String, DtoPropBuilder<T, P>> autoScalarPropMap = new LinkedHashMap<>();
 
-    final Map<P, DtoPropBuilder<T, P>> positivePropMap = new LinkedHashMap<>();
+    final Map<P, List<DtoPropBuilder<T, P>>> positivePropMap = new LinkedHashMap<>();
 
     final Map<String, AbstractPropBuilder> aliasPositivePropMap = new LinkedHashMap<>();
 
@@ -110,23 +110,30 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             );
         }
 
-        if (!positivePropMap.isEmpty()) {
+        if (!positivePropMap.isEmpty() || !negativePropAliasMap.isEmpty()) {
             throw ctx.exception(
                     allScalars.name.getLine(),
                     "`#allScalars` must be defined at the beginning"
             );
         }
 
+        Mandatory mandatory;
+        if (allScalars.required != null) {
+            mandatory = Mandatory.REQUIRED;
+        } else if (allScalars.optional != null) {
+            if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                throw ctx.exception(
+                        allScalars.name.getLine(),
+                        "Unnecessary optional modifier '?', all properties of specification are automatically optional"
+                );
+            }
+            mandatory = Mandatory.OPTIONAL;
+        } else {
+            mandatory = modifiers.contains(DtoTypeModifier.SPECIFICATION) ? Mandatory.OPTIONAL : Mandatory.DEFAULT;
+        }
+
         if (allScalars.args.isEmpty()) {
             for (P baseProp : ctx.getProps(baseType).values()) {
-                Mandatory mandatory;
-                if (allScalars.required != null) {
-                    mandatory = Mandatory.REQUIRED;
-                } else if (allScalars.optional != null) {
-                    mandatory = Mandatory.OPTIONAL;
-                } else {
-                    mandatory = Mandatory.DEFAULT;
-                }
                 if (isAutoScalar(baseProp)) {
                     autoScalarPropMap.put(
                             baseProp.getName(),
@@ -146,7 +153,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Set<T> handledBaseTypes = new LinkedHashSet<>();
             for (DtoParser.QualifiedNameContext qnCtx : allScalars.args) {
                 String qualifiedName = qnCtx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
-                T baseType = qualifiedNameTypeMap.get(qualifiedName);
+                T baseType = qualifiedName.equals("this") ? this.baseType : qualifiedNameTypeMap.get(qualifiedName);
                 if (baseType == null) {
                     Set<T> baseTypes = nameTypeMap.get(qualifiedName);
                     if (baseTypes != null) {
@@ -165,13 +172,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         }
                     }
                     if (baseType == null) {
-                        throw ctx.exception(
-                                qnCtx.start.getLine(),
-                                "Illegal type name \"" + qualifiedName + "\", " +
-                                        "it is not super type of \"" +
-                                        this.baseType.getQualifiedName() +
-                                        "\""
-                        );
+                        if (qualifiedName.indexOf('.') == -1) {
+                            String imported;
+                            try {
+                                imported = ctx.resolve(qnCtx);
+                            } catch (Throwable ex) {
+                                imported = null;
+                            }
+                            if (imported != null) {
+                                baseType = qualifiedNameTypeMap.get(imported);
+                            }
+                        }
+                        if (baseType == null) {
+                            throw ctx.exception(
+                                    qnCtx.start.getLine(),
+                                    "Illegal type name \"" + qualifiedName + "\", " +
+                                            "it is not super type of \"" +
+                                            this.baseType.getQualifiedName() +
+                                            "\""
+                            );
+                        }
                     }
                 }
                 if (!handledBaseTypes.add(baseType)) {
@@ -184,14 +204,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                     );
                 }
                 for (P baseProp : ctx.getDeclaredProps(baseType).values()) {
-                    Mandatory mandatory;
-                    if (allScalars.required != null) {
-                        mandatory = Mandatory.REQUIRED;
-                    } else if (allScalars.optional != null) {
-                        mandatory = Mandatory.OPTIONAL;
-                    } else {
-                        mandatory = Mandatory.DEFAULT;
-                    }
                     if (isAutoScalar(baseProp) && !autoScalarPropMap.containsKey(baseProp.getName())) {
                         autoScalarPropMap.put(
                                 baseProp.getName(),
@@ -214,25 +226,49 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     private void handlePositiveProp(DtoParser.PositivePropContext prop) {
         DtoPropBuilder<T, P> builder = new DtoPropBuilder<>(this, prop);
-        if (positivePropMap.put(builder.getBaseProp(), builder) != null) {
-            throw ctx.exception(
-                    builder.getBaseLine(),
-                    "Base property \"" +
-                            builder.getBaseProp() +
-                            "\" cannot be referenced twice"
-            );
+        for (P baseProp : builder.getBasePropMap().values()) {
+            handlePositiveProp0(builder, baseProp);
         }
-        if (builder.getAlias() != null) {
-            if (aliasPositivePropMap.put(builder.getAlias(), builder) != null) {
+    }
+
+    private void handlePositiveProp0(DtoPropBuilder<T, P> propBuilder, P baseProp) {
+        List<DtoPropBuilder<T, P>> builders = positivePropMap.get(baseProp);
+        if (builders == null) {
+            builders = new ArrayList<>();
+            positivePropMap.put(baseProp, builders);
+        } else {
+            boolean valid = false;
+            if (builders.size() < 2) {
+                String oldFuncName = builders.get(0).getFuncName();
+                String newFuncName = propBuilder.getFuncName();
+                if (!Objects.equals(oldFuncName, newFuncName) &&
+                        Constants.QBE_FUNC_NAMES.contains(oldFuncName) &&
+                        (Constants.QBE_FUNC_NAMES.contains(newFuncName))) {
+                    valid = true;
+                }
+            }
+            if (!valid) {
                 throw ctx.exception(
-                        builder.getAliasLine(),
+                        propBuilder.getBaseLine(),
+                        "Base property \"" +
+                                baseProp +
+                                "\" cannot be referenced too many times"
+                );
+            }
+        }
+        builders.add(propBuilder);
+        if (propBuilder.getAlias() != null) {
+            AbstractPropBuilder conflictPropBuilder = aliasPositivePropMap.put(propBuilder.getAlias(), propBuilder);
+            if (conflictPropBuilder != null && conflictPropBuilder != propBuilder) {
+                throw ctx.exception(
+                        propBuilder.getAliasLine(),
                         "Duplicated property alias \"" +
-                                builder.getAlias() +
+                                propBuilder.getAlias() +
                                 "\""
                 );
             }
         } else {
-            flatPositiveProps.add(builder);
+            flatPositiveProps.add(propBuilder);
         }
     }
 
@@ -277,14 +313,14 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         }
         TypeRef typeRef = ctx.resolve(prop.typeRef());
         if (!typeRef.isNullable() &&
-                !modifiers.contains(DtoTypeModifier.INPUT_ONLY) &&
+                !modifiers.contains(DtoTypeModifier.SPECIFICATION) &&
                 !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
             throw ctx.exception(
                     prop.prop.getLine(),
                     "Illegal user defined property \"" +
                             prop.prop.getText() +
                             "\", it is not null but its default value cannot be determined, " +
-                            "so it must be declared in dto type with the modifier 'inputOnly'"
+                            "so it must be declared in dto type with the modifier 'specification'"
             );
         }
         UserProp userProp = new UserProp(prop.prop, typeRef, annotations);
@@ -327,6 +363,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
         dtoType = new DtoType<>(
                 baseType,
+                ctx.getTargetPackageName(),
                 annotations,
                 modifiers,
                 name != null ? name.getText() : null,
@@ -341,35 +378,31 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             superTypes = new ArrayList<>(superTypeBuilders.size());
             for (DtoTypeBuilder<T, P> superTypeBuilder : superTypeBuilders) {
                 DtoType<T, P> superType = superTypeBuilder.build();
-                if (modifiers.contains(DtoTypeModifier.INPUT) && !superType.getModifiers().contains(DtoTypeModifier.INPUT)) {
+                String category = category(modifiers);
+                String superCategory = category(superType.getModifiers());
+                if (!category.equals(superCategory)) {
                     assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
                                     name.getText() +
-                                    "\", it is input type but the super type \"" +
+                                    "\", it is \"" +
+                                    category +
+                                    "\", but its super type \"" +
                                     superType.getName() +
-                                    "\" is not input"
+                                    "\" is not"
                     );
-                } else if (modifiers.contains(DtoTypeModifier.INPUT_ONLY) && !superType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
+                }
+                if (!modifiers.contains(DtoTypeModifier.UNSAFE) &&
+                        superType.getModifiers().contains(DtoTypeModifier.UNSAFE)) {
                     assert name != null;
                     throw ctx.exception(
                             name.getLine(),
                             "Illegal type \"" +
                                     name.getText() +
-                                    "\", it is inputOnly type but the super type \"" +
+                                    "\", its super type \"" +
                                     superType.getName() +
-                                    "\" is not inputOnly"
-                    );
-                } else if (!modifiers.contains(DtoTypeModifier.INPUT_ONLY) && superType.getModifiers().contains(DtoTypeModifier.INPUT_ONLY)) {
-                    assert name != null;
-                    throw ctx.exception(
-                            name.getLine(),
-                            "Illegal type \"" +
-                                    name.getText() +
-                                    "\", it is not inputOnly type but the super type \"" +
-                                    superType.getName() +
-                                    "\" is inputOnly"
+                                    "\" is unsafe so that it must unsafe too"
                     );
                 }
                 superTypes.add(superType);
@@ -568,5 +601,15 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 );
             }
         }
+    }
+
+    private static String category(Set<DtoTypeModifier> modifiers) {
+        if (modifiers.contains(DtoTypeModifier.INPUT)) {
+            return "input";
+        }
+        if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            return "specification";
+        }
+        return "view(neither input nor specification)";
     }
 }

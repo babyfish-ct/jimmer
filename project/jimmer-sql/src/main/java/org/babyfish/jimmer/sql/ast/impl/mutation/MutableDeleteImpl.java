@@ -3,11 +3,12 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -33,12 +34,12 @@ public class MutableDeleteImpl
 
     private MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
-    private boolean isDissociationEnabled;
+    private boolean isDissociationDisabled;
 
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, ImmutableType immutableType) {
         super(sqlClient, immutableType);
         deleteQuery = new MutableRootQueryImpl<>(
-                new StatementContext(ExecutionPurpose.QUERY, false),
+                new StatementContext(ExecutionPurpose.DELETE),
                 sqlClient,
                 immutableType
         );
@@ -47,7 +48,7 @@ public class MutableDeleteImpl
     public MutableDeleteImpl(JSqlClientImplementor sqlClient, TableProxy<?> table) {
         super(sqlClient, table);
         deleteQuery = new MutableRootQueryImpl<>(
-                new StatementContext(ExecutionPurpose.QUERY, false),
+                new StatementContext(ExecutionPurpose.DELETE),
                 sqlClient,
                 table
         );
@@ -80,8 +81,8 @@ public class MutableDeleteImpl
     }
 
     @Override
-    public MutableDelete enableDissociation() {
-        isDissociationEnabled = true;
+    public MutableDelete disableDissociation() {
+        isDissociationDisabled = true;
         return this;
     }
 
@@ -109,26 +110,33 @@ public class MutableDeleteImpl
 
     @SuppressWarnings("unchecked")
     private Integer executeImpl(Connection con) {
-        freeze();
 
         JSqlClientImplementor sqlClient = getSqlClient();
         TableImplementor<?> table = getTableImplementor();
 
+        boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
+        boolean directly = table.isEmpty() && binLogOnly && (
+                isDissociationDisabled ||
+                        sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType()) == null
+        );
+
         AstContext astContext = new AstContext(sqlClient);
+
+        if (directly) {
+            applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
+        }
+
         astContext.pushStatement(deleteQuery);
         try {
-            Predicate predicate = deleteQuery.getPredicate();
-            if (predicate != null) {
-                ((Ast) predicate).accept(new UseTableVisitor(astContext));
+            AstVisitor visitor = new UseTableVisitor(astContext);
+            for (Predicate predicate : deleteQuery.getPredicates()) {
+                ((Ast) predicate).accept(visitor);
             }
         } finally {
             astContext.popStatement();
         }
 
-        boolean binLogOnly = sqlClient.getTriggerType() == TriggerType.BINLOG_ONLY;
-        if (table.isEmpty() && binLogOnly &&
-                (!isDissociationEnabled || sqlClient.getEntityManager().getDissociationInfo(table.getImmutableType()) == null)
-        ) {
+        if (directly) {
             SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {
@@ -154,7 +162,7 @@ public class MutableDeleteImpl
         MutationCache cache;
         if (binLogOnly) {
             ids = deleteQuery
-                    .select((Expression<Object>) table.get(table.getImmutableType().getIdProp().getName()))
+                    .select(table.get(table.getImmutableType().getIdProp()))
                     .distinct()
                     .execute(con);
             cache = null;

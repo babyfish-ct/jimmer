@@ -154,13 +154,14 @@ public class TypeRef {
 
         @Override
         public String toString() {
+            String typeString = typeRef != null ? typeRef.toString() : "*";
             if (in) {
-                return "in " + typeRef;
+                return "in " + typeString;
             }
             if (out) {
-                return "out " + typeRef;
+                return "out " + typeString;
             }
-            return typeRef.toString();
+            return typeString;
         }
     }
 

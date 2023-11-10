@@ -48,7 +48,7 @@ public abstract class AbstractIdentityDataManager<K, V> {
         return value;
     }
 
-    protected void putValue(K key, V value) {
+    protected boolean putValue(K key, V value) {
         int h = System.identityHashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
@@ -56,10 +56,11 @@ public abstract class AbstractIdentityDataManager<K, V> {
         for (Node<K, V> node = startNode; node != null; node = node.next) {
             if (node.key == key) {
                 node.value = value;
-                return;
+                return false;
             }
         }
         tab[index] = new Node<>(h, key, value, startNode);
+        return true;
     }
 
     protected abstract V createValue(K key);

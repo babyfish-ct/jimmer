@@ -44,11 +44,6 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
 
     public void pushStatement(AbstractMutableStatementImpl statement) {
         StackFrame frame = this.frame;
-        if (frame != null && frame.statement.isSubQueryDisabled()) {
-            throw new IllegalStateException(
-                    "Cannot use sub query here because the sub query of parent statement is disabled"
-            );
-        }
         this.frame = new StackFrame(statement, frame);
     }
 

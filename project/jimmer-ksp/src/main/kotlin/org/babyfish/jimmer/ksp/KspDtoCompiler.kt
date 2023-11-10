@@ -2,15 +2,14 @@ package org.babyfish.jimmer.ksp
 
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.squareup.kotlinpoet.STRING
 import org.babyfish.jimmer.dto.compiler.DtoCompiler
+import org.babyfish.jimmer.dto.compiler.DtoFile
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 
-class KspDtoCompiler(
-    immutableType: ImmutableType,
-    dtoFilePath: String
-) : DtoCompiler<ImmutableType, ImmutableProp>(immutableType, dtoFilePath) {
+class KspDtoCompiler(dtoFile: DtoFile) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {
 
     override fun getSuperTypes(baseType: ImmutableType): Collection<ImmutableType> =
         baseType.superTypes
@@ -39,4 +38,10 @@ class KspDtoCompiler(
                     .toList()
             }
         }
+
+    override fun isSameType(baseProp1: ImmutableProp, baseProp2: ImmutableProp): Boolean =
+        baseProp1.typeName(overrideNullable = false) == baseProp2.typeName(overrideNullable = false)
+
+    override fun isStringProp(baseProp: ImmutableProp): Boolean =
+        baseProp.typeName(overrideNullable = false) == STRING
 }

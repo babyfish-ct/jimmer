@@ -27,6 +27,7 @@ public class CodeBasedExceptionAdvice {
 
     @ExceptionHandler
     public ResponseEntity<Map<String, Object>> handle(CodeBasedException ex) {
+        LOGGER.error("Auto handled HTTP Error(" + CodeBasedException.class.getName() + ")", ex);
         return ResponseEntity
                 .status(errorTranslator.getHttpStatus())
                 .body(resultMap(ex));

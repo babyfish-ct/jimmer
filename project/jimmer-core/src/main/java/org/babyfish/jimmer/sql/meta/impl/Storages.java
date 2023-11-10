@@ -62,7 +62,7 @@ public class Storages {
                 JoinColumnObj.array(prop, false, joinColumn, foreignKeyStrategy);
         ColumnDefinition definition;
         try {
-            definition= joinDefinition(columns, prop.getTargetType(), strategy);
+            definition = joinDefinition(columns, prop.getTargetType(), strategy);
         } catch (IllegalJoinColumnCount ex) {
             throw new ModelException(
                     "Illegal property \"" +
@@ -122,7 +122,9 @@ public class Storages {
         }
         return new SingleColumn(
                 namingStrategy.foreignKeyColumnName(prop),
-                isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
+                columns != null ?
+                        columns[0].isForeignKey :
+                        isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
         );
     }
 
@@ -258,13 +260,17 @@ public class Storages {
         if (definition == null) {
             definition = new SingleColumn(
                     namingStrategy.middleTableBackRefColumnName(prop),
-                    isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy)
+                    joinColumns != null ?
+                            joinColumns[0].isForeignKey :
+                            isForeignKey(prop, true, ForeignKeyType.AUTO, foreignKeyStrategy)
             );
         }
         if (targetDefinition == null) {
             targetDefinition = new SingleColumn(
                     namingStrategy.middleTableTargetRefColumnName(prop),
-                    isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
+                    inverseJoinColumns != null ?
+                            inverseJoinColumns[0].isForeignKey :
+                            isForeignKey(prop, false, ForeignKeyType.AUTO, foreignKeyStrategy)
             );
         }
         return new MiddleTable(

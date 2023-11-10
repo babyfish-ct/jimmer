@@ -50,23 +50,30 @@ public class JavaFeignGenerator implements Generator {
         for (Map.Entry<Service, File> e : ctx.getServiceFileMap().entrySet()) {
             Service service = e.getKey();
             File file = e.getValue();
-            zipOut.putNextEntry(new ZipEntry(baseDir + file + ".java"));
+            putEntry(zipOut, baseDir + file + ".java");
             new ServiceWriter(ctx, service).flush();
             zipOut.closeEntry();
         }
         for (Map.Entry<Type, File> e : ctx.getTypeFilePairs()) {
             Type type = e.getKey();
             File file = e.getValue();
-            zipOut.putNextEntry(new ZipEntry(baseDir + file + ".java"));
+            putEntry(zipOut, baseDir + file + ".java");
             new TypeDefinitionWriter(ctx, type).flush();
             zipOut.closeEntry();
         }
         for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : ctx.getDtoMap().entrySet()) {
             Class<?> rawType = e.getKey();
             DtoWriter dtoWriter = new DtoWriter(ctx, rawType);
-            zipOut.putNextEntry(new ZipEntry(baseDir + dtoWriter.getFile() + ".java"));
+            putEntry(zipOut, baseDir + dtoWriter.getFile() + ".java");
             dtoWriter.flush();
             zipOut.closeEntry();
         }
+    }
+
+    private static void putEntry(ZipOutputStream zipOut, String fileName) throws IOException {
+        if (fileName.charAt(0) == '/') {
+            fileName = fileName.substring(1);
+        }
+        zipOut.putNextEntry(new ZipEntry(fileName));
     }
 }

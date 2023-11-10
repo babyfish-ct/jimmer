@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.filter;
 
 import org.babyfish.jimmer.lang.OldChain;
 import org.babyfish.jimmer.sql.filter.impl.FilterManager;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,6 +13,12 @@ public class FilterConfig {
 
     public FilterConfig(FilterManager filterManager) {
         this.filterManager = filterManager;
+    }
+
+    @OldChain
+    public FilterConfig setBehavior(LogicalDeletedBehavior behavior) {
+        this.filterManager = filterManager.setBehavior(behavior);
+        return this;
     }
 
     @OldChain

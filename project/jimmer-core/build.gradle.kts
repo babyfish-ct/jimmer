@@ -26,12 +26,12 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
     testImplementation("org.mapstruct:mapstruct:1.5.3.Final")
-    testImplementation("org.projectlombok:lombok:1.18.26")
+    testImplementation("org.projectlombok:lombok:1.18.30")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
     testAnnotationProcessor(project(":jimmer-apt"))
     testAnnotationProcessor("org.mapstruct:mapstruct-processor:1.5.3.Final")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.26")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
 }
 
 tasks.withType(JavaCompile::class) {

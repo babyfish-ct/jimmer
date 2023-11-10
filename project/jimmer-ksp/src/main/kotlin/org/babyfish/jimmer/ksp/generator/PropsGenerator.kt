@@ -6,11 +6,13 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.meta.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.meta.impl.Utils
 import org.babyfish.jimmer.sql.Embeddable
 import java.io.OutputStreamWriter
 
@@ -72,6 +74,10 @@ class PropsGenerator(
                             addProp(type, prop, nonNullTable = false, outerJoin = false, isTableEx = true)
                             addProp(type, prop, nonNullTable = true, outerJoin = true, isTableEx = true)
                             addProp(type, prop, nonNullTable = false, outerJoin = true, isTableEx = true)
+                            addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = true, isTableEx = false)
+                            addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = false, isTableEx = false)
+                            addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = true, isTableEx = true)
+                            addIdProp(type, prop, type.getIdPropName(prop.name), nonNullTable = false, isTableEx = true)
                         }
                     }
                     if (type.isEntity) {
@@ -80,6 +86,7 @@ class PropsGenerator(
                         addFetchByFun(type, false)
                         addFetchByFun(type, true)
                     }
+                    addObjectMeta(type)
                 }.build()
             val writer = OutputStreamWriter(it, Charsets.UTF_8)
             fileSpec.writeTo(writer)
@@ -166,11 +173,80 @@ class PropsGenerator(
                         .getterBuilder()
                         .apply {
                             if (prop.isRemote) {
-                                addCode("return %L.protect(%L(%S))", K_REMOTE_REF, innerFunName, prop.name)
+                                addCode(
+                                    "return %L.protect(%L(%T.%L))",
+                                    K_REMOTE_REF,
+                                    innerFunName,
+                                    type.propsClassName,
+                                    StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
+                                )
+                            } else if (innerFunName == "get") {
+                                addCode(
+                                    "return get<%T>(%T.%L) as %T",
+                                    prop.targetTypeName(overrideNullable = false),
+                                    type.propsClassName,
+                                    StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
+                                    returnClassName
+                                )
                             } else {
-                                addCode("return %L(%S)", innerFunName, prop.name)
+                                addCode(
+                                    "return %L(%T.%L)",
+                                    innerFunName,
+                                    type.propsClassName,
+                                    StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
+                                )
                             }
                         }
+                        .build()
+                )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addIdProp(
+        type: ImmutableType,
+        prop: ImmutableProp,
+        idPropName: String?,
+        nonNullTable: Boolean,
+        isTableEx: Boolean
+    ) {
+        idPropName ?: return
+        if (nonNullTable && prop.isNullable) {
+            return
+        }
+        if (prop.isTransient || !prop.isAssociation(true) || prop.isList != isTableEx) {
+            return
+        }
+        val receiverClassName = when {
+            prop.isNullable -> K_PROPS_CLASS_NAME
+            isTableEx && nonNullTable -> K_NON_NULL_TABLE_CLASS_NAME_EX
+            isTableEx && !nonNullTable -> K_NULLABLE_TABLE_CLASS_NAME_EX
+            !isTableEx && nonNullTable -> K_NON_NULL_TABLE_CLASS_NAME
+            else -> K_NULLABLE_PROPS_CLASS_NAME
+        }.parameterizedBy(
+            type.className
+        )
+        val returnClassName = if (nonNullTable) {
+            K_NON_NULL_PROP_EXPRESSION
+        } else {
+            K_NULLABLE_PROP_EXPRESSION
+        }.parameterizedBy(
+            prop.targetType!!.idProp!!.typeName()
+        )
+        addProperty(
+            PropertySpec
+                .builder(idPropName, returnClassName)
+                .receiver(receiverClassName)
+                .getter(
+                    FunSpec
+                        .getterBuilder()
+                        .addStatement(
+                            "return getAssociatedId<%T>(%T.%L) as %T",
+                            prop.targetType!!.idProp!!.targetTypeName(overrideNullable = false),
+                            type.propsClassName,
+                            StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
+                            returnClassName
+                        )
                         .build()
                 )
                 .build()
@@ -225,18 +301,17 @@ class PropsGenerator(
     }
 
     private fun FileSpec.Builder.addRemoteId(type: ImmutableType, nullable: Boolean) {
+        val returnTypeName =
+            if (nullable) {
+                K_NULLABLE_PROP_EXPRESSION
+            } else {
+                K_NON_NULL_PROP_EXPRESSION
+            }.parameterizedBy(
+                type.idProp!!.typeName()
+            )
         addProperty(
             PropertySpec
-                .builder(
-                    type.idProp!!.name,
-                    if (nullable) {
-                        K_NULLABLE_PROP_EXPRESSION
-                    } else {
-                        K_NON_NULL_PROP_EXPRESSION
-                    }.parameterizedBy(
-                        type.idProp!!.typeName()
-                    )
-                )
+                .builder(type.idProp!!.name, returnTypeName)
                 .receiver(
                     if (nullable) {
                         K_NULLABLE_REMOTE_REF
@@ -249,7 +324,12 @@ class PropsGenerator(
                 .getter(
                     FunSpec
                         .getterBuilder()
-                        .addCode("return (this as %T<*>).id()", K_REMOTE_REF_IMPLEMENTOR)
+                        .addCode(
+                            "return (this as %T<*>).id<%T>() as %T",
+                            K_REMOTE_REF_IMPLEMENTOR,
+                            type.idProp!!.targetTypeName(),
+                            returnTypeName
+                        )
                         .build()
                 )
                 .build()
@@ -286,6 +366,36 @@ class PropsGenerator(
                     NEW_FETCHER_FUN_CLASS_NAME,
                     type.className,
                     MemberName(type.className.packageName, "by")
+                )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addObjectMeta(type: ImmutableType) {
+        addType(
+            TypeSpec
+                .objectBuilder(type.propsClassName)
+                .apply {
+                    for (prop in type.properties.values) {
+                        addPropMeta(type, prop)
+                    }
+                }
+                .build()
+        )
+    }
+
+    private fun TypeSpec.Builder.addPropMeta(type: ImmutableType, prop: ImmutableProp) {
+        addProperty(
+            PropertySpec
+                .builder(
+                    StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
+                    IMMUTABLE_PROP_CLASS_NAME
+                )
+                .initializer(
+                    "%T::%N.%M()",
+                    type.className,
+                    prop.name,
+                    MemberName("org.babyfish.jimmer.kt", "toImmutableProp")
                 )
                 .build()
         )

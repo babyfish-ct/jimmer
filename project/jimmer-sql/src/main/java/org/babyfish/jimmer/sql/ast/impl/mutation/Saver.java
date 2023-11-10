@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
+import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
@@ -124,7 +125,6 @@ class Saver {
     private void saveAssociations(DraftSpi currentDraftSpi, ObjectType currentObjectType, boolean forParent) {
 
         ImmutableType currentType = currentDraftSpi.__type();
-
         for (ImmutableProp prop : currentType.getProps().values()) {
             if (prop.isAssociation(TargetLevel.ENTITY) &&
                     prop.isColumnDefinition() == forParent &&
@@ -350,9 +350,9 @@ class Saver {
                             data.getSqlClient(),
                             prop.getTargetType(),
                             ExecutionPurpose.MUTATE,
-                            true,
+                            FilterLevel.DEFAULT,
                             (q, t) -> {
-                                PropExpression<Object> idExpr = t.get(prop.getTargetType().getIdProp().getName());
+                                Expression<Object> idExpr = t.get(prop.getTargetType().getIdProp());
                                 q.where(idExpr.in(illegalTargetIds));
                                 return q.select(idExpr);
                             }
@@ -754,13 +754,13 @@ class Saver {
         }
         int updatedCount = updatedProps.size();
         for (int i = 0; i < updatedCount; i++) {
-            update.set(table.get(updatedProps.get(i).getName()), updatedValues.get(i));
+            update.set((PropExpression<Object>) table.get(updatedProps.get(i)), updatedValues.get(i));
         }
-        update.where(((PropExpression<Object>)table.get(idProp.getName())).eq(draftSpi.__get(idProp.getId())));
+        update.where(table.get(idProp).eq(draftSpi.__get(idProp.getId())));
         if (version != null) {
             ImmutableProp versionProp = type.getVersionProp();
             assert  versionProp != null;
-            update.where(((PropExpression<Object>)table.get(versionProp.getName())).eq(version));
+            update.where(table.get(versionProp).eq(version));
         }
         update.where(lambda.apply(table, draftSpi));
         return update.execute(con);
@@ -828,10 +828,6 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void callInterceptor(DraftSpi draftSpi, ImmutableSpi original) {
         ImmutableType type = draftSpi.__type();
-        LogicalDeletedInfo info = type.getLogicalDeletedInfo();
-        if (info != null) {
-            draftSpi.__set(info.getProp().getId(), info.getRestoredValue());
-        }
         DraftHandler<?, ?> handlers = data.getSqlClient().getDraftHandlers(type);
         if (handlers != null) {
             PropId idPropId = type.getIdProp().getId();
@@ -871,14 +867,11 @@ class Saver {
         }
 
         List<ImmutableSpi> rows = Internal.requiresNewDraftContext(ctx -> {
-            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, true, (q, table) -> {
+            List<ImmutableSpi> list = Queries.createQuery(data.getSqlClient(), type, ExecutionPurpose.MUTATE, FilterLevel.DEFAULT, (q, table) -> {
                 for (ImmutableProp keyProp : actualKeyProps) {
                     if (keyProp.isReference(TargetLevel.ENTITY)) {
                         ImmutableProp targetIdProp = keyProp.getTargetType().getIdProp();
-                        Expression<Object> targetIdExpression =
-                                table
-                                        .<Table<?>>join(keyProp.getName())
-                                        .get(targetIdProp.getName());
+                        Expression<Object> targetIdExpression = table.getAssociatedId(keyProp);
                         ImmutableSpi target = (ImmutableSpi) example.__get(keyProp.getId());
                         if (target != null) {
                             q.where(targetIdExpression.eq(target.__get(targetIdProp.getId())));
@@ -888,9 +881,9 @@ class Saver {
                     } else {
                         Object value = example.__get(keyProp.getId());
                         if (value != null) {
-                            q.where(table.<Expression<Object>>get(keyProp.getName()).eq(value));
+                            q.where(table.get(keyProp).eq(value));
                         } else {
-                            q.where(table.<Expression<Object>>get(keyProp.getName()).isNull());
+                            q.where(table.get(keyProp).isNull());
                         }
                     }
                 }

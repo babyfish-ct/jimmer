@@ -1,28 +1,30 @@
 package org.babyfish.jimmer.sql.filter.impl;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.lang.Ref;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.meta.ImmutableType;
-import org.babyfish.jimmer.meta.TargetLevel;
-import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
+import org.babyfish.jimmer.sql.cache.impl.PropCacheInvalidators;
+import org.babyfish.jimmer.sql.event.AssociationEvent;
 import org.babyfish.jimmer.sql.event.Triggers;
-import org.babyfish.jimmer.sql.ast.Expression;
-import org.babyfish.jimmer.sql.ast.impl.query.Queries;
 import org.babyfish.jimmer.sql.ast.table.Props;
 import org.babyfish.jimmer.sql.ast.table.PropsFor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
-import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.CachesImpl;
 import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.event.EntityEvent;
+import org.babyfish.jimmer.sql.event.impl.BackRefIds;
+import org.babyfish.jimmer.sql.event.impl.EvictContext;
 import org.babyfish.jimmer.sql.filter.*;
+import org.babyfish.jimmer.sql.di.AopProxyProvider;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
-import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+import org.babyfish.jimmer.sql.runtime.LogicalDeletedBehavior;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -31,13 +33,19 @@ import java.util.stream.Collectors;
 
 public class FilterManager implements Filters {
 
+    private final static ThreadLocal<LinkedList<Filter<?>>> EXECUTING_FILTERS_LOCAL = new ThreadLocal<>();
+
+    private final AopProxyProvider aopProxyProvider;
+
+    private final LogicalDeletedFilterProvider provider;
+
     private final Set<Filter<?>> allFilters;
 
     private final Set<Filter<?>> disabledFilters;
 
     private final Map<String, List<Filter<Props>>> filterMap;
 
-    private final Map<String, List<Filter<Props>>> allCacheableFilterMap;
+    private final Map<String, List<CacheableFilter<Props>>> allCacheableFilterMap;
 
     private final TypeCache<Filter<Props>> cache =
             new TypeCache<>(this::create, true);
@@ -45,36 +53,39 @@ public class FilterManager implements Filters {
     private final TypeCache<Filter<Props>> shardingOnlyCache =
             new TypeCache<>(this::createShardingOnly, true);
 
-    private final TypeCache<List<Filter<Props>>> allCacheableCache =
+    private final TypeCache<List<CacheableFilter<Props>>> allCacheableCache =
             new TypeCache<>(this::createAllCacheable, false);
-
-    private final BuiltInFilters builtIns;
 
     private JSqlClientImplementor sqlClient;
 
+    @SuppressWarnings("unchecked")
     public FilterManager(
-            BuiltInFilters builtIns,
+            AopProxyProvider aopProxyProvider,
+            LogicalDeletedFilterProvider provider,
             List<Filter<?>> filters,
             Collection<Filter<?>> disabledFilters
     ) {
-        this.builtIns = builtIns;
+        this.aopProxyProvider = aopProxyProvider;
+        this.provider = provider;
         this.allFilters = standardFilters(filters);
         this.disabledFilters = standardDisabledFilters(null, disabledFilters, this.allFilters);
         this.filterMap = filterMap(this.allFilters, this.disabledFilters);
-        this.allCacheableFilterMap = filterMap(
+        this.allCacheableFilterMap = (Map<String, List<CacheableFilter<Props>>>)(Map<?, ?>)filterMap(
                 this.allFilters.stream().filter(it -> it instanceof CacheableFilter<?>).collect(Collectors.toList()),
                 Collections.emptyList()
         );
     }
 
     private FilterManager(
-            BuiltInFilters builtIns,
+            AopProxyProvider aopProxyProvider,
+            LogicalDeletedFilterProvider provider,
             Set<Filter<?>> filters,
             Set<Filter<?>> disabledFilters,
             Map<String, List<Filter<Props>>> filterMap,
-            Map<String, List<Filter<Props>>> allCacheableFilterMap
+            Map<String, List<CacheableFilter<Props>>> allCacheableFilterMap
     ) {
-        this.builtIns = builtIns;
+        this.aopProxyProvider = aopProxyProvider;
+        this.provider = provider;
         this.allFilters = filters;
         this.disabledFilters = disabledFilters;
         this.filterMap = filterMap;
@@ -113,6 +124,18 @@ public class FilterManager implements Filters {
     }
 
     @Override
+    public Filter<Props> getLogicalDeletedFilter(ImmutableType type) {
+        Filter<Props> filter = provider.get(type);
+        if (filter == null) {
+            return null;
+        }
+        if (filter instanceof CacheableFilter<?>) {
+            return new ExportedCacheableFilter(type, Collections.singletonList((CacheableFilter<Props>) filter));
+        }
+        return new ExportedFilter(Collections.singletonList(filter));
+    }
+
+    @Override
     public Ref<SortedMap<String, Object>> getParameterMapRef(Class<?> type) {
         return getParameterMapRef(ImmutableType.get(type));
     }
@@ -146,6 +169,21 @@ public class FilterManager implements Filters {
         return getTargetParameterMapRef(prop.unwrap());
     }
 
+    public FilterManager setBehavior(LogicalDeletedBehavior behavior) {
+        LogicalDeletedFilterProvider newProvider = provider.toBehavior(behavior);
+        if (newProvider == provider) {
+            return this;
+        }
+        return new FilterManager(
+                aopProxyProvider,
+                newProvider,
+                allFilters,
+                disabledFilters,
+                filterMap,
+                allCacheableFilterMap
+        );
+    }
+
     public FilterManager enable(Collection<Filter<?>> filters) {
         if (filters.isEmpty()) {
             return this;
@@ -158,7 +196,8 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
-                builtIns,
+                aopProxyProvider,
+                provider,
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
@@ -175,7 +214,8 @@ public class FilterManager implements Filters {
             return this;
         }
         return new FilterManager(
-                builtIns,
+                aopProxyProvider,
+                provider,
                 allFilters,
                 disabledSet,
                 filterMap(allFilters, disabledSet),
@@ -253,11 +293,6 @@ public class FilterManager implements Filters {
         onInitialized();
     }
 
-    @Override
-    public BuiltInFilters builtIns() {
-        return builtIns;
-    }
-
     public boolean contains(ImmutableType type) {
         for (ImmutableType t : type.getAllTypes()) {
             if (filterMap.containsKey(t.toString())) {
@@ -273,7 +308,10 @@ public class FilterManager implements Filters {
             return false;
         }
         if (prop.getDeclaringType() == prop.getTargetType()) {
-            return false;
+            return true;
+        }
+        if (provider.get(prop.getTargetType()) != null) {
+            return true;
         }
         Set<Filter<Props>> declaredFilters = new HashSet<>();
         for (ImmutableType t : prop.getDeclaringType().getAllTypes()) {
@@ -309,6 +347,10 @@ public class FilterManager implements Filters {
     private Filter<Props> create(ImmutableType type, boolean shardingOnly) {
         Set<Filter<Props>> filters = new LinkedHashSet<>();
         if (type != null) {
+            Filter<Props> logicalDeletedFilter = provider.get(type);
+            if (logicalDeletedFilter != null) {
+                filters.add(logicalDeletedFilter);
+            }
             for (ImmutableType t : type.getAllTypes()) {
                 List<Filter<Props>> list = filterMap.get(t.toString());
                 if (list != null) {
@@ -326,19 +368,25 @@ public class FilterManager implements Filters {
         }
         for (Filter<?> filter : filters) {
             if (!(filter instanceof CacheableFilter<?>)) {
-                return new CompositeFilter(filters);
+                return new ExportedFilter(filters);
             }
         }
-        return new CompositeCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
+        return new ExportedCacheableFilter(type, (Collection<CacheableFilter<Props>>)(Collection<?>)filters);
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Filter<Props>> createAllCacheable(ImmutableType type) {
-        List<Filter<Props>> filters = new ArrayList<>();
+    private List<CacheableFilter<Props>> createAllCacheable(ImmutableType type) {
+        List<CacheableFilter<Props>> filters = new ArrayList<>();
         for (ImmutableType t : type.getAllTypes()) {
-            List<Filter<Props>> list = allCacheableFilterMap.get(t.toString());
+            List<CacheableFilter<Props>> list = allCacheableFilterMap.get(t.toString());
+            Filter<Props> logicalDeletedFilter = provider.get(type);
+            if (logicalDeletedFilter instanceof CacheableFilter<?>) {
+                if (list == null) {
+                    list = new ArrayList<>();
+                }
+                list.add((CacheableFilter<Props>) logicalDeletedFilter);
+            }
             if (list != null) {
-                for (Filter<Props> filter : list) {
+                for (CacheableFilter<Props> filter : list) {
                     if (!disabledFilters.contains(filter)) {
                         filters.add(filter);
                     }
@@ -416,7 +464,6 @@ public class FilterManager implements Filters {
             }
             return ImmutableType.get((Class<?>) entityType);
         } else if (Props.class.isAssignableFrom(propsClass)) {
-            PropsFor propsFor = propsClass.getAnnotation(PropsFor.class);
             if (Props.class == propsClass) {
                 throw new IllegalStateException(
                         "`" +
@@ -426,6 +473,7 @@ public class FilterManager implements Filters {
                                 "`"
                 );
             }
+            PropsFor propsFor = propsClass.getAnnotation(PropsFor.class);
             if (propsFor == null) {
                 throw new IllegalStateException(
                         "`" +
@@ -455,7 +503,7 @@ public class FilterManager implements Filters {
         Set<Filter<?>> set = new LinkedHashSet<>();
         for (Filter<?> filter : filters) {
             Filter<?> unwrapped = unwrap(filter);
-            if (unwrapped != null) {
+            if (unwrapped != null && !(unwrapped instanceof LogicalDeletedFilterProvider.Internal)) {
                 set.add(unwrapped);
             }
         }
@@ -498,7 +546,7 @@ public class FilterManager implements Filters {
         Set<Filter<?>> set = base != null ? new HashSet<>(base) : new HashSet<>();
         for (Filter<?> filter : more) {
             Filter<?> unwrapped = unwrap(filter);
-            if (unwrapped != null) {
+            if (unwrapped != null && !(unwrapped instanceof LogicalDeletedFilterProvider.Internal)) {
                 set.add(unwrapped);
             }
         }
@@ -506,36 +554,271 @@ public class FilterManager implements Filters {
         return set;
     }
 
-    private static class CompositeFilter implements Filter<Props> {
+    private static Collection<?> affectedSourceIds(List<CacheableFilter<Props>> filters, EntityEvent<?> e) {
+        if (filters.size() == 1) {
+            return filters.get(0).getAffectedSourceIds(e);
+        }
+        Set<Object> ids = null;
+        for (CacheableFilter<?> filter : filters) {
+            Collection<?> someIds = filter.getAffectedSourceIds(e);
+            if (someIds != null && !someIds.isEmpty()) {
+                if (ids == null) {
+                    ids = new LinkedHashSet<>();
+                }
+                for (Object someId : someIds) {
+                    if (someId != null) {
+                        ids.add(someId);
+                    }
+                }
+            }
+        }
+        return ids == null || ids.isEmpty() ? null : ids;
+    }
+
+    private static Collection<?> affectedSourceIds(List<CacheableFilter<Props>> filters, AssociationEvent e) {
+        if (filters.size() == 1) {
+            return filters.get(0).getAffectedSourceIds(e);
+        }
+        Set<Object> ids = null;
+        for (CacheableFilter<?> filter : filters) {
+            Collection<?> someIds = filter.getAffectedSourceIds(e);
+            if (someIds != null && !someIds.isEmpty()) {
+                if (ids == null) {
+                    ids = new LinkedHashSet<>();
+                }
+                for (Object someId : someIds) {
+                    if (someId != null) {
+                        ids.add(someId);
+                    }
+                }
+            }
+        }
+        return ids == null || ids.isEmpty() ? null : ids;
+    }
+
+    private void onInitialized() {
+        for (Filter<?> filter : allFilters) {
+            if (filter instanceof CacheableFilter<?>) {
+                ((CacheableFilter<?>)filter).initialize(sqlClient);
+            }
+        }
+        CachesImpl caches = (CachesImpl) this.sqlClient.getCaches();
+        for (Map.Entry<ImmutableType, LocatedCache<?, ?>> entry : caches.getObjectCacheMap().entrySet()) {
+            ImmutableType type = entry.getKey();
+            List<CacheableFilter<Props>> filters = allCacheableCache.get(type);
+            if (!filters.isEmpty() &&
+                    PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                            filters,
+                            EntityEvent.class,
+                            aopProxyProvider
+                    )
+            ) {
+                sqlClient.getTriggers().addEntityListener(e -> {
+                    EvictContext.execute(() -> {
+                        handleOtherChange(type, filters, e);
+                    });
+                });
+            }
+            if (!filters.isEmpty() &&
+                    PropCacheInvalidators.isGetAffectedSourceIdsOverridden(
+                            filters,
+                            AssociationEvent.class,
+                            aopProxyProvider
+                    )
+            ) {
+                sqlClient.getTriggers().addAssociationListener(e -> {
+                    EvictContext.execute(() -> {
+                        handleOtherChange(type, filters, e);
+                    });
+                });
+            }
+        }
+        for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
+            ImmutableProp prop = entry.getKey();
+            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+                List<CacheableFilter<Props>> filters = allCacheableCache.get(prop.getTargetType());
+                if (!filters.isEmpty()) {
+                    sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
+                        handleTargetChange(prop, filters, e);
+                    });
+                }
+            }
+        }
+    }
+
+    private void handleTargetChange(
+            ImmutableProp prop,
+            List<CacheableFilter<Props>> filters,
+            EntityEvent<?> e
+    ) {
+        if (e.isEvict()) {
+            return;
+        }
+        boolean affected = false;
+        for (CacheableFilter<Props> filter : filters) {
+            if (filter.isAffectedBy(e)) {
+                affected = true;
+                break;
+            }
+        }
+        if (!affected) {
+            return;
+        }
+        if (prop.isAssociation(TargetLevel.PERSISTENT)) {
+            ImmutableProp mappedBy = prop.getMappedBy();
+            if (mappedBy != null && mappedBy.isColumnDefinition()) {
+                ImmutableSpi oe = (ImmutableSpi) e.getOldEntity();
+                ImmutableSpi ne = (ImmutableSpi) e.getNewEntity();
+                if (oe == null || ne == null) {
+                    return;
+                }
+                Ref<ImmutableSpi> unchangedParentRef = e.getUnchangedRef(mappedBy);
+                if (unchangedParentRef == null) {
+                    return;
+                }
+                ImmutableSpi unchangedParent = unchangedParentRef.getValue();
+                if (unchangedParent == null) {
+                    return;
+                }
+                ImmutableProp parentIdProp = mappedBy.getTargetType().getIdProp();
+                Object parentId = ImmutableObjects.get(unchangedParent, parentIdProp);
+                sqlClient.getTriggers().fireAssociationEvict(prop, parentId, e.getConnection(), e.getReason());
+                return;
+            }
+        }
+        List<?> backRefIds = BackRefIds.findBackRefIds(sqlClient, prop, e.getId(), e.getConnection());
+        for (Object backRefId : backRefIds) {
+            sqlClient.getTriggers().fireAssociationEvict(prop, backRefId, e.getConnection(), e.getReason());
+        }
+    }
+
+    private void handleOtherChange(
+            ImmutableType type,
+            List<CacheableFilter<Props>> filters,
+            EntityEvent<?> e
+    ) {
+        EvictContext ctx = EvictContext.get();
+        if (ctx != null) {
+            ctx.add(e.getImmutableType(), e.getId());
+        }
+        Collection<?> sourceIds = affectedSourceIds(filters, e);
+        if (sourceIds != null) {
+            Triggers triggers = sqlClient.getTriggers();
+            for (Object sourceId : sourceIds) {
+                triggers.fireEntityEvict(type, sourceId, e.getConnection());
+            }
+        }
+    }
+
+    private void handleOtherChange(
+            ImmutableType type,
+            List<CacheableFilter<Props>> filters,
+            AssociationEvent e
+    ) {
+        EvictContext ctx = EvictContext.get();
+        if (ctx != null) {
+            ctx.add(e.getImmutableProp(), e.getSourceId());
+        }
+        if (ctx != null && !e.isEvict()) {
+            ctx.disable(e.getImmutableProp());
+        }
+        Collection<?> sourceIds = affectedSourceIds(filters, e);
+        if (sourceIds != null) {
+            Triggers triggers = sqlClient.getTriggers();
+            for (Object sourceId : sourceIds) {
+                triggers.fireEntityEvict(type, sourceId, e.getConnection());
+            }
+        }
+    }
+
+    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
+        Set<ImmutableType> affectTypes = new HashSet<>();
+        for (ImmutableType type : allTypes) {
+            for (ImmutableType upcastType : type.getAllTypes()) {
+                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType.toString())) {
+                    affectTypes.add(type);
+                    break;
+                }
+            }
+        }
+        return affectTypes;
+    }
+
+    public static Filter<?> currentFilter() {
+        LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        return executingFilters != null ? executingFilters.peek() : null;
+    }
+
+    public static void executing(Filter<?> filter, Runnable block) {
+        if (filter == null) {
+            block.run();
+            return;
+        }
+        if (filter instanceof Exported) {
+            throw new IllegalArgumentException("The filter cannot be exported filter");
+        }
+        LinkedList<Filter<?>> executingFilters = EXECUTING_FILTERS_LOCAL.get();
+        if (executingFilters == null) {
+            executingFilters = new LinkedList<>();
+            executingFilters.add(filter);
+            EXECUTING_FILTERS_LOCAL.set(executingFilters);
+            try {
+                block.run();
+            } finally {
+                EXECUTING_FILTERS_LOCAL.remove();
+            }
+        } else {
+            if (executingFilters.contains(filter)) {
+                throw new IllegalStateException(
+                        "A dead recursion was discovered during the filter execution process, " +
+                                "where the filter \"" +
+                                filter +
+                                "\" to be executed is the same as the filters \"" +
+                                executingFilters +
+                                "\" currently being executed in the context."
+                );
+            }
+            executingFilters.push(filter);
+            try {
+                block.run();
+            } finally {
+                executingFilters.pop();
+            }
+        }
+    }
+
+    private static class ExportedFilter implements Filter<Props>, Exported {
 
         private final List<Filter<Props>> filters;
 
-        private CompositeFilter(Collection<Filter<Props>> filters) {
+        private ExportedFilter(Collection<Filter<Props>> filters) {
             this.filters = new ArrayList<>(filters);
         }
 
         @Override
         public void filter(FilterArgs<Props> args) {
             for (Filter<Props> filter : filters) {
-                filter.filter(args);
+                executing(filter, () -> {
+                    filter.filter(args);
+                });
             }
         }
 
         @Override
         public String toString() {
-            return "CompositeFilter{" +
+            return "ExportedFilter{" +
                     "filters=" + filters +
                     '}';
         }
     }
 
-    private static class CompositeCacheableFilter implements CacheableFilter<Props> {
+    private static class ExportedCacheableFilter implements CacheableFilter<Props>, Exported {
 
         private final ImmutableType type;
 
         private final List<CacheableFilter<Props>> filters;
 
-        private CompositeCacheableFilter(ImmutableType type, Collection<CacheableFilter<Props>> filters) {
+        private ExportedCacheableFilter(ImmutableType type, Collection<CacheableFilter<Props>> filters) {
             this.type = type;
             this.filters = new ArrayList<>(filters);
         }
@@ -543,16 +826,14 @@ public class FilterManager implements Filters {
         @Override
         public void filter(FilterArgs<Props> args) {
             for (Filter<Props> filter : filters) {
-                filter.filter(args);
+                executing(filter, () -> {
+                    filter.filter(args);
+                });
             }
         }
 
         @Override
         public SortedMap<String, Object> getParameters() {
-            if (filters.size() == 1) {
-                SortedMap<String, Object> map = filters.get(0).getParameters();
-                return map != null ? map : Collections.emptySortedMap();
-            }
             SortedMap<String, Object> map = new TreeMap<>();
             for (CacheableFilter<Props> filter : filters) {
                 SortedMap<String, Object> subMap = filter.getParameters();
@@ -561,7 +842,6 @@ public class FilterManager implements Filters {
                 }
                 for (Map.Entry<String, Object> e : subMap.entrySet()) {
                     String key = e.getKey();
-                    Object value = e.getValue();
                     if (key == null || key.isEmpty()) {
                         throw new IllegalStateException(
                                 "The method `getParameters` of \"" +
@@ -569,12 +849,9 @@ public class FilterManager implements Filters {
                                         "\" cannot map with null or empty key"
                         );
                     }
+                    Object value = e.getValue();
                     if (value == null) {
-                        throw new IllegalStateException(
-                                "The method `getParameters` of \"" +
-                                        filter.getClass().getName() +
-                                        "\" cannot map with null value"
-                        );
+                        continue;
                     }
                     Object conflictValue = map.get(key);
                     if (conflictValue != null && !conflictValue.equals(value)) {
@@ -603,105 +880,25 @@ public class FilterManager implements Filters {
             return false;
         }
 
+        @Nullable
+        @Override
+        public Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
+            return affectedSourceIds(filters, e);
+        }
+
+        @Nullable
+        @Override
+        public Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) {
+            return affectedSourceIds(filters, e);
+        }
+
         @Override
         public String toString() {
-            return "CompositeCacheableFilter{" +
+            return "ExportedCacheableFilter{" +
                     "filters=" + filters +
                     '}';
         }
     }
 
-    private void onInitialized() {
-        CachesImpl caches = (CachesImpl) this.sqlClient.getCaches();
-        for (Map.Entry<ImmutableProp, LocatedCache<?, ?>> entry : caches.getPropCacheMap().entrySet()) {
-            ImmutableProp prop = entry.getKey();
-            if (prop.isAssociation(TargetLevel.PERSISTENT)) {
-                List<Filter<Props>> filters = allCacheableCache.get(prop.getTargetType());
-                if (!filters.isEmpty()) {
-                    sqlClient.getTriggers().addEntityListener(prop.getTargetType(), e -> {
-                        handleTargetChange(prop, filters, e);
-                    });
-                }
-            }
-        }
-    }
-
-    private void handleTargetChange(
-            ImmutableProp prop,
-            List<Filter<Props>> filters,
-            EntityEvent<?> e
-    ) {
-        if (!(sqlClient.getCaches().getPropertyCache(prop) instanceof Cache.Parameterized<?, ?>)) {
-            return;
-        }
-        if (prop.isReferenceList(TargetLevel.PERSISTENT)) {
-            ImmutableProp mappedBy = prop.getMappedBy();
-            if (mappedBy != null && mappedBy.isColumnDefinition()) {
-                if (e.getUnchangedRef(mappedBy) == null) {
-                    return;
-                }
-            }
-        }
-        boolean affected = false;
-        for (Filter<Props> filter : filters) {
-            if (filter instanceof CacheableFilter<?> && ((CacheableFilter<?>)filter).isAffectedBy(e)) {
-                affected = true;
-                break;
-            }
-        }
-        if (affected) {
-            fireAssociationEvent(prop, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void fireAssociationEvent(ImmutableProp prop, EntityEvent<?> e) {
-        Triggers triggers = sqlClient.getTriggers();
-        ImmutableProp mappedBy = prop.getMappedBy();
-        if (mappedBy != null && mappedBy.isColumnDefinition()) {
-            Ref<Object> ref = e.getUnchangedRef(mappedBy);
-            if (ref != null) {
-                ImmutableSpi source = (ImmutableSpi) ref.getValue();
-                if (source != null) {
-                    ImmutableType sourceType = source.__type();
-                    Object sourceId = source.__get(sourceType.getIdProp().getId());
-                    triggers.fireAssociationEvict(prop, sourceId);
-                }
-            }
-        } else {
-            ImmutableType declaringType = prop.getDeclaringType();
-            List<ImmutableType> sourceTypes =
-                    declaringType.isEntity() ?
-                            Collections.singletonList(declaringType) :
-                            sqlClient.getEntityManager().getImplementationTypes(declaringType);
-            String targetIdPropName = prop.getTargetType().getIdProp().getName();
-            for (ImmutableType sourceType : sourceTypes) {
-                Collection<Object> sourceIds = Queries
-                        .createQuery(sqlClient, sourceType, ExecutionPurpose.EVICT, true, (q, source) -> {
-                            Expression<Object> sourceIdExpr = source.get(sourceType.getIdProp().getName());
-                            Expression<Object> targetIdExpr = source.join(prop.getName()).get(targetIdPropName);
-                            q.where(targetIdExpr.eq(e.getId()));
-                            return q.select(sourceIdExpr);
-                        })
-                        .distinct()
-                        .execute();
-                for (Object sourceId : sourceIds) {
-                    triggers.fireAssociationEvict(prop, sourceId);
-                }
-            }
-        }
-    }
-
-    public Set<ImmutableType> getAffectedTypes(Collection<ImmutableType> allTypes) {
-        Set<ImmutableType> affectTypes = new HashSet<>();
-        for (ImmutableType type : allTypes) {
-            for (ImmutableType upcastType : type.getAllTypes()) {
-                if (!affectTypes.contains(upcastType) && filterMap.containsKey(upcastType.toString())) {
-                    affectTypes.add(type);
-                    break;
-                }
-            }
-        }
-        return affectTypes;
-    }
+    public interface Exported {}
 }

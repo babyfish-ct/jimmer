@@ -27,7 +27,9 @@ class DataLoader extends AbstractDataLoader {
                 prop,
                 filter,
                 Integer.MAX_VALUE,
-                0);
+                0,
+                false
+        );
     }
 
     public DataLoader(
@@ -36,7 +38,8 @@ class DataLoader extends AbstractDataLoader {
             ImmutableProp prop,
             FieldFilter<?> filter,
             int limit,
-            int offset
+            int offset,
+            boolean rawValue
     ) {
         super(
                 sqlClient,
@@ -48,7 +51,8 @@ class DataLoader extends AbstractDataLoader {
                         null,
                 filter,
                 limit,
-                offset
+                offset,
+                rawValue
         );
     }
 

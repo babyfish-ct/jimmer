@@ -1,12 +1,10 @@
 package org.babyfish.jimmer.apt.generator;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.impl.util.FlatUtils;
+import org.babyfish.jimmer.impl.util.DtoPropAccessor;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -17,6 +15,7 @@ import org.babyfish.jimmer.sql.collection.IdViewList;
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList;
 import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -24,6 +23,9 @@ class Constants {
 
     public static final ClassName CLONEABLE_CLASS_NAME =
             ClassName.get(Cloneable.class);
+
+    public static final ClassName SERIALIZABLE_CLASS_NAME =
+            ClassName.get(Serializable.class);
 
     public static final ClassName CLONE_NOT_SUPPORTED_EXCEPTION_CLASS_NAME =
             ClassName.get(CloneNotSupportedException.class);
@@ -43,6 +45,9 @@ class Constants {
     public static final ClassName MAP_CLASS_NAME =
             ClassName.get(Map.class);
 
+    public static final ClassName COLLECTION_CLASS_NAME =
+            ClassName.get(Collection.class);
+
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
 
@@ -55,11 +60,26 @@ class Constants {
     public static final ClassName INPUT_CLASS_NAME =
             ClassName.get(Input.class);
 
+    public static final ClassName JSPECIFICATION_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query.specification",
+                    "JSpecification"
+            );
+
+    public static final ClassName SPECIFICATION_ARGS_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query.specification",
+                    "SpecificationArgs"
+            );
+
+    public static final ClassName PREDICATE_APPLIER_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast.query.specification",
+                    "PredicateApplier"
+            );
+
     public static final ClassName VIEWABLE_INPUT_CLASS_NAME =
             ClassName.get(ViewableInput.class);
-
-    public static final ClassName LOMBOK_DATA_CLASS_NAME =
-            ClassName.get("lombok", "Data");
 
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
@@ -82,8 +102,8 @@ class Constants {
     public static final ClassName VALIDATOR_CLASS_NAME =
             ClassName.get(Validator.class);
 
-    public static final ClassName FLAT_UTILS_CLASS_NAME =
-            ClassName.get(FlatUtils.class);
+    public static final ClassName DTO_PROP_ACCESSOR_CLASS_NAME =
+            ClassName.get(DtoPropAccessor.class);
 
     public static final ClassName ID_VIEW_LIST_CLASS_NAME =
             ClassName.get(IdViewList.class);
@@ -191,6 +211,12 @@ class Constants {
                     "AbstractTypedFetcher"
             );
 
+    public static final ClassName ID_ONLY_FETCH_TYPE =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.fetcher",
+                    "IdOnlyFetchType"
+            );
+
     public static final ClassName FETCHER_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
@@ -265,6 +291,12 @@ class Constants {
             ClassName.get(
                     "org.babyfish.jimmer.sql.fetcher",
                     "ViewMetadata"
+            );
+
+    public static final ClassName IMMUTABLE_PROP_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.meta",
+                    "ImmutableProp"
             );
 
     public static final String DRAFT_FIELD_CTX =
