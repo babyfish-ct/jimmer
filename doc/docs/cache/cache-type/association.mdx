@@ -916,3 +916,11 @@ Delete data from redis: [Author.books-3] ❷
 
 -   ❶ For the Book object with id `10`, its many-to-many association cache `Book.authors` is deleted.
 -   ❷ For the Author object with id `3`, its many-to-many association cache `Author.books` is deleted.
+
+## Notes on Logical Deletion
+
+If associated objects support [logical deletion](../../query/global-filter/logical-deleted), association caching is still supported by default. 
+
+:::warning
+However, once the logical deletion is [ignored](../../query/global-filter/logical-deleted#ignore-logical-deletion-filter) or [reversed](../../query/global-filter/logical-deleted#reverse-logical-deletion-filter), association caching will be ignored.
+:::

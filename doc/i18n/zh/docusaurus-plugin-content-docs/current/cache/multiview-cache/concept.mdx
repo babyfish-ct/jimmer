@@ -40,10 +40,10 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 ## 场景
 
-多视图缓存由[全局过滤器](../../query/global-filter)导致。
+多视图缓存由[用户自定义全局过滤器](../../query/global-filter/user-filter)导致。
 
 :::info
-只要某个实体被施加了[全局过滤器](../../query/global-filter)，
+只要某个实体被施加了[用户自定义全局过滤器](../../query/global-filter/user-filter)，
 
 -   所有以它作为目标类型的关联缓存
 
@@ -65,10 +65,6 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 然而，无需担心，Jimmer会告诉开发人员[为什么缓存未生效](./abandoned-callback)。
 :::
-
-这里所讨论的[全局过滤器](../../query/global-filter)，不但包含用户自定义的过滤器，还包括[逻辑删除](../../mapping/advanced/logical-deleted)所隐含的内置过滤器。
-
-后续文档会从用户自定义过滤器和[逻辑删除](../../mapping/advanced/logical-deleted)两个方面入手，介绍多视图缓存。
 
 ## SubKey
 
@@ -110,27 +106,27 @@ import {MultiViewCache} from '@site/src/components/Image';
             <td>[6,4,2,8]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false&#125;</td>
+            <td>&#123;"module":"x"&#125;</td>
             <td>[6,5,3,2,9,8]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"a"&#125;</td>
+            <td>&#123;"module":"x","tenant":"a"&#125;</td>
             <td>[5,3,9]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"b"&#125;</td>
+            <td>&#123;"module":"x","tenant":"b"&#125;</td>
             <td>[6,2,8]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":true&#125;</td>
+            <td>&#123;"module":"y"&#125;</td>
             <td>[4,1,7]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":true,"tenant":"a"&#125;</td>
+            <td>&#123;"module":"y","tenant":"a"&#125;</td>
             <td>[1,7]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":true,"tenant":"b"&#125;</td>
+            <td>&#123;"module":"y","tenant":"b"&#125;</td>
             <td>[4]</td>
         </tr>
         <tr>
@@ -147,15 +143,15 @@ import {MultiViewCache} from '@site/src/components/Image';
             <td>[12,10]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false&#125;</td>
+            <td>&#123;"module":"x"&#125;</td>
             <td>[12,11]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"a"&#125;</td>
+            <td>&#123;"module":"x","tenant":"a"&#125;</td>
             <td>[11]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"b"&#125;</td>
+            <td>&#123;"module":"x","tenant":"b"&#125;</td>
             <td>[12]</td>
         </tr>
         <tr>
@@ -196,7 +192,7 @@ import {MultiViewCache} from '@site/src/components/Image';
 
     此`SortedMap`必须采用默认的排序规则，不得自定义`Comparator`。
 
-    这点非常重要。比如，SubKey只可能是`{"logicalDeleted":false,"tenant":"a"}`，而不可能与之不同但等价的`{"tenant":"a", "logicalDeleted":false}`。
+    这点非常重要。比如，SubKey只可能是`{"module":"x","tenant":"a"}`，而不可能与之不同但等价的`{"tenant":"a", "module":"x"}`。
     这样，多视图缓存保证了其内部没有冗余的信息。
     :::
 
@@ -204,7 +200,7 @@ import {MultiViewCache} from '@site/src/components/Image';
 
 ### 关联属性的SubKey
 
-对于关联属性而言，缓存的多视图化必然是因其关联实体被[全局过滤器](../../query/global-filter)影响导致。
+对于关联属性而言，缓存的多视图化必然是因其关联实体被[用户自定义全局过滤器](../../query/global-filter/user-filter)影响导致。
 支持多视图缓存的全局过滤器仅仅实现`Filter/KFilter`接口是不够的，必须实现`CacheableFilter/KCacheableFilter`接口
 
 <Tabs groupId="language">

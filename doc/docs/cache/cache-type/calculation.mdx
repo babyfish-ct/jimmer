@@ -336,45 +336,46 @@ class BookStoreAvgPriceResolver(
 </TabItem>
 </Tabs>
 
-We need to modify this class to add two Spring event listener methods:
+We need to override the following two methods in this class:
 
-<Tabs groupId="language"> 
+<Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="BookStoreAvgPriceResolver.java"
-package com.example.business.resolver;  
+```java title="BookStoreAvgPriceResolver.java"  
+package com.example.business.resolver;
 
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.springframework.stereotype.Component;
 
-@Component 
+@Component
 public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDecimal> {
     
-    // Inject sqlClient via constructor
+    // Constructor inject sqlClient  
     private final JSqlClient sqlClient;
 
-    ...omit other code...
+    ...other code omitted...
 
-    @EventListener
+    @Override
     // highlight-next-line
-    public void onAssociationChange(AssociationEvent e) {
+    Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
         // TODO
     }
 
-    @EventListener
+    @Override
     // highlight-next-line 
-    public void onEntityChange(EntityEvent<?> e) {
+    Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) {
         // TODO
     }
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="BookStoreAvgPriceResolver.kt"
-package com.example.business.resolver
+package com.example.business.resolver  
 
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.sql.kt.KTransientResolver
@@ -382,195 +383,95 @@ import org.springframework.stereotype.Component
 
 @Component
 class BookStoreAvgPriceResolver(
-    // Inject sqlClient via constructor
-    private val sqlClient: KSqlClient   
+    // Constructor inject sqlClient
+    private val sqlClient: KSqlClient  
 ) : KTransientResolver<Long, BigDecimal> {
 
-    ...omit other code...
-
-    @EventListener
-    // highlight-next-line
-    fun onAssociationChange(e: AssociationEvent) {
-        // TODO
-    }
-
-    @EventListener
-    // highlight-next-line
-    fun onEntityChange(e: EntityEvent<*>) {
-        // TODO
-    }
-}
-```
-
-</TabItem>
-</Tabs>  
-
-:::info
-If using the SpringBoot Starter, trigger events, i.e. `EntityEvent` and `AssociationEvent`, will be sent as Spring events.
-
-So responding to Jimmer trigger events with the `@org.springframework.context.event.EventListener` annotation works.  
-
-If using the underlying API, respond to events using Jimmer's trigger API:
-
-<ViewMore buttonText="Non-Spring Mode">
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java title="BookStoreAvgPriceResolver.java" 
-package com.example.business.resolver;
-
-import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.TransientResolver;
-
-public class BookStoreAvgPriceResolver  
-implements TransientResolver<Long, BigDecimal> {
-    
-    private final JSqlClient sqlClient;
-
-    ...omit other code...
-
-    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-        // highlight-next-line
-        sqlClient.getTriggers().addAssociationListener(
-            this::onAssociationChange
-        );
-        // highlight-next-line
-        sqlClient.getTriggers().addEntityListener(
-            this::onEntityChange
-        );
-    }
+    ...other code omitted...
 
     // highlight-next-line
-    private void onAssociationChange(AssociationEvent e) {
+    override fun getAffectedSourceIds(e: EntityEvent<*>): Collection<*>? {
         // TODO
     }
 
     // highlight-next-line
-    private void onEntityChange(EntityEvent<?> e) {
+    override fun getAffectedSourceIds(e: AssociationEvent): Collection<*>? {
         // TODO
     }
 }
 ```
 
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
+</TabItem> 
+</Tabs>
 
-```kotlin title="BookStoreAvgPriceResolver.kt"
-package com.example.business.resolver
+These two methods are the built-in [trigger](../../mutation/trigger) response methods of `TransientResolver` that are executed automatically when the database changes. They are responsible for automatically clearing the computed cache when the database changes.
 
-import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.sql.kt.KTransientResolver
-import org.springframework.stereotype.Component
+Next, let's implement these two methods.
 
-class BookStoreAvgPriceResolver(
-    private val sqlClient: KSqlClient
-) : KTransientResolver<Long, BigDecimal> {
+### When BOOK.STORE_ID is modified
 
-    ...omit other code... 
-
-    init {
-        // highlight-next-line
-        sqlClient.triggers.addAssociationListener {
-            this.onAssociationChange(it) 
-        }
-        // highlight-next-line
-        sqlClient.triggers.addEntityListener {
-            this.onEntityChange(it)
-        }
-    }
-
-    // highlight-next-line
-    private fun onAssociationChange(e: AssociationEvent) {
-        // TODO
-    }
-
-    // highlight-next-line
-    private fun onEntityChange(e: EntityEvent<*>) {
-        // TODO
-    }
-}
-```
-
-</TabItem>
-</Tabs> 
-</ViewMore>
-:::
-
-Next, we will implement the empty methods above: `onEntityChange` and `onAssociationChange`.
-
-### Modifying BOOK.STORE_ID  
-
-Users can change the association between `BOOK_STORE` and `BOOK` by modifying the foreign key `STORE_ID` of `BOOK`. This will inevitably affect the `BookStore.avgPrice` of some bookstores. 
-
-For this, we can understand the association change between objects through the `onAssociationChange` method:
+Users can change the association between `BOOK_STORE` and `BOOK` by modifying the `STORE_ID` foreign key of the `BOOK` table. This will inevitably affect `BookStore.avgPrice` of some bookstores.
 
 :::tip
-If listening for changes to the many-to-one association `Book.store`, then the two parent objects corresponding to the old and new values need to be handled, and whether they are null must be considered.
+If watching for changes to the `Book.store` one-to-many association, the old and new values before and after the modification are two parent objects that need to be considered separately, making the code slightly more cumbersome.
 
-Fortunately, the entity model of the example has the reverse one-to-many association `BookStore.books`, and we can use it to simplify the code.
-
-If listening for changes to the one-to-many association `BookStore.books`, we only need to consider the id of the current `BookStore` object, which simplifies the code as follows:
+Luckily, the entity model in this example has the reverse one-to-many association `BookStore.books`. When listening for changes to `BookStore.books`, we only need to consider the id of the current `BookStore` object, simplifying the code. 
 :::
+
+Implement `getAffectedSourceIds(AssociationEvent)` as follows:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java 
-@EventListener
-public void onAssociationChange(AssociationEvent e) {
+```java
+@Override  
+public Collection<?> getAffectedSourceIds(AssociationEvent e) {
     if (sqlClient.getCaches().isAffectedBy(e) && ❶
-        e.isChanged(BookStoreProps.BOOKS) ❷  
+        e.getImmutableProp() == BookStoreProps.BOOKS.unwrap() ❷
     ) {
-        sqlClient
-                .getCaches()
-                .getPropertyCache(BookStoreProps.AVG_PRICE) ❸
-                .delete(e.getSourceId()); ❹
+        return Collections.singletonList(e.getSourceId()); ❸
     }
+    return null;
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-@EventListener  
-fun onAssociationChange(e: AssociationEvent) {
+override fun getAffectedSourceIds(e: AssociationEvent): Collection<*>? {
     if (sqlClient.caches.isAffectedBy(e) && ❶
-        e.isChanged(BookStore::books) ❷
+        e.immutableProp == BookProps.BOOKS ❷
     ) {
-        sqlClient
-            .caches
-            .getPropertyCache<Any, Any>(BookStore::avgPrice) ❸
-            ?.delete(e.sourceId) ❹
+        return listOf(e.sourceId) ❸
     }
+    return null
 }
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ If the trigger type is set to `BOTH`, any modification that triggers event notifications will be executed twice.
-
+-   ❶ If the trigger type is set to `BOTH`, any modification-caused trigger event notifications will be executed twice.
+  
     :::note
-    1st time: `e.connection` is non-null, indicating this is a notification sent by the Transaction trigger.
-
-    2nd time: `e.connection` is null, indicating this is a notification sent by the BinLog trigger.
+    The 1st time: `e.connection` is non-null, indicating this is a notification from the Transaction trigger.
+    
+    The 2nd time: `e.connection` is null, indicating this is a notification from the BinLog trigger.
     :::
 
-    However, the calculated cache consistency maintenance work only needs to be done once, no need to do it twice.
+    However, the cache consistency maintenance work only needs to be done once, no need to do it twice.
 
-    `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
+    `sqlClient.caches.isAffectedBy(e)` can solve this problem, so that even if the trigger type is set to `BOTH`, the code here will only execute once.
 
-    :::tip
-    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplined behavior.
+    :::caution
+    No matter whether Jimmer's trigger type is set to `BOTH` or not, it is recommended to include this check as a disciplinary measure.
     :::
+  
+-   ❷ If the `BookStore.books` one-to-many association is modified  
 
--   ❷ If the one-to-many association `BookStore.books` is modified.
-
--   ❸ Get the calculated cache corresponding to the calculated property `BookStore.avgPrice`. 
-
--   ❹ Delete the calculated cache according to the id of the current `BookStore` object.
+-   ❹ Then the `sourceId` of this association modification event *(i.e. the `BookStore` id)* needs to have the computed property cache `BookStore.avgPrice` cleared.
 
 Now let's verify the effect of modifying `Book.store`:
 
@@ -631,93 +532,100 @@ Delete data from redis: [BookStore.books-2]
 
 ### Modifying BOOK.PRICE
 
-Users can also modify the price of a book, which will inevitably affect the `BookStore.avgPrice` of its bookstore. We can implement the `onEntityChange` method as follows:
+Users can also modify the `price` of books, which will inevitably affect `BookStore.avgPrice` of the bookstore it belongs to.
+
+Implement `getAffectedSourceIds(EntityEvent<?>)`:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-@EventListener
-public void onEntityChange(EntityEvent<?> e) {
-    if (sqlClient.getCaches().isAffectedBy(e) && ❶
-        e.isChanged(BookProps.PRICE) ❷
-    ) {
-        Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE); ❸
-        BookStore store = storeRef != null ? storeRef.getValue() : null;
-        if (store != null) { ❹
-            sqlClient
-                    .getCaches()
-                    .getPropertyCache(BookStoreProps.AVG_PRICE) ❺
-                    .delete(store.id()); ❻
+@Override
+public Collection<?> getAffectedSourceIds(EntityEvent<?> e) {
+    if (sqlClient().getCaches().isAffectedBy(e) && ❶
+        !e.isEvict() && ❷
+        e.getImmutableType().getJavaClass() == Book.class) { ❸
+
+        Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE); ❹
+        if (storeRef != null && storeRef.getValue() != null && e.isChanged(BookProps.PRICE)) { ❺
+            return Collections.singletonList(storeRef.getValue().id()); ❻  
         }
     }
+    return null;
 }
 ```
 
 </TabItem>
+
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-@EventListener
-fun onEntityChange(e: EntityEvent<*>) {
+override fun getAffectedSourceIds(e: EntityEvent<*>): Collection<*>? {
     if (sqlClient.caches.isAffectedBy(e) && ❶
-        e.isChanged(Book::price) ❷
+        !e.isEvict && ❷
+        e.getImmutableType().javaClass == Book::class.java ❸
     ) {
-        val storeId = e.getUnchangedRef(Book::store)?.value?.id ❸
-        if (storeId !== null) { ❹
-            sqlClient
-                .caches
-                .getPropertyCache<Any, Any>(BookStore::avgPrice) ❺
-                ?.delete(storeId) ❻
+        val store = e.getUnchangedRef(Book::store)?.value ❹
+        if (store !== null && e.isChanged(Book::price)) { ❺
+            return listOf(store.id) ❻
         }
     }
-} 
+    return null
+}
 ```
 
 </TabItem>
 </Tabs>
 
--   ❶ If the trigger type is set to `BOTH`, any modification that triggers event notifications will be executed twice.
+-   ❶ If the trigger type is set to `BOTH`, any modification-caused trigger event notifications will be executed twice.
 
     :::note
-    1st time: `e.connection` is non-null, indicating this is a notification sent by the Transaction trigger.
+    The 1st time: `e.connection` is non-null, indicating this is a notification from the Transaction trigger.
 
-    2nd time: `e.connection` is null, indicating this is a notification sent by the BinLog trigger.
+    The 2nd time: `e.connection` is null, indicating this is a notification from the BinLog trigger.
     :::
 
-    However, the calculated cache consistency maintenance work only needs to be done once, no need to do it twice.
+    However, the cache consistency maintenance work only needs to be done once, no need to do it twice.
 
-    `sqlClient.caches.isAffectedBy(e)` can solve this problem. Even if the trigger type is set to `BOTH`, this code will only be executed once.
+    `sqlClient.caches.isAffectedBy(e)` can solve this problem, so that even if the trigger type is set to `BOTH`, the code here will only execute once.
 
-    :::tip
-    Regardless of whether Jimmer's trigger type is set to `BOTH`, it is recommended to add this check as a disciplined behavior.
+    :::caution
+    No matter whether Jimmer's trigger type is set to `BOTH` or not, it is recommended to include this check as a disciplinary measure.
     :::
+  
+-   ❷ There are two reasons for Jimmer's event callbacks, whether it's `EntityEvent` or `AssociationEvent`.
 
--   ❷ `e.isChanged(BookProps.PRICE)`/`e.isChanged(Book::price)` contains two meanings at the same time:
+    1. Explicitly know that the database has been modified
+    
+        In this case, `isEvict()` returns false. Users can access any property of `EntityEvent`/`AssociationEvent`.
+        
+    2. In the process of automatic cache eviction with cascading effect, the cache of an object/association needs to be evicted
+    
+        In this case, `isEvict()` returns true. Except for `EntityEvent.id`/`AssociationEvent.sourceId`, the event object does not support any other properties like `EntityEvent.newEntity`, `AssociationEvent.attachedTargetId`.
+        
+        Here, we need to explicitly determine if the user has modified the `PRICE` field of the `BOOK` table, so we must check `isEvict()` is false.
 
-    - The modified entity type is `Book`.
+        :::warning  
+        Whether to check `e.isEvict()` must be decided on a case-by-case basis.
+        :::
+    
+-   ❸ Confirm that the current event was triggered because an object of type `Book` was modified.
 
-    - The modified entity property is `Book.price`.
-
-    When the above conditions are met, we need to clean up the calculated cache of `BookStore.avgPrice` of its bookstore.
-
--   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)` means that if the foreign key-based `Book.store` has not been modified, return a `Ref` wrapper object containing the unmodified associated object. If the associated object is nont null, it only has the id property.
+-   ❹ ❺ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)` returns a `Ref` wrapper object containing the unchanged associated object *(only id property)* or null, if the `Book.store` association based on foreign key was not modified.
 
     :::info
-    - If `getUnchangedRef` returns null, it means this property has been modified rather than being an `Unchanged` property.
-
-    - If `getUnchangedRef` returns a non-null wrapper object `Ref` but its internal `value` is null, it means this property has not been modified and its value has remained null all along.
+    - If the returned `Ref` wrapper object itself is null, it means this property was modified rather than being `Unchanged`.
+    
+    - If the returned `Ref` wrapper object is non-null but its internal `value` is null, it means this property was not modified and its value has remained null all along.
     :::
     
--   ❹ If the foreign key of the modified data has not been modified and is not null.
-
+    Ultimately, we expect the `BOOK.STORE_ID` foreign key field was not modified and has remained non-null.
+    
     :::tip
-    The case where the foreign key field is modified does not need to be considered here, because the `onAssociationChange` discussed above will handle this case properly.
+    We don't need to consider the case where the foreign key field was modified here, because the other method we discussed earlier, `getAffectedSourceIds(AssociationEvent)`, will properly handle that case.
     :::
-    
--   ❺ Get the calculated cache corresponding to the calculated property `BookStore.avgPrice`.
-
--   ❻ Delete the calculated cache according to the id of the parent object.
+  
+-   ❻ If all the above conditions are met, then the computed property cache `BookStore.avgPrice` of the `BookStore` parent object that the `price`-modified `Book` belongs to needs to be cleared.
 
 Now let's verify the effect of modifying `Book.price`: 
 

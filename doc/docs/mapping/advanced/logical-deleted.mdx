@@ -6,81 +6,74 @@ title: Logical Deletion
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Logical deletion, also known as soft deletion, does not actually delete data from the database. Instead, it creates the illusion that data has been deleted by hiding it. This leaves room for recovery in case of misoperation.
+Logical deletion, also known as soft deletion, means data is not actually deleted. Instead, data is hidden to give the illusion of deletion. This leaves room for recovering from accidental operations.
 
-To enable logical deletion for entities, a flag property decorated with `org.babyfish.jimmer.sql.LogicalDeleted` needs to be added to indicate whether the data is normal or deleted.
+To enable logical deletion support for an entity, add a flag property annotated with `org.babyfish.jimmer.sql.LogicalDeleted` to indicate whether the data is normal or already deleted.
 
 Once a logical deletion property is configured for an entity:
 
--   By default, when developers call the API to delete an entity object, Jimmer does not actually delete the data with SQL `delete` statement. Instead, it uses `update` statement to set the logical deletion property of the entity to "deleted".
+-   By default, when developers call APIs to delete an entity object, Jimmer will NOT actually delete the data with SQL `delete` statements. Instead, it will use `update` statements to set the logical deletion property of the entity to "already deleted".
 
-    Exception: Even if an entity has logical deletion property, Jimmer also provides APIs for developers to forcibly truly delete objects by passing additional parameters.
-    
--   By default, all SQL queries against the entity will be automatically appended with `where soft_delete_flag <> deleted` condition to create the illusion that some data has been deleted.
+    Other cases: Even if an entity has a logical deletion property, Jimmer also provides APIs for developers to forcibly truly delete objects by passing additional parameters.
+  
+-   By default, all SQL queries against the entity will be automatically appended with a `where logicalDeleteFlag <> already deleted` condition to create the illusion that some data has been deleted. 
 
-    Exceptions:
-    
-    - Jimmer provides some convenience APIs that query entities *(or entity id sets)* by id *(or id sets)* without requiring users to create queries. This set of APIs ignores the soft deletion rules.
-
-    - Jimmer can ignore logical deletion filtering rules *(not add filtering conditions)*; or even reverse logical deletion filtering rules *(add opposite filtering conditions to find deleted data only)*.
-    
 :::info
-Logical deletion itself is a relatively fixed feature. In terms of automatically adding query filtering conditions, [Global Filters](../../query/global-filter) is a more general feature.
-
-In fact, logical deletion itself is a built-in [Global Filter](../../query/global-filter) provided by Jimmer without requiring implementation by developers.
+This doc only covers the mapping configuration of the logical deletion flag field. For how to use the logical deletion functionality, see [Global Filters / Logical Deletion](../../query/global-filter/logical-deleted).
 :::
 
 ## Usage
 
 The logical deletion flag property can be one of the following types:
 
-- boolean: must be non-null
-- int: must be non-null 
-- enum: must be non-null
-- date: must be nullable
+-   boolean: must be non-null
+-   int: must be non-null  
+-   enum: must be non-null
+-   date: must be nullable
 
-### boolean Type  
+### boolean type
 
--   Use true to indicate deleted
+-   Use true to represent deleted
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
-
+    
     ```java title="Book.java"
     @Entity
     public interface Book {
 
-        // highlight-next-line
-        @LogicalDeleted("true")  
+        // highlight-next-line 
+        @LogicalDeleted("true")
         boolean isDeleted();
-
-        ...Omit other code...
+        
+        ...other code omitted...
     }
     ```
-
+    
     </TabItem>
+    
     <TabItem value="kotlin" label="Kotlin">
-
+    
     ```kotlin title="Book.kt"
     @Entity
     interface Book {
-
+    
         // highlight-next-line
         @LogicalDeleted("true")
         val isDeleted: Boolean
-
-        ...Omit other code...
+        
+        ...other code omitted...
     }
     ```
-
+    
     </TabItem>
     </Tabs>
 
--   Use false to indicate deleted
+-   Use false to represent deleted 
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
-
+    
     ```java title="Book.java"
     @Entity
     public interface Book {
@@ -89,14 +82,15 @@ The logical deletion flag property can be one of the following types:
         @LogicalDeleted("false")
         boolean isEnabled();
 
-        ...Omit other code...
+        ...other code omitted...
     }
     ```
-
+    
     </TabItem>
+    
     <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin title="Book.kt" 
+    
+    ```kotlin title="Book.kt"
     @Entity
     interface Book {
 
@@ -104,40 +98,14 @@ The logical deletion flag property can be one of the following types:
         @LogicalDeleted("false")
         val isEnabled: Boolean
 
-        ...Omit other code...
+        ...other code omitted...
     }
     ```
-
+    
     </TabItem>
     </Tabs>
-    
-Here, in addition to the `value` parameter we configured for `@LogicalDeleted`, the annotation also has another parameter `restoredValue`:
 
--   `value`: The value of the field when the object is deleted.
-
--   `restoredValue`: The value of the field when the object is not deleted.
-
-Obviously, `value` and `restoredValue` cannot be equal. 
-
-:::tip
-When this property has only two possible values *(boolean or enum with only two options)*, `restoredValue` can be omitted.
-:::
-
-Therefore, the annotations demonstrated in the above code are actually omissions of the `restoredValue` parameter:
-
--   `@LogicalDeleted("true")` is actually a shorthand for `@LogicalDeleted(value = "true", restoredValue = "false")`.
-
--   `@LogicalDeleted("false")` is actually a shorthand for `@LogicalDeleted(value = "false", restoredValue = "true")`.
-
-:::info  
-Whether omitted or explicitly specified by the developer, the `restoredValue` parameter has two roles:
-
--   The default value of this property when the object is first saved.
-
--   When data in deleted state is saved again and its state needs to be restored to normal, the value to which this property is automatically reset.
-:::
-
-### int Type  
+### int type
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -147,10 +115,10 @@ Whether omitted or explicitly specified by the developer, the `restoredValue` pa
 public interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(value = "1", restoredValue = "0")
+    @LogicalDeleted("4")
     int state();
 
-    ...Omit other code...
+    ...other code omitted...
 }
 ```
 
@@ -162,36 +130,36 @@ public interface Book {
 interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(value = "1", restoredValue = "0")
+    @LogicalDeleted("4")
     val state: Int
 
-    ...Omit other code...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-### Enum Type
+### enum type
 
-First, define the enum type to represent data status:
+First, define an enum type to represent the data state:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java title="BookState.java"
 public enum BookState {
-    INTIALIZED,  
+    INTIALIZED, 
     FROZEN,
     PUBLISHED,
-    DELETED
+    DELETED  
 }
 ```
 
 </TabItem>
 <TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="BookState.kt"
+```kotlin title="BookState.kt"  
 enum class BookState {
     INTIALIZED,
     FROZEN,
@@ -206,18 +174,15 @@ enum class BookState {
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
-```java title="Book.java" 
+```java title="Book.java"
 @Entity
 public interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(
-        value = "DELETED",
-        restoredValue = "INTIALIZED"  
-    )
+    @LogicalDeleted("DELETED")
     BookState state();
 
-    ...Omit other code...
+    ...other code omitted...
 }
 ```
 
@@ -225,152 +190,116 @@ public interface Book {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin title="Book.kt"
-@Entity
+@Entity  
 interface Book {
 
     // highlight-next-line
-    @LogicalDeleted(
-        value = "DELETED",
-        restoredValue = "INTIALIZED"
-    )
+    @LogicalDeleted("DELETED")
     val state: BookState
 
-    ...Omit other code...
+    ...other code omitted...
 }
 ```
 
 </TabItem>
 </Tabs>
 
-:::tip
-If the enum has only two options, `restoredValue` can be omitted.
-::: 
-
 :::info
-For Jimmer's configuration related to saving enum properties, please refer to [Enum Mapping](./enum).
+For how Jimmer saves enum properties, see [Enum Mapping](./enum).
 :::
 
-### Date
+### date type
 
--   Use non-null to indicate deleted, null to indicate not deleted
+-   Use non-null to represent deleted, null for non-deleted
 
     <Tabs groupId="language">
     <TabItem value="java" label="Java">
-
+    
     ```java title="Book.java"
     @Entity
     public interface Book {
-
+    
         // highlight-next-line
-        @LogicalDeleted(value = "now", restoredValue = "null") 
+        @LogicalDeleted("now") 
         @Nullable
         LocalDateTime deletedTime();
-
-        ...Omit other code...
+    
+        ...other code omitted...
     }
     ```
-
+    
     </TabItem>
+    
     <TabItem value="kotlin" label="Kotlin">
-
+    
     ```kotlin title="Book.kt"
     @Entity
     interface Book {
-
+    
         // highlight-next-line
-        @LogicalDeleted(value = "now", restoredValue = "null")
+        @LogicalDeleted("now")
         val deletedTime: LocalDateTime?
-
-        ...Omit other code...
+    
+        ...other code omitted...
     }
     ```
-
-    </TabItem>
-    </Tabs>
-
--   Use null to indicate deleted, non-null to indicate not deleted
-
-    <Tabs groupId="language">
-    <TabItem value="java" label="Java">
-
-    ```java title="Book.java"
-    @Entity
-    public interface Book {
-
-        // highlight-next-line
-        @LogicalDeleted(value = "null", restoredValue = "now")
-        @Nullable
-        LocalDateTime createdTime();
-
-        ...Omit other code...
-    }
-    ```
-
-    </TabItem>
-    <TabItem value="kotlin" label="Kotlin">
-
-    ```kotlin title="Book.kt"
-    @Entity
-    interface Book {
-
-        // highlight-next-line
-        @LogicalDeleted(value = "null", restoredValue = "now")
-        val createdTime: LocalDateTime?
-
-        ...Omit other code...
-    }
-    ```
-
+    
     </TabItem>
     </Tabs>
     
-Where `now` is a special value defined by `@LogicalDeleted` that represents current time.
+    :::info
+    `"now"` here means the `deletedTime` property will be automatically set to the current JVM time when the data is logically deleted.
+    :::
+  
+-   Use null to represent deleted, non-null for non-deleted
 
-## Multi-View Cache Support  
-
-:::caution
-Logical deletion itself is a very simple feature. If it is only used at the SQL operation level, it is merely a simple query condition adding feature.
-
-However, when used together with Jimmer's caching capabilities, since logical deletion itself is a built-in [Global Filter](../../query/global-filter), this will involve [Multi-View Cache](../../cache/multiview-cache) issues that developers need to be aware of.
-:::
-
-This article will not discuss what problems [Multi-View Cache](../../cache/multiview-cache) tries to solve and how to solve them. Please refer to related documents on [Multi-View Cache](../../cache/multiview-cache). This article briefly introduces how to enable multi-view cache for logical deletion properties:
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java title="Book.java"
-@Entity 
-public interface Book {
-
-    @LogicalDeleted(
-        value = "true",
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+    
         // highlight-next-line
-        useMultiViewCache = true  
-    )
-    boolean isDeleted();
-
-    ...Omit other code...
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="Book.kt"
-@Entity
-interface Book {
-
-    @LogicalDeleted(
-        value = "true",
+        @LogicalDeleted("null")
+        @Nullable
+        LocalDateTime createdTime();
+    
+        ...other code omitted...
+    }
+    ```
+    
+    </TabItem>
+    
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+    
         // highlight-next-line
-        useMultiViewCache = true
-    )
-    val isDeleted: Boolean
+        @LogicalDeleted("null") 
+        val createdTime: LocalDateTime?
+    
+        ...other code omitted...
+    }
+    ```
+    
+    </TabItem>
+    </Tabs>
+    
+    :::info
+    `"null"` here means the `createdTime` property will be automatically set to null when the data is logically deleted.
+    :::
 
-    ...Omit other code...
-}
-```
+## Multi-versioning Issues  
 
-</TabItem>
-</Tabs>
+Logical deletion does not truly delete data from the database. It only hides the data. This means there are now multiple versions of the data.
+
+Therefore, it is recommended that the id uses auto-generation strategy instead of being specified by users. Logically deleted data still exists in the database, so data with the same id can no longer be successfully inserted.
+
+Once the id uses auto-generation strategy, it loses business meaning. So developers should establish uniqueness constraints/indices based on other fields instead of the primary key constraint to ensure uniqueness at the business level.
+
+Obviously, data multi-versioning increases the complexity for users to define uniqueness constraints/indices. 
+
+This doc focuses on the mapping configuration of logical deletion, so it only points out this issue without further discussion. For an in-depth look at this problem, see [Key / Multi-version Support](./key#multi-version-support).

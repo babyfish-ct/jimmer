@@ -548,3 +548,9 @@ However, if [sharding-jdbc](https://shardingsphere.apache.org/document/4.1.1/en/
 To solve this, make the filter implement `ShardingFilter` *(Java)* or `KShardingFilter` *(Kotlin)*. These interfaces have no behaviors, just for type marking.
 
 Once a filter inherits `ShardingFilter` or `KShardingFilter`, these simple APIs will no longer ignore the filter. This ensures the final SQL contains the sharding field required by sharding-jdbc, querying only one shard instead of all shards.
+
+## Multi-view Cache 
+
+When user-defined filters and cache are used together, a problem called "multi-view cache" is involved.
+
+Since we haven't introduced cache yet, we'll just make a brief note here. Please refer to [Cache/Multi-view Cache](../../cache/multiview-cache) for details.

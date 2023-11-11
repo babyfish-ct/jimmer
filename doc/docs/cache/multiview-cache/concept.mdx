@@ -40,10 +40,10 @@ Therefore, this table can also be interpreted as property cache can be multi-vie
 
 ## Scenarios
 
-Multi-view cache is caused by [global filters](../../query/global-filter).
+Multi-view cache is caused by [user defined global filters](../../query/global-filter/user-filter).
 
 :::info
-As long as an entity is applied with a [global filter](../../query/global-filter), 
+As long as an entity is applied with a [user defined global filter](../../query/global-filter/user-filter), 
 
 -   all association caches targeting it
 
@@ -52,7 +52,7 @@ As long as an entity is applied with a [global filter](../../query/global-filter
 need to be multi-viewed.
 :::
 
-For example, if a global filter is added to `Book`, then properties like:
+For example, if an user defined global filter is added to `Book`, then properties like:
 
 -   Association properties targeting `Book`, such as `BookStore.books`, `Author.books`
 
@@ -65,10 +65,6 @@ These filter-sensitive properties either do not support cache or support multi-v
 
 Don't worry. Jimmer will tell developers [why cache is abandoned](./abandoned-callback).
 :::
-
-The [global filters](../../query/global-filter) discussed here include not only user-defined filters, but also the built-in filters implied by [logical delete](../../mapping/advanced/logical-deleted).
-
-Subsequent documents will introduce multi-view cache from user-defined filters and [logical delete](../../mapping/advanced/logical-deleted).
 
 ## SubKey  
 
@@ -110,27 +106,27 @@ Now let's take a look at an example of multi-view cache:
             <td>[6,4,2,8]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false&#125;</td>
+            <td>&#123;"module":"x"&#125;</td>
             <td>[6,5,3,2,9,8]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"a"&#125;</td>
+            <td>&#123;"module":"x","tenant":"a"&#125;</td>
             <td>[5,3,9]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"b"&#125;</td>
+            <td>&#123;"module":"x","tenant":"b"&#125;</td>
             <td>[6,2,8]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":true&#125;</td>
+            <td>&#123;"module":"y"&#125;</td>
             <td>[4,1,7]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":true,"tenant":"a"&#125;</td>
+            <td>&#123;"module":"y","tenant":"a"&#125;</td>
             <td>[1,7]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":true,"tenant":"b"&#125;</td>
+            <td>&#123;"module":"y","tenant":"b"&#125;</td>
             <td>[4]</td>
         </tr>
         <tr>
@@ -147,15 +143,15 @@ Now let's take a look at an example of multi-view cache:
             <td>[12,10]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false&#125;</td>
+            <td>&#123;"module":"x"&#125;</td>
             <td>[12,11]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"a"&#125;</td>
+            <td>&#123;"module":"x","tenant":"a"&#125;</td>
             <td>[11]</td>
         </tr>
         <tr>
-            <td>&#123;"logicalDeleted":false,"tenant":"b"&#125;</td>
+            <td>&#123;"module":"x","tenant":"b"&#125;</td>
             <td>[12]</td>
         </tr>
         <tr>
@@ -196,7 +192,7 @@ Obviously, compared to single-view cache, multi-view cache splits the data into 
 
     This `SortedMap` must use the default sorting rule without custom `Comparator`.
 
-    This is very important. For example, SubKey can only be `{"logicalDeleted":false,"tenant":"a"}`, not `{tenant:"a", logicalDeleted":false}` which is different but equivalent.  
+    This is very important. For example, SubKey can only be `{"module":"x","tenant":"a"}`, not `{tenant:"a", "module":"x"}` which is different but equivalent.  
     This ensures there is no redundant information internally in multi-view cache.
     :::
 
@@ -204,7 +200,8 @@ Multi-view cache is only for property cache, i.e. association cache and calculat
 
 ### SubKey of Association Properties
 
-For association properties, the necessity of multi-view cache must be caused by the associated entity being affected by [global filters](../../query/global-filter).
+For association properties, the necessity of multi-view cache must be caused by the associated entity being affected by [user defined global filters](../../query/global-filter/user-filter).
+
 Supporting multi-view cache by merely implementing the `Filter/KFilter` interface is not enough. The `CacheableFilter/KCacheableFilter` interface must be implemented.
 
 <Tabs groupId="language">
@@ -243,11 +240,7 @@ interface KCacheableFilter<E: Any> : KFilter<E> {
 Users need to implement the `getParameters()` method to contribute part of the information to sub key.
 
 :::info
-<<<<<<< HEAD
-When multiple `CacheableFilter/KCachableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the sub key.
-=======
 When multiple `CacheableFilter/KCacheableFilter` affect the associated entity, the data returned by the `getParameters()` method of each filter object is merged together as the SubKey.
->>>>>>> main
 :::
 
 ### SubKey of Complex Calculated Properties

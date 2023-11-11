@@ -907,3 +907,11 @@ Delete data from redis: [Author.books-3] ❷
 
 -   ❶ 对于id为`10`的Book对象而言，其一对多关联`Book.authors`对应的关联缓存被删除
 -   ❷ 对于id为`3`的Author对象而言，其一对多关联`Author.books`对应的关联缓存被删除
+
+## 逻辑删除相关注意事项
+
+如果关联对象支持[逻辑删除](../../query/global-filter/logical-deleted)，默认情况下，关联缓存仍然被支持。
+
+:::warning
+然而，一旦逻辑删除过滤器被[忽略](../../query/global-filter/logical-deleted#忽略逻辑删除过滤器)或[反转](../../query/global-filter/logical-deleted#反转逻辑删除过滤器)，关联缓存会被忽略。
+:::

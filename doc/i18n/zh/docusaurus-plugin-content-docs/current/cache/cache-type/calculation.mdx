@@ -336,7 +336,7 @@ class BookStoreAvgPriceResolver(
 </TabItem>
 </Tabs>
 
-我们需要修改此类，添加两个Spring事件监听方法
+我们需要修改此类，覆盖如下两个方法
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -356,15 +356,15 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
 
     ...省略其他代码...
 
-    @EventListener
+    @Override
     // highlight-next-line
-    public void onAssociationChange(AssociationEvent e) {
+    Collection<?> getAffectedSourceIds(@NotNull EntityEvent<?> e) {
         // TODO
     }
 
-    @EventListener
+    @Override
     // highlight-next-line
-    public void onEntityChange(EntityEvent<?> e) {
+    Collection<?> getAffectedSourceIds(@NotNull AssociationEvent e) {
         // TODO
     }
 }
@@ -388,105 +388,13 @@ class BookStoreAvgPriceResolver(
 
     ...省略其他代码...
 
-    @EventListener
     // highlight-next-line
-    fun onAssociationChange(e: AssociationEvent) {
-        // TODO
-    }
-
-    @EventListener
-    // highlight-next-line
-    fun onEntityChange(e: EntityEvent<?>) {
-        // TODO
-    }
-}
-```
-
-</TabItem>
-</Tabs>
-
-:::info
-如果使用SpringBoot Starter，触发器事件，即`EntityEvent`和`AssociationEvent`，会被作为Spring事件发送。
-
-所以，用注解`@org.springframework.context.event.EventListener`响应Jimmer触发器的事件即可。
-
-如果使用底层API，采用Jimmer的触发器API响应事件
-
-<ViewMore buttonText="非Spring模式">
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java title="BookStoreAvgPriceResolver.java"
-package com.example.business.resolver;
-
-import org.babyfish.jimmer.sql.*;
-import org.babyfish.jimmer.sql.TransientResolver;
-
-public class BookStoreAvgPriceResolver 
-implements TransientResolver<Long, BigDecimal> {
-    
-    private final JSqlClient sqlClient;
-
-    ...省略其他代码...
-
-    public BookStoreAvgPriceResolver(JSqlClient sqlClient) {
-        this.sqlClient = sqlClient;
-        // highlight-next-line
-        sqlClient.getTriggers().addAssociationListener(
-            this::onAssociationChange
-        );
-        // highlight-next-line
-        sqlClient.getTriggers().addEntityListener(
-            this::onEntityChange
-        );
-    }
-
-    // highlight-next-line
-    private void onAssociationChange(AssociationEvent e) {
+    override fun getAffectedSourceIds(e: EntityEvent<?>): Collection<*>? {
         // TODO
     }
 
     // highlight-next-line
-    private void onEntityChange(EntityEvent<?> e) {
-        // TODO
-    }
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="BookStoreAvgPriceResolver.kt"
-package com.example.business.resolver
-
-import org.babyfish.jimmer.sql.*
-import org.babyfish.jimmer.sql.kt.KTransientResolver
-import org.springframework.stereotype.Component
-
-class BookStoreAvgPriceResolver(
-    private val sqlClient KSqlClient
-) : KTransientResolver<Long, BigDecimal> {
-
-    ...省略其他代码...
-
-    init {
-        // highlight-next-line
-        sqlClient.triggers.addAssociationListener {
-            this.onAssociationChange(it)
-        }
-        // highlight-next-line
-        sqlClient.triggers.addEntityListener {
-            this.onEntityChange(it)
-        }
-    }
-
-    // highlight-next-line
-    private fun onAssociationChange(e: AssociationEvent) {
-        // TODO
-    }
-
-    // highlight-next-line
-    private fun onEntityChange(e: EntityEvent<?>) {
+    override fun getAffectedSourceIds(e: AssociationEvent): Collection<*>? {
         // TODO
     }
 }
@@ -494,39 +402,35 @@ class BookStoreAvgPriceResolver(
 
 </TabItem>
 </Tabs>
-</ViewMore>
-:::
 
-接下来，我们会实现上面的空白方法：`onEntityChange`和`onAssociationChange`。
+这两个方法是`TransientResolver`内置的[触发器](../../mutation/trigger)响应方法，在数据库变化时被自动执行，负责在数据库变化时自动清理计算缓存。
 
-### 修改BOOK.STORE_ID
+接下来，我们实现这两个方法。
+
+### 当外键BOOK.STORE_ID被修改时
 
 用户可以通过修改`BOOK`表的外键`STORE_ID`来改变`BOOK_STORE`和`BOOK`之间的关联，这必然会影响某些书店的`BookStore.avgPrice`。
 
-对此，我们可以通过`onAssociationChange`方法来了解对象之间的关系变化。
-
 :::tip
-如果监听多对一关联`Book.store`的变化，那么就需要针对修改前的旧值和修改后的新值处理两个父对象，还要考虑它们是否为null。
+如果关注多对一关联`Book.store`的变化，那么修改前的旧值和修改后的新值就是两个父对象，要分别考虑它们是否为null，代码会稍微繁琐一点。
 
-幸运的是，本例所基于的实体模型中，存在逆向的一对多关联`BookStore.books`，我们可以使用它来简化代码。
-
-如果监听一对多关联`BookStore.books`的变化，我们只需要考虑当前`BookStore`对象的id即可，代码会得到简化，如下
+幸运的是，本例所基于的实体模型中，存在逆向的一对多关联`BookStore.books`。如果监听一对多关联`BookStore.books`的变化，我们只需要考虑当前`BookStore`对象的id即可，代码会得到简化。
 :::
+
+实现`getAffectedSourceIds(AssociationEvent)`，如下
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-@EventListener
-public void onAssociationChange(AssociationEvent e) {
+@Override
+public Collection<?> getAffectedSourceIds(AssociationEvent e) {
     if (sqlClient.getCaches().isAffectedBy(e) && ❶
-        e.isChanged(BookStoreProps.BOOKS) ❷
+        e.getImmutableProp() == BookStoreProps.BOOKS.unwrap() ❷
     ) {
-        sqlClient
-                .getCaches()
-                .getPropertyCache(BookStoreProps.AVG_PRICE) ❸
-                .delete(e.getSourceId()); ❹
+        return Collections.singletonList(e.getSourceId()); ❸
     }
+    return null;
 }
 ```
 
@@ -534,16 +438,13 @@ public void onAssociationChange(AssociationEvent e) {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-@EventListener
-fun onAssociationChange(e: AssociationEvent) {
+override fun getAffectedSourceIds(e: AssociationEvent): Collection<*> {
     if (sqlClient.caches.isAffectedBy(e) && ❶
-        e.isChanged(BookStore::books) ❷
+        e.immutableProp == BookProps.BOOKS ❷
     ) {
-        sqlClient
-            .caches
-            .getPropertyCache<Any, Any>(BookStore::avgPrice) ❸
-            ?.delete(e.sourceId) ❹
+        return listOf(e.sourceId) ❸
     }
+    return null
 }
 ```
 
@@ -562,15 +463,13 @@ fun onAssociationChange(e: AssociationEvent) {
 
     `sqlClient.caches.isAffectedBy(e)`可以解决这个问题，即使触发器的类型被设置为`BOTH`，也可保证这里的代码只会执行一次。
 
-    :::tip
-    无论Jimmer的触发器的类型是否被设置为`BOTH`，都建议将此检查作为一个纪律性动作加上。
+    :::caution
+    无论Jimmer的触发器的类型是否被设置为`BOTH`，都建议将此检查作为一个纪律性行为。
     :::
 
 -   ❷ 如果一对多关联`BookStore.books`被修改
 
--   ❸ 获得计算属性`BookStore.avgPrice`所对应的计算缓存
-
--   ❹ 按照当前`BookStore`对象的id删除计算缓存
+-   ❹ 那么，该关联修改事件的`sourceId` *(即，`BookStore`的id)* 所对应的计算属性`BookStore.avgPrice`的缓存需要被清理。
 
 现在，让我们来验证修改`Book.store`的效果
 
@@ -628,28 +527,28 @@ Delete data from redis: [BookStore.books-2]
 
 -   ❷ 外键修改后的新值`2`所引用的父对象的计算缓存`BookStore.avgPrice-2`被删除
 
-### 修改BOOK.PRICE
+### 当BOOK.PRICE被修改时
 
-用户还可以修改书籍的价格，这必然会影响其所属书店的`BookStore.avgPrice`。对此，我们可如此实现`onEntityChange`方法：
+用户还可以修改书籍的价格，这必然会影响其所属书店的`BookStore.avgPrice`。
+
+实现`getAffectedSourceIds(EntityEvent<?>)`，如下
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
 
 ```java
-@EventListener
-public void onEntityChange(EntityEvent<?> e) {
-    if (sqlClient.getCaches().isAffectedBy(e) && ❶
-        e.isChanged(BookProps.PRICE) ❷
-    ) {
-        Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE); ❸
-        BookStore store = storeRef != null ? storeRef.getValue() : null;
-        if (store != null) { ❹
-            sqlClient
-                    .getCaches()
-                    .getPropertyCache(BookStoreProps.AVG_PRICE) ❺
-                    .delete(store.id()); ❻
+@Override
+public Collection<?> getAffectedSourceIds(EntityEvent<?> e) {
+    if (sqlClient().getCaches().isAffectedBy(e) && ❶
+            !e.isEvict() && ❷
+            e.getImmutableType().getJavaClass() == Book.class) { ❸
+
+        Ref<BookStore> storeRef = e.getUnchangedRef(BookProps.STORE); ❹
+        if (storeRef != null && storeRef.getValue() != null && e.isChanged(BookProps.PRICE)) { ❺
+            return Collections.singletonList(storeRef.getValue().id()); ❻
         }
     }
+    return null;
 }
 ```
 
@@ -657,19 +556,17 @@ public void onEntityChange(EntityEvent<?> e) {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-@EventListener
-fun onEntityChange(e: EntityEvent<*>) {
+override fun getAffectedSourceIds(e: EntityEvent<*>): Collection<*>? {
     if (sqlClient.caches.isAffectedBy(e) && ❶
-        e.isChanged(Book::price) ❷
+        !e.isEvict && ❷
+        e.getImmutableType().javaClass == Book::class.java ❸
     ) {
-        val storeId = e.getUnchangedRef(Book::store)?.value?.id ❸
-        if (storeId !== null) { ❹
-            sqlClient
-                .caches
-                .getPropertyCache<Any, Any>(BookStore::avgPrice) ❺
-                ?.delete(storeId) ❻
+        val store = e.getUnchangedRef(Book::store)?.value ❹
+        if (store !== null && e.isChanged(Book::price)) { ❺
+            return listOf(store.id) ❻
         }
     }
+    return null
 }
 ```
 
@@ -688,36 +585,44 @@ fun onEntityChange(e: EntityEvent<*>) {
 
     `sqlClient.caches.isAffectedBy(e)`可以解决这个问题，即使触发器的类型被设置为`BOTH`，也可保证这里的代码只会执行一次。
 
-    :::tip
-    无论Jimmer的触发器的类型是否被设置为`BOTH`，都建议将此检查作为一个纪律性动作加上。
+    :::caution
+    无论Jimmer的触发器的类型是否被设置为`BOTH`，都建议将此检查作为一个纪律性行为。
     :::
 
--   ❷ `e.isChanged(BookProps.PRICE)`/`e.isChanged(Book::price)`同时包含了两个含义
+-   ❷ 两种原因都导致Jimmer的事件回调，无论`EntityEvent`还是`AssociationEvent`。
 
-    -   被修改的实体类型是`Book`
+    1.  明确得知道数据库被修改
 
-    -   被修改的实体属性是`Book.price`
+        此时，`isEvict()`方法返回false。用户可以访问`EntityEvent`/`AssociationEvent`的任何属性。
 
-    当以上条件满足时，我们需要清理其所属书店的计算属性`BookStore.avgPrice`的计算缓存。
+    2.  在具备连锁效应的自动清理缓存的过程中，某个对象/关联的缓存需要被清理
 
--   ❸ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)`表示，
-    如果基于外键的`Book.store`没有被修改，返回其一个`Ref`包装对象，其内是未被修改的关联对象。如果该关联对象非null，则只有id属性。
+        此时，`isEvict()`方法返回true。除了`EntityEvent.id`/`AssociationEvent.sourceId`外，事件对象不支持任何属性，比如`EntityEvent.newEntity`，`AssociationEvent.attachedTargetId`。
+
+    这里，我们需要明确地判断用户是否修改了`BOOK`表的`PRICE`字段，所以，我们必须判断`isEvict()`为false。
+
+    :::warning
+    是否判断`e.isEvict()`，必须具体情况具体分析。
+    :::
+
+-   ❸ 确定当前事件被触发是因为`Book`类型的对象被修改了。
+
+-   ❹ ❺ `e.getUnchangedRef(BookProps.STORE)`/`e.getUnchangedRef(Book::store)`表示，
+    如果基于外键的`Book.store`没有被修改，返回其一个`Ref`包装对象，其内容是未被修改的关联对象 *(只有id属性)* 或null。
 
     :::info
     -   如果`getUnchangedRef`返回的包装对象`Ref`本身为null，表示这个属性被修改了，并非`Unchanged`属性。
 
-    -   如果`getUnchangedRef`返回的包装对象`Ref`非null但其内部的`value`为null，表示这个属性未被修改，且其值一直保持为null。
+    -   如果`getUnchangedRef`返回的包装对象`Ref`并非null，但其内部的`value`为null，表示这个属性未被修改，且其值一直保持为null。
     :::
 
--   ❹ 如果被修改的数据的的外键未被修改且非null
+    最终，我们期望外键字段`BOOK.STORE_ID`没有被修改，并一直不为null。
 
     :::tip
-    这里无需考虑外键字段被修改的情况，因为前面我们已经讨论过的`onAssociationChange`会妥善处理这种情况。
+    这里，无需考虑外键字段被修改的情况，因为前面我们已经讨论过的另外一个方法`getAffectedSourceIds(AssociationEvent)`会妥善处理这种情况。
     :::
 
--   ❺ 获得计算属性`BookStore.avgPrice`所对应的计算缓存
-
--   ❻ 按照父对象id删除计算缓存
+-   ❻ 如果以上条件都满足，那么`price`被修改的`Book`所属的`BookStore`父对象的计算属性`BookStore.avgPrice`的缓存需要被清理。
 
 现在，让我们来验证修改`Book.price`的效果
 
