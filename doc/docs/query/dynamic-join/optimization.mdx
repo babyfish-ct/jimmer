@@ -273,11 +273,142 @@ Here, we use another approach to solve the same problems.
         - `asTableEx` here (and various TableEx types in Java) is a concept to be introduced in later docs [Pagination Safety](./table-ex). Please ignore it for now.
         :::
   
-## Ghost Joins
+## Phantom Joins
 
-A ghost join is a simple optimization concept. It becomes clear when compared to a normal join: 
+### Two ways to filter on associated ids
 
-Let's look at an example of a normal table join first:
+For foreign key based associations, there are two ways to filter on the associated id:
+
+1.  Use the foreign key property directly
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable book = BookTable.$;
+
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            // highlight-next-line
+            .storeId()
+            .eq(2L)  
+        )
+        .select(book)
+        .execute();
+    ```
+
+    </TabItem>
+
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                // highlight-next-line  
+                .storeId
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::tip
+    For one-to-one/many-to-one associations  
+    *(like `Book.store` in this example)*,
+    even if the user does not declare an [@IdView](../../mapping/advanced/view/id-view)  
+    property for the `Book` entity, 
+    the `storeId` property can still be used in SQL DSL.
+    :::
+   
+2.  Join to the associated object first, then access the id property
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable book = BookTable.$;
+
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            .store()
+            // highlight-next-line
+            .id() // only access id
+            .eq(2L)
+        )
+        .select(book)  
+        .execute();
+    ```
+
+    </TabItem>
+
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                .store
+                // highlight-next-line
+                .id // only access id
+                eq 2L  
+            )
+            select(table)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+   
+-   These two approaches are not equivalent:
+
+    1.  `where(table.storeId().eq(2L))`: Simply filter based on the foreign key field of the current table.
+
+    2.  `where(table.store().id().eq(2L))`: Actually join to the associated table first, then check the associated id value.
+
+    They are not equivalent because:
+
+    -   The foreign key may be fake, i.e. there is no corresponding foreign key constraint in the database. This will cause non-null pseudo foreign keys to be unable to fetch non-null associated objects through joining.
+
+    -   The associated object may be affected by [global filters](../global-filter), so it should be ignored even if it exists in the database.
+  
+-   However, the two approaches are completely equivalent *when all of the following conditions are met*:
+
+    -   The association is a one-to-one or many-to-one association based on foreign key, not through a join table or other reverse association mapping.
+
+    -   The foreign key is real, i.e. there is a corresponding foreign key constraint in the database. See [Real and Fake Foreign Keys](../../mapping/base/foreignkey).
+
+    -   The associated object is not affected by [global filters](../global-filter). Note this refers to either of:
+
+        -   [User-defined filters](../global-filter/user-filter)
+        -   [Logical deletion filters](../global-filter/logical-deleted)
+
+    In this case, the id of the associated object is actually just the foreign key of the current table, so they are equivalent.
+  
+:::info  
+Developers should understand the difference between these two approaches and choose the right one according to the business needs.
+
+However, when the two approaches are equivalent, optimizing the second approach into the first one is very beneficial - this is called phantom join elimination.
+
+The equivalence of the two query methods is a precondition for phantom join elimination to take effect, so this will not be repeated below.
+:::
+
+### Inapplicable Scenarios
+
+Phantom join elimination is only applicable to accessing the `id` property of associated objects, not other properties.
+
+Here, accessing the `name` property of the associated object is used as an example to demonstrate the inability to eliminate the join.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -325,7 +456,9 @@ where
     tb_2_.NAME = ?
 ```
 
-Now let's look at an example of a ghost join:
+### Applicable scenarios
+
+If only the id property of the associated object is accessed, phantom join elimination can be triggered. For example:
 
 <Tabs groupId="language"> 
 <TabItem value="java" label="Java">
@@ -384,17 +517,162 @@ We see no table join in the SQL, only a condition `tb_1_.STORE_ID = ?` based on 
 
 The reason: For a many-to-one association mapped by foreign key, the parent table's id is actually the child table's own foreign key. 
 
-:::info
-1.  For a many-to-one association mapped by foreign key, if the associated object obtained via join operation accesses only the id field and no other fields, such join is considered a ghost join.
-
-2.  The ghost join will be ignored and no related JOIN statement will be generated in the final SQL.
-:::
-
 ## Half Joins
 
-A half join is a concept similar to ghost join, but for join tables.
+Half joins are a concept similar to phantom joins, but for join table based associations.
 
-Let's first look at an example of a normal join table join:
+### Two ways to filter on associated ids
+
+For join table based associations, there are two ways to filter on the associated id:
+
+1.  Check the foreign key field in the join table
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    BookTable book = BookTable.$;
+    
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            .asTableEx()
+            // highlight-next-line
+            .authorIds()
+            .eq(2L)
+        )
+        .select(book)
+        .execute();
+    ```
+    
+    </TabItem>
+    
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                .asTableEx()
+                // highlight-next-line
+                .authorIds
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+    
+    </TabItem>
+    </Tabs>
+    
+    :::note
+    The `asTableEx` here has no substantial function, it will be introduced in 
+    the next doc [Pagination Safety](./table-ex). Please ignore it for now.
+    :::
+   
+    :::caution
+    For one-to-many/many-to-many associations *(like `Book.authors` in this example)*,
+    *users must declare an [@IdView](../../mapping/advanced/view/id-view) property 
+    *for the `Book` entity to access the `authorIds` property in SQL DSL.
+    :::
+   
+2.  Join to the associated object first, then access the id property
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+    
+    ```java
+    BookTable book = BookTable.$;
+    
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            .asTableEx()  
+            .authors()
+            // highlight-next-line
+            .id() // only access id
+            .eq(2L)
+        )
+        .select(book)
+        .execute();
+    ```
+    
+    </TabItem>
+    
+    <TabItem value="kotlin" label="Kotlin">
+    
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                .asTableEx()
+                .authors
+                // highlight-next-line
+                .id // only access id
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+    
+    </TabItem>
+    </Tabs>
+    
+    :::note
+    The `asTableEx` here has no substantial function, it will be introduced in 
+    the next doc [Pagination Safety](./table-ex). Please ignore it for now.
+    :::
+   
+-   These two approaches are not equivalent:
+
+    1.  `where(table.authorIds().eq(2L))`: 1 join operation
+    
+        From the current table `BOOK`, join to `BOOK_AUTHOR_MAPPING` table and directly check the `BOOK_AUTHOR_MAPPING.AUTHOR_ID` field.
+        
+    2.  `where(table.authors().id().eq(2L))`: 2 join operations
+    
+        -   Based on current table `BOOK`, join to `BOOK_AUTHOR_MAPPING`
+        
+        -   Based on join table `BOOK_AUTHOR_MAPPING`, join to `AUTHOR`
+        
+        Finally, check the `AUTHOR.ID` field.
+
+    They are not equivalent because:
+    
+    -   The foreign key `BOOK_AUTHOR_MAPPING.AUTHOR_ID` may be fake, i.e. there is no corresponding foreign key constraint in the database. This will cause non-null pseudo foreign keys to be unable to fetch non-null associated objects through joining.
+
+    -   The associated object may be affected by [global filters](../global-filter), so it should be ignored even if it exists in the database.
+  
+-   However, the two approaches are completely equivalent *when all of the following conditions are met*:
+
+    -   The foreign key in the join table is real, i.e. there is a corresponding foreign key constraint in the database. See [Real and Fake Foreign Keys](../../mapping/base/foreignkey).
+
+    -   The associated object is not affected by [global filters](../global-filter). Note this refers to either of:
+
+        -   [User-defined filters](../global-filter/user-filter)
+        -   [Logical deletion filters](../global-filter/logical-deleted)
+
+    In this case, the id of the associated object is actually just the foreign key of the current table, so they are equivalent.
+  
+:::info
+Developers should understand the difference between these two approaches and choose the right one according to the business needs.  
+
+However, when the two approaches are equivalent, optimizing the second approach into the first one is very beneficial - this is called half join elimination.
+
+The equivalence of the two query methods is a precondition for half join elimination to take effect, so this will not be repeated below.  
+:::
+
+### Inapplicable scenarios
+
+Half join elimination is only applicable to accessing the `id` property of associated objects, not other properties.
+
+Here, accessing the `Autor.firstName` property of the associated object is used as an example to demonstrate the inability to eliminate the second join.
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -437,8 +715,9 @@ val bookIds = sqlClient
 </TabItem>
 </Tabs>
 
-:::info
-`asTableEx` here (and various TableEx types in Java) is a concept to be introduced in later docs [Pagination Safety](./table-ex). Please ignore it for now.  
+:::note
+The `asTableEx` here has no substantial function, it will be introduced in 
+the next doc [Pagination Safety](./table-ex). Please ignore it for now.
 :::
 
 The generated SQL:
@@ -464,7 +743,9 @@ We see join tables produce two SQL JOIN clauses:
 -   Second step: Join to target table
     `inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID`
 
-Next, let's look at an example of a half join:
+### Applicable scenarios
+
+If only the id property of the associated object is accessed, half join elimination can be triggered. For example:
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -494,7 +775,8 @@ List<Long> bookIds = sqlClient
 val bookIds = sqlClient
     .createQuery(Book::class) {
         where(
-            (table as KNullableTableEx<Book>)
+            table
+                .asTableEx()
                 .authors
                 // highlight-next-line
                 .id // Access id only
@@ -508,6 +790,11 @@ val bookIds = sqlClient
 
 </TabItem> 
 </Tabs>
+
+:::note
+The `asTableEx` here has no substantial function, it will be introduced in 
+the next doc [Pagination Safety](./table-ex). Please ignore it for now.
+:::
 
 This time, the generated SQL:
 
@@ -525,9 +812,3 @@ where tb_2_.AUTHOR_ID = ?
 This time we only see one SQL JOIN clause instead of two.
 
 The reason: The target table's primary key is actually the foreign key from the intermediate table to the target table.
-
-:::info
-1.  For associations mapped by join table, if the associated object obtained via join operation accesses only the id field and no other fields, such join is considered a half join.
-
-2.  In the final generated SQL, a half join uses only one JOIN statement to join the intermediate table, without using second JOIN statement to further join the target table.
-:::

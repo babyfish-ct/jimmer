@@ -271,9 +271,139 @@ from BOOK as tb_1_
 
 ## 幻连接
 
-幻连接是一个很简单的优化概念，和普通的连接对比一下就明白了。
+### 判断关联id的两种方法
 
-我们先来看一个普通表连接的例子。
+对于基于外键的关联而言，有如下两种办法对关联id进行筛查：
+
+1.  直接使用外键属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable book = BookTable.$;
+
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            // highlight-next-line
+            .storeId()
+            .eq(2L)
+        )
+        .select(book)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                // highlight-next-line
+                .storeId
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::tip
+    对于一对一/多对一关联而言 *(这个例子的`Book.store`)而言，
+    *即使用户不为`Book`实体声明[@IdView](../../mapping/advanced/view/id-view)属性，
+    SQL DSL中也可以使用`storeId`属性。
+    :::
+
+2.  先通过join操作连接到关联对象，再访问id属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable book = BookTable.$;
+
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            .store()
+            // highlight-next-line
+            .id() // 只访问id
+            .eq(2L)
+        )
+        .select(book)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                .store
+                // highlight-next-line
+                .id // 只访问id
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   这两种方法，并不等价
+
+    1.  `where(table.storeId().eq(2L))`：简单地根据当前表的外键字段进行过滤。
+
+    2.  `where(table.store().id().eq(2L))`：真正先连接到关联表，再判断关联id的值。
+
+    二者不等价，是因为存在以下的情况
+
+    -   如果外键是假的，即数据中没有相应的外键约束。这会导致非null的伪外键无法通过连接获取非null的关联对象。
+
+    -   如果关联对象受[全局过滤器](../global-filter)影响，即使数据库中存在关联对象，也应该视而不见。
+
+-   然而，当以下所有条件同时满足时，上述两种方法是完全等价的。
+
+    -   关联属性是基于外键的一对一或多对一关联，而非基于中间表，或其他关联的反向映射。
+
+    -   外键是真的，即数据中存在对应的外键约束。请参见[真假外键](../../mapping/base/foreignkey)
+
+    -   关联对象不受[全局过滤器](../global-filter)影响。
+    
+        注意：这里指以下两种过滤器中任何一种
+
+        -   [用户自定义过滤器](../global-filter/user-filter)
+
+        -   [逻辑删除过滤器](../global-filter/logical-deleted)
+
+    此时，关联对象的id，其实就是当前表的外键，二者等价。
+    
+:::info
+开发人员应该明白这两种方法的差异，按照业务需求选择正确的方式。
+
+然而，当两种方法等价时，自动将第二种方法优化成第一种方法是一件非常划算的事，这就叫做幻连接优化。
+
+两种查询方法等价，是幻连接优化能生效的必要条件，下文不再重复。
+:::
+
+### 不适用的场景
+
+幻连接优化仅针对对关联对象的id属性的访问，不支持其他属性。
+
+这里，以关联对象的`name`属性为例，来演示无法去掉join。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -321,7 +451,9 @@ where
     tb_2_.NAME = ?
 ```
 
-现在，再来看一个幻连接的例子
+### 适用的场景
+
+如果仅访问关联对象的id属性，则能启动幻连接优化。例如：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -380,17 +512,161 @@ from BOOK as tb_1_
 
 原因：对于基于外键映射的多对一关联而言，父表的id其实就是子表自己的外键。
 
-:::info
-1. 对于基于外键映射的多对一关联，在Java查询代码中通过连接操作获取了关联对象，如果此关联对象除了id字段以外没有任何的其它字段被访问，那么该连接将被视为幻连接。
-
-2. 幻连接将会被忽略，不会在最终SQL中生成相关的JOIN语句。
-:::
-
 ## 半连接
 
 半连接是一个和幻象连接类似的概念，但用于基于中间表的关联。
 
-我们先来看一个基于中间表的普通连接。
+### 判断关联id的两种方法
+
+对于基于中间表的关联而言，有如下两种办法对关联id进行筛查：
+
+1.  判断中间表中的外键字段
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable book = BookTable.$;
+
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            .asTableEx()
+            // highlight-next-line
+            .authorIds()
+            .eq(2L)
+        )
+        .select(book)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                .asTableEx()
+                // highlight-next-line
+                .authorIds
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::note
+    例子中的`asTableEx`，并无实质性的功能，将会在下一篇文档[分页安全性](./table-ex)中做介绍。这里，请读者先忽略它。
+    :::
+
+    :::caution
+    对于一对多/多对多关联而言 *(这个例子的`Book.authors`)而言，
+    *用户必须`Book`实体声明[@IdView](../../mapping/advanced/view/id-view)属性，
+    否则无法在SQL DSL中访问使用`authorIds`属性。
+    :::
+
+2.  先通过join操作连接到关联对象，再访问id属性
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookTable book = BookTable.$;
+
+    List<Book> books = sqlClient
+        .createQuery(book)
+        .where(
+            book
+            .asTableEx()
+            .authors()
+            // highlight-next-line
+            .id() // 只访问id
+            .eq(2L)
+        )
+        .select(book)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val books = sqlClient
+        .createQuery(Book::class) {
+            where(
+                table
+                .asTableEx()
+                .authors
+                // highlight-next-line
+                .id // 只访问id
+                eq 2L
+            )
+            select(table)
+        }
+        .execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    :::note
+    例子中的`asTableEx`，并无实质性的功能，将会在下一篇文档[分页安全性](./table-ex)中做介绍。这里，请读者先忽略它。
+    :::
+
+-   这两种方法，并不等价
+
+    1.  `where(table.authorIds().eq(2L))`：一次JOIN操作
+    
+        从当前表`BOOK`，通过join操作拿到`BOOK_AUTHOR_MAPPING`表，直接判断`BOOK_AUTHOR_MAPPING.AUTHOR_ID`字段。
+
+    2.  `where(table.authors().id().eq(2L))`：两次JOIN操作
+    
+        -   基于当前表`BOOK`，通过join操作拿到`BOOK_AUTHOR_MAPPING`中间表
+
+        -   基于中间表`BOOK_AUTHOR_MAPPING`，通过join操作拿到`AUTHOR`表
+
+        最后，判断`AUTHOR.ID`字段。
+
+    二者不等价，是因为存在以下的情况
+
+    -   如果外键`BOOK_AUTHOR_MAPPING.AUTHOR_ID`是假的，即数据中没有相应的外键约束。这会导致非null的伪外键无法通过连接获取非null的关联对象。
+
+    -   如果关联对象受[全局过滤器](../global-filter)影响，即使数据库中存在关联对象，也应该视而不见。
+
+-   然而，当以下所有条件同时满足时，上述两种方法是完全等价的。
+
+    -   中间表中的外键是真的，即数据中存在对应的外键约束。请参见[真假外键](../../mapping/base/foreignkey)
+
+    -   关联对象不受[全局过滤器](../global-filter)影响。
+    
+        注意：这里指以下两种过滤器中任何一种
+
+        -   [用户自定义过滤器](../global-filter/user-filter)
+
+        -   [逻辑删除过滤器](../global-filter/logical-deleted)
+
+    此时，关联对象的id，其实就是当前表的外键，二者等价。
+    
+:::info
+开发人员应该明白这两种方法的差异，按照业务需求选择正确的方式。
+
+然而，当两种方法等价时，自动将第二种方法优化成第一种方法是一件非常划算的事，这就叫做半连接优化。
+
+两种查询方法等价，是半连接优化能生效的必要条件，下文不再重复。
+:::
+
+### 不适用的场景
+
+半连接优化仅针对对关联对象的id属性的访问，不支持其他属性。
+
+这里，以关联对象的`Autor.firstName`属性为例，来演示无法去掉第二个join。
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -433,7 +709,7 @@ val bookIds = sqlClient
 </TabItem>
 </Tabs>
 
-:::info
+:::note
 这里的`asTableEx` *(以及Java下的各种TableEx类型)* 是后续文档[分页安全性](./table-ex)要介绍的概念。这里，请读者先忽略它。
 :::
 
@@ -459,7 +735,9 @@ where tb_3_.FIRST_NAME = ?
 - 第二步：连接到目标表
     `inner join AUTHOR as tb_3_ on tb_2_.AUTHOR_ID = tb_3_.ID`
 
-接下来，让我们看看半连接的例子
+### 适用的场景
+
+如果仅访问关联对象的id属性，则能启动半连接优化。例如：
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -489,7 +767,8 @@ List<Long> bookIds = sqlClient
 val bookIds = sqlClient
     .createQuery(Book::class) {
         where(
-            (table as KNullableTableEx<Book>)
+            table
+                .asTableEx()
                 .authors
                 // highlight-next-line
                 .id // 只访问id 
@@ -503,6 +782,10 @@ val bookIds = sqlClient
 
 </TabItem>
 </Tabs>
+
+:::note
+例子中的`asTableEx`，并无实质性的功能，将会在下一篇文档[分页安全性](./table-ex)中做介绍。这里，请读者先忽略它。
+:::
 
 这次，生成的SQL如下：
 ```sql
@@ -519,9 +802,3 @@ where tb_2_.AUTHOR_ID = ?
 这一次，我们只看到一个SQL JOIN子句，而不是两个。
 
 原因：目标表的主键，其实就是中间表到目标表的外键。
-
-:::info
-1. 对于基于中间表映射的关联，在Java查询代码中通过连接操作获取了关联对象，如果此关联对象除了id字段以外没有任何的其它字段被访问，那么该连接将被视为半连接。
-
-2. 在最终生成的SQL中，半连接仅使用一条JOIN语句连接到中间表，不会进一步使用第二条JOIN语句连接到目标表。
-:::

@@ -5,6 +5,11 @@ title: Key
 
 import Key from "../../_shared/key.mdx";
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Concept
+
 :::info
 @`org.babyfish.jimmer.sql.Key` is used together with [Save Command](../../mutation/save-command) in mutation section.
 :::
@@ -12,3 +17,119 @@ import Key from "../../_shared/key.mdx";
 <Key/>
 
 This article only introduces the configuration of Key. For how to use it further, please refer to [Save Command](../../mutation/save-command).
+
+## Multi-version support
+
+Jimmer supports [logical deletion](./logical-deleted), which hides deleted data instead of actually deleting it.
+
+The unique constraint defined by `@Key` is only for non-hidden data, not all data in the table, so unique constraint cannot be simply defined by the columns of `@key`.
+
+-   When the logical deletion flag is datetime
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java"> 
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        // highlight-next-line
+        @Key
+        String name();
+
+        // highlight-next-line 
+        @LogicalDeleted("now")
+        @Nullable
+        LocalDateTime deletedTime();
+
+        ...other code omitted...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        // highlight-next-line
+        @Key
+        val name: String
+
+        // highlight-next-line
+        @LogicalDeleted("now")
+        val deletedTime: LocalDateTime?
+
+        ...other code omitted...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    In this case, combine the columns corresponding to `@Key` *(for this example, `NAME`)* and the logical deletion flag column *(for this example, `DELETED_TIME`)* to define the uniqueness constraint, e.g.:
+
+    ```sql
+    alter table BOOK
+        add constraint UQ_BOOK
+            unique(NAME, DELETED_TIME);
+    ```
+
+-   When the logical deletion flag is other type
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java"> 
+
+    ```java title="Book.java"
+    @Entity
+    public interface Book {
+
+        // highlight-next-line
+        @Key
+        String name();
+
+        // highlight-next-line
+        @LogicalDeleted("true")
+        boolean deleted();
+
+        ...other code omitted...
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin title="Book.kt"
+    @Entity
+    interface Book {
+
+        // highlight-next-line
+        @Key
+        val name: String
+
+        // highlight-next-line
+        @LogicalDeleted("true")
+        val deleted: Boolean
+
+        ...other code omitted...
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    In this case, combining the `@Key` columns and the logical deletion flag column is no longer a viable approach. Using a conditional unique index is the only option.
+
+    :::caution
+    Unfortunately, not all databases support conditional indexes, and the syntax for creating conditional index varies between databases. 
+    
+    Here, PostgreSQL is used as an example:
+    :::
+
+    ```sql
+    create unique index BOOK_KEY_INDEX 
+        on BOOK(NAME)
+        // highlight-next-line
+        where DELETED = false;
+    ```
