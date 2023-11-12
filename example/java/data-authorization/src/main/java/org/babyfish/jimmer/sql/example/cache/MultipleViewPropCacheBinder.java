@@ -29,7 +29,7 @@ public class MultipleViewPropCacheBinder implements SimpleBinder.Parameterized<O
             ConcurrentMap<String, Object> subMap = dataMap.get(toDataKey(key));
             if (subMap != null) {
                 Object result = subMap.get(subKey);
-                if (result != null) {
+                if (!"<null>".equals(result)) {
                     resultMap.put(key, result);
                 }
             }
@@ -45,7 +45,7 @@ public class MultipleViewPropCacheBinder implements SimpleBinder.Parameterized<O
             Object value = e.getValue();
             dataMap
                     .computeIfAbsent(key, it -> new ConcurrentHashMap<>())
-                    .put(subKey, value);
+                    .put(subKey, value != null ? value.toString() : "<null>");
         }
     }
 

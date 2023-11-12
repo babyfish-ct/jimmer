@@ -24,7 +24,7 @@ public class SingleViewPropCacheBinder implements SimpleBinder<Object, Object> {
         Map<Object, Object> resultMap = new HashMap<>();
         for (Object key : keys) {
             Object result = dataMap.get(toDataKey(key));
-            if (result != null) {
+            if (!"<null>".equals(result)) {
                 resultMap.put(key, result);
             }
         }
@@ -34,7 +34,7 @@ public class SingleViewPropCacheBinder implements SimpleBinder<Object, Object> {
     @Override
     public void setAll(Map<Object, Object> map) {
         for (Map.Entry<Object, Object> e : map.entrySet()) {
-            dataMap.put(toDataKey(e.getKey()), e.getValue());
+            dataMap.put(toDataKey(e.getKey()), e.getValue() != null ? e.getValue() : "<null>");
         }
     }
 

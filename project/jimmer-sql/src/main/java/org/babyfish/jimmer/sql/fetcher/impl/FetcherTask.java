@@ -110,7 +110,9 @@ class FetcherTask {
             for (Map.Entry<Object, TaskData> e : handledMap.entrySet()) {
                 TaskData taskData = e.getValue();
                 Object value = loadedMap.get(taskData.getDrafts().get(0));
-                afterLoad(taskData, value, true);
+                if (value != null) {
+                    afterLoad(taskData, value, true);
+                }
             }
         }
         return pendingMap.isEmpty();
