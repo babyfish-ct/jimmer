@@ -27,7 +27,7 @@ public class DefaultDatabaseNamingStrategy implements DatabaseNamingStrategy {
     @Override
     public String sequenceName(ImmutableType type) {
         return snake(type.getJavaClass().getSimpleName()) +
-                (lowercase ? "_seq_id" : "_SEQ_ID");
+                (lowercase ? "_id_seq" : "_ID_SEQ");
     }
 
     @Override

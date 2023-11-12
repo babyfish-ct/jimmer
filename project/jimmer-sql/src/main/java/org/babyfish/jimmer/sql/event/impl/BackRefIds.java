@@ -26,6 +26,7 @@ public class BackRefIds {
             return Queries
                     .createQuery(sqlClient, thisType, ExecutionPurpose.EVICT, FilterLevel.IGNORE_USER_FILTERS, (q, table) -> {
                         q.where(table.getId().eq(id));
+                        q.where(table.getAssociatedId(prop).isNotNull());
                         return q.select(table.getAssociatedId(prop));
                     })
                     .execute(con);

@@ -1,0 +1,35 @@
+plugins {
+    id("java")
+}
+
+ext {
+    jimmerVersion = "0.8.39"
+}
+
+group 'org.example'
+version jimmerVersion
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation "org.babyfish.jimmer:jimmer-sql:${jimmerVersion}"
+    annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
+
+    runtimeOnly 'com.h2database:h2:2.1.212'
+    implementation 'com.zaxxer:HikariCP:4.0.3'
+
+    testImplementation platform("org.junit:junit-bom:5.9.1")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}

@@ -120,10 +120,15 @@ public class FilterCacheEvictTest extends AbstractQueryTest {
                 },
                 ctx -> {
                     ctx.sql(
-                            "select tb_1_.PARENT_ID from FILE tb_1_ where tb_1_.ID = ?"
+                            "select tb_1_.PARENT_ID " +
+                                    "from FILE tb_1_ " +
+                                    "where tb_1_.ID = ? " +
+                                    "and tb_1_.PARENT_ID is not null"
                     ).variables(28L);
                     ctx.statement(1).sql(
-                            "select distinct tb_1_.ID from FILE tb_1_ where tb_1_.PARENT_ID = ?"
+                            "select distinct tb_1_.ID " +
+                                    "from FILE tb_1_ " +
+                                    "where tb_1_.PARENT_ID = ?"
                     ).variables(28L);
                 }
         );
