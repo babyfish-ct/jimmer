@@ -40,13 +40,14 @@ public class UserService implements Context {
                 .fetchOneOrNull();
     }
 
-    public void login(String nickName) {
+    public boolean login(String nickName) {
 
         User user = findByName(nickName);
         if (user == null) {
-            throw new IllegalArgumentException("No such user: " + nickName);
+            return false;
         }
         userLocal.set(user);
+        return true;
     }
 
     public void logout() {

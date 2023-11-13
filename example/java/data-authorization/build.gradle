@@ -18,11 +18,15 @@ repositories {
 
 dependencies {
 
-    implementation "org.babyfish.jimmer:jimmer-sql:${jimmerVersion}"
+    implementation "org.babyfish.jimmer:jimmer-core:${jimmerVersion}"
+    implementation files("/Users/chentao/projects/git/jimmer/project/jimmer-sql/build/libs/jimmer-sql-0.8.40.jar")
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
     runtimeOnly 'com.h2database:h2:2.1.212'
     implementation 'com.zaxxer:HikariCP:4.0.3'
+
+    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.8'
+    runtimeOnly 'org.apache.logging.log4j:log4j-core:2.8'
 
     testImplementation platform("org.junit:junit-bom:5.9.1")
     testImplementation "org.junit.jupiter:junit-jupiter"

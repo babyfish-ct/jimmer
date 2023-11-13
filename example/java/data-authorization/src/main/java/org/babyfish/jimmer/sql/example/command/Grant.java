@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.command;
 
 import org.babyfish.jimmer.sql.example.command.common.Command;
+import org.babyfish.jimmer.sql.example.command.common.CommandException;
 import org.babyfish.jimmer.sql.example.model.File;
 import org.babyfish.jimmer.sql.example.model.User;
 
@@ -21,14 +22,12 @@ public class Grant extends Command {
     public void execute(Set<Character> flags, List<String> args) {
         String path = arg(args, 0);
         String nickName = arg(args, 1);
-        File file = FILE_SERVICE.findByPath(path);
-        if (file == null) {
-            throw new IllegalArgumentException("The file \"" + path + "\"does not exists");
-        }
+        File file = getFile(path, null);
         User user = USER_SERVICE.findByName(nickName);
         if (user == null) {
-            throw new IllegalArgumentException("The user \"" + nickName + "\"does not exists");
+            throw new CommandException("The user \"" + nickName + "\"does not exists");
         }
+
         FILE_SERVICE.grant(file.id(), user.id());
         System.out.println("Granted successfully");
     }

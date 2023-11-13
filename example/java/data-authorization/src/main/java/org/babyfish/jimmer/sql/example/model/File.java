@@ -9,12 +9,13 @@ import java.util.List;
 public interface File {
 
     @Id
-    @GeneratedValue(sequenceName = "FILE_ID_SEQ")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     long id();
 
     @Key
     String name();
 
+    @Key
     @Nullable
     @ManyToOne
     File parent();

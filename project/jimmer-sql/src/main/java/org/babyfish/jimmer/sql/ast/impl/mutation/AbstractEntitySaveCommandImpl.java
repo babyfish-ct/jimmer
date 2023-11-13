@@ -190,13 +190,9 @@ abstract class AbstractEntitySaveCommandImpl implements AbstractEntitySaveComman
                         throw new IllegalArgumentException(
                                 "'" + prop + "' cannot be key property because it is version property"
                         );
-                    } else if (prop.isAssociation(TargetLevel.PERSISTENT) || !(prop.isColumnDefinition())) {
+                    } else if (!prop.isColumnDefinition()) {
                         throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is not a scalar property with storage"
-                        );
-                    } else if (prop.isNullable()) {
-                        throw new IllegalArgumentException(
-                                "'" + prop + "' cannot be key property because it is nullable"
+                                "'" + prop + "' cannot be key property because it is not property with column definition"
                         );
                     }
                     if (type == null) {

@@ -10,8 +10,11 @@ public class Login extends Command {
     @Override
     public void execute(Set<Character> flags, List<String> args) {
         String nickName = arg(args, 0);
-        USER_SERVICE.login(nickName);
-        System.out.println("Logged successfully");
+        if (USER_SERVICE.login(nickName)) {
+            System.out.println("Logged successfully");
+        } else {
+            System.out.println("Logged failed");
+        }
     }
 
     @Override

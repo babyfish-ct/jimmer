@@ -50,6 +50,7 @@ public abstract class AbstractTransactionCacheOperatorTest extends AbstractTest 
             );
             cfg.setDialect(dialect());
             cfg.setTriggerType(TriggerType.TRANSACTION_ONLY);
+            cfg.setCacheOperator(new TransactionCacheOperator());
             cfg.setCacheFactory(new CacheFactory() {
                 @Override
                 public Cache<?, ?> createObjectCache(@NotNull ImmutableType type) {

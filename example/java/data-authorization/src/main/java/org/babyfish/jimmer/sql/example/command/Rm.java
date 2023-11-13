@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.command;
 
 import org.babyfish.jimmer.sql.example.command.common.Command;
+import org.babyfish.jimmer.sql.example.command.common.CommandException;
 import org.babyfish.jimmer.sql.example.model.File;
 
 import java.util.List;
@@ -21,10 +22,7 @@ public class Rm extends Command {
     public void execute(Set<Character> flags, List<String> args) {
 
         String path = arg(args, 0);
-        File file = FILE_SERVICE.findByPath(path);
-        if (file == null) {
-            throw new IllegalArgumentException("Cannot delete \"" + path + "\" because it does not exists");
-        }
+        File file = getFile(path, null);
 
         FILE_SERVICE.delete(file.id(), flags.contains('r'));
         System.out.println("Deleted successfully");

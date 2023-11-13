@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.sql.example.command;
 
+import org.babyfish.jimmer.ImmutableObjects;
+import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.command.common.Command;
+import org.babyfish.jimmer.sql.example.command.common.CommandException;
 import org.babyfish.jimmer.sql.example.model.File;
 import org.babyfish.jimmer.sql.example.model.FileDraft;
 import org.babyfish.jimmer.sql.example.model.FileType;
@@ -21,28 +24,30 @@ public class Touch extends Command {
     public void execute(Set<Character> flags, List<String> args) {
 
         String path = arg(args, 0);
-        List<String> parts = FILE_SERVICE.split(path);
-        if (parts.isEmpty()) {
-            throw new IllegalArgumentException("The path is too short");
+        Tuple2<String, String> tuple = split(path);
+        String parentPath = tuple.get_1();
+        String name = tuple.get_2();
+        if (name == null) {
+            return;
         }
 
-        String parentPath = String.join("/", parts.subList(0, parts.size() - 1));
-        String name = parts.get(parts.size() - 1);
-
-        File parent = FILE_SERVICE.findByPath(parentPath);
-        if (parent == null) {
-            throw new IllegalArgumentException("The parent path \"" + parentPath + "\" does not exists");
+        File parent = parentPath != null ? getFile(parentPath, null) : null;
+        if (parent != null && parent.type() != FileType.DIRECTORY) {
+            throw new CommandException("The parent path \"" + parentPath + "\" is not directory");
         }
-        if (parent.type() != FileType.DIRECTORY) {
-            throw new IllegalArgumentException("The parent path \"" + parentPath + "\" is not directory");
+        Long parentId = parent != null ? parent.id() : null;
+        if (FILE_SERVICE.findByParentIdAndName(parentId, name) != null) {
+            throw new CommandException("The path \"" + path + "\" already exists");
         }
 
+        File idOnlyParent = parentId != null ? ImmutableObjects.makeIdOnly(File.class, parentId) : null;
         File file = FileDraft.$.produce(draft -> {
             draft.setName(name);
-            draft.applyParent(parentDraft -> parentDraft.setId(parent.id()));
+            draft.setParent(idOnlyParent);
             draft.setType(FileType.FILE);
         });
         FILE_SERVICE.save(file);
+
         System.out.println("File has been created successfully");
     }
 }

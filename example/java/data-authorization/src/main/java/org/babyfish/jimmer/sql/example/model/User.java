@@ -6,7 +6,7 @@ import org.babyfish.jimmer.sql.*;
 @Table(name = "FILE_USER")
 public interface User {
 
-    @GeneratedValue(sequenceName = "FILE_USER_ID_SEQ")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Id
     long id();
 

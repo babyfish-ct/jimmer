@@ -37,12 +37,6 @@ public class CachesImpl implements Caches {
             CacheOperator operator,
             CacheAbandonedCallback abandonedCallback
     ) {
-        if (operator == null &&
-                triggers.isTransaction() &&
-                (!objectCacheMap.isEmpty() || !propCacheMap.isEmpty())
-        ) {
-            operator = new TransactionCacheOperator();
-        }
         Map<ImmutableType, LocatedCacheImpl<?, ?>> objectCacheWrapperMap = new LinkedHashMap<>();
         for (Map.Entry<ImmutableType, Cache<?, ?>> e : objectCacheMap.entrySet()) {
             ImmutableType type = e.getKey();

@@ -5,16 +5,17 @@ import org.babyfish.jimmer.sql.example.command.common.Command;
 import java.util.List;
 import java.util.Set;
 
-public class TraceCache extends Command {
+public class DCache extends Command {
 
     @Override
     public String getDescription() {
-        return "Print all items of cache";
+        return "Clear all items of cache";
     }
 
     @Override
     public void execute(Set<Character> flags, List<String> args) {
-        CACHE_STORAGE.trace();
+        CACHE_STORAGE.clear();
+        System.out.println("All items of cache is deleted");
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.runtime.Initializer;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -39,8 +40,9 @@ public class DatabaseInitializer implements Initializer, Context {
 
     private void initDatabase(String text) throws SQLException {
         String[] arr = text.split("\\s*;\\s*");
+        Connection con = TRANSACTION_MANAGER.currentConnection();
         for (String sql : arr) {
-            Statement statement = TRANSACTION_MANAGER.currentConnection().createStatement();
+            Statement statement = con.createStatement();
             statement.executeUpdate(sql);
         }
     }

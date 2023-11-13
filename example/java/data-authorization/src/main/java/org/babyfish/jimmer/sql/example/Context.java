@@ -1,6 +1,8 @@
 package org.babyfish.jimmer.sql.example;
 
 import org.babyfish.jimmer.sql.JSqlClient;
+import org.babyfish.jimmer.sql.cache.CacheOperator;
+import org.babyfish.jimmer.sql.cache.LocatedCache;
 import org.babyfish.jimmer.sql.di.AbstractJSqlClientWrapper;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
@@ -14,6 +16,10 @@ import org.babyfish.jimmer.sql.example.database.TransactionManager;
 import org.babyfish.jimmer.sql.example.filter.FileFilter;
 import org.babyfish.jimmer.sql.example.service.FileService;
 import org.babyfish.jimmer.sql.example.service.UserService;
+import org.babyfish.jimmer.sql.runtime.Executor;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+
+import java.util.Collection;
 
 public interface Context {
 
@@ -24,6 +30,7 @@ public interface Context {
                     return JSqlClient.newBuilder()
                             .setDialect(new PostgresDialect())
                             .setConnectionManager(new ConnectionManagerImpl())
+                            .setExecutor(Executor.log())
                             .setTriggerType(TriggerType.TRANSACTION_ONLY)
                             .setCacheFactory(new CacheFactoryImpl())
                             .addFilters(RESOURCE_FILTER)
@@ -49,14 +56,22 @@ public interface Context {
             new Tree(),
             new MkDir(),
             new Touch(),
+            new Mv(),
             new Rm(),
 
             new Grant(),
             new Revoke(),
 
-            new TraceCache(),
-            new ClearCache()
+            new Cache(),
+            new DCache()
     );
 
     CacheStorage CACHE_STORAGE = new CacheStorage();
+
+    static void initialize() {
+        TRANSACTION_MANAGER.execute(() -> {
+            ((JSqlClientImplementor)SQL_CLIENT).initialize();
+           return null;
+        });
+    }
 }

@@ -10,6 +10,7 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+//
 public class MultipleViewPropCacheBinder implements SimpleBinder.Parameterized<Object, Object> {
 
     private final ConcurrentMap<String, ConcurrentMap<String, Object>> dataMap;
@@ -29,8 +30,8 @@ public class MultipleViewPropCacheBinder implements SimpleBinder.Parameterized<O
             ConcurrentMap<String, Object> subMap = dataMap.get(toDataKey(key));
             if (subMap != null) {
                 Object result = subMap.get(subKey);
-                if (!"<null>".equals(result)) {
-                    resultMap.put(key, result);
+                if (result != null) {
+                    resultMap.put(key, "<null>".equals(result) ? null : result);
                 }
             }
         }
@@ -45,7 +46,7 @@ public class MultipleViewPropCacheBinder implements SimpleBinder.Parameterized<O
             Object value = e.getValue();
             dataMap
                     .computeIfAbsent(key, it -> new ConcurrentHashMap<>())
-                    .put(subKey, value != null ? value.toString() : "<null>");
+                    .put(subKey, value != null ? value : "<null>");
         }
     }
 

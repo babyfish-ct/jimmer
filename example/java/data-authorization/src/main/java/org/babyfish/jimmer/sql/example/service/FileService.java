@@ -34,37 +34,46 @@ public class FileService implements Context {
                             RecursiveListFieldConfig::recursive
                     );
 
-    public List<String> split(String path) {
-        return Arrays.stream(SLASH_PATTERN.split(path))
-                .filter(it -> !it.isEmpty())
-                .collect(Collectors.toList());
-    }
+    private static final Fetcher<File> DETAIL_DOWN_RECURSION =
+            FileFetcher.$
+                    .allScalarFields()
+                    .authorizedUsers(
+                            UserFetcher.$.allScalarFields()
+                    )
+                    .subFiles(
+                            FileFetcher.$
+                                    .allScalarFields()
+                                    .authorizedUsers(
+                                            UserFetcher.$.allScalarFields()
+                                    ),
+                            RecursiveListFieldConfig::recursive
+                    );
 
     public File findByPath(String path) {
-        List<String> parts = split(path);
+        List<String> parts = Arrays.stream(SLASH_PATTERN.split(path))
+                .filter(it -> !it.isEmpty())
+                .collect(Collectors.toList());
         if (parts.isEmpty()) {
             return null;
         }
-        int index = 0;
-        Long parentId = null;
         File file = null;
         for (int i = 0; i < parts.size(); i++) {
-            file = find(parentId, parts.get(i));
+            File parent = file;
+            file = findByParentIdAndName(
+                    parent != null ? parent.id() : null,
+                    parts.get(i)
+            );
             if (file == null) {
-                throw new IllegalArgumentException(
-                        "Cannot find \"" +
-                                path +
-                                "\" because \"" +
-                                parts.subList(0, index) +
-                                "\" does not exists"
+                throw new NotExistsException(
+                        path,
+                        String.join("/", parts.subList(0, i + 1))
                 );
             }
-            parentId = file.id();
         }
         return file;
     }
 
-    private File find(@Nullable Long parentId, String name) {
+    public File findByParentIdAndName(@Nullable Long parentId, String name) {
         FileTable table = FileTable.$;
         return SQL_CLIENT
                 .createQuery(table)
@@ -74,14 +83,23 @@ public class FileService implements Context {
                 .fetchOneOrNull();
     }
 
-    public List<File> findTrees() {
+    public List<File> findRootDetailTrees() {
         FileTable table = FileTable.$;
         return SQL_CLIENT
                 .createQuery(table)
                 .where(table.parentId().isNull())
                 .orderBy(table.name())
-                .select(table.fetch(DOWN_RECURSION))
+                .select(table.fetch(DETAIL_DOWN_RECURSION))
                 .execute();
+    }
+
+    public File findSubDetailTree(long id) {
+        FileTable table = FileTable.$;
+        return SQL_CLIENT
+                .createQuery(table)
+                .where(table.id().eq(id))
+                .select(table.fetch(DETAIL_DOWN_RECURSION))
+                .fetchOneOrNull();
     }
 
     public File findSubTree(long id) {
@@ -97,7 +115,9 @@ public class FileService implements Context {
         long id = SQL_CLIENT.save(file).getModifiedEntity().id();
         SQL_CLIENT
                 .getAssociations(FileProps.AUTHORIZED_USERS)
-                .save(id, USER_SERVICE.currentUser().id());
+                .saveCommand(id, USER_SERVICE.currentUser().id())
+                .checkExistence(true)
+                .execute();
     }
 
     public void delete(long id, boolean recursive) {
@@ -116,7 +136,7 @@ public class FileService implements Context {
                 AssociationTable.of(FileTableEx.class, FileTableEx::authorizedUsers);
         return SQL_CLIENT.createAssociationQuery(mappingTable)
                 .where(mappingTable.sourceId().eq(id))
-                .where(mappingTable.targetId().eq(id))
+                .where(mappingTable.targetId().eq(userId))
                 .select(Expression.constant(1))
                 .fetchOneOrNull() != null;
     }

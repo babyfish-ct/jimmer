@@ -24,7 +24,7 @@ public class CommandDispatcher implements Context {
 
     public boolean execute() {
         String line = readInput();
-        if (line.isEmpty()) {
+        if (line == null || line.isEmpty()) {
             return true;
         }
         String[] parts = BLANK_PATTERN.split(line);
@@ -48,8 +48,9 @@ public class CommandDispatcher implements Context {
         TRANSACTION_MANAGER.execute(() -> {
             try {
                 execute(command, parts);
+            } catch (CommandException ex) {
+                System.out.println(ex.getMessage());
             } catch (RuntimeException | Error ex) {
-                System.err.println(ex.getMessage());
                 ex.printStackTrace(System.err);
             }
             return null;
@@ -103,7 +104,12 @@ public class CommandDispatcher implements Context {
         for (int i = 1; i < parts.length; i++) {
             if (parts[i].startsWith("-")) {
                 for (int ii = parts[i].length() - 1; ii > 0; --ii) {
-                    flags.add(parts[i].charAt(ii));
+                    char flag = parts[i].charAt(ii);
+                    if (flag == 'h') {
+                        System.out.println(command.getDescription());
+                        return;
+                    }
+                    flags.add(flag);
                 }
             } else {
                 args.add(parts[i]);

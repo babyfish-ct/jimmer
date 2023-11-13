@@ -1,15 +1,10 @@
 package org.babyfish.jimmer.sql.example;
 
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
-
 public class App implements Context {
 
     public static void main(String[] args) {
 
-        TRANSACTION_MANAGER.execute(() -> {
-            ((JSqlClientImplementor)SQL_CLIENT).initialize();
-            return 0;
-        });
+        Context.initialize();
 
         System.out.println("---------------------------------------------------------");
         System.out.println("You can enter `help` to know which commands are supported");
