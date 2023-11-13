@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example.cache;
 
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -18,21 +19,18 @@ public class CacheStorage {
     public void trace() {
 
         System.out.println("---- Object Cache Items ----");
-        for (Map.Entry<String, Object> e : objectMap.entrySet()) {
+        for (Map.Entry<String, Object> e : new TreeMap<>(objectMap).entrySet()) {
             System.out.println(e.getKey() + ": " + e.getValue());
         }
 
         System.out.println("---- Single-view Prop Cache Items ----");
-        for (Map.Entry<String, Object> e : singleViewPropMap.entrySet()) {
+        for (Map.Entry<String, Object> e : new TreeMap<>(singleViewPropMap).entrySet()) {
             System.out.println(e.getKey() + ": " + e.getValue());
         }
 
         System.out.println("---- Multi-view Prop Cache Items ----");
-        for (Map.Entry<String, ConcurrentMap<String, Object>> e : multiViewPropCache.entrySet()) {
-            System.out.println(e.getKey() + ':');
-            for (Map.Entry<String, Object> subE : e.getValue().entrySet()) {
-                System.out.println(subE.getKey() + ": " + subE.getValue());
-            }
+        for (Map.Entry<String, ConcurrentMap<String, Object>> e : new TreeMap<>(multiViewPropCache).entrySet()) {
+            System.out.println(e.getKey() + ": " + e.getValue());
         }
     }
 

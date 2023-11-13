@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cache;
+package org.babyfish.jimmer.sql.example.cache.mock;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
@@ -10,7 +10,10 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-//
+/*
+ * No need to look at the code of this class,
+ * it just deliberately shows the mock code caused by not using Spring
+ */
 public class MultipleViewPropCacheBinder implements SimpleBinder.Parameterized<Object, Object> {
 
     private final ConcurrentMap<String, ConcurrentMap<String, Object>> dataMap;

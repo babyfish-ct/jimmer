@@ -7,6 +7,9 @@ import org.babyfish.jimmer.sql.cache.Cache;
 import org.babyfish.jimmer.sql.cache.chain.ChainCacheBuilder;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
 import org.babyfish.jimmer.sql.example.Context;
+import org.babyfish.jimmer.sql.example.cache.mock.MultipleViewPropCacheBinder;
+import org.babyfish.jimmer.sql.example.cache.mock.ObjectCacheBinder;
+import org.babyfish.jimmer.sql.example.cache.mock.SingleViewPropCacheBinder;
 
 import java.util.List;
 

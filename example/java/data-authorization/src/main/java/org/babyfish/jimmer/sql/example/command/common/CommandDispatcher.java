@@ -65,6 +65,10 @@ public class CommandDispatcher implements Context {
         System.out.println("    Show all commands");
         System.out.println();
 
+        System.out.println("-   exit");
+        System.out.println("    Exit the application");
+        System.out.println();
+
         for (Command command : commandMap.values()) {
             System.out.print("-   ");
             System.out.println(command.getName());
@@ -94,9 +98,8 @@ public class CommandDispatcher implements Context {
     private static void execute(Command command, String[] parts) {
 
         if (command.isUserRequired() && !USER_SERVICE.isLogged()) {
-            throw new IllegalStateException(
-                    "You've not logged, please login"
-            );
+            System.out.println("Error: You've not logged, please login");
+            return;
         }
 
         Set<Character> flags = new HashSet<>();

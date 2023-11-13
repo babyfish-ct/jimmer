@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.sql.example.cache;
+package org.babyfish.jimmer.sql.example.cache.mock;
 
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.cache.chain.SimpleBinder;
@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
+/*
+ * No need to look at the code of this class,
+ * it just deliberately shows the mock code caused by not using Spring
+ */
 public class ObjectCacheBinder implements SimpleBinder<Object, Object> {
 
     private final ConcurrentMap<String, Object> dataMap;

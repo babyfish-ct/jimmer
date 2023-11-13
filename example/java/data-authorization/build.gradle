@@ -3,7 +3,7 @@ plugins {
 }
 
 ext {
-    jimmerVersion = "0.8.40-SNAPSHOT"
+    jimmerVersion = "0.8.40"
 }
 
 group 'org.example'
@@ -11,15 +11,11 @@ version jimmerVersion
 
 repositories {
     mavenCentral()
-    maven {
-        url("https://oss.sonatype.org/content/repositories/snapshots")
-    }
 }
 
 dependencies {
 
-    implementation "org.babyfish.jimmer:jimmer-core:${jimmerVersion}"
-    implementation files("/Users/chentao/projects/git/jimmer/project/jimmer-sql/build/libs/jimmer-sql-0.8.40.jar")
+    implementation "org.babyfish.jimmer:jimmer-sql:${jimmerVersion}"
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
     runtimeOnly 'com.h2database:h2:2.1.212'
