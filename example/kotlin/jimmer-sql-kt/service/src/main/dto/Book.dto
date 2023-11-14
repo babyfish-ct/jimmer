@@ -8,8 +8,7 @@
 export org.babyfish.jimmer.sql.example.kt.model.Book
     -> package org.babyfish.jimmer.sql.example.kt.service.dto
 
-// Abstract type will not generate java/kt code
-abstract input AbstractBookInput {
+input BookInput {
 
     /*
      * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
@@ -17,9 +16,6 @@ abstract input AbstractBookInput {
      * #allScalars(this)/#allScalars(Book): All scalar fields of `Book`, exclude `TenantAware`, `BaseEntity`
      */
     #allScalars(this)
-}
-
-input BookInput : AbstractBookInput {
 
     /*
      * You can also write `storeId` because the @IdView property `Book.storeId` has already been defined.
@@ -36,7 +32,14 @@ input BookInput : AbstractBookInput {
     id(authors) as authorIds // Override default alias `authorsId`
 }
 
-input CompositeBookInput: AbstractBookInput {
+input CompositeBookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(this)/#allScalars(Book): All scalar fields of `Book`, exclude `TenantAware`, `BaseEntity`
+     */
+    #allScalars(this)
 
     store {
         #allScalars(this) // or `#allScalars(BookStore)`

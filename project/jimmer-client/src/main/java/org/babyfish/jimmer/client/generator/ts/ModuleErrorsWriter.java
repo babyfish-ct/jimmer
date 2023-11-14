@@ -16,7 +16,7 @@ public class ModuleErrorsWriter extends TsCodeWriter {
     private final Map<String, Set<EnumBasedError>> errorMap;
 
     public ModuleErrorsWriter(TsContext ctx) {
-        super(ctx, ctx.getModuleErrorsFile());
+        super(ctx, ctx.getModuleErrorsFile(), false);
         Map<String, Set<EnumBasedError>> errorMap = new TreeMap<>();
         for (Service service : ctx.getServiceFileMap().keySet()) {
             for (Operation operation : service.getOperations()) {

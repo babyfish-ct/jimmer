@@ -1,0 +1,36 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation project(":model")
+    implementation project(":repository")
+
+    // For RedisConnectionFactory
+    implementation "org.springframework.data:spring-data-redis:${springBootVersion}"
+
+    // For HttpServletRequest(javax or jakatra)
+    implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
+
+    // For @KafkaListener
+    implementation "org.springframework.kafka:spring-kafka:${springBootVersion}"
+
+    implementation 'org.apache.kafka:connect-api:0.10.0.0'
+
+    runtimeOnly 'com.h2database:h2:2.1.212'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.30'
+    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+    runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
+    runtimeOnly 'com.github.ben-manes.caffeine:caffeine:2.9.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+

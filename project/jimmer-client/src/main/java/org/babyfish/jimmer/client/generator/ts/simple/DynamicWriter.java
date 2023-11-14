@@ -8,8 +8,8 @@ public class DynamicWriter extends TsCodeWriter {
 
     public static final File FILE = new File("", "Dynamic");
 
-    public DynamicWriter(TsContext ctx) {
-        super(ctx, FILE);
+    public DynamicWriter(TsContext ctx, boolean mutable) {
+        super(ctx, FILE, mutable);
     }
 
     @Override
@@ -17,7 +17,9 @@ public class DynamicWriter extends TsCodeWriter {
 
         code("export type Dynamic<T> = ");
         scope(ScopeType.BLANK, "", true, () -> {
-            code("{[K in keyof T]?: Dynamic<T[K]>}");
+            code("{")
+                    .codeIf(!mutable, "readonly ")
+                    .code("[K in keyof T]?: Dynamic<T[K]>}");
         });
         code(";\n");
     }

@@ -8,8 +8,11 @@ public class TypeDefinitionWriter extends TsCodeWriter {
 
     private final Type type;
 
-    public TypeDefinitionWriter(TsContext ctx, Type type) {
-        super(ctx, ctx.getFile(type));
+    private final boolean mutable;
+
+    public TypeDefinitionWriter(TsContext ctx, Type type, boolean mutable) {
+        super(ctx, ctx.getFile(type), mutable);
+        this.mutable = mutable;
         if (!type.hasDefinition()) {
             throw new IllegalArgumentException("The type does not have definition");
         }
@@ -47,7 +50,7 @@ public class TypeDefinitionWriter extends TsCodeWriter {
                 separator();
                 code('\n');
                 document(property.getDocument());
-                code("readonly ")
+                codeIf(!mutable, "readonly ")
                         .code(property.getName())
                         .codeIf(property.getType() instanceof NullableType, "?")
                         .code(": ");

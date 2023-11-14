@@ -9,7 +9,7 @@ public class ResponseOfWriter extends TsCodeWriter {
     public static final File FILE = new File("", "ResponseOf");
 
     public ResponseOfWriter(TsContext ctx) {
-        super(ctx, FILE);
+        super(ctx, FILE, false);
     }
 
     @Override

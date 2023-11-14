@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.cloud;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.SimpleType;
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
@@ -53,7 +51,7 @@ public class MicroServiceExporterController {
     public List<ImmutableSpi> findByIds(
             @RequestParam(IDS) String idArrStr,
             @RequestParam(FETCHER) String fetcherStr
-    ) throws JsonProcessingException, IOException {
+    ) throws IOException {
         Fetcher<?> fetcher = FetcherCompiler.compile(fetcherStr);
         Class<?> idType = fetcher.getImmutableType().getIdProp().getElementClass();
         List<?> ids = mapper.readValue(
@@ -73,8 +71,7 @@ public class MicroServiceExporterController {
     public List<Tuple2<Object, ImmutableSpi>> findByAssociatedIds(
             @RequestParam(PROP) String prop,
             @RequestParam(TARGET_IDS) String targetIdArrStr,
-            @RequestParam(FETCHER) String fetcherStr,
-            HttpServletResponse response
+            @RequestParam(FETCHER) String fetcherStr
     ) throws Exception {
         Fetcher<?> fetcher = FetcherCompiler.compile(fetcherStr);
         ImmutableProp immutableProp = fetcher.getImmutableType().getProp(prop);

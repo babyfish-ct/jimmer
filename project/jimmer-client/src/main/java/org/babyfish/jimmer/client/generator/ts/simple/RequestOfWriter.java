@@ -9,7 +9,7 @@ public class RequestOfWriter extends TsCodeWriter {
     public static final File FILE = new File("", "RequestOf");
 
     public RequestOfWriter(TsContext ctx) {
-        super(ctx, FILE);
+        super(ctx, FILE, false);
     }
 
     @Override

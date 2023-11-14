@@ -1,0 +1,33 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.0'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencies {
+
+	implementation project(":repository")
+	runtimeOnly project(":runtime")
+
+	implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
+	annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
+
+	implementation 'org.springframework.boot:spring-boot-starter-graphql'
+	implementation 'org.springframework.boot:spring-boot-starter-graphql'
+	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
+
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+}
+
+repositories {
+	mavenCentral()
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

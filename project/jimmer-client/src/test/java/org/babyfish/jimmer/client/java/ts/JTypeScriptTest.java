@@ -393,7 +393,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         Service service = Constants.JAVA_METADATA.getServices().get(BookService.class);
-        new ServiceWriter(ctx, service).flush();
+        new ServiceWriter(ctx, service, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Dynamic, Executor } from '../';\n" +
@@ -620,7 +620,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out, true);
         Service service = Constants.JAVA_METADATA.getServices().get(BookService.class);
-        new ServiceWriter(ctx, service).flush();
+        new ServiceWriter(ctx, service, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Dynamic, Executor } from '../';\n" +
@@ -1061,7 +1061,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         Service service = Constants.JAVA_METADATA.getServices().get(AuthorService.class);
-        new ServiceWriter(ctx, service).flush();
+        new ServiceWriter(ctx, service, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Executor } from '../';\n" +
@@ -1101,7 +1101,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         ImmutableObjectType bookStoreType = Constants.JAVA_METADATA.getRawImmutableObjectTypes().get(ImmutableType.get(BookStore.class));
-        new TypeDefinitionWriter(ctx, bookStoreType).flush();
+        new TypeDefinitionWriter(ctx, bookStoreType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Book } from './';\n" +
@@ -1126,7 +1126,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         ImmutableObjectType bookType = Constants.JAVA_METADATA.getRawImmutableObjectTypes().get(ImmutableType.get(Book.class));
-        new TypeDefinitionWriter(ctx, bookType).flush();
+        new TypeDefinitionWriter(ctx, bookType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Author, BookStore } from './';\n" +
@@ -1164,7 +1164,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         ImmutableObjectType authorType = Constants.JAVA_METADATA.getRawImmutableObjectTypes().get(ImmutableType.get(Author.class));
-        new TypeDefinitionWriter(ctx, authorType).flush();
+        new TypeDefinitionWriter(ctx, authorType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Gender } from '../enums';\n" +
@@ -1193,7 +1193,7 @@ public class JTypeScriptTest {
     public void testBookDto() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
-        new DtoWriter(ctx, Book.class).flush();
+        new DtoWriter(ctx, Book.class, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "export type BookDto = {\n" +
@@ -1226,7 +1226,7 @@ public class JTypeScriptTest {
     public void testAuthorDto() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
-        new DtoWriter(ctx, Author.class).flush();
+        new DtoWriter(ctx, Author.class, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "import type { Gender } from '../enums';\n" +
@@ -1284,7 +1284,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         StaticObjectType bookInputType = Constants.JAVA_METADATA.getStaticTypes().get(new StaticObjectType.Key(BookInput.class, null));
-        new TypeDefinitionWriter(ctx, bookInputType).flush();
+        new TypeDefinitionWriter(ctx, bookInputType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "export interface BookInput {\n" +
@@ -1311,7 +1311,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         StaticObjectType pageType = Constants.JAVA_METADATA.getGenericTypes().get(Page.class);
-        new TypeDefinitionWriter(ctx, pageType).flush();
+        new TypeDefinitionWriter(ctx, pageType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "export interface Page<E> {\n" +
@@ -1331,7 +1331,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         StaticObjectType tupleType = Constants.JAVA_METADATA.getGenericTypes().get(Tuple2.class);
-        new TypeDefinitionWriter(ctx, tupleType).flush();
+        new TypeDefinitionWriter(ctx, tupleType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "export interface Tuple2<T1, T2> {\n" +
@@ -1349,7 +1349,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         EnumType genderType = Constants.JAVA_METADATA.getEnumTypes().get(Gender.class);
-        new TypeDefinitionWriter(ctx, genderType).flush();
+        new TypeDefinitionWriter(ctx, genderType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
                 "export type Gender = 'MALE' | 'FEMALE';\n",
@@ -1362,7 +1362,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         Service service = Constants.JAVA_METADATA.getServices().get(ArrayService.class);
-        new ServiceWriter(ctx, service).flush();
+        new ServiceWriter(ctx, service, false).flush();
         String code = out.toString();
         Assertions.assertEquals("import type { Executor } from '../';\n" +
                 "\n" +
@@ -1395,7 +1395,7 @@ public class JTypeScriptTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         TsContext ctx = createContext(out);
         Service service = Constants.JAVA_METADATA.getServices().get(EnumService.class);
-        new ServiceWriter(ctx, service).flush();
+        new ServiceWriter(ctx, service, false).flush();
         String code = out.toString();
         Assertions.assertEquals("import type { Executor } from '../';\n" +
                 "import type { Gender } from '../model/enums';\n" +

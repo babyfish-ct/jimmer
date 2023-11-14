@@ -15,8 +15,8 @@ public class ServiceWriter extends TsCodeWriter {
 
     private final Service service;
 
-    public ServiceWriter(TsContext ctx, Service service) {
-        super(ctx, ctx.getFile(service));
+    public ServiceWriter(TsContext ctx, Service service, boolean mutable) {
+        super(ctx, ctx.getFile(service), mutable);
         this.service = service;
     }
 
@@ -82,7 +82,7 @@ public class ServiceWriter extends TsCodeWriter {
     }
 
     private void write(Parameter parameter) {
-        code("readonly ")
+        codeIf(!mutable, "readonly ")
                 .code(parameter.getName())
                 .codeIf(parameter.getType() instanceof NullableType, '?')
                 .code(": ")

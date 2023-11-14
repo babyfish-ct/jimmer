@@ -12,8 +12,11 @@ public class DtoWriter extends TsCodeWriter {
 
     private final List<ImmutableObjectType> immutableObjectTypes;
 
-    public DtoWriter(TsContext ctx, Class<?> rawType) {
-        super(ctx, dtoFile(ctx, rawType));
+    private final boolean mutable;
+
+    public DtoWriter(TsContext ctx, Class<?> rawType, boolean mutable) {
+        super(ctx, dtoFile(ctx, rawType), mutable);
+        this.mutable = mutable;
         this.immutableObjectTypes = ctx.getDtoMap().get(rawType);
     }
 
@@ -31,7 +34,7 @@ public class DtoWriter extends TsCodeWriter {
                 scope(ScopeType.OBJECT, ", ", true, () -> {
                     for (Property prop : type.getProperties().values()) {
                         separator();
-                        code("readonly ")
+                        codeIf(!mutable, "readonly ")
                                 .code(prop.getName())
                                 .codeIf(prop.getType() instanceof NullableType, '?')
                                 .code(": ")

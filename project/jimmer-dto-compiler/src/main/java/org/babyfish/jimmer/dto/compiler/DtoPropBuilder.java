@@ -498,7 +498,6 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
                             Collections.singleton(DtoTypeModifier.SPECIFICATION) :
                             Collections.emptySet(),
-                    Collections.emptyList(),
                     prop.recursive != null ? baseProp : null,
                     prop.recursive != null ? alias : null,
                     ctx

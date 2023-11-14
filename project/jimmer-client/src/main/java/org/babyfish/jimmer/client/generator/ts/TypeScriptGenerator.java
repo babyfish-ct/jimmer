@@ -22,19 +22,22 @@ public class TypeScriptGenerator implements Generator {
 
     private final boolean anonymous;
 
+    private final boolean mutable;
+
     public TypeScriptGenerator() {
-        this("Api", 4, false);
+        this("Api", 4, false, false);
     }
 
     public TypeScriptGenerator(String moduleName) {
-        this(moduleName, 4, false);
+        this(moduleName, 4, false, false);
     }
 
     public TypeScriptGenerator(String moduleName, int indent) {
-        this(moduleName, indent, false);
+        this(moduleName, indent, false, false);
     }
 
-    public TypeScriptGenerator(String moduleName, int indent, boolean anonymous) {
+    public TypeScriptGenerator(String moduleName, int indent, boolean anonymous, boolean mutable) {
+        this.mutable = mutable;
         if (moduleName == null || moduleName.isEmpty()) {
             moduleName = "Api";
         } else if ("All".equals(moduleName)) {
@@ -71,7 +74,7 @@ public class TypeScriptGenerator implements Generator {
         zipOut.closeEntry();
 
         putEntry(zipOut, DynamicWriter.FILE);
-        new DynamicWriter(ctx).flush();
+        new DynamicWriter(ctx, mutable).flush();
         zipOut.closeEntry();
 
         putEntry(zipOut, RequestOfWriter.FILE);
@@ -92,7 +95,7 @@ public class TypeScriptGenerator implements Generator {
             File file = e.getValue();
             indexMap.computeIfAbsent(file.getDir(), Index::new).addObjectFile(file);
             putEntry(zipOut, file);
-            new ServiceWriter(ctx, service).flush();
+            new ServiceWriter(ctx, service, mutable).flush();
             zipOut.closeEntry();
         }
         for (Map.Entry<Type, File> e : ctx.getTypeFilePairs()) {
@@ -100,13 +103,13 @@ public class TypeScriptGenerator implements Generator {
             File file = e.getValue();
             indexMap.computeIfAbsent(file.getDir(), Index::new).addTypeFile(file);
             putEntry(zipOut, file);
-            new TypeDefinitionWriter(ctx, type).flush();
+            new TypeDefinitionWriter(ctx, type, mutable).flush();
             zipOut.closeEntry();
         }
         if (!anonymous) {
             for (Map.Entry<Class<?>, List<ImmutableObjectType>> e : ctx.getDtoMap().entrySet()) {
                 Class<?> rawType = e.getKey();
-                DtoWriter dtoWriter = new DtoWriter(ctx, rawType);
+                DtoWriter dtoWriter = new DtoWriter(ctx, rawType, mutable);
                 indexMap.computeIfAbsent(dtoWriter.getFile().getDir(), Index::new).addTypeFile(dtoWriter.getFile());
                 putEntry(zipOut, dtoWriter.getFile());
                 dtoWriter.flush();

@@ -61,10 +61,8 @@ public class Tree extends Command {
         if (!ImmutableObjects.isLoaded(file, FileProps.TYPE)) { // virtual root
             return;
         }
-        System.out.print(" \u001B[36m(");
-        if (file.type() == FileType.DIRECTORY) {
-            System.out.print("dir:");
-        }
+        System.out.print(file.type() == FileType.FILE ? " \u001B[32m<" : " \u001B[36m<");
+        System.out.print(file.type() == FileType.FILE ? "D: " : "F: ");
         System.out.print(
                 file
                         .authorizedUsers()
@@ -72,6 +70,6 @@ public class Tree extends Command {
                         .map(User::nickName)
                         .collect(Collectors.joining(","))
         );
-        System.out.print(")\u001B[0m");
+        System.out.print(">\u001B[0m");
     }
 }

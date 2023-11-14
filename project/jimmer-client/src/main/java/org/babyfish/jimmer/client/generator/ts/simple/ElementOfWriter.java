@@ -9,7 +9,7 @@ public class ElementOfWriter extends TsCodeWriter {
     public static final File FILE = new File("", "ElementOf");
 
     public ElementOfWriter(TsContext ctx) {
-        super(ctx, FILE);
+        super(ctx, FILE, false);
     }
 
     @Override

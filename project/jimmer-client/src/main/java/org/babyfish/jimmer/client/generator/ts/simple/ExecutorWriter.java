@@ -13,7 +13,7 @@ public class ExecutorWriter extends TsCodeWriter {
     public static final File FILE = new File("", "Executor");
 
     public ExecutorWriter(TsContext ctx) {
-        super(ctx, FILE);
+        super(ctx, FILE, false);
     }
 
     @Override

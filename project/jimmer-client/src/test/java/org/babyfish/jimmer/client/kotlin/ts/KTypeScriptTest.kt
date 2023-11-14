@@ -127,7 +127,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val service = Constants.KOTLIN_METADATA.services[KBookService::class.java]
-        ServiceWriter(ctx, service).flush()
+        ServiceWriter(ctx, service, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { Dynamic, Executor } from '../';\n" +
@@ -294,7 +294,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val bookStoreType = Constants.KOTLIN_METADATA.rawImmutableObjectTypes[ImmutableType.get(KBookStore::class.java)]
-        TypeDefinitionWriter(ctx, bookStoreType).flush()
+        TypeDefinitionWriter(ctx, bookStoreType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KBook, KCoordinate } from './';\n" +
@@ -318,7 +318,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val bookType = Constants.KOTLIN_METADATA.rawImmutableObjectTypes[ImmutableType.get(KBook::class.java)]
-        TypeDefinitionWriter(ctx, bookType).flush()
+        TypeDefinitionWriter(ctx, bookType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KAuthor, KBookStore } from './';\n" +
@@ -346,7 +346,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val authorType = Constants.KOTLIN_METADATA.rawImmutableObjectTypes[ImmutableType.get(KAuthor::class.java)]
-        TypeDefinitionWriter(ctx, authorType).flush()
+        TypeDefinitionWriter(ctx, authorType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KGender } from '../enums';\n" +
@@ -372,7 +372,7 @@ class KTypeScriptTest {
     fun testBookDto() {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
-        DtoWriter(ctx, KBook::class.java).flush()
+        DtoWriter(ctx, KBook::class.java, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KCoordinate } from '../entities';\n" +
@@ -409,7 +409,7 @@ class KTypeScriptTest {
     fun testKAuthorDto() {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
-        DtoWriter(ctx, KAuthor::class.java).flush()
+        DtoWriter(ctx, KAuthor::class.java, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KCoordinate } from '../entities';\n" +
@@ -442,7 +442,7 @@ class KTypeScriptTest {
     fun testKBookStoreDto() {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
-        DtoWriter(ctx, KBookStore::class.java).flush()
+        DtoWriter(ctx, KBookStore::class.java, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { KCoordinate } from '../entities';\n" +
@@ -463,7 +463,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val bookInputType = Constants.KOTLIN_METADATA.staticTypes[StaticObjectType.Key(KBookInput::class.java, null)]
-        TypeDefinitionWriter(ctx, bookInputType).flush()
+        TypeDefinitionWriter(ctx, bookInputType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "export interface KBookInput {\n" +
@@ -487,7 +487,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val pageType = Constants.KOTLIN_METADATA.staticTypes[StaticObjectType.Key(KPage::class.java, null)]
-        TypeDefinitionWriter(ctx, pageType).flush()
+        TypeDefinitionWriter(ctx, pageType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "export interface KPage<E> {\n" +
@@ -507,7 +507,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val genderType = Constants.KOTLIN_METADATA.enumTypes[KGender::class.java]
-        TypeDefinitionWriter(ctx, genderType).flush()
+        TypeDefinitionWriter(ctx, genderType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "export type KGender = 'MALE' | 'FEMALE';\n",
@@ -520,7 +520,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val service = Constants.KOTLIN_METADATA.services[KArrayService::class.java]
-        ServiceWriter(ctx, service).flush()
+        ServiceWriter(ctx, service, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { Executor } from '../';\n" +
@@ -555,7 +555,7 @@ class KTypeScriptTest {
         val out = ByteArrayOutputStream()
         val ctx = createContext(out)
         val service = Constants.KOTLIN_METADATA.services[KEnumService::class.java]
-        ServiceWriter(ctx, service).flush()
+        ServiceWriter(ctx, service, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
             "import type { Executor } from '../';\n" +

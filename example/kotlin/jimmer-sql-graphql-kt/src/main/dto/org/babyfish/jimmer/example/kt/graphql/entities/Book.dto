@@ -9,9 +9,7 @@
  * 2. Otherwise, the project must be rebuilt
  */
 
-
-// Abstract type will not generate java/kt code
-abstract input AbstractBookInput {
+input BookInput {
 
     /*
      * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
@@ -19,10 +17,6 @@ abstract input AbstractBookInput {
      * #allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
      */
     #allScalars(Book)
-}
-
-input BookInput : AbstractBookInput {
-
     /*
      * You can also write `storeId` because the @IdView property `Book.storeId` has already been defined.
      *
@@ -38,7 +32,14 @@ input BookInput : AbstractBookInput {
     id(authors) as authorIds // Override default alias `authorsId`
 }
 
-input CompositeBookInput: AbstractBookInput {
+input CompositeBookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
+     */
+    #allScalars(Book)
 
     store {
         #allScalars(BookStore)

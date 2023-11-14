@@ -1,17 +1,14 @@
 import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 
-abstract Key {
+@Shallow
+BookView {
 
     @Shallow
     name
 
     @Shallow
     edition
-}
-
-@Shallow
-BookView : Key {
 
     @Shallow
     id

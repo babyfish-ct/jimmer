@@ -39,7 +39,6 @@ dtoType
     (annotations += annotation)*
     (modifiers += Identifier)*
     name=Identifier
-    (':' superNames += Identifier (',' superNames += Identifier)*)?
     body=dtoBody
     ;
 

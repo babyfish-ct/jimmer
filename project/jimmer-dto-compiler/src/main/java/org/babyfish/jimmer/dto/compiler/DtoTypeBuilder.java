@@ -23,8 +23,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final Set<DtoTypeModifier> modifiers;
 
-    final List<Token> superNames;
-
     final P recursiveBaseProp;
 
     final String recursiveAlias;
@@ -41,8 +39,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final List<Token> negativePropAliasTokens = new ArrayList<>();
 
-    private List<DtoTypeBuilder<T, P>> superTypeBuilders;
-
     private DtoType<T, P> dtoType;
 
     private AliasPattern currentAliasGroup;
@@ -56,7 +52,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             Token name,
             List<DtoParser.AnnotationContext> annotations,
             Set<DtoTypeModifier> modifiers,
-            List<Token> superNames,
             P recursiveBaseProp,
             String recursiveAlias,
             CompilerContext<T, P> ctx
@@ -78,7 +73,6 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             this.annotations = parsedAnnotations;
         }
         this.modifiers = Collections.unmodifiableSet(modifiers);
-        this.superNames = superNames;
         this.recursiveBaseProp = recursiveBaseProp;
         this.recursiveAlias = recursiveAlias;
         for (DtoParser.ExplicitPropContext prop : body.explicitProps) {
@@ -370,159 +364,26 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 ctx.getDtoFilePath()
         );
 
-        resolveSuperTypes(new LinkedList<>());
-        List<DtoType<T, P>> superTypes;
-        if (superTypeBuilders.isEmpty()) {
-            superTypes = Collections.emptyList();
-        } else {
-            superTypes = new ArrayList<>(superTypeBuilders.size());
-            for (DtoTypeBuilder<T, P> superTypeBuilder : superTypeBuilders) {
-                DtoType<T, P> superType = superTypeBuilder.build();
-                String category = category(modifiers);
-                String superCategory = category(superType.getModifiers());
-                if (!category.equals(superCategory)) {
-                    assert name != null;
-                    throw ctx.exception(
-                            name.getLine(),
-                            "Illegal type \"" +
-                                    name.getText() +
-                                    "\", it is \"" +
-                                    category +
-                                    "\", but its super type \"" +
-                                    superType.getName() +
-                                    "\" is not"
-                    );
-                }
-                if (!modifiers.contains(DtoTypeModifier.UNSAFE) &&
-                        superType.getModifiers().contains(DtoTypeModifier.UNSAFE)) {
-                    assert name != null;
-                    throw ctx.exception(
-                            name.getLine(),
-                            "Illegal type \"" +
-                                    name.getText() +
-                                    "\", its super type \"" +
-                                    superType.getName() +
-                                    "\" is unsafe so that it must unsafe too"
-                    );
-                }
-                superTypes.add(superType);
-            }
-        }
-
-        Map<String, AbstractProp> declaredProps = resolveDeclaredProps();
-
-        Map<String, AbstractProp> superProps = new LinkedHashMap<>();
-        if (!superTypes.isEmpty()) {
-            Map<String, DtoProp<T, P>> basePathSuperProps = new LinkedHashMap<>();
-            Set<String> declaredBasePaths = new HashSet<>();
-            for (AbstractProp declaredProp : declaredProps.values()) {
-                if (declaredProp instanceof DtoProp<?, ?>) {
-                    declaredBasePaths.add(((DtoProp<?, ?>)declaredProp).getBasePath());
-                }
-            }
-            for (DtoType<T, P> superType : superTypes) {
-                for (DtoProp<T, P> superDtoProp : superType.getDtoProps()) {
-                    String alias = superDtoProp.getAlias();
-                    if (isExcluded(alias) ||
-                            declaredProps.containsKey(superDtoProp.getAlias()) ||
-                            declaredBasePaths.contains(superDtoProp.getBasePath())) {
-                        continue;
-                    }
-                    DtoProp<T, P> baseConflictProp = basePathSuperProps.put(superDtoProp.getBasePath(), superDtoProp);
-                    if (baseConflictProp != null && !DtoPropImpl.canMerge(baseConflictProp, superDtoProp)) {
-                        assert name != null;
-                        throw ctx.exception(
-                                name.getLine(),
-                                "Illegal dto type \"" +
-                                        name.getText() +
-                                        "\", the base property \"" +
-                                        superDtoProp.getBasePath() +
-                                        "\" is defined differently by multiple super type so that it must be overridden"
-                        );
-                    }
-                    AbstractProp conflictAliasProp = superProps.put(alias, superDtoProp);
-                    if (conflictAliasProp != null && !DtoPropImpl.canMerge(conflictAliasProp, superDtoProp)) {
-                        assert name != null;
-                        throw ctx.exception(
-                                name.getLine(),
-                                "Illegal dto type \"" +
-                                        name.getText() +
-                                        "\", the property alias \"" +
-                                        alias +
-                                        "\" is defined differently by multiple super type so that it must be overridden"
-                        );
-                    }
-                }
-            }
-        }
-
-        List<AbstractProp> props = new ArrayList<>();
-        for (AbstractProp prop : superProps.values()) {
-            if (prop instanceof DtoProp<?, ?>) {
-                props.add(prop);
-            }
-        }
-        for (AbstractProp prop : declaredProps.values()) {
-            if (prop instanceof DtoProp<?, ?>) {
-                props.add(prop);
-            }
-        }
-        for (AbstractProp prop : superProps.values()) {
-            if (prop instanceof UserProp) {
-                props.add(prop);
-            }
-        }
-        for (AbstractProp prop : declaredProps.values()) {
-            if (prop instanceof UserProp) {
-                props.add(prop);
-            }
-        }
+        Map<String, AbstractProp> propMap = resolveDeclaredProps();
 
         validateUnusedNegativePropTokens();
 
+        List<AbstractProp> props = new ArrayList<>(propMap.size());
+        for (AbstractProp prop : propMap.values()) {
+            if (!(prop instanceof UserProp)) {
+                props.add(prop);
+            }
+        }
+        for (AbstractProp prop : propMap.values()) {
+            if (prop instanceof UserProp) {
+                props.add(prop);
+            }
+        }
         dtoType.setProps(Collections.unmodifiableList(props));
         return dtoType;
     }
 
-    private void resolveSuperTypes(LinkedList<DtoTypeBuilder<T, P>> stack) {
-        if (this.superTypeBuilders != null) {
-            return;
-        }
-        if (superNames.isEmpty()) {
-            this.superTypeBuilders = Collections.emptyList();
-            return;
-        }
-        int index = stack.indexOf(this);
-        if (index != -1) {
-            throw ctx.exception(
-                    name.getLine(),
-                    "Illegal circular inheritance: " +
-                            stack.subList(index, stack.size()).stream().map(it -> it.name.getText()).collect(Collectors.joining("->")) +
-                            "->" +
-                            name.getText()
-            );
-        }
-        stack.push(this);
-        try {
-            List<DtoTypeBuilder<T, P>> superTypeBuilders = new ArrayList<>(superNames.size());
-            for (Token superName : superNames) {
-                DtoTypeBuilder<T, P> superTypeBuilder = ctx.get(superName.getText());
-                if (superTypeBuilder == null) {
-                    throw ctx.exception(
-                            superName.getLine(),
-                            "Illegal super dto name \"" +
-                                    superName.getText() +
-                                    "\""
-                    );
-                }
-                superTypeBuilders.add(superTypeBuilder);
-            }
-            this.superTypeBuilders = superTypeBuilders;
-        } finally {
-            stack.pop();
-        }
-    }
-
+    @SuppressWarnings("unchecked")
     private Map<String, AbstractProp> resolveDeclaredProps() {
         if (this.declaredProps != null) {
             return this.declaredProps;

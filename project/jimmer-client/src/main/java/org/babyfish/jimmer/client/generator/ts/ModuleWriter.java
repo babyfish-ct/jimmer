@@ -6,7 +6,7 @@ import org.babyfish.jimmer.client.generator.ts.simple.ExecutorWriter;
 public class ModuleWriter extends TsCodeWriter {
 
     public ModuleWriter(TsContext ctx) {
-        super(ctx, ctx.getModuleFile());
+        super(ctx, ctx.getModuleFile(), false);
     }
 
     @Override

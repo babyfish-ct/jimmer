@@ -25,8 +25,11 @@ public abstract class TsCodeWriter extends CodeWriter<TsContext> {
 
     private final Map<String, Set<String>> importDataMap = new TreeMap<>();
 
-    protected TsCodeWriter(TsContext ctx, File file) {
+    protected final boolean mutable;
+
+    protected TsCodeWriter(TsContext ctx, File file, boolean mutable) {
         super(ctx, file);
+        this.mutable = mutable;
     }
 
     @Override
@@ -122,18 +125,17 @@ public abstract class TsCodeWriter extends CodeWriter<TsContext> {
 
     @Override
     protected void writeArrayTypeRef(ArrayType arrayType) {
-        code("ReadonlyArray<");
+        code(mutable ? "Array<" : "ReadonlyArray<");
         typeRef(arrayType.getElementType());
         code(">");
     }
 
     @Override
     protected void writeMapTypeRef(MapType mapType) {
-        code("ReadonlyMap<");
-        typeRef(mapType.getKeyType());
-        code(", ");
+        code(mutable ? "{" : "{readonly ");
+        code("[key:string]: ");
         typeRef(mapType.getValueType());
-        code(">");
+        code("}");
     }
 
     @Override
@@ -163,7 +165,7 @@ public abstract class TsCodeWriter extends CodeWriter<TsContext> {
                         code('\n');
                         document(property.getDocument());
                     }
-                    code("readonly ")
+                    codeIf(!mutable, "readonly ")
                             .code(property.getName())
                             .codeIf(property.getType() instanceof NullableType, "?")
                             .code(": ");

@@ -1,8 +1,19 @@
+/**
+ * 1.  This file is compiled by the annotation processor, when it is modified:
+ *
+ *     -   If any other Java code is modified, you can directly click the `Run` button of Intellij
+ *
+ *     -   Otherwise, the project must be rebuilt
+ *
+ * 2.  Please view the annotation `@EnableDtoGeneration` of the class `App`,
+ *     that annotation is required because entity interfaces are not declared
+ *     in current project.
+ */
+
 export org.babyfish.jimmer.sql.example.model.Book
     -> package org.babyfish.jimmer.sql.example.service.dto
 
-// Abstract type will not generate java/kt code
-abstract input AbstractBookInput {
+input BookInput {
 
     /*
      * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
@@ -10,9 +21,6 @@ abstract input AbstractBookInput {
      * #allScalars(this)/#allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
      */
     #allScalars(Book)
-}
-
-input BookInput : AbstractBookInput {
 
     /*
      * You can also write `storeId` because the @IdView property `Book.storeId` has already been defined.
@@ -29,7 +37,14 @@ input BookInput : AbstractBookInput {
     id(authors) as authorIds // Override default alias `authorsId`
 }
 
-input CompositeBookInput: AbstractBookInput {
+input CompositeBookInput {
+
+    /*
+     * #allScalars: All scalar fields of `Book`, `TenantAware` and `BaseEntity`
+     *
+     * #allScalars(this)/#allScalars(Book): All scalar fields of `Book`, exclude `TenantAware` and `BaseEntity`
+     */
+    #allScalars(Book)
 
     store {
         #allScalars(this) // or `#allScalars(BookStore)`

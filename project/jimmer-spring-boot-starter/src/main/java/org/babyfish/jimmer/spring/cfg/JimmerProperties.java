@@ -496,7 +496,7 @@ public class JimmerProperties {
 
         public Client(@Nullable TypeScript ts, @Nullable JavaFeign javaFeign) {
             if (ts == null) {
-                this.ts = new TypeScript(null, "Api", 4, false);
+                this.ts = new TypeScript(null, "Api", 4, false, false);
             } else {
                 this.ts = ts;
             }
@@ -538,7 +538,9 @@ public class JimmerProperties {
 
             private final boolean anonymous;
 
-            public TypeScript(@Nullable String path, @Nullable String apiName, int indent, boolean anonymous) {
+            private final boolean mutable;
+
+            public TypeScript(@Nullable String path, @Nullable String apiName, int indent, boolean anonymous, boolean mutable) {
                 if (path == null || path.isEmpty()) {
                     this.path = null;
                 } else {
@@ -554,6 +556,7 @@ public class JimmerProperties {
                 }
                 this.indent = indent != 0 ? Math.max(indent, 2) : 4;
                 this.anonymous = anonymous;
+                this.mutable = mutable;
             }
 
             @Nullable
@@ -572,6 +575,10 @@ public class JimmerProperties {
 
             public boolean isAnonymous() {
                 return anonymous;
+            }
+
+            public boolean isMutable() {
+                return mutable;
             }
 
             @Override

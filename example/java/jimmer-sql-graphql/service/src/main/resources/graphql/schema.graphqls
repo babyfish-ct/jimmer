@@ -1,0 +1,123 @@
+scalar Long
+scalar BigDecimal
+scalar LocalDateTime
+
+type Query {
+
+    bookStores(name: String): [BookStore!]!
+
+    books(
+        name: String,
+        minPrice: BigDecimal,
+        maxPrice: BigDecimal,
+        storeName:
+        String, authorName:
+        String,
+        sortCode: String
+    ): [Book!]!
+
+    booksBySuperQBE(
+        name: String,
+        minPrice: BigDecimal,
+        maxPrice: BigDecimal,
+        storeName:
+        String, authorName:
+        String,
+        sortCode: String
+    ): [Book!]!
+
+    authors(name: String): [Author!]!
+}
+
+type Mutation {
+    saveBookStore(input: BookStoreInput!): BookStore!
+    deleteBookStore(id: Long): Int!
+    saveBook(input: BookInput!): Book!
+    saveCompositeBook(input: CompositeBookInput!): Book!
+    deleteBook(id: Long): Int!
+    saveAuthor(input: AuthorInput!): Author!
+    deleteAuthor(id: Long): Int!
+}
+
+interface CommonEntity {
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+}
+
+type BookStore implements CommonEntity {
+    id: Long!
+    name: String!
+    website: String
+    avgPrice: BigDecimal!
+    books: [Book!]!
+    newestBooks: [Book!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+}
+
+type Book implements CommonEntity {
+    id: Long!
+    name: String!
+    edition: Int!
+    price: BigDecimal!
+    store: BookStore
+    authors: [Author!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+    tenant: String!
+}
+
+type Author implements CommonEntity {
+    id: Long!
+    firstName: String!
+    lastName: String!
+    fullName: String
+    gender: Gender!
+    books: [Book!]!
+    createdTime: LocalDateTime!
+    modifiedTime: LocalDateTime!
+}
+
+input BookStoreInput {
+    id: Long
+    name: String!
+    website: String
+}
+
+input BookInput {
+    id: Long
+    name: String!
+    edition: Int
+    price: BigDecimal!
+    storeId: Long
+    authorIds: [Long!]!
+}
+
+input CompositeBookInput {
+    id: Long
+    name: String!
+    edition: Int
+    price: BigDecimal!
+    store: CompositeBookInput_StoreTarget
+    authors: [CompositeBookInput_AuthorTarget!]!
+}
+
+input CompositeBookInput_StoreTarget {
+    name: String!
+    website: String
+}
+
+input CompositeBookInput_AuthorTarget {
+    firstName: String!
+    lastName: String!
+    gender: Gender!
+}
+
+input AuthorInput {
+    id: Long
+    firstName: String!
+    lastName: String!
+    gender: Gender!
+}
+
+enum Gender { MALE, FEMALE }

@@ -92,14 +92,6 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             );
         }
         Set<String> superSet = new LinkedHashSet<>();
-        for (Token superName : type.superNames) {
-            if (!superSet.add(superName.getText())) {
-                throw exception(
-                        superName.getLine(),
-                        "Duplicated super dto name \"" + superName.getText() + "\""
-                );
-            }
-        }
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(
                 null,
                 compiler.getBaseType(),
@@ -107,7 +99,6 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 type.name,
                 type.annotations,
                 modifiers,
-                type.superNames,
                 null,
                 null,
                 this

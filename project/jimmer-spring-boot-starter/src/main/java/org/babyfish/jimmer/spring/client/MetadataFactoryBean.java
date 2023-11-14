@@ -17,10 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.*;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -196,10 +192,14 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
 
     static {
         Set<String> set = new HashSet<>();
-        set.add(HttpServletRequest.class.getName());
-        set.add(ServletRequest.class.getName());
-        set.add(HttpServletResponse.class.getName());
-        set.add(ServletResponse.class.getName());
+        set.add("javax.servlet.http.HttpServletRequest");
+        set.add("javax.servlet.http.ServletRequest");
+        set.add("javax.servlet.http.HttpServletResponse");
+        set.add("javax.servlet.http.ServletResponse");
+        set.add("jakarta.servlet.http.HttpServletRequest");
+        set.add("jakarta.servlet.http.ServletRequest");
+        set.add("jakarta.servlet.http.HttpServletResponse");
+        set.add("jakarta.servlet.http.ServletResponse");
         set.add(MultipartFile.class.getName());
         set.add(Principal.class.getName());
         IGNORED_CLASS_NAMES = set;

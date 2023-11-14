@@ -9,7 +9,6 @@ import org.babyfish.jimmer.spring.cloud.MicroServiceExporterController;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.kt.KSqlClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
@@ -17,9 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.ParameterNameDiscoverer;
 
-import javax.servlet.Servlet;
-
-@ConditionalOnClass(Servlet.class)
+@Conditional(HttpServletCondition.class)
 public class ServletControllerConfiguration {
     @ConditionalOnProperty("jimmer.client.ts.path")
     @ConditionalOnMissingBean(TypeScriptController.class)

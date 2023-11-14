@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is only required by java
+ * This annotation is only required by java, not kotlin.
  *
  * <p>The `jimmer-apt` handles these annotations</p>
  * <ul>
