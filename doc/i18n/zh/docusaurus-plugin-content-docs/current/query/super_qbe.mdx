@@ -459,18 +459,21 @@ specification BookSpecification {
 
 由此可见，某些QBE函数自带默认alias的功能。
 
-假设原属性名称为，所有QBE函数的默认alias行为如下
+假设原属性名称为`Prop`，所有QBE函数的默认alias行为如下
 
 |QBE函数|默认alias|
 |---|---|
-|eq *(或不指定QBE函数)* |`value`|
+|eq *(或不指定QBE函数)* |`prop`|
 |ne|不支持，不指定alias会导致编译错|
-|gt|`minValueExclusive`|
-|ge|`minValue`|
-|lt|`maxValueExclusive`|
-|le|`maxValue`|
-|like|`value`|
+|gt|`minPropExclusive`|
+|ge|`minProp`|
+|lt|`maxPropExclusive`|
+|le|`maxProp`|
+|like|`prop`|
 |notLike|不支持，不指定alias会导致编译错|
 |valueIn|不支持，不指定alias会导致编译错|
 |valueNotIn|不支持，不指定alias会导致编译错|
-|notLike|不支持，不指定alias会导致编译错|
+|associatedIdEq或id|如果关联非集合，`propId`；否则，编译报错|
+|associatedIdNe|如果关联非集合，`excludedPropId`；否则，编译报错|
+|associatedIdIn|如果关联非集合，`propIds`；否则，编译报错|
+|associatedIdNotNull|如果关联非集合，`excludedPropIds`；否则，编译报错|
