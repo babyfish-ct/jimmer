@@ -133,3 +133,34 @@ Jimmer支持[逻辑删除](./logical-deleted)，该功能会导致被数据只�
         // highlight-next-line
         where DELETED = false;
     ```
+
+## 动态覆盖
+
+借助于实体中`@Key`注解的配置，叫做静态配置。
+
+有的时候，不同的业务可能对`@key`有不同的要求。因此，`@Key`配置可以在运行时被动态覆盖。
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java 
+sqlClient
+    .getEntities()
+    .saveCommand(book)
+    // highlight-next-line
+    .setKeyProps(BookProps.NAME, BookProps.EDITION)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.save(book) {
+    // highlight-next-line
+    .setKeyProps(Book::name, Book::edition)
+}
+```
+
+</TabItem>
+</Tabs>

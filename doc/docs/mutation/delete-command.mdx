@@ -5,6 +5,7 @@ title: Delete Command
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import DissociateMode from '../_shared/dissociate-mode.md';
 
 ## Basic Concepts  
 
@@ -282,7 +283,7 @@ The finally generated SQL is:
     where ID in(?, ?, ?, ?)
     ```
 
-### Dissociate Operation  
+### Dissociate Mode  
 
 From the above discussion we can see that the delete command may cause data in many-to-many association middle tables to be deleted, which is a relatively simple case.
 
@@ -348,6 +349,9 @@ This means that through the one-to-many association `BookStore.books` we can cer
 
 Next, Jimmer will refer to the [@OnDissociate](../mapping/advanced/on-dissociate) annotation on the many-to-one association property `Book.store`.
 
+<DissociateMode/>
+
+## Dissociation Examples
 1.  If the foreign key corresponding to `Book.store` is configured by the [@OnDissociate](../mapping/advanced/on-dissociate) annotation as `SET_NULL`, the following SQL is executed:
 
     ```sql

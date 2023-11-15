@@ -8,6 +8,7 @@ import TabItem from '@theme/TabItem';
 import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
+import DissociateMode from '../../_shared/dissociate-mode.md';
 
 An important concept is involved when saving associated objects: dissociation operations.
 
@@ -218,7 +219,7 @@ Finally 3 SQL statements are generated:
 
 ## Dissociating Child Table Data  
 
-This operation is for one-to-many associations directly based on foreign keys.
+This operation is for associations directly based on foreign keys.
 
 The `BOOK` table has a foreign key field `STORE_ID` pointing to the `BOOK_STORE` table, forming a many-to-one association. This many-to-one association is mapped to the `Book.store` property, and the reverse one-to-many association is mapped to the `BookStore.books` property.
 
@@ -226,13 +227,7 @@ If a parent object in the database *(`BookStore` in this example)* holds some ch
 
 ### Dissociation Modes
 
-Child object dissociation operations have three modes:
-
--   NONE *(default)*: Dissociation is not supported, operation is prevented by throwing exception 
-
--   SET_NULL: Set foreign key of dissociated child object to null. Precondition is child object's many-to-one association property is nullable; otherwise attempt to configure this will cause exception
-
--   DELETE: Delete the dissociated child objects
+<DissociateMode/>
 
 :::info
 Although child object dissociation is caused by a one-to-many association *(i.e. parent object abandoning some child objects, the one-to-many association is `BookStore.books` in this example)*, the dissociation mode is configured for the reverse many-to-one association *(`Book.store` in this example)*. The purpose of this design is to maintain similarity with configuring cascade behaviors of foreign keys in database DDL. 

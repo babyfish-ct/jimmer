@@ -5,22 +5,83 @@ title: OnDissociate
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import DissociateMode from '../../_shared/dissociate-mode.md';
 
-:::info
-@`org.babyfish.jimmer.sql.OnDissociate` is used together with [Save Command](../../mutation/save-command) and [Delete Command](../../mutation/delete-command) in mutation section.  
-:::
+## Concepts
 
-`@OnDissociate` can only be used on many-to-one associations mapped by foreign keys, such as:
+@`org.babyfish.jimmer.sql.OnDissociate` is used together with [Modification/Save Command](../../mutation/save-command) and [Modification/Delete Command](../../mutation/delete-command)
+
+- [Modification/Save Command](../../mutation/save-command)
+
+    <table>
+    <thead>
+    <tr>
+    <th>Existing data structure in database</th>
+    <th>Data structure expected to be saved by user</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td>
+
+    ```sh
+    +-BookStore(id=2)
+    |
+    +-----Book(id=10)
+    |
+    # highlight-next-line
+    +-----Book(id=11) 
+    |
+    # highlight-next-line
+    \-----Book(id=12)
+
+    
+    ```
+
+    </td>
+    <td>
+
+    ```sh
+    +-BookStore(id=2)
+    |
+    +-----Book(id=10)
+    |
+    |
+    |
+    |
+    |
+    \-----Book(id=9)
+    ```
+
+    </td>
+    </tr>
+    </tbody>
+    </table>
+
+    This means:
+
+    - The association between `BookStore-2` and `Book-10` remains unchanged
+
+    - The association between `BookStore-2` and `Book-9` needs to be created
+
+    - `BookStore-2` needs to be disassociated from `Book-11` and `Book-12`.
+
+- [Modification/Delete Command](../../mutation/delete-command)
+
+    This is easy to understand. Child objects need to be disassociated before deleting the parent object.
+
+`@OnDissociate` can only be used on foreign key based many-to-one associations, for example:
 
 <Tabs groupId="language">
-<TabItem value="java" label="Java">
+<TabItem value="java" label="Java">  
 
 ```java title="Book.java"
 @Entity
 public interface Book {
 
-    @Nullable
+    @Null
     @ManyToOne
+    // highlight-next-line  
     @OnDissociate(DissociateAction.SET_NULL)
     BookStore store();
     ...
@@ -28,14 +89,15 @@ public interface Book {
 ```
 
 </TabItem>
-<TabItem value="kotlin" label="Kotlin">  
+<TabItem value="kotlin" label="Kotlin">
 
-```kotlin title="Book.kt"
+```kotlin title="Book.kt" 
 @Entity
 interface Book {
 
     @ManyToOne
-    @OnDissociate(DissociateAction.SET_NULL)
+    // highlight-next-line
+    @OnDissociate(DissociateAction.SET_NULL) 
     val store: BookStore?
     ...
 }
@@ -44,17 +106,87 @@ interface Book {
 </TabItem>
 </Tabs>
 
-When 
+:::info
+Although disassociation of child objects is caused by a one-to-many association *(or inverse one-to-one)* *(that is, the parent object abandons some child objects. The one-to-many association here is `BookStore.books`)*, the disassociation mode is configured for the inverse many-to-one association *(here `Book.store`)*. This design is to maintain similarity with configuring cascade properties of foreign keys in database DDLs.
 
--   the parent object is deleted,
--   or the parent discards some child objects (based on the object tree override behavior of the save command),  
+For Jimmr, a one-to-many association must be bidirectional, so the many-to-one association that is the mirror image of a known one-to-many association is always known. So there is no problem with this design.
+:::
 
-the child object will be dissociated.
+## Dissociation Modes
 
-DissociateAction has 3 options, corresponding to the foreign key behaviors in the database:
+The parameter of the `OnDissociate` annotation in the above code is called the dissociation mode:
 
--   NONE: The current foreign key does not support dissociation behavior, preventing its parent object from being deleted.
--   SET_NULL: Automatically clear the foreign key. For parent delete operations, it looks very much like `on delete set null`.
--   DELETE: Automatically delete child objects. For parent delete operations, it looks very much like `on delete cascade`.
+<DissociateMode/>
 
-This article only introduces the configuration of OnDissociate. For how to use it further, please refer to [SaveCommand/Dissociation](../../mutation/save-command/dissociation) and [Delete Command](../../mutation/delete-command).
+This article only introduces the configuration of OnDissociate. For how to use it further, please refer to [Save Command/Dissociation Operations](../../mutation/save-command/dissociation) and [Delete Commands](../../mutation/delete-command).
+
+## Dynamic Overrides 
+
+Confiugration specified by the annotation `@OnDissociate` is called static configuration.
+
+Sometimes, different businesses may have different requirements for dissociation operations. Therefore, dissociation configurations can be dynamically overridden at runtime.
+
+-   [Modification/Save Command](../../mutation/save-command)
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    sqlClient
+        .getEntities()
+        .saveCommand(book)
+        // highlight-next-line
+        .setDissociateAction(BookProps.STORE, DissociateAction.SET_NULL)
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    sqlClient.save(book) {
+        // highlight-next-line
+        .setDissociateAction(Book::store, DissociateAction.SET_NULL)
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+-   [Modification/Delete Command](../../mutation/delete-command)
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    DeleteResult result = sqlClient
+        .getEntities()
+        .deleteCommand(BookStore.class, 1L)
+        .configure(it ->
+                it
+                    // highlight-next-line
+                    .setDissociateAction(
+                        BookProps.STORE,
+                        DissociateAction.SET_NULL
+                    )
+        )
+        .execute();
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val result = sqlClient
+        .entities
+        .delete(BookStore::class, 1L) {
+            // highlight-next-line
+            setDissociateAction(
+                Book::store, 
+                DissociateAction.SET_NULL
+            )
+        }
+    ```
+
+    </TabItem>
+    </Tabs>

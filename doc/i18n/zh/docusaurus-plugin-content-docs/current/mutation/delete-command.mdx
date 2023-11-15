@@ -5,6 +5,7 @@ title: 删除指令
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import DissociateMode from '../_shared/dissociate-mode.md';
 
 ## 基本概念
 
@@ -280,7 +281,7 @@ println(
     where ID in(?, ?, ?, ?)
     ```
 
-### 脱勾操作
+### 脱勾模式
 
 从上面的论述可以看到，delete指令有可能导致多对多关联中间表的数据的被删除，这是比较简单的情况。
 
@@ -344,6 +345,10 @@ println(
 这表示，通过一对多关联`BookStore.books`一定能找到与之对应的多对一关联`Book.store`。
 
 接下来，Jimmer会参考多对一关联属性`Book.store`上的[@OnDissociate](../mapping/advanced/on-dissociate)注解。
+
+<DissociateMode/>
+
+### 脱钩示范
 
 1. 如果`Book.store`所对应的外键被[@OnDissociate](../mapping/advanced/on-dissociate)注解配置为`SET_NULL`，则，执行如下SQL
 

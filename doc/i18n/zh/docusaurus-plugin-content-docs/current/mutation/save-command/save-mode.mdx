@@ -389,7 +389,7 @@ val newestBookId = sqlClient.save(book)
         ```kotlin
         sqlClient.save(book) {
             // highlight-next-line
-            .setDissociateAction(Book::name, Book::edition)
+            .setKeyProps(Book::name, Book::edition)
         }
         ```
 

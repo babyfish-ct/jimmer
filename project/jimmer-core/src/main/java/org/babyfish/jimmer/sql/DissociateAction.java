@@ -25,10 +25,10 @@ public enum DissociateAction {
 
     /**
      * This is a special option. If the parent object is physically deleted and the foreign key of the
-     * child object is true (foreign key constraint exists in the database), it will be ignored,
+     * child object is real (foreign key constraint exists in the database), it will be ignored,
      * equivalent to {@link #CHECK}.
      *
-     * <p>In other cases, this option takes effect. When the parent object is deleted (either physically
+     * <p>If this option takes effect, when the parent object is deleted (either physically
      * or logically), regardless whether there are some existing child objects in the database or not.</p>
      */
     LAX,

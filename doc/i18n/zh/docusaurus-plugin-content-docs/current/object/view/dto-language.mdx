@@ -59,35 +59,69 @@ DTO语言的代码体现为扩展名为`dto`的文件，一旦编译完成，这
 
 因此，第一件事，是在`src/main`下建立`dto`子目录。
 
-:::warning
-dto文件由Jimmer的Annotation Processor *(Java)* 或 Ksp *(Kotlin)* 编译。因此，有两点注意事项
+:::tip
+Jimmer不要求`src/main/dto`目录必须在实体类型所在的项目中。事实上，你可以在任何能合法访问实体的项目中定义创建此目录。
 
--   对于多工程结构的项目而言，dto文件需要定义在实体类型所在子项目中。
+Jimmer只要求在包含dto文件的项目中使用`jimmer-apt`或`jimmer-ksp`，它们负责DTO文件的编译和相关代码的生成。
 
--   如果正在使用诸如Intellij这样的IDE开发项目
-    
-    -   如果除了dto文件外还有其他Java/Kotlin文件被修改了，直接点击IDE中运行按钮可以导致dto文件的重新编译
-
-    -   但是，如果除了dto文件外没有其他Java/Kotlin文件被修改，简单地点击IDE中运行按钮并不会导致dto文件被重新编译，除非显式地rebuild！
-
-如果你有好办法可解决这个问题，欢迎反馈。
+> 对于Java项目而言，除了`jimmer-apt`外，有可能还还需要多一个额外的配置，请参见[注意事项](#22-注意事项)
 :::
 
-假设存在一个Jimmer实体类型，其完整的类型名为`com.yourcompany.yourproject.Book`，该类被`@org.babyfish.jimmer.sql.Entity`修饰 *(DTO语言只支持Entity类型)*，那么
+### 2.1. 两种创建文件的方法
 
-1.  在`src/main/dto`目录下建立目录`com/yourcompany/yourproject`，即，建立和包名一致的目录
+`src/main/dto`目录下可以定义若干个dto文件，每一个文件和一个原始实体相互对应。
 
-2.  在上一步建立的目录中新文件`Book.dto`，该文件必须和类同名，且扩展名为`dto`
+假设存在一个Jimmer实体类型，其完整的类型名为`com.yourcompany.yourproject.Book`，该类被`@org.babyfish.jimmer.sql.Entity`修饰 *(DTO语言只支持Entity类型)*，
+有两种方法建立dto文件。
+
+1.  不使用`export`语句
+
+    这种情况下，dto文件的目录需要和原始实体的包对应，名称需要和原始实体的名称对应：
+
+    1.  在`src/main/dto`目录下建立目录`com/yourcompany/yourproject`，即，建立和包名一致的目录
+
+    2.  在上一步建立的目录中新文件`Book.dto`，该文件必须和类同名，且扩展名为`dto`
+
+2.  使用`export`语句
+
+    这种情况下，dto文件目录和名称是随意的，因为我们会在文件内部使用`export`语句定义dto文件和哪个原始实体对应。
+
+    -   由于对dto文件的目录没有要求，建议直接在`src/main/dto`下建立dto文件
+
+    -   虽然对dto文件的名称也没有要求，但是为了项目的可维护性，仍然建议文件名采用原始实体的名称，这里，就是`Book.dto`
+
+    -   dto文件的第一行代码为`export`语句
+
+        ```sh
+        export com.yourcompany.yourproject.Book
+
+        ...后续代码...
+        ```
+
+DTO文件被编译后，将自动生成更多的Java/Kotlin类型，它们默认的包名为：`实体包名` + `.dto`。
+
+如果你使用了`export`语句，你可以进一步定义生成的代码所在的包，例如：
+
+```sh
+export com.yourcompany.yourproject.Book
+    -> package com.yourcompany.yourproject.mydto
+```
 
 用户可以编辑`Book.dto`文件，定义任意个以`Book`类型为聚合根的所有DTO类型。这里，我们先定一个DTO类型：
 
 ```sh title="Book.dto"
+...省略export(如果有的话)...
+
 BookView {
     ...略...
 }
 ```
 
-编译后会生成Java/Kotlin类型`BookView`
+:::info
+DTO文件的第一行代码可能是`export`语句，为简化本文，后文不再写出。
+:::
+
+编译后会生成Java/Kotlin类型`BookView`，假设生成代码所在包的默认值没有别修改，生成代码如下
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -98,7 +132,6 @@ package com.yourcompany.yourproject.dto;
 import com.yourcompany.yourproject.Book;
 import org.babyfish.jimmer.View;
 
-@lombok.Data
 public class BookView implements View<Book> {
     ...略...
 }
@@ -123,10 +156,22 @@ data class BookView(
 </TabItem>
 </Tabs>
 
-:::info
--   生成的类型所在的包为`com.yourcompany.yourproject.dto`，相对实体所在的包多了一个`dto`子包。
+### 2.2. 注意事项
 
--   对于Java而言，其生产的类型假设用户使用了lombok。
+:::warning
+-   对于Java项目而言 *(kotlin开发者请忽略)*：
+
+    如果当前项目并非定义实体的项目，则需要在当前项目随意找一个类，用`@org.babyfish.jimmer.sql.EnableDtoGeneration`修饰。
+
+    否则，DTO文件不会被编译。
+
+-   dto文件由Jimmer的Annotation Processor *(Java)* 或 Ksp *(Kotlin)* 编译。
+
+    因此，如果正在使用诸如Intellij这样的IDE开发项目，那么
+    
+    -   如果除了dto文件外还有其他Java/Kotlin文件被修改了，直接点击IDE中运行按钮可以导致dto文件的重新编译
+
+    -   但是，如果除了dto文件外没有其他Java/Kotlin文件被修改，简单地点击IDE中运行按钮并不会导致dto文件被重新编译，除非显式地rebuild！
 :::
 
 ## 3. view、input和specification
@@ -266,7 +311,6 @@ BookView {
 <TabItem value="java" label="Java">
 
 ```java title="BookView.java"
-@lombok.Data
 public class BookView implements View<Book> {
 
     private long id;
@@ -360,7 +404,7 @@ BookView {
 
 ## 6. 负属性
 
-前文所讲的`#allScalars`宏，和后文会讲的继承，都会批量化地让DTO映射多个属性。负属性可以去掉某些属性
+前文所讲的`#allScalars`宏，会批量化地让DTO映射多个属性。负属性可以去掉某些属性
 
 ```sh title="Book.dto"
 BookView {
@@ -551,7 +595,6 @@ OrderView {
 <TabItem value="java" label="Java">
 
 ```java title="BookView.java"
-@lombok.Data
 public class RobotView implements View<Robot> {
 
     private String oldSystemProp1;
@@ -636,7 +679,6 @@ RobotView {
     <TabItem value="java" label="Java">
 
     ```java title="BookView.java"
-    @lombok.Data
     public class AuthorView implements View<AuthorView> {
 
         private int gender;
@@ -678,7 +720,6 @@ RobotView {
     <TabItem value="java" label="Java">
 
     ```java title="BookView.java"
-    @lombok.Data
     public class AuthorView implements View<AuthorView> {
 
         private String gender;
@@ -709,8 +750,8 @@ RobotView {
 
 -   直接使用
 -   递归关联
--   调用id函数后使用
--   调用flat函数后使用
+-   调用id函数
+-   调用flat函数
 
 ### 10.1. 普通关联
 
@@ -741,7 +782,6 @@ RobotView {
     <TabItem value="java" label="Java">
 
     ```java title="CompositeBookInput.java"
-    @lombok.Data
     public class CompositeBookInput implements Input<Book> {
 
         @Nullable
@@ -759,7 +799,6 @@ RobotView {
         // highlight-next-line
         private List<TargetOf_authors> authors;
 
-        @lombok.Data
         // highlight-next-line
         public static class TargetOf_store implements Input<BookStore> {
         
@@ -771,7 +810,6 @@ RobotView {
             ...省略其他成员...
         }
 
-        @lombok.Data
         // highlight-next-line
         public static class TargetOf_authors implements Input<Author> {
             
@@ -951,7 +989,9 @@ BookView {
 
 ### 10.4. flat函数
 
-`flat`函数只能用于引用关联 *(一对一或多对一)*，不能用于集合关联 *(一对多或多对多)*，用于把关联DTO的属性提升到当前DTO类型，得到不含关联的平坦对象。
+-   对view和input而言，`flat`函数只能用于引用关联 *(一对一或多对一)*，不能用于集合关联 *(一对多或多对多)*，用于把关联DTO的属性提升到当前DTO类型，得到不含关联的平坦对象。
+
+-   对于sepecification而言，`flat`函数没有上述限制，可以用于集合关联。请查看(../../query/super_qbe)。
 
 以官方例子中的`TreeNode`实体为例 *(事实上，这个例子是错误的，我们稍后会讨论这个问题)*
 
@@ -1080,208 +1120,33 @@ com.yourcompany.yourproject.FlatTreeNodeView(
 
 请参见<ViewMore buttonText="Output DTO是否该用flat模式的争议"><FlatProblem/></ViewMore>
 
-## 11. 继承
+## 11. 自定义字段
 
-DTO类型定义之间支持继承，具备如下特色
-
--   DTO类型定义之间的继承，只是配置层面的继承而已。因此，既和原始实体的继承关系无关，也和生成的DTO的类型无关 *(截止到目前版本为止，不会生成带继承关系的Java/Kotlin类)*。
-
--   DTO类型之间的继承只针对dto文件内部。
-
--   DTO类型之间的继承是多继承，即，一个DTO类型定义，可以从多个DTO类型继承。
-
--   DTO类型分为三种
-
-    -   view *(既无`input`关键字也无`speciciation`关键字)*
-
-    -   input
-
-    -   speciciation
-
-    只有相同类型的DTO类型之间才可以继承。
-
--   如果任何一个超类型被`unsafe`关键字修饰，那么派生类必须被`unsafe`关键字修饰。
-
-例子如下:
-
-```sh title="Robot.dto"
-
-BaseRobotView1 {
-    ...略...
-}
-
-BaseRobotView2 {
-    ...略...
-}
-
-# highlight-next-line
-DefaultRobotView : BaseRobotView1, BaseRobotView2 {
-    ...略...
-}
-```
-
-对于生成的Java/Kotlin类型`DefaultRobotView`类而言，并不会有任何Java/Kotlin继承关系，这是因为：
-
--   生成的是Java/Kotlin类而非接口，无法实现多继承
-
--   由于负属性特性的存在，相比于基DTO类型定义而言，派生DTO类型定义可能反而少了一些属性
-
-这就是"DTO类型定义之间的继承，只是配置层面的继承而已"的根本原因。
-
-但是，上述代码，却会导致在Java/Kotlin中生成`BaseRobotView1`类和`BaseRobotView2`类。
-
-如果你期望基DTO类型定义只为派生DTO类型定义所用，其本身不生成任何Java/Kotlin类型，可以添加`abstract`修饰符，如下
-
-```sh title="Robot.dto"
-
-# highlight-next-line
-abstract BaseRobotView1 {
-    ...略...
-}
-
-# highlight-next-line
-abstract BaseRobotView2 {
-    ...略...
-}
-
-DefaultRobotView : BaseRobotView1, BaseRobotView2 {
-    ...略...
-}
-```
-
-## 12. 自定义字段
-
-### 12.1 初识自定义字段
+### 11.1 初识自定义字段
 
 前面我们所讲的例子中，所有DTO属性都是由实体属性映射而来，成为映射属性。
 
 除了映射属性外，DTO类型还支持映射自定义属性
 
-```sh title="Author.dto"
-import java.util.LocaleDateTime ❶
-
-AuthorSpecification {
+```sh title="BookInput.dto"  
+BookInput {
     
     #allScalars(Author)? - id
 
-    minCreatedTime: LocaleDateTime?  ❷
-    maxCreatedTimeExclusive: LocaleDateTime?  ❸
+    #highlight-next-line
+    remark: String
 }
 ```
 
--   ❶ 导入类型，简化后续自定义属性的定义
+这里，BookInput具备一个自定义属性：`remark`。
 
--   ❷ ❸ 定义自定义属性的定义
+:::info
+自定义属性和映射属性的区别在于需要类型定义。
+:::
 
-    自定义属性采用类似于kotlin的语法，可以采用`?`明确定属性可为null，否则，不能为null。
+### 11.2 内置类型
 
-    -   对于Kotlin项目而言，生成与之完全对应的类型
-
-    -   对于Java项目而言，除了顶层类型的`?`会被用于在目标Java字段上生成`@org.jetbrains.annotations.Nullable`注解外，内部范型的`?`会被忽略
-
-    :::caution
-    这里的自定义的属性允许为null，如果要定义非null的属性 *(即去掉`?`)*，必须使用`input-only`/`inputOnly`修饰符
-    :::
-
-这里，`AuthorSpecification`并没有直接的Input/Output语言，被用作复杂动态查询的查询规格参数，例如
-
-<Tabs groupId="language">
-<TabItem value="java" label="Java">
-
-```java title="AuthorRepository.java"
-public interface AuthorRepository extends JRepository<Author, Long> {
-    
-    AuthorTable table = AuthorTable.$;
-
-    default List<Author> find(AuthorSpecification spec) {
-        return sql()
-            .createQuery(table)
-            .whereIf(
-                StringUtils.hasContent(spec.getFirstName()),
-                table.firstName().ilike(spec.getFirstName() != null)
-            )
-            .whereIf(
-                StringUtils.hasContent(spec.getLastName()),
-                table.lastName().ilike(spec.getLastName() != null)
-            )
-            .whereIf(
-                spec.getGender() != null,
-                table.gender().eq(sepc.getGender());
-            )
-            .whereIf(
-                spec.getMinCreatedTime() != null,
-                () -> table.createdTime().ge(spec.getMinCreatedTime())
-            )
-            .whereIf(
-                spec.getMaxCreatedTimeExclusive() != null,
-                () -> table.createdTime().lt(spec.getMaxCreatedTimeExclusive())
-            )
-            .select(table)
-            .execute()
-    }
-}
-```
-
-</TabItem>
-<TabItem value="kotlin" label="Kotlin">
-
-```kotlin title="AuthorRepository.kt"
-interface AuthorRepository : KRepository<Author, Long> {
-
-    fun find(spec: AuthorSpecification): List<Author> =
-        sql
-            .createQuery(Author::class) {
-                spec.firstName?.takeIf { it.isNotEmpty() }?.let {
-                    where(table.firstName ilike it)
-                }
-                spec.lastName?.takeIf { it.isNotEmpty() }?.let {
-                    where(table.lastName ilike it)
-                }
-                spec.gender?.let {
-                    where(table.gender eq it)
-                }
-                spec.minCreatedTime?.let {
-                    where(table.createdTime ge it)
-                }
-                spec.maxCreatedTimeExclusive?.let {
-                    where(table.createdTime lt it)
-                }
-                select(table)
-            }
-            .execute()
-}
-```
-
-</TabItem>
-</Tabs>
-
-对于其他非关联字段而言，查询条件是`eq`和`ilike`这样的单值查询条件，所以简单地使用`#allScalars`映射即可。
-
-然而，`createdTime`所对应的查询条件相对复杂，是一个区域查询，并不能简单地对映射实体中的`createdTime`属性，而是需要两个边界属性：`minCreatedTime`和`maxCreatedTimeExclusive`。
-
-由此可见，对于`AuthorSpecification`这种查询规格参数而言，自定义属性能带来极大的便利，能映射的属性就映射，不能映射的属性就自定义。
-
-因此，建议如下
-
--   Specificiation DTO：鼓励使用，自定义属性几乎就是为这种类型设计。
-
--   Input DTO: 可以少量使用，允许在Input DTO中混杂少量控制信息。
-
-    DTO对象的`toEntity`方法会忽略这些信息，把其他信息转化为一个干净的动态实体对象供[保存指令](../../mutation/save-command)使用
-
--   Output DTO: 不鼓励使用
-
-    -   首先，Output DTO本身不是必须的，让查询方法直接返回动态对象，并辅以[@FetchBy注解](../../spring/client/api#声明fetchby)，已经是足够强大的方案了。
-
-    -   其次，即便使用了Output DTO，Output DTO对象也只会拥有实体对象的属性，除非你愿意手动填充自定义属性。
-
-    :::tip
-    对于输出类型而言，自定义属性是实体层面的事 *(所以Output DTO不是必须的)*。
-    
-    请参见*[视图属性](../../mapping/advanced/view)、[简单计算属性](../../mapping/advanced/calculated/formula)、或[复杂计算属性](../../mapping/advanced/calculated/transient)
-    :::
-
-### 12.2 内置类型
+自定义属性的类型可以是内置类型。
 
 所谓内置类型，就是DTO语言内置类型，无需采用`import`导入。
 
@@ -1352,7 +1217,7 @@ interface AuthorRepository : KRepository<Author, Long> {
     |Map&lt;K, V&gt;|Map&lt;? extends K, ? extends V&gt;|Map&lt;K, V&gt;|
     |MutableMap&lt;K, V&gt;|Map&lt;K, V&gt;|Mutable&lt;K, V&gt;|
 
-### 12.3 范型参数修饰
+### 11.3 范型参数修饰
 
 除了内置类型中的范型类 *(数组和集合)* 型外，其他范型类都支持使用`in`或`out`修饰范型参数，例如
 
@@ -1362,7 +1227,7 @@ interface AuthorRepository : KRepository<Author, Long> {
 |UserType1&lt;out UserType2&gt;|UserType1&lt;? extends UserType2&gt;|UserType1&lt;out UserType2&gt;|
 |UserType1&lt;in UserType2&gt;|UserType1&lt;? super UserType2&gt;|UserType1&lt;in UserType2&gt;|
 
-### 12.4 导入语句
+### 11.4 导入语句
 
 除了内置类型外的其他类型外，其他类型在被引用时，要么书写全名，要么在文件开头使用import语句，否则，将会认为其同当前实体属于同一包。
 
@@ -1400,34 +1265,26 @@ DTO语言支持多种风格的import语句，例如
     }
     ```
 
-## 13. 注解
+## 12. 注解
 
-### 13.1 基本用法
+### 12.1 基本用法
 
 你可以在DTO语言中使用注解修饰DTO类型、映射属性和自定义属性
 
 ```sh title="Author.dto"
-import org.babyfish.jimmer.client.Doc
-import org.springframework.format.annotation.DateTimeFormat
+import org.babyfish.jimmer.client.Doc 
+import javax.validation.constraints.Size
 
-@Doc("Author对象复杂查询的查询规格") ❶
-AuthorSpecification {
+@Doc("BookInput without associations") ❶
+BookInput {
     
     #allScalars
 
-    @Doc("模糊匹配")  ❷
-    firstName
+    @Size(min = 4, max = 20) ❷
+    name
 
-    @Doc("模糊匹配")  ❸
-    lastName
-
-    @Doc("最小创建时间，闭") ❹
-    @DateTimeFormat(pattern = "yyyy-MM-dd") ❺
-    minCreatedTime: LocalDateTime?
-
-    @Doc("最小创建时间，开") ❻
-    @DateTimeFormat(pattern = "yyyy-MM-dd") ❼
-    maxCreatedTimeExclusive: LocalDateTime?
+    @Size(min = 10, max = 50) ❸
+    remark: String
 }
 ```
 
@@ -1435,9 +1292,9 @@ AuthorSpecification {
 
 -   ❶ 修饰类型
 
--   ❷ ❸ 修饰映射属性
+-   ❷ 修饰映射属性
 
--   ❹ ❺ ❻ ❼ 修饰自定义属性
+-   ❸ 修饰自定义属性
 
 :::tip
 有一个细节需要注意
@@ -1463,7 +1320,7 @@ BookView {
 -   `@B`修饰匿名的关联类型
 :::
 
-### 13.2 注解替换
+### 12.2 注解替换
 
 -   如前文所述，DTO语言支持注解，直接控制被生成的DTO类型的注解
 
@@ -1486,7 +1343,7 @@ BookView {
 
 和Java不同，无论注解有多少个参数，`value`参数都可以被缩写，只要保证被缩写的属性最先配置即可。
 
-### 13.4 混合Java和Kotlin的语法
+### 12.4 混合Java和Kotlin的语法
 
 Java和Kotlin的注解语法存在一些微弱的差异，DTO语言混合了二者的特征，例如
 

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: Mutation
+title: Modification
 ---
 
 In this section, we will introduce all the capabilities in Jimmer related to modifying the database. 

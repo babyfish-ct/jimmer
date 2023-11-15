@@ -133,3 +133,34 @@ The unique constraint defined by `@Key` is only for non-hidden data, not all dat
         // highlight-next-line
         where DELETED = false;
     ```
+
+## Dynamic Overrides 
+
+Confiugration specified by the annotation `@Key` is called static configuration.
+
+Sometimes, different businesses may have different requirements for `@Key`. Therefore, `@Key` configurations can be dynamically overridden at runtime.
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java 
+sqlClient
+    .getEntities()
+    .saveCommand(book)
+    // highlight-next-line
+    .setKeyProps(BookProps.NAME, BookProps.EDITION)
+    .execute();
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+sqlClient.save(book) {
+    // highlight-next-line
+    .setKeyProps(Book::name, Book::edition)
+}
+```
+
+</TabItem>
+</Tabs>

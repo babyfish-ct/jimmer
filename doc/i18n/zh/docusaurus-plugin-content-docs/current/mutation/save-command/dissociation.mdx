@@ -8,6 +8,7 @@ import TabItem from '@theme/TabItem';
 import { ShortAssociation } from '@site/src/components/ShortAssociation';
 import { LongAssociation } from '@site/src/components/LongAssociation';
 import { ViewMore } from '@site/src/components/ViewMore';
+import DissociateMode from '../../_shared/dissociate-mode.md';
 
 在保存关联对象时，会涉及一个重要的概念：脱勾操作。
 
@@ -217,7 +218,7 @@ sqlClient.update(
 
 ## 脱勾子表数据
 
-此操作针对直接给予外键的一对多关联。
+此操作针对直接给予外键的关联。
 
 `BOOK`表有一个指向`BOOK_STORE`表的外键字段`STORE_ID`，形成多对一关系。这个多对一关联被映射成了属性`Book.store`，反过来的一对多关联被映射成了属性`BookStore.books`。
 
@@ -225,16 +226,10 @@ sqlClient.update(
 
 ### 脱勾模式
 
-子对象脱勾操作有三种模式
-
--   NONE *(默认)*: 不支持脱勾操作，通过抛出异常阻止操作
-
--   SET_NULL: 把被脱勾的子对象的外键设置为null。前提是子对象的多对一关联属性是nullable的；否则尝试此配置将会导致异常
-
--   DELETE: 将被脱勾的子对象删除
+<DissociateMode/>
 
 :::info
-虽然子对象脱勾是由于一对多关联导致的 *(即，父对象遗弃某些子对象，本例的一对多关联为`BookStore.books`)*，但是脱勾模式的配置针对逆向的多对一关联 *(本例为`Book.store`)*，这样设计的目的是为了保持和数据库DDL外键的级联特性配置的相似性。
+虽然子对象脱勾是由于一对多关联 *(或逆向inverse一对一)* 导致的 *(即，父对象遗弃某些子对象，本例的一对多关联为`BookStore.books`)*，但是脱勾模式的配置针对逆向的多对一关联 *(本例为`Book.store`)*，这样设计的目的是为了保持和数据库DDL外键的级联特性配置的相似性。
 
 对于Jimmr而言，一对多关联一定是双向关联，知道某个一对多关联，一定知道与其互为镜像的多对一关联。所以，此设计没有任何问题。
 :::

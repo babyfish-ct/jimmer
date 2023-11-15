@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import kotlin.jvm.JvmClassMappingKt;
 import kotlin.reflect.KClass;
 import kotlin.reflect.KType;
@@ -210,6 +211,10 @@ class Context {
                 return type;
             }
             if (javaClass.isEnum()) {
+                SimpleType simpleType = jsonValueType(javaClass);
+                if (simpleType != null) {
+                    return simpleType;
+                }
                 EnumType enumType = enumTypeMap.get(javaClass);
                 if (enumType == null) {
                     enumType = new EnumTypeImpl(javaClass);
@@ -418,6 +423,10 @@ class Context {
                 return objectType(immutableType, fetchBy);
             }
             if (javaClass.isEnum()) {
+                SimpleType simpleType = jsonValueType(javaClass);
+                if (simpleType != null) {
+                    return simpleType;
+                }
                 EnumType enumType = enumTypeMap.get(javaClass);
                 if (enumType == null) {
                     enumType = new EnumTypeImpl(javaClass);
@@ -804,6 +813,25 @@ class Context {
             list.add(field);
         }
         return list;
+    }
+
+    private SimpleType jsonValueType(Class<?> enumType) {
+        for (Method method : enumType.getMethods()) {
+            if (method.isAnnotationPresent(JsonValue.class) &&
+            method.getParameterTypes().length == 0) {
+                Class<?> type = method.getReturnType();
+                SimpleType simpleType = SimpleTypeImpl.get(type);
+                if (simpleType == null) {
+                    throw new IllegalDocMetaException(
+                            "Illegal enum type, its method \"" +
+                                    method +
+                                    "\" is decorated by \"@JsonView\", but does not return simple type"
+                    );
+                }
+                return simpleType;
+            }
+        }
+        return null;
     }
 
     private static class UnifiedTypeParameter {

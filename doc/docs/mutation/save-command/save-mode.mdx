@@ -392,7 +392,7 @@ As long as the `id` of an entity serves no purpose other than being a unique ide
         ```kotlin
         sqlClient.save(book) {
             // highlight-next-line
-            .setDissociateAction(Book::name, Book::edition)
+            .setKeyProps(Book::name, Book::edition)
         }
         ```
 
