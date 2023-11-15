@@ -6,7 +6,7 @@ title: 超级QBE查询
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Super QBE是一个非常强大的功能，利用[DTO语言](../object/view/dto-language)自动生成复杂查询的参数类型，并实现查询逻辑。
+Super QBE是一个非常强大的功能，利用[DTO语言](../object/view/dto-language)生成复杂查询的参数类型，并自动实现查询逻辑。
 
 ## 创建文件
 
@@ -21,7 +21,7 @@ export com.yourcompany.yourproject.model.Book
     -> package com.yourcompany.yourproject.dto
 ```
 
-以上这些步骤，以及如何编译DTO文件，在[DTO语言#2. 创建文件](../object/view/dto-language#2-创建文件)中有详细的讨论，本文不做过多重复。
+以上这些步骤，以及如何编译DTO文件，在[DTO语言#2. 创建文件](../object/view/dto-language#2-创建文件)中有详细的讨论，本文不作重复性阐述。
 
 ## 定义Specification类型
 
@@ -75,15 +75,15 @@ data class BookSpecification(
 </TabItem>
 </Tabs>
 
-在后续的讨论中，我们会为DTO文件中的`BookSpecification`添加属性。
-
-相应地，对于自动生成的`BookSpecification`累而言，一方面属性会同步增加，另外一方面，`applyTo`方法中的代码也会变多。
-
 :::info
 `applyTo`是specification编译后生成的代码中的特有方法，按照当前对象的信息动态地为Jimmer查询添加where条件。
 
 此方法无需用户调用 *(被Jimmer内部行为调用)* ，用户也无需关心其内部代码实现。这里只需要知道此方法有什么用即可。
 :::
+
+在后续的讨论中，我们会陆续为DTO文件中的`BookSpecification`添加属性。
+
+相应地，对于自动生成的`BookSpecification`类而言，一方面属性会同步增加，另外一方面，`applyTo`方法中的代码也会变多。
 
 ### 用法
 
@@ -95,7 +95,7 @@ data class BookSpecification(
     ```java
     public List<Book> find(
         // highlight-next-line
-        JSpecification<?, BookTable> specification
+        JSpecification<?, BookTable> specification ❶
     ) {
         
         BookTable table = BookTable.$;
@@ -103,7 +103,7 @@ data class BookSpecification(
         return sqlClient
             .createQuery(table)
             // highlight-next-line
-            .where(specification)
+            .where(specification) ❷
             .select(table)
             .execute();
     }
@@ -115,11 +115,11 @@ data class BookSpecification(
     ```kotlin
     fun find(
         // highlight-next-line
-        specification: KSpecification<Book>
+        specification: KSpecification<Book> ❶
     ): List<Book> =
         sqlClient.createQuery(Book::class) {
             // highlight-next-line
-            where(specification)
+            where(specification) ❷
             select(table)
         }.execute()
     ```
@@ -127,11 +127,11 @@ data class BookSpecification(
     </TabItem>
     </Tabs>
 
-    -   无论`specification`格式简单还是复杂，只需一个简单的`where`语句就可以使用。
+    -   ❶ Java查询参数类型为`JSpecification<?, BookTable>`，Kolin查询参数为`KSpecification<Book>`。
 
-    -   Java查询参数类型为`JSpecification<?, BookTable>`，Kolin查询参数为`KSpecification<Book>`。
+        二者存在细微差异，但都继承于`org.babyfish.jimmer.Specification<Book>`类型。
 
-        二者存在细微差异，但都继承于`org.babyfish.jimmer.specification<Book>`类型。
+    -   ❷ 无论`specification`格式简单还是复杂，只需一个简单的`where`语句就可以使用。
 
 -   在Spring Data Repository中使用
 
@@ -148,7 +148,7 @@ data class BookSpecification(
 
         public List<Book> find(
             // highlight-next-line
-            JSpecification<?, BookTable> specification
+            Specification<Book> specification
         )
     }
     ```
@@ -161,13 +161,16 @@ data class BookSpecification(
 
         fun find(
             // highlight-next-line
-            specification: KSpecification<Book>
+            specification: Specification<Book>
         ): List<Book>
     }
     ```
 
     </TabItem>
     </Tabs>
+
+    在Spring Data Repository的抽象方法中声明specification参数时，无需区分`JSpecification`和`KSpecification`，
+    统一用`org.babyfish.jimmer.Specification`类型即可。
 
 ## 属性映射
 
@@ -182,7 +185,7 @@ specification BookSpecification {
 }
 ```
 
-这样，就将实体，属性映射到了DTO中，生成的代码为
+这样，就将实体属性映射到了DTO中，生成的代码为
 
 <Tabs groupId="language">
 <TabItem value="java" label="Java">
@@ -260,6 +263,8 @@ specification用作查询参数，为了支持动态查询，默认情况下，�
 
     由于`specification.name`为null，生成的SQL不会带任何`where`条件
     
+    生成的SQL如下
+
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK tb_1_
@@ -267,10 +272,10 @@ specification用作查询参数，为了支持动态查询，默认情况下，�
     ```
     
     :::info
-    这种不指定specification相关属性的查询，必然导致无条件查询。因此，这种例子，本文仅仅示范一次。
+    这种不指定specification相关属性的查询，必然导致查询没有任何条件。
+    
+    这种例子本文仅仅示范一次。
     :::
-
-    生成的SQL如下
 
 -   让BookSpecifiation的`name`字段不为null
 
@@ -298,20 +303,22 @@ specification用作查询参数，为了支持动态查询，默认情况下，�
     </TabItem>
     </Tabs>
 
+    生成的SQL如下
+
     ```sql
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK tb_1_
     /* highlight-next-line */
-    where tb_1_.NAME = ?
+    where tb_1_.NAME = ? /* GraphQL in Action */
     ```
 
 ## QBE函数
 
 ### 初识QBE函数
 
-上面的代码中，当制定了`specification.name`后，生成的`where`条件是等于。
+上面的代码中，当指定了`specification.name`后，生成的`where`条件是等于。
 
-等于不一定是我们需要的，我可以为映射属性施加QBE函数，改变运算符号，以`like`为例
+等于不一定是我们需要的，可以为映射属性施加QBE函数，改变运算符，以`like`为例
 
 ```sh
 ...省略export语句...
@@ -350,13 +357,13 @@ val books = bookRepository.find(specification)
 </TabItem>
 </Tabs>
 
-执行SQL如下
+生成的SQL如下
 
 ```sql
 select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
 from BOOK tb_1_
 /* highlight-next-line */
-where tb_1_.NAME like ?
+where tb_1_.NAME like ? /* %GraphQL% */
 ```
 
 ### like函数的选项
@@ -369,7 +376,7 @@ where tb_1_.NAME like ?
 
 -   $: 精确匹配结尾 *(Jimmer不会自动在参数值后面加`%`)*
 
-如果需要选项，可以在`like`后面加`/`，再加上需要的选项，比如：`like/i`、`like/^`、`like/$`、`like/i^`、`like/i$`和`like/i^$`。
+如果需要选项，可以在`like`后面加`/`，再加上需要的选项。比如：`like/i`、`like/^`、`like/$`、`like/i^`、`like/i$`和`like/i^$`。
 
 :::caution
 虽然`i`、`^`和`$`都是可选的，但是彼此先后顺序是固定的。
@@ -394,7 +401,7 @@ specification BookSpecification {
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK tb_1_
     /* highlight-next-line */
-    where lower(tb_1_.NAME) like ?
+    where lower(tb_1_.NAME) like ? /* %graphql% */
     ```
 
 -   支持`ilike`的数据库
@@ -403,12 +410,12 @@ specification BookSpecification {
     select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
     from BOOK tb_1_
     /* highlight-next-line */
-    where tb_1_.NAME ilike ?
+    where tb_1_.NAME ilike ? /* %graphql% */
     ```
 
 ### 所有QBE函数
 
-事实上，除了`like`外，speciation支持大量的QBE函数，几乎涵盖了所有常见的SQL判断，如下表
+事实上，除了`like`外，speciation支持大量的QBE函数，涵盖了常见的SQL判断，如下表
 
 |QBE函数|原实体属性类型 *(或要求)*|生成的DTO类属性的类型|备注|
 |---|---|---|---|
@@ -437,20 +444,18 @@ specification BookSpecification {
 ...省略export语句...
 
 specification BookSpecification {
-    #highlight-next-line
     like/i(name)
     ge(price)
     le(price)
 }
 ```
 
-`ge(price)`会指定默认的alias`minPrice`，`le(price)`会指定默认的alias`maxPrice`，因此，上述代码也可以写为
+`ge(price)`会指定默认的别名`minPrice`，`le(price)`会指定默认的别名`maxPrice`，因此，上述代码也可以写为
 
 ```sh
 ...省略export语句...
 
 specification BookSpecification {
-    #highlight-next-line
     like/i(name)
     ge(price) as minPrice
     le(price) as maxPrice
@@ -459,7 +464,7 @@ specification BookSpecification {
 
 由此可见，某些QBE函数自带默认alias的功能。
 
-假设原属性名称为`Prop`，所有QBE函数的默认alias行为如下
+**假设原属性名称为`Prop`**，所有QBE函数的默认alias行为如下
 
 |QBE函数|默认alias|
 |---|---|
@@ -473,7 +478,330 @@ specification BookSpecification {
 |notLike|不支持，不指定alias会导致编译错|
 |valueIn|不支持，不指定alias会导致编译错|
 |valueNotIn|不支持，不指定alias会导致编译错|
-|associatedIdEq或id|如果关联非集合，`propId`；否则，编译报错|
-|associatedIdNe|如果关联非集合，`excludedPropId`；否则，编译报错|
-|associatedIdIn|如果关联非集合，`propIds`；否则，编译报错|
-|associatedIdNotNull|如果关联非集合，`excludedPropIds`；否则，编译报错|
+|associatedIdEq或id|如果关联是引用 *(非集合)*，`propId`；否则，编译报错|
+|associatedIdNe|如果关联是引用 *(非集合)*，`excludedPropId`；否则，编译报错|
+|associatedIdIn|如果关联是引用 *(非集合)*，`propIds`；否则，编译报错|
+|associatedIdNotNull|如果关联是引用 *(非集合)*，`excludedPropIds`；否则，编译报错|
+
+编译后生成的代码为
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookSpecification.java"
+public class BookSpecification implements JSpecification<Book, BookTable> {
+
+    @Nullable
+    private String name;
+
+    @Nullable
+    private BigDecimal minPrice;
+
+    @Nullable
+    private BigDecimal maxPrice;
+
+    ...省略getters和setters...
+
+    @Override
+    public void applyTo(SpecificationArgs<Book, BookTable> args) {
+        ...略...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookSpecification.kt"
+package com.yourcompany.yourproject.dto;
+
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
+...省略其他import语句...
+
+data class BookSpecification(
+    val name: String? = null,
+    val minPrice: BigDecimal? = null,
+    val maxPrice: BigDecimal? = null
+) : KSpecification<Book> {
+
+    override fun applyTo(args: KSpecificationArgs<Book>) {
+        ...略...
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+执行
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookSpecification specification = new BookSpecification();
+specification.setName("GraphQL");
+specification.setMinPrice(new BigDecimal(40));
+specification.setMaxPrice(new BigDecimal(40));
+List<Book> books = bookRepository.find(specification);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val specification = BookSpecification(
+    name = "GraphQL",
+    minPrice = BigDecimal(40),
+    maxPrice = BigDecimal(60)
+)
+val books = bookRepository.find(specification)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+from BOOK tb_1_
+where
+        lower(tb_1_.NAME) like ? /* %graphql% */
+    and
+        tb_1_.PRICE >= ? /* 40 */
+    and
+        tb_1_.PRICE <= ? /* 60 */
+order by
+    tb_1_.NAME asc,
+    tb_1_.EDITION desc
+```
+
+## 关联对象
+
+之前例子，所有过滤规则都是针对当前表字段的。现在，让我们对关联对象进行过滤。修改DTO文件如下
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    like/i(name)
+    ge(price)
+    le(price)
+    #highlight-next-line
+    flat(store) { ❶ 
+        like/i(name) as storeName
+    }
+    #highlight-next-line
+    flat(authors) { ❷ 
+        like/i(firstName) as authorName
+    }
+}
+```
+
+我们发现，上面的代码使用了`flat`函数。flat函数在[DTO语言#10.4-flat函数](../object/view/dto-language#104-flat函数)中有详细讨论，本文不作重复性阐述。
+
+:::info
+由于`specification`作为复杂查询的参数，很有可能HTTP GET参数。采用`flat`函数消除关联，生成平坦的DTO对象，更有利于基于Spring MVC开发HTTP GET API。
+:::
+
+-   ❶ `Book.store`是引用关联
+
+-   ❷ `Book.authors`是集合关联
+
+编译后生成的代码为
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookSpecification.java"
+public class BookSpecification implements JSpecification<Book, BookTable> {
+
+    @Nullable
+    private String name;
+
+    @Nullable
+    private BigDecimal minPrice;
+
+    @Nullable
+    private BigDecimal maxPrice;
+
+    @Nullable
+    private String storeName;
+
+    @Nullable
+    private String authorName;
+
+    ...省略getters和setters...
+
+    @Override
+    public void applyTo(SpecificationArgs<Book, BookTable> args) {
+        ...略...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookSpecification.kt"
+package com.yourcompany.yourproject.dto;
+
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
+...省略其他import语句...
+
+data class BookSpecification(
+    val name: String? = null,
+    val minPrice: BigDecimal? = null,
+    val maxPrice: BigDecimal? = null,
+    val storeName: String? = null,
+    val authorName: String? = null
+) : KSpecification<Book> {
+
+    override fun applyTo(args: KSpecificationArgs<Book>) {
+        ...略...
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+执行
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookSpecification specification = new BookSpecification();
+specification.setStoreName("MANNING");
+specification.setAuthorName("a");
+List<Book> books = bookRepository.find(specification);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val specification = BookSpecification(
+    storeName = "MANNING",
+    authorName = "a"
+)
+val books = bookRepository.find(specification)
+```
+
+</TabItem>
+</Tabs>
+
+生成的SQL如下
+
+```sql
+select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+from BOOK tb_1_
+/* highlight-next-line */
+inner join BOOK_STORE tb_2_ /* ❶ */
+    on tb_1_.STORE_ID = tb_2_.ID
+where
+        tb_2_.NAME ilike ? /* %manning% */
+    and
+        /* highlight-next-line */
+        exists( /* ❷ */
+            select
+                1
+            from AUTHOR tb_3_
+            inner join BOOK_AUTHOR_MAPPING tb_4_
+                on tb_3_.ID = tb_4_.AUTHOR_ID
+            where
+                    tb_1_.ID = tb_4_.BOOK_ID
+                and
+                    tb_3_.FIRST_NAME ilike ? /* %a% */
+                    
+        )
+```
+
+-   ❶ `Book.store`是引用关联，不会破坏[分页安全性](./dynamic-join/table-ex)。
+
+    因此，仅使用[动态JOIN](./dynamic-join/)即可应用DTO对象`storeName`属性所表示的过滤条件。
+
+-   ❷ `Book.authors`是集合关联，会破坏[分页安全性](./dynamic-join/table-ex)。
+
+    因此，不能使用[动态JOIN](./dynamic-join/)，必须使用[子查询](./sub-query)才能应用DTO对象`authorName`属性所表示的过滤条件。
+
+## 逻辑或
+
+之前的例子中，Jimmer会按照DTO对象的每个属性来生成若干个`where`条件，这些条件之间的关系是逻辑与，但能否支持逻辑或呢？
+
+另外，实体类型`Author`除了`firstName`属性外还有`lastName`，上一个例子中的`authorName`只映射了`firstName`显得不太合理，有没有更好的办法？
+
+以上两个问题是同一个问题。为解决这个问题，Super QBE支持逻辑或，也称呼多属性映射。
+
+修改DTO代码，如下
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    like/i(name)
+    ge(price)
+    le(price)
+    flat(store) {
+        like/i(name) as storeName
+    }
+    flat(authors) {
+        // highlight-next-line
+        like/i(firstName, lastName) as authorName
+    }
+}
+```
+
+这里，DTO属性`authorName`映射了两个属性，`firstName`和`lastName`，这就叫做多属性映射。
+
+-   多属性映射只能在`specification`中使用，无法在[DTO语言](../object/view/dto-language)所描述的其他类型中使用。
+
+-   被QBE函数映射的多个属性的类型必须完全一致 *(但可空性允许不同)*。例如，这里的`firstName`和`lastName`都是`String`类型`。
+
+-   多属性映射的DTO属性必须通过`as`指定别名，否则会导致编译错。
+
+-   并非所有QBE函数都支持多属性映射，支持多属性映射的QBE函数如下：
+
+    -   eq
+    -   ne
+    -   null
+    -   notNull
+    -   valueIn
+    -   associatedIdEq
+    -   associatedIdIn
+
+    盲目地让所有QBE函数都支持多属性映射会带来理解歧义。所以，才会有此限制。
+
+重复执行上个例子中的查询，生成的SQL如下
+
+```sql
+select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+from BOOK tb_1_
+inner join BOOK_STORE tb_2_
+    on tb_1_.STORE_ID = tb_2_.ID
+where
+        tb_2_.NAME ilike ? /* %manning% */
+    and
+        exists(
+            select
+                1
+            from AUTHOR tb_3_
+            inner join BOOK_AUTHOR_MAPPING tb_4_
+                on tb_3_.ID = tb_4_.AUTHOR_ID
+            where
+                    tb_1_.ID = tb_4_.BOOK_ID
+                and
+                    (
+                        tb_3_.FIRST_NAME ilike ? /* %a% */
+                    /* highlight-next-line */
+                    or
+                        tb_3_.LAST_NAME ilike ? /* %a% */
+                    )
+        )
+```
+
+不难发现，多属性映射就是逻辑或。
