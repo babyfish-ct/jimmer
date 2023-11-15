@@ -3,4 +3,474 @@ sidebar_position: 14
 title: 超级QBE查询
 ---
 
-TODO
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Super QBE是一个非常强大的功能，利用[DTO语言](../object/view/dto-language)自动生成复杂查询的参数类型，并实现查询逻辑。
+
+## 创建文件
+
+在任何可以访问实体类型的项目中，创建`src/main/dto`目录，在这个目录下创建文件`Book.dto`。
+
+对于Java项目而言，如果当前项目并非定义实体类型的项目，需要在为当前项目中任何一个类添加`@EnableDtoGeneration`注解。
+
+在文件头部添加如下代码
+
+```sh
+export com.yourcompany.yourproject.model.Book
+    -> package com.yourcompany.yourproject.dto
+```
+
+以上这些步骤，以及如何编译DTO文件，在[DTO语言#2. 创建文件](../object/view/dto-language#2-创建文件)中有详细的讨论，本文不做过多重复。
+
+## 定义Specification类型
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+
+}
+```
+
+### 编译后的代码
+
+编译后，将会生成这样的Java/Kotlin代码
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookSpecification.java"
+package com.yourcompany.yourproject.dto;
+
+import org.babyfish.jimmer.sql.ast.query.specification.JSpecification;
+import org.babyfish.jimmer.sql.ast.query.specification.SpecificationArgs;
+...省略其他import语句...
+
+public class BookSpecification implements JSpecification<Book, BookTable> {
+
+    @Override
+    public void applyTo(SpecificationArgs<Book, BookTable> args) {}
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookSpecification.kt"
+package com.yourcompany.yourproject.dto;
+
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
+...省略其他import语句...
+
+data class BookSpecification(
+    // 现在data class暂时没有字段，会导致编译错误
+) : KSpecification<Book> {
+
+    override fun applyTo(args: KSpecificationArgs<Book>) {}
+}
+```
+
+</TabItem>
+</Tabs>
+
+在后续的讨论中，我们会为DTO文件中的`BookSpecification`添加属性。
+
+相应地，对于自动生成的`BookSpecification`累而言，一方面属性会同步增加，另外一方面，`applyTo`方法中的代码也会变多。
+
+:::info
+`applyTo`是specification编译后生成的代码中的特有方法，按照当前对象的信息动态地为Jimmer查询添加where条件。
+
+此方法无需用户调用 *(被Jimmer内部行为调用)* ，用户也无需关心其内部代码实现。这里只需要知道此方法有什么用即可。
+:::
+
+### 用法
+
+-   在查询中使用
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    public List<Book> find(
+        // highlight-next-line
+        JSpecification<?, BookTable> specification
+    ) {
+        
+        BookTable table = BookTable.$;
+        
+        return sqlClient
+            .createQuery(table)
+            // highlight-next-line
+            .where(specification)
+            .select(table)
+            .execute();
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    fun find(
+        // highlight-next-line
+        specification: KSpecification<Book>
+    ): List<Book> =
+        sqlClient.createQuery(Book::class) {
+            // highlight-next-line
+            where(specification)
+            select(table)
+        }.execute()
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    -   无论`specification`格式简单还是复杂，只需一个简单的`where`语句就可以使用。
+
+    -   Java查询参数类型为`JSpecification<?, BookTable>`，Kolin查询参数为`KSpecification<Book>`。
+
+        二者存在细微差异，但都继承于`org.babyfish.jimmer.specification<Book>`类型。
+
+-   在Spring Data Repository中使用
+
+    Jimmer整合了Spring Data，所以能定义Spring Data Repository，请参考[SpringData风格](../spring/repository)以了解更多。
+
+    Jimmer的Spring Data Repository有两种查询风格，抽象方法和default方法。default方法使用specification的代码和上面雷同，
+    所以，我们看看抽象查询方法使用specifiation的例子
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    public interface BookRepository : JRepository<Book, Long> {
+
+        public List<Book> find(
+            // highlight-next-line
+            JSpecification<?, BookTable> specification
+        )
+    }
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    interface BookRepository : KRepository<Book, Long> {
+
+        fun find(
+            // highlight-next-line
+            specification: KSpecification<Book>
+        ): List<Book>
+    }
+    ```
+
+    </TabItem>
+    </Tabs>
+
+## 属性映射
+
+### 映射属性
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    #highlight-next-line
+    name
+}
+```
+
+这样，就将实体，属性映射到了DTO中，生成的代码为
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java title="BookSpecification.java"
+public class BookSpecification implements JSpecification<Book, BookTable> {
+
+    @Nullable
+    // highlight-next-line
+    private String name;
+
+    ...省略getters和setters...
+
+    @Override
+    public void applyTo(SpecificationArgs<Book, BookTable> args) {
+        ...略...
+    }
+}
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin title="BookSpecification.kt"
+package com.yourcompany.yourproject.dto;
+
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecification
+import org.babyfish.jimmer.sql.kt.ast.query.specification.KSpecificationArgs
+...省略其他import语句...
+
+data class BookSpecification(
+    // highlight-next-line
+    val name: String? = null
+) : KSpecification<Book> {
+
+    override fun applyTo(args: KSpecificationArgs<Book>) {
+        ...略...
+    }
+}
+```
+
+</TabItem>
+</Tabs>
+
+### 可空性
+
+我们发现，在生成的代码中`name`字段时可以为null的，这是specification的特殊性所在。
+
+:::tip
+specification用作查询参数，为了支持动态查询，默认情况下，所有属性都是可以为null的。除非显式地使用`!`规定属性不能为null*(请参见[DTO语言#7. 可空性](dto-language#7-可空性))*。
+:::
+
+### 用法
+
+-   让BookSpecifiation的`name`字段为null
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookSpecification specification = new BookSpecification();
+    List<Book> books = bookRepository.find(specification);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val specification = BookSpecification()
+    val books = bookRepository.find(specification)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    由于`specification.name`为null，生成的SQL不会带任何`where`条件
+    
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+    from BOOK tb_1_
+    where tb_1_.NAME = ?
+    ```
+    
+    :::info
+    这种不指定specification相关属性的查询，必然导致无条件查询。因此，这种例子，本文仅仅示范一次。
+    :::
+
+    生成的SQL如下
+
+-   让BookSpecifiation的`name`字段不为null
+
+    <Tabs groupId="language">
+    <TabItem value="java" label="Java">
+
+    ```java
+    BookSpecification specification = new BookSpecification();
+    // highlight-next-line
+    specification.setName("GraphQL in Action");
+    List<Book> books = bookRepository.find(specification);
+    ```
+
+    </TabItem>
+    <TabItem value="kotlin" label="Kotlin">
+
+    ```kotlin
+    val specification = BookSpecification(
+        // highlight-next-line
+        name = "GraphQL in Action"
+    )
+    val books = bookRepository.find(specification)
+    ```
+
+    </TabItem>
+    </Tabs>
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+    from BOOK tb_1_
+    /* highlight-next-line */
+    where tb_1_.NAME = ?
+    ```
+
+## QBE函数
+
+### 初识QBE函数
+
+上面的代码中，当制定了`specification.name`后，生成的`where`条件是等于。
+
+等于不一定是我们需要的，我可以为映射属性施加QBE函数，改变运算符号，以`like`为例
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    #highlight-next-line
+    like(name)
+}
+```
+
+like函数不会影响生成的`BookSpecification`类的属性，但是会影响其`applyTo`方法，该方法的内部实现是`where`条件的添加逻辑，无需用户关心。
+
+执行
+
+<Tabs groupId="language">
+<TabItem value="java" label="Java">
+
+```java
+BookSpecification specification = new BookSpecification();
+// highlight-next-line
+specification.setName("GraphQL");
+List<Book> books = bookRepository.find(specification);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val specification = BookSpecification(
+    // highlight-next-line
+    name = "GraphQL"
+)
+val books = bookRepository.find(specification)
+```
+
+</TabItem>
+</Tabs>
+
+执行SQL如下
+
+```sql
+select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+from BOOK tb_1_
+/* highlight-next-line */
+where tb_1_.NAME like ?
+```
+
+### like函数的选项
+
+`like`是所有QBE函数中比较特殊的一个，支持3个选项
+
+-   i: 大小写不敏感
+
+-   ^: 精确匹配开头 *(Jimmer不会自动在参数值前面加`%`)*
+
+-   $: 精确匹配结尾 *(Jimmer不会自动在参数值后面加`%`)*
+
+如果需要选项，可以在`like`后面加`/`，再加上需要的选项，比如：`like/i`、`like/^`、`like/$`、`like/i^`、`like/i$`和`like/i^$`。
+
+:::caution
+虽然`i`、`^`和`$`都是可选的，但是彼此先后顺序是固定的。
+:::
+
+让我们来试试大小写不敏感的`like`，修改DTO代码如下
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    #highlight-next-line
+    like/i(name)
+}
+```
+
+再次执行上面的代码，执行如下SQL
+
+-   不支持`ilike`的数据库
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+    from BOOK tb_1_
+    /* highlight-next-line */
+    where lower(tb_1_.NAME) like ?
+    ```
+
+-   支持`ilike`的数据库
+
+    ```sql
+    select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID
+    from BOOK tb_1_
+    /* highlight-next-line */
+    where tb_1_.NAME ilike ?
+    ```
+
+### 所有QBE函数
+
+事实上，除了`like`外，speciation支持大量的QBE函数，几乎涵盖了所有常见的SQL判断，如下表
+
+|QBE函数|原实体属性类型 *(或要求)*|生成的DTO类属性的类型|备注|
+|---|---|---|---|
+|eq|任何非关联属性|原类型|等于，和不使用任何QBE函数等价|
+|ne|任何非关联属性|原类型|不等于|
+|gt|任何非关联属性|原类型|大于|
+|ge|任何非关联属性|原类型|大于或等于|
+|lt|任何非关联属性|原类型|小于|
+|le|任何非关联属性|原类型|小于或等于|
+|like|String|String|模糊匹配|
+|notLike|String|String|模糊不匹配|
+|null|任何属性|boolean|如果DTO属性为true，is null判断|
+|notNull|任何属性|boolean|如果DTO属性为true，is not null判断|
+|valueIn|任何非关联属性|List<原类型>|in(...)|
+|valueNotIn|任何非关联属性|List<原类型>|not in(...)|
+|associatedIdEq|任何关联属性|关联实体的id属性的类型|关联id = ?。注意，和`id`*(DTO语言固有函数)* 等价|
+|associatedIdNe|任何关联属性|关联实体的id属性的类型|关联id &lt;&gt; ?|
+|associatedIdIn|任何关联属性|List<关联实体的id属性的类型>|关联id in(...)|
+|associatedIdNotIn|任何关联属性|List<关联实体的id属性的类型>|关联id not in(...)|
+
+### 综合示范
+
+修改DTO代码
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    #highlight-next-line
+    like/i(name)
+    ge(price)
+    le(price)
+}
+```
+
+`ge(price)`会指定默认的alias`minPrice`，`le(price)`会指定默认的alias`maxPrice`，因此，上述代码也可以写为
+
+```sh
+...省略export语句...
+
+specification BookSpecification {
+    #highlight-next-line
+    like/i(name)
+    ge(price) as minPrice
+    le(price) as maxPrice
+}
+```
+
+由此可见，某些QBE函数自带默认alias的功能。
+
+假设原属性名称为，所有QBE函数的默认alias行为如下
+
+|QBE函数|默认alias|
+|---|---|
+|eq *(或不指定QBE函数)* |`value`|
+|ne|不支持，不指定alias会导致编译错|
+|gt|`minValueExclusive`|
+|ge|`minValue`|
+|lt|`maxValueExclusive`|
+|le|`maxValue`|
+|like|`value`|
+|notLike|不支持，不指定alias会导致编译错|
+|valueIn|不支持，不指定alias会导致编译错|
+|valueNotIn|不支持，不指定alias会导致编译错|
+|notLike|不支持，不指定alias会导致编译错|

@@ -291,6 +291,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             } else {
                 switch (funcName) {
                     case "id":
+                    case "associatedIdEq":
                         if (baseProp.isAssociation(true) && baseProp.isList()) {
                             throw ctx.exception(
                                     prop.props.get(0).getLine(),
@@ -304,6 +305,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         alias = null;
                         break;
                     case "ne":
+                    case "notLike":
                     case "valueIn":
                     case "valueNotIn":
                         throw ctx.exception(
@@ -341,6 +343,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                             alias = Character.toUpperCase(alias.charAt(0)) + alias.substring(1);
                         }
                         alias = "is" + alias + "NotNull";
+                        break;
+                    case "associatedIdNe":
+                        if (baseProp.isAssociation(true) && baseProp.isList()) {
+                            throw ctx.exception(
+                                    prop.props.get(0).getLine(),
+                                    "The alias must be specified for `associatedIdIn` function when base property is list"
+                            );
+                        }
+                        alias = "excluded" + Character.toUpperCase(baseProp.getName().charAt(0)) + baseProp.getName().substring(1) + "Id";
                         break;
                     case "associatedIdIn":
                         if (baseProp.isAssociation(true) && baseProp.isList()) {
