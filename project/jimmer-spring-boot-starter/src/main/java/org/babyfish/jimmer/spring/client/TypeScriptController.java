@@ -4,10 +4,10 @@ import org.babyfish.jimmer.client.generator.ts.TypeScriptGenerator;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @Controller
@@ -39,6 +39,6 @@ public class TypeScriptController {
                     properties.getClient().getTs().isMutable()
             ).generate(metadata, out);
         };
-        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+        return ResponseEntity.ok().headers(headers).body(body);
     }
 }
