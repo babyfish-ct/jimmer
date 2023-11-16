@@ -5,7 +5,6 @@ import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,6 +46,6 @@ public class JavaFeignController {
                             javaFeign.getBasePackage()
             ).generate(metadata, out);
         };
-        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+        return ResponseEntity.ok().headers(headers).body(body);
     }
 }
