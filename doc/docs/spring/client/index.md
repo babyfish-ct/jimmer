@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: Generate Client Code
+title: 🔥 Generate Client Code
 ---
 
 In this series of articles, we will introduce generating client code. 

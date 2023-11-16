@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Object Fetcher
+title: 🔥 Object Fetcher
 ---
 
 import Tabs from '@theme/Tabs';

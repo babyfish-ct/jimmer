@@ -35,6 +35,7 @@ Jimmer有很多配置，其中 **一部分** 可以在Spring Boot的`application
 |jimmer.client.ts.api-name|string|Api|被自动生成的TypeScript代码的API名称|
 |jimmer.client.ts.indent|int|4|被自动生成的TypeScript代码的缩进量|
 |jimmer.client.ts.anonymous|boolean|false|被自动生成的TypeScript代码是否采用匿名类型风格避免为DTO类型命名|
+|jimmer.client.ts.mutable|boolean|false|默认情况下，Jimmer生成的Typescript是为React生态服务的，因此TS类型声明中有大量的`readonly`修饰。如果不期望这种行为，请将此配置设置为true|
 |jimmer.client.java-feign.path|string||被自动生成的Spring Cloud Feign Java代码的下载路径，比如"/java-feign.zip"|
 |jimmer.client.java-feign.api-name|string|Api|被自动生成的Spring Cloud Feign Java代码的API名称|
 |jimmer.client.java-feign.indent|int|4|被自动生成的Spring Cloud Feign Java代码的缩进量|
