@@ -1,5 +1,6 @@
 package org.babyfish.jimmer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.babyfish.jimmer.model.Complex;
 import org.babyfish.jimmer.model.ComplexDraft;
 import org.junit.jupiter.api.Assertions;
@@ -8,7 +9,7 @@ import org.junit.jupiter.api.Test;
 public class ComplexTest {
 
     @Test
-    public void test() {
+    public void test() throws JsonProcessingException {
         Complex a = ComplexDraft.$.produce(c -> {
             c.setReal(5);
             c.setImage(7);
@@ -18,12 +19,16 @@ public class ComplexTest {
            c.setImage(c.getImage() - 1);
         });
         Assertions.assertEquals(
-                "{\"real\":5.0,\"image\":7.0}",
+                "{\"real\":\"5.0\",\"image\":\"7.0\"}",
                 a.toString()
         );
         Assertions.assertEquals(
-                "{\"real\":4.0,\"image\":6.0}",
+                "{\"real\":\"4.0\",\"image\":\"6.0\"}",
                 b.toString()
+        );
+        Assertions.assertEquals(
+                b,
+                ImmutableObjects.fromString(Complex.class, "{\"real\":\"4.0\",\"image\":\"6.0\"}")
         );
     }
 }

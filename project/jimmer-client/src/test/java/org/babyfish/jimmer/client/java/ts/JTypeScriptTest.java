@@ -643,7 +643,7 @@ public class JTypeScriptTest {
                         "    \n" +
                         "    async findBook(options: {readonly id: number}): Promise<\n" +
                         "        {\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -669,7 +669,7 @@ public class JTypeScriptTest {
                         "        let _uri = '/java/book/';\n" +
                         "        _uri += encodeURIComponent(options.id);\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as {\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -716,7 +716,7 @@ public class JTypeScriptTest {
                         "        readonly maxPrice?: number\n" +
                         "    }): Promise<\n" +
                         "        ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -778,7 +778,7 @@ public class JTypeScriptTest {
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -804,7 +804,7 @@ public class JTypeScriptTest {
                         "    \n" +
                         "    async findComplexBooksByArguments(options: {readonly arguments: FindBookArguments}): Promise<\n" +
                         "        ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -866,7 +866,7 @@ public class JTypeScriptTest {
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -892,16 +892,16 @@ public class JTypeScriptTest {
                         "    \n" +
                         "    async findSimpleBooks(): Promise<\n" +
                         "        ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
-                        "            readonly storeId?: number\n" +
+                        "            readonly storeId?: string\n" +
                         "        }>\n" +
                         "    > {\n" +
                         "        let _uri = '/java/books/simple';\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
-                        "            readonly storeId?: number\n" +
+                        "            readonly storeId?: string\n" +
                         "        }>\n" +
                         "    }\n" +
                         "    \n" +
@@ -919,7 +919,7 @@ public class JTypeScriptTest {
                         "        readonly pageSize: number\n" +
                         "    }): Promise<\n" +
                         "        Page<Tuple2<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -950,7 +950,7 @@ public class JTypeScriptTest {
                         "             * All the books i have written\n" +
                         "             */\n" +
                         "            readonly books: ReadonlyArray<{\n" +
-                        "                readonly id: number, \n" +
+                        "                readonly id: string, \n" +
                         "                readonly name: string, \n" +
                         "                \n" +
                         "                /**\n" +
@@ -988,7 +988,7 @@ public class JTypeScriptTest {
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Page<Tuple2<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -1019,7 +1019,7 @@ public class JTypeScriptTest {
                         "             * All the books i have written\n" +
                         "             */\n" +
                         "            readonly books: ReadonlyArray<{\n" +
-                        "                readonly id: number, \n" +
+                        "                readonly id: string, \n" +
                         "                readonly name: string, \n" +
                         "                \n" +
                         "                /**\n" +
@@ -1133,7 +1133,7 @@ public class JTypeScriptTest {
                         "\n" +
                         "export interface Book {\n" +
                         "    \n" +
-                        "    readonly id: number;\n" +
+                        "    readonly id: string;\n" +
                         "    \n" +
                         "    readonly name: string;\n" +
                         "    \n" +
@@ -1151,9 +1151,9 @@ public class JTypeScriptTest {
                         "     */\n" +
                         "    readonly authors: ReadonlyArray<Author>;\n" +
                         "    \n" +
-                        "    readonly storeId?: number;\n" +
+                        "    readonly storeId?: string;\n" +
                         "    \n" +
-                        "    readonly authorIds: ReadonlyArray<number>;\n" +
+                        "    readonly authorIds: ReadonlyArray<string>;\n" +
                         "}\n",
                 code
         );
@@ -1198,12 +1198,12 @@ public class JTypeScriptTest {
         Assertions.assertEquals(
                 "export type BookDto = {\n" +
                         "    'BookService/SIMPLE_FETCHER': {\n" +
-                        "        readonly id: number, \n" +
+                        "        readonly id: string, \n" +
                         "        readonly name: string, \n" +
-                        "        readonly storeId?: number\n" +
+                        "        readonly storeId?: string\n" +
                         "    }, \n" +
                         "    'BookService/COMPLEX_FETCHER': {\n" +
-                        "        readonly id: number, \n" +
+                        "        readonly id: string, \n" +
                         "        readonly name: string, \n" +
                         "        readonly edition: number, \n" +
                         "        readonly price: number, \n" +
@@ -1242,7 +1242,7 @@ public class JTypeScriptTest {
                         "        readonly firstName: string, \n" +
                         "        readonly lastName: string, \n" +
                         "        readonly books: ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            readonly edition: number, \n" +
                         "            readonly price: number, \n" +
@@ -1262,7 +1262,7 @@ public class JTypeScriptTest {
                         "        readonly lastName: string, \n" +
                         "        readonly gender: Gender, \n" +
                         "        readonly books: ReadonlyArray<{\n" +
-                        "            readonly id: number, \n" +
+                        "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
                         "            \n" +
                         "            /**\n" +

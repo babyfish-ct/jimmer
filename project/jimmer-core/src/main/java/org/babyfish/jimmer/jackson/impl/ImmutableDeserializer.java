@@ -1,10 +1,12 @@
-package org.babyfish.jimmer.jackson;
+package org.babyfish.jimmer.jackson.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.meta.BeanProps;
+import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.runtime.DraftSpi;
@@ -58,8 +60,9 @@ public class ImmutableDeserializer extends StdDeserializer<Object> {
                                 node.get(nodeName),
                                 BeanProps.get(ctx.getTypeFactory(), prop)
                         );
-                        if (value != null && prop.getConverter() != null) {
-                            value = ((Converter<Object>) prop.getConverter()).input(value);
+                        ConverterMetadata metadata = prop.getConverterMetadata();
+                        if (value != null && metadata != null) {
+                            value = ((Converter<Object, Object>) metadata.getConverter()).input(value);
                         }
                         ((DraftSpi) draft).__set(prop.getId(), value);
                         ((DraftSpi) draft).__show(prop.getId(), true);

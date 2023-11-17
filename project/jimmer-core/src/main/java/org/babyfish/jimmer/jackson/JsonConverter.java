@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 @kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
 public @interface JsonConverter {
 
-    Class<? extends Converter<?>> value();
+    Class<? extends Converter<?, ?>> value();
 }

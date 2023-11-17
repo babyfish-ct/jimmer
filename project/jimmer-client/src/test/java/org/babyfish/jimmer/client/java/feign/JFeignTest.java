@@ -125,18 +125,18 @@ public class JFeignTest {
                         "    \n" +
                         "    class BookService_SIMPLE_FETCHER {\n" +
                         "        \n" +
-                        "        private long id;\n" +
+                        "        private String id;\n" +
                         "        \n" +
                         "        private String name;\n" +
                         "        \n" +
                         "        @Nullable\n" +
-                        "        private Long storeId;\n" +
+                        "        private String storeId;\n" +
                         "        \n" +
-                        "        public long getId() {\n" +
+                        "        public String getId() {\n" +
                         "            return id;\n" +
                         "        }\n" +
                         "        \n" +
-                        "        public void setId(long id) {\n" +
+                        "        public void setId(String id) {\n" +
                         "            this.id = id;\n" +
                         "        }\n" +
                         "        \n" +
@@ -149,18 +149,18 @@ public class JFeignTest {
                         "        }\n" +
                         "        \n" +
                         "        @Nullable\n" +
-                        "        public Long getStoreId() {\n" +
+                        "        public String getStoreId() {\n" +
                         "            return storeId;\n" +
                         "        }\n" +
                         "        \n" +
-                        "        public void setStoreId(@Nullable Long storeId) {\n" +
+                        "        public void setStoreId(@Nullable String storeId) {\n" +
                         "            this.storeId = storeId;\n" +
                         "        }\n" +
                         "    }\n" +
                         "    \n" +
                         "    class BookService_COMPLEX_FETCHER {\n" +
                         "        \n" +
-                        "        private long id;\n" +
+                        "        private String id;\n" +
                         "        \n" +
                         "        private String name;\n" +
                         "        \n" +
@@ -179,11 +179,11 @@ public class JFeignTest {
                         "         */\n" +
                         "        private List<TargetOf_authors> authors;\n" +
                         "        \n" +
-                        "        public long getId() {\n" +
+                        "        public String getId() {\n" +
                         "            return id;\n" +
                         "        }\n" +
                         "        \n" +
-                        "        public void setId(long id) {\n" +
+                        "        public void setId(String id) {\n" +
                         "            this.id = id;\n" +
                         "        }\n" +
                         "        \n" +
@@ -306,7 +306,7 @@ public class JFeignTest {
                         "public class Dynamic_Book {\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    private Long id;\n" +
+                        "    private String id;\n" +
                         "    \n" +
                         "    @Nullable\n" +
                         "    private String name;\n" +
@@ -330,17 +330,17 @@ public class JFeignTest {
                         "    private List<Dynamic_Author> authors;\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    private Long storeId;\n" +
+                        "    private String storeId;\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    private List<Long> authorIds;\n" +
+                        "    private List<String> authorIds;\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    public Long getId() {\n" +
+                        "    public String getId() {\n" +
                         "        return id;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    public void setId(@Nullable Long id) {\n" +
+                        "    public void setId(@Nullable String id) {\n" +
                         "        this.id = id;\n" +
                         "    }\n" +
                         "    \n" +
@@ -390,20 +390,20 @@ public class JFeignTest {
                         "    }\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    public Long getStoreId() {\n" +
+                        "    public String getStoreId() {\n" +
                         "        return storeId;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    public void setStoreId(@Nullable Long storeId) {\n" +
+                        "    public void setStoreId(@Nullable String storeId) {\n" +
                         "        this.storeId = storeId;\n" +
                         "    }\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    public List<Long> getAuthorIds() {\n" +
+                        "    public List<String> getAuthorIds() {\n" +
                         "        return authorIds;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    public void setAuthorIds(@Nullable List<Long> authorIds) {\n" +
+                        "    public void setAuthorIds(@Nullable List<String> authorIds) {\n" +
                         "        this.authorIds = authorIds;\n" +
                         "    }\n" +
                         "}\n",

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.AnnotationMap;
 import com.fasterxml.jackson.databind.introspect.TypeResolutionContext;
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.jackson.PropUtils;
+import org.babyfish.jimmer.jackson.impl.JacksonUtils;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 
@@ -26,7 +26,7 @@ class BeanMember extends AnnotatedMember {
     BeanMember(TypeResolutionContext ctx, ImmutableProp prop) {
         super(ctx, annotationMap(prop));
         this.prop = prop;
-        this.type = PropUtils.getJacksonType(prop);
+        this.type = JacksonUtils.getJacksonType(prop);
     }
 
     @Override
@@ -105,23 +105,13 @@ class BeanMember extends AnnotatedMember {
 
     private static AnnotationMap annotationMap(ImmutableProp prop) {
         AnnotationMap map = new AnnotationMap();
-        for (Annotation annotation : prop.getAnnotations()) {
-            if (annotation.annotationType() == JsonIgnore.class ||
-                annotation.annotationType() == JsonFormat.class
-            ) {
-                map = AnnotationMap.merge(map, AnnotationMap.of(annotation.annotationType(), annotation));
-            } else {
-                for (Annotation deeperAnnotation : annotation.annotationType().getAnnotations()) {
-                    if (deeperAnnotation.annotationType() == JsonIgnore.class ||
-                            deeperAnnotation.annotationType() == JsonFormat.class
-                    ) {
-                        map = AnnotationMap.merge(
-                                map,
-                                AnnotationMap.of(deeperAnnotation.annotationType(), deeperAnnotation)
-                        );
-                    }
-                }
-            }
+        JsonIgnore jsonIgnore = JacksonUtils.getAnnotation(prop, JsonIgnore.class);
+        if (jsonIgnore != null) {
+            map = AnnotationMap.merge(map, AnnotationMap.of(JsonIgnore.class, jsonIgnore));
+        }
+        JsonFormat jsonFormat = JacksonUtils.getAnnotation(prop, JsonFormat.class);
+        if (jsonFormat != null) {
+            map = AnnotationMap.merge(map, AnnotationMap.of(JsonFormat.class, jsonFormat));
         }
         return map;
     }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.sql.Serialized;

@@ -30,7 +30,7 @@ public class MetadataTest {
 
         assertType(
                 "{" +
-                        "--->id: long, " +
+                        "--->id: String, " +
                         "--->name: String, " +
                         "--->edition: int, " +
                         "--->price: BigDecimal, " +
@@ -59,7 +59,7 @@ public class MetadataTest {
                         "--->lastName: String, " +
                         "--->gender: MALE | FEMALE, " +
                         "--->books: Array<{" +
-                        "--->--->id: long, " +
+                        "--->--->id: String, " +
                         "--->--->name: String, " +
                         "--->--->store: {" +
                         "--->--->--->id: long, " +

@@ -10,6 +10,7 @@ import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.generator.Strings;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.impl.util.Keywords;
+import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.meta;
 
 import org.babyfish.jimmer.jackson.Converter;
+import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SqlTemplate;
@@ -81,7 +82,7 @@ public interface ImmutableProp {
 
     ImmutableProp getManyToManyViewBaseDeeperProp();
 
-    Converter<?> getConverter();
+    ConverterMetadata getConverterMetadata();
 
     @NotNull
     DissociateAction getDissociateAction();

@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.jackson;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.babyfish.jimmer.jackson.impl.ImmutableDeserializers;
+import org.babyfish.jimmer.jackson.impl.ImmutableSerializers;
+import org.babyfish.jimmer.jackson.impl.JimmerClassIntrospector;
 
 public class ImmutableModule extends SimpleModule {
 

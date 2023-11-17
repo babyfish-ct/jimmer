@@ -2,7 +2,7 @@ package org.babyfish.jimmer.model;
 
 import org.babyfish.jimmer.jackson.Converter;
 
-public class UpperCaseConverter implements Converter<String> {
+public class UpperCaseConverter implements Converter<String, String> {
 
     @Override
     public String output(String value) {

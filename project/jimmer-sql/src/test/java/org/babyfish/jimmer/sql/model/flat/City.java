@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.sql.model.flat;
 
+import org.babyfish.jimmer.jackson.JsonConverter;
+import org.babyfish.jimmer.jackson.LongConverter;
 import org.babyfish.jimmer.sql.*;
 
 @Entity
@@ -8,6 +10,7 @@ import org.babyfish.jimmer.sql.*;
 public interface City {
 
     @Id
+    @JsonConverter(LongConverter.class)
     long id();
 
     String cityName();

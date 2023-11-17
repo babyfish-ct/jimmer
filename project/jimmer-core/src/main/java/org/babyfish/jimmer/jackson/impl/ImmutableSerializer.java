@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.jackson;
+package org.babyfish.jimmer.jackson.impl;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -12,7 +12,9 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.OffsetDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.meta.BeanProps;
+import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -65,31 +67,41 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
             }
             if (immutable.__isLoaded(prop.getId()) && immutable.__isVisible(prop.getId())) {
                 Object value = immutable.__get(prop.getId());
-                if (value != null && prop.getConverter() != null) {
-                    value = ((Converter<Object>)prop.getConverter()).output(value);
+                ConverterMetadata metadata = prop.getConverterMetadata();
+                if (value != null && metadata != null) {
+                    value = ((Converter<Object, Object>)metadata.getConverter()).output(value);
                 }
                 if (value == null) {
                     provider.defaultSerializeField(propNameConverter.fieldName(prop), null, gen);
                 } else if (prop.isAssociation(TargetLevel.OBJECT) || prop.isScalarList()) {
-                    TypeSerializer typeSer = null;
                     gen.writeFieldName(propNameConverter.fieldName(prop));
+                    TypeSerializer typeSer = null;
                     if (!prop.isReferenceList(TargetLevel.OBJECT) &&
                             value instanceof ImmutableSpi &&
                             ((ImmutableSpi)value).__type() != immutableType) {
-                        typeSer = provider.findTypeSerializer(PropUtils.getJacksonType(prop));
+                        typeSer = provider.findTypeSerializer(JacksonUtils.getJacksonType(prop));
                     }
                     if (typeSer != null) {
                         provider.findValueSerializer(value.getClass()).serializeWithType(value, gen, provider, typeSer);
                     } else {
-                        provider.findValueSerializer(PropUtils.getJacksonType(prop)).serialize(value, gen, provider);
+                        provider.findValueSerializer(JacksonUtils.getJacksonType(prop)).serialize(value, gen, provider);
                     }
                 } else {
                     gen.writeFieldName(propNameConverter.fieldName(prop));
-                    JsonSerializer<?> serializer = provider.findTypedValueSerializer(
-                            prop.getElementClass(),
-                            true,
-                            BeanProps.get(provider.getTypeFactory(), prop)
-                    );
+                    JsonSerializer<?> serializer;
+                    if (prop.getConverterMetadata() == null) {
+                        serializer = provider.findTypedValueSerializer(
+                                prop.getReturnClass(),
+                                true,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    } else {
+                        serializer = provider.findTypedValueSerializer(
+                                JacksonUtils.getJacksonType(prop),
+                                true,
+                                BeanProps.get(provider.getTypeFactory(), prop)
+                        );
+                    }
                     if (serializer instanceof DateSerializer) {
                         serializer = ((DateSerializer) serializer).createContextual(
                                 provider,

@@ -183,6 +183,121 @@ class Context {
         return jetBrainsMetadataMap.computeIfAbsent(type, t -> new JetBrainsMetadata(type));
     }
 
+    public Type parseConvertedType(java.lang.reflect.Type javaType) {
+        if (javaType instanceof Class<?>) {
+            Class<?> javaClass = (Class<?>) javaType;
+            if (javaClass.isEnum()) {
+                SimpleType simpleType = jsonValueType(javaClass);
+                if (simpleType != null) {
+                    return simpleType;
+                }
+                EnumType enumType = enumTypeMap.get(javaClass);
+                if (enumType == null) {
+                    enumType = new EnumTypeImpl(javaClass);
+                    enumTypeMap.put(javaClass, enumType);
+                }
+                return enumType;
+            }
+            if (javaClass.isArray()) {
+                final StaticObjectType componentType = objectType(javaClass.getComponentType(), null);
+                Class<?> componentClass = componentType.getJavaType();
+
+                if (componentClass.isArray()) {
+                    throw new IllegalDocMetaException(
+                            "Illegal type \"" +
+                                    javaType +
+                                    "\" declared in " +
+                                    location +
+                                    ", multi-dimensional array is not supported"
+                    );
+                }
+
+                final SimpleType simpleType = SimpleTypeImpl.get(componentClass);
+
+                if (simpleType != null) {
+                    return new ArrayTypeImpl(simpleType);
+                }
+
+                return new ArrayTypeImpl(componentType);
+            }
+            SimpleType simpleType = SimpleTypeImpl.get(javaClass);
+            if (simpleType != null) {
+                return simpleType;
+            }
+            if ((Iterable.class.isAssignableFrom(javaClass) && ITERABLE_CLASS_NAMES.contains(javaClass.getName())) ||
+                    (Map.class.isAssignableFrom(javaClass) && MAP_CLASS_NAMES.contains(javaClass.getName()))) {
+                throw new IllegalDocMetaException(
+                        "Illegal type \"" +
+                                javaType +
+                                "\" declared in " +
+                                location +
+                                ", iterable and map must be parameterized type"
+                );
+            }
+            if (!ignoreTypeVariableResolving && javaClass.getTypeParameters().length != 0) {
+                throw new IllegalDocMetaException(
+                        "Illegal type \"" +
+                                javaType +
+                                "\" declared in " +
+                                location +
+                                ", generic type must be parameterized type"
+                );
+            }
+            return objectType(javaClass, null);
+        }
+        if (javaType instanceof WildcardType) {
+            return parseConvertedType(((WildcardType) javaType).getUpperBounds()[0]);
+        }
+        if (javaType instanceof GenericArrayType) {
+            return new ArrayTypeImpl(parseConvertedType(((GenericArrayType) javaType).getGenericComponentType()));
+        }
+        if (javaType instanceof AnnotatedTypeVariable) {
+            if (ignoreTypeVariableResolving) {
+                return new UnresolvedTypeVariableImpl(((TypeVariable<?>) javaType).getName());
+            }
+            TypeVariable<?> typeVariable = (TypeVariable<?>) javaType;
+            Object resolvedType = resolve(new UnifiedTypeParameter(typeVariable));
+            if (resolvedType instanceof KType) {
+                return parseKotlinType((KType) resolvedType);
+            }
+            return parseType((AnnotatedType) resolvedType);
+        }
+        if (javaType instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) javaType;
+            java.lang.reflect.Type rawType = parameterizedType.getRawType();
+            if (!(rawType instanceof Class<?>)) {
+                throw new IllegalDocMetaException(
+                        "Illegal type \"" +
+                                javaType +
+                                "\" declared in " +
+                                location +
+                                ", the parameterized whose raw type is not class is not supported"
+                );
+            }
+            Class<?> rawClass = (Class<?>) rawType;
+            if (Iterable.class.isAssignableFrom(rawClass) && ITERABLE_CLASS_NAMES.contains(rawClass.getName())) {
+                return new ArrayTypeImpl(parseConvertedType(parameterizedType.getActualTypeArguments()[0]));
+            }
+            if (Map.class.isAssignableFrom(rawClass) && MAP_CLASS_NAMES.contains(rawClass.getName())) {
+                return new MapTypeImpl(
+                        parseConvertedType(parameterizedType.getActualTypeArguments()[0]),
+                        parseConvertedType(parameterizedType.getActualTypeArguments()[1])
+                );
+            }
+            if (Optional.class.isAssignableFrom(rawClass)) {
+                return NullableTypeImpl.of(parseConvertedType(parameterizedType.getActualTypeArguments()[0]));
+            }
+            throw new IllegalDocMetaException(
+                    "Illegal type \"" +
+                            javaType +
+                            "\" declared in " +
+                            location +
+                            ", the converted type cannot contains parameterized type that is not collection"
+            );
+        }
+        throw new AssertionError("Internal bug: unexpected java type " + javaType);
+    }
+
     public Type parseType(AnnotatedType annotatedType) {
         java.lang.reflect.Type javaType = annotatedType.getType();
         FetchBy fetchBy = annotatedType.getAnnotation(FetchBy.class);
@@ -818,7 +933,7 @@ class Context {
     private SimpleType jsonValueType(Class<?> enumType) {
         for (Method method : enumType.getMethods()) {
             if (method.isAnnotationPresent(JsonValue.class) &&
-            method.getParameterTypes().length == 0) {
+                    method.getParameterTypes().length == 0) {
                 Class<?> type = method.getReturnType();
                 SimpleType simpleType = SimpleTypeImpl.get(type);
                 if (simpleType == null) {

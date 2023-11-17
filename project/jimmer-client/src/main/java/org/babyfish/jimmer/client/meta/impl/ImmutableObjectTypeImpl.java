@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.meta.impl;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -257,7 +258,13 @@ public class ImmutableObjectTypeImpl implements ImmutableObjectType {
     }
 
     private static Property property(Context ctx, ImmutableProp prop) {
-        Type type = ctx.parseType(((ImmutablePropImplementor)prop).getJavaGetter().getAnnotatedReturnType());
+        ConverterMetadata metadata = prop.getConverterMetadata();
+        Type type;
+        if (metadata != null) {
+            type = ctx.parseConvertedType(metadata.getTargetType());
+        } else {
+            type = ctx.parseType(((ImmutablePropImplementor)prop).getJavaGetter().getAnnotatedReturnType());
+        }
         if (prop.isNullable()) {
             type = NullableTypeImpl.of(type);
         }
