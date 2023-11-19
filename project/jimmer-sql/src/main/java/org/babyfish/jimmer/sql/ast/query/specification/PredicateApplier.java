@@ -285,7 +285,7 @@ public class PredicateApplier {
             }
             return statement;
         }
-        
+
         Table<?> table() {
             Table<?> table = this._table;
             if (table == null) {

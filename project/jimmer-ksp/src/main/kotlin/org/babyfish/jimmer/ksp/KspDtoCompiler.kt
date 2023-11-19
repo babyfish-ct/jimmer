@@ -40,7 +40,7 @@ class KspDtoCompiler(dtoFile: DtoFile) : DtoCompiler<ImmutableType, ImmutablePro
         }
 
     override fun isSameType(baseProp1: ImmutableProp, baseProp2: ImmutableProp): Boolean =
-        baseProp1.typeName(overrideNullable = false) == baseProp2.typeName(overrideNullable = false)
+        baseProp1.clientClassName.copy(nullable = false) == baseProp2.clientClassName.copy(nullable = false)
 
     override fun isStringProp(baseProp: ImmutableProp): Boolean =
         baseProp.typeName(overrideNullable = false) == STRING

@@ -773,6 +773,17 @@ class DtoGenerator private constructor(
                         endControlFlow()
                         unindent()
                         add("}")
+                    } else if (tailBaseProp.converterMetadata != null) {
+                        add(
+                            ",\n{ %T.%L.converterMetadata.getConverter<Any, Any>().output(it) }",
+                            dtoType.baseType.propsClassName,
+                            StringUtil.snake(tailBaseProp.name, SnakeCase.UPPER)
+                        )
+                        add(
+                            ",\n{ %T.%L.converterMetadata.getConverter<Any, Any>().input(it) }",
+                            dtoType.baseType.propsClassName,
+                            StringUtil.snake(tailBaseProp.name, SnakeCase.UPPER)
+                        )
                     }
 
                     unindent()
@@ -797,16 +808,21 @@ class DtoGenerator private constructor(
                         return COLLECTION.parameterizedBy(propElementName(prop)).copy(nullable = prop.isNullable)
 
                     "id", "associatedIdEq", "associatedIdNe" ->
-                        return baseProp.targetType!!.idProp!!.typeName().copy(nullable = prop.isNullable)
+                        return baseProp.targetType!!.idProp!!.clientClassName.copy(nullable = prop.isNullable)
 
                     "associatedIdIn", "associatedIdNotIn" ->
-                        return COLLECTION.parameterizedBy(baseProp.targetType!!.idProp!!.typeName())
+                        return COLLECTION.parameterizedBy(baseProp.targetType!!.idProp!!.clientClassName)
                             .copy(nullable = prop.isNullable)
                 }
             }
             if (baseProp.isAssociation(true)) {
                 return propElementName(prop).copy(nullable = prop.isNullable)
             }
+        }
+
+        val metadata = baseProp.converterMetadata
+        if (metadata != null) {
+            return metadata.targetTypeName
         }
 
         val enumType = prop.enumType
@@ -849,10 +865,10 @@ class DtoGenerator private constructor(
             )
         }
         return if (tailProp.isIdOnly) {
-                tailProp.baseProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
-            } else {
-                tailProp.baseProp.targetTypeName(overrideNullable = false)
-            }
+            tailProp.baseProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
+        } else {
+            tailProp.baseProp.clientClassName
+        }
     }
 
     private fun typeName(typeRef: TypeRef?): TypeName {

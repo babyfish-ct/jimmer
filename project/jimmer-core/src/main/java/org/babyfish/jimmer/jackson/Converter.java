@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.jackson;
 
+/**
+ * @see LongConverter
+ * @see LongListConverter
+ */
 public interface Converter<S, T> {
 
     T output(S value);

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.meta
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.google.devtools.ksp.isAbstract
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
@@ -11,11 +12,15 @@ import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.Scalar
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
+import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.ksp.generator.DRAFT
 import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
 import org.babyfish.jimmer.ksp.generator.parseValidationMessages
 import org.babyfish.jimmer.ksp.generator.upper
+import org.babyfish.jimmer.ksp.util.ConverterMetadata
+import org.babyfish.jimmer.ksp.util.converterMetadataOf
+import org.babyfish.jimmer.ksp.util.recursiveAnnotationOf
 import org.babyfish.jimmer.meta.impl.Utils
 import org.babyfish.jimmer.meta.impl.PropDescriptor
 import org.babyfish.jimmer.sql.*
@@ -257,6 +262,9 @@ class ImmutableProp(
             }
         }
 
+    val clientClassName: TypeName
+        get() = converterMetadata?.targetTypeName?.copy(nullable = isNullable) ?: typeName()
+
     val targetType: ImmutableType? by lazy {
         targetDeclaration
             .takeIf { isAssociation }
@@ -331,6 +339,34 @@ class ImmutableProp(
             "__${name}Loaded"
         } else {
             null
+        }
+
+    val converterMetadata: ConverterMetadata? =
+        run {
+            val jsonConverter = propDeclaration.recursiveAnnotationOf(JsonConverter::class)
+            val jsonFormat = propDeclaration.recursiveAnnotationOf(JsonFormat::class)
+            if (jsonConverter !== null && jsonFormat !== null) {
+                throw MetaException(
+                    propDeclaration,
+                    "it cannot be decorated both \"@${JsonConverter::class.qualifiedName}\" " +
+                        "and \"${JsonFormat::class.qualifiedName}\""
+                )
+            }
+            if (jsonConverter === null) {
+                null
+            } else {
+                val declaration = jsonConverter.getClassArgument(JsonConverter::value)!!
+                converterMetadataOf(declaration).also {
+                    if (it.sourceTypeName != typeName(overrideNullable = false)) {
+                        throw MetaException(
+                            propDeclaration,
+                            "the source type of converter " +
+                                "\"${declaration.qualifiedName!!.asString()}\" is \"" +
+                                "${it.sourceTypeName}\" does not match the return type of current property"
+                        )
+                    }
+                }
+            }
         }
 
     fun annotation(annotationType: KClass<out Annotation>): KSAnnotation? =

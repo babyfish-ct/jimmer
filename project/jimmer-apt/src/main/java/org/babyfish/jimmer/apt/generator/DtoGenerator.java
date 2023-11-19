@@ -4,6 +4,7 @@ import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -390,6 +391,17 @@ public class DtoGenerator {
             cb.endControlFlow();
             cb.unindent();
             cb.add("}");
+        } else if (tailProp.getBaseProp().getConverterMetadata() != null) {
+            cb.add(
+                    ",\narg -> $T.$L.unwrap().getConverterMetadata().getConverter().output(arg)",
+                    dtoType.getBaseType().getPropsClassName(),
+                    StringUtil.snake(tailProp.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
+            );
+            cb.add(
+                    ",\narg -> $T.$L.unwrap().getConverterMetadata().getConverter().input(arg)",
+                    dtoType.getBaseType().getPropsClassName(),
+                    StringUtil.snake(tailProp.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
+            );
         }
 
         cb.unindent();
@@ -828,23 +840,28 @@ public class DtoGenerator {
                     case "valueNotIn":
                         return ParameterizedTypeName.get(
                                 Constants.COLLECTION_CLASS_NAME,
-                                getPropElementName(prop)
+                                getPropElementName(prop).box()
                         );
                     case "id":
                     case "associatedIdEq":
                     case "associatedIdNe":
-                        return baseProp.getTargetType().getIdProp().getTypeName();
+                        return baseProp.getTargetType().getIdProp().getClientTypeName();
                     case "associatedIdIn":
                     case "associatedIdNotIn":
                         return ParameterizedTypeName.get(
                                 Constants.COLLECTION_CLASS_NAME,
-                                baseProp.getTargetType().getIdProp().getTypeName()
+                                baseProp.getTargetType().getIdProp().getClientTypeName().box()
                         );
                 }
             }
             if (baseProp.isAssociation(true)) {
                 return getPropElementName(prop);
             }
+        }
+
+        ConverterMetadata metadata = baseProp.getConverterMetadata();
+        if (metadata != null) {
+            return metadata.getTargetTypeName();
         }
 
         EnumType enumType = prop.getEnumType();
@@ -1099,9 +1116,12 @@ public class DtoGenerator {
                     targetType.getName()
             );
         }
-        TypeName typeName = tailProp.isIdOnly() ?
-                tailProp.getBaseProp().getTargetType().getIdProp().getTypeName() :
-                tailProp.getBaseProp().getElementTypeName();
+        TypeName typeName;
+        if (tailProp.isIdOnly()) {
+            typeName = tailProp.getBaseProp().getTargetType().getIdProp().getClientTypeName();
+        } else {
+            typeName = tailProp.getBaseProp().getClientTypeName();
+        }
         if (typeName.isPrimitive() && prop.isNullable()) {
             return typeName.box();
         }

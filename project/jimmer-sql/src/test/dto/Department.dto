@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.sql.model.hr.Department
+    -> package org.babyfish.jimmer.sql.model.hr.dto
+
+DepartmentView {
+    id
+    employeeIds
+}
+
+specification DepartmentSpecification {
+    id
+    associatedIdIn(employees) as employeeIds
+}

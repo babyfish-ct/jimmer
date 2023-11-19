@@ -1162,14 +1162,14 @@ public class CascadeSaveTest extends AbstractMutationTest {
                     });
                     ctx.entity(it -> {
                         it.original(
-                                "{\"id\":1,\"name\":\"Develop\",\"employees\":[{\"name\":\"Tim\"}]}"
+                                "{\"id\":\"1\",\"name\":\"Develop\",\"employees\":[{\"name\":\"Tim\"}]}"
                         );
                         it.modified(
                                 "{" +
-                                        "--->\"id\":1," +
+                                        "--->\"id\":\"1\"," +
                                         "--->\"name\":\"Develop\"," +
                                         "--->\"employees\":[" +
-                                        "--->--->{\"id\":100,\"name\":\"Tim\",\"department\":{\"id\":1}}" +
+                                        "--->--->{\"id\":100,\"name\":\"Tim\",\"department\":{\"id\":\"1\"}}" +
                                         "--->]" +
                                         "}");
                     });
@@ -1203,10 +1203,10 @@ public class CascadeSaveTest extends AbstractMutationTest {
                         );
                         it.modified(
                                 "{" +
-                                        "--->\"id\":10," +
+                                        "--->\"id\":\"10\"," +
                                         "--->\"name\":\"Develop\"," +
                                         "--->\"employees\":[" +
-                                        "--->--->{\"id\":100,\"name\":\"Tim\",\"department\":{\"id\":10}}" +
+                                        "--->--->{\"id\":100,\"name\":\"Tim\",\"department\":{\"id\":\"10\"}}" +
                                         "--->]" +
                                         "}");
                     });

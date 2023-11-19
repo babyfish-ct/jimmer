@@ -46,8 +46,9 @@ public class ConverterMetadata {
         return targetJacksonType;
     }
 
-    public Converter<?, ?> getConverter() {
-        return converter;
+    @SuppressWarnings("unchecked")
+    public <S, T> Converter<S, T> getConverter() {
+        return (Converter<S, T>) converter;
     }
 
     public static ConverterMetadata of(Class<? extends Converter<?, ?>> converterClass) {

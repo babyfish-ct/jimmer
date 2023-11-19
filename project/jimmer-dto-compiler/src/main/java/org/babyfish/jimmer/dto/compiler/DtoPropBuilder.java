@@ -116,7 +116,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                         prop.func.getLine(),
                         "Illegal property \"" +
                                 baseProp.getName() +
-                                "\", its type is not same as the type of \"" +
+                                "\", its property type or converted type(From Converter<?, T>) is not same as the type of \"" +
                                 firstBaseProp.getName() +
                                 "\""
                 );

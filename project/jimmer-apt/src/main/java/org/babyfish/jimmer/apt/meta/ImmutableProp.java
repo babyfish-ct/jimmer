@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.meta;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -8,9 +9,11 @@ import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.generator.Strings;
+import org.babyfish.jimmer.apt.util.ConverterMetadata;
+import org.babyfish.jimmer.apt.util.RecursiveAnnotations;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
 import org.babyfish.jimmer.impl.util.Keywords;
-import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
+import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.meta.impl.Utils;
 import org.babyfish.jimmer.meta.impl.PropDescriptor;
 import org.babyfish.jimmer.sql.*;
@@ -65,6 +68,8 @@ public class ImmutableProp implements BaseProp {
     private final TypeName draftElementTypeName;
 
     private final TypeMirror elementType;
+
+    private final ConverterMetadata converterMetadata;
 
     private final boolean isTransient;
 
@@ -228,6 +233,8 @@ public class ImmutableProp implements BaseProp {
             );
         }
 
+        //------------------
+
         Transient trans = executableElement.getAnnotation(Transient.class);
         isTransient = trans != null;
         boolean hasResolver = false;
@@ -356,7 +363,51 @@ public class ImmutableProp implements BaseProp {
             draftTypeName = draftElementTypeName;
         }
 
+        this.converterMetadata = determinConverterMetadata();
+
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
+    }
+
+    private ConverterMetadata determinConverterMetadata() {
+        AnnotationMirror jsonConverter = RecursiveAnnotations.of(executableElement, JsonConverter.class);
+        if (jsonConverter != null) {
+            if (isEntityAssociation) {
+                throw new MetaException(
+                        executableElement,
+                        "it cannot be decorated by \"@" +
+                                JsonConverter.class.getName() +
+                                "\" because it is association"
+                );
+            }
+            if (RecursiveAnnotations.of(executableElement, JsonFormat.class) != null) {
+                throw new MetaException(
+                        executableElement,
+                        "it cannot be decorated by both \"@" +
+                                JsonConverter.class.getName() +
+                                "\" and \"@" +
+                                JsonFormat.class.getName() +
+                                "\""
+                );
+            }
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : jsonConverter.getElementValues().entrySet()) {
+                if (e.getKey().getSimpleName().contentEquals("value")) {
+                    TypeElement converterElement = context.getElements().getTypeElement(e.getValue().getValue().toString());
+                    ConverterMetadata metadata = ConverterMetadata.of(converterElement);
+                    if (!metadata.getSourceTypeName().equals(getTypeName().box())) {
+                        throw new MetaException(
+                                executableElement,
+                                "The source type of converter \"" +
+                                        converterElement.getQualifiedName().toString() +
+                                        "\" is \"" +
+                                        metadata.getSourceTypeName() +
+                                        "\" which is not the return type of property"
+                        );
+                    }
+                    return metadata;
+                }
+            }
+        }
+        return null;
     }
 
     public ImmutableType getDeclaringType() {
@@ -445,6 +496,17 @@ public class ImmutableProp implements BaseProp {
 
     public TypeName getDraftElementTypeName() {
         return draftElementTypeName;
+    }
+
+    public ConverterMetadata getConverterMetadata() {
+        return converterMetadata;
+    }
+
+    public TypeName getClientTypeName() {
+        if (converterMetadata != null) {
+            return converterMetadata.getTargetTypeName();
+        }
+        return getTypeName();
     }
 
     @Override

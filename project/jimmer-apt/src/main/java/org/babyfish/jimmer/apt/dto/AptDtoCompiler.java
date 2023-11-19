@@ -57,7 +57,7 @@ public class AptDtoCompiler extends DtoCompiler<ImmutableType, ImmutableProp> {
 
     @Override
     protected boolean isSameType(ImmutableProp baseProp1, ImmutableProp baseProp2) {
-        return baseProp1.getTypeName().equals(baseProp2.getTypeName());
+        return baseProp1.getClientTypeName().equals(baseProp2.getClientTypeName());
     }
 
     @Override
