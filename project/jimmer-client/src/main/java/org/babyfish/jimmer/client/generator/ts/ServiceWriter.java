@@ -238,7 +238,7 @@ public class ServiceWriter extends TsCodeWriter {
 
     private static class UriPart {
 
-        private final static Pattern SLASH_PATTERN = Pattern.compile("\\{[^\\}]+\\}");
+        private final static Pattern SLASH_PATTERN = Pattern.compile("\\{(.+?)(?::(?:[^{}]+|\\{[^{}]+?})+)?}");
 
         final String text;
 
@@ -260,7 +260,7 @@ public class ServiceWriter extends TsCodeWriter {
                 if (matcher.start() > pos) {
                     uriParts.add(new UriPart(uri.substring(pos, matcher.start()), false));
                 }
-                uriParts.add(new UriPart(uri.substring(matcher.start() + 1, matcher.end() - 1), true));
+                uriParts.add(new UriPart(matcher.group(1), true));
                 pos = matcher.end();
             }
             if (pos < uri.length()) {
