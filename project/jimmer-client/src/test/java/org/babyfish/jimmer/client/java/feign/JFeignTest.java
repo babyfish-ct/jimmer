@@ -130,7 +130,7 @@ public class JFeignTest {
                         "        private String name;\n" +
                         "        \n" +
                         "        @Nullable\n" +
-                        "        private String storeId;\n" +
+                        "        private Long storeId;\n" +
                         "        \n" +
                         "        public String getId() {\n" +
                         "            return id;\n" +
@@ -149,11 +149,11 @@ public class JFeignTest {
                         "        }\n" +
                         "        \n" +
                         "        @Nullable\n" +
-                        "        public String getStoreId() {\n" +
+                        "        public Long getStoreId() {\n" +
                         "            return storeId;\n" +
                         "        }\n" +
                         "        \n" +
-                        "        public void setStoreId(@Nullable String storeId) {\n" +
+                        "        public void setStoreId(@Nullable Long storeId) {\n" +
                         "            this.storeId = storeId;\n" +
                         "        }\n" +
                         "    }\n" +
@@ -330,10 +330,10 @@ public class JFeignTest {
                         "    private List<Dynamic_Author> authors;\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    private String storeId;\n" +
+                        "    private Long storeId;\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    private List<String> authorIds;\n" +
+                        "    private List<Long> authorIds;\n" +
                         "    \n" +
                         "    @Nullable\n" +
                         "    public String getId() {\n" +
@@ -390,20 +390,20 @@ public class JFeignTest {
                         "    }\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    public String getStoreId() {\n" +
+                        "    public Long getStoreId() {\n" +
                         "        return storeId;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    public void setStoreId(@Nullable String storeId) {\n" +
+                        "    public void setStoreId(@Nullable Long storeId) {\n" +
                         "        this.storeId = storeId;\n" +
                         "    }\n" +
                         "    \n" +
                         "    @Nullable\n" +
-                        "    public List<String> getAuthorIds() {\n" +
+                        "    public List<Long> getAuthorIds() {\n" +
                         "        return authorIds;\n" +
                         "    }\n" +
                         "    \n" +
-                        "    public void setAuthorIds(@Nullable List<String> authorIds) {\n" +
+                        "    public void setAuthorIds(@Nullable List<Long> authorIds) {\n" +
                         "        this.authorIds = authorIds;\n" +
                         "    }\n" +
                         "}\n",

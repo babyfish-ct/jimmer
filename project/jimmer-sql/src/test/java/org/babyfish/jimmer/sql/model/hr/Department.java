@@ -27,6 +27,5 @@ public interface Department {
     List<Employee> employees();
 
     @IdView("employees")
-    @JsonConverter(LongListConverter.class)
     List<Long> employeeIds();
 }

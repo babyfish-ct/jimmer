@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.jackson.meta;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.impl.util.StaticCache;
 import org.babyfish.jimmer.jackson.Converter;
@@ -10,7 +11,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConverterMetadata {
 
@@ -19,15 +24,17 @@ public class ConverterMetadata {
             false
     );
 
-    private final Type sourceType;
+    final Type sourceType;
 
-    private final Type targetType;
+    final Type targetType;
 
-    private final JavaType targetJacksonType;
+    final JavaType targetJacksonType;
 
-    private final Converter<?, ?> converter;
+    final Converter<?, ?> converter;
 
-    public ConverterMetadata(Type sourceType, Type targetType, JavaType targetJacksonType, Converter<?, ?> converter) {
+    private ListMetadata listMetadata;
+
+    ConverterMetadata(Type sourceType, Type targetType, JavaType targetJacksonType, Converter<?, ?> converter) {
         this.sourceType = sourceType;
         this.targetType = targetType;
         this.targetJacksonType = targetJacksonType;
@@ -53,6 +60,14 @@ public class ConverterMetadata {
 
     public static ConverterMetadata of(Class<? extends Converter<?, ?>> converterClass) {
         return CACHE.get(converterClass);
+    }
+
+    public ConverterMetadata toListMetadata() {
+        ListMetadata listMetadata = this.listMetadata;
+        if (listMetadata == null) {
+            this.listMetadata = listMetadata = new ListMetadata();
+        }
+        return listMetadata;
     }
 
     private static ConverterMetadata create(Class<?> converterClass) {
@@ -105,5 +120,56 @@ public class ConverterMetadata {
             );
         }
         return new ConverterMetadata(sourceType, targetType, jacksonType, converter);
+    }
+
+    private class ListMetadata extends ConverterMetadata {
+
+        public ListMetadata() {
+            super(
+                    TypeUtils.parameterize(List.class, ConverterMetadata.this.sourceType),
+                    TypeUtils.parameterize(List.class, ConverterMetadata.this.targetType),
+                    CollectionType.construct(
+                            List.class,
+                            null,
+                            null,
+                            null,
+                            ConverterMetadata.this.targetJacksonType
+                    ),
+                    new ListConverter(ConverterMetadata.this.converter)
+            );
+        }
+
+        @Override
+        public ConverterMetadata toListMetadata() {
+            throw new IllegalStateException("The current metadata is already list metadata");
+        }
+    }
+
+    private static class ListConverter implements Converter<List<?>, List<?>> {
+
+        private final Converter<Object, Object> converter;
+
+        @SuppressWarnings("unchecked")
+        private ListConverter(Converter<?, ?> converter) {
+            this.converter = (Converter<Object, Object>)converter;
+        }
+
+        @Override
+        public List<?> output(List<?> value) {
+            List<Object> convertedList = new ArrayList<>(value.size());
+            for (Object e : value) {
+                convertedList.add(converter.output(e));
+            }
+            return convertedList;
+        }
+
+        @Override
+        public List<?> input(List<?> jsonValue) {
+            List<Object> convertedList = new ArrayList<>(jsonValue.size());
+            for (Object e : jsonValue) {
+                convertedList.add(converter.input(e));
+            }
+            return convertedList;
+        }
     }
 }

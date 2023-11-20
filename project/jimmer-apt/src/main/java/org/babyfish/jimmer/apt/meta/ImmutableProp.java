@@ -69,8 +69,6 @@ public class ImmutableProp implements BaseProp {
 
     private final TypeMirror elementType;
 
-    private final ConverterMetadata converterMetadata;
-
     private final boolean isTransient;
 
     private final boolean hasTransientResolver;
@@ -114,6 +112,10 @@ public class ImmutableProp implements BaseProp {
     private boolean manyToManyViewBasePropResolved;
 
     private Boolean remote;
+
+    private ConverterMetadata converterMetadata;
+
+    private boolean converterMetadataResolved;
 
     public ImmutableProp(
             Context context,
@@ -362,52 +364,7 @@ public class ImmutableProp implements BaseProp {
         } else {
             draftTypeName = draftElementTypeName;
         }
-
-        this.converterMetadata = determinConverterMetadata();
-
         this.validationMessageMap = ValidationMessages.parseMessageMap(executableElement);
-    }
-
-    private ConverterMetadata determinConverterMetadata() {
-        AnnotationMirror jsonConverter = RecursiveAnnotations.of(executableElement, JsonConverter.class);
-        if (jsonConverter != null) {
-            if (isEntityAssociation) {
-                throw new MetaException(
-                        executableElement,
-                        "it cannot be decorated by \"@" +
-                                JsonConverter.class.getName() +
-                                "\" because it is association"
-                );
-            }
-            if (RecursiveAnnotations.of(executableElement, JsonFormat.class) != null) {
-                throw new MetaException(
-                        executableElement,
-                        "it cannot be decorated by both \"@" +
-                                JsonConverter.class.getName() +
-                                "\" and \"@" +
-                                JsonFormat.class.getName() +
-                                "\""
-                );
-            }
-            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : jsonConverter.getElementValues().entrySet()) {
-                if (e.getKey().getSimpleName().contentEquals("value")) {
-                    TypeElement converterElement = context.getElements().getTypeElement(e.getValue().getValue().toString());
-                    ConverterMetadata metadata = ConverterMetadata.of(converterElement);
-                    if (!metadata.getSourceTypeName().equals(getTypeName().box())) {
-                        throw new MetaException(
-                                executableElement,
-                                "The source type of converter \"" +
-                                        converterElement.getQualifiedName().toString() +
-                                        "\" is \"" +
-                                        metadata.getSourceTypeName() +
-                                        "\" which is not the return type of property"
-                        );
-                    }
-                    return metadata;
-                }
-            }
-        }
-        return null;
     }
 
     public ImmutableType getDeclaringType() {
@@ -499,7 +456,62 @@ public class ImmutableProp implements BaseProp {
     }
 
     public ConverterMetadata getConverterMetadata() {
+        if (converterMetadataResolved) {
+            return converterMetadata;
+        }
+        converterMetadata = determineConverterMetadata();
+        converterMetadataResolved = true;
         return converterMetadata;
+    }
+
+    private ConverterMetadata determineConverterMetadata() {
+        AnnotationMirror jsonConverter = RecursiveAnnotations.of(executableElement, JsonConverter.class);
+        if (jsonConverter != null) {
+            if (isEntityAssociation) {
+                throw new MetaException(
+                        executableElement,
+                        "it cannot be decorated by \"@" +
+                                JsonConverter.class.getName() +
+                                "\" because it is association"
+                );
+            }
+            if (getIdViewBaseProp() != null) {
+                throw new MetaException(
+                        executableElement,
+                        "it cannot be decorated by \"@" +
+                                JsonConverter.class.getName() +
+                                "\" because it is id-view property"
+                );
+            }
+            if (RecursiveAnnotations.of(executableElement, JsonFormat.class) != null) {
+                throw new MetaException(
+                        executableElement,
+                        "it cannot be decorated by both \"@" +
+                                JsonConverter.class.getName() +
+                                "\" and \"@" +
+                                JsonFormat.class.getName() +
+                                "\""
+                );
+            }
+            for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : jsonConverter.getElementValues().entrySet()) {
+                if (e.getKey().getSimpleName().contentEquals("value")) {
+                    TypeElement converterElement = context.getElements().getTypeElement(e.getValue().getValue().toString());
+                    ConverterMetadata metadata = ConverterMetadata.of(converterElement);
+                    if (!metadata.getSourceTypeName().equals(getTypeName().box())) {
+                        throw new MetaException(
+                                executableElement,
+                                "The source type of converter \"" +
+                                        converterElement.getQualifiedName().toString() +
+                                        "\" is \"" +
+                                        metadata.getSourceTypeName() +
+                                        "\" which is not the return type of property"
+                        );
+                    }
+                    return metadata;
+                }
+            }
+        }
+        return null;
     }
 
     public TypeName getClientTypeName() {

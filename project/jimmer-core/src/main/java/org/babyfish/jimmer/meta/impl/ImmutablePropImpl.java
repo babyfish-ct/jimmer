@@ -7,6 +7,7 @@ import kotlin.reflect.full.KClasses;
 import org.babyfish.jimmer.Formula;
 import org.babyfish.jimmer.Scalar;
 import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.impl.JacksonUtils;
 import org.babyfish.jimmer.jackson.meta.ConverterMetadata;
@@ -768,58 +769,90 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
         if (converterMetadataResolved) {
             return converterMetadata;
         }
-        JsonConverter jsonConverter = JacksonUtils.getAnnotation(this, JsonConverter.class);
         ConverterMetadata metadata = null;
-        if (jsonConverter != null) {
-            if (isAssociation(TargetLevel.OBJECT)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it cannot be decorated by \"@" +
-                                JsonConverter.class +
-                                "\" because it is " +
-                                (isReferenceList(TargetLevel.OBJECT) ? "list" : "reference") +
-                                " of immutable object"
-                );
+        if (getIdViewBaseProp() != null) {
+            metadata = getIdViewBaseProp().getTargetType().getIdProp().getConverterMetadata();
+            if (metadata != null && getIdViewBaseProp().isReferenceList(TargetLevel.ENTITY)) {
+                metadata = metadata.toListMetadata();
             }
-            if (JacksonUtils.getAnnotation(this, JsonFormat.class) != null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it cannot be decorated by both \"@" +
-                                JsonConverter.class +
-                                "\" and \"@" +
-                                JsonFormat.class +
-                                "\""
-                );
-            }
-            metadata = ConverterMetadata.of(jsonConverter.value());
-            Type genericReturnType = getJavaGetter().getGenericReturnType();
-            if (genericReturnType instanceof Class<?>) {
-                Class<?> type = (Class<?>) genericReturnType;
-                if (type.isPrimitive()) {
-                    genericReturnType = Classes.boxTypeOf(type);
+        } else {
+            JsonConverter jsonConverter = JacksonUtils.getAnnotation(this, JsonConverter.class);
+            if (jsonConverter != null) {
+                if (isAssociation(TargetLevel.OBJECT)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it cannot be decorated by \"@" +
+                                    JsonConverter.class +
+                                    "\" because it is " +
+                                    (isReferenceList(TargetLevel.OBJECT) ? "list" : "reference") +
+                                    " of immutable object"
+                    );
                 }
-            }
-            if (!metadata.getSourceType().equals(genericReturnType)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                this +
-                                "\", it cannot be decorated by @" +
-                                JsonConverter.class.getName() +
-                                ", the property type \"" +
-                                javaGetter.getGenericReturnType() +
-                                "\" does not match the source type \"" +
-                                metadata.getSourceType() +
-                                "\" of converter class \"" +
-                                metadata.getConverter().getClass().getName() +
-                                "\""
-                );
+                if (JacksonUtils.getAnnotation(this, JsonFormat.class) != null) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it cannot be decorated by both \"@" +
+                                    JsonConverter.class +
+                                    "\" and \"@" +
+                                    JsonFormat.class +
+                                    "\""
+                    );
+                }
+                metadata = ConverterMetadata.of(jsonConverter.value());
+                Type genericReturnType = getJavaGetter().getGenericReturnType();
+                if (genericReturnType instanceof Class<?>) {
+                    Class<?> type = (Class<?>) genericReturnType;
+                    if (type.isPrimitive()) {
+                        genericReturnType = Classes.boxTypeOf(type);
+                    }
+                }
+                if (!metadata.getSourceType().equals(genericReturnType)) {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    this +
+                                    "\", it cannot be decorated by @" +
+                                    JsonConverter.class.getName() +
+                                    ", the property type \"" +
+                                    javaGetter.getGenericReturnType() +
+                                    "\" does not match the source type \"" +
+                                    metadata.getSourceType() +
+                                    "\" of converter class \"" +
+                                    metadata.getConverter().getClass().getName() +
+                                    "\""
+                    );
+                }
             }
         }
         converterMetadata = metadata;
         converterMetadataResolved = true;
         return metadata;
+    }
+
+    @Nullable
+    @Override
+    public <S, T> Converter<S, T> getConverter() {
+        ConverterMetadata metadata = getConverterMetadata();
+        if (metadata != null) {
+            return metadata.getConverter();
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public <S, T> Converter<S, T> getAssociatedIdConverter(boolean forList) {
+        ImmutableType target = getTargetType();
+        if (target == null) {
+            throw new IllegalStateException("The current property \"" + this + "\" is not association");
+        }
+        ConverterMetadata metadata = targetType.getIdProp().getConverterMetadata();
+        if (metadata == null) {
+            return null;
+        }
+        metadata = forList && isReferenceList(TargetLevel.ENTITY) ? metadata.toListMetadata() : metadata;
+        return metadata.getConverter();
     }
 
     @NotNull

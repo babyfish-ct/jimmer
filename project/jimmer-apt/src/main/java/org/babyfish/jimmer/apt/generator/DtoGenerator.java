@@ -195,6 +195,10 @@ public class DtoGenerator {
         addToString();
 
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
+            addSpecificationConverter(prop);
+        }
+
+        for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.isNewTarget() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
                 new DtoGenerator(
                         prop.getTargetType(),
@@ -314,18 +318,22 @@ public class DtoGenerator {
                 cb.add(",\nnull");
             } else {
                 cb.add(
-                        ",\n$T.$L($T.class)",
+                        ",\n$T.$L($T.class, ",
                         Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                         tailProp.getBaseProp().isList() ? "idListGetter" : "idReferenceGetter",
                         tailProp.getBaseProp().getTargetType().getClassName()
                 );
+                addConverterLoading(cb, prop, false);
+                cb.add(")");
             }
             cb.add(
-                    ",\n$T.$L($T.class)",
+                    ",\n$T.$L($T.class, ",
                     Constants.DTO_PROP_ACCESSOR_CLASS_NAME,
                     tailProp.getBaseProp().isList() ? "idListSetter" : "idReferenceSetter",
                     tailProp.getBaseProp().getTargetType().getClassName()
             );
+            addConverterLoading(cb, prop, false);
+            cb.add(")");
         } else if (tailProp.getTargetType() != null) {
             if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
@@ -347,13 +355,13 @@ public class DtoGenerator {
             );
         } else if (prop.getEnumType() != null) {
             EnumType enumType = prop.getEnumType();
-            TypeName enumTypName = tailProp.getBaseProp().getTypeName();
+            TypeName enumTypeName = tailProp.getBaseProp().getTypeName();
             if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
                 cb.add(",\nnull");
             } else {
                 cb.add(",\narg -> {\n");
                 cb.indent();
-                cb.beginControlFlow("switch (($T)arg)", enumTypName);
+                cb.beginControlFlow("switch (($T)arg)", enumTypeName);
                 for (Map.Entry<String, String> e: enumType.getValueMap().entrySet()) {
                     cb.add("case $L:\n", e.getKey());
                     cb.indent();
@@ -373,41 +381,56 @@ public class DtoGenerator {
             }
             cb.add(",\narg -> {\n");
             cb.indent();
-            cb.beginControlFlow("switch (($T)arg)", enumType.isNumeric() ? TypeName.INT : Constants.STRING_CLASS_NAME);
-            for (Map.Entry<String, String> e: enumType.getConstantMap().entrySet()) {
-                cb.add("case $L:\n", e.getKey());
-                cb.indent();
-                cb.addStatement("return $T.$L", enumTypName, e.getValue());
-                cb.unindent();
-            }
-            cb.add("default:\n");
-            cb.indent();
-            cb.addStatement(
-                    "throw new IllegalArgumentException($S + arg + $S)",
-                    "Illegal value `\"",
-                    "\"`for enum type: \"" + enumTypName + "\""
-            );
-            cb.unindent();
-            cb.endControlFlow();
+            addValueToEnum(cb, prop, "arg");
             cb.unindent();
             cb.add("}");
-        } else if (tailProp.getBaseProp().getConverterMetadata() != null) {
-            cb.add(
-                    ",\narg -> $T.$L.unwrap().getConverterMetadata().getConverter().output(arg)",
-                    dtoType.getBaseType().getPropsClassName(),
-                    StringUtil.snake(tailProp.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
-            );
-            cb.add(
-                    ",\narg -> $T.$L.unwrap().getConverterMetadata().getConverter().input(arg)",
-                    dtoType.getBaseType().getPropsClassName(),
-                    StringUtil.snake(tailProp.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
-            );
+        } else if (converterMetadataOf(prop) != null) {
+            cb.add(",\narg -> ");
+            addConverterLoading(cb, prop, true);
+            cb.add(".output(arg)");
+            cb.add(",\narg -> ");
+            addConverterLoading(cb, prop, true);
+            cb.add(".input(arg)");
         }
 
         cb.unindent();
         cb.add("\n)");
         builder.initializer(cb.build());
         typeBuilder.addField(builder.build());
+    }
+    
+    private void addValueToEnum(CodeBlock.Builder cb, DtoProp<ImmutableType, ImmutableProp> prop, String variableName) {
+        EnumType enumType = prop.getEnumType();
+        TypeName enumTypeName = prop.toTailProp().getBaseProp().getTypeName();
+        cb.beginControlFlow("switch (($T)$L)", enumType.isNumeric() ? TypeName.INT : Constants.STRING_CLASS_NAME, variableName);
+        for (Map.Entry<String, String> e: enumType.getConstantMap().entrySet()) {
+            cb.add("case $L:\n", e.getKey());
+            cb.indent();
+            cb.addStatement("return $T.$L", enumTypeName, e.getValue());
+            cb.unindent();
+        }
+        cb.add("default:\n");
+        cb.indent();
+        cb.addStatement(
+                "throw new IllegalArgumentException($S + $L + $S)",
+                "Illegal value `\"",
+                variableName,
+                "\"`for enum type: \"" + enumTypeName + "\""
+        );
+        cb.unindent();
+        cb.endControlFlow();
+    }
+
+    private void addConverterLoading(CodeBlock.Builder cb, DtoProp<ImmutableType, ImmutableProp> prop, boolean forList) {
+        ImmutableProp baseProp = prop.toTailProp().getBaseProp();
+        cb.add(
+                "$T.$L.unwrap().$L",
+                dtoType.getBaseType().getPropsClassName(),
+                StringUtil.snake(baseProp.getName(), StringUtil.SnakeCase.UPPER),
+                prop.toTailProp().getBaseProp().isAssociation(true) ?
+                        "getAssociatedIdConverter(" + forList + ")" :
+                        "getConverter()"
+        );
     }
 
     private boolean isSimpleProp(DtoProp<ImmutableType, ImmutableProp> prop) {
@@ -670,6 +693,10 @@ public class DtoGenerator {
             if (prop.getBaseProp().isJavaFormula()) {
                 continue;
             }
+            boolean check = prop.isNullable() && dtoType.getModifiers().contains(DtoTypeModifier.DYNAMIC);
+            if (check) {
+                builder.beginControlFlow("if ($L != null)", prop.getName());
+            }
             if (isSimpleProp(prop)) {
                 builder.addStatement("__draft.$L($L)", prop.getBaseProp().getSetterName(), prop.getName());
             } else {
@@ -689,6 +716,9 @@ public class DtoGenerator {
                             prop.getName()
                     );
                 }
+            }
+            if (check) {
+                builder.endControlFlow();
             }
         }
         builder.addCode("$<});\n");
@@ -813,8 +843,15 @@ public class DtoGenerator {
                     StringUtil.snake(prop.getBaseProp().getName(), StringUtil.SnakeCase.UPPER)
             );
         }
-        cb.add("this.");
-        cb.add(prop.getName());
+        if (isSpecificationConverterRequired(prop)) {
+            cb.add(
+                    "$L(this.$L)",
+                    StringUtil.identifier("__convert", prop.getName()),
+                    prop.getName()
+            );
+        } else {
+            cb.add("this.$L", prop.getName());
+        }
         if ("like".equals(funcName) || "notLike".equals(funcName)) {
             cb.add(", ");
             cb.add(prop.getLikeOptions().contains(LikeOption.INSENSITIVE) ? "true" : "false");
@@ -827,8 +864,82 @@ public class DtoGenerator {
         builder.addCode(cb.build());
     }
 
-    public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+    private void addSpecificationConverter(DtoProp<ImmutableType, ImmutableProp> prop) {
+        if (!isSpecificationConverterRequired(prop)) {
+            return;
+        }
         ImmutableProp baseProp = prop.toTailProp().getBaseProp();
+        TypeName baseTypeName = null;
+        String funcName = prop.getFuncName();
+        if (funcName != null) {
+            switch (funcName) {
+                case "id":
+                    baseTypeName = baseProp.getTargetType().getIdProp().getTypeName();
+                    if (baseProp.isList() && !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+                        baseTypeName = ParameterizedTypeName.get(
+                                Constants.LIST_CLASS_NAME,
+                                baseTypeName.box()
+                        );
+                    }
+                    break;
+                case "associatedIdEq":
+                case "associatedIdNe":
+                    baseTypeName = baseProp.getTargetType().getIdProp().getTypeName();
+                case "associatedIdIn":
+                case "associatedIdNotIn":
+                    baseTypeName = ParameterizedTypeName.get(
+                            Constants.LIST_CLASS_NAME,
+                            baseProp.getTargetType().getIdProp().getTypeName().box()
+                    );
+            }
+        }
+        if (baseTypeName == null) {
+            baseTypeName = baseProp.getTypeName();
+        }
+        baseTypeName = baseTypeName.box();
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(StringUtil.identifier("__convert", prop.getName()))
+                .addModifiers(Modifier.PRIVATE)
+                .addParameter(getPropTypeName(prop), "value")
+                .returns(baseTypeName);
+        CodeBlock.Builder cb = CodeBlock.builder();
+        cb.beginControlFlow("if ($L == null)", prop.getName());
+        cb.addStatement("return null");
+        cb.endControlFlow();
+        if (prop.getEnumType() != null) {
+            addValueToEnum(cb, prop, "value");
+        } else {
+            cb.addStatement(
+                    "return $T.$L.unwrap().<$T, $T>$L.input(value)",
+                    dtoType.getBaseType().getPropsClassName(),
+                    StringUtil.snake(baseProp.getName(), StringUtil.SnakeCase.UPPER),
+                    baseTypeName,
+                    getPropTypeName(prop).box(),
+                    baseProp.isAssociation(true) ?
+                            "getAssociatedIdConverter(true)" :
+                            "getConverter()"
+            );
+        }
+        builder.addCode(cb.build());
+        typeBuilder.addMethod(builder.build());
+    }
+
+    public TypeName getPropTypeName(DtoProp<ImmutableType, ImmutableProp> prop) {
+
+        ImmutableProp baseProp = prop.toTailProp().getBaseProp();
+
+        EnumType enumType = prop.getEnumType();
+        if (enumType != null) {
+            if (enumType.isNumeric()) {
+                return prop.isNullable() ? TypeName.INT.box() : TypeName.INT;
+            }
+            return Constants.STRING_CLASS_NAME;
+        }
+        ConverterMetadata metadata = converterMetadataOf(prop);
+        if (metadata != null) {
+            return metadata.getTargetTypeName();
+        }
+
         if (dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
             String funcName = prop.toTailProp().getFuncName();
             if (funcName != null) {
@@ -859,18 +970,6 @@ public class DtoGenerator {
             }
         }
 
-        ConverterMetadata metadata = baseProp.getConverterMetadata();
-        if (metadata != null) {
-            return metadata.getTargetTypeName();
-        }
-
-        EnumType enumType = prop.getEnumType();
-        if (enumType != null) {
-            if (enumType.isNumeric()) {
-                return prop.isNullable() ? TypeName.INT.box() : TypeName.INT;
-            }
-            return Constants.STRING_CLASS_NAME;
-        }
         TypeName elementTypeName = getPropElementName(prop);
         return baseProp.isList() ?
                 ParameterizedTypeName.get(
@@ -1116,9 +1215,12 @@ public class DtoGenerator {
                     targetType.getName()
             );
         }
+        ImmutableProp baseProp = tailProp.getBaseProp();
         TypeName typeName;
         if (tailProp.isIdOnly()) {
-            typeName = tailProp.getBaseProp().getTargetType().getIdProp().getClientTypeName();
+            typeName = tailProp.getBaseProp().getTargetType().getIdProp().getTypeName();
+        } else if (baseProp.getIdViewBaseProp() != null) {
+            typeName = baseProp.getIdViewBaseProp().getTargetType().getIdProp().getClientTypeName();
         } else {
             typeName = tailProp.getBaseProp().getClientTypeName();
         }
@@ -1156,6 +1258,42 @@ public class DtoGenerator {
             }
         }
         return simpleName;
+    }
+
+    private boolean isSpecificationConverterRequired(DtoProp<ImmutableType, ImmutableProp> prop) {
+        if (!dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+            return false;
+        }
+        return prop.getEnumType() != null || converterMetadataOf(prop) != null;
+    }
+
+    private ConverterMetadata converterMetadataOf(DtoProp<ImmutableType, ImmutableProp> prop) {
+        ImmutableProp baseProp = prop.toTailProp().getBaseProp();
+        ConverterMetadata metadata;
+        String funcName = prop.getFuncName();
+        if ("id".equals(funcName)) {
+            metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
+            if (metadata != null && baseProp.isList() && !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
+                metadata = metadata.toListMetadata();
+            }
+            return metadata;
+        }
+        if ("associatedInEq".equals(funcName) || "associatedInNe".equals(funcName)) {
+            return baseProp.getTargetType().getIdProp().getConverterMetadata();
+        }
+        if ("associatedIdIn".equals(funcName) || "associatedIdNotIn".equals(funcName)) {
+            metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
+            if (metadata != null) {
+                return metadata.toListMetadata();
+            }
+        }
+        if (baseProp.getIdViewBaseProp() != null) {
+            metadata = baseProp.getIdViewBaseProp().getTargetType().getIdProp().getConverterMetadata();
+            if (metadata != null) {
+                return baseProp.isList() ? metadata.toListMetadata() : metadata;
+            }
+        }
+        return baseProp.getConverterMetadata();
     }
 
     private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {

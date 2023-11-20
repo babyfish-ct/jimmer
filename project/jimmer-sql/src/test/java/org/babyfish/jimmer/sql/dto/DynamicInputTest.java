@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.dto;
 import org.babyfish.jimmer.sql.common.Tests;
 import org.babyfish.jimmer.sql.model.dto.DynamicBookInput;
 import org.babyfish.jimmer.sql.model.dto.DynamicBookInput2;
+import org.babyfish.jimmer.sql.model.dto.DynamicBookStoreInput;
 import org.junit.jupiter.api.Test;
 
 public class DynamicInputTest extends Tests {
@@ -22,6 +23,16 @@ public class DynamicInputTest extends Tests {
         DynamicBookInput2 input = new DynamicBookInput2();
         assertContentEquals(
                 "{}",
+                input.toEntity()
+        );
+    }
+
+    @Test
+    public void testDynamicBookStoreInput() {
+        DynamicBookStoreInput input = new DynamicBookStoreInput();
+        input.setName("MANNING");
+        assertContentEquals(
+                "{\"name\":\"MANNING\"}",
                 input.toEntity()
         );
     }

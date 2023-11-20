@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 
-class Constants {
+public class Constants {
 
     public static final ClassName CLONEABLE_CLASS_NAME =
             ClassName.get(Cloneable.class);
@@ -56,9 +56,6 @@ class Constants {
 
     public static final ClassName VIEW_CLASS_NAME =
             ClassName.get(View.class);
-
-    public static final ClassName INPUT_CLASS_NAME =
-            ClassName.get(Input.class);
 
     public static final ClassName JSPECIFICATION_CLASS_NAME =
             ClassName.get(

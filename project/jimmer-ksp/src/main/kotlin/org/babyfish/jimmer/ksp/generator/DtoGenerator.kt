@@ -16,6 +16,7 @@ import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.meta.*
+import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.math.min
@@ -181,6 +182,10 @@ class DtoGenerator private constructor(
             addApplyTo()
         } else {
             addToEntity()
+        }
+
+        for (prop in dtoType.dtoProps) {
+            typeBuilder.addSpecificationConverter(prop)
         }
 
         if (!isSpecification) {
@@ -476,6 +481,10 @@ class DtoGenerator private constructor(
                         if (baseProp.isKotlinFormula) {
                             continue
                         }
+                        val check = prop.isNullable && dtoType.modifiers.contains(DtoTypeModifier.DYNAMIC);
+                        if (check) {
+                            beginControlFlow("if (that.%L !== null)", prop.name)
+                        }
                         if (isSimpleProp(prop)) {
                             if (prop.isNullable && baseProp.let { it.isList && it.isAssociation(true) }) {
                                 addStatement("%L = that.%L ?: emptyList()", baseProp.name, prop.name)
@@ -501,6 +510,9 @@ class DtoGenerator private constructor(
                                     prop.name
                                 )
                             }
+                        }
+                        if (check) {
+                            endControlFlow()
                         }
                     }
                 }
@@ -617,7 +629,15 @@ class DtoGenerator private constructor(
                             StringUtil.snake(prop.baseProp.name, SnakeCase.UPPER)
                         )
                     }
-                    add(", this.%L", prop.name)
+                    if (isSpecificationConverterRequired(prop)) {
+                        add(
+                            ", %L(this.%L)",
+                            StringUtil.identifier("__convert", prop.name),
+                            prop.name
+                        )
+                    } else {
+                        add(", this.%L", prop.name)
+                    }
                     if (funcName == "like") {
                         add(", ")
                         add(if (prop.likeOptions.contains(LikeOption.INSENSITIVE)) "true" else "false")
@@ -701,18 +721,22 @@ class DtoGenerator private constructor(
                             add(",\nnull")
                         } else {
                             add(
-                                ",\n%T.%L(%T::class.java)",
+                                ",\n%T.%L(%T::class.java, ",
                                 DTO_PROP_ACCESSOR,
                                 if (tailBaseProp.isList) "idListGetter" else "idReferenceGetter",
                                 tailBaseProp.targetTypeName(overrideNullable = false)
                             )
+                            addConverterLoading(prop, false)
+                            add(")")
                         }
                         add(
-                            ",\n%T.%L(%T::class.java)",
+                            ",\n%T.%L(%T::class.java, ",
                             DTO_PROP_ACCESSOR,
                             if (tailBaseProp.isList) "idListSetter" else "idReferenceSetter",
                             tailBaseProp.targetTypeName(overrideNullable = false)
                         )
+                        addConverterLoading(prop, false)
+                        add(")")
                     } else if (tailBaseProp.targetType !== null) {
                         if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                             add(",\nnull")
@@ -758,32 +782,16 @@ class DtoGenerator private constructor(
                         }
                         add(",\n{\n")
                         indent()
-                        beginControlFlow(
-                            "when (it as %T)",
-                            if (propTypeName(prop).copy(nullable = false) == INT) INT else STRING
-                        )
-                        for ((v, en) in enumType.constantMap) {
-                            addStatement("%L -> %T.%L", v, enumTypeName, en)
-                        }
-                        addStatement("else -> throw IllegalArgumentException(")
-                        indent()
-                        addStatement("%S + it + %S", "Illegal value \"", "\" for the enum type \"$enumTypeName\"")
-                        unindent()
-                        add(")\n")
-                        endControlFlow()
+                        addValueToEnum(prop)
                         unindent()
                         add("}")
-                    } else if (tailBaseProp.converterMetadata != null) {
-                        add(
-                            ",\n{ %T.%L.converterMetadata.getConverter<Any, Any>().output(it) }",
-                            dtoType.baseType.propsClassName,
-                            StringUtil.snake(tailBaseProp.name, SnakeCase.UPPER)
-                        )
-                        add(
-                            ",\n{ %T.%L.converterMetadata.getConverter<Any, Any>().input(it) }",
-                            dtoType.baseType.propsClassName,
-                            StringUtil.snake(tailBaseProp.name, SnakeCase.UPPER)
-                        )
+                    } else if (prop.dtoConverterMetadata != null) {
+                        add(",\n{ ")
+                        addConverterLoading(prop, true)
+                        add(".output(it) }")
+                        add(",\n{ ")
+                        addConverterLoading(prop, true)
+                        add(".input(it) }")
                     }
 
                     unindent()
@@ -794,9 +802,73 @@ class DtoGenerator private constructor(
         addProperty(builder.build())
     }
 
+    private fun TypeSpec.Builder.addSpecificationConverter(prop: DtoProp<ImmutableType, ImmutableProp>) {
+        if (!isSpecificationConverterRequired(prop)) {
+            return
+        }
+        val baseProp = prop.toTailProp().getBaseProp()
+        val baseTypeName = when (prop.funcName) {
+            "id" -> baseProp.targetType!!.idProp!!.typeName().let {
+                if (baseProp.isList && !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                    LIST.parameterizedBy(it)
+                } else {
+                    it
+                }
+            }
+            "associatedIdEq", "associatedIdNe" ->
+                baseProp.targetType!!.idProp!!.typeName()
+            "associatedIdIn", "associatedIdNotIn" ->
+                LIST.parameterizedBy(baseProp.targetType!!.idProp!!.typeName())
+            else -> baseProp.typeName()
+        }.copy(nullable = prop.isNullable)
+        val builder = FunSpec
+            .builder(StringUtil.identifier("__convert", prop.getName()))
+            .addModifiers(KModifier.PUBLIC)
+            .addParameter("value", propTypeName(prop))
+            .returns(baseTypeName)
+            .addCode(
+                CodeBlock
+                    .builder()
+                    .apply {
+                        if (prop.isNullable) {
+                            beginControlFlow("if (value === null)")
+                            addStatement("return null")
+                            endControlFlow()
+                        }
+                        if (prop.enumType !== null) {
+                            add("return ")
+                            addValueToEnum(prop, "value")
+                        } else {
+                            val metadata = prop.dtoConverterMetadata!!
+                            add(
+                                "return %T.%L.%L<%T, %T>(%L).input(value)",
+                                dtoType.baseType.propsClassName,
+                                StringUtil.snake(baseProp.name, SnakeCase.UPPER),
+                                if (baseProp.isAssociation(true)) "getAssociatedIdConverter" else "getConverter",
+                                metadata.sourceTypeName,
+                                metadata.targetTypeName,
+                                if (baseProp.isAssociation(true)) "true" else ""
+                            )
+                        }
+                    }
+                    .build()
+            )
+        addFunction(builder.build())
+    }
+
     private fun propTypeName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
 
         val baseProp = prop.toTailProp().baseProp
+        val enumType = prop.enumType
+        if (enumType !== null) {
+            return (if (enumType.isNumeric) INT else STRING).copy(nullable = prop.isNullable)
+        }
+
+        val metadata = prop.dtoConverterMetadata
+        if (metadata != null) {
+            return metadata.targetTypeName.copy(nullable = prop.isNullable)
+        }
+
         if (dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
             val funcName = prop.toTailProp().getFuncName()
             if (funcName != null) {
@@ -820,15 +892,6 @@ class DtoGenerator private constructor(
             }
         }
 
-        val metadata = baseProp.converterMetadata
-        if (metadata != null) {
-            return metadata.targetTypeName
-        }
-
-        val enumType = prop.enumType
-        if (enumType !== null) {
-            return (if (enumType.isNumeric) INT else STRING).copy(nullable = prop.isNullable)
-        }
         val elementTypeName: TypeName = propElementName(prop)
         return if (baseProp.isList) {
             LIST.parameterizedBy(elementTypeName)
@@ -864,8 +927,11 @@ class DtoGenerator private constructor(
                 targetType.name!!
             )
         }
+        val baseProp = tailProp.baseProp
         return if (tailProp.isIdOnly) {
-            tailProp.baseProp.targetType!!.idProp!!.targetTypeName(overrideNullable = false)
+            baseProp.targetType!!.idProp!!.clientClassName
+        } else if (baseProp.idViewBaseProp !== null) {
+            baseProp.idViewBaseProp!!.targetType!!.idProp!!.clientClassName
         } else {
             tailProp.baseProp.clientClassName
         }
@@ -967,6 +1033,71 @@ class DtoGenerator private constructor(
             }
         }
     }
+
+    private fun CodeBlock.Builder.addValueToEnum(prop: DtoProp<ImmutableType, ImmutableProp>, variableName: String = "it") {
+        beginControlFlow(
+            "when ($variableName as %T)",
+            if (propTypeName(prop).copy(nullable = false) == INT) INT else STRING
+        )
+        val enumTypeName = prop.toTailProp().baseProp.typeName(overrideNullable = false)
+        for ((v, en) in prop.enumType!!.constantMap) {
+            addStatement("%L -> %T.%L", v, enumTypeName, en)
+        }
+        addStatement("else -> throw IllegalArgumentException(")
+        indent()
+        addStatement("%S + $variableName + %S", "Illegal value \"", "\" for the enum type \"$enumTypeName\"")
+        unindent()
+        add(")\n")
+        endControlFlow()
+    }
+
+    private fun CodeBlock.Builder.addConverterLoading(
+        prop: DtoProp<ImmutableType, ImmutableProp>,
+        forList: Boolean
+    ) {
+        val baseProp: ImmutableProp = prop.toTailProp().getBaseProp()
+        add(
+            "%T.%L.%L",
+            dtoType.baseType.propsClassName,
+            StringUtil.snake(baseProp.name, SnakeCase.UPPER),
+            if (prop.toTailProp().getBaseProp()
+                    .isAssociation(true)
+            ) "getAssociatedIdConverter<Any, Any>($forList)" else "getConverter<Any, Any>()"
+        )
+    }
+
+    private fun isSpecificationConverterRequired(prop: DtoProp<ImmutableType, ImmutableProp>): Boolean {
+        return if (!dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            false
+        } else {
+            prop.getEnumType() != null || prop.dtoConverterMetadata != null
+        }
+    }
+
+    private val DtoProp<ImmutableType, ImmutableProp>.dtoConverterMetadata: ConverterMetadata?
+        get() {
+            val baseProp = toTailProp().getBaseProp()
+            val funcName = getFuncName()
+            if ("id" == funcName) {
+                val metadata = baseProp.targetType!!.idProp!!.converterMetadata
+                if (metadata != null && baseProp.isList && !dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+                    return metadata.toListMetadata()
+                }
+                return metadata
+            }
+            if ("associatedInEq" == funcName || "associatedInNe" == funcName) {
+                return baseProp.targetType!!.idProp!!.converterMetadata
+            }
+            if ("associatedIdIn" == funcName || "associatedIdNotIn" == funcName) {
+                return baseProp.targetType!!.idProp!!.converterMetadata?.toListMetadata()
+            }
+            if (baseProp.idViewBaseProp !== null) {
+                return baseProp.idViewBaseProp!!.targetType!!.idProp!!.converterMetadata?.let {
+                    if (baseProp.isList) it.toListMetadata() else it
+                }
+            }
+            return baseProp.converterMetadata
+        }
 
     companion object {
 

@@ -6,6 +6,19 @@ DepartmentView {
     employeeIds
 }
 
+DepartmentIdFunView {
+    id
+    id(employees) as employeeIds
+}
+
+DepartmentCompositeView {
+    id
+    employees {
+        id
+        name
+    }
+}
+
 specification DepartmentSpecification {
     id
     associatedIdIn(employees) as employeeIds

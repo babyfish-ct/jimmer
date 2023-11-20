@@ -6,6 +6,10 @@ BookStoreView {
     }
 }
 
+dynamic input DynamicBookStoreInput {
+    #allScalars?
+}
+
 input BookStoreNullableInput {
     #allScalars
     books? {

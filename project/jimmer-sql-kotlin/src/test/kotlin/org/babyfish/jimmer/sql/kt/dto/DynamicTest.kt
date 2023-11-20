@@ -3,12 +3,23 @@ package org.babyfish.jimmer.sql.kt.dto
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.DynamicBookInput2
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.DynamicBookStoreInput
 import org.junit.Test
 import java.math.BigDecimal
 import java.util.*
 
 
 class DynamicTest {
+
+    @Test
+    fun testByDynamicBookStoreInput() {
+        val input = DynamicBookStoreInput(name = "MANNING")
+        assertContentEquals(
+            "{\"name\":\"MANNING\"}",
+            input.toEntity()
+        )
+    }
+
     @Test
     fun testNullByDynamicInput() {
         val input = DynamicBookInput()

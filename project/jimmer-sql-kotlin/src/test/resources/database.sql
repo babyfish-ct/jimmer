@@ -8,6 +8,8 @@ drop table ms_product if exists;
 drop table ms_order_item_product_mapping if exists;
 drop table ms_order_item if exists;
 drop table ms_order if exists;
+drop table employee if exists;
+drop table department if exists;
 drop table transform if exists;
 drop table permission if exists;
 drop table administrator_role_mapping if exists;
@@ -404,6 +406,33 @@ alter table transform
 
 insert into transform(id, `left`, top, `right`, bottom, target_left, target_top, target_right, target_bottom)
     values(1, 100, 120, 400, 320, 800, 600, 1400, 1000);
+
+
+
+
+create table department(
+    id bigint not null,
+    name varchar(20) not null,
+    deleted_time datetime
+);
+alter table department
+    add constraint pk_department
+        primary key(id);
+
+create table employee(
+    id bigint not null,
+    name varchar(20) not null,
+    department_id bigint,
+    deleted_time datetime
+);
+alter table employee
+    add constraint pk_employee
+        primary key(id);
+alter table employee
+    add constraint fk_employee_department
+        foreign key(department_id)
+            references department(id);
+
 
 
 

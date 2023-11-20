@@ -9,3 +9,7 @@ input BookStoreNullableIdInput {
     #allScalars
     id(books)? as bookIds
 }
+
+dynamic input DynamicBookStoreInput {
+    #allScalars?
+}

@@ -3,10 +3,8 @@ package org.babyfish.jimmer.sql.kt.model.hr
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.jackson.LongConverter
 import org.babyfish.jimmer.jackson.LongListConverter
-import org.babyfish.jimmer.sql.Entity
-import org.babyfish.jimmer.sql.Id
-import org.babyfish.jimmer.sql.IdView
-import org.babyfish.jimmer.sql.OneToMany
+import org.babyfish.jimmer.sql.*
+import java.time.LocalDateTime
 
 @Entity
 interface Department {
@@ -16,6 +14,9 @@ interface Department {
     val id: Long
 
     val name: String
+
+    @LogicalDeleted("now")
+    val deletedTime: LocalDateTime?
 
     @OneToMany(mappedBy = "department")
     val employees: List<Employee>

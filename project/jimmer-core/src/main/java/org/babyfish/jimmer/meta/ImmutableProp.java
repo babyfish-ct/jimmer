@@ -84,6 +84,10 @@ public interface ImmutableProp {
 
     ConverterMetadata getConverterMetadata();
 
+    <S, T> Converter<S, T> getConverter();
+
+    <S, T> Converter<S, T> getAssociatedIdConverter(boolean forList);
+
     @NotNull
     DissociateAction getDissociateAction();
 

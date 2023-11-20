@@ -894,14 +894,14 @@ public class JTypeScriptTest {
                         "        ReadonlyArray<{\n" +
                         "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
-                        "            readonly storeId?: string\n" +
+                        "            readonly storeId?: number\n" +
                         "        }>\n" +
                         "    > {\n" +
                         "        let _uri = '/java/books/simple';\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<{\n" +
                         "            readonly id: string, \n" +
                         "            readonly name: string, \n" +
-                        "            readonly storeId?: string\n" +
+                        "            readonly storeId?: number\n" +
                         "        }>\n" +
                         "    }\n" +
                         "    \n" +
@@ -1151,9 +1151,9 @@ public class JTypeScriptTest {
                         "     */\n" +
                         "    readonly authors: ReadonlyArray<Author>;\n" +
                         "    \n" +
-                        "    readonly storeId?: string;\n" +
+                        "    readonly storeId?: number;\n" +
                         "    \n" +
-                        "    readonly authorIds: ReadonlyArray<string>;\n" +
+                        "    readonly authorIds: ReadonlyArray<number>;\n" +
                         "}\n",
                 code
         );
@@ -1200,7 +1200,7 @@ public class JTypeScriptTest {
                         "    'BookService/SIMPLE_FETCHER': {\n" +
                         "        readonly id: string, \n" +
                         "        readonly name: string, \n" +
-                        "        readonly storeId?: string\n" +
+                        "        readonly storeId?: number\n" +
                         "    }, \n" +
                         "    'BookService/COMPLEX_FETCHER': {\n" +
                         "        readonly id: string, \n" +

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.query.specification;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.ComparableExpression;
+import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
@@ -137,19 +138,23 @@ public class PredicateApplier {
         if (value == null || value.isEmpty()) {
             return;
         }
-        if (!matchStart && !value.startsWith("%")) {
-            value = '%' + value;
-        }
-        if (!matchEnd && !value.endsWith("%")) {
-            value = value + '%';
+        LikeMode mode;
+        if (matchStart && matchEnd) {
+            mode = LikeMode.EXACT;
+        } else if (matchStart) {
+            mode = LikeMode.START;
+        } else if (matchEnd) {
+            mode = LikeMode.END;
+        } else {
+            mode = LikeMode.ANYWHERE;
         }
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
             if (insensitive) {
-                predicates[i] = ((StringExpression) ctx.table().<String>get(props[i])).ilike(value);
+                predicates[i] = ((StringExpression) ctx.table().<String>get(props[i])).ilike(value, mode);
             } else {
-                predicates[i] = ((StringExpression) ctx.table().<String>get(props[i])).like(value);
+                predicates[i] = ((StringExpression) ctx.table().<String>get(props[i])).like(value, mode);
             }
         }
         ctx.statement().where(Predicate.or(predicates));
@@ -159,18 +164,22 @@ public class PredicateApplier {
         if (value == null || value.isEmpty()) {
             return;
         }
-        if (!matchStart && !value.startsWith("%")) {
-            value = '%' + value;
-        }
-        if (!matchEnd && !value.endsWith("%")) {
-            value = value + '%';
+        LikeMode mode;
+        if (matchStart && matchEnd) {
+            mode = LikeMode.EXACT;
+        } else if (matchStart) {
+            mode = LikeMode.START;
+        } else if (matchEnd) {
+            mode = LikeMode.END;
+        } else {
+            mode = LikeMode.ANYWHERE;
         }
         Context ctx = this.context;
         Predicate predicate;
         if (insensitive) {
-            predicate = ((StringExpression) ctx.table().<String>get(prop)).like(value);
+            predicate = ((StringExpression) ctx.table().<String>get(prop)).ilike(value, mode);
         } else {
-            predicate = ((StringExpression) ctx.table().<String>get(prop)).ilike(value);
+            predicate = ((StringExpression) ctx.table().<String>get(prop)).like(value, mode);
         }
         ctx.statement().where(Predicate.not(predicate));
     }

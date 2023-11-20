@@ -1,7 +1,5 @@
 package org.babyfish.jimmer.jackson;
 
-import org.babyfish.jimmer.jackson.Converter;
-
 public class LongConverter implements Converter<Long, String> {
 
     @Override

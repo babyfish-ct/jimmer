@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.impl.util;
 
 import org.babyfish.jimmer.Draft;
+import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
@@ -151,52 +152,89 @@ public class DtoPropAccessor {
     }
 
     @SuppressWarnings("unchecked")
-    public static Function<Object, Object> idListGetter(Class<?> targetEntityType) {
+    public static Function<Object, Object> idListGetter(Class<?> targetEntityType, Converter<?, ?> targetIdConverter) {
         ImmutableType targetType = ImmutableType.get(targetEntityType);
         PropId targetIdPropId = targetType.getIdProp().getId();
         return arg -> {
             List<ImmutableSpi> targets = (List<ImmutableSpi>) arg;
             List<Object> targetIds = new ArrayList<>(targets.size());
-            for (ImmutableSpi target : targets) {
-                targetIds.add(target.__get(targetIdPropId));
+            if (targetIdConverter == null) {
+                for (ImmutableSpi target : targets) {
+                    targetIds.add(target.__get(targetIdPropId));
+                }
+            } else {
+                for (ImmutableSpi target : targets) {
+                    targetIds.add(
+                            ((Converter<Object, Object>)targetIdConverter).output(
+                                    target.__get(targetIdPropId)
+                            )
+                    );
+                }
             }
             return targetIds;
         };
     }
 
     @SuppressWarnings("unchecked")
-    public static Function<Object, Object> idListSetter(Class<?> targetEntityType) {
+    public static Function<Object, Object> idListSetter(Class<?> targetEntityType, Converter<?, ?> targetIdConverter) {
         ImmutableType targetType = ImmutableType.get(targetEntityType);
         PropId targetIdPropId = targetType.getIdProp().getId();
         return arg -> {
             List<Object> targetIds = (List<Object>) arg;
             List<Object> targets = new ArrayList<>(targetIds.size());
-            for (Object targetId : targetIds) {
-                targets.add(
-                        Internal.produce(
-                                targetType, 
-                                null, 
-                                draft -> ((DraftSpi) draft).__set(targetIdPropId, targetId)
-                        )
-                );
+            if (targetIdConverter == null) {
+                for (Object targetId : targetIds) {
+                    targets.add(
+                            Internal.produce(
+                                    targetType,
+                                    null,
+                                    draft -> ((DraftSpi) draft).__set(targetIdPropId, targetId)
+                            )
+                    );
+                }
+            } else {
+                for (Object targetId : targetIds) {
+                    targets.add(
+                            Internal.produce(
+                                    targetType,
+                                    null,
+                                    draft -> ((DraftSpi) draft).__set(
+                                            targetIdPropId,
+                                            ((Converter<Object, Object>)targetIdConverter).input(targetId)
+                                    )
+                            )
+                    );
+                }
             }
             return targets;
         };
     }
 
-    public static Function<Object, Object> idReferenceGetter(Class<?> targetEntityType) {
+    @SuppressWarnings("unchecked")
+    public static Function<Object, Object> idReferenceGetter(Class<?> targetEntityType, Converter<?, ?> targetIdConverter) {
         ImmutableType targetType = ImmutableType.get(targetEntityType);
         PropId targetIdPropId = targetType.getIdProp().getId();
-        return arg -> ((ImmutableSpi) arg).__get(targetIdPropId);
+        if (targetIdConverter == null) {
+            return arg -> ((ImmutableSpi) arg).__get(targetIdPropId);
+        }
+        return arg -> ((Converter<Object, Object>)targetIdConverter).output(
+                ((ImmutableSpi) arg).__get(targetIdPropId)
+        );
     }
 
-    public static Function<Object, Object> idReferenceSetter(Class<?> targetEntityType) {
+    @SuppressWarnings("unchecked")
+    public static Function<Object, Object> idReferenceSetter(Class<?> targetEntityType, Converter<?, ?> targetIdConverter) {
         ImmutableType targetType = ImmutableType.get(targetEntityType);
         PropId targetIdPropId = targetType.getIdProp().getId();
         return arg -> Internal.produce(
                 targetType,
                 null,
-                draft -> ((DraftSpi) draft).__set(targetIdPropId, arg)
+                draft -> ((DraftSpi) draft).__set(
+                        targetIdPropId,
+                        targetIdConverter == null ?
+                                arg :
+                                ((Converter<Object, Object>)targetIdConverter).input(arg)
+                )
         );
     }
 
