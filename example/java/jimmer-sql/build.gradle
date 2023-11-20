@@ -7,3 +7,9 @@ allprojects {
     group = "org.babyfish.jimmer.sql.example"
     version = jimmerVersion
 }
+
+subprojects {
+    apply plugin: 'java'
+    compileJava.options.encoding = "UTF-8"
+    compileTestJava.options.encoding = "UTF-8"
+}
