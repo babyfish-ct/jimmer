@@ -35,7 +35,7 @@ import javax.sql.DataSource;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-public class SpringJSqlClient extends LazyJSqlClient {
+public class SpringJSqlClient extends JLazyInitializationSqlClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SpringJSqlClient.class);
 

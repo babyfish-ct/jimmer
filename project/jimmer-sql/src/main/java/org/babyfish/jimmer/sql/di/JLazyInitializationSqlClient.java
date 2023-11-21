@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-public abstract class LazyJSqlClient implements JSqlClientImplementor {
+public abstract class JLazyInitializationSqlClient implements JSqlClientImplementor {
 
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
