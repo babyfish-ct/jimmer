@@ -231,6 +231,9 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider);
 
         @OldChain
+        Builder setLogicalDeletedValueGeneratorProvider(LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider);
+
+        @OldChain
         Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider);
 
         @OldChain

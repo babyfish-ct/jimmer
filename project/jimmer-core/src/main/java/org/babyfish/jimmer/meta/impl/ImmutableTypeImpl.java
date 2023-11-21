@@ -9,9 +9,11 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.IdGenerator;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.impl.IdGenerators;
+import org.babyfish.jimmer.sql.meta.impl.LogicalDeletedValueGenerators;
 import org.babyfish.jimmer.sql.meta.impl.MetaCache;
 import org.babyfish.jimmer.sql.meta.impl.SqlContextCache;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +33,13 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     };
 
     private static final IdGenerator NIL_ID_GENERATOR = new IdGenerator() {};
+
+    private static final LogicalDeletedValueGenerator<?> NIL_LOGICAL_DELETED_VALUE_GENERATOR = new LogicalDeletedValueGenerator<Object>() {
+        @Override
+        public Object generate(Class<?> entityType) {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     private final Class<?> javaClass;
 
@@ -83,6 +92,11 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     private final SqlContextCache<IdGenerator> idGeneratorCache = new SqlContextCache<>(it -> {
         IdGenerator g = IdGenerators.of(this, it);
         return g != null ? g : NIL_ID_GENERATOR;
+    });
+
+    private final SqlContextCache<LogicalDeletedValueGenerator<?>> logicalDeletedValueGeneratorCache = new SqlContextCache<>(it -> {
+        LogicalDeletedValueGenerator<?> g = LogicalDeletedValueGenerators.of(getLogicalDeletedInfo(), it);
+        return g != null ? g : NIL_LOGICAL_DELETED_VALUE_GENERATOR;
     });
 
     ImmutableTypeImpl(
@@ -480,6 +494,12 @@ class ImmutableTypeImpl extends AbstractImmutableTypeImpl {
     public IdGenerator getIdGenerator(SqlContext sqlContext) {
         IdGenerator generator = idGeneratorCache.get(sqlContext);
         return generator == NIL_ID_GENERATOR ? null : generator;
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
+        LogicalDeletedValueGenerator<?> generator = logicalDeletedValueGeneratorCache.get(sqlContext);
+        return generator == NIL_LOGICAL_DELETED_VALUE_GENERATOR ? null : generator;
     }
 
     @Override

@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-public abstract class AbstractJSqlClientWrapper implements JSqlClientImplementor {
+public abstract class LazyJSqlClient implements JSqlClientImplementor {
 
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
@@ -86,8 +86,18 @@ public abstract class AbstractJSqlClientWrapper implements JSqlClientImplementor
     }
 
     @Override
-    public UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGenerator) throws Exception {
-        return sqlClient().getUserIdGenerator(userIdGenerator);
+    public UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGeneratorType) throws Exception {
+        return sqlClient().getUserIdGenerator(userIdGeneratorType);
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(String ref) throws Exception {
+        return sqlClient().getLogicalDeletedValueGenerator(ref);
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(Class<?> logicalDeletedValueGeneratorType) throws Exception {
+        return sqlClient().getLogicalDeletedValueGenerator(logicalDeletedValueGeneratorType);
     }
 
     public static Builder newBuilder() {

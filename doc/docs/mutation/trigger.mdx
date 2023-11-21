@@ -782,11 +782,11 @@ However, to send events to the Transaction trigger, the database must be modifie
 <TabItem value="java" label="Java">
 
 ```java  
-BookTable book = BookTable.$;
+BookTable table = BookTable.$;
 sqlClient
     .createUpdate(book)
-    .set(book.store().id(), 2L)
-    .where(book.id().eq(7L))
+    .set(table.store().id(), 2L)
+    .where(table.id().eq(7L))
     .execute();
 ```
 

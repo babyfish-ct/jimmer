@@ -566,7 +566,7 @@ public class App {
                 Expression.numeric().sql(
                     Integer.class,
                     "rank() over(partition by %e order by %e desc)",
-                    new Expression[] { table.store().id(), table.price() }
+                    new Expression[] { table.storeId(), table.price() }
                 )
             )
             .execute();

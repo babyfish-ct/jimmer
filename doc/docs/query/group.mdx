@@ -70,9 +70,9 @@ BookTable table = BookTable.$;
 
 List<Tuple2<Long, BigDecimal>> tuples = sqlClient
     .createQuery(table)
-    .groupBy(table.store().id()) ❶
+    .groupBy(table.storeId()) ❶
     .select(
-            table.store().id(), ❷
+            table.storeId(), ❷
             table.price().avg() ❸
     )
     .execute();

@@ -9,6 +9,7 @@ import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
 import org.babyfish.jimmer.sql.cache.*
+import org.babyfish.jimmer.sql.di.LogicalDeletedValueGeneratorProvider
 import org.babyfish.jimmer.sql.di.TransientResolverProvider
 import org.babyfish.jimmer.sql.di.UserIdGeneratorProvider
 import org.babyfish.jimmer.sql.dialect.Dialect
@@ -100,6 +101,10 @@ class KSqlClientDsl internal constructor(
 
     fun setUserIdGeneratorProvider(provider: UserIdGeneratorProvider) {
         javaBuilder.setUserIdGeneratorProvider(provider)
+    }
+
+    fun setLogicalDeletedValueGeneratorProvider(provider: LogicalDeletedValueGeneratorProvider) {
+        javaBuilder.setLogicalDeletedValueGeneratorProvider(provider)
     }
 
     fun setTransientResolverProvider(provider: TransientResolverProvider) {

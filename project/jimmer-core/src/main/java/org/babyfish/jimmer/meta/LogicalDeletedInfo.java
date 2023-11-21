@@ -108,6 +108,7 @@ public final class LogicalDeletedInfo {
                 returnType != boolean.class &&
                         returnType != int.class &&
                         returnType != long.class &&
+                        returnType != Long.class &&
                         returnType != UUID.class &&
                         !returnType.isEnum() &&
                         !NOW_SUPPLIER_MAP.containsKey(returnType))) {
@@ -116,7 +117,7 @@ public final class LogicalDeletedInfo {
                             prop +
                             "\", it is decorated by `@" +
                             LogicalDeleted.class.getName() +
-                            "` so that it type must be boolean, integer, long, enum, uuid or time"
+                            "` so that it type must be boolean, integer, enum, long, long, uuid or time"
             );
         }
         if (NOW_SUPPLIER_MAP.containsKey(returnType)) {
@@ -131,7 +132,7 @@ public final class LogicalDeletedInfo {
                                 "\" so that it must be nullable"
                 );
             }
-        } else if (prop.isNullable()) {
+        } else if (returnType != long.class && returnType != Long.class && returnType != UUID.class && prop.isNullable()) {
             throw new ModelException(
                     "Illegal property \"" +
                             prop +
@@ -178,7 +179,7 @@ public final class LogicalDeletedInfo {
             );
         }
 
-        if (returnType == long.class || returnType == UUID.class) {
+        if (returnType == long.class || returnType == Long.class || returnType == UUID.class) {
             if (valueText != null) {
                 throw new ModelException(
                         "Illegal property \"" +
@@ -205,6 +206,9 @@ public final class LogicalDeletedInfo {
                                     "\" requires `generatorType` or `generatorRef` of `@LogicalDeleted`"
                     );
                 }
+            }
+            if (prop.isNullable()) {
+                return new LogicalDeletedInfo(prop, Action.IsNull.INSTANCE, null, generatorType, generatorRef);
             }
             Object notDeletedValue = returnType == UUID.class ?
                     UUID.fromString("00000000-0000-0000-0000-000000000000") :

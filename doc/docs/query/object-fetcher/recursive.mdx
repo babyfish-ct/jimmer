@@ -126,7 +126,7 @@ TreeNodeTable node = TreeNodeTable.$;
 
 List<TreeNode> treeNodes = sqlClient
     .createQuery(node)
-    .where(node.parent().isNull())
+    .where(node.parentId().isNull())
     .select(
         node.fetch(
             TreeNodeFetcher.$
@@ -241,7 +241,7 @@ TreeNodeTable node = TreeNodeTable.$;
 
 List<TreeNode> treeNodes = sqlClient
     .createQuery(node)
-    .where(node.parent().isNull())
+    .where(node.parentId().isNull())
     .select(
         node.fetch(
             TreeNodeFetcher.$
@@ -506,7 +506,7 @@ TreeNodeTable node = TreeNodeTable.$;
 
 List<TreeNode> treeNodes = sqlClient
     .createQuery(node)
-    .where(node.parent().isNull())
+    .where(node.parentId().isNull())
     .select(
         node.fetch(
             TreeNodeFetcher.$

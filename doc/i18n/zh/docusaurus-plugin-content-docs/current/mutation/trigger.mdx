@@ -770,7 +770,7 @@ update BOOK set STORE_ID = 2 where ID = 7;
 BookTable book = BookTable.$;
 sqlClient
         .createUpdate(book)
-        .set(book.store().id(), 2L)
+        .set(book.storeId(), 2L)
         .where(book.id().eq(7L))
         .execute();
 ```

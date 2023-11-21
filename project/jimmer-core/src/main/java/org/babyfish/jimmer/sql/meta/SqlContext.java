@@ -9,7 +9,11 @@ public interface SqlContext {
 
     UserIdGenerator<?> getUserIdGenerator(String ref) throws Exception;
 
-    UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGenerator) throws Exception;
+    UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGeneratorType) throws Exception;
+
+    LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(String ref) throws Exception;
+
+    LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(Class<?> logicalDeletedValueGeneratorType) throws Exception;
 
     MetadataStrategy getMetadataStrategy();
 }

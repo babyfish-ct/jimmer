@@ -67,7 +67,10 @@ public class Metadata {
             );
         } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException(
-                    "Cannot find draft type for \"" + immutableJavaClass.getName() + "\""
+                    "Cannot find draft type for \"" + immutableJavaClass.getName() + "\"." +
+                            "Jimmer requires to use `jimmer-apt`(Java) or `jimmer-ksp`(Kotlin) to " +
+                            "generate some code according the user-defined entity interfaces," +
+                            "please view \"https://babyfish-ct.github.io/jimmer/docs/overview/get-started/generate-code\""
             );
         }
         Class<?> producerClass = Arrays

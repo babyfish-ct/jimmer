@@ -194,10 +194,10 @@ public class BookStoreAvgPriceResolver implements TransientResolver<Long, BigDec
         return Tuple2.toMap(
             sqlClient
                 .createQuery(table)
-                .where(table.store().id().in(storeIds)) ❶
-                .groupBy(table.store().id()) ❷
+                .where(table.storeId().in(storeIds)) ❶
+                .groupBy(table.storeId()) ❷
                 .select(
-                    table.store().id(),
+                    table.storeId(),
                     table.price().avg() ❸
                 )
                 .execute()
@@ -629,7 +629,7 @@ implements TransientResolver<Long, List<Long>> {
                         table.edition()
                     ).in(
                         sqlClient.createSubQuery(table) ❷
-                            .where(table.store().id().in(ids)) ❸
+                            .where(table.storeId().in(ids)) ❸
                             .groupBy(table.name())  ❹
                             .select(
                                 table.name(),
@@ -638,7 +638,7 @@ implements TransientResolver<Long, List<Long>> {
                     )
                 )
                 .select(
-                    table.store().id(),
+                    table.storeId(),
                     table.id()
                 )
                 .execute()

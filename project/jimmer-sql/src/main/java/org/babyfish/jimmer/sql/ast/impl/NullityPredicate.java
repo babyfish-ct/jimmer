@@ -32,8 +32,14 @@ class NullityPredicate extends AbstractPredicate {
                 if (!propExpr.getProp().isNullable() && !JoinUtils.hasLeftJoin(propExpr.getTable())) {
                     throw new IllegalArgumentException(
                             "Unable to instantiate `is null` predicate which attempts to check if a " +
-                                    "non-null property is null, this non-property must belong to a join table " +
-                                    "and table join path needs to have at least one left join or full join."
+                                    "non-null property of root table or inner joined table is null " +
+                                    "(eg: `table.parent().isNull()`). " +
+                                    "There are two solutions: " +
+                                    "1. Use associated id property " +
+                                    "(eg: `table.parentId().isNull()`), " +
+                                    "2. This non-property must belong to a join table " +
+                                    "and table join path needs to have at least one left join " +
+                                    "(eg: `table.parent(JoinType.LEFT).isNull()`)."
                     );
                 }
             }

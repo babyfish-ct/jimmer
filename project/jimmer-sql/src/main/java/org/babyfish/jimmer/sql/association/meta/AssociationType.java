@@ -6,10 +6,7 @@ import org.babyfish.jimmer.meta.*;
 import org.babyfish.jimmer.meta.impl.AbstractImmutableTypeImpl;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.association.Association;
-import org.babyfish.jimmer.sql.meta.IdGenerator;
-import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.meta.MiddleTable;
-import org.babyfish.jimmer.sql.meta.SqlContext;
+import org.babyfish.jimmer.sql.meta.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -257,6 +254,11 @@ public class AssociationType extends AbstractImmutableTypeImpl {
 
     @Override
     public IdGenerator getIdGenerator(SqlContext sqlContext) {
+        return null;
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(SqlContext sqlContext) {
         return null;
     }
 

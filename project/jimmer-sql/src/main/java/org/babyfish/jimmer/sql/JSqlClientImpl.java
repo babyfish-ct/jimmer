@@ -91,6 +91,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final UserIdGeneratorProvider userIdGeneratorProvider;
 
+    private final LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider;
+
     private final TransientResolverManager transientResolverManager;
 
     private final FilterManager filterManager;
@@ -136,6 +138,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             BinLog binLog,
             FilterManager filterManager,
             UserIdGeneratorProvider userIdGeneratorProvider,
+            LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider,
             TransientResolverManager transientResolverManager,
             boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
@@ -178,8 +181,12 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.filterManager = filterManager;
         this.userIdGeneratorProvider =
                 userIdGeneratorProvider != null ?
-                userIdGeneratorProvider :
-                new DefaultUserIdGeneratorProvider();
+                        userIdGeneratorProvider :
+                        new DefaultUserIdGeneratorProvider();
+        this.logicalDeletedValueGeneratorProvider =
+                logicalDeletedValueGeneratorProvider != null ?
+                        logicalDeletedValueGeneratorProvider :
+                        new DefaultLogicalDeletedValueGeneratorProvider();
         this.transientResolverManager = transientResolverManager;
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
@@ -263,9 +270,21 @@ class JSqlClientImpl implements JSqlClientImplementor {
         return userIdGeneratorProvider.get(ref, this);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGenerator) throws Exception {
-        return userIdGeneratorProvider.get((Class<UserIdGenerator<?>>) userIdGenerator, this);
+    public UserIdGenerator<?> getUserIdGenerator(Class<?> userIdGeneratorType) throws Exception {
+        return userIdGeneratorProvider.get((Class<UserIdGenerator<?>>) userIdGeneratorType, this);
+    }
+
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(String ref) throws Exception {
+        return logicalDeletedValueGeneratorProvider.get(ref, this);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public LogicalDeletedValueGenerator<?> getLogicalDeletedValueGenerator(Class<?> logicalDeletedValueGeneratorType) throws Exception {
+        return logicalDeletedValueGeneratorProvider.get((Class<LogicalDeletedValueGenerator<?>>) logicalDeletedValueGeneratorType, this);
     }
 
     @Override
@@ -446,6 +465,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 userIdGeneratorProvider,
+                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -488,6 +508,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 cfg.getFilterManager(),
                 userIdGeneratorProvider,
+                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -525,6 +546,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 binLog,
                 filterManager,
                 userIdGeneratorProvider,
+                logicalDeletedValueGeneratorProvider,
                 transientResolverManager,
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
@@ -620,6 +642,8 @@ class JSqlClientImpl implements JSqlClientImplementor {
         private SqlFormatter sqlFormatter = SqlFormatter.SIMPLE;
 
         private UserIdGeneratorProvider userIdGeneratorProvider;
+
+        private LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider;
 
         private TransientResolverProvider transientResolverProvider;
 
@@ -748,18 +772,28 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
+        @OldChain
         public Builder setSqlFormatter(SqlFormatter sqlFormatter) {
             this.sqlFormatter = sqlFormatter != null ? sqlFormatter : SqlFormatter.SIMPLE;
             return this;
         }
 
         @Override
+        @OldChain
         public Builder setUserIdGeneratorProvider(UserIdGeneratorProvider userIdGeneratorProvider) {
             this.userIdGeneratorProvider = userIdGeneratorProvider;
             return this;
         }
 
         @Override
+        @OldChain
+        public Builder setLogicalDeletedValueGeneratorProvider(LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider) {
+            this.logicalDeletedValueGeneratorProvider = logicalDeletedValueGeneratorProvider;
+            return this;
+        }
+
+        @Override
+        @OldChain
         public JSqlClient.Builder setTransientResolverProvider(TransientResolverProvider transientResolverProvider) {
             this.transientResolverProvider = transientResolverProvider;
             return this;
@@ -1330,6 +1364,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     binLog,
                     filterManager,
                     userIdGeneratorProvider,
+                    logicalDeletedValueGeneratorProvider,
                     transientResolverManager,
                     defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,

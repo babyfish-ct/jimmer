@@ -6,6 +6,7 @@ import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 public interface Employee {
@@ -17,9 +18,9 @@ public interface Employee {
 
     String name();
 
-    @LogicalDeleted("now")
+    @LogicalDeleted
     @Nullable
-    LocalDateTime deletedTime();
+    UUID deletedUUID();
 
     @ManyToOne
     @Nullable

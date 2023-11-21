@@ -2,6 +2,7 @@ package org.babyfish.jimmer.spring;
 
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.cfg.support.SpringConnectionManager;
+import org.babyfish.jimmer.spring.cfg.support.SpringLogicalDeletedValueGeneratorProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringTransientResolverProvider;
 import org.babyfish.jimmer.spring.cfg.support.SpringUserIdGeneratorProvider;
 import org.babyfish.jimmer.sql.DraftHandler;
@@ -10,10 +11,7 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheFactory;
 import org.babyfish.jimmer.sql.cache.CacheOperator;
-import org.babyfish.jimmer.sql.di.AbstractJSqlClientWrapper;
-import org.babyfish.jimmer.sql.di.AopProxyProvider;
-import org.babyfish.jimmer.sql.di.TransientResolverProvider;
-import org.babyfish.jimmer.sql.di.UserIdGeneratorProvider;
+import org.babyfish.jimmer.sql.di.*;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.event.Triggers;
@@ -37,7 +35,7 @@ import javax.sql.DataSource;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-public class SpringJSqlClient extends AbstractJSqlClientWrapper {
+public class SpringJSqlClient extends LazyJSqlClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SpringJSqlClient.class);
 
@@ -60,6 +58,7 @@ public class SpringJSqlClient extends AbstractJSqlClientWrapper {
         DataSource dataSource = getOptionalBean(DataSource.class);
         ConnectionManager connectionManager = getOptionalBean(ConnectionManager.class);
         UserIdGeneratorProvider userIdGeneratorProvider = getOptionalBean(UserIdGeneratorProvider.class);
+        LogicalDeletedValueGeneratorProvider logicalDeletedValueGeneratorProvider = getOptionalBean(LogicalDeletedValueGeneratorProvider.class);
         TransientResolverProvider transientResolverProvider = getOptionalBean(TransientResolverProvider.class);
         AopProxyProvider aopProxyProvider = getOptionalBean(AopProxyProvider.class);
         EntityManager entityManager = getOptionalBean(EntityManager.class);
@@ -85,6 +84,11 @@ public class SpringJSqlClient extends AbstractJSqlClientWrapper {
             builder.setUserIdGeneratorProvider(userIdGeneratorProvider);
         } else {
             builder.setUserIdGeneratorProvider(new SpringUserIdGeneratorProvider(ctx));
+        }
+        if (logicalDeletedValueGeneratorProvider != null) {
+            builder.setLogicalDeletedValueGeneratorProvider(logicalDeletedValueGeneratorProvider);
+        } else {
+            builder.setLogicalDeletedValueGeneratorProvider(new SpringLogicalDeletedValueGeneratorProvider(ctx));
         }
         if (transientResolverProvider != null) {
             builder.setTransientResolverProvider(transientResolverProvider);

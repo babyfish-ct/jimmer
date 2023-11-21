@@ -540,7 +540,7 @@ create table employee(
     id bigint not null,
     name varchar(20) not null,
     department_id bigint,
-    deleted_time datetime
+    deleted_uuid uuid
 );
 alter table employee
     add constraint pk_employee

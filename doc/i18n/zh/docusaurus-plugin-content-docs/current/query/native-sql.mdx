@@ -110,7 +110,7 @@ List<Tuple3<Book, Integer, Integer>> tuples = sqlClient
             Integer.class,
             // highlight-next-line
             "rank() over(partition by %e order by %e desc)",
-            new Expression[] { table.store().id(), table.price() }
+            new Expression[] { table.storeId(), table.price() }
         )
     )
     .execute();
