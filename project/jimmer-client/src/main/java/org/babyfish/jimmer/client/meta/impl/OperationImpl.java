@@ -2,6 +2,7 @@ package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.NotApi;
+import org.babyfish.jimmer.client.NotParam;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.EnumBasedError;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -183,6 +184,11 @@ class OperationImpl implements Operation {
         List<Parameter> list = new ArrayList<>();
         java.lang.reflect.Parameter[] rawParameters = rawMethod.getParameters();
         for (int i = 0; i < rawParameters.length; i++) {
+
+            if (rawParameters[i].isAnnotationPresent(NotParam.class)) {
+                continue;
+            }
+
             Parameter parameter = ParameterImpl.create(
                     ctx,
                     operation,
