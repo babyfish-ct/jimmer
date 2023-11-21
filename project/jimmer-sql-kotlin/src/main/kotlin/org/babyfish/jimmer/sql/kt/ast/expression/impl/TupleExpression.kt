@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
-import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
@@ -37,12 +36,20 @@ internal class Tuple2Expression<T1, T2>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -88,14 +95,22 @@ internal class Tuple3Expression<T1, T2, T3>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection3 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -147,8 +162,14 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
@@ -156,7 +177,9 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
             (selection3 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection4 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -214,8 +237,14 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
@@ -225,7 +254,9 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
             (selection4 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection5 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -289,8 +320,14 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
@@ -302,7 +339,9 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
             (selection5 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection6 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -372,8 +411,14 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
@@ -387,7 +432,9 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
             (selection6 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection7 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -463,8 +510,14 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence {
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
@@ -480,7 +533,9 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
             (selection7 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection8 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 
@@ -562,8 +617,14 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
     }
 
     override fun renderTo(builder: SqlBuilder) {
+        renderTo(builder, false)
+    }
+
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
         usingLowestPrecedence { 
-            builder.sql("(")
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE)
+            }
             (selection1 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection2 as Ast).renderTo(builder)
@@ -581,7 +642,9 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
             (selection8 as Ast).renderTo(builder)
             builder.sql(", ")
             (selection9 as Ast).renderTo(builder)
-            builder.sql(")")
+            if (!ignoreBrackets) {
+                builder.leave()
+            }
         }
     }
 

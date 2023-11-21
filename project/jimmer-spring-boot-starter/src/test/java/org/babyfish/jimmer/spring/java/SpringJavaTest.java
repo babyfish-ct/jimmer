@@ -242,7 +242,7 @@ public class SpringJavaTest extends AbstractTest {
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(0, 10, BookProps.NAME.desc());
         assertSQLs(
-                "select count(tb_1_.ID) from BOOK tb_1_",
+                "select count(1) from BOOK tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                         "from BOOK tb_1_ " +
                         "order by tb_1_.NAME desc " +
@@ -277,7 +277,7 @@ public class SpringJavaTest extends AbstractTest {
 
                 Page<Book> page = bookRepository.findAll(0, 10, BookProps.NAME.desc());
                 assertSQLs(
-                        "select count(tb_1_.ID) from BOOK tb_1_",
+                        "select count(1) from BOOK tb_1_",
                         "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                                 "from BOOK tb_1_ " +
                                 "order by tb_1_.NAME desc " +
@@ -316,7 +316,7 @@ public class SpringJavaTest extends AbstractTest {
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(0, 10, sort);
         assertSQLs(
-                "select count(tb_1_.ID) from BOOK tb_1_",
+                "select count(1) from BOOK tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                         "from BOOK tb_1_ " +
                         "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
@@ -344,7 +344,7 @@ public class SpringJavaTest extends AbstractTest {
         assertTransactionEvents();
         Page<Book> page = bookRepository.findAll(pageable);
         assertSQLs(
-                "select count(tb_1_.ID) from BOOK tb_1_",
+                "select count(1) from BOOK tb_1_",
                 "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
                         "from BOOK tb_1_ " +
                         "order by tb_1_.NAME desc " +
@@ -423,7 +423,7 @@ public class SpringJavaTest extends AbstractTest {
     }
 
     @Test
-    public void testFindByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc() throws JsonProcessingException {
+    public void testFindByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc() {
         Pageable pageable = PageRequest.of(0, 2);
         Page<Book> page = bookRepository.findByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc(
                 pageable,
@@ -437,7 +437,7 @@ public class SpringJavaTest extends AbstractTest {
                 "O'REILLY"
         );
         assertSQLs(
-                "select count(tb_1_.ID) " +
+                "select count(1) " +
                         "from BOOK tb_1_ " +
                         "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                         "where tb_1_.NAME ilike ? " +
@@ -498,6 +498,44 @@ public class SpringJavaTest extends AbstractTest {
         );
         Assertions.assertEquals(3, page.getTotalElements());
         Assertions.assertEquals(2, page.getTotalPages());
+    }
+
+    @Test
+    public void testFindByNameLikeIgnoreCaseOrderByNameAscEditionDesc() {
+        Pageable pageable = PageRequest.of(0, 2);
+        Page<Book> page = bookRepository.findByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc(
+                pageable,
+                null,
+                "graphql",
+                null
+        );
+        assertSQLs(
+                "select count(1) from BOOK tb_1_ where tb_1_.NAME ilike ?",
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID from BOOK tb_1_ where tb_1_.NAME ilike ? order by tb_1_.NAME asc, tb_1_.EDITION desc limit ?"
+        );
+    }
+
+    @Test
+    public void testFindByStoreNameOrderByNameAscEditionDesc() {
+        Pageable pageable = PageRequest.of(0, 2);
+        Page<Book> page = bookRepository.findByNameLikeIgnoreCaseAndStoreNameOrderByNameAscEditionDesc(
+                pageable,
+                null,
+                null,
+                "manning"
+        );
+        assertSQLs(
+                "select count(1) " +
+                        "from BOOK tb_1_ " +
+                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                        "where tb_2_.NAME = ?",
+                "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                        "from BOOK tb_1_ " +
+                        "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
+                        "where tb_2_.NAME = ? " +
+                        "order by tb_1_.NAME asc, tb_1_.EDITION desc " +
+                        "limit ?"
+        );
     }
 
     @Test

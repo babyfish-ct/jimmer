@@ -158,11 +158,11 @@ public class PropExpressionImpl<T>
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple) {
+    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
         EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());
         if (partial != null) {
-            if (ignoreEmbeddedTuple || partial.size() == 1) {
+            if (ignoreBrackets || partial.size() == 1) {
                 tableImplementor.renderSelection(prop, rawId, builder, path != null ? partial : null);
             } else {
                 builder.enter(SqlBuilder.ScopeType.TUPLE);

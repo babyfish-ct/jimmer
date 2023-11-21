@@ -1,6 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.Expression;
+import org.babyfish.jimmer.sql.ast.PropExpression;
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor;
+import org.babyfish.jimmer.sql.meta.EmbeddedColumns;
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,11 +27,15 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
+
         visitor.visitAggregation(functionName(), expression, prefix());
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder) {
+    public final void renderTo(@NotNull SqlBuilder builder) {
+
+        validate(builder.getAstContext().getSqlClient());
+
         builder.sql(functionName());
         builder.sql("(");
         String prefix = prefix();
@@ -35,8 +43,36 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
             builder.sql(prefix);
             builder.sql(" ");
         }
-        renderChild((Ast) expression, builder);
+        renderExpression(builder);
         builder.sql(")");
+    }
+
+    private void validate(JSqlClientImplementor sqlClient) {
+        if (!sqlClient.getDialect().isTupleCountSupported()) {
+            if (expression instanceof PropExpression<?>) {
+                PropExpressionImpl<?> propExpr = (PropExpressionImpl<?>) expression;
+                EmbeddedColumns.Partial partial = propExpr.getPartial(sqlClient.getMetadataStrategy());
+                if (partial != null && partial.size() > 1) {
+                    throw new IllegalArgumentException(
+                            "The `count` function does not support embedded property " +
+                                    "because multiple columns `count` is not supported by current dialect \"" +
+                                    sqlClient.getDialect().getClass().getName() +
+                                    "\""
+                    );
+                }
+            } else if (expression instanceof TupleExpressionImplementor<?>) {
+                throw new IllegalArgumentException(
+                        "The `count` function does not support tuple expression " +
+                                "because multiple columns `count` is not supported by current dialect \"" +
+                                sqlClient.getDialect().getClass().getName() +
+                                "\""
+                );
+            }
+        }
+    }
+
+    protected void renderExpression(@NotNull SqlBuilder builder) {
+        renderChild((Ast) expression, builder);
     }
 
     @Override
@@ -83,6 +119,21 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         @Override
         protected String prefix() {
             return "distinct";
+        }
+
+        @Override
+        protected void renderExpression(@NotNull SqlBuilder builder) {
+            if (builder.getAstContext().getSqlClient().getDialect().isTupleCountSupported()) {
+                if (expression instanceof PropExpressionImplementor<?>) {
+                    ((PropExpressionImplementor<?>) expression).renderTo(builder, true);
+                    return;
+                }
+                if (expression instanceof TupleExpressionImplementor<?>) {
+                    ((TupleExpressionImplementor<?>) expression).renderTo(builder, true);
+                    return;
+                }
+            }
+            super.renderExpression(builder);
         }
     }
 

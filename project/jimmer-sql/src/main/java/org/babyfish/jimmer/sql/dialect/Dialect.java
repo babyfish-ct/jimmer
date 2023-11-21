@@ -35,6 +35,10 @@ public interface Dialect {
 
     default boolean isMultiInsertionSupported() { return true; }
 
+    default boolean isTupleCountSupported() {
+        return false;
+    }
+
     @Nullable
     default String getConstantTableName() { return null; }
 

@@ -1,6 +1,9 @@
 package org.babyfish.jimmer.meta;
 
+import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.sql.LogicalDeleted;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedUUIDGenerator;
+import org.babyfish.jimmer.sql.meta.LogicalDeletedValueGenerator;
 
 import java.time.*;
 import java.util.*;
@@ -17,14 +20,22 @@ public final class LogicalDeletedInfo {
 
     private final Object value;
 
+    private final Class<? extends LogicalDeletedValueGenerator<?>> generatorType;
+
+    private final String generatorRef;
+
     private LogicalDeletedInfo(
             ImmutableProp prop,
             Action action,
-            Object value
+            Object value,
+            Class<? extends LogicalDeletedValueGenerator<?>> generatorType,
+            String generatorRef
     ) {
         this.prop = prop;
         this.action = action;
         this.value = value;
+        this.generatorType = generatorType;
+        this.generatorRef = generatorRef;
     }
 
     public LogicalDeletedInfo to(ImmutableProp prop) {
@@ -48,6 +59,8 @@ public final class LogicalDeletedInfo {
         this.prop = prop;
         this.action = base.action;
         this.value = base.value;
+        this.generatorType = base.generatorType;
+        this.generatorRef = base.generatorRef;
     }
 
     public ImmutableProp getProp() {
@@ -58,11 +71,22 @@ public final class LogicalDeletedInfo {
         return action;
     }
 
-    public Object getValue() {
+    public Object generateValue() {
+        if (generatorType != null || generatorRef != null) {
+            throw new AssertionError("Internal bug, cannot generate value, please use generator");
+        }
         if (value instanceof Supplier<?>) {
             return ((Supplier<?>)value).get();
         }
         return value;
+    }
+
+    public Class<? extends LogicalDeletedValueGenerator<?>> getGeneratorType() {
+        return generatorType;
+    }
+
+    public String getGeneratorRef() {
+        return generatorRef;
     }
 
     @Override
@@ -83,6 +107,8 @@ public final class LogicalDeletedInfo {
         if (prop.isAssociation(TargetLevel.OBJECT) || (
                 returnType != boolean.class &&
                         returnType != int.class &&
+                        returnType != long.class &&
+                        returnType != UUID.class &&
                         !returnType.isEnum() &&
                         !NOW_SUPPLIER_MAP.containsKey(returnType))) {
             throw new ModelException(
@@ -90,7 +116,7 @@ public final class LogicalDeletedInfo {
                             prop +
                             "\", it is decorated by `@" +
                             LogicalDeleted.class.getName() +
-                            "` so that it type must be boolean, integer, enum or time"
+                            "` so that it type must be boolean, integer, long, enum, uuid or time"
             );
         }
         if (NOW_SUPPLIER_MAP.containsKey(returnType)) {
@@ -117,28 +143,102 @@ public final class LogicalDeletedInfo {
             );
         }
 
+        String valueText = deleted.value();
+        if (valueText.isEmpty()) {
+            valueText = null;
+        }
+        Class<? extends LogicalDeletedValueGenerator<?>> generatorType = deleted.generatorType();
+        if (generatorType == LogicalDeletedValueGenerator.None.class) {
+            generatorType = null;
+        }
+        String generatorRef = deleted.generatorRef();
+        if (generatorRef.isEmpty()) {
+            generatorRef = null;
+        }
+
+        if (valueText != null && generatorType != null) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", `value` and `generatorType` of `@LogicalDeleted` cannot be specified at the same time"
+            );
+        }
+        if (valueText != null && generatorRef != null) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", `value` and `generatorRef` of `@LogicalDeleted` cannot be specified at the same time"
+            );
+        }
+        if (generatorType != null && generatorRef != null) {
+            throw new ModelException(
+                    "Illegal property \"" +
+                            prop +
+                            "\", `generatorType` and `generatorRef` of `@LogicalDeleted` cannot be specified at the same time"
+            );
+        }
+
+        if (returnType == long.class || returnType == UUID.class) {
+            if (valueText != null) {
+                throw new ModelException(
+                        "Illegal property \"" +
+                                prop +
+                                "\", the property returns \"" +
+                                returnType +
+                                "\" does not require `value` of `@LogicalDeleted`"
+                );
+            }
+            if (generatorType != null) {
+                new GenericValidator(prop, LogicalDeleted.class, generatorType, LogicalDeletedValueGenerator.class)
+                        .expect(0, UUID.class)
+                        .validate();
+            }
+            if (generatorType == null && generatorRef == null) {
+                if (returnType == UUID.class) {
+                    generatorType = LogicalDeletedUUIDGenerator.class;
+                } else {
+                    throw new ModelException(
+                            "Illegal property \"" +
+                                    prop +
+                                    "\", the property returns \"" +
+                                    returnType +
+                                    "\" requires `generatorType` or `generatorRef` of `@LogicalDeleted`"
+                    );
+                }
+            }
+            Object notDeletedValue = returnType == UUID.class ?
+                    UUID.fromString("00000000-0000-0000-0000-000000000000") :
+                    0L;
+            return new LogicalDeletedInfo(
+                    prop,
+                    new Action.Eq(notDeletedValue),
+                    null,
+                    generatorType,
+                    generatorRef
+            );
+        }
+
         if (deleted.value().isEmpty()) {
             throw new ModelException(
                     "Illegal property \"" +
                             prop +
-                            "\", it is decorated by `@" +
-                            LogicalDeleted.class.getName() +
-                            "` but the `value` is empty string"
+                            "\", the property returns \"" +
+                            returnType +
+                            "\" requires `value` of `@LogicalDeleted`"
             );
         }
-
-        Object value = parseValue(prop, deleted.value(), "value");
+        Object value = parseValue(prop, deleted.value());
         Action action;
         if (prop.isNullable()) {
-            action = value != null ? Action.IS_NULL : Action.IS_NOT_NULL;
+            action = value != null ? Action.IsNull.INSTANCE : Action.IsNotNull.INSTANCE;
         } else {
-            action = Action.NE;
+            action = new Action.Ne(value);
         }
-        return new LogicalDeletedInfo(prop, action, value);
+        return new LogicalDeletedInfo(prop, action, value, null, null);
     }
 
     @SuppressWarnings("unchecked")
-    private static Object parseValue(ImmutableProp prop, String value, String argumentName) {
+    private static Object parseValue(ImmutableProp prop, String value) {
         Class<?> type = prop.getElementClass();
         if (type == boolean.class) {
             switch (value) {
@@ -152,9 +252,7 @@ public final class LogicalDeletedInfo {
                                     prop +
                                     "\", it is decorated by `@" +
                                     LogicalDeleted.class.getName() +
-                                    "` and its type is boolean, but the `" +
-                                    argumentName +
-                                    "` is \"" +
+                                    "` and its type is boolean, but the `value` is \"" +
                                     value +
                                     "\" is neither \"true\" nor \"false\""
                     );
@@ -168,9 +266,7 @@ public final class LogicalDeletedInfo {
                                 prop +
                                 "\", it is decorated by `@" +
                                 LogicalDeleted.class.getName() +
-                                "` and its type is int, but the `" +
-                                argumentName +
-                                "` is \"" +
+                                "` and its type is int, but the `value` is \"" +
                                 value +
                                 "\" which is not a valid integer"
                 );
@@ -189,9 +285,7 @@ public final class LogicalDeletedInfo {
                             LogicalDeleted.class.getName() +
                             "` and its type is the enum type \"" +
                             type.getName() +
-                            "\", but the `" +
-                            argumentName +
-                            "` is \"" +
+                            "\", but the `value` is \"" +
                             value +
                             "\" which is not any one of: " +
                             Arrays.stream(constants).map(Enum::name).collect(Collectors.toList())
@@ -210,9 +304,7 @@ public final class LogicalDeletedInfo {
                                     LogicalDeleted.class.getName() +
                                     "` and its type is the time type \"" +
                                     type.getName() +
-                                    "\", but the `" +
-                                    argumentName +
-                                    "` is \"" +
+                                    "\", but the `value` is \"" +
                                     value +
                                     "\" which is neither \"null\" or \"now\""
                     );
@@ -220,10 +312,81 @@ public final class LogicalDeletedInfo {
         }
     }
 
-    public enum Action {
-        NE,
-        IS_NULL,
-        IS_NOT_NULL
+    public static abstract class Action {
+
+        Action() {}
+
+        public abstract Action reversed();
+
+        public static class Eq extends Action {
+
+            private final Object value;
+
+            private Action reversed;
+
+            Eq(Object value) {
+                this.value = value;
+            }
+
+            public Object getValue() {
+                return value;
+            }
+
+            @Override
+            public Action reversed() {
+                if (reversed == null) {
+                    reversed = new Ne(value);
+                }
+                return reversed;
+            }
+        }
+
+        public static class Ne extends Action {
+
+            private final Object value;
+
+            private Action reversed;
+
+            Ne(Object value) {
+                this.value = value;
+            }
+
+            public Object getValue() {
+                return value;
+            }
+
+            @Override
+            public Action reversed() {
+                if (reversed == null) {
+                    reversed = new Eq(value);
+                }
+                return reversed;
+            }
+        }
+
+        public static class IsNull extends Action {
+
+            static final IsNull INSTANCE = new IsNull();
+
+            private IsNull() {}
+
+            @Override
+            public Action reversed() {
+                return IsNotNull.INSTANCE;
+            }
+        }
+
+        public static class IsNotNull extends Action {
+
+            static final IsNotNull INSTANCE = new IsNotNull();
+
+            private IsNotNull() {}
+
+            @Override
+            public Action reversed() {
+                return IsNull.INSTANCE;
+            }
+        }
     }
 
     static {

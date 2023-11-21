@@ -130,8 +130,8 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
     }
 
     @Override
-    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple) {
-        ((PropExpressionImplementor<?>)raw).renderTo(builder, ignoreEmbeddedTuple);
+    public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+        ((PropExpressionImplementor<?>)raw).renderTo(builder, ignoreBrackets);
     }
 
     @Override

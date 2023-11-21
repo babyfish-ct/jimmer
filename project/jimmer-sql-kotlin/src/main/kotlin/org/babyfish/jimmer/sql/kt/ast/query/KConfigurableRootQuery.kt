@@ -1,12 +1,13 @@
 package org.babyfish.jimmer.sql.kt.ast.query
 
 import org.babyfish.jimmer.lang.NewChain
+import org.babyfish.jimmer.sql.kt.ast.expression.rowCount
 import java.sql.Connection
 
 interface KConfigurableRootQuery<E: Any, R> : KTypedRootQuery<R> {
 
     fun count(con: Connection? = null): Long =
-        reselect { select(org.babyfish.jimmer.sql.kt.ast.expression.count(table)) }
+        reselect { select(rowCount()) }
             .withoutSortingAndPaging()
             .execute(con)[0]
 

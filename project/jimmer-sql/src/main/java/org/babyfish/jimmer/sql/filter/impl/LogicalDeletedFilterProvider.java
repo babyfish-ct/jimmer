@@ -97,16 +97,17 @@ public class LogicalDeletedFilterProvider {
         @Override
         public void filter(FilterArgs<Props> args) {
             Expression<Object> expr = args.getTable().get(info.getProp().getName());
-            switch (info.getAction()) {
-                case NE:
-                    args.where(expr.ne(info.getValue()));
-                    break;
-                case IS_NOT_NULL:
-                    args.where(expr.isNotNull());
-                    break;
-                case IS_NULL:
-                    args.where(expr.isNull());
-                    break;
+            LogicalDeletedInfo.Action action = info.getAction();
+            if (action instanceof LogicalDeletedInfo.Action.Eq) {
+                LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
+                args.where(expr.eq(eq.getValue()));
+            } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
+                LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
+                args.where(expr.ne(ne.getValue()));
+            } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+                args.where(expr.isNull());
+            } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+                args.where(expr.isNotNull());
             }
         }
 
@@ -164,16 +165,17 @@ public class LogicalDeletedFilterProvider {
         @Override
         public void filter(FilterArgs<Props> args) {
             Expression<Object> expr = args.getTable().get(info.getProp().getName());
-            switch (info.getAction()) {
-                case NE:
-                    args.where(expr.eq(info.getValue()));
-                    break;
-                case IS_NOT_NULL:
-                    args.where(expr.isNull());
-                    break;
-                case IS_NULL:
-                    args.where(expr.isNotNull());
-                    break;
+            LogicalDeletedInfo.Action action = info.getAction().reversed();
+            if (action instanceof LogicalDeletedInfo.Action.Eq) {
+                LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
+                args.where(expr.eq(eq.getValue()));
+            } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
+                LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
+                args.where(expr.ne(ne.getValue()));
+            } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+                args.where(expr.isNull());
+            } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+                args.where(expr.isNotNull());
             }
         }
     }

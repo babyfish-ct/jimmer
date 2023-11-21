@@ -475,14 +475,6 @@ public class ImmutableProp implements BaseProp {
                                 "\" because it is association"
                 );
             }
-            if (getIdViewBaseProp() != null) {
-                throw new MetaException(
-                        executableElement,
-                        "it cannot be decorated by \"@" +
-                                JsonConverter.class.getName() +
-                                "\" because it is id-view property"
-                );
-            }
             if (RecursiveAnnotations.of(executableElement, JsonFormat.class) != null) {
                 throw new MetaException(
                         executableElement,

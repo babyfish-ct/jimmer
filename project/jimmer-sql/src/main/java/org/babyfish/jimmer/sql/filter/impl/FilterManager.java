@@ -159,7 +159,9 @@ public class FilterManager implements Filters {
             return Ref.empty();
         }
         if (filter instanceof CacheableFilter<?>) {
-            return Ref.of(((CacheableFilter<Props>) filter).getParameters());
+            return Ref.of(
+                    standardParameterMap(((CacheableFilter<Props>) filter).getParameters())
+            );
         }
         return null;
     }
@@ -901,4 +903,28 @@ public class FilterManager implements Filters {
     }
 
     public interface Exported {}
+
+    private static SortedMap<String, Object> standardParameterMap(SortedMap<String, Object> parameters) {
+        if (parameters == null || parameters.isEmpty()) {
+            return parameters;
+        }
+        boolean hasNullValue = false;
+        for (Object o : parameters.values()) {
+            if (o == null) {
+                hasNullValue = true;
+                break;
+            }
+        }
+        if (!hasNullValue) {
+            return parameters;
+        }
+        SortedMap<String, Object> withoutNullValueMap = new TreeMap<>();
+        for (Map.Entry<String, Object> e : parameters.entrySet()) {
+            Object value = e.getValue();
+            if (value != null) {
+                withoutNullValueMap.put(e.getKey(), value);
+            }
+        }
+        return withoutNullValueMap;
+    }
 }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.query;
 
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableRootQuery;
 import org.babyfish.jimmer.sql.ast.query.PagingQueries;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -30,14 +31,14 @@ public class PagingTest extends AbstractQueryTest {
         });
 
         ConfigurableRootQuery<BookTable, Long> countQuery = query
-                .reselect((q, book) -> q.select(book.count()))
+                .reselect((q, book) -> q.select(Expression.constant(1).count()))
                 .withoutSortingAndPaging();
 
         executeAndExpect(
                 countQuery,
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.PRICE between ? and ?"
                     );
@@ -73,14 +74,14 @@ public class PagingTest extends AbstractQueryTest {
         });
 
         ConfigurableRootQuery<BookTable, Long> countQuery = query
-                .reselect((q, book) -> q.select(book.count()))
+                .reselect((q, book) -> q.select(Expression.constant(1).count()))
                 .withoutSortingAndPaging();
 
         executeAndExpect(
                 countQuery,
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ?"
@@ -117,14 +118,14 @@ public class PagingTest extends AbstractQueryTest {
                 });
 
         ConfigurableRootQuery<BookTable, Long> countQuery = query
-                .reselect((q, book) -> q.select(book.count()))
+                .reselect((q, book) -> q.select(Expression.constant(1).count()))
                 .withoutSortingAndPaging();
 
         executeAndExpect(
                 countQuery,
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.PRICE between ? and ?"
                     );
@@ -162,14 +163,14 @@ public class PagingTest extends AbstractQueryTest {
                 });
 
         ConfigurableRootQuery<BookTable, Long> countQuery = query
-                .reselect((q, book) -> q.select(book.count()))
+                .reselect((q, book) -> q.select(Expression.constant(1).count()))
                 .withoutSortingAndPaging();
 
         executeAndExpect(
                 countQuery,
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "inner join BOOK_STORE tb_2_ on tb_1_.STORE_ID = tb_2_.ID " +
                                     "where tb_1_.PRICE between ? and ?"
@@ -393,7 +394,7 @@ public class PagingTest extends AbstractQueryTest {
                 ),
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.NAME like ?"
                     );
@@ -450,7 +451,7 @@ public class PagingTest extends AbstractQueryTest {
                 ),
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.NAME like ?"
                     );
@@ -508,7 +509,7 @@ public class PagingTest extends AbstractQueryTest {
                 ),
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.NAME like ?"
                     );
@@ -535,7 +536,7 @@ public class PagingTest extends AbstractQueryTest {
                 ),
                 ctx -> {
                     ctx.sql(
-                            "select count(tb_1_.ID) " +
+                            "select count(1) " +
                                     "from BOOK tb_1_ " +
                                     "where tb_1_.STORE_ID = ?"
                     );

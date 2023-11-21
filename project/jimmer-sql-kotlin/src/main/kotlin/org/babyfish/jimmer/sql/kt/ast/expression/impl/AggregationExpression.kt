@@ -3,9 +3,13 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 import org.babyfish.jimmer.sql.ast.impl.Ast
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor
+import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
+import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class AggregationExpression<T: Any>(
@@ -16,14 +20,46 @@ internal abstract class AggregationExpression<T: Any>(
         (expression as Ast).accept(visitor)
     }
 
-    override fun renderTo(builder: SqlBuilder) {
+    final override fun renderTo(builder: SqlBuilder) {
+
+        validate(builder.astContext.sqlClient)
+
         builder.sql(functionName())
         builder.sql("(")
         prefix()?.let {
             builder.sql(it).sql(" ")
         }
-        renderChild((expression as Ast), builder)
+        renderExpression(builder)
         builder.sql(")")
+    }
+
+    private fun validate(sqlClient: JSqlClientImplementor) {
+
+        if (sqlClient.dialect.isTupleCountSupported) {
+            if (expression is KPropExpression<*>) {
+                val propExpr = expression as PropExpressionImplementor<*>
+                val partial = propExpr.getPartial(sqlClient.metadataStrategy)
+                if (partial !== null && partial.size() > 1) {
+                    throw IllegalArgumentException(
+                        "The `count` function does not support embedded property " +
+                            "because multiple columns `count` is not supported by current dialect \"" +
+                            sqlClient.getDialect().javaClass.getName() +
+                            "\""
+                    )
+                }
+            } else if (expression is TupleExpressionImplementor<*>) {
+                throw java.lang.IllegalArgumentException(
+                    "The `count` function does not support tuple expression " +
+                        "because multiple columns `count` is not supported by current dialect \"" +
+                        sqlClient.getDialect().javaClass.getName() +
+                        "\""
+                )
+            }
+        }
+    }
+
+    protected open fun renderExpression(builder: SqlBuilder) {
+        renderChild((expression as Ast), builder)
     }
 
     override fun precedence(): Int = 0
@@ -49,7 +85,21 @@ internal abstract class AggregationExpression<T: Any>(
 
         override fun getType(): Class<Long> = Long::class.java
 
-        override fun prefix(): String? = "distinct"
+        override fun prefix(): String = "distinct"
+
+        override fun renderExpression(builder: SqlBuilder) {
+            if (builder.astContext.sqlClient.getDialect().isTupleCountSupported) {
+                if (expression is PropExpressionImplementor<*>) {
+                    (expression as PropExpressionImplementor<*>).renderTo(builder, true)
+                    return
+                }
+                if (expression is TupleExpressionImplementor<*>) {
+                    (expression as TupleExpressionImplementor<*>).renderTo(builder, true)
+                    return
+                }
+            }
+            super.renderExpression(builder)
+        }
     }
 
     class Max<T: Comparable<*>>(

@@ -42,7 +42,7 @@ class PagingTest : AbstractQueryTest() {
             }
         }) {
             sql(
-                """select count(tb_1_.ID) 
+                """select count(1) 
                     |from BOOK tb_1_ 
                     |where tb_1_.NAME like ?""".trimMargin()
             )
@@ -95,7 +95,7 @@ class PagingTest : AbstractQueryTest() {
             }
         }) {
             sql(
-                """select count(tb_1_.ID) 
+                """select count(1) 
                     |from BOOK tb_1_ 
                     |where tb_1_.NAME like ?""".trimMargin()
             )
@@ -147,7 +147,7 @@ class PagingTest : AbstractQueryTest() {
             }
         }) {
             sql(
-                """select count(tb_1_.ID) 
+                """select count(1) 
                     |from BOOK tb_1_ 
                     |where tb_1_.STORE_ID = ?""".trimMargin()
             )

@@ -215,7 +215,7 @@ public abstract class AbstractDataLoader {
         Cache<Object, Object> cache = sqlClient.getCaches().getPropertyCache(prop);
         Ref<SortedMap<String, Object>> parameterMapRef = resolver.getParameterMapRef();
         SortedMap<String, Object> parameterMap = parameterMapRef != null ?
-                standardResolveParameters(parameterMapRef.getValue()) :
+                standardParameterMap(parameterMapRef.getValue()) :
                 null;
         Cache.Parameterized<Object, Object> parameterizedCache =
                 cache instanceof Cache.Parameterized<?, ?> ?
@@ -805,7 +805,7 @@ public abstract class AbstractDataLoader {
     private SortedMap<String, Object> getParameters() {
         Filter<?> filter = globalFiler;
         if (filter instanceof CacheableFilter<?>) {
-            SortedMap<String, Object> parameters = ((CacheableFilter<?>) filter).getParameters();
+            SortedMap<String, Object> parameters = standardParameterMap(((CacheableFilter<?>) filter).getParameters());
             if (parameters.isEmpty()) {
                 return null;
             }
@@ -963,7 +963,7 @@ public abstract class AbstractDataLoader {
         );
     }
 
-    private static SortedMap<String, Object> standardResolveParameters(SortedMap<String, Object> parameters) {
+    private static SortedMap<String, Object> standardParameterMap(SortedMap<String, Object> parameters) {
         if (parameters == null || parameters.isEmpty()) {
             return parameters;
         }

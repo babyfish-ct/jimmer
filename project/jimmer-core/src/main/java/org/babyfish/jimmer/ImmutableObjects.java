@@ -355,13 +355,17 @@ public class ImmutableObjects {
         if (!spi.__isLoaded(propId)) {
             return false;
         }
-        switch (info.getAction()) {
-            case NE:
-                return spi.__get(propId).equals(info.getValue());
-            case IS_NULL:
-                return spi.__get(propId) != null;
-            case IS_NOT_NULL:
-                return spi.__get(propId) == null;
+        LogicalDeletedInfo.Action action = info.getAction().reversed();
+        if (action instanceof LogicalDeletedInfo.Action.Eq) {
+            LogicalDeletedInfo.Action.Eq eq = (LogicalDeletedInfo.Action.Eq) action;
+            return eq.getValue().equals(spi.__get(propId));
+        } else if (action instanceof LogicalDeletedInfo.Action.Ne) {
+            LogicalDeletedInfo.Action.Ne ne = (LogicalDeletedInfo.Action.Ne) action;
+            return !ne.getValue().equals(spi.__get(propId));
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNull) {
+            return spi.__get(propId) == null;
+        } else if (action instanceof LogicalDeletedInfo.Action.IsNotNull) {
+            return spi.__get(propId) != null;
         }
         return false;
     }

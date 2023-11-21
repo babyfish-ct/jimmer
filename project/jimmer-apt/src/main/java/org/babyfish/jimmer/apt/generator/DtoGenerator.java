@@ -1269,7 +1269,10 @@ public class DtoGenerator {
 
     private ConverterMetadata converterMetadataOf(DtoProp<ImmutableType, ImmutableProp> prop) {
         ImmutableProp baseProp = prop.toTailProp().getBaseProp();
-        ConverterMetadata metadata;
+        ConverterMetadata metadata = baseProp.getConverterMetadata();
+        if (metadata != null) {
+            return metadata;
+        }
         String funcName = prop.getFuncName();
         if ("id".equals(funcName)) {
             metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
@@ -1293,7 +1296,7 @@ public class DtoGenerator {
                 return baseProp.isList() ? metadata.toListMetadata() : metadata;
             }
         }
-        return baseProp.getConverterMetadata();
+        return null;
     }
 
     private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {

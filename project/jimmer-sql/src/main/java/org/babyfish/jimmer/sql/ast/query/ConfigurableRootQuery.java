@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.query;
 
 import org.babyfish.jimmer.lang.NewChain;
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +15,7 @@ public interface ConfigurableRootQuery<T extends Table<?>, R> extends TypedRootQ
     }
 
     default long count(Connection con) {
-        return reselect((q, t) -> q.select(t.count()))
+        return reselect((q, t) -> q.select(Expression.rowCount()))
             .withoutSortingAndPaging()
             .execute(con)
             .get(0);

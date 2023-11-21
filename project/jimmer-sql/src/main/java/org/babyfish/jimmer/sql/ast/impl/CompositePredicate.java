@@ -37,7 +37,7 @@ public abstract class CompositePredicate extends AbstractPredicate {
             return null;
         }
         if (arr.length == 1) {
-            return predicates[0];
+            return arr[0];
         }
         return new And(arr);
     }
@@ -60,7 +60,7 @@ public abstract class CompositePredicate extends AbstractPredicate {
             return null;
         }
         if (arr.length == 1) {
-            return predicates[0];
+            return arr[0];
         }
         return new Or(arr);
     }

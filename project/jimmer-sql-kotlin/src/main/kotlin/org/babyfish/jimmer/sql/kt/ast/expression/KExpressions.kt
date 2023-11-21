@@ -43,8 +43,13 @@ fun and(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Boo
     } else {
         predicates
             .mapNotNull { it?.toKtPredicateImpl() }
-            .takeIf { it.isNotEmpty() }
-            ?.let { AndPredicate(it) }
+            .let {
+                when (it.size) {
+                    0 -> null
+                    1 -> it.first()
+                    else -> AndPredicate(it)
+                }
+            }
     }
 
 fun or(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>? =
@@ -53,8 +58,13 @@ fun or(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Bool
     } else {
         predicates
             .mapNotNull { it?.toKtPredicateImpl() }
-            .takeIf { it.isNotEmpty() }
-            ?.let { OrPredicate(it) }
+            .let {
+                when (it.size) {
+                    0 -> null
+                    1 -> it.first()
+                    else -> OrPredicate(it)
+                }
+            }
     }
 
 
@@ -272,12 +282,19 @@ operator fun <N: Number> KExpression<N>.rem(right: N): KNullableExpression<N> =
 
 
 
+fun rowCount(): KNonNullExpression<Long> {
+    return ROW_COUNT
+}
+
+private val ROW_COUNT = count(constant(1))
+
 fun count(expression: KExpression<*>, distinct: Boolean = false): KNonNullExpression<Long> =
     if (distinct) {
         AggregationExpression.CountDistinct(expression)
     } else {
         AggregationExpression.Count(expression)
     }
+
 
 fun count(table: KTable<*>, distinct: Boolean = false): KNonNullExpression<Long> {
     val idExpr = table.getId<Any>()

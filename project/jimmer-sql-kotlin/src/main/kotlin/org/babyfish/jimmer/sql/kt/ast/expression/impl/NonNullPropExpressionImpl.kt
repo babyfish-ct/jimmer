@@ -36,8 +36,8 @@ internal class NonNullPropExpressionImpl<T: Any>(
         javaPropExpression.renderTo(builder)
     }
 
-    override fun renderTo(builder: SqlBuilder, ignoreEmbeddedTuple: Boolean) {
-        javaPropExpression.renderTo(builder, ignoreEmbeddedTuple)
+    override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {
+        javaPropExpression.renderTo(builder, ignoreBrackets)
     }
 
     override fun getTable(): Table<*> =

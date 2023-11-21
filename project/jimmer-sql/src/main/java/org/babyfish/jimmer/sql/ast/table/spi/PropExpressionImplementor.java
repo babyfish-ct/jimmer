@@ -21,5 +21,5 @@ public interface PropExpressionImplementor<T> extends PropExpression<T>, Express
     @Nullable
     EmbeddedColumns.Partial getPartial(MetadataStrategy strategy);
 
-    void renderTo(@NotNull SqlBuilder builder, boolean ignoreEmbeddedTuple);
+    void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets);
 }

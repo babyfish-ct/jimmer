@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.meta.impl;
 
-import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.impl.util.Classes;
+import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
@@ -10,8 +9,6 @@ import org.babyfish.jimmer.sql.GenerationType;
 import org.babyfish.jimmer.sql.meta.*;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
-import java.util.Map;
 
 public class IdGenerators {
 
@@ -116,39 +113,9 @@ public class IdGenerators {
                 );
             }
         } else if (generatorType != UserIdGenerator.None.class) {
-            Class<?> returnType = idProp.getElementClass();
-            Map<?, Type> typeArguments = TypeUtils.getTypeArguments(generatorType, UserIdGenerator.class);
-            Class<?> parsedType = null;
-            if (!typeArguments.isEmpty()) {
-                Type typeArgument = typeArguments.values().iterator().next();
-                if (typeArgument instanceof Class<?>) {
-                    parsedType = (Class<?>) typeArgument;
-                }
-            }
-            if (parsedType == null) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                idProp +
-                                "\", the generator type is \"" +
-                                generatorType.getName() +
-                                "\" does support type argument for \"" +
-                                UserIdGenerator.class +
-                                "\""
-                );
-            }
-            if (!Classes.matches(parsedType, returnType)) {
-                throw new ModelException(
-                        "Illegal property \"" +
-                                idProp +
-                                "\", the generator type is \"" +
-                                generatorType.getName() +
-                                "\" generates id whose type is \"" +
-                                parsedType.getName() +
-                                "\" but the property returns \"" +
-                                returnType.getName() +
-                                "\""
-                );
-            }
+            new GenericValidator(idProp, GeneratedValue.class, generatorType, UserIdGenerator.class)
+                    .expect(0, idProp.getGenericType())
+                    .validate();
         }
 
         IdGenerator idGenerator = null;
@@ -164,6 +131,9 @@ public class IdGenerators {
                             ((InvocationTargetException) ex).getTargetException() :
                             ex;
                 }
+                new GenericValidator(idProp, GeneratedValue.class, idGenerator.getClass(), UserIdGenerator.class)
+                        .expect(0, idProp.getGenericType())
+                        .validate();
             } else {
                 try {
                     idGenerator = sqlContext.getUserIdGenerator(generatorType);

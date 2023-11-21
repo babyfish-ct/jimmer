@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.sql.ast.impl.*;
+import org.babyfish.jimmer.sql.ast.impl.util.RowCounts;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.tuple.*;
@@ -86,6 +87,17 @@ public interface Expression<T> extends Selection<T> {
 
     static <N extends Number & Comparable<N>> NumericExpression<N> constant(N value) {
         return Constants.number(value);
+    }
+
+    /**
+     * Global expression for row count across tables
+     *
+     * @return The row count across tables
+     *
+     * @see #count() The count of id of a specific table
+     */
+    static NumericExpression<Long> rowCount() {
+        return RowCounts.INSTANCE;
     }
 
     static StringFactory string() {

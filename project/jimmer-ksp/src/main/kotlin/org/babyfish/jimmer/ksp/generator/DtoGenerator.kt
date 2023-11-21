@@ -1077,6 +1077,10 @@ class DtoGenerator private constructor(
     private val DtoProp<ImmutableType, ImmutableProp>.dtoConverterMetadata: ConverterMetadata?
         get() {
             val baseProp = toTailProp().getBaseProp()
+            val metadata = baseProp.converterMetadata
+            if (metadata != null) {
+                return metadata
+            }
             val funcName = getFuncName()
             if ("id" == funcName) {
                 val metadata = baseProp.targetType!!.idProp!!.converterMetadata
@@ -1096,7 +1100,7 @@ class DtoGenerator private constructor(
                     if (baseProp.isList) it.toListMetadata() else it
                 }
             }
-            return baseProp.converterMetadata
+            return null
         }
 
     companion object {

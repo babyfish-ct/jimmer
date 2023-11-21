@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.model.hr;
 
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongConverter;
-import org.babyfish.jimmer.jackson.LongListConverter;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 

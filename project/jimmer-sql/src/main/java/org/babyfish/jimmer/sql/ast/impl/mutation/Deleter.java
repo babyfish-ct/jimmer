@@ -331,7 +331,7 @@ public class Deleter {
         LogicalDeletedInfo info = type.getLogicalDeletedInfo();
         assert info != null;
         ImmutableProp prop = info.getProp();
-        Object deletedValue = info.getValue();
+        Object deletedValue = info.generateValue();
         ids = prepareLogicEvents(type, ids, prop.getId(), deletedValue);
         if (ids.isEmpty()) {
             return;

@@ -18,14 +18,14 @@ public class LogicalDeletedFieldTest {
     public void testA() {
         LogicalDeletedInfo info = ImmutableType.get(A.class).getLogicalDeletedInfo();
         assert info != null;
-        Assertions.assertEquals(1, info.getValue());
+        Assertions.assertEquals(1, info.generateValue());
     }
 
     @Test
     public void testB() {
         LogicalDeletedInfo info = ImmutableType.get(B.class).getLogicalDeletedInfo();
         assert info != null;
-        Assertions.assertEquals(B.Status.DISABLED, info.getValue());
+        Assertions.assertEquals(B.Status.DISABLED, info.generateValue());
     }
 
     @Test
@@ -34,7 +34,7 @@ public class LogicalDeletedFieldTest {
         assert info != null;
         Assertions.assertTrue(
                 Math.abs(
-                        ((LocalDateTime)info.getValue()).toEpochSecond(ZoneOffset.UTC) -
+                        ((LocalDateTime)info.generateValue()).toEpochSecond(ZoneOffset.UTC) -
                         LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
                 ) < 1000
         );
@@ -44,6 +44,6 @@ public class LogicalDeletedFieldTest {
     public void testD() {
         LogicalDeletedInfo info = ImmutableType.get(D.class).getLogicalDeletedInfo();
         assert info != null;
-        Assertions.assertNull(info.getValue());
+        Assertions.assertNull(info.generateValue());
     }
 }

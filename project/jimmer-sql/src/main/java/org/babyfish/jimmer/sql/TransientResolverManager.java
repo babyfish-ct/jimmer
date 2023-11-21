@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
+import org.babyfish.jimmer.impl.util.GenericValidator;
 import org.babyfish.jimmer.impl.util.PropCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -16,6 +17,7 @@ import org.babyfish.jimmer.sql.event.EntityEvent;
 import org.babyfish.jimmer.sql.di.AopProxyProvider;
 import org.babyfish.jimmer.sql.di.StrategyProvider;
 import org.babyfish.jimmer.sql.di.TransientResolverProvider;
+import org.babyfish.jimmer.sql.meta.UserIdGenerator;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 
 import java.lang.reflect.*;
@@ -162,101 +164,26 @@ class TransientResolverManager {
             }
             resolverType = resolver.getClass();
         }
-        if (!TransientResolver.class.isAssignableFrom(resolverType)) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop.getName() +
-                            "\", the resolver type must implement \"" +
-                            TransientResolver.class +
-                            "\""
+        Type expectedType;
+        if (prop.isReferenceList(TargetLevel.ENTITY)) {
+            expectedType = TypeUtils.parameterize(
+                    List.class,
+                    TypeUtils
+                            .wildcardType()
+                            .withUpperBounds(
+                                    Classes.boxTypeOf(prop.getTargetType().getIdProp().getReturnClass())
+                            )
+                            .build()
             );
+        } else if (prop.isReference(TargetLevel.ENTITY)) {
+            expectedType = Classes.boxTypeOf(prop.getTargetType().getIdProp().getReturnClass());
+        } else {
+            expectedType = prop.getGenericType();
         }
-        if (resolverType.isInterface() || (resolverType.getModifiers() & Modifier.ABSTRACT) != 0) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop.getName() +
-                            "\", the resolver type must be non-abstract class"
-            );
-        }
-        if (resolverType.getTypeParameters().length != 0) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop.getName() +
-                            "\", the resolver type cannot has parameters"
-            );
-        }
-        Map<TypeVariable<?>, Type> typeMap =
-                TypeUtils.getTypeArguments(resolverType, TransientResolver.class);
-        Type keyType = typeMap.get(TransientResolver.class.getTypeParameters()[0]);
-        Type valueType = typeMap.get(TransientResolver.class.getTypeParameters()[1]);
-
-        if (!(keyType instanceof Class<?>) ||
-                !Classes.matches((Class<?>)keyType, prop.getDeclaringType().getIdProp().getElementClass())) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop.getName() +
-                            "\", the first generic type argument of resolver type must be \"" +
-                            prop.getDeclaringType().getIdProp().getElementClass() +
-                            "\""
-            );
-        }
-        if (prop.isAssociation(TargetLevel.ENTITY)) {
-            ImmutableProp targetIdProp = prop.getTargetType().getIdProp();
-            if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                Type valueElementType = null;
-                if (valueType instanceof ParameterizedType) {
-                    ParameterizedType parameterizedType = (ParameterizedType) valueType;
-                    if (parameterizedType.getRawType() == List.class) {
-                        valueElementType = parameterizedType.getActualTypeArguments()[0];
-                        if (valueElementType instanceof WildcardType) {
-                            valueElementType = ((WildcardType) valueElementType).getUpperBounds()[0];
-                        }
-                    }
-                }
-                if (!(valueElementType instanceof Class<?>) ||
-                        !Classes.matches((Class<?>) valueElementType, targetIdProp.getElementClass())) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    prop.getName() +
-                                    "\", the second generic type argument of resolver type \"" +
-                                    resolverType.getName() +
-                                    "\" must be \"" +
-                                    List.class.getName() +
-                                    "\" whose element type is \"" +
-                                    targetIdProp.getElementClass() +
-                                    "\" which is return type of \"" +
-                                    targetIdProp +
-                                    "\""
-                    );
-                }
-            } else {
-                if (!(valueType instanceof Class<?>) ||
-                        !Classes.matches((Class<?>) valueType, targetIdProp.getElementClass())) {
-                    throw new ModelException(
-                            "Illegal property \"" +
-                                    prop.getName() +
-                                    "\", the second generic type argument of resolver type \"" +
-                                    resolverType.getName() +
-                                    "\" must be \"" +
-                                    targetIdProp.getElementClass() +
-                                    "\" which is return type of \"" +
-                                    targetIdProp +
-                                    "\""
-                    );
-                }
-            }
-        } else if (!(valueType instanceof Class<?>) || !Classes.matches((Class<?>)valueType, prop.getElementClass())) {
-            throw new ModelException(
-                    "Illegal property \"" +
-                            prop.getName() +
-                            "\", the second generic type argument of resolver type \"" +
-                            resolverType.getName() +
-                            "\" must be \"" +
-                            prop.getElementClass() +
-                            "\""
-            );
-        }
-
+        new GenericValidator(prop, Transient.class, resolverType, TransientResolver.class)
+                .expect(0, prop.getDeclaringType().getIdProp().getGenericType())
+                .expect(1, expectedType, true)
+                .validate();
         if (resolver != null) {
             return resolver;
         }

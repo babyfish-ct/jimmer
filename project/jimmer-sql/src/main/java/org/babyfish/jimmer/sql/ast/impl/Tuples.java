@@ -46,11 +46,20 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -123,13 +132,22 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
             builder.sql(", ");
             renderChild((Ast) expr3, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -210,7 +228,14 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
@@ -218,7 +243,9 @@ public class Tuples {
             renderChild((Ast) expr3, builder);
             builder.sql(", ");
             renderChild((Ast) expr4, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -306,7 +333,14 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
@@ -316,7 +350,9 @@ public class Tuples {
             renderChild((Ast) expr4, builder);
             builder.sql(", ");
             renderChild((Ast) expr5, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -411,7 +447,14 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
@@ -423,7 +466,9 @@ public class Tuples {
             renderChild((Ast) expr5, builder);
             builder.sql(", ");
             renderChild((Ast) expr6, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -525,7 +570,14 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
@@ -539,7 +591,9 @@ public class Tuples {
             renderChild((Ast) expr6, builder);
             builder.sql(", ");
             renderChild((Ast) expr7, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -648,7 +702,14 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
@@ -664,7 +725,9 @@ public class Tuples {
             renderChild((Ast) expr7, builder);
             builder.sql(", ");
             renderChild((Ast) expr8, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
@@ -780,7 +843,14 @@ public class Tuples {
 
         @Override
         public void renderTo(@NotNull SqlBuilder builder) {
-            builder.sql("(");
+            renderTo(builder, false);
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
+            if (!ignoreBrackets) {
+                builder.enter(SqlBuilder.ScopeType.TUPLE);
+            }
             renderChild((Ast) expr1, builder);
             builder.sql(", ");
             renderChild((Ast) expr2, builder);
@@ -798,7 +868,9 @@ public class Tuples {
             renderChild((Ast) expr8, builder);
             builder.sql(", ");
             renderChild((Ast) expr9, builder);
-            builder.sql(")");
+            if (!ignoreBrackets) {
+                builder.leave();
+            }
         }
 
         @Override
