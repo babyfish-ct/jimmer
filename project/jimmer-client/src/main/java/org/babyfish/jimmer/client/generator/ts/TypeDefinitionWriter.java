@@ -71,13 +71,18 @@ public class TypeDefinitionWriter extends TsCodeWriter {
 
     private void writeEnumType() {
         EnumType enumType = (EnumType)type;
-        code("export type ").code(getFile().getName()).code(" = ");
-        scope(ScopeType.BLANK, " | ", enumType.getItems().size() > 3, () -> {
+        code("export const ").code(getFile().getName()).code("_CONSTANTS = ");
+        scope(ScopeType.LIST, ", ", enumType.getItems().size() > 3, () -> {
             for (String item : enumType.getItems()) {
                 separator();
                 code('\'').code(item).code('\'');
             }
         });
-        code(";\n");
+        code(" as const;\n");
+        code("export type ")
+                .code(getFile().getName())
+                .code(" = typeof ")
+                .code(getFile().getName())
+                .code("_CONSTANTS[number];\n");
     }
 }

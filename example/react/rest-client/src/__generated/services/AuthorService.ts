@@ -1,8 +1,7 @@
 import type { Dynamic, Executor } from '../';
 import type { AuthorDto } from '../model/dto';
 import type { Author } from '../model/entities';
-import type { Gender } from '../model/enums';
-import type { AuthorInput } from '../model/static';
+import type { AuthorInput, AuthorSpecification } from '../model/static';
 
 export class AuthorService {
     
@@ -20,31 +19,31 @@ export class AuthorService {
         let _uri = '/author/list';
         let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
         let _value: any = undefined;
-        _value = options.sortCode;
-        if (_value !== undefined && _value !== null) {
-            _uri += _separator
-            _uri += 'sortCode='
-            _uri += encodeURIComponent(_value);
-            _separator = '&';
-        }
-        _value = options.firstName;
+        _value = options.specification.firstName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
             _uri += 'firstName='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        _value = options.lastName;
+        _value = options.specification.lastName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
             _uri += 'lastName='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        _value = options.gender;
+        _value = options.specification.maxCreatedTime;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'gender='
+            _uri += 'maxCreatedTime='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.specification.minCreatedTime;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'minCreatedTime='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
@@ -99,12 +98,7 @@ export class AuthorService {
 
 export type AuthorServiceOptions = {
     'deleteAuthor': {readonly id: number},
-    'findAuthors': {
-        readonly sortCode?: string, 
-        readonly firstName?: string, 
-        readonly lastName?: string, 
-        readonly gender?: Gender
-    },
+    'findAuthors': {readonly specification: AuthorSpecification},
     'findComplexAuthor': {readonly id: number},
     'findSimpleAuthors': {},
     'saveAuthor': {readonly input: AuthorInput}

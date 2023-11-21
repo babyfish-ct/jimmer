@@ -4,7 +4,7 @@ export interface FlatTreeNodeView {
     
     readonly grandParentName?: string;
     
-    readonly id?: number;
+    readonly id: number;
     
     readonly name: string;
     

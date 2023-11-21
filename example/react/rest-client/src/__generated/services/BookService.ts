@@ -1,7 +1,7 @@
 import type { Dynamic, Executor } from '../';
 import type { BookDto } from '../model/dto';
 import type { Book } from '../model/entities';
-import type { BookInput, CompositeBookInput, Page } from '../model/static';
+import type { BookInput, BookSpecification, CompositeBookInput, Page } from '../model/static';
 
 export class BookService {
     
@@ -47,6 +47,20 @@ export class BookService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
+        _value = options.minPrice;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'minPrice='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.maxPrice;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'maxPrice='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
         _value = options.storeName;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
@@ -58,6 +72,71 @@ export class BookService {
         if (_value !== undefined && _value !== null) {
             _uri += _separator
             _uri += 'authorName='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        return (await this.executor({uri: _uri, method: 'GET'})) as Page<BookDto['BookService/DEFAULT_FETCHER']>
+    }
+    
+    async findBooksBySuperQBE(options: BookServiceOptions['findBooksBySuperQBE']): Promise<
+        Page<BookDto['BookService/DEFAULT_FETCHER']>
+    > {
+        let _uri = '/book/list/bySuperQBE';
+        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
+        let _value: any = undefined;
+        _value = options.specification.authorName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'authorName='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.specification.maxPrice;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'maxPrice='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.specification.minPrice;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'minPrice='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.specification.name;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'name='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.specification.storeName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'storeName='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.pageIndex;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'pageIndex='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.pageSize;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'pageSize='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.sortCode;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'sortCode='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
@@ -101,8 +180,16 @@ export type BookServiceOptions = {
         readonly pageSize?: number, 
         readonly sortCode?: string, 
         readonly name?: string, 
+        readonly minPrice?: number, 
+        readonly maxPrice?: number, 
         readonly storeName?: string, 
         readonly authorName?: string
+    },
+    'findBooksBySuperQBE': {
+        readonly pageIndex?: number, 
+        readonly pageSize?: number, 
+        readonly sortCode?: string, 
+        readonly specification: BookSpecification
     },
     'findComplexBook': {readonly id: number},
     'findSimpleBooks': {},

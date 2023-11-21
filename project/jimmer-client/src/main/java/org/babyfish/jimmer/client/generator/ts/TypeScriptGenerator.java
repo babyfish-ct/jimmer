@@ -101,7 +101,7 @@ public class TypeScriptGenerator implements Generator {
         for (Map.Entry<Type, File> e : ctx.getTypeFilePairs()) {
             Type type = e.getKey();
             File file = e.getValue();
-            indexMap.computeIfAbsent(file.getDir(), Index::new).addTypeFile(file);
+            indexMap.computeIfAbsent(file.getDir(), Index::new).addType(file, type);
             putEntry(zipOut, file);
             new TypeDefinitionWriter(ctx, type, mutable).flush();
             zipOut.closeEntry();
@@ -151,7 +151,8 @@ public class TypeScriptGenerator implements Generator {
                 );
             }
         }
-        for (File file : index.typeFiles) {
+        for (Map.Entry<File, Type> e : index.typeMap.entrySet()) {
+            File file = e.getKey();
             if (file == ctx.getModuleErrorsFile()) {
                 writer.write(
                         "export type { " +
@@ -165,6 +166,16 @@ public class TypeScriptGenerator implements Generator {
                         "export type { " +
                                 file.getName() +
                                 " } from './" +
+                                file.getName() +
+                                "';\n"
+                );
+            }
+            Type type = e.getValue();
+            if (type instanceof EnumType) {
+                writer.write(
+                        "export { " +
+                                file.getName() +
+                                "_CONSTANTS } from './" +
                                 file.getName() +
                                 "';\n"
                 );
@@ -191,7 +202,7 @@ public class TypeScriptGenerator implements Generator {
 
         final Set<File> objectFiles = new TreeSet<>();
 
-        final Set<File> typeFiles = new TreeSet<>();
+        final Map<File, Type> typeMap = new TreeMap<>();
 
         public Index(String dir) {
             this.dir = dir;
@@ -203,7 +214,12 @@ public class TypeScriptGenerator implements Generator {
         }
 
         public Index addTypeFile(File file) {
-            typeFiles.add(file);
+            typeMap.put(file, null);
+            return this;
+        }
+
+        public Index addType(File file, Type type) {
+            typeMap.put(file, type);
             return this;
         }
     }

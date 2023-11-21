@@ -1,5 +1,7 @@
 export type { AuthorInput } from './AuthorInput';
+export type { AuthorSpecification } from './AuthorSpecification';
 export type { BookInput } from './BookInput';
+export type { BookSpecification } from './BookSpecification';
 export type { BookStoreInput } from './BookStoreInput';
 export type { CompositeBookInput } from './CompositeBookInput';
 export type { ExportedSavePath } from './ExportedSavePath';

@@ -1352,7 +1352,8 @@ public class JTypeScriptTest {
         new TypeDefinitionWriter(ctx, genderType, false).flush();
         String code = out.toString();
         Assertions.assertEquals(
-                "export type Gender = 'MALE' | 'FEMALE';\n",
+                "export const Gender_CONSTANTS = ['MALE', 'FEMALE'] as const;\n" +
+                        "export type Gender = typeof Gender_CONSTANTS[number];\n",
                 code
         );
     }

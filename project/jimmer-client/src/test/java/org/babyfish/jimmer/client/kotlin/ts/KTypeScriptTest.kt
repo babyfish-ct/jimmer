@@ -510,7 +510,8 @@ class KTypeScriptTest {
         TypeDefinitionWriter(ctx, genderType, false).flush()
         val code = out.toString()
         Assertions.assertEquals(
-            "export type KGender = 'MALE' | 'FEMALE';\n",
+            "export const KGender_CONSTANTS = ['MALE', 'FEMALE'] as const;\n" +
+                "export type KGender = typeof KGender_CONSTANTS[number];\n",
             code
         )
     }

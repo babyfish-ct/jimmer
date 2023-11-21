@@ -1,3 +1,3 @@
 export type Dynamic<T> = 
-    {[K in keyof T]?: Dynamic<T[K]>}
+    {readonly [K in keyof T]?: Dynamic<T[K]>}
 ;

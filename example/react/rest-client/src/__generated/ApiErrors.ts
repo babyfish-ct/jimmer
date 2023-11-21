@@ -33,11 +33,6 @@ export type AllErrors =
     } | 
     {
         readonly family: "SAVE_ERROR_CODE",
-        readonly code: "ILLEGAL_VERSION",
-        readonly "exportedPath": ExportedSavePath
-    } | 
-    {
-        readonly family: "SAVE_ERROR_CODE",
         readonly code: "KEY_NOT_UNIQUE",
         readonly "exportedPath": ExportedSavePath
     } | 
@@ -74,6 +69,11 @@ export type AllErrors =
     {
         readonly family: "SAVE_ERROR_CODE",
         readonly code: "NULL_TARGET",
+        readonly "exportedPath": ExportedSavePath
+    } | 
+    {
+        readonly family: "SAVE_ERROR_CODE",
+        readonly code: "OPTIMISTIC_LOCK_ERROR",
         readonly "exportedPath": ExportedSavePath
     } | 
     {
@@ -143,7 +143,7 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SAVE_ERROR_CODE',
-                readonly code: 'ILLEGAL_VERSION',
+                readonly code: 'OPTIMISTIC_LOCK_ERROR',
                 readonly [key:string]: any
             } | 
             {
@@ -232,7 +232,7 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SAVE_ERROR_CODE',
-                readonly code: 'ILLEGAL_VERSION',
+                readonly code: 'OPTIMISTIC_LOCK_ERROR',
                 readonly [key:string]: any
             } | 
             {
@@ -319,7 +319,7 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SAVE_ERROR_CODE',
-                readonly code: 'ILLEGAL_VERSION',
+                readonly code: 'OPTIMISTIC_LOCK_ERROR',
                 readonly [key:string]: any
             } | 
             {
@@ -408,7 +408,7 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SAVE_ERROR_CODE',
-                readonly code: 'ILLEGAL_VERSION',
+                readonly code: 'OPTIMISTIC_LOCK_ERROR',
                 readonly [key:string]: any
             } | 
             {
@@ -497,7 +497,7 @@ export type ApiErrors = {
             } | 
             {
                 readonly family: 'SAVE_ERROR_CODE',
-                readonly code: 'ILLEGAL_VERSION',
+                readonly code: 'OPTIMISTIC_LOCK_ERROR',
                 readonly [key:string]: any
             } | 
             {
