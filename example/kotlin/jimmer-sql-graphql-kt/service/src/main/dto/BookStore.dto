@@ -1,0 +1,18 @@
+/**
+ * 1. If any other Java code is modified, you can directly click the `Run` button of Intellij
+ *
+ * 2. Otherwise, the project must be rebuilt
+ */
+
+export org.babyfish.jimmer.sql.example.kt.model.BookStore
+    -> package org.babyfish.jimmer.sql.example.kt.service.dto
+
+input BookStoreInput {
+
+    /*
+     * #allScalars: All scalar fields of `BookStore` and `BaseEntity`
+     *
+     * #allScalars(BookStore): All scalar fields of `BookStore`, exclude `BaseEntity`
+     */
+    #allScalars(BookStore)
+}

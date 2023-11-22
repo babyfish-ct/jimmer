@@ -20,8 +20,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation 'org.springframework.boot:spring-boot-starter-graphql'
 	implementation 'com.graphql-java:graphql-java-extended-scalars:18.1'
-
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	runtimeOnly 'com.h2database:h2:2.1.212'
+	runtimeOnly 'mysql:mysql-connector-java:8.0.30'
+	runtimeOnly 'org.postgresql:postgresql:42.6.0'
+	runtimeOnly 'io.lettuce:lettuce-core:6.2.0.RELEASE'
+	runtimeOnly 'com.github.ben-manes.caffeine:caffeine:2.9.1'
 }
 
 repositories {

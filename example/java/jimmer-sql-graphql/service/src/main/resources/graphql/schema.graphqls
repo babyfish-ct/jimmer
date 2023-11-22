@@ -17,12 +17,7 @@ type Query {
     ): [Book!]!
 
     booksBySuperQBE(
-        name: String,
-        minPrice: BigDecimal,
-        maxPrice: BigDecimal,
-        storeName:
-        String, authorName:
-        String,
+        specification: BookSpecification,
         sortCode: String
     ): [Book!]!
 
@@ -118,6 +113,14 @@ input AuthorInput {
     firstName: String!
     lastName: String!
     gender: Gender!
+}
+
+input BookSpecification {
+    name: String
+    minPrice: BigDecimal
+    maxPrice: BigDecimal
+    storeName: String,
+    authorName: String
 }
 
 enum Gender { MALE, FEMALE }

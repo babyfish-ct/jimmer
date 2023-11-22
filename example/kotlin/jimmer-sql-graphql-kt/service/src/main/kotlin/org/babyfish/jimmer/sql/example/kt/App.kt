@@ -1,0 +1,11 @@
+package org.babyfish.jimmer.sql.example.kt
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+
+@SpringBootApplication
+class App
+
+fun main(args: Array<String>) {
+	runApplication<org.babyfish.jimmer.sql.example.kt.App>(*args)
+}

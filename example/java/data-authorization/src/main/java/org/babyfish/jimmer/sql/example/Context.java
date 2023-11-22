@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.example;
 
 import org.babyfish.jimmer.sql.JSqlClient;
-import org.babyfish.jimmer.sql.cache.CacheOperator;
-import org.babyfish.jimmer.sql.cache.LocatedCache;
-import org.babyfish.jimmer.sql.di.AbstractJSqlClientWrapper;
+import org.babyfish.jimmer.sql.di.JLazyInitializationSqlClient;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
 import org.babyfish.jimmer.sql.event.TriggerType;
 import org.babyfish.jimmer.sql.example.cache.CacheFactoryImpl;
@@ -24,7 +22,7 @@ import java.util.Collection;
 public interface Context {
 
     JSqlClient SQL_CLIENT =
-            new AbstractJSqlClientWrapper() {
+            new JLazyInitializationSqlClient() {
                 @Override
                 protected Builder createBuilder() {
                     return JSqlClient.newBuilder()

@@ -51,19 +51,9 @@ public class BookService {
 
     @QueryMapping
     public List<Book> booksBySuperQBE(
-            @Argument @Nullable String name,
-            @Argument @Nullable BigDecimal minPrice,
-            @Argument @Nullable BigDecimal maxPrice,
-            @Argument @Nullable String storeName,
-            @Argument @Nullable String authorName,
+            @Argument @Nullable BookSpecification specification,
             @Argument @Nullable String sortCode
     ) {
-        BookSpecification specification = new BookSpecification();
-        specification.setName(name);
-        specification.setMinPrice(minPrice);
-        specification.setMaxPrice(maxPrice);
-        specification.setStoreName(storeName);
-        specification.setAuthorName(authorName);
         return bookRepository.find(
                 specification,
                 SortUtils.toSort(sortCode != null ? sortCode : "name asc")
