@@ -3,6 +3,8 @@ package org.babyfish.jimmer.apt.generator;
 import org.babyfish.jimmer.apt.meta.ImmutableProp;
 
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeMirror;
+import java.lang.annotation.Annotation;
 import java.util.*;
 
 public class Annotations {
@@ -29,6 +31,28 @@ public class Annotations {
             }
         }
         return mirrorMultiMap;
+    }
+
+    public static AnnotationMirror annotationMirror(Element element, Class<? extends Annotation> annotationType) {
+        String qualifiedName = annotationType.getName();
+        for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+            TypeElement typeElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
+            if (typeElement.getQualifiedName().toString().equals(qualifiedName)) {
+                return annotationMirror;
+            }
+        }
+        return null;
+    }
+
+    public static AnnotationMirror annotationMirror(TypeMirror typeMirror, Class<? extends Annotation> annotationType) {
+        String qualifiedName = annotationType.getName();
+        for (AnnotationMirror annotationMirror : typeMirror.getAnnotationMirrors()) {
+            TypeElement typeElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
+            if (typeElement.getQualifiedName().toString().equals(qualifiedName)) {
+                return annotationMirror;
+            }
+        }
+        return null;
     }
 
     public static String qualifiedName(AnnotationMirror mirror) {

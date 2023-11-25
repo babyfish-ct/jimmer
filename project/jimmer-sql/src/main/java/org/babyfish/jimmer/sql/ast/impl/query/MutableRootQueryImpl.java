@@ -221,11 +221,13 @@ public class MutableRootQueryImpl<T extends Table<?>>
     @SuppressWarnings("unchecked")
     @Override
     public MutableRootQuery<T> where(JSpecification<?, T> specification) {
-        SpecificationArgs<Object, Table<Object>> args =
-                new SpecificationArgs<>(new PredicateApplier(this));
-        JSpecification<Object, Table<Object>> implementor =
-                (JSpecification<Object, Table<Object>>)specification;
-        implementor.applyTo(args);
+        if (specification != null) {
+            SpecificationArgs<Object, Table<Object>> args =
+                    new SpecificationArgs<>(new PredicateApplier(this));
+            JSpecification<Object, Table<Object>> implementor =
+                    (JSpecification<Object, Table<Object>>) specification;
+            implementor.applyTo(args);
+        }
         return this;
     }
 

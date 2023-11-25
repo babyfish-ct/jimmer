@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.meta.SqlContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -53,10 +54,14 @@ public class SqlContextCache<T> {
         if (value == null) {
             (lock = readWriteLock.writeLock()).lock();
             try {
+                Map<SqlContext, T> om = otherMap;
+                if (om != null && om.size() > 512) {
+                    otherMap = om = null;
+                }
                 value = strategy.equals(primaryKey) ?
                         primaryValue :
-                        otherMap != null ?
-                                otherMap.get(strategy) :
+                        om != null ?
+                                om.get(strategy) :
                                 null;
                 if (value == null) {
                     value = creator.apply(strategy);
@@ -67,9 +72,8 @@ public class SqlContextCache<T> {
                         primaryKey = strategy;
                         primaryValue = value;
                     } else {
-                        Map<SqlContext, T> om = otherMap;
                         if (om == null) {
-                            otherMap = om = new HashMap<>();
+                            otherMap = om = new WeakHashMap<>();
                         }
                         om.put(strategy, value);
                     }

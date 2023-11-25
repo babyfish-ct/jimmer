@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt;
 
+import org.babyfish.jimmer.apt.api.ApiProcessor;
 import org.babyfish.jimmer.apt.dto.AptDtoCompiler;
 import org.babyfish.jimmer.apt.dto.DtoContext;
 import org.babyfish.jimmer.apt.dto.DtoException;
@@ -28,8 +29,9 @@ import java.util.stream.Collectors;
         "org.babyfish.jimmer.sql.Entity",
         "org.babyfish.jimmer.sql.MappedSuperclass",
         "org.babyfish.jimmer.sql.Embeddable",
+        "org.babyfish.jimmer.sql.EnableDtoGeneration",
         "org.babyfish.jimmer.error.ErrorFamily",
-        "org.babyfish.jimmer.sql.EnableDtoGeneration"
+        "org.babyfish.jimmer.client.Api"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class JimmerProcessor extends AbstractProcessor {
@@ -136,6 +138,8 @@ public class JimmerProcessor extends AbstractProcessor {
         } catch (MetaException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
         }
+
+        new ApiProcessor(elements, roundEnv, filer).process();
 
         return true;
     }

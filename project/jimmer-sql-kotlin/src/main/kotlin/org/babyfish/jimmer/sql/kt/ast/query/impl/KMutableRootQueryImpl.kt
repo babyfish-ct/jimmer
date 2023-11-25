@@ -32,9 +32,11 @@ internal class KMutableRootQueryImpl<E: Any>(
         javaQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
     }
 
-    override fun where(specification: KSpecification<E>) {
-        val args = KSpecificationArgs<E>(PredicateApplier(javaQuery))
-        specification.applyTo(args)
+    override fun where(specification: KSpecification<E>?) {
+        if (specification !== null) {
+            val args = KSpecificationArgs<E>(PredicateApplier(javaQuery))
+            specification.applyTo(args)
+        }
     }
 
     override fun orderBy(vararg expressions: KExpression<*>?) {

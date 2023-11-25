@@ -1,0 +1,20 @@
+package org.babyfish.jimmer.client.meta;
+
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+public interface TypeRef {
+
+    String getTypeName();
+
+    boolean isNullable();
+
+    List<TypeRef> getArguments();
+
+    @Nullable
+    String getFetchBy();
+
+    @Nullable
+    String getFetcherOwner();
+}
