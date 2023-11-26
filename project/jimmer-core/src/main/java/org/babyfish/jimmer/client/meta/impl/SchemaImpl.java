@@ -11,27 +11,34 @@ import org.babyfish.jimmer.client.meta.Schema;
 import org.babyfish.jimmer.client.meta.TypeDefinition;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @JsonSerialize(using = SchemaImpl.Serializer.class)
 @JsonDeserialize(using = SchemaImpl.Deserializer.class)
 public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
-    private List<ApiServiceImpl<S>> apiServices = new ArrayList<>();
+    private Map<String, ApiServiceImpl<S>> apiServiceMap;
 
-    private Map<String, TypeDefinitionImpl<S>> typeDefinitionMap = new LinkedHashMap<>();
+    private Map<String, TypeDefinitionImpl<S>> typeDefinitionMap = new TreeMap<>();
 
     SchemaImpl() {
+        this(null);
+    }
+
+    SchemaImpl(Map<String, ApiServiceImpl<S>> apiServiceMap) {
         super(null);
+        this.apiServiceMap = apiServiceMap != null ? apiServiceMap : new TreeMap<>();
+    }
+
+    SchemaImpl(Map<String, ApiServiceImpl<S>> apiServiceMap, Map<String, TypeDefinitionImpl<S>> typeDefinitionMap) {
+        this.apiServiceMap = apiServiceMap;
+        this.typeDefinitionMap = typeDefinitionMap;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<ApiService> getApiServices() {
-        return (List<ApiService>) (List<?>) apiServices;
+    public Map<String, ApiService> getApiServiceMap() {
+        return (Map<String, ApiService>) (Map<?, ?>) apiServiceMap;
     }
 
     @SuppressWarnings("unchecked")
@@ -41,7 +48,7 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
     }
 
     public void addApiService(ApiServiceImpl<S> apiService) {
-        this.apiServices.add(apiService);
+        this.apiServiceMap.put(apiService.getTypeName(), apiService);
     }
 
     public void addTypeDefinition(TypeDefinitionImpl<S> typeDefinition) {
@@ -49,8 +56,9 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
     }
 
     @Override
-    public void accept(TypeNameVisitor visitor) {
-        for (ApiServiceImpl<S> apiService : apiServices) {
+    public void accept(AstNodeVisitor<S> visitor) {
+        visitor.visitAstNode(this);
+        for (ApiServiceImpl<S> apiService : apiServiceMap.values()) {
             apiService.accept(visitor);
         }
         // Cannot visit type definitions because the current visitor is used create or mark definitions
@@ -59,7 +67,7 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
     @Override
     public String toString() {
         return "SchemaImpl{" +
-                "apiServices=" + apiServices +
+                "apiServiceMap=" + apiServiceMap +
                 ", typeDefinitionMap=" + typeDefinitionMap +
                 '}';
     }
@@ -69,7 +77,7 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
         @Override
         public void serialize(SchemaImpl<?> schema, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
-            provider.defaultSerializeField("services", schema.getApiServices(), gen);
+            provider.defaultSerializeField("services", schema.getApiServiceMap().values(), gen);
             provider.defaultSerializeField("definitions", schema.getTypeDefinitionMap().values(), gen);
             gen.writeEndObject();
         }
@@ -85,8 +93,10 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
             for (JsonNode serviceNode : jsonNode.get("services")) {
                 schema.addApiService(ctx.readTreeAsValue(serviceNode, ApiServiceImpl.class));
             }
-            for (JsonNode definitionNode : jsonNode.get("definitions")) {
-                schema.addTypeDefinition(ctx.readTreeAsValue(definitionNode, TypeDefinitionImpl.class));
+            if (ctx.getAttribute(Schemas.IGNORE_DEFINITIONS) == null) {
+                for (JsonNode definitionNode : jsonNode.get("definitions")) {
+                    schema.addTypeDefinition(ctx.readTreeAsValue(definitionNode, TypeDefinitionImpl.class));
+                }
             }
             return schema;
         }

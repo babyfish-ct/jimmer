@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.Immutable;
-import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
@@ -13,7 +13,6 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,29 +28,31 @@ public class Context {
 
     private final TypeMirror collectionType;
 
-    private final TypeMirror stringType;
-
     private final TypeMirror numberType;
 
     private final TypeMirror comparableType;
 
     private final TypeElement enumElement;
 
-    private final Map<String, ImmutableType> immutableTypeMap = new HashMap<>();
+    private final Map<TypeElement, ImmutableType> immutableTypeMap = new HashMap<>();
 
     private final boolean keepIsPrefix;
 
-    Context(Elements elements, Types types, boolean keepIsPrefix) {
+    private final String[] includes;
+
+    private final String[] excludes;
+
+    Context(Elements elements, Types types, boolean keepIsPrefix, String[] includes, String[] excludes) {
         this.elements = elements;
         this.types = types;
+        this.keepIsPrefix = keepIsPrefix;
+        this.includes = includes;
+        this.excludes = excludes;
         collectionType = types.erasure(
                 elements
                         .getTypeElement(Collection.class.getName())
                         .asType()
         );
-        stringType = elements
-                .getTypeElement(String.class.getName())
-                .asType();
         numberType = elements
                 .getTypeElement(Number.class.getName())
                 .asType();
@@ -62,7 +63,6 @@ public class Context {
                         types.getWildcardType(null, null)
                 );
         enumElement = elements.getTypeElement(Enum.class.getName());
-        this.keepIsPrefix = keepIsPrefix;
     }
 
     public Class<? extends Annotation> getImmutableAnnotationType(TypeElement typeElement) {
@@ -137,37 +137,20 @@ public class Context {
         return types.isSubtype(type, superType);
     }
 
-    public Collection<ImmutableType> getImmutableTypes() {
-        return Collections.unmodifiableCollection(immutableTypeMap.values());
-    }
-
     public ImmutableType getImmutableType(TypeElement typeElement) {
-        if (getImmutableAnnotationType(typeElement) != null) {
-            String qualifiedName = typeElement.getQualifiedName().toString();
-            ImmutableType type = immutableTypeMap.get(qualifiedName);
-            if (type == null) {
+        ImmutableType type = immutableTypeMap.get(typeElement);
+        if (type == null && !immutableTypeMap.containsKey(typeElement)) {
+            if (isImmutable(typeElement)) {
                 type = new ImmutableType(this, typeElement);
-                if (immutableTypeMap.put(qualifiedName, type) != null) {
-                    throw new MetaException(
-                            typeElement,
-                            "Conflict qualified immutable type name \"" +
-                                    qualifiedName +
-                                    "\""
-                    );
-                }
             }
-            return type;
+            immutableTypeMap.put(typeElement, type);
         }
-        return null;
+        return type;
     }
 
     public ImmutableType getImmutableType(TypeMirror type) {
         TypeElement typeElement = (TypeElement) types.asElement(type);
         return getImmutableType(typeElement);
-    }
-
-    public boolean isString(TypeMirror type) {
-        return types.isSubtype(type, stringType);
     }
 
     public boolean isNumber(TypeMirror type) {
@@ -188,5 +171,27 @@ public class Context {
 
     public boolean keepIsPrefix() {
         return keepIsPrefix;
+    }
+
+    public boolean include(TypeElement typeElement) {
+        if (typeElement.getAnnotation(kotlin.Metadata.class) != null) {
+            return false;
+        }
+        String qualifiedName = typeElement.getQualifiedName().toString();
+        if (includes != null) {
+            for (String include : includes) {
+                if (qualifiedName.startsWith(include)) {
+                    return true;
+                }
+            }
+        }
+        if (excludes != null) {
+            for (String exclude : excludes) {
+                if (qualifiedName.startsWith(exclude)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

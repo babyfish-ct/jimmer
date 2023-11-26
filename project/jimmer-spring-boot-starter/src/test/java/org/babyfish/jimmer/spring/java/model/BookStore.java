@@ -18,7 +18,9 @@ public interface BookStore {
 
     String name();
 
-    @Doc("All books available in this bookstore")
+    /**
+     * All books available in this bookstore
+     */
     @OneToMany(mappedBy = "store")
     List<Book> books();
 

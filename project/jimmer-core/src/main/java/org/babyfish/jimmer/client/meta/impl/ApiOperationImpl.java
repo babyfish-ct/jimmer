@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.babyfish.jimmer.client.meta.ApiOperation;
+import org.babyfish.jimmer.client.meta.ApiParameter;
 import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.Parameter;
 import org.babyfish.jimmer.client.meta.TypeRef;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +25,7 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     private List<String> groups;
 
-    private List<ParameterImpl<S>> parameters;
+    private List<ApiParameterImpl<S>> parameters;
 
     private TypeRefImpl<S> returnType;
 
@@ -61,11 +61,11 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<Parameter> getParameters() {
-        return (List<Parameter>) (List<?>) parameters;
+    public List<ApiParameter> getParameters() {
+        return (List<ApiParameter>) (List<?>) parameters;
     }
 
-    public void addParameter(ParameterImpl<S> parameter) {
+    public void addParameter(ApiParameterImpl<S> parameter) {
         this.parameters.add(parameter);
     }
 
@@ -90,8 +90,9 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
     }
 
     @Override
-    public void accept(TypeNameVisitor visitor) {
-        for (ParameterImpl<S> parameter : parameters) {
+    public void accept(AstNodeVisitor<S> visitor) {
+        visitor.visitAstNode(this);
+        for (ApiParameterImpl<S> parameter : parameters) {
             parameter.accept(visitor);
         }
         if (returnType != null) {
@@ -142,7 +143,7 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             }
             if (jsonNode.has("parameters")) {
                 for (JsonNode paramNode : jsonNode.get("parameters")) {
-                    ParameterImpl<Object> parameter = ctx.readTreeAsValue(paramNode, ParameterImpl.class);
+                    ApiParameterImpl<Object> parameter = ctx.readTreeAsValue(paramNode, ApiParameterImpl.class);
                     operation.addParameter(parameter);
                 }
             }

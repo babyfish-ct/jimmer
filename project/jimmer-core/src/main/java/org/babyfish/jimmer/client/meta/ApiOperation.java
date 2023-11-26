@@ -11,7 +11,7 @@ public interface ApiOperation {
     @Nullable
     List<String> getGroups();
 
-    List<Parameter> getParameters();
+    List<ApiParameter> getParameters();
 
     @Nullable
     TypeRef getReturnType();

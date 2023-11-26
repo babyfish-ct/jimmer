@@ -1,16 +1,33 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.meta.Schema;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 public abstract class SchemaBuilder<S> {
 
     private LinkedList<AstNode<S>> stack = new LinkedList<>();
 
-    public SchemaBuilder() {
-        stack.push(new SchemaImpl<>());
+    @SuppressWarnings("unchecked")
+    public SchemaBuilder(Schema original) {
+        Map<String, ApiServiceImpl<S>> serviceMap = null;
+        if (original != null) {
+            serviceMap = (Map<String, ApiServiceImpl<S>>) (Map<?, ?>) original.getApiServiceMap();
+            serviceMap = new TreeMap<>(serviceMap);
+            Iterator<String> itr = serviceMap.keySet().iterator();
+            while (itr.hasNext()) {
+                if (loadSource(itr.next()) == null) {
+                    itr.remove();
+                }
+            }
+        }
+        SchemaImpl<S> schema = new SchemaImpl<>(serviceMap);
+        stack.push(schema);
     }
 
     @SuppressWarnings("unchecked")
@@ -54,8 +71,8 @@ public abstract class SchemaBuilder<S> {
         run(new ApiOperationImpl<>(source, name), block);
     }
 
-    public void parameter(S source, String name, Consumer<ParameterImpl<S>> block) {
-        run(new ParameterImpl<>(source, name), block);
+    public void parameter(S source, String name, Consumer<ApiParameterImpl<S>> block) {
+        run(new ApiParameterImpl<>(source, name), block);
     }
 
     public void typeRef(Consumer<TypeRefImpl<S>> block) {
@@ -84,15 +101,16 @@ public abstract class SchemaBuilder<S> {
         return (Schema) stack.peek();
     }
 
+    @Nullable
     protected abstract S loadSource(String typeName);
+
+    protected abstract RuntimeException typeNameNotFound(String typeName);
 
     protected abstract void handleDefinition(S source);
 
     private void resolve() {
         AstNode<S> current = stack.peek();
         assert current != null;
-        TypeDefinitionVisitor<S> visitor = new TypeDefinitionVisitor<>(this);
-        current.accept(visitor);
-        visitor.clearUnusedDefinitions();
+        current.accept(new TypeDefinitionVisitor<>(this));
     }
 }

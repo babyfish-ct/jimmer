@@ -35,7 +35,6 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
     TypeDefinitionImpl(S source, String typeName) {
         super(source);
         this.typeName = typeName;
-        this.immutable = immutable;
     }
 
     @Override
@@ -83,7 +82,8 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
     }
 
     @Override
-    public void accept(TypeNameVisitor visitor) {
+    public void accept(AstNodeVisitor<S> visitor) {
+        visitor.visitAstNode(this);
         for (PropImpl<S> prop : propMap.values()) {
             prop.accept(visitor);
         }

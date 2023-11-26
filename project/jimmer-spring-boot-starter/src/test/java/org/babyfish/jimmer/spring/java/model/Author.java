@@ -20,6 +20,9 @@ public interface Author {
 
     Gender gender();
 
+    /**
+     * All the books i have written
+     */
     @Doc("All the books i have written")
     @ManyToMany(mappedBy = "authors")
     List<Book> books();

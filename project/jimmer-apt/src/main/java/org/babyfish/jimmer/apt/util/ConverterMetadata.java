@@ -2,7 +2,7 @@ package org.babyfish.jimmer.apt.util;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.MetaException;
-import org.babyfish.jimmer.apt.generator.Constants;
+import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.jackson.Converter;
 
 import javax.lang.model.element.TypeElement;
@@ -25,7 +25,8 @@ public class ConverterMetadata {
                     "It should not have type parameters"
             );
         }
-        return new ParseContext(converterElement).get();
+        List<TypeName> arguments = new GenericParser("converter", converterElement, Converter.class.getName()).parse();
+        return new ConverterMetadata(arguments.get(0), arguments.get(1));
     }
 
     public ConverterMetadata(TypeName sourceTypeName, TypeName targetTypeName) {
@@ -69,135 +70,6 @@ public class ConverterMetadata {
                 "sourceTypeName=" + sourceTypeName +
                 ", targetTypeName=" + targetTypeName +
                 '}';
-    }
-
-    private static class ParseContext {
-
-        private static final String CONVERTER_NAME = Converter.class.getName();
-
-        public final TypeElement converterTypeElement;
-
-        private final Map<TypeVariable, TypeMirror> replaceMap = new HashMap<>();
-
-        private ParseContext(TypeElement converterTypeElement) {
-            this.converterTypeElement = converterTypeElement;
-        }
-
-        private void parse(DeclaredType type) throws Finished {
-            TypeElement typeElement = (TypeElement) type.asElement();
-            if (typeElement.getQualifiedName().toString().equals(CONVERTER_NAME)) {
-                List<? extends TypeMirror> arguments = type.getTypeArguments();
-                if (arguments.size() != 2) {
-                    throw new MetaException(
-                            this.converterTypeElement,
-                            "The converter type \"" +
-                                    typeElement +
-                                    "\" does not specify type arguments for \"" +
-                                    Converter.class.getName() +
-                                    "\""
-                    );
-                }
-                throw new Finished(
-                        resolve(arguments.get(0)),
-                        resolve(arguments.get(1))
-                );
-            } else {
-                List<? extends TypeMirror> arguments = type.getTypeArguments();
-                if (!arguments.isEmpty()) {
-                    List<? extends TypeParameterElement> parameters = typeElement.getTypeParameters();
-                    int size = arguments.size();
-                    for (int i = 0; i < size; i++) {
-                        replaceMap.put((TypeVariable) parameters.get(i).asType(), arguments.get(i));
-                    }
-                }
-                TypeMirror superType = typeElement.getSuperclass();
-                if (superType instanceof DeclaredType) {
-                    parse((DeclaredType) superType);
-                }
-                for (TypeMirror superItf : typeElement.getInterfaces()) {
-                    parse((DeclaredType) superItf);
-                }
-            }
-        }
-
-        public ConverterMetadata get() {
-            try {
-                parse((DeclaredType) converterTypeElement.asType());
-            } catch (Finished ex) {
-                return new ConverterMetadata(ex.sourceTypeName, ex.targetTypeName);
-            }
-            throw new MetaException(
-                    converterTypeElement,
-                    "it does not specify the arguments for \"" +
-                            Converter.class.getName() +
-                            "\""
-            );
-        }
-
-        private TypeName resolve(TypeMirror type) {
-            if (type instanceof DeclaredType) {
-                DeclaredType declaredType = (DeclaredType) type;
-                TypeElement typeElement = (TypeElement) declaredType.asElement();
-                ClassName className = ClassName.bestGuess(typeElement.getQualifiedName().toString());
-                List<? extends TypeMirror> arguments = declaredType.getTypeArguments();
-                if (!arguments.isEmpty()) {
-                    TypeName[] argTypeNames = new TypeName[arguments.size()];
-                    for (int i = arguments.size() - 1; i >= 0; --i) {
-                        argTypeNames[i] = resolve(arguments.get(i));
-                    }
-                    return ParameterizedTypeName.get(className, argTypeNames);
-                }
-                return className;
-            }
-            if (type instanceof TypeVariable) {
-                return resolve((TypeVariable) type);
-            }
-            if (type instanceof WildcardType) {
-                WildcardType wildcardType = (WildcardType) type;
-                if (wildcardType.getSuperBound() != null) {
-                    return WildcardTypeName.supertypeOf(
-                            resolve(wildcardType.getSuperBound())
-                    );
-                }
-                return WildcardTypeName.subtypeOf(
-                        wildcardType.getExtendsBound() != null ?
-                                resolve(wildcardType.getExtendsBound()) :
-                                TypeName.OBJECT
-                );
-            }
-            if (type instanceof ArrayType) {
-                return ArrayTypeName.of(
-                        resolve(((ArrayType)type).getComponentType())
-                );
-            }
-            throw new MetaException(
-                    converterTypeElement,
-                    "cannot resolve \"" + type + "\""
-            );
-        }
-
-        private TypeName resolve(TypeVariable typeVariable) {
-            TypeMirror type = replaceMap.get(typeVariable);
-            if (type == null) {
-                throw new MetaException(
-                        converterTypeElement,
-                        "cannot resolve \"" + typeVariable + "\""
-                );
-            }
-            return resolve(type);
-        }
-    }
-
-    private static class Finished extends Exception {
-
-        final TypeName sourceTypeName;
-
-        final TypeName targetTypeName;
-
-        private Finished(TypeName sourceTypeName, TypeName targetTypeName) {
-            this.sourceTypeName = sourceTypeName;
-            this.targetTypeName = targetTypeName;
-        }
     }
 
     private class ListMetadata extends ConverterMetadata {

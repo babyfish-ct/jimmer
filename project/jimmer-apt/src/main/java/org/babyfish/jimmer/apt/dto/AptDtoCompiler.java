@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.apt.dto;
 
 import com.squareup.javapoet.ClassName;
-import org.babyfish.jimmer.apt.meta.ImmutableProp;
-import org.babyfish.jimmer.apt.meta.ImmutableType;
+import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
+import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.dto.compiler.DtoCompiler;
 import org.babyfish.jimmer.dto.compiler.DtoFile;
 import org.babyfish.jimmer.sql.GeneratedValue;

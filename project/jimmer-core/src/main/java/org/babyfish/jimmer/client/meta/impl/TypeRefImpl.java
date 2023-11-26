@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @JsonSerialize(using = TypeRefImpl.Serializer.class)
@@ -81,8 +80,8 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
     }
 
     @Override
-    public void accept(TypeNameVisitor visitor) {
-        visitor.visitTypeName(typeName);
+    public void accept(AstNodeVisitor<S> visitor) {
+        visitor.visitAstNode(this);
         if (arguments != null) {
             for (TypeRefImpl<S> argument : arguments) {
                 argument.accept(visitor);

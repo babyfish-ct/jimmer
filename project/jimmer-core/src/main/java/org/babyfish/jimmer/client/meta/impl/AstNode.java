@@ -17,5 +17,5 @@ public abstract class AstNode<S> {
         return source;
     }
 
-    public abstract void accept(TypeNameVisitor visitor);
+    public abstract void accept(AstNodeVisitor<S> visitor);
 }

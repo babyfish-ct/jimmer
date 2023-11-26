@@ -23,11 +23,17 @@ public interface Book {
 
     BigDecimal price();
 
-    @Doc("The bookstore to which the current book belongs, null is allowd")
+    /**
+     * The bookstore to which the current book belongs, null is allowed
+     */
+    @Doc("The bookstore to which the current book belongs, null is allowed")
     @ManyToOne
     @Nullable
     BookStore store();
 
+    /**
+     * All authors involved in writing the work
+     */
     @Doc("All authors involved in writing the work")
     @ManyToMany
     List<Author> authors();

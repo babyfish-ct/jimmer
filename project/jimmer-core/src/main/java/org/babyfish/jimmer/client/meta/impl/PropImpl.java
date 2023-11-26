@@ -57,7 +57,8 @@ public class PropImpl<S> extends AstNode<S> implements Prop {
     }
 
     @Override
-    public void accept(TypeNameVisitor visitor) {
+    public void accept(AstNodeVisitor<S> visitor) {
+        visitor.visitAstNode(this);
         type.accept(visitor);
     }
 
