@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.generator
+package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -15,6 +15,16 @@ import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.get
+import org.babyfish.jimmer.ksp.immutable.generator.CLASS_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.DTO_PROP_ACCESSOR
+import org.babyfish.jimmer.ksp.immutable.generator.GENERATED_BY_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JSON_PROPERTY_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_ARGS_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.VIEWABLE_INPUT_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.VIEW_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.VIEW_METADATA_CLASS_NAME
 import org.babyfish.jimmer.ksp.meta.*
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import java.io.OutputStreamWriter

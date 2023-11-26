@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.generator
+package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.*

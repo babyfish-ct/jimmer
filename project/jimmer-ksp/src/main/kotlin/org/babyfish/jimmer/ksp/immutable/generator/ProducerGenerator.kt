@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.generator
+package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy

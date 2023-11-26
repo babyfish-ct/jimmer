@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.generator
+package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -6,7 +6,7 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.meta.Context
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.meta.ImmutableType
 import java.io.OutputStreamWriter
@@ -66,7 +66,7 @@ class DraftGenerator(
     private fun FileSpec.Builder.addType(type: ImmutableType) {
         addType(
             TypeSpec
-                .interfaceBuilder("${type.simpleName}${DRAFT}")
+                .interfaceBuilder("${type.simpleName}$DRAFT")
                 .addAnnotation(DSL_SCOPE_CLASS_NAME)
                 .addSuperinterface(type.className)
                 .addAnnotation(

@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.generator
+package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty

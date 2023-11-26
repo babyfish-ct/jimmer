@@ -14,10 +14,10 @@ import org.babyfish.jimmer.dto.compiler.spi.BaseProp
 import org.babyfish.jimmer.impl.util.Keywords
 import org.babyfish.jimmer.jackson.JsonConverter
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.generator.DRAFT
-import org.babyfish.jimmer.ksp.generator.KEY_FULL_NAME
-import org.babyfish.jimmer.ksp.generator.parseValidationMessages
-import org.babyfish.jimmer.ksp.generator.upper
+import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
+import org.babyfish.jimmer.ksp.immutable.generator.KEY_FULL_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.parseValidationMessages
+import org.babyfish.jimmer.ksp.immutable.generator.upper
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import org.babyfish.jimmer.ksp.util.converterMetadataOf
 import org.babyfish.jimmer.ksp.util.recursiveAnnotationOf

@@ -1,25 +1,21 @@
-package org.babyfish.jimmer.ksp.meta
+package org.babyfish.jimmer.ksp
 
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.ksp.MetaException
-import org.babyfish.jimmer.ksp.annotation
-import org.babyfish.jimmer.ksp.fullName
+import org.babyfish.jimmer.ksp.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 
-class Context private constructor(
+class Context(
     val resolver: Resolver,
-    typeMap: MutableMap<KSClassDeclaration, ImmutableType>?
+    val environment: SymbolProcessorEnvironment
 ) {
-    constructor(resolver: Resolver): this(resolver, null)
-
-    constructor(ctx: Context): this(ctx.resolver, ctx.typeMap)
 
     val intType: KSType = resolver.builtIns.intType
 
@@ -38,7 +34,21 @@ class Context private constructor(
         ?.asStarProjectedType()
         ?: error("Internal bug")
 
-    private val typeMap = typeMap ?: mutableMapOf()
+    private val includes: Array<String>? =
+        environment.options["jimmer.source.includes"]
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                it.trim().split("\\s*,[,;]\\s*").toTypedArray()
+            }
+
+    private val excludes: Array<String>? =
+        environment.options["jimmer.source.excludes"]
+            ?.takeIf { it.isNotEmpty() }
+            ?.let {
+                it.trim().split("\\s*[,;]\\s*").toTypedArray()
+            }
+
+    private val typeMap: MutableMap<KSClassDeclaration, ImmutableType> = mutableMapOf()
 
     private var newTypes = typeMap?.values?.toMutableList() ?: mutableListOf()
 
@@ -75,6 +85,17 @@ class Context private constructor(
                 }
             }
         }
+    }
+
+    fun include(declaration: KSClassDeclaration): Boolean {
+        val qualifiedName = declaration.qualifiedName!!.asString()
+        if (includes !== null && !includes.any { qualifiedName.startsWith(it) }) {
+            return false
+        }
+        if (excludes !== null && excludes.any { qualifiedName.startsWith(it) }) {
+            return false
+        }
+        return true
     }
 
     companion object {

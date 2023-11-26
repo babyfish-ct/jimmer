@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.generator
+package org.babyfish.jimmer.ksp.error
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -15,6 +15,8 @@ import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.getClassArgument
 import org.babyfish.jimmer.ksp.MetaException
+import org.babyfish.jimmer.ksp.immutable.generator.GENERATED_BY_CLASS_NAME
+import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
 import java.io.OutputStreamWriter
 
 class ErrorGenerator(

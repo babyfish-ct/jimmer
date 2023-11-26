@@ -10,10 +10,10 @@ import org.babyfish.jimmer.Formula
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.dto.compiler.spi.BaseType
 import org.babyfish.jimmer.ksp.*
-import org.babyfish.jimmer.ksp.generator.DRAFT
-import org.babyfish.jimmer.ksp.generator.FETCHER_DSL
-import org.babyfish.jimmer.ksp.generator.PROPS
-import org.babyfish.jimmer.ksp.generator.parseValidationMessages
+import org.babyfish.jimmer.ksp.immutable.generator.DRAFT
+import org.babyfish.jimmer.ksp.immutable.generator.FETCHER_DSL
+import org.babyfish.jimmer.ksp.immutable.generator.PROPS
+import org.babyfish.jimmer.ksp.immutable.generator.parseValidationMessages
 import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
