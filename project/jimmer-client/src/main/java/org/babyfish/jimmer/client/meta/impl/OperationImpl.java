@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.IllegalDocMetaException;
-import org.babyfish.jimmer.client.NotApi;
-import org.babyfish.jimmer.client.NotParam;
+import org.babyfish.jimmer.client.IgnoreApi;
+import org.babyfish.jimmer.client.IgnoreParam;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
@@ -129,7 +129,7 @@ class OperationImpl implements Operation {
             Service declaringService,
             java.lang.reflect.Method rawMethod
     ) {
-        if (rawMethod.isAnnotationPresent(NotApi.class)) {
+        if (rawMethod.isAnnotationPresent(IgnoreApi.class)) {
             return null;
         }
         Tuple2<String, HttpMethod> http = ctx.getOperationParser().http(rawMethod);
@@ -179,7 +179,7 @@ class OperationImpl implements Operation {
                 new Throws(ctx).getErrors(rawMethod)
         );
 
-        if (declaringService.getJavaType().isAnnotationPresent(NotParam.class) || rawMethod.isAnnotationPresent(NotParam.class)) {
+        if (declaringService.getJavaType().isAnnotationPresent(IgnoreParam.class) || rawMethod.isAnnotationPresent(IgnoreParam.class)) {
             operation.parameters = Collections.emptyList();
             return operation;
         }
@@ -190,7 +190,7 @@ class OperationImpl implements Operation {
         java.lang.reflect.Parameter[] rawParameters = rawMethod.getParameters();
         for (int i = 0; i < rawParameters.length; i++) {
 
-            if (rawParameters[i].isAnnotationPresent(NotParam.class)) {
+            if (rawParameters[i].isAnnotationPresent(IgnoreParam.class)) {
                 continue;
             }
 
