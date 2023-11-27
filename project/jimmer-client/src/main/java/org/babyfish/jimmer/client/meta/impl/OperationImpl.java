@@ -4,7 +4,6 @@ import org.babyfish.jimmer.client.IllegalDocMetaException;
 import org.babyfish.jimmer.client.NotApi;
 import org.babyfish.jimmer.client.NotParam;
 import org.babyfish.jimmer.client.meta.*;
-import org.babyfish.jimmer.client.meta.EnumBasedError;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
 
@@ -179,6 +178,12 @@ class OperationImpl implements Operation {
                 type,
                 new Throws(ctx).getErrors(rawMethod)
         );
+
+        if (declaringService.getJavaType().isAnnotationPresent(NotParam.class) || rawMethod.isAnnotationPresent(NotParam.class)) {
+            operation.parameters = Collections.emptyList();
+            return operation;
+        }
+
         int index = 0;
         String[] parameterNames = ctx.getOperationParser().getParameterNames(rawMethod);
         List<Parameter> list = new ArrayList<>();
