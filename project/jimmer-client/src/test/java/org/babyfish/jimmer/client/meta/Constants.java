@@ -4,10 +4,7 @@ import kotlin.jvm.JvmClassMappingKt;
 import kotlin.reflect.KFunction;
 import kotlin.reflect.KType;
 import org.babyfish.jimmer.client.java.service.*;
-import org.babyfish.jimmer.client.kotlin.service.KArrayService;
-import org.babyfish.jimmer.client.kotlin.service.KBookService;
-import org.babyfish.jimmer.client.kotlin.service.KBookStoreService;
-import org.babyfish.jimmer.client.kotlin.service.KEnumService;
+import org.babyfish.jimmer.client.kotlin.service.*;
 import org.babyfish.jimmer.client.meta.common.*;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.jetbrains.annotations.Nullable;
@@ -102,6 +99,7 @@ public class Constants {
             .addServiceType(AuthorService.class)
             .addServiceType(ArrayService.class)
             .addServiceType(EnumService.class)
+            .addServiceType(NotApiService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )
@@ -115,6 +113,7 @@ public class Constants {
             .addServiceType(KBookStoreService.class)
             .addServiceType(KArrayService.class)
             .addServiceType(KEnumService.class)
+            .addServiceType(KNotApiService.class)
             .setOperationParser(
                     OPERATION_PARSER
             )

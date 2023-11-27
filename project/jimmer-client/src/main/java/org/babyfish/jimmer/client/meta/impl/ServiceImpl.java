@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.meta.impl;
 
+import org.babyfish.jimmer.client.NotApi;
 import org.babyfish.jimmer.client.meta.Document;
 import org.babyfish.jimmer.client.meta.Operation;
 import org.babyfish.jimmer.client.meta.Service;
@@ -84,6 +85,9 @@ class ServiceImpl implements Service {
             String uri,
             Operation.HttpMethod defaultMethod
     ) {
+        if (serviceType.isAnnotationPresent(NotApi.class)) {
+            return null;
+        }
         ServiceImpl service = new ServiceImpl(serviceType, uri, defaultMethod);
         List<Operation> list = new ArrayList<>();
         for (Method method : serviceType.getMethods()) {

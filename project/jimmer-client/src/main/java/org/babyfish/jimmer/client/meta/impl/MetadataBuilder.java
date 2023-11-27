@@ -65,7 +65,9 @@ public class MetadataBuilder implements Metadata.Builder {
                     uri,
                     defaultMethod
             );
-            serviceMap.put(serviceType, service);
+            if (service != null) {
+                serviceMap.put(serviceType, service);
+            }
         }
         return new MetadataImpl(
                 serviceMap,
