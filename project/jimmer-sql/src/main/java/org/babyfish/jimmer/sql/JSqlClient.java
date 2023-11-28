@@ -107,6 +107,9 @@ public interface JSqlClient extends SubQueryProvider {
     @NewChain
     JSqlClient disableSlaveConnectionManager();
 
+    @NewChain
+    JSqlClient executor(Executor executor);
+
     @Nullable
     default <E> E findById(Class<E> type, Object id) {
         return getEntities().findById(type, id);

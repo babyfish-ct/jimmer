@@ -16,6 +16,7 @@ import org.babyfish.jimmer.sql.kt.filter.KFilterDsl
 import org.babyfish.jimmer.sql.kt.filter.KFilters
 import org.babyfish.jimmer.sql.kt.impl.KSqlClientImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
+import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -88,6 +89,9 @@ interface KSqlClient {
 
     @NewChain
     fun disableSlaveConnectionManager(): KSqlClient
+
+    @NewChain
+    fun executor(executor: Executor?): KSqlClient
 
     val entityManager: EntityManager
 

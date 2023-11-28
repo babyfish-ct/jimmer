@@ -19,5 +19,6 @@ FlatTreeNode {
         as(^ -> parent) {
             #allScalars
         }
+        id(parent) as grandParentId
     }
 }

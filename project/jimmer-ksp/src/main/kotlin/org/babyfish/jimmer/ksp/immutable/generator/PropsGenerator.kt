@@ -173,7 +173,7 @@ class PropsGenerator(
                         .apply {
                             if (prop.isRemote) {
                                 addCode(
-                                    "return %L.protect(%L(%T.%L))",
+                                    "return %L.protect(%L(%T.%L.unwrap()))",
                                     K_REMOTE_REF,
                                     innerFunName,
                                     type.propsClassName,
@@ -181,7 +181,7 @@ class PropsGenerator(
                                 )
                             } else if (innerFunName == "get") {
                                 addCode(
-                                    "return get<%T>(%T.%L) as %T",
+                                    "return get<%T>(%T.%L.unwrap()) as %T",
                                     prop.targetTypeName(overrideNullable = false),
                                     type.propsClassName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
@@ -189,7 +189,7 @@ class PropsGenerator(
                                 )
                             } else {
                                 addCode(
-                                    "return %L(%T.%L)",
+                                    "return %L(%T.%L.unwrap())",
                                     innerFunName,
                                     type.propsClassName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER)
@@ -240,7 +240,7 @@ class PropsGenerator(
                     FunSpec
                         .getterBuilder()
                         .addStatement(
-                            "return getAssociatedId<%T>(%T.%L) as %T",
+                            "return getAssociatedId<%T>(%T.%L.unwrap()) as %T",
                             prop.targetType!!.idProp!!.targetTypeName(overrideNullable = false),
                             type.propsClassName,
                             StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
@@ -388,10 +388,25 @@ class PropsGenerator(
             PropertySpec
                 .builder(
                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
-                    IMMUTABLE_PROP_CLASS_NAME
+                    when {
+                        prop.isReferenceList -> TYPED_PROP_REFERENCE_LIST_CLASS_NAME
+                        prop.isReference -> TYPED_PROP_REFERENCE_CLASS_NAME
+                        prop.isScalarList -> TYPED_PROP_SCALAR_LIST_CLASS_NAME
+                        else -> TYPED_PROP_SCALAR_CLASS_NAME
+                    }.parameterizedBy(
+                        type.className,
+                        prop.targetTypeName()
+                    )
                 )
                 .initializer(
-                    "%T::%N.%M()",
+                    "%T.%L(%T::%N.%M())",
+                    TYPED_PROP_CLASS_NAME,
+                    when {
+                        prop.isReferenceList -> "referenceList"
+                        prop.isReference -> "reference"
+                        prop.isScalarList -> "scalarList"
+                        else -> "scalar"
+                    },
                     type.className,
                     prop.name,
                     MemberName("org.babyfish.jimmer.kt", "toImmutableProp")

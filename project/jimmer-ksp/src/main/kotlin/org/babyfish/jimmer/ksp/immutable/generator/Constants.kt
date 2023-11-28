@@ -13,6 +13,7 @@ import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.meta.PropId
+import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.collection.IdViewList
 import org.babyfish.jimmer.sql.collection.ManyToManyViewList
 import org.babyfish.jimmer.sql.collection.MutableIdViewList
@@ -53,7 +54,11 @@ internal val INTERNAL_TYPE_CLASS_NAME = Internal::class.asClassName()
 internal val IMMUTABLE_PROP_CATEGORY_CLASS_NAME = ImmutablePropCategory::class.asClassName()
 internal val IMMUTABLE_TYPE_CLASS_NAME = ImmutableType::class.asClassName()
 internal val DRAFT_CONSUMER_CLASS_NAME = DraftConsumer::class.asClassName()
-internal val IMMUTABLE_PROP_CLASS_NAME = ImmutableProp::class.asClassName()
+internal val TYPED_PROP_CLASS_NAME = TypedProp::class.asClassName()
+internal val TYPED_PROP_SCALAR_CLASS_NAME = TypedProp.Scalar::class.asClassName()
+internal val TYPED_PROP_SCALAR_LIST_CLASS_NAME = TypedProp.ScalarList::class.asClassName()
+internal val TYPED_PROP_REFERENCE_CLASS_NAME = TypedProp.Reference::class.asClassName()
+internal val TYPED_PROP_REFERENCE_LIST_CLASS_NAME = TypedProp.ReferenceList::class.asClassName()
 internal val IMMUTABLE_SPI_CLASS_NAME = ImmutableSpi::class.asClassName()
 internal val IMMUTABLE_OBJECTS_CLASS_NAME = ImmutableObjects::class.asClassName()
 internal val UNLOADED_EXCEPTION_CLASS_NAME = UnloadedException::class.asClassName()

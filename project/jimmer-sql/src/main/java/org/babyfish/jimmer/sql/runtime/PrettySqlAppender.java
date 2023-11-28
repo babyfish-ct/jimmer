@@ -314,7 +314,7 @@ abstract class PrettySqlAppender {
 
             @Override
             public void append(StringBuilder builder, LocalDateTime variable) {
-                builder.append('\'').append(DATE_FORMATTER.format(variable)).append('\'');
+                builder.append('\'').append(DATE_TIME_FORMATTER.format(variable)).append('\'');
             }
         }
 
@@ -322,7 +322,7 @@ abstract class PrettySqlAppender {
 
             @Override
             public void append(StringBuilder builder, OffsetDateTime variable) {
-                builder.append('\'').append(DATE_FORMATTER.format(variable)).append('\'');
+                builder.append('\'').append(DATE_TIME_FORMATTER.format(variable)).append('\'');
             }
         }
 
@@ -330,7 +330,7 @@ abstract class PrettySqlAppender {
 
             @Override
             public void append(StringBuilder builder, ZonedDateTime variable) {
-                builder.append('\'').append(DATE_FORMATTER.format(variable)).append('\'');
+                builder.append('\'').append(DATE_TIME_FORMATTER.format(variable)).append('\'');
             }
         }
 

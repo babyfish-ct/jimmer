@@ -271,6 +271,8 @@ class ImmutableProp(
             ?.let { ctx.typeOf(it) }
     }
 
+    val isReferenceList = isAssociation && isList
+
     val isReference = isAssociation && !isList
 
     val isScalarList = isList && !isAssociation

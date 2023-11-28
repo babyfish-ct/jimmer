@@ -559,6 +559,47 @@ class JSqlClientImpl implements JSqlClientImplementor {
     }
 
     @Override
+    public JSqlClientImplementor executor(Executor executor) {
+        if (executor == null) {
+            executor = DefaultExecutor.INSTANCE;
+        }
+        if (this.executor.equals(executor)) {
+            return this;
+        }
+        return new JSqlClientImpl(
+                connectionManager,
+                slaveConnectionManager,
+                dialect,
+                executor,
+                executorContextPrefixes,
+                sqlFormatter,
+                idGeneratorMap,
+                scalarProviderManager,
+                defaultBatchSize,
+                defaultListBatchSize,
+                offsetOptimizingThreshold,
+                entities,
+                entityManager,
+                caches,
+                triggers,
+                transactionTriggers,
+                metadataStrategy,
+                binLog,
+                filterManager,
+                userIdGeneratorProvider,
+                logicalDeletedValueGeneratorProvider,
+                transientResolverManager,
+                defaultDissociationActionCheckable,
+                idOnlyTargetCheckingLevel,
+                saveCommandPessimisticLock,
+                draftHandlerManager,
+                microServiceName,
+                microServiceExchange,
+                sqlClientInitializer
+        );
+    }
+
+    @Override
     public TransientResolver<?, ?> getResolver(ImmutableProp prop) {
         return transientResolverManager.get(prop);
     }

@@ -88,6 +88,9 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
     @Override
     JSqlClientImplementor disableSlaveConnectionManager();
 
+    @Override
+    JSqlClientImplementor executor(Executor executor);
+
     Loaders getLoaders();
 
     void initialize();

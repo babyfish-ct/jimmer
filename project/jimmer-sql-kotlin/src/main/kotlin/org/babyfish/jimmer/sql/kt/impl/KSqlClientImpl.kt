@@ -26,6 +26,7 @@ import org.babyfish.jimmer.sql.kt.loader.KLoaders
 import org.babyfish.jimmer.sql.kt.loader.impl.KLoadersImpl
 import org.babyfish.jimmer.sql.runtime.EntityManager
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose
+import org.babyfish.jimmer.sql.runtime.Executor
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
@@ -127,6 +128,15 @@ internal class KSqlClientImpl(
 
     override fun disableSlaveConnectionManager(): KSqlClient =
         javaClient.disableSlaveConnectionManager().let {
+            if (javaClient === it) {
+                this
+            } else {
+                KSqlClientImpl(it)
+            }
+        }
+
+    override fun executor(executor: Executor?): KSqlClient =
+        javaClient.executor(executor).let {
             if (javaClient === it) {
                 this
             } else {

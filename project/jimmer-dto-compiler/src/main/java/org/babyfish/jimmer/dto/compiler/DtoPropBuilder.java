@@ -189,7 +189,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     funcName = "id";
                     break;
                 case "flat":
-                    if (!baseProp.isAssociation(false)) {
+                    if (!baseProp.isAssociation(true)) {
                         throw ctx.exception(
                                 prop.func.getLine(),
                                 "Cannot call the function \"flat\" because the current prop \"" +
@@ -482,7 +482,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         DtoTypeBuilder<T, P> targetTypeBuilder = null;
         DtoParser.DtoBodyContext dtoBody = prop.dtoBody();
         if (dtoBody != null) {
-            if (!baseProp.isAssociation(false)) {
+            if (!baseProp.isAssociation(true)) {
                 throw ctx.exception(
                         dtoBody.start.getLine(),
                         "Illegal property \"" +
@@ -513,7 +513,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     prop.recursive != null ? alias : null,
                     ctx
             );
-        } else if (baseProp.isAssociation(false) &&
+        } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
                 !"associatedIdIn".equals(funcName) &&
                 !"associatedIdNotIn".equals(funcName)) {

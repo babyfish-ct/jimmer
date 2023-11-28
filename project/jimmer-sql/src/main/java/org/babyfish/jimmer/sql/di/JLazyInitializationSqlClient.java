@@ -425,6 +425,11 @@ public abstract class JLazyInitializationSqlClient implements JSqlClientImplemen
     }
 
     @Override
+    public JSqlClientImplementor executor(Executor executor) {
+        return sqlClient().executor(executor);
+    }
+
+    @Override
     public Loaders getLoaders() {
         return sqlClient().getLoaders();
     }

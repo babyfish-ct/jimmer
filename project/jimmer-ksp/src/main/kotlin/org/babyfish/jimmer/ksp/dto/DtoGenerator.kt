@@ -592,7 +592,7 @@ class DtoGenerator private constructor(
         }
         for (prop in newStack.subList(sameCount, newStack.size)) {
             addStatement(
-                "__applier.push(%T.%L)",
+                "__applier.push(%T.%L.unwrap())",
                 prop.declaringType.propsClassName,
                 StringUtil.snake(prop.name, SnakeCase.UPPER)
             )
@@ -627,7 +627,7 @@ class DtoGenerator private constructor(
                                 add(", ")
                             }
                             add(
-                                "%T.%L",
+                                "%T.%L.unwrap()",
                                 baseProp.declaringType.propsClassName,
                                 StringUtil.snake(baseProp.name, SnakeCase.UPPER)
                             )
@@ -635,7 +635,7 @@ class DtoGenerator private constructor(
                         add(")")
                     } else {
                         add(
-                            "%T.%L",
+                            "%T.%L.unwrap()",
                             prop.baseProp.declaringType.propsClassName,
                             StringUtil.snake(prop.baseProp.name, SnakeCase.UPPER)
                         )
@@ -852,7 +852,7 @@ class DtoGenerator private constructor(
                         } else {
                             val metadata = prop.dtoConverterMetadata!!
                             add(
-                                "return %T.%L.%L<%T, %T>(%L).input(value)",
+                                "return %T.%L.unwrap().%L<%T, %T>(%L).input(value)",
                                 dtoType.baseType.propsClassName,
                                 StringUtil.snake(baseProp.name, SnakeCase.UPPER),
                                 if (baseProp.isAssociation(true)) "getAssociatedIdConverter" else "getConverter",
@@ -1068,12 +1068,16 @@ class DtoGenerator private constructor(
     ) {
         val baseProp: ImmutableProp = prop.toTailProp().getBaseProp()
         add(
-            "%T.%L.%L",
+            "%T.%L.unwrap().%L",
             dtoType.baseType.propsClassName,
             StringUtil.snake(baseProp.name, SnakeCase.UPPER),
             if (prop.toTailProp().getBaseProp()
                     .isAssociation(true)
-            ) "getAssociatedIdConverter<Any, Any>($forList)" else "getConverter<Any, Any>()"
+            ) {
+                "getAssociatedIdConverter<Any, Any>($forList)"
+            } else {
+                "getConverter<Any, Any>()"
+            }
         )
     }
 
