@@ -69,13 +69,8 @@ public class ClientProcessor {
             }
 
             @Override
-            protected void typeNameNotFound(String typeName) {
-                throw new MetaException(
-                        ancestorSource(),
-                        "Cannot resolve the type name \"" +
-                                typeName +
-                                "\""
-                );
+            protected void throwException(Element source, String message) {
+                throw new MetaException(source, message);
             }
 
             @Override
@@ -450,6 +445,7 @@ public class ClientProcessor {
 
         TypeDefinitionImpl<Element> typeDefinition = builder.current();
         typeDefinition.setImmutable(immutable);
+        typeDefinition.setApiIgnore(typeElement.getAnnotation(ApiIgnore.class) != null);
 
         if (!immutable || typeElement.getKind() == ElementKind.INTERFACE) {
             for (Element element : typeElement.getEnclosedElements()) {
@@ -491,21 +487,27 @@ public class ClientProcessor {
         }
         if (typeElement.getKind() == ElementKind.CLASS || typeElement.getKind() == ElementKind.INTERFACE) {
             if (typeElement.getSuperclass().getKind() != TypeKind.NONE) {
-                TypeName superName = typeName(((DeclaredType) typeElement.getSuperclass()).asElement());
-                if (superName.isGenerationRequired()) {
-                    builder.typeRef(type -> {
-                        fillType(typeElement.getSuperclass());
-                        typeDefinition.addSuperType(type);
-                    });
+                Element superElement = ((DeclaredType) typeElement.getSuperclass()).asElement();
+                if (Annotations.annotationMirror(superElement, ApiIgnore.class) == null) {
+                    TypeName superName = typeName(superElement);
+                    if (superName.isGenerationRequired()) {
+                        builder.typeRef(type -> {
+                            fillType(typeElement.getSuperclass());
+                            typeDefinition.addSuperType(type);
+                        });
+                    }
                 }
             }
             for (TypeMirror itf : typeElement.getInterfaces()) {
-                TypeName superName = typeName(((DeclaredType) itf).asElement());
-                if (superName.isGenerationRequired()) {
-                    builder.typeRef(type -> {
-                        fillType(itf);
-                        typeDefinition.addSuperType(type);
-                    });
+                Element superElement = ((DeclaredType) itf).asElement();
+                if (Annotations.annotationMirror(superElement, ApiIgnore.class) == null) {
+                    TypeName superName = typeName(superElement);
+                    if (superName.isGenerationRequired()) {
+                        builder.typeRef(type -> {
+                            fillType(itf);
+                            typeDefinition.addSuperType(type);
+                        });
+                    }
                 }
             }
         }

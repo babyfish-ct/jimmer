@@ -23,6 +23,8 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     private boolean immutable;
 
+    private boolean apiIgnore;
+
     private Map<String, PropImpl<S>> propMap = new LinkedHashMap<>();
 
     private List<TypeRefImpl<S>> superTypes = new ArrayList<>();
@@ -46,6 +48,15 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     public void setImmutable(boolean immutable) {
         this.immutable = immutable;
+    }
+
+    @Override
+    public boolean isApiIgnore() {
+        return apiIgnore;
+    }
+
+    public void setApiIgnore(boolean apiIgnore) {
+        this.apiIgnore = apiIgnore;
     }
 
     @SuppressWarnings("unchecked")
@@ -108,6 +119,10 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
                 gen.writeFieldName("immutable");
                 gen.writeBoolean(true);
             }
+            if (definition.isApiIgnore()) {
+                gen.writeFieldName("apiIgnore");
+                gen.writeBoolean(true);
+            }
             if (!definition.getPropMap().isEmpty()) {
                 provider.defaultSerializeField("props", definition.getPropMap().values(), gen);
             }
@@ -130,6 +145,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             );
             if (jsonNode.has("immutable")) {
                 definition.setImmutable(jsonNode.get("immutable").asBoolean());
+            }
+            if (jsonNode.has("apiIgnore")) {
+                definition.setApiIgnore(jsonNode.get("apiIgnore").asBoolean());
             }
             if (jsonNode.has("props")) {
                 for (JsonNode propNode : jsonNode.get("props")) {

@@ -106,12 +106,7 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
 
     @Override
     public String toString() {
-        return "ApiServiceImpl{" +
-                "className='" + typeName + '\'' +
-                ", groups='" + groups + '\'' +
-                ", operations=" + operations +
-                ", doc='" + doc + '\'' +
-                '}';
+        return typeName;
     }
 
     @JsonValue

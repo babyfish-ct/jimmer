@@ -30,7 +30,12 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
             }
             S source = builder.loadSource(typeName.toString());
             if (source == null) {
-                builder.typeNameNotFound(typeName.toString());
+                builder.throwException(
+                        builder.ancestorSource(),
+                        "Cannot resolve the type name \"" +
+                                typeName +
+                                "\""
+                );
             }
             builder.definition(source, typeName, definition -> {
                 typeDefinitionMap.put(typeName, definition);

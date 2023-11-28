@@ -9,6 +9,8 @@ public interface TypeDefinition {
 
     boolean isImmutable();
 
+    boolean isApiIgnore();
+
     Map<String, Prop> getPropMap();
 
     List<TypeRef> getSuperTypes();

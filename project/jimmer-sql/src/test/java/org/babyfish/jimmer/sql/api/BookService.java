@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.model.Book;
 import org.babyfish.jimmer.sql.model.BookFetcher;
 import org.babyfish.jimmer.sql.model.BookStoreFetcher;
 import org.babyfish.jimmer.sql.model.dto.BookInput;
+import org.babyfish.jimmer.sql.model.dto.BookSpecification2;
 import org.babyfish.jimmer.sql.model.dto.CompositeBookInput;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,7 @@ public interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with short associations
      */
-    List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
+    List<? extends @FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
             @Nullable String name,
             @Nullable Integer edition,
             @Nullable BigDecimal minPrice,
@@ -49,13 +50,17 @@ public interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
-    List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
+    List<? extends @FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @Nullable String name,
             @Nullable Integer edition,
             @Nullable BigDecimal minPrice,
             @Nullable BigDecimal maxPrice,
             @Nullable String storeName,
             @Nullable String authorName
+    );
+
+    List<? extends @FetchBy("COMPLEX") Book> findBySuperQBE(
+            @Nullable BookSpecification2 specification
     );
 
     void saveBook(BookInput input);

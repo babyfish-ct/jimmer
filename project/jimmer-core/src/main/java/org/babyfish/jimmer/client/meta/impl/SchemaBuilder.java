@@ -1,16 +1,17 @@
 package org.babyfish.jimmer.client.meta.impl;
 
-import org.babyfish.jimmer.client.meta.Schema;
-import org.babyfish.jimmer.client.meta.TypeName;
+import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
+import java.security.Principal;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class SchemaBuilder<S> {
+
+    private static final Set<String> IGNORED_PARAMETER_TYPES;
+
+    private static final Set<String> ILLEGAL_PARAMETER_TYPES;
 
     private LinkedList<AstNode<S>> stack = new LinkedList<>();
 
@@ -94,19 +95,69 @@ public abstract class SchemaBuilder<S> {
 
     public Schema build() {
         resolve();
+        unnecessaryPart();
         return (Schema) stack.peek();
     }
 
     @Nullable
     protected abstract S loadSource(String typeName);
 
-    protected abstract void typeNameNotFound(String typeName);
+    protected abstract void throwException(S source, String message);
 
     protected abstract void fillDefinition(S source);
 
     private void resolve() {
-        AstNode<S> current = stack.peek();
-        assert current != null;
-        current.accept(new TypeDefinitionVisitor<>(this));
+        SchemaImpl<S> schema = current();
+        schema.accept(new TypeDefinitionVisitor<>(this));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void unnecessaryPart() {
+        SchemaImpl<S> schema = current();
+        for (ApiService service : schema.getApiServiceMap().values()) {
+            for (ApiOperation operation : service.getOperations()) {
+                Collection<ApiParameterImpl<S>> parameters =
+                        (List<ApiParameterImpl<S>>) (List<?>) operation.getParameters();
+                parameters.removeIf(parameter -> {
+                    if (IGNORED_PARAMETER_TYPES.contains(parameter.getType().getTypeName().toString())) {
+                        return true;
+                    }
+                    if (ILLEGAL_PARAMETER_TYPES.contains(parameter.getType().getTypeName().toString())) {
+                        throwException(
+                                parameter.getSource(),
+                                "The parameter whose type \"" +
+                                        parameter.getType() +
+                                        "\" is not supported by jimmer client code generation, " +
+                                        "please use \"@ApiIgnore\" to decorate \"" +
+                                        operation +
+                                        "\" of \"" +
+                                        service +
+                                        "\""
+                        );
+                    }
+                    TypeDefinition typeDefinition = schema.getTypeDefinitionMap().get(parameter.getType().getTypeName());
+                    return typeDefinition != null && typeDefinition.isApiIgnore();
+                });
+            }
+        }
+    }
+
+    static {
+
+        Set<String> ignoredParameterTypes = new HashSet<>();
+        ignoredParameterTypes.add("javax.servlet.http.HttpServletRequest");
+        ignoredParameterTypes.add("javax.servlet.http.ServletRequest");
+        ignoredParameterTypes.add("javax.servlet.http.HttpServletResponse");
+        ignoredParameterTypes.add("javax.servlet.http.ServletResponse");
+        ignoredParameterTypes.add("jakarta.servlet.http.HttpServletRequest");
+        ignoredParameterTypes.add("jakarta.servlet.http.ServletRequest");
+        ignoredParameterTypes.add("jakarta.servlet.http.HttpServletResponse");
+        ignoredParameterTypes.add("jakarta.servlet.http.ServletResponse");
+        ignoredParameterTypes.add(Principal.class.getName());
+        IGNORED_PARAMETER_TYPES = ignoredParameterTypes;
+
+        Set<String> illegalParameterTypes = new HashSet<>();
+        illegalParameterTypes.add("org.springframework.web.multipart.MultipartFile");
+        ILLEGAL_PARAMETER_TYPES = illegalParameterTypes;
     }
 }

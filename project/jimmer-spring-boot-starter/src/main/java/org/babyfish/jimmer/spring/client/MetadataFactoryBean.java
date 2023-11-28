@@ -200,7 +200,7 @@ public class MetadataFactoryBean implements FactoryBean<Metadata> {
         set.add("jakarta.servlet.http.ServletRequest");
         set.add("jakarta.servlet.http.HttpServletResponse");
         set.add("jakarta.servlet.http.ServletResponse");
-        set.add(MultipartFile.class.getName());
+        set.add("org.springframework.web.multipart.MultipartFile");
         set.add(Principal.class.getName());
         IGNORED_CLASS_NAMES = set;
     }

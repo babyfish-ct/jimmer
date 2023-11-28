@@ -15,7 +15,9 @@ dependencies {
 
     implementation "org.babyfish.jimmer:jimmer-spring-boot-starter:${jimmerVersion}"
 
-    annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
+    //annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
+    annotationProcessor "org.babyfish.jimmer:jimmer-core:${jimmerVersion}"
+    annotationProcessor files("/Users/chentao/projects/git/jimmer/project/jimmer-apt/build/lib/jimmer-apt-0.8.47.jar")
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
