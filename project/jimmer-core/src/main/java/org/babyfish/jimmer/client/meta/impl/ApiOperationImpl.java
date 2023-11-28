@@ -6,10 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.babyfish.jimmer.client.meta.ApiOperation;
-import org.babyfish.jimmer.client.meta.ApiParameter;
-import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.TypeRef;
+import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -31,10 +28,15 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     private Doc doc;
 
+    private StringBuilder keyBuilder;
+
+    private String key;
+
     ApiOperationImpl(S source, String name) {
         super(source);
         this.name = name;
         this.parameters = new ArrayList<>();
+        this.keyBuilder = new StringBuilder(name);
     }
 
     @Override
@@ -67,6 +69,20 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     public void addParameter(ApiParameterImpl<S> parameter) {
         this.parameters.add(parameter);
+        addIgnoredParameter(parameter);
+    }
+
+    public void addIgnoredParameter(ApiParameterImpl<S> parameter) {
+        if (keyBuilder == null) {
+            throw new IllegalStateException("This operation has been frozen, cannot add parameter into it");
+        }
+        TypeName typeName = parameter.getType().getTypeName();
+        if (typeName.getTypeVariable() != null) {
+            throw new AssertionError(
+                    "Illegal parameter \"" + parameter.getName() + "\", its type cannot be type variable"
+            );
+        }
+        keyBuilder.append(':').append(typeName);
     }
 
     @Nullable
@@ -108,6 +124,14 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
                 ", returnType=" + returnType +
                 ", doc='" + doc + '\'' +
                 '}';
+    }
+
+    public String key() {
+        String key = this.key;
+        if (key == null) {
+            this.key = key = keyBuilder.toString();
+        }
+        return key;
     }
 
     public static class Serializer extends JsonSerializer<ApiOperationImpl<?>> {

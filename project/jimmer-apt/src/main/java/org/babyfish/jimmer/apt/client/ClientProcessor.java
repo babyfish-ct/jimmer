@@ -192,7 +192,11 @@ public class ClientProcessor {
                         fillType(parameterElement.asType());
                         parameter.setType(type);
                     });
-                    operation.addParameter(parameter);
+                    if (Annotations.annotationMirror(parameterElement, ApiIgnore.class) != null) {
+                        operation.addIgnoredParameter(parameter);
+                    } else {
+                        operation.addParameter(parameter);
+                    }
                 });
             }
             if (method.getReturnType().getKind() != TypeKind.VOID) {
@@ -488,7 +492,7 @@ public class ClientProcessor {
         if (typeElement.getKind() == ElementKind.CLASS || typeElement.getKind() == ElementKind.INTERFACE) {
             if (typeElement.getSuperclass().getKind() != TypeKind.NONE) {
                 TypeName superName = typeName(((DeclaredType) typeElement.getSuperclass()).asElement());
-                if (TypeDefinition.isGenerationRequired(superName)) {
+                if (superName.isGenerationRequired()) {
                     builder.typeRef(type -> {
                         fillType(typeElement.getSuperclass());
                         typeDefinition.addSuperType(type);
@@ -497,7 +501,7 @@ public class ClientProcessor {
             }
             for (TypeMirror itf : typeElement.getInterfaces()) {
                 TypeName superName = typeName(((DeclaredType) itf).asElement());
-                if (TypeDefinition.isGenerationRequired(superName)) {
+                if (superName.isGenerationRequired()) {
                     builder.typeRef(type -> {
                         fillType(itf);
                         typeDefinition.addSuperType(type);

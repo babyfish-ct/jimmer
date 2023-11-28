@@ -13,9 +13,9 @@ public interface ApiService {
 
     List<ApiOperation> getOperations();
 
+    @Nullable
     Doc getDoc();
 
+    @Nullable
     ApiOperation findOperation(String name, Class<?>... types);
-
-    ApiOperation findOperation(String name, String... typeNames);
 }

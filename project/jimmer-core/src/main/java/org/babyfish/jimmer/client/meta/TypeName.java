@@ -99,6 +99,68 @@ public final class TypeName implements Comparable<TypeName> {
         return typeVariable;
     }
 
+    public boolean isPrimitive() {
+        if (packageName == null && simpleNames.size() == 1) {
+            switch (simpleNames.get(0)) {
+                case "boolean":
+                case "char":
+                case "byte":
+                case "short":
+                case "int":
+                case "long":
+                case "float":
+                case "double":
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isGenerationRequired() {
+        String text = toStringImpl(false);
+        switch (text) {
+            case "boolean":
+            case "char":
+            case "byte":
+            case "short":
+            case "int":
+            case "long":
+            case "float":
+            case "double":
+            case "java.lang.Object":
+            case "java.io.Closeable":
+            case "java.lang.AutoCloseable":
+            case "java.lang.Enum":
+            case "java.lang.Class":
+            case "java.math.BigDecimal":
+            case "java.math.BigInteger":
+            case "java.util.Iterable":
+            case "java.util.Collection":
+            case "java.util.List":
+            case "java.util.Set":
+            case "java.util.SortedSet":
+            case "java.util.NavigableSet":
+            case "java.util.SequencedSet":
+            case "java.util.Map":
+            case "java.util.SortedMap":
+            case "java.util.NavigableMap":
+            case "java.util.SequencedMap":
+            case "java.lang.String":
+            case "java.util.UUID":
+            case "java.util.Date":
+            case "java.sql.Date":
+            case "java.sql.Time":
+            case "java.sql.Timestamp":
+            case "java.time.LocalDate":
+            case "java.time.LocalDateTime":
+            case "java.time.OffsetDateTime":
+            case "java.time.ZonedDateTime":
+                return false;
+            default:
+                return !text.startsWith("<");
+        }
+    }
+
     @Override
     public int compareTo(@NotNull TypeName o) {
         return toString().compareTo(o.toString());

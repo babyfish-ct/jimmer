@@ -299,7 +299,7 @@ class ClientProcessor(
         if (declaration.classKind == ClassKind.CLASS || declaration.classKind == ClassKind.INTERFACE) {
             for (superTypeReference in declaration.superTypes) {
                 val superName = superTypeReference.resolve().declaration.toTypeName()
-                if (TypeDefinition.isGenerationRequired(processTypeName(superName))) {
+                if (processTypeName(superName).isGenerationRequired) {
                     typeRef { superType ->
                         fillType(superTypeReference)
                         definition.addSuperType(superType)

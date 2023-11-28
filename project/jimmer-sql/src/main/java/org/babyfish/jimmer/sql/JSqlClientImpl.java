@@ -1577,4 +1577,3 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
     }
 }
-
