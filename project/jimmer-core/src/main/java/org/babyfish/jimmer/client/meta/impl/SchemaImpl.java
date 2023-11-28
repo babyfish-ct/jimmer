@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.babyfish.jimmer.client.meta.ApiService;
 import org.babyfish.jimmer.client.meta.Schema;
 import org.babyfish.jimmer.client.meta.TypeDefinition;
+import org.babyfish.jimmer.client.meta.TypeName;
 
 import java.io.IOException;
 import java.util.*;
@@ -19,7 +20,7 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
     private Map<String, ApiServiceImpl<S>> apiServiceMap;
 
-    private Map<String, TypeDefinitionImpl<S>> typeDefinitionMap = new TreeMap<>();
+    private Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap = new TreeMap<>();
 
     SchemaImpl() {
         this(null);
@@ -30,7 +31,7 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
         this.apiServiceMap = apiServiceMap != null ? apiServiceMap : new TreeMap<>();
     }
 
-    SchemaImpl(Map<String, ApiServiceImpl<S>> apiServiceMap, Map<String, TypeDefinitionImpl<S>> typeDefinitionMap) {
+    SchemaImpl(Map<String, ApiServiceImpl<S>> apiServiceMap, Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap) {
         this.apiServiceMap = apiServiceMap;
         this.typeDefinitionMap = typeDefinitionMap;
     }
@@ -43,8 +44,8 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map<String, TypeDefinition> getTypeDefinitionMap() {
-        return (Map<String, TypeDefinition>) (Map<?, ?>) typeDefinitionMap;
+    public Map<TypeName, TypeDefinition> getTypeDefinitionMap() {
+        return (Map<TypeName, TypeDefinition>) (Map<?, ?>) typeDefinitionMap;
     }
 
     public void addApiService(ApiServiceImpl<S> apiService) {

@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.CodeBlock
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 

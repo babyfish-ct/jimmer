@@ -10,8 +10,8 @@ import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.Context
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import java.io.OutputStreamWriter
 

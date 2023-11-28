@@ -4,8 +4,8 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.get
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.meta.PropId
 import kotlin.reflect.KClass
 

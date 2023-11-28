@@ -6,8 +6,8 @@ import org.babyfish.jimmer.dto.compiler.DtoType
 import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.KspDtoCompiler
 import org.babyfish.jimmer.ksp.annotation
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.Entity
 
 class DtoProcessor(
@@ -15,9 +15,10 @@ class DtoProcessor(
     private val dtoDirs: Collection<String>,
     private val dtoMutable: Boolean
 ) {
-    fun process() {
+    fun process(): Boolean {
         val dtoTypeMap = findDtoTypeMap()
         generateDtoTypes(dtoTypeMap)
+        return dtoTypeMap.isNotEmpty()
     }
 
     private fun findDtoTypeMap(): Map<ImmutableType, MutableList<DtoType<ImmutableType, ImmutableProp>>> {

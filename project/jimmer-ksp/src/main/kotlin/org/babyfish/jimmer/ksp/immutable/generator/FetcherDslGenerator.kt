@@ -2,8 +2,8 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.JoinTable
 import org.babyfish.jimmer.sql.ManyToOne
 

@@ -7,7 +7,7 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass

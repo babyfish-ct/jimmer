@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.ksp.meta
+package org.babyfish.jimmer.ksp.immutable.meta
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.google.devtools.ksp.isAbstract

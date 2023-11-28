@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface TypeRef {
 
-    String getTypeName();
+    TypeName getTypeName();
 
     boolean isNullable();
 

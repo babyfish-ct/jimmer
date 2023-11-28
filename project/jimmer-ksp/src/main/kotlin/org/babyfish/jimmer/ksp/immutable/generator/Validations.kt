@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.google.devtools.ksp.symbol.KSAnnotation
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 
 val ImmutableProp.validationAnnotationMirrorMultiMap: Map<String, List<KSAnnotation>>
     get() = mutableMapOf<String, MutableList<KSAnnotation>>().apply {

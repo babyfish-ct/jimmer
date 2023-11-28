@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface TypeDefinition {
 
-    String getTypeName();
+    TypeName getTypeName();
 
     boolean isImmutable();
 
@@ -31,8 +31,9 @@ public interface TypeDefinition {
         }
     }
 
-    static boolean isGenerationRequired(String typeName) {
-        switch (typeName) {
+    static boolean isGenerationRequired(TypeName typeName) {
+        String text = typeName.toString();
+        switch (text) {
             case "boolean":
             case "char":
             case "byte":
@@ -59,8 +60,6 @@ public interface TypeDefinition {
             case "java.util.SortedMap":
             case "java.util.NavigableMap":
             case "java.util.SequencedMap":
-            case "java.lang.BigDecimal":
-            case "java.lang.BigInteger":
             case "java.lang.String":
             case "java.util.UUID":
             case "java.util.Date":
@@ -73,7 +72,7 @@ public interface TypeDefinition {
             case "java.time.ZonedDateTime":
                 return false;
             default:
-                return !typeName.startsWith("<");
+                return !text.startsWith("<");
         }
     }
 }

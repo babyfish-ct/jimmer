@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.apt;
 
-import org.babyfish.jimmer.apt.client.ApiProcessor;
+import org.babyfish.jimmer.apt.client.ClientProcessor;
 import org.babyfish.jimmer.apt.dto.DtoProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
@@ -106,8 +106,8 @@ public class JimmerProcessor extends AbstractProcessor {
                 }
             }
             if (!clientGenerated) {
+                new ClientProcessor(context, elements, filer, delayedClientElements).handleService(roundEnv);
                 clientGenerated = true;
-                new ApiProcessor(context, elements, filer, delayedClientElements).process(roundEnv);
                 delayedClientElements = null;
             }
         } catch (MetaException ex) {

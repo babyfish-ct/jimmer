@@ -10,10 +10,7 @@ import org.babyfish.jimmer.client.Api;
 import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.NullableType;
-import org.babyfish.jimmer.client.meta.DefaultFetcherOwner;
-import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.Schema;
-import org.babyfish.jimmer.client.meta.TypeDefinition;
+import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.impl.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.sql.Embeddable;
@@ -31,10 +28,9 @@ import javax.tools.StandardLocation;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 
-public class ApiProcessor {
+public class ClientProcessor {
 
     private static final String JIMMER_CLIENT = "META-INF/jimmer/client";
 
@@ -50,7 +46,7 @@ public class ApiProcessor {
 
     private final SchemaBuilder<Element> builder;
 
-    public ApiProcessor(Context context, Elements elements, Filer filer, Collection<? extends Element> delayedElements) {
+    public ClientProcessor(Context context, Elements elements, Filer filer, Collection<? extends Element> delayedElements) {
         this.context = context;
         this.elements = elements;
         this.filer = filer;
@@ -73,7 +69,7 @@ public class ApiProcessor {
             }
 
             @Override
-            protected RuntimeException typeNameNotFound(String typeName) {
+            protected void typeNameNotFound(String typeName) {
                 throw new MetaException(
                         ancestorSource(),
                         "Cannot resolve the type name \"" +
@@ -83,9 +79,9 @@ public class ApiProcessor {
             }
 
             @Override
-            protected void handleDefinition(Element source) {
+            protected void fillDefinition(Element source) {
                 TypeElement typeElement = (TypeElement) source;
-                ApiProcessor.this.handleDefinition(
+                ClientProcessor.this.fillDefinition(
                         typeElement,
                         typeElement.getAnnotation(Immutable.class) != null ||
                                 typeElement.getAnnotation(Entity.class) != null ||
@@ -101,19 +97,19 @@ public class ApiProcessor {
             try (Reader reader = new InputStreamReader(Files.newInputStream(jimmerClientFile.toPath()), StandardCharsets.UTF_8)) {
                 return Schemas.readServicesFrom(reader);
             } catch (IOException ex) {
-                throw new GeneratorException("Cannot read conent of  \"" + jimmerClientFile + "\"", ex);
+                throw new GeneratorException("Cannot read content of  \"" + jimmerClientFile + "\"", ex);
             }
         }
         return null;
     }
 
-    public void process(RoundEnvironment roundEnv) {
+    public void handleService(RoundEnvironment roundEnv) {
         for (Element element : roundEnv.getRootElements()) {
-            process(element);
+            handleService(element);
         }
         if (delayedElements != null) {
             for (Element element : delayedElements) {
-                process(element);
+                handleService(element);
             }
         }
 
@@ -126,7 +122,7 @@ public class ApiProcessor {
         }
     }
 
-    private void process(Element element) {
+    private void handleService(Element element) {
         if (!(element instanceof TypeElement)) {
             return;
         }
@@ -137,13 +133,13 @@ public class ApiProcessor {
         if (typeElement.getNestingKind().isNested()) {
             throw new MetaException(
                     typeElement,
-                    "the API interface must be top-level"
+                    "the API service type must be top-level"
             );
         }
         if (!typeElement.getTypeParameters().isEmpty()) {
             throw new MetaException(
                     typeElement.getTypeParameters().get(0),
-                    "api service cannot declare type parameters"
+                    "API service cannot declare type parameters"
             );
         }
         SchemaImpl<Element> schema = builder.current();
@@ -169,6 +165,12 @@ public class ApiProcessor {
     private void handleMethod(ExecutableElement method) {
         ApiServiceImpl<Element> service = builder.current();
         builder.operation(method, method.getSimpleName().toString(), operation -> {
+            if (!method.getTypeParameters().isEmpty()) {
+                throw new MetaException(
+                        method.getTypeParameters().get(0),
+                        "API method cannot declare type parameters"
+                );
+            }
             Api api = operation.getSource().getAnnotation(Api.class);
             if (api != null) {
                 if (service.getGroups() != null) {
@@ -184,16 +186,10 @@ public class ApiProcessor {
                 operation.setGroups(Arrays.asList(api.groups()));
             }
             operation.setDoc(Doc.parse(elements.getDocComment(method)));
-            if (!method.getTypeParameters().isEmpty()) {
-                throw new MetaException(
-                        method.getTypeParameters().get(0),
-                        "api method cannot declare type parameters"
-                );
-            }
             for (VariableElement parameterElement : method.getParameters()) {
                 builder.parameter(parameterElement, parameterElement.getSimpleName().toString(), parameter -> {
                     builder.typeRef(type -> {
-                        handleType(parameterElement.asType());
+                        fillType(parameterElement.asType());
                         parameter.setType(type);
                     });
                     operation.addParameter(parameter);
@@ -201,7 +197,7 @@ public class ApiProcessor {
             }
             if (method.getReturnType().getKind() != TypeKind.VOID) {
                 builder.typeRef(type -> {
-                    handleType(method.getReturnType());
+                    fillType(method.getReturnType());
                     operation.setReturnType(type);
                 });
             }
@@ -209,11 +205,11 @@ public class ApiProcessor {
         });
     }
 
-    private void handleType(TypeMirror type) {
+    private void fillType(TypeMirror type) {
         if (type.getKind() != TypeKind.VOID) {
             determineNullity(type);
             determineFetchBy(type);
-            determineTypeName(type);
+            determineTypeAndArguments(type);
         }
     }
 
@@ -319,7 +315,7 @@ public class ApiProcessor {
                     builder.ancestorSource(),
                     "Illegal `@FetcherBy`, there is static field \"" +
                             constant +
-                            "\" in entityType \"\"" +
+                            "\" in owner type \"\"" +
                             owner + " but it is not fetcher for \"" +
                             ((TypeElement)((DeclaredType)entityType).asElement()).getQualifiedName() +
                             "\""
@@ -327,37 +323,37 @@ public class ApiProcessor {
         }
 
         typeRef.setFetchBy(constant);
-        typeRef.setFetchOwner(owner.toString());
+        typeRef.setFetcherOwner(owner.toString());
     }
 
-    private void determineTypeName(TypeMirror type) {
+    private void determineTypeAndArguments(TypeMirror type) {
 
         TypeRefImpl<Element> typeRef = builder.current();
 
         switch (type.getKind()) {
             case BOOLEAN:
-                typeRef.setTypeName("boolean");
+                typeRef.setTypeName(TypeName.BOOLEAN);
                 break;
             case CHAR:
-                typeRef.setTypeName("char");
+                typeRef.setTypeName(TypeName.CHAR);
                 break;
             case BYTE:
-                typeRef.setTypeName("byte");
+                typeRef.setTypeName(TypeName.BYTE);
                 break;
             case SHORT:
-                typeRef.setTypeName("short");
+                typeRef.setTypeName(TypeName.SHORT);
                 break;
             case INT:
-                typeRef.setTypeName("int");
+                typeRef.setTypeName(TypeName.INT);
                 break;
             case LONG:
-                typeRef.setTypeName("long");
+                typeRef.setTypeName(TypeName.LONG);
                 break;
             case FLOAT:
-                typeRef.setTypeName("float");
+                typeRef.setTypeName(TypeName.FLOAT);
                 break;
             case DOUBLE:
-                typeRef.setTypeName("double");
+                typeRef.setTypeName(TypeName.DOUBLE);
                 break;
             case TYPEVAR:
                 handleTypeVariable((TypeVariable) type);
@@ -385,13 +381,7 @@ public class ApiProcessor {
         TypeElement parentElement = (TypeElement) element.getEnclosingElement();
         String name = element.getSimpleName().toString();
 
-        typeRef.setTypeName(
-                "<" +
-                        parentElement.getQualifiedName().toString() +
-                        "::" +
-                        name +
-                        ">"
-        );
+        typeRef.setTypeName(typeName(parentElement).typeVariable(name));
     }
 
     private void handleWildcardType(WildcardType wildcardType) {
@@ -402,18 +392,18 @@ public class ApiProcessor {
                     "api type cannot be wildcard without extends bound"
             );
         }
-        determineTypeName(typeMirror);
+        determineTypeAndArguments(typeMirror);
     }
 
     private void handleIntersectionTpe(IntersectionType intersectionType) {
-        handleType(intersectionType.getBounds().get(0));
+        fillType(intersectionType.getBounds().get(0));
     }
 
     private void handleArrayType(ArrayType arrayType) {
         TypeRefImpl<Element> typeRef = builder.current();
-        typeRef.setTypeName("java.util.List");
+        typeRef.setTypeName(TypeName.LIST);
         builder.typeRef(argument -> {
-            handleType(arrayType.getComponentType());
+            fillType(arrayType.getComponentType());
             typeRef.addArgument(argument);
         });
     }
@@ -422,7 +412,7 @@ public class ApiProcessor {
 
         TypeRefImpl<Element> typeRef = builder.current();
 
-        String unboxedTypeName = unboxedTypeName(declaredType);
+        TypeName unboxedTypeName = unboxedTypeName(declaredType);
         if (unboxedTypeName != null) {
             typeRef.setTypeName(unboxedTypeName);
             return;
@@ -435,8 +425,8 @@ public class ApiProcessor {
                     "api type must be top-level of static nested type"
             );
         }
-        String className = typeElement.getQualifiedName().toString();
-        if ("java.lang.Object".equals(className)) {
+        TypeName className = typeName(typeElement);
+        if (TypeName.OBJECT.equals(className)) {
             throw new MetaException(
                     builder.ancestorSource(),
                     "api type cannot be `java.lang.Object`"
@@ -446,13 +436,13 @@ public class ApiProcessor {
 
         for (TypeMirror typeMirror : declaredType.getTypeArguments()) {
             builder.typeRef(argument -> {
-                handleType(typeMirror);
+                fillType(typeMirror);
                 typeRef.addArgument(argument);
             });
         }
     }
 
-    private void handleDefinition(TypeElement typeElement, boolean immutable) {
+    private void fillDefinition(TypeElement typeElement, boolean immutable) {
 
         TypeDefinitionImpl<Element> typeDefinition = builder.current();
         typeDefinition.setImmutable(immutable);
@@ -487,7 +477,7 @@ public class ApiProcessor {
                 }
                 builder.prop(executableElement, name, prop -> {
                     builder.typeRef(type -> {
-                        handleType(executableElement.getReturnType());
+                        fillType(executableElement.getReturnType());
                         prop.setType(type);
                     });
                     prop.setDoc(Doc.parse(elements.getDocComment(executableElement)));
@@ -497,19 +487,19 @@ public class ApiProcessor {
         }
         if (typeElement.getKind() == ElementKind.CLASS || typeElement.getKind() == ElementKind.INTERFACE) {
             if (typeElement.getSuperclass().getKind() != TypeKind.NONE) {
-                String superName = ((TypeElement) ((DeclaredType) typeElement.getSuperclass()).asElement()).getQualifiedName().toString();
+                TypeName superName = typeName(((DeclaredType) typeElement.getSuperclass()).asElement());
                 if (TypeDefinition.isGenerationRequired(superName)) {
                     builder.typeRef(type -> {
-                        handleType(typeElement.getSuperclass());
+                        fillType(typeElement.getSuperclass());
                         typeDefinition.addSuperType(type);
                     });
                 }
             }
             for (TypeMirror itf : typeElement.getInterfaces()) {
-                String superName = ((TypeElement)((DeclaredType) itf).asElement()).getQualifiedName().toString();
+                TypeName superName = typeName(((DeclaredType) itf).asElement());
                 if (TypeDefinition.isGenerationRequired(superName)) {
                     builder.typeRef(type -> {
-                        handleType(itf);
+                        fillType(itf);
                         typeDefinition.addSuperType(type);
                     });
                 }
@@ -525,29 +515,45 @@ public class ApiProcessor {
                ) != null;
     }
 
-    private static String unboxedTypeName(TypeMirror type) {
+    private static TypeName unboxedTypeName(TypeMirror type) {
         if (!(type instanceof DeclaredType)) {
             return null;
         }
         TypeElement element = (TypeElement) ((DeclaredType) type).asElement();
         switch (element.getQualifiedName().toString()) {
             case "java.lang.Boolean":
-                return "boolean";
+                return TypeName.BOOLEAN;
             case "java.lang.Character":
-                return "char";
+                return TypeName.CHAR;
             case "java.lang.Byte":
-                return "byte";
+                return TypeName.BYTE;
             case "java.lang.Short":
-                return "short";
+                return TypeName.SHORT;
             case "java.lang.Integer":
-                return "int";
+                return TypeName.INT;
             case "java.lang.Long":
-                return "long";
+                return TypeName.LONG;
             case "java.lang.Float":
-                return "float";
+                return TypeName.FLOAT;
             case "java.lang.Double":
-                return "double";
+                return TypeName.DOUBLE;
         }
         return null;
+    }
+
+    private static TypeName typeName(Element element) {
+        List<String> simpleNames = new ArrayList<>();
+        String packageName = null;
+        for (Element e = element; e != null; e = e.getEnclosingElement()) {
+            if (e instanceof TypeElement) {
+                simpleNames.add(e.getSimpleName().toString());
+            } else if (e instanceof PackageElement) {
+                packageName = ((PackageElement) e).getQualifiedName().toString();
+            } else {
+                break;
+            }
+        }
+        Collections.reverse(simpleNames);
+        return new TypeName(packageName, simpleNames);
     }
 }

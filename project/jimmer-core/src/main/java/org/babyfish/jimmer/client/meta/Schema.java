@@ -6,5 +6,5 @@ public interface Schema {
 
     Map<String, ApiService> getApiServiceMap();
 
-    Map<String, TypeDefinition> getTypeDefinitionMap();
+    Map<TypeName, TypeDefinition> getTypeDefinitionMap();
 }

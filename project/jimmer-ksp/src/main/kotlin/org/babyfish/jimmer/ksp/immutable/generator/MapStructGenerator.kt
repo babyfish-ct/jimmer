@@ -2,8 +2,8 @@ package org.babyfish.jimmer.ksp.immutable.generator
 
 import com.squareup.kotlinpoet.*
 import org.babyfish.jimmer.impl.util.StringUtil
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 
 class MapStructGenerator(
     private val type: ImmutableType,

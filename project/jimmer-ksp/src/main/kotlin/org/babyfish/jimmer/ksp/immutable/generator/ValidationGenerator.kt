@@ -8,7 +8,7 @@ import com.squareup.kotlinpoet.asClassName
 import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.isBuiltInType
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.MetaException
 import java.math.BigDecimal
 import java.math.BigInteger

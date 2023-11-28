@@ -25,7 +25,8 @@ import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.VIEWABLE_INPUT_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.VIEW_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.VIEW_METADATA_CLASS_NAME
-import org.babyfish.jimmer.ksp.meta.*
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import java.io.OutputStreamWriter
 import java.util.*

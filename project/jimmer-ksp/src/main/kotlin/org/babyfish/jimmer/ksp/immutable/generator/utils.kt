@@ -8,8 +8,8 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import org.babyfish.jimmer.ksp.annotations
 import org.babyfish.jimmer.ksp.fullName
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.MetaException
 import javax.validation.Constraint
 import kotlin.math.abs

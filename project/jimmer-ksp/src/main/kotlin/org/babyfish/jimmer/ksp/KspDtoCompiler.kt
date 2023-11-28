@@ -5,8 +5,8 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.STRING
 import org.babyfish.jimmer.dto.compiler.DtoCompiler
 import org.babyfish.jimmer.dto.compiler.DtoFile
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.sql.GeneratedValue
 
 class KspDtoCompiler(dtoFile: DtoFile) : DtoCompiler<ImmutableType, ImmutableProp>(dtoFile) {

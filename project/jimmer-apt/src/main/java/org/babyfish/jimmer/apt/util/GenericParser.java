@@ -22,6 +22,9 @@ public class GenericParser {
     private final Map<TypeVariable, TypeMirror> replaceMap = new HashMap<>();
 
     public GenericParser(String name, TypeElement element, String superName) {
+        if (!element.getTypeParameters().isEmpty()) {
+            throw new IllegalArgumentException("element cannot have type parameters");
+        }
         this.name = name.toLowerCase();
         this.element = element;
         this.superName = superName;

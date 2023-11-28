@@ -6,10 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.Prop;
-import org.babyfish.jimmer.client.meta.TypeDefinition;
-import org.babyfish.jimmer.client.meta.TypeRef;
+import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -22,7 +19,7 @@ import java.util.Map;
 @JsonDeserialize(using = TypeDefinitionImpl.Deserializer.class)
 public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition {
 
-    private final String typeName;
+    private final TypeName typeName;
 
     private boolean immutable;
 
@@ -32,13 +29,13 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     private Doc doc;
 
-    TypeDefinitionImpl(S source, String typeName) {
+    TypeDefinitionImpl(S source, TypeName typeName) {
         super(source);
         this.typeName = typeName;
     }
 
     @Override
-    public String getTypeName() {
+    public TypeName getTypeName() {
         return typeName;
     }
 
@@ -106,8 +103,7 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
         @Override
         public void serialize(TypeDefinitionImpl<?> definition, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
-            gen.writeFieldName("typeName");
-            gen.writeString(definition.getTypeName());
+            provider.defaultSerializeField("typeName", definition.getTypeName(), gen);
             if (definition.isImmutable()) {
                 gen.writeFieldName("immutable");
                 gen.writeBoolean(true);
@@ -128,7 +124,10 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
         @Override
         public TypeDefinitionImpl<?> deserialize(JsonParser jp, DeserializationContext ctx) throws IOException, JacksonException {
             JsonNode jsonNode = jp.getCodec().readTree(jp);
-            TypeDefinitionImpl<Object> definition = new TypeDefinitionImpl<>(null, jsonNode.get("typeName").asText());
+            TypeDefinitionImpl<Object> definition = new TypeDefinitionImpl<>(
+                    null,
+                    ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class)
+            );
             if (jsonNode.has("immutable")) {
                 definition.setImmutable(jsonNode.get("immutable").asBoolean());
             }

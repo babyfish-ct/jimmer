@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.meta.impl;
 
 import org.babyfish.jimmer.client.meta.Schema;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
@@ -19,12 +20,7 @@ public abstract class SchemaBuilder<S> {
         if (original != null) {
             serviceMap = (Map<String, ApiServiceImpl<S>>) (Map<?, ?>) original.getApiServiceMap();
             serviceMap = new TreeMap<>(serviceMap);
-            Iterator<String> itr = serviceMap.keySet().iterator();
-            while (itr.hasNext()) {
-                if (loadSource(itr.next()) == null) {
-                    itr.remove();
-                }
-            }
+            serviceMap.keySet().removeIf(s -> loadSource(s) == null);
         }
         SchemaImpl<S> schema = new SchemaImpl<>(serviceMap);
         stack.push(schema);
@@ -79,8 +75,8 @@ public abstract class SchemaBuilder<S> {
         run(new TypeRefImpl<>(), block);
     }
 
-    public void definition(S source, String className, Consumer<TypeDefinitionImpl<S>> block) {
-        run(new TypeDefinitionImpl<>(source, className), block);
+    public void definition(S source, TypeName typeName, Consumer<TypeDefinitionImpl<S>> block) {
+        run(new TypeDefinitionImpl<>(source, typeName), block);
     }
 
     public void prop(S source, String name, Consumer<PropImpl<S>> block) {
@@ -104,9 +100,9 @@ public abstract class SchemaBuilder<S> {
     @Nullable
     protected abstract S loadSource(String typeName);
 
-    protected abstract RuntimeException typeNameNotFound(String typeName);
+    protected abstract void typeNameNotFound(String typeName);
 
-    protected abstract void handleDefinition(S source);
+    protected abstract void fillDefinition(S source);
 
     private void resolve() {
         AstNode<S> current = stack.peek();

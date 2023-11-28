@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.meta.TypeRef;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +18,7 @@ import java.util.List;
 @JsonDeserialize(using = TypeRefImpl.Deserializer.class)
 public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
 
-    private String typeName;
+    private TypeName typeName;
 
     private boolean nullable;
 
@@ -32,11 +33,11 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
     }
 
     @Override
-    public String getTypeName() {
+    public TypeName getTypeName() {
         return typeName;
     }
 
-    public void setTypeName(String typeName) {
+    public void setTypeName(TypeName typeName) {
         this.typeName = typeName;
     }
 
@@ -75,7 +76,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
         return fetchOwner;
     }
 
-    public void setFetchOwner(String fetchOwner) {
+    public void setFetcherOwner(String fetchOwner) {
         this.fetchOwner = fetchOwner;
     }
 
@@ -105,8 +106,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
         @Override
         public void serialize(TypeRefImpl<?> typeRef, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
-            gen.writeFieldName("typeName");
-            gen.writeString(typeRef.getTypeName());
+            provider.defaultSerializeField("typeName", typeRef.getTypeName(), gen);
             if (typeRef.isNullable()) {
                 gen.writeFieldName("nullable");
                 gen.writeBoolean(true);
@@ -131,7 +131,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
         public TypeRefImpl<?> deserialize(JsonParser jp, DeserializationContext ctx) throws IOException, JacksonException {
             JsonNode jsonNode = jp.getCodec().readTree(jp);
             TypeRefImpl<Object> typeRef = new TypeRefImpl<>();
-            typeRef.setTypeName(jsonNode.get("typeName").asText());
+            typeRef.setTypeName(ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class));
             if (jsonNode.has("nullable")) {
                 typeRef.setNullable(jsonNode.get("nullable").asBoolean());
             }
@@ -143,7 +143,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
             }
             if (jsonNode.has("fetchBy")) {
                 typeRef.setFetchBy(jsonNode.get("fetchBy").asText());
-                typeRef.setFetchOwner(jsonNode.get("fetcherOwner").asText());
+                typeRef.setFetcherOwner(jsonNode.get("fetcherOwner").asText());
             }
             return typeRef;
         }

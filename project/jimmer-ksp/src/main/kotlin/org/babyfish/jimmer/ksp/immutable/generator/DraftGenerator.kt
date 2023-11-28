@@ -7,8 +7,8 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.ksp.Context
-import org.babyfish.jimmer.ksp.meta.ImmutableProp
-import org.babyfish.jimmer.ksp.meta.ImmutableType
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
+import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import java.io.OutputStreamWriter
 
 class DraftGenerator(
