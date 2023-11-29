@@ -47,6 +47,13 @@ export class AuthorService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
+        _value = options.sortCode;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'sortCode='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
         return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
     }
     
@@ -98,7 +105,7 @@ export class AuthorService {
 
 export type AuthorServiceOptions = {
     'deleteAuthor': {readonly id: number},
-    'findAuthors': {readonly specification: AuthorSpecification},
+    'findAuthors': {readonly specification: AuthorSpecification, readonly sortCode?: string},
     'findComplexAuthor': {readonly id: number},
     'findSimpleAuthors': {},
     'saveAuthor': {readonly input: AuthorInput}
