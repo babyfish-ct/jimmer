@@ -11,6 +11,7 @@ import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.client.Api
 import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.FetchBy
+import org.babyfish.jimmer.client.meta.ApiOperation
 import org.babyfish.jimmer.client.meta.DefaultFetcherOwner
 import org.babyfish.jimmer.client.meta.Doc
 import org.babyfish.jimmer.client.meta.TypeDefinition
@@ -114,26 +115,32 @@ class ClientProcessor(
 
     private fun SchemaBuilder<KSDeclaration>.handleOperation(func: KSFunctionDeclaration) {
         val service = current<ApiServiceImpl<KSDeclaration>>()
+        if (func.typeParameters.isNotEmpty()) {
+            throw MetaException(
+                func.typeParameters[0],
+                "API function cannot declare type parameters"
+            )
+        }
+        val api = func.annotation(Api::class)
+        if (api == null && ApiOperation.AUTO_OPERATION_ANNOTATIONS.all { func.annotation(it) == null }) {
+            return
+        }
         operation(func, func.simpleName.asString()) { operation ->
-            if (func.typeParameters.isNotEmpty()) {
-                throw MetaException(
-                    func.typeParameters[0],
-                    "API function cannot declare type parameters"
-                )
-            }
-            func.annotation(Api::class)?.get<List<String>>("groups")?.takeIf { it.isNotEmpty() }?.let {
+            api?.get<List<String>>("groups")?.takeIf { it.isNotEmpty() }?.let {
                 operation.groups = it
             }
             func.docString?.let {
                 operation.doc = Doc.parse(it)
             }
             for (param in func.parameters) {
-                parameter(null, param.name!!.asString()) { parameter ->
-                    typeRef { type ->
-                        fillType(param.type)
-                        parameter.setType(type)
+                if (param.annotation(ApiIgnore::class) != null) {
+                    parameter(null, param.name!!.asString()) { parameter ->
+                        typeRef { type ->
+                            fillType(param.type)
+                            parameter.setType(type)
+                        }
+                        operation.addParameter(parameter)
                     }
-                    operation.addParameter(parameter)
                 }
             }
             func.returnType?.let { unresolvedType ->
@@ -297,11 +304,14 @@ class ClientProcessor(
 
         if (declaration.classKind == ClassKind.CLASS || declaration.classKind == ClassKind.INTERFACE) {
             for (superTypeReference in declaration.superTypes) {
-                val superName = superTypeReference.resolve().declaration.toTypeName()
-                if (processTypeName(superName).isGenerationRequired) {
-                    typeRef { superType ->
-                        fillType(superTypeReference)
-                        definition.addSuperType(superType)
+                val superDeclaration = superTypeReference.resolve().declaration
+                if (superDeclaration.annotation(ApiIgnore::class) == null) {
+                    val superName = superDeclaration.toTypeName()
+                    if (processTypeName(superName).isGenerationRequired) {
+                        typeRef { superType ->
+                            fillType(superTypeReference)
+                            definition.addSuperType(superType)
+                        }
                     }
                 }
             }

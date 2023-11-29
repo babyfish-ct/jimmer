@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.*;
 import org.babyfish.jimmer.sql.meta.UUIDIdGenerator;
 import org.jetbrains.annotations.Nullable;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,6 +18,7 @@ public interface Book {
     UUID id();
 
     @Key
+    @NotEmpty(message = "The book name cannot be empty")
     String name();
 
     @Key

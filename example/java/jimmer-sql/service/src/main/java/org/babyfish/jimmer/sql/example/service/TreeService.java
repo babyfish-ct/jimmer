@@ -38,7 +38,7 @@ public class TreeService {
 
     private final TreeNodeRepository treeNodeRepository;
 
-    public TreeService(TreeNodeRepository treeNodeRepository, ObjectMapper objectMapper) {
+    public TreeService(TreeNodeRepository treeNodeRepository) {
         this.treeNodeRepository = treeNodeRepository;
     }
 

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.classic.book.by
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookInput
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification2
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.CompositeBookInput
 import java.math.BigDecimal
 
@@ -26,6 +27,7 @@ interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
+    @Api
     fun findSimpleBooks(
         name: String?,
         edition: Int?,
@@ -45,6 +47,7 @@ interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
+    @Api
     fun findComplexBooks(
         name: String?,
         edition: Int,
@@ -54,8 +57,15 @@ interface BookService {
         authorName: String?
     ): List<@FetchBy("COMPLEX_FETCHER") Book>
 
+    @Api
+    fun findBySuperQBE(
+        specification: BookSpecification2
+    ): List<@FetchBy("COMPLEX_FETCHER") Book>
+
+    @Api
     fun saveBook(input: BookInput)
 
+    @Api
     fun saveBook(input: CompositeBookInput)
 
     companion object {

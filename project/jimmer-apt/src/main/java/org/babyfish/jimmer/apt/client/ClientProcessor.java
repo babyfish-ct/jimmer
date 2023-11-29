@@ -159,23 +159,35 @@ public class ClientProcessor {
 
     private void handleMethod(ExecutableElement method) {
         ApiServiceImpl<Element> service = builder.current();
-        builder.operation(method, method.getSimpleName().toString(), operation -> {
-            if (!method.getTypeParameters().isEmpty()) {
-                throw new MetaException(
-                        method.getTypeParameters().get(0),
-                        "API method cannot declare type parameters"
-                );
+        if (!method.getTypeParameters().isEmpty()) {
+            throw new MetaException(
+                    method.getTypeParameters().get(0),
+                    "API method cannot declare type parameters"
+            );
+        }
+        Api api = method.getAnnotation(Api.class);
+        if (api == null) {
+            boolean matched = false;
+            for (String autoOperationAnnotation : ApiOperation.AUTO_OPERATION_ANNOTATIONS) {
+                if (Annotations.annotationMirror(method, autoOperationAnnotation) != null) {
+                    matched = true;
+                    break;
+                }
             }
-            Api api = operation.getSource().getAnnotation(Api.class);
-            if (api != null) {
-                if (service.getGroups() != null) {
+            if (!matched) {
+                return;
+            }
+        }
+        builder.operation(method, method.getSimpleName().toString(), operation -> {
+             if (api != null) {
+                if (api.groups().length != 0 && service.getGroups() != null) {
                     throw new MetaException(
                             operation.getSource(),
                             "It cannot be decorated by \"@" +
                                     Api.class +
-                                    "\" because the declaring type \"" +
+                                    "\" with `groups` because the groups of declaring type \"" +
                                     service.getTypeName() +
-                                    "\" has been decorated by that annotation"
+                                    "\" has been specified"
                     );
                 }
                 operation.setGroups(Arrays.asList(api.groups()));
@@ -183,13 +195,13 @@ public class ClientProcessor {
             operation.setDoc(Doc.parse(elements.getDocComment(method)));
             for (VariableElement parameterElement : method.getParameters()) {
                 builder.parameter(parameterElement, parameterElement.getSimpleName().toString(), parameter -> {
-                    builder.typeRef(type -> {
-                        fillType(parameterElement.asType());
-                        parameter.setType(type);
-                    });
                     if (Annotations.annotationMirror(parameterElement, ApiIgnore.class) != null) {
                         operation.addIgnoredParameter(parameter);
                     } else {
+                        builder.typeRef(type -> {
+                            fillType(parameterElement.asType());
+                            parameter.setType(type);
+                        });
                         operation.addParameter(parameter);
                     }
                 });

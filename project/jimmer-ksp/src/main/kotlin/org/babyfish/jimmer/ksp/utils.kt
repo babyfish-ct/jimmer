@@ -27,12 +27,15 @@ fun KSAnnotated.annotations(annotationType: KClass<out Annotation>): List<KSAnno
 }
 
 fun KSAnnotated.annotation(annotationType: KClass<out Annotation>): KSAnnotation? =
+    annotation(annotationType.qualifiedName!!)
+
+fun KSAnnotated.annotation(qualifiedName: String): KSAnnotation? =
     if (this is KSPropertyDeclaration) {
         val selfAnno = annotations.firstOrNull {
-            it.annotationType.resolve().declaration.fullName == annotationType.qualifiedName
+            it.annotationType.resolve().declaration.fullName == qualifiedName
         }
-        val getterAnno = getter?.annotation(annotationType)
-        val returnAnno = getter?.returnType?.annotation(annotationType)
+        val getterAnno = getter?.annotation(qualifiedName)
+        val returnAnno = getter?.returnType?.annotation(qualifiedName)
         val targets = mutableListOf<String>()
         if (selfAnno !== null) {
             targets.add("property")
@@ -47,13 +50,13 @@ fun KSAnnotated.annotation(annotationType: KClass<out Annotation>): KSAnnotation
             throw MetaException(
                 this,
                 "it is decorated by multiple annotations of type " +
-                    "'@${annotationType.qualifiedName}' from different annotation targets: $targets"
+                    "'@${qualifiedName}' from different annotation targets: $targets"
             )
         }
         selfAnno ?: getterAnno ?: returnAnno
     } else {
         annotations.firstOrNull {
-            it.annotationType.resolve().declaration.fullName == annotationType.qualifiedName
+            it.annotationType.resolve().declaration.fullName == qualifiedName
         }
     }
 

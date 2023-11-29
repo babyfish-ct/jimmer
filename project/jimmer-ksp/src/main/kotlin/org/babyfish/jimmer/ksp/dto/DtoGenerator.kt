@@ -330,19 +330,22 @@ class DtoGenerator private constructor(
                                     .build()
                             )
                         }
-                        if (prop.annotations.isEmpty()) {
-                            for (anno in prop.baseProp.annotations { isCopyableAnnotation(it) }) {
-                                addAnnotation(
-                                    object : KSAnnotation by anno {
-                                        override val useSiteTarget: AnnotationUseSiteTarget?
-                                            get() = AnnotationUseSiteTarget.FIELD
-                                    }.toAnnotationSpec()
-                                )
-                            }
-                        } else {
-                            for (anno in prop.annotations) {
-                                addAnnotation(annotationOf(anno, AnnotationSpec.UseSiteTarget.FIELD))
-                            }
+                        for (anno in prop.baseProp.annotations {
+                            isCopyableAnnotation(it) &&
+                                prop.annotations.none {
+                                    dtoAnon -> dtoAnon.qualifiedName ==
+                                    it.annotationType.resolve().declaration.qualifiedName?.asString()
+                                }
+                        }) {
+                            addAnnotation(
+                                object : KSAnnotation by anno {
+                                    override val useSiteTarget: AnnotationUseSiteTarget?
+                                        get() = AnnotationUseSiteTarget.FIELD
+                                }.toAnnotationSpec()
+                            )
+                        }
+                        for (anno in prop.annotations) {
+                            addAnnotation(annotationOf(anno, AnnotationSpec.UseSiteTarget.FIELD))
                         }
                     }
                     .build()

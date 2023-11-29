@@ -2,6 +2,7 @@ package org.babyfish.jimmer.apt.dto;
 
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.GeneratorException;
+import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
@@ -464,23 +465,19 @@ public class DtoGenerator {
         FieldSpec.Builder builder = FieldSpec
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
-        boolean hasNullity = false;
-        if (prop.getAnnotations().isEmpty()) {
-            for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
-                if (isCopyableAnnotation(annotationMirror, false)) {
-                    builder.addAnnotation(AnnotationSpec.get(annotationMirror));
-                    hasNullity |= isNullityAnnotation(
-                            annotationMirror.getAnnotationType().asElement().getSimpleName().toString()
-                    );
-                }
-            }
-        } else {
-            for (Anno anno : prop.getAnnotations()) {
-                builder.addAnnotation(annotationOf(anno));
-                hasNullity |= isNullityAnnotation(anno.getQualifiedName());
+        for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
+            if (isCopyableAnnotation(annotationMirror, false) &&
+                prop.getAnnotations().stream().noneMatch(
+                        it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
+                )
+            ) {
+                builder.addAnnotation(AnnotationSpec.get(annotationMirror));
             }
         }
-        if (!hasNullity && !typeName.isPrimitive()) {
+        for (Anno anno : prop.getAnnotations()) {
+            builder.addAnnotation(annotationOf(anno));
+        }
+        if (!typeName.isPrimitive()) {
             if (prop.isNullable()) {
                 builder.addAnnotation(Nullable.class);
             } else {
@@ -1305,6 +1302,9 @@ public class DtoGenerator {
             boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.FIELD);
             if (acceptField) {
                 String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement()).getQualifiedName().toString();
+                if (isNullityAnnotation(qualifiedName)) {
+                    return false;
+                }
                 return !qualifiedName.startsWith("org.babyfish.jimmer.") ||
                         qualifiedName.startsWith("org.babyfish.jimmer.client.");
             }

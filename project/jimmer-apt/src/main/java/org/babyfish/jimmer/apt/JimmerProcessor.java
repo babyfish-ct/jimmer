@@ -106,8 +106,8 @@ public class JimmerProcessor extends AbstractProcessor {
                 }
             }
             if (!clientGenerated) {
-                new ClientProcessor(context, elements, filer, delayedClientElements).handleService(roundEnv);
                 clientGenerated = true;
+                new ClientProcessor(context, elements, filer, delayedClientElements).handleService(roundEnv);
                 delayedClientElements = null;
             }
         } catch (MetaException ex) {
