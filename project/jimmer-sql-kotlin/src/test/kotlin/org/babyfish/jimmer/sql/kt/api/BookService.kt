@@ -63,6 +63,12 @@ interface BookService {
     ): List<@FetchBy("COMPLEX_FETCHER") Book>
 
     @Api
+    fun findByNameAndEdition(
+        name: String,
+        edition: Int
+    ): @FetchBy("COMPLEX_FETCHER") Book?
+
+    @Api
     fun saveBook(input: BookInput)
 
     @Api

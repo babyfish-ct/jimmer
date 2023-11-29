@@ -241,12 +241,12 @@ class ClientProcessor(
             it.type!!
         }
         val actualEntityTypeName = argType.resolve().toTypeName()
-        if (actualEntityTypeName != entityType.toTypeName()) {
+        if (actualEntityTypeName.copy(nullable = false) != entityType.toTypeName().copy(nullable = false)) {
             throw MetaException(
                 ancestorSource(),
                 "Illegal `@FetcherBy`, there is property \"" +
                     constant +
-                    "\" companion object type \"\"" +
+                    "\" in companion object type \"\"" +
                     companionDeclaration.qualifiedName!!.asString() +
                     " but it is not fetcher for \"" +
                     entityType.declaration.qualifiedName!!.asString() +

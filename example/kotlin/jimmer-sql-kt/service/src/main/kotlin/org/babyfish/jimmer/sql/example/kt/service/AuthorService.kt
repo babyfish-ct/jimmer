@@ -5,9 +5,11 @@ import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.example.kt.repository.AuthorRepository
 import org.babyfish.jimmer.sql.example.kt.model.Author
 import org.babyfish.jimmer.spring.model.SortUtils
+import org.babyfish.jimmer.sql.example.kt.model.Book
 import org.babyfish.jimmer.sql.example.kt.model.by
 import org.babyfish.jimmer.sql.example.kt.service.dto.AuthorInput
 import org.babyfish.jimmer.sql.example.kt.service.dto.AuthorSpecification
+import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
 import org.springframework.transaction.annotation.Transactional
