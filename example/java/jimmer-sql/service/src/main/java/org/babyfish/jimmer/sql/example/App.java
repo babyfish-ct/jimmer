@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.example;
 
+import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,6 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>This is only required by java, not kotlin(kotlin uses KSP, not APT). </p>
  */
 @EnableDtoGeneration
+@EnableImplicitApi
 @SpringBootApplication
 public class App {
 
