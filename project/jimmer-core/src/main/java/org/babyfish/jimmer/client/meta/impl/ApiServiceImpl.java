@@ -99,8 +99,12 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
         visitor.visitAstNode(this);
-        for (ApiOperationImpl<S> operation : operations) {
-            operation.accept(visitor);
+        try {
+            for (ApiOperationImpl<S> operation : operations) {
+                operation.accept(visitor);
+            }
+        } finally {
+            visitor.visitedAstNode(this);
         }
     }
 

@@ -42,13 +42,7 @@ public final class TypeName implements Comparable<TypeName> {
 
     public static final TypeName STRING = new TypeName("java.lang", "String");
 
-    public static final TypeName ITERABLE = new TypeName("java.util", "Iterable");
-
-    public static final TypeName COLLECTION = new TypeName("java.util", "Collection");
-
     public static final TypeName LIST = new TypeName("java.util", "List");
-
-    public static final TypeName SET = new TypeName("java.util", "Set");
 
     public static final TypeName MAP = new TypeName("java.util", "Map");
 
@@ -66,18 +60,90 @@ public final class TypeName implements Comparable<TypeName> {
 
     private String clientString;
 
-    public TypeName(@Nullable String packageName, String simpleName) {
+    private TypeName(@Nullable String packageName, String simpleName) {
         this(packageName, Collections.singletonList(simpleName), null);
     }
 
-    public TypeName(@Nullable String packageName, List<String> simpleNames) {
+    private TypeName(@Nullable String packageName, List<String> simpleNames) {
         this(packageName, simpleNames, null);
     }
 
-    public TypeName(@Nullable String packageName, List<String> simpleNames, @Nullable String typeVariable) {
+    private TypeName(@Nullable String packageName, List<String> simpleNames, @Nullable String typeVariable) {
         this.packageName = packageName != null && !packageName.isEmpty() ? packageName : null;
         this.simpleNames = Collections.unmodifiableList(simpleNames);
         this.typeVariable = typeVariable;
+    }
+
+    public static TypeName of(String packageName, List<String> simpleNames) {
+        if (packageName != null && !packageName.isEmpty() && simpleNames.size() == 1) {
+            switch (packageName + '.' + simpleNames.get(0)) {
+                case "void":
+                case "kotlin.Unit":
+                    return VOID;
+                case "boolean":
+                case "java.lang.Boolean":
+                case "kotlin.Boolean":
+                    return BOOLEAN;
+                case "char":
+                case "java.lang.Character":
+                case "kotlin.Char":
+                    return CHAR;
+                case "byte":
+                case "java.lang.Byte":
+                case "kotlin.Byte":
+                    return BYTE;
+                case "short":
+                case "java.lang.Short":
+                case "kotlin.Short":
+                    return SHORT;
+                case "int":
+                case "java.lang.Integer":
+                case "kotlin.Int":
+                    return INT;
+                case "long":
+                case "java.lang.Long":
+                case "kotlin.Long":
+                    return LONG;
+                case "float":
+                case "java.lang.Float":
+                case "kotlin.Float":
+                    return FLOAT;
+                case "double":
+                case "java.lang.Double":
+                case "kotlin.Double":
+                    return DOUBLE;
+                case "java.lang.Object":
+                case "kotlin.Any":
+                    return OBJECT;
+                case "java.lang.String":
+                case "kotlin.String":
+                    return STRING;
+                case "java.util.Iterable":
+                case "java.util.Collection":
+                case "java.util.List":
+                case "java.util.Set":
+                case "java.util.SortedSet":
+                case "java.util.NavigableSet":
+                case "java.util.SequencedSet":
+                case "kotlin.collections.Iterable":
+                case "kotlin.collections.Collection":
+                case "kotlin.collections.List":
+                case "kotlin.collections.Set":
+                    return LIST;
+                case "java.util.Map":
+                case "java.util.SortedMap":
+                case "java.util.NavigableMap":
+                case "java.util.SequencedMap":
+                case "kotlin.collections.Map":
+                case "kotlin.collections.MutableIterable":
+                case "kotlin.collections.MutableCollection":
+                case "kotlin.collections.MutableList":
+                case "kotlin.collections.MutableSet":
+                case "kotlin.collections.MutableMap":
+                    return MAP;
+            }
+        }
+        return new TypeName(packageName, simpleNames);
     }
 
     public TypeName typeVariable(String typeVariable) {

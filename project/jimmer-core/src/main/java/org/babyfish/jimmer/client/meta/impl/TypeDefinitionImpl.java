@@ -92,11 +92,15 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
         visitor.visitAstNode(this);
-        for (PropImpl<S> prop : propMap.values()) {
-            prop.accept(visitor);
-        }
-        for (TypeRefImpl<S> superType : superTypes) {
-            superType.accept(visitor);
+        try {
+            for (PropImpl<S> prop : propMap.values()) {
+                prop.accept(visitor);
+            }
+            for (TypeRefImpl<S> superType : superTypes) {
+                superType.accept(visitor);
+            }
+        } finally {
+            visitor.visitedAstNode(this);
         }
     }
 

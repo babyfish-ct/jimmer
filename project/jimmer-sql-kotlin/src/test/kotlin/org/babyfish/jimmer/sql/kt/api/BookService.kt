@@ -60,7 +60,7 @@ interface BookService {
     @Api
     fun findBySuperQBE(
         specification: BookSpecification2
-    ): List<@FetchBy("COMPLEX_FETCHER") Book>
+    ): MutableList<out @FetchBy("COMPLEX_FETCHER") Book>
 
     @Api
     fun findByNameAndEdition(

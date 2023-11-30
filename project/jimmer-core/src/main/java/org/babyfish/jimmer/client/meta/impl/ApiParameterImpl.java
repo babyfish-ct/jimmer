@@ -41,7 +41,11 @@ public class ApiParameterImpl<S> extends AstNode<S> implements ApiParameter {
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
         visitor.visitAstNode(this);
-        type.accept(visitor);
+        try {
+            type.accept(visitor);
+        } finally {
+            visitor.visitedAstNode(this);
+        }
     }
 
     @Override

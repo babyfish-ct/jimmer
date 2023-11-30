@@ -26,7 +26,8 @@ import java.nio.charset.StandardCharsets
 
 class ClientProcessor(
     private val ctx: Context,
-    private val delayedFiles: Collection<KSFile>?
+    private val explicitClientApi: Boolean,
+    private val delayedClientTypeNames: Collection<String>?
 ) {
     private val builder = object: SchemaBuilder<KSDeclaration>(null) {
 
@@ -56,11 +57,9 @@ class ClientProcessor(
                 builder.handleService(declaration)
             }
         }
-        if (delayedFiles !== null) {
-            for (file in delayedFiles) {
-                for (declaration in file.declarations) {
-                    builder.handleService(declaration)
-                }
+        if (delayedClientTypeNames != null) {
+            for (delayedClientTypeName in delayedClientTypeNames) {
+                builder.handleService(ctx.resolver.getClassDeclarationByName(delayedClientTypeName)!!)
             }
         }
         val schema = builder.build()
@@ -76,11 +75,7 @@ class ClientProcessor(
     }
 
     private fun SchemaBuilder<KSDeclaration>.handleService(declaration: KSDeclaration) {
-        if (declaration !is KSClassDeclaration ||
-            !isApiService(declaration) ||
-            !ctx.include(declaration) ||
-            declaration.annotation(ApiIgnore::class) != null
-        ) {
+        if (declaration !is KSClassDeclaration || !isApiService(declaration)) {
             return
         }
         if (declaration.modifiers.contains(Modifier.INNER)) {
@@ -104,10 +99,9 @@ class ClientProcessor(
                 service.doc = Doc.parse(it)
             }
             for (func in declaration.getDeclaredFunctions()) {
-                if (!func.isPublic() || func.annotation(ApiIgnore::class) != null) {
-                    continue
+                if (isApiOperation(func)) {
+                    handleOperation(func)
                 }
-                handleOperation(func)
             }
             schema.addApiService(service)
         }
@@ -263,7 +257,7 @@ class ClientProcessor(
             typeRef.typeName = it.parentDeclaration!!.toTypeName().typeVariable(type.declaration.simpleName.asString())
             return
         }
-        typeRef.typeName = processTypeName(type.declaration.toTypeName())
+        typeRef.typeName = type.declaration.toTypeName()
         for (argument in type.arguments) {
             when (argument.variance) {
                 Variance.STAR -> throw MetaException(
@@ -307,7 +301,7 @@ class ClientProcessor(
                 val superDeclaration = superTypeReference.resolve().declaration
                 if (superDeclaration.annotation(ApiIgnore::class) == null) {
                     val superName = superDeclaration.toTypeName()
-                    if (processTypeName(superName).isGenerationRequired) {
+                    if (superName.isGenerationRequired) {
                         typeRef { superType ->
                             fillType(superTypeReference)
                             definition.addSuperType(superType)
@@ -318,40 +312,39 @@ class ClientProcessor(
         }
     }
 
-    companion object {
-
-        fun isApiService(declaration: KSDeclaration): Boolean {
-            return declaration.annotation(Api::class) !== null ||
-                declaration.annotations {
-                    it.fullName == "org.springframework.web.bind.annotation.RestController"
-                }.isNotEmpty()
+    private fun isApiService(declaration: KSClassDeclaration): Boolean {
+        if (!ctx.include(declaration)) {
+            return false
         }
+        if (declaration.annotation(ApiIgnore::class) !== null) {
+            return false
+        }
+        if (declaration.annotation(Api::class) !== null) {
+            return true
+        }
+        if (!explicitClientApi) {
+            return false
+        }
+        return declaration.annotation("org.springframework.web.bind.annotation.RestController") !== null
+    }
 
-        fun processTypeName(typeName: TypeName): TypeName =
-            when (typeName.toString()) {
-                "kotlin.Unit" -> TypeName.VOID
-                "kotlin.Boolean" -> TypeName.BOOLEAN
-                "kotlin.Char" -> TypeName.CHAR
-                "kotlin.Byte" -> TypeName.BYTE
-                "kotlin.Short" -> TypeName.SHORT
-                "kotlin.Int" -> TypeName.INT
-                "kotlin.Long" -> TypeName.LONG
-                "kotlin.Float" -> TypeName.FLOAT
-                "kotlin.Double" -> TypeName.DOUBLE
-                "kotlin.Any" -> TypeName.OBJECT
-                "kotlin.String" -> TypeName.STRING
-                "kotlin.collections.Iterable" -> TypeName.ITERABLE
-                "kotlin.collections.Collection" -> TypeName.COLLECTION
-                "kotlin.collections.List" -> TypeName.LIST
-                "kotlin.collections.Set" -> TypeName.SET
-                "kotlin.collections.Map" -> TypeName.MAP
-                "kotlin.collections.MutableIterable" -> TypeName.ITERABLE
-                "kotlin.collections.MutableCollection" -> TypeName.COLLECTION
-                "kotlin.collections.MutableList" -> TypeName.LIST
-                "kotlin.collections.MutableSet" -> TypeName.SET
-                "kotlin.collections.MutableMap" -> TypeName.MAP
-                else -> typeName
-            }
+    private fun isApiOperation(declaration: KSFunctionDeclaration): Boolean {
+        if (!declaration.isPublic()) {
+            return false
+        }
+        if (declaration.annotation(ApiIgnore::class) !== null) {
+            return false
+        }
+        if (declaration.annotation(Api::class) !== null) {
+            return true
+        }
+        if (!explicitClientApi) {
+            return false
+        }
+        return ApiOperation.AUTO_OPERATION_ANNOTATIONS.any { declaration.annotation(it) !== null }
+    }
+
+    companion object {
 
         fun KSDeclaration.toTypeName(): TypeName {
             val simpleNames = mutableListOf<String>()
@@ -361,7 +354,7 @@ class ClientProcessor(
                 d = d.parentDeclaration
             }
             simpleNames.reverse()
-            return TypeName(packageName.asString(), simpleNames)
+            return TypeName.of(packageName.asString(), simpleNames)
         }
     }
 }

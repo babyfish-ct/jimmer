@@ -45,8 +45,8 @@ public abstract class SchemaBuilder<S> {
                 if (types.length == 0) {
                     return node.getSource();
                 }
-                for (Class<?> type : types) {
-                    if (node.getClass() == type) {
+                for (Class<?> otherType : types) {
+                    if (node.getClass() == otherType) {
                         return node.getSource();
                     }
                 }
@@ -91,6 +91,14 @@ public abstract class SchemaBuilder<S> {
         } finally {
             stack.pop();
         }
+    }
+
+    public void push(AstNode<S> child) {
+        stack.push(child);
+    }
+
+    public void pop() {
+        stack.pop();
     }
 
     public Schema build() {

@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.java.bll;
 
-import org.babyfish.jimmer.client.Api;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.spring.java.dal.BookRepository;
 import org.babyfish.jimmer.spring.java.model.*;
@@ -9,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Api
 public class BookService {
 
     private final BookRepository bookRepository;

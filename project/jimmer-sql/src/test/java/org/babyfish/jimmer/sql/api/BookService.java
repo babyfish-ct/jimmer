@@ -55,7 +55,7 @@ public interface BookService {
      * @return A list of books objects, with long associations
      */
     @Api
-    List<? extends @FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
+    List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @Nullable String name,
             @Nullable Integer edition,
             @Nullable BigDecimal minPrice,
@@ -65,8 +65,14 @@ public interface BookService {
     );
 
     @Api
-    List<? extends @FetchBy("COMPLEX") Book> findBySuperQBE(
+    List<? extends @FetchBy("COMPLEX_FETCHER") Book> findBySuperQBE(
             @Nullable BookSpecification2 specification
+    );
+
+    @Api
+    @FetchBy("COMPLEX_FETCHER") Book findByNameAndEdition(
+            String name,
+            int edition
     );
 
     @Api

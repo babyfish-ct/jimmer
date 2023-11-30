@@ -4,6 +4,7 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
+import org.babyfish.jimmer.client.EnableImplicitApi
 import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.ksp.client.ClientProcessor
 import org.babyfish.jimmer.ksp.dto.DtoProcessor
@@ -39,13 +40,24 @@ class JimmerProcessor(
 
     private var serverGenerated = false
 
+    private var explicitClientApi: Boolean? = null
+
     private var clientGenerated = false
 
-    private var delayedFiles: Collection<KSFile>? = null
+    private var delayedClientTypeNames: Collection<String>? = null
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         return try {
             val ctx = Context(resolver, environment)
+            if (explicitClientApi === null) {
+                explicitClientApi = resolver.getAllFiles().any { file ->
+                    file.declarations.any {
+                        it is KSClassDeclaration &&
+                            ctx.include(it) &&
+                            it.annotation(EnableImplicitApi::class) !== null
+                    }
+                }
+            }
             val processedDeclarations = mutableListOf<KSClassDeclaration>()
             if (!serverGenerated) {
                 processedDeclarations += ImmutableProcessor(ctx).process()
@@ -53,14 +65,20 @@ class JimmerProcessor(
                 val dtoGenerated = DtoProcessor(ctx, dtoDirs, dtoMutable).process()
                 serverGenerated = true
                 if (dtoGenerated) {
-                    delayedFiles = resolver.getNewFiles().toList()
+                    delayedClientTypeNames = resolver.getAllFiles().flatMap {  file ->
+                        file.declarations.filterIsInstance<KSClassDeclaration>().map { it.fullName }
+                    }.toList()
                     return processedDeclarations
                 }
             }
             if (!clientGenerated) {
-                ClientProcessor(ctx, delayedFiles).process()
                 clientGenerated = true
-                delayedFiles = null
+                ClientProcessor(
+                    ctx,
+                    explicitClientApi ?: error("Internal bug: explicitClientApi not resolved"),
+                    delayedClientTypeNames
+                ).process()
+                delayedClientTypeNames = null
             }
             return processedDeclarations
         } catch (ex: MetaException) {

@@ -4,15 +4,16 @@ import org.babyfish.jimmer.apt.client.ClientProcessor;
 import org.babyfish.jimmer.apt.dto.DtoProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
+import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes({
         "org.babyfish.jimmer.Immutable",
@@ -39,9 +40,11 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private boolean serverGenerated;
 
+    private Boolean clientExplicitApi;
+
     private boolean clientGenerated;
 
-    private Set<? extends Element> delayedClientElements;
+    private List<String> delayedClientTypeNames;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -95,20 +98,32 @@ public class JimmerProcessor extends AbstractProcessor {
             RoundEnvironment roundEnv
     ) {
         try {
+            if (clientExplicitApi == null) {
+                clientExplicitApi = roundEnv.getRootElements().stream().anyMatch(
+                        it -> it instanceof TypeElement &&
+                                context.include((TypeElement) it) &&
+                                it.getAnnotation(EnableImplicitApi.class) != null
+                );
+            }
             if (!serverGenerated) {
                 serverGenerated = true;
                 new ImmutableProcessor(context, filer, messager).process(roundEnv);
                 new ErrorProcessor(context, filer).process(roundEnv);
                 boolean dtoGenerated = new DtoProcessor(context, elements, filer, dtoDirs).process();
                 if (dtoGenerated) {
-                    delayedClientElements = roundEnv.getRootElements();
+                    delayedClientTypeNames = roundEnv
+                            .getRootElements()
+                            .stream()
+                            .filter(it -> it instanceof TypeElement)
+                            .map(it -> ((TypeElement)it).getQualifiedName().toString())
+                            .collect(Collectors.toList());
                     return false;
                 }
             }
             if (!clientGenerated) {
                 clientGenerated = true;
-                new ClientProcessor(context, elements, filer, delayedClientElements).handleService(roundEnv);
-                delayedClientElements = null;
+                new ClientProcessor(context, elements, filer, clientExplicitApi, delayedClientTypeNames).process(roundEnv);
+                delayedClientTypeNames = null;
             }
         } catch (MetaException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());

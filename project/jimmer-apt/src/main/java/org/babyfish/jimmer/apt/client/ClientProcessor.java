@@ -6,10 +6,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.util.GenericParser;
-import org.babyfish.jimmer.client.Api;
-import org.babyfish.jimmer.client.ApiIgnore;
-import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.client.NullableType;
+import org.babyfish.jimmer.client.*;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.impl.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
@@ -34,23 +31,25 @@ public class ClientProcessor {
 
     private static final String JIMMER_CLIENT = "META-INF/jimmer/client";
 
+    private static final String FETCH_BY_NAME = FetchBy.class.getName();
+
     private final Context context;
 
     private final Elements elements;
 
-    private final Filer filer;
-
-    private final Collection<? extends Element> delayedElements;
+    private final Collection<String> delayedClientTypeNames;
 
     private final File jimmerClientFile;
 
+    private final boolean explicitApi;
+
     private final SchemaBuilder<Element> builder;
 
-    public ClientProcessor(Context context, Elements elements, Filer filer, Collection<? extends Element> delayedElements) {
+    public ClientProcessor(Context context, Elements elements, Filer filer, boolean explicitApi, Collection<String> delayedClientTypeNames) {
         this.context = context;
         this.elements = elements;
-        this.filer = filer;
-        this.delayedElements = delayedElements;
+        this.explicitApi = explicitApi;
+        this.delayedClientTypeNames = delayedClientTypeNames;
 
         FileObject fileObject;
         try {
@@ -98,13 +97,15 @@ public class ClientProcessor {
         return null;
     }
 
-    public void handleService(RoundEnvironment roundEnv) {
+    public void process(RoundEnvironment roundEnv) {
+
         for (Element element : roundEnv.getRootElements()) {
             handleService(element);
         }
-        if (delayedElements != null) {
-            for (Element element : delayedElements) {
-                handleService(element);
+
+        if (delayedClientTypeNames != null) {
+            for (String delayedClientTypeName : delayedClientTypeNames) {
+                handleService(context.getElements().getTypeElement(delayedClientTypeName));
             }
         }
 
@@ -122,7 +123,7 @@ public class ClientProcessor {
             return;
         }
         TypeElement typeElement = (TypeElement) element;
-        if (!isApiService(element) || typeElement.getAnnotation(ApiIgnore.class) != null) {
+        if (!isApiService(element)) {
             return;
         }
         if (typeElement.getNestingKind().isNested()) {
@@ -147,8 +148,7 @@ public class ClientProcessor {
             for (Element subElement : typeElement.getEnclosedElements()) {
                 if (subElement instanceof ExecutableElement && subElement.getAnnotation(ApiIgnore.class) == null) {
                     ExecutableElement executableElement = (ExecutableElement) subElement;
-                    if (executableElement.getModifiers().contains(Modifier.PUBLIC) &&
-                            !executableElement.getModifiers().contains(Modifier.STATIC)) {
+                    if (isApiOperation(executableElement)) {
                         handleMethod(executableElement);
                     }
                 }
@@ -168,10 +168,12 @@ public class ClientProcessor {
         Api api = method.getAnnotation(Api.class);
         if (api == null) {
             boolean matched = false;
-            for (String autoOperationAnnotation : ApiOperation.AUTO_OPERATION_ANNOTATIONS) {
-                if (Annotations.annotationMirror(method, autoOperationAnnotation) != null) {
-                    matched = true;
-                    break;
+            if (explicitApi) {
+                for (String autoOperationAnnotation : ApiOperation.AUTO_OPERATION_ANNOTATIONS) {
+                    if (Annotations.annotationMirror(method, autoOperationAnnotation) != null) {
+                        matched = true;
+                        break;
+                    }
                 }
             }
             if (!matched) {
@@ -247,12 +249,18 @@ public class ClientProcessor {
 
         TypeRefImpl<Element> typeRef = builder.current();
 
-        AnnotationMirror fetchBy = Annotations.annotationMirror(entityType, FetchBy.class);
+        AnnotationMirror fetchBy = entityType.getAnnotationMirrors().stream().filter(
+                it -> {
+                    TypeElement annoElement = (TypeElement) it.getAnnotationType().asElement();
+                    return annoElement.getQualifiedName().toString().equals(FETCH_BY_NAME);
+                }
+        ).findFirst().orElse(null);
         if (fetchBy == null) {
             return;
         }
         if (!context.isImmutable(entityType)) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "Illegal type because \"" +
                             entityType +
@@ -262,6 +270,7 @@ public class ClientProcessor {
         String constant = Annotations.annotationValue(fetchBy, "value", null);
         if (constant.isEmpty()) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "The `value` of `@FetchBy` is required"
             );
@@ -290,6 +299,7 @@ public class ClientProcessor {
         }
         if (fetcherElement == null) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "Illegal `@FetcherBy`, there is no static field \"" +
                             constant +
@@ -311,6 +321,7 @@ public class ClientProcessor {
             } else {
                 if (!element.getQualifiedName().toString().equals("org.babyfish.jimmer.sql.fetcher.Fetcher")) {
                     throw new MetaException(
+                            builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                             builder.ancestorSource(),
                             "Illegal `@FetcherBy`, there is static field \"" +
                                     constant +
@@ -323,6 +334,7 @@ public class ClientProcessor {
         }
         if (!((TypeElement)((DeclaredType)entityType).asElement()).getQualifiedName().toString().equals(genericTypeName)) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
                     "Illegal `@FetcherBy`, there is static field \"" +
                             constant +
@@ -399,11 +411,12 @@ public class ClientProcessor {
         TypeMirror typeMirror = wildcardType.getExtendsBound();
         if (typeMirror == null) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
-                    "api type cannot be wildcard without extends bound"
+                    "Client Api system does not accept wildcard type without extends bound"
             );
         }
-        determineTypeAndArguments(typeMirror);
+        fillType(typeMirror);
     }
 
     private void handleIntersectionTpe(IntersectionType intersectionType) {
@@ -432,15 +445,17 @@ public class ClientProcessor {
         TypeElement typeElement = (TypeElement) declaredType.asElement();
         if (typeElement.getNestingKind().isNested() && !typeElement.getModifiers().contains(Modifier.STATIC)) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
-                    "api type must be top-level of static nested type"
+                    "Client API service must be top-level of static nested type"
             );
         }
         TypeName className = typeName(typeElement);
         if (TypeName.OBJECT.equals(className)) {
             throw new MetaException(
+                    builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
-                    "api type cannot be `java.lang.Object`"
+                    "Client Api system does not accept unambiguous type `java.lang.Object`"
             );
         }
         typeRef.setTypeName(className);
@@ -525,12 +540,41 @@ public class ClientProcessor {
         }
     }
 
-    public static boolean isApiService(Element element) {
-       return element.getAnnotation(Api.class) != null ||
-               Annotations.annotationMirror(
-                       element,
-                       "org.springframework.web.bind.annotation.RestController"
-               ) != null;
+    public boolean isApiService(Element element) {
+        if (element == null || (!(element instanceof TypeElement) && !context.include((TypeElement) element))) {
+            return false;
+        }
+        if (element.getAnnotation(ApiIgnore.class) != null) {
+            return false;
+        }
+        if (element.getAnnotation(Api.class) != null) {
+            return true;
+        }
+        if (!explicitApi) {
+            return false;
+        }
+        return Annotations.annotationMirror(
+                element,
+                "org.springframework.web.bind.annotation.RestController"
+        ) != null;
+    }
+
+    public boolean isApiOperation(ExecutableElement element) {
+        if (!element.getModifiers().contains(Modifier.PUBLIC) || element.getModifiers().contains(Modifier.STATIC)) {
+            return false;
+        }
+        if (element.getAnnotation(ApiIgnore.class) != null) {
+            return false;
+        }
+        if (element.getAnnotation(Api.class) != null) {
+            return true;
+        }
+        if (!explicitApi) {
+            return false;
+        }
+        return ApiOperation.AUTO_OPERATION_ANNOTATIONS.stream().anyMatch(it ->
+            Annotations.annotationMirror(element, it) != null
+        );
     }
 
     private static TypeName unboxedTypeName(TypeMirror type) {
@@ -572,6 +616,6 @@ public class ClientProcessor {
             }
         }
         Collections.reverse(simpleNames);
-        return new TypeName(packageName, simpleNames);
+        return TypeName.of(packageName, simpleNames);
     }
 }

@@ -23,7 +23,9 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
     @SuppressWarnings("unchecked")
     @Override
     public void visitAstNode(AstNode<S> astNode) {
-        if (astNode instanceof TypeRefImpl<?>) {
+        if (astNode instanceof ApiOperationImpl<?> || astNode instanceof ApiParameterImpl<?>) {
+            builder.push(astNode);
+        } else if (astNode instanceof TypeRefImpl<?>) {
             TypeName typeName = ((TypeRefImpl<?>) astNode).getTypeName();
             if (!typeName.isGenerationRequired() || typeDefinitionMap.containsKey(typeName)) {
                 return;
@@ -47,6 +49,13 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
                     ((TypeRefImpl<S>) superType).accept(this);
                 }
             });
+        }
+    }
+
+    @Override
+    public void visitedAstNode(AstNode<S> astNode) {
+        if (astNode instanceof ApiOperationImpl<?> || astNode instanceof ApiParameterImpl<?>) {
+            builder.pop();
         }
     }
 }
