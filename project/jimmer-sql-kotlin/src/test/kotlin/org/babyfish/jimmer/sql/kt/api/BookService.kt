@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.sql.kt.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.babyfish.jimmer.client.Api
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.ThrowsAll
+import org.babyfish.jimmer.client.meta.Api
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
@@ -16,12 +16,12 @@ import java.math.BigDecimal
 /**
  * An interface to test generation of `META-INF/jimmer/client`
  */
-@Api(groups = ["abc"])
+@Api
 interface BookService {
 
     fun initialize(objectMapper: ObjectMapper)
 
-    @Api
+    @Api("mobile")
     fun handleTree(tree: Tree<Book>)
 
     /**
@@ -35,7 +35,7 @@ interface BookService {
      * @return A list of books objects, with long associations
      */
     @ThrowsAll(SystemErrorCode::class)
-    @Api
+    @Api("mobile")
     fun findSimpleBooks(
         name: String?,
         edition: Int?,
@@ -56,7 +56,7 @@ interface BookService {
      * @return A list of books objects, with long associations
      */
     @ThrowsSystemError(SystemErrorCode.A, SystemErrorCode.B)
-    @Api
+    @Api("pc")
     fun findComplexBooks(
         name: String?,
         edition: Int,
@@ -66,21 +66,21 @@ interface BookService {
         authorName: String?
     ): List<@FetchBy("COMPLEX_FETCHER") Book>
 
-    @Api
+    @Api("pc")
     fun findBySuperQBE(
         specification: BookSpecification2
     ): MutableList<out @FetchBy("COMPLEX_FETCHER") Book>
 
-    @Api
+    @Api("pc")
     fun findByNameAndEdition(
         name: String,
         edition: Int
     ): @FetchBy("COMPLEX_FETCHER") Book?
 
-    @Api
+    @Api("pc")
     fun saveBook(input: BookInput)
 
-    @Api
+    @Api("mobile")
     fun saveBook(input: CompositeBookInput)
 
     companion object {

@@ -147,7 +147,7 @@ public class ClientProcessor {
         builder.api(typeElement, typeElement.getQualifiedName().toString(), apiService -> {
             Api api = typeElement.getAnnotation(Api.class);
             if (api != null) {
-                apiService.setGroups(Arrays.asList(api.groups()));
+                apiService.setGroups(Arrays.asList(api.value()));
             }
             apiService.setDoc(Doc.parse(elements.getDocComment(typeElement)));
             for (Element subElement : typeElement.getEnclosedElements()) {
@@ -186,18 +186,29 @@ public class ClientProcessor {
             }
         }
         builder.operation(method, method.getSimpleName().toString(), operation -> {
-             if (api != null) {
-                if (api.groups().length != 0 && service.getGroups() != null) {
-                    throw new MetaException(
-                            operation.getSource(),
-                            "It cannot be decorated by \"@" +
-                                    Api.class +
-                                    "\" with `groups` because the groups of declaring type \"" +
-                                    service.getTypeName() +
-                                    "\" has been specified"
-                    );
+            if (api != null) {
+                List<String> groups = Arrays.asList(api.value());
+                if (groups.isEmpty()) {
+                    groups = null;
                 }
-                operation.setGroups(Arrays.asList(api.groups()));
+                List<String> parentGroups = service.getGroups();
+                if (parentGroups != null && groups != null) {
+                    Set<String> set = new LinkedHashSet<>(groups);
+                    set.retainAll(parentGroups);
+                    if (!set.isEmpty()) {
+                        throw new MetaException(
+                                operation.getSource(),
+                                "It cannot be decorated by \"@" +
+                                        Api.class +
+                                        "\" with `groups` \"" +
+                                        set +
+                                        "\" because they are not declared in declaring type \"" +
+                                        service.getTypeName() +
+                                        "\""
+                        );
+                    }
+                }
+                operation.setGroups(groups);
             }
             operation.setDoc(Doc.parse(elements.getDocComment(method)));
             for (VariableElement parameterElement : method.getParameters()) {

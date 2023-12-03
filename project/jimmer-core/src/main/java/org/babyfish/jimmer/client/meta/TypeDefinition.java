@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +12,9 @@ public interface TypeDefinition {
     Kind getKind();
 
     boolean isApiIgnore();
+
+    @Nullable
+    List<String> getGroups();
 
     Map<String, Prop> getPropMap();
 

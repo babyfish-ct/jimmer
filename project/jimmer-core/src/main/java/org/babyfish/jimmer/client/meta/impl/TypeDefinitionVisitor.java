@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.meta.TypeDefinition;
 import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.meta.TypeRef;
 
+import java.util.List;
 import java.util.Map;
 
 public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
@@ -23,11 +24,20 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
     @SuppressWarnings("unchecked")
     @Override
     public void visitAstNode(AstNode<S> astNode) {
-        if (astNode instanceof ApiOperationImpl<?> || astNode instanceof ApiParameterImpl<?>) {
+        if (isContextNode(astNode)) {
             builder.push(astNode);
         } else if (astNode instanceof TypeRefImpl<?>) {
             TypeName typeName = ((TypeRefImpl<?>) astNode).getTypeName();
-            if (!typeName.isGenerationRequired() || typeDefinitionMap.containsKey(typeName)) {
+            if (!typeName.isGenerationRequired()) {
+                return;
+            }
+            List<String> groups = builder.<ApiOperationImpl<S>>ancestor(ApiOperationImpl.class).getGroups();
+            if (groups == null) {
+                groups = builder.<ApiServiceImpl<S>>ancestor(ApiServiceImpl.class).getGroups();
+            }
+            TypeDefinitionImpl<S> existingDefinition = typeDefinitionMap.get(typeName);
+            if (existingDefinition != null) {
+                existingDefinition.mergeGroups(groups);
                 return;
             }
             S source = builder.loadSource(typeName.toString());
@@ -39,8 +49,10 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
                                 "\""
                 );
             }
+            List<String> finalGroups = groups;
             builder.definition(source, typeName, definition -> {
                 typeDefinitionMap.put(typeName, definition);
+                definition.mergeGroups(finalGroups);
                 builder.fillDefinition(source);
                 for (Prop prop : definition.getPropMap().values()) {
                     ((PropImpl<S>) prop).accept(this);
@@ -54,8 +66,14 @@ public class TypeDefinitionVisitor<S> implements AstNodeVisitor<S> {
 
     @Override
     public void visitedAstNode(AstNode<S> astNode) {
-        if (astNode instanceof ApiOperationImpl<?> || astNode instanceof ApiParameterImpl<?>) {
+        if (isContextNode(astNode)) {
             builder.pop();
         }
+    }
+
+    private static boolean isContextNode(AstNode<?> astNode) {
+        return astNode instanceof ApiServiceImpl<?> ||
+                astNode instanceof ApiOperationImpl<?> ||
+                astNode instanceof ApiParameterImpl<?>;
     }
 }

@@ -6,21 +6,34 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @JsonSerialize(using = TypeDefinitionImpl.Serializer.class)
 @JsonDeserialize(using = TypeDefinitionImpl.Deserializer.class)
 public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements TypeDefinition {
+
+    private static final JavaType GROUPS_TYPE = CollectionType.construct(
+            List.class,
+            null,
+            null,
+            null,
+            SimpleType.constructUnsafe(String.class)
+    );
 
     private final TypeName typeName;
 
     private Kind kind;
 
     private boolean apiIgnore;
+
+    private List<String> groups = Collections.emptyList();
 
     private final Map<String, PropImpl<S>> propMap = new LinkedHashMap<>();
 
@@ -52,6 +65,25 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
     @Override
     public boolean isApiIgnore() {
         return apiIgnore;
+    }
+
+    @Nullable
+    @Override
+    public List<String> getGroups() {
+        return groups;
+    }
+
+    public void mergeGroups(List<String> groups) {
+        if (this.groups == null) {
+            return;
+        }
+        if (groups == null) {
+            this.groups = null;
+            return;
+        }
+        List<String> merged = new ArrayList<>(this.groups);
+        merged.addAll(groups);
+        this.groups = merged.stream().distinct().collect(Collectors.toList());
     }
 
     public void setApiIgnore(boolean apiIgnore) {
@@ -136,6 +168,9 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
                 gen.writeFieldName("apiIgnore");
                 gen.writeBoolean(true);
             }
+            if (definition.getGroups() != null) {
+                provider.defaultSerializeField("groups", definition.getGroups(), gen);
+            }
             if (!definition.getPropMap().isEmpty()) {
                 provider.defaultSerializeField("props", definition.getPropMap().values(), gen);
             }
@@ -167,6 +202,9 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
             }
             if (jsonNode.has("apiIgnore")) {
                 definition.setApiIgnore(jsonNode.get("apiIgnore").asBoolean());
+            }
+            if (jsonNode.has("groups")) {
+                definition.mergeGroups(ctx.readTreeAsValue(jsonNode.get("groups"), GROUPS_TYPE));
             }
             if (jsonNode.has("props")) {
                 for (JsonNode propNode : jsonNode.get("props")) {

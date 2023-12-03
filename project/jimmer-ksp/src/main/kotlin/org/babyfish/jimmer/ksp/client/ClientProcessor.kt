@@ -5,7 +5,6 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.Immutable
-import org.babyfish.jimmer.client.Api
 import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.ThrowsAll
@@ -92,7 +91,7 @@ class ClientProcessor(
         }
         val schema = current<SchemaImpl<KSDeclaration>>()
         api(declaration, declaration.fullName) { service ->
-            declaration.annotation(Api::class)?.get<List<String>>("groups")?.takeIf { it.isNotEmpty() }.let { groups ->
+            declaration.annotation(Api::class)?.get<List<String>>("value")?.takeIf { it.isNotEmpty() }.let { groups ->
                 service.groups = groups
             }
             declaration.docString?.let {
@@ -121,7 +120,24 @@ class ClientProcessor(
             return
         }
         operation(func, func.simpleName.asString()) { operation ->
-            api?.get<List<String>>("groups")?.takeIf { it.isNotEmpty() }?.let {
+            api?.get<List<String>>("value")?.takeIf { it.isNotEmpty() }?.let {
+                service.groups?.let { parentGroups ->
+                    val illegalGroups = parentGroups.toMutableSet().apply {
+                        removeAll(it)
+                    }
+                    if (illegalGroups.isNotEmpty()) {
+                        throw MetaException(
+                            operation.source,
+                            "It cannot be decorated by \"@" +
+                                Api::class.java +
+                                "\" with `groups` \"" +
+                                illegalGroups +
+                                "\" because they are not declared in declaring type \"" +
+                                service.typeName +
+                                "\""
+                        )
+                    }
+                }
                 operation.groups = it
             }
             func.docString?.let {

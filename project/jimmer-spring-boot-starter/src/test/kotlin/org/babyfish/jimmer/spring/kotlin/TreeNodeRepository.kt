@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.spring.kotlin
 
 import org.babyfish.jimmer.Specification
-import org.babyfish.jimmer.client.Api
 import org.babyfish.jimmer.spring.kotlin.dto.TreeNodeView2
 import org.babyfish.jimmer.spring.repository.KRepository
 import org.babyfish.jimmer.sql.fetcher.Fetcher
