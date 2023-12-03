@@ -66,6 +66,7 @@ class Context(
             if (sqlAnnotation !== null) {
                 throw MetaException(
                     classDeclaration,
+                    null,
                     "it cannot be decorated by both " +
                         "@${sqlAnnotation.fullName} and ${anno.fullName}"
                 )

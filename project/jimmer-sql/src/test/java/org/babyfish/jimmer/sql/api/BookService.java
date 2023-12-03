@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.Api;
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
 import org.babyfish.jimmer.sql.model.Book;
@@ -24,6 +25,9 @@ public interface BookService {
 
     void initialize(ObjectMapper mapper);
 
+    @Api
+    void processTree(Tree<Book> tree);
+
     /**
      * Find books with simple format
      * @param name Optional value to filter `name`
@@ -34,6 +38,7 @@ public interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with short associations
      */
+    @ThrowsAll(SystemErrorCode.class)
     @Api
     List<? extends @FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
             @Nullable String name,
@@ -54,6 +59,7 @@ public interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
+    @ThrowsSystemError({SystemErrorCode.A, SystemErrorCode.B})
     @Api
     List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @Nullable String name,

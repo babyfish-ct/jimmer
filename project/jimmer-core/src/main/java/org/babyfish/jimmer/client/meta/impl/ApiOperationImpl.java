@@ -6,25 +6,37 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.MapType;
+import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @JsonSerialize(using = ApiOperationImpl.Serializer.class)
 @JsonDeserialize(using = ApiOperationImpl.Deserializer.class)
 public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
+    private static final JavaType ERROR_LIST_TYPE =
+            CollectionType.construct(
+                    List.class,
+                    null,
+                    null,
+                    null,
+                    SimpleType.constructUnsafe(String.class)
+            );
+
     private String name;
 
     private List<String> groups;
 
-    private List<ApiParameterImpl<S>> parameters;
+    private final List<ApiParameterImpl<S>> parameters = new ArrayList<>();
 
     private TypeRefImpl<S> returnType;
+
+    private Map<TypeName, List<String>> errorMap = Collections.emptyMap();
 
     private Doc doc;
 
@@ -35,7 +47,6 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
     ApiOperationImpl(S source, String name) {
         super(source);
         this.name = name;
-        this.parameters = new ArrayList<>();
     }
 
     @Override
@@ -95,6 +106,23 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
         this.returnType = returnType;
     }
 
+    @Override
+    public Map<TypeName, List<String>> getErrorMap() {
+        return errorMap;
+    }
+
+    public void setErrorMap(Map<TypeName, List<String>> errorMap) {
+        if (errorMap.isEmpty()) {
+            this.errorMap = Collections.emptyMap();
+        } else {
+            Map<TypeName, List<String>> map = new LinkedHashMap<>((errorMap.size() * 4 + 2) / 3);
+            for (Map.Entry<TypeName, List<String>> e : errorMap.entrySet()) {
+                map.put(e.getKey(), Collections.unmodifiableList(e.getValue()));
+            }
+            this.errorMap = Collections.unmodifiableMap(map);
+        }
+    }
+
     @Nullable
     @Override
     public Doc getDoc() {
@@ -114,6 +142,11 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             }
             if (returnType != null) {
                 returnType.accept(visitor);
+            }
+            for (TypeName typeName : errorMap.keySet()) {
+                TypeRefImpl<S> typeRef = new TypeRefImpl<>();
+                typeRef.setTypeName(typeName);
+                typeRef.accept(visitor);
             }
         } finally {
             visitor.visitedAstNode(this);
@@ -161,6 +194,15 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             if (operation.getReturnType() != null) {
                 provider.defaultSerializeField("returnType", operation.getReturnType(), gen);
             }
+            if (!operation.getErrorMap().isEmpty()) {
+                gen.writeFieldName("errors");
+                gen.writeStartObject();
+                for (Map.Entry<TypeName, List<String>> e : operation.getErrorMap().entrySet()) {
+                    gen.writeFieldName(e.getKey().toString(true));
+                    gen.writeObject(e.getValue());
+                }
+                gen.writeEndObject();
+            }
             gen.writeEndObject();
         }
     }
@@ -185,6 +227,16 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             }
             if (jsonNode.has("returnType")) {
                 operation.setReturnType(ctx.readTreeAsValue(jsonNode.get("returnType"), TypeRefImpl.class));
+            }
+            if (jsonNode.has("errors")) {
+                Map<TypeName, List<String>> errorMap = new LinkedHashMap<>();
+                for (Map.Entry<String, JsonNode> e : jsonNode.get("errors").properties()) {
+                    errorMap.put(
+                            TypeName.parse(e.getKey()),
+                            ctx.readTreeAsValue(e.getValue(), ERROR_LIST_TYPE)
+                    );
+                }
+                operation.setErrorMap(errorMap);
             }
             return operation;
         }

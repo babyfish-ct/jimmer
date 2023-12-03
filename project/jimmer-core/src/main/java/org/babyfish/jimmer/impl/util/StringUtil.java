@@ -65,4 +65,14 @@ public class StringUtil {
         LOWER,
         UPPER
     }
+
+    public static String propName(String method, boolean isBoolean) {
+        if (method.length() > 3 && !Character.isLowerCase(method.charAt(3)) && method.startsWith("get")) {
+            return identifier(method.substring(3));
+        }
+        if (isBoolean && method.length() > 2 && method.startsWith("is") && !Character.isLowerCase(method.charAt(2))) {
+            return identifier(method.substring(2));
+        }
+        return null;
+    }
 }

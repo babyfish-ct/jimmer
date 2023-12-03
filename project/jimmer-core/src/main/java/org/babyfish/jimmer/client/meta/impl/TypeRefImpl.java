@@ -26,9 +26,9 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
 
     private String fetchBy;
 
-    private String fetchOwner;
+    private TypeName fetchOwner;
 
-    TypeRefImpl() {
+    public TypeRefImpl() {
         super(null);
     }
 
@@ -72,11 +72,11 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
 
     @Nullable
     @Override
-    public String getFetcherOwner() {
+    public TypeName getFetcherOwner() {
         return fetchOwner;
     }
 
-    public void setFetcherOwner(String fetchOwner) {
+    public void setFetcherOwner(TypeName fetchOwner) {
         this.fetchOwner = fetchOwner;
     }
 
@@ -122,7 +122,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
                 gen.writeFieldName("fetchBy");
                 gen.writeString(typeRef.getFetchBy());
                 gen.writeFieldName("fetcherOwner");
-                gen.writeString(typeRef.getFetcherOwner());
+                gen.writeString(typeRef.getFetcherOwner().toString(true));
             }
             gen.writeEndObject();
         }
@@ -147,7 +147,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
             }
             if (jsonNode.has("fetchBy")) {
                 typeRef.setFetchBy(jsonNode.get("fetchBy").asText());
-                typeRef.setFetcherOwner(jsonNode.get("fetcherOwner").asText());
+                typeRef.setFetcherOwner(TypeName.parse(jsonNode.get("fetcherOwner").asText()));
             }
             return typeRef;
         }

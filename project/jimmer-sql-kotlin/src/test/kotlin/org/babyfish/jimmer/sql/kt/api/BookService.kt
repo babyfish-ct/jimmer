@@ -1,7 +1,9 @@
 package org.babyfish.jimmer.sql.kt.api
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.client.Api
 import org.babyfish.jimmer.client.FetchBy
+import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
@@ -17,6 +19,11 @@ import java.math.BigDecimal
 @Api(groups = ["abc"])
 interface BookService {
 
+    fun initialize(objectMapper: ObjectMapper)
+
+    @Api
+    fun handleTree(tree: Tree<Book>)
+
     /**
      * Find books with simple format
      * @param name Optional value to filter `name`
@@ -27,6 +34,7 @@ interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
+    @ThrowsAll(SystemErrorCode::class)
     @Api
     fun findSimpleBooks(
         name: String?,
@@ -47,6 +55,7 @@ interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
+    @ThrowsSystemError(SystemErrorCode.A, SystemErrorCode.B)
     @Api
     fun findComplexBooks(
         name: String?,

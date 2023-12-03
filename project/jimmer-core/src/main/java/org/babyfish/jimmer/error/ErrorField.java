@@ -14,4 +14,6 @@ public @interface ErrorField {
     boolean list() default false;
 
     boolean nullable() default false;
+
+    String doc() default "";
 }

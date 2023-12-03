@@ -84,6 +84,10 @@ public abstract class SchemaBuilder<S> {
         run(new PropImpl<>(source, name), block);
     }
 
+    public void constant(S source, String name, Consumer<EnumConstantImpl<S>> block) {
+        run(new EnumConstantImpl<>(source, name), block);
+    }
+
     private <X extends AstNode<S>> void run(X child, Consumer<X> block) {
         stack.push(child);
         try {

@@ -300,6 +300,7 @@ class ErrorGenerator(
                     if (it == "family" || it == "code") {
                         throw MetaException(
                             item,
+                            null,
                             "The enum constant \"" +
                                 item.parentDeclaration?.qualifiedName?.asString() +
                                 '.' +

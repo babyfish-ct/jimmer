@@ -7,7 +7,7 @@ public interface TypeDefinition {
 
     TypeName getTypeName();
 
-    boolean isImmutable();
+    Kind getKind();
 
     boolean isApiIgnore();
 
@@ -16,4 +16,15 @@ public interface TypeDefinition {
     List<TypeRef> getSuperTypes();
 
     Doc getDoc();
+
+    Map<String, Prop> getErrorPropMap();
+
+    Map<String, EnumConstant> getEnumConstantMap();
+
+    enum Kind {
+        IMMUTABLE,
+        OBJECT,
+        ENUM,
+        ERROR_ENUM
+    }
 }

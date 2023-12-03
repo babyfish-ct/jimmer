@@ -9,6 +9,9 @@ import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.client.*;
 import org.babyfish.jimmer.client.meta.*;
 import org.babyfish.jimmer.client.meta.impl.*;
+import org.babyfish.jimmer.error.ErrorFamily;
+import org.babyfish.jimmer.error.ErrorField;
+import org.babyfish.jimmer.error.ErrorFields;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
@@ -31,7 +34,9 @@ public class ClientProcessor {
 
     private static final String JIMMER_CLIENT = "META-INF/jimmer/client";
 
-    private static final String FETCH_BY_NAME = FetchBy.class.getName();
+    private static final TypeName FETCH_BY_NAME = TypeName.of("org.babyfish.jimmer.client", Collections.singletonList("FetchBy"));
+
+    private static final TypeName THROWS_ALL_NAME = TypeName.of("org.babyfish.jimmer.client", Collections.singletonList("ThrowsAll"));
 
     private final Context context;
 
@@ -214,8 +219,101 @@ public class ClientProcessor {
                     operation.setReturnType(type);
                 });
             }
+            operation.setErrorMap(getErrorMap(method));
             service.addOperation(operation);
         });
+    }
+
+    private Map<TypeName, List<String>> getErrorMap(ExecutableElement method) {
+        Map<TypeName, List<String>> errorMap = new LinkedHashMap<>();
+        for (AnnotationMirror annotationMirror : method.getAnnotationMirrors()) {
+            TypeName enumTypeName = null;
+            List<String> constants = null;
+            if (THROWS_ALL_NAME.equals(typeName(annotationMirror.getAnnotationType().asElement()))) {
+                String enumName = Annotations.annotationValue(annotationMirror, "value", null).toString();
+                TypeElement enumElement = context.getElements().getTypeElement(enumName);
+                if (enumElement.getAnnotation(ErrorFamily.class) == null) {
+                    throw new MetaException(
+                            builder.ancestorSource(),
+                            "it is decorated by `@ThrowsAll` with the argument \"" +
+                                    enumName +
+                                    "\", however, that enum is not decorated by `@ErrorFamily`"
+                    );
+                }
+                constants = new ArrayList<>();
+                for (Element constantElement : enumElement.getEnclosedElements()) {
+                    if (constantElement.getKind() == ElementKind.ENUM_CONSTANT) {
+                        constants.add(constantElement.getSimpleName().toString());
+                    }
+                }
+                enumTypeName = typeName(enumElement);
+            } else {
+                TypeElement enumElement = null;
+                for (Element argElement : annotationMirror.getAnnotationType().asElement().getEnclosedElements()) {
+                    if (argElement instanceof ExecutableElement &&
+                            argElement.getSimpleName().toString().equals("value") &&
+                            argElement.getModifiers().contains(Modifier.PUBLIC) &&
+                            !argElement.getModifiers().contains(Modifier.STATIC)) {
+                        ExecutableElement argMethodElement = (ExecutableElement) argElement;
+                        if (argMethodElement.getTypeParameters().isEmpty() && argMethodElement.getParameters().isEmpty()) {
+                            if (argMethodElement.getReturnType().getKind() == TypeKind.ARRAY) {
+                                TypeMirror enumType = ((ArrayType)argMethodElement.getReturnType()).getComponentType();
+                                if (enumType.getKind() == TypeKind.DECLARED) {
+                                    enumElement = (TypeElement) ((DeclaredType)enumType).asElement();
+                                    if (enumElement.getKind() == ElementKind.ENUM &&
+                                            Annotations.annotationMirror(enumElement, ErrorFamily.class) != null) {
+                                        enumTypeName = typeName(enumElement);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (enumTypeName != null) {
+                    List<?> values = Annotations.annotationValue(annotationMirror, "value", Collections.emptyList());
+                    constants = new ArrayList<>(values.size());
+                    for (Object value : values) {
+                        String constantName = value.toString();
+                        if (constantName.length() > 2) {
+                            throw new IllegalArgumentException(constantName);
+                        }
+                        constants.add(constantName);
+                        boolean match = enumElement
+                                .getEnclosedElements()
+                                .stream()
+                                .anyMatch(it ->
+                                        it.getKind() == ElementKind.ENUM_CONSTANT &&
+                                                it.getSimpleName().toString().equals(constantName)
+                                );
+                        if (!match) {
+                            throw new MetaException(
+                                    builder.ancestorSource(),
+                                    "It is decorated by `@" +
+                                            typeName(annotationMirror.getAnnotationType().asElement()) +
+                                            "` but there is no constant \"" +
+                                            constantName +
+                                            "\" in the enum \"" +
+                                            enumTypeName +
+                                            "\""
+                            );
+                        }
+                    }
+                }
+            }
+            if (enumTypeName != null) {
+                if (errorMap.put(enumTypeName, constants) != null) {
+                    throw new MetaException(
+                            builder.ancestorSource(),
+                            "It cannot be decorated by `@" +
+                                    enumTypeName +
+                                    "` because the error throwing of \"" +
+                                    enumTypeName +
+                                    "\" has already been declared"
+                    );
+                }
+            }
+        }
+        return errorMap;
     }
 
     private void fillType(TypeMirror type) {
@@ -249,11 +347,8 @@ public class ClientProcessor {
 
         TypeRefImpl<Element> typeRef = builder.current();
 
-        AnnotationMirror fetchBy = entityType.getAnnotationMirrors().stream().filter(
-                it -> {
-                    TypeElement annoElement = (TypeElement) it.getAnnotationType().asElement();
-                    return annoElement.getQualifiedName().toString().equals(FETCH_BY_NAME);
-                }
+        AnnotationMirror fetchBy = entityType.getAnnotationMirrors().stream().filter( it ->
+                FETCH_BY_NAME.equals(typeName(it.getAnnotationType().asElement()))
         ).findFirst().orElse(null);
         if (fetchBy == null) {
             return;
@@ -288,8 +383,9 @@ public class ClientProcessor {
             }
         }
 
+        Element ownerElement = elements.getTypeElement(owner.toString());
         VariableElement fetcherElement = null;
-        for (Element element : elements.getTypeElement(owner.toString()).getEnclosedElements()) {
+        for (Element element : ownerElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.FIELD &&
                     element.getModifiers().contains(Modifier.STATIC) &&
                     element.getSimpleName().toString().equals(constant)) {
@@ -346,7 +442,7 @@ public class ClientProcessor {
         }
 
         typeRef.setFetchBy(constant);
-        typeRef.setFetcherOwner(owner.toString());
+        typeRef.setFetcherOwner(typeName(ownerElement));
     }
 
     private void determineTypeAndArguments(TypeMirror type) {
@@ -470,9 +566,18 @@ public class ClientProcessor {
 
     private void fillDefinition(TypeElement typeElement, boolean immutable) {
 
+        if (typeElement.getKind() == ElementKind.ENUM) {
+            fillEnumDefinition(typeElement);
+            return;
+        }
+
         TypeDefinitionImpl<Element> typeDefinition = builder.current();
-        typeDefinition.setImmutable(immutable);
         typeDefinition.setApiIgnore(typeElement.getAnnotation(ApiIgnore.class) != null);
+        if (immutable) {
+            typeDefinition.setKind(TypeDefinition.Kind.IMMUTABLE);
+        } else {
+            typeDefinition.setKind(TypeDefinition.Kind.OBJECT);
+        }
 
         if (!immutable || typeElement.getKind() == ElementKind.INTERFACE) {
             for (Element element : typeElement.getEnclosedElements()) {
@@ -512,6 +617,7 @@ public class ClientProcessor {
                 });
             }
         }
+
         if (typeElement.getKind() == ElementKind.CLASS || typeElement.getKind() == ElementKind.INTERFACE) {
             if (typeElement.getSuperclass().getKind() != TypeKind.NONE) {
                 Element superElement = ((DeclaredType) typeElement.getSuperclass()).asElement();
@@ -540,8 +646,77 @@ public class ClientProcessor {
         }
     }
 
+    private void fillEnumDefinition(TypeElement typeElement) {
+
+        TypeDefinitionImpl<Element> definition = builder.current();
+        definition.setApiIgnore(typeElement.getAnnotation(ApiIgnore.class) != null);
+        if (typeElement.getAnnotation(ErrorFamily.class) != null) {
+            definition.setKind(TypeDefinition.Kind.ERROR_ENUM);
+        } else {
+            definition.setKind(TypeDefinition.Kind.ENUM);
+        }
+
+        fillErrorProps(typeElement);
+
+        for (Element element : typeElement.getEnclosedElements()) {
+            if (element.getKind() == ElementKind.ENUM_CONSTANT) {
+                builder.constant(element, element.getSimpleName().toString(), constant -> {
+                    fillErrorProps(element);
+                    definition.addEnumConstant(constant);
+                });
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void fillErrorProps(Element element) {
+        Collection<AnnotationMirror> errorFields = null;
+        AnnotationMirror annotationMirror = Annotations.annotationMirror(element, ErrorFields.class);
+        if (annotationMirror != null) {
+            errorFields = Annotations.annotationValue(annotationMirror, "value", null);
+        } else {
+            annotationMirror = Annotations.annotationMirror(element, ErrorField.class);
+            if (annotationMirror != null) {
+                errorFields = Collections.singleton(annotationMirror);
+            }
+        }
+        if (errorFields == null || errorFields.isEmpty()) {
+            return;
+        }
+        ErrorPropContainerNode<Element> container = builder.current();
+        for (AnnotationMirror errorField : errorFields) {
+            String name = Annotations.annotationValue(errorField, "name", null);
+            String typeName = Annotations.annotationValue(errorField, "type", null).toString();
+            boolean isList = Annotations.annotationValue(errorField, "list", false);
+            boolean isNullable = Annotations.annotationValue(errorField, "nullable", false);
+            String doc = Annotations.annotationValue(errorField, "doc", "");
+            builder.prop(element, name, prop -> {
+                builder.typeRef(type -> {
+                    Element fieldTypeElement = context.getElements().getTypeElement(typeName);
+                    if (fieldTypeElement != null) {
+                        type.setTypeName(typeName(fieldTypeElement));
+                    } else {
+                        type.setTypeName(TypeName.parse(typeName));
+                    }
+                    if (isList) {
+                        TypeRefImpl<Element> listType  = new TypeRefImpl<>();
+                        listType.setTypeName(TypeName.LIST);
+                        listType.addArgument(type);
+                        type = listType;
+                    }
+                    type.setNullable(isNullable);
+                    prop.setType(type);
+                    if (!doc.isEmpty()) {
+                        prop.setDoc(Doc.parse(doc));
+                    }
+                    container.addErrorProp(prop);
+                });
+            });
+        }
+    }
+
     public boolean isApiService(Element element) {
-        if (element == null || (!(element instanceof TypeElement) && !context.include((TypeElement) element))) {
+        if (!(element instanceof TypeElement) || !context.include((TypeElement) element)) {
             return false;
         }
         if (element.getAnnotation(ApiIgnore.class) != null) {

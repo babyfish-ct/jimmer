@@ -10,26 +10,25 @@ import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @JsonSerialize(using = TypeDefinitionImpl.Serializer.class)
 @JsonDeserialize(using = TypeDefinitionImpl.Deserializer.class)
-public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition {
+public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements TypeDefinition {
 
     private final TypeName typeName;
 
-    private boolean immutable;
+    private Kind kind;
 
     private boolean apiIgnore;
 
-    private Map<String, PropImpl<S>> propMap = new LinkedHashMap<>();
+    private final Map<String, PropImpl<S>> propMap = new LinkedHashMap<>();
 
-    private List<TypeRefImpl<S>> superTypes = new ArrayList<>();
+    private final List<TypeRefImpl<S>> superTypes = new ArrayList<>();
 
     private Doc doc;
+
+    private final Map<String, EnumConstantImpl<S>> enumConstantMap = new LinkedHashMap<>();
 
     TypeDefinitionImpl(S source, TypeName typeName) {
         super(source);
@@ -42,12 +41,12 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
     }
 
     @Override
-    public boolean isImmutable() {
-        return immutable;
+    public Kind getKind() {
+        return kind;
     }
 
-    public void setImmutable(boolean immutable) {
-        this.immutable = immutable;
+    public void setKind(Kind kind) {
+        this.kind = kind;
     }
 
     @Override
@@ -62,7 +61,7 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
     @SuppressWarnings("unchecked")
     @Override
     public Map<String, Prop> getPropMap() {
-        return (Map<String, Prop>) (Map<?, ?>)propMap;
+        return (Map<String, Prop>) (Map<?, ?>) propMap;
     }
 
     public void addProp(PropImpl<S> prop) {
@@ -87,6 +86,16 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
 
     public void setDoc(Doc doc) {
         this.doc = doc;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, EnumConstant> getEnumConstantMap() {
+        return (Map<String, EnumConstant>) (Map<?, ?>) enumConstantMap;
+    }
+
+    public void addEnumConstant(EnumConstantImpl<S> constant) {
+        enumConstantMap.put(constant.getName(), constant);
     }
 
     @Override
@@ -119,9 +128,9 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
         public void serialize(TypeDefinitionImpl<?> definition, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
             provider.defaultSerializeField("typeName", definition.getTypeName(), gen);
-            if (definition.isImmutable()) {
-                gen.writeFieldName("immutable");
-                gen.writeBoolean(true);
+            if (definition.getKind() != Kind.OBJECT) {
+                gen.writeFieldName("kind");
+                gen.writeString(definition.getKind().name());
             }
             if (definition.isApiIgnore()) {
                 gen.writeFieldName("apiIgnore");
@@ -132,6 +141,12 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             }
             if (!definition.getSuperTypes().isEmpty()) {
                 provider.defaultSerializeField("superTypes", definition.getSuperTypes(), gen);
+            }
+            if (!definition.getErrorPropMap().isEmpty()) {
+                provider.defaultSerializeField("errorProps", definition.getErrorPropMap().values(), gen);
+            }
+            if (!definition.getEnumConstantMap().isEmpty()) {
+                provider.defaultSerializeField("constants", definition.getEnumConstantMap().values(), gen);
             }
             gen.writeEndObject();
         }
@@ -147,8 +162,8 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
                     null,
                     ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class)
             );
-            if (jsonNode.has("immutable")) {
-                definition.setImmutable(jsonNode.get("immutable").asBoolean());
+            if (jsonNode.has("kind")) {
+                definition.setKind(Kind.valueOf(jsonNode.get("kind").asText()));
             }
             if (jsonNode.has("apiIgnore")) {
                 definition.setApiIgnore(jsonNode.get("apiIgnore").asBoolean());
@@ -161,6 +176,16 @@ public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition 
             if (jsonNode.has("superTypes")) {
                 for (JsonNode superNode : jsonNode.get("superTypes")) {
                     definition.addSuperType(ctx.readTreeAsValue(superNode, TypeRefImpl.class));
+                }
+            }
+            if (jsonNode.has("errorProps")) {
+                for (JsonNode propNode : jsonNode.get("errorProps")) {
+                    definition.addErrorProp(ctx.readTreeAsValue(propNode, PropImpl.class));
+                }
+            }
+            if (jsonNode.has("constants")) {
+                for (JsonNode propNode : jsonNode.get("constants")) {
+                    definition.addEnumConstant(ctx.readTreeAsValue(propNode, EnumConstantImpl.class));
                 }
             }
             return definition;

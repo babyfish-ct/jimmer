@@ -34,6 +34,7 @@ class ValidationGenerator(
         if (nullityAnnotations.isNotEmpty()) {
             throw MetaException(
                 prop.propDeclaration,
+                null,
                 "it cannot be decorated by that annotation " +
                     "'@${nullityAnnotations[0].fullName}', " +
                     "kotlin decides the nullity of property by language, not by annotation"
@@ -56,6 +57,7 @@ class ValidationGenerator(
         if (!isSimpleType(String::class) && !isSimpleType(List::class)) {
             throw MetaException(
                 prop.propDeclaration,
+                null,
                 "it's decorated by the annotation @" +
                     notEmpty.fullName +
                     " but its type is neither string nor list"

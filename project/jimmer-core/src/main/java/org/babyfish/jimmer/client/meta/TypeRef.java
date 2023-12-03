@@ -16,5 +16,5 @@ public interface TypeRef {
     String getFetchBy();
 
     @Nullable
-    String getFetcherOwner();
+    TypeName getFetcherOwner();
 }
