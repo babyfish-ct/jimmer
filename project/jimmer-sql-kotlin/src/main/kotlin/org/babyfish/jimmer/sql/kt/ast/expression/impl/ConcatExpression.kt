@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -8,7 +9,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal open class ConcatExpression(
-    private val expressions: List<KExpression<String>>
+    private var expressions: List<KExpression<String>>
 ) : AbstractKExpression<String>() {
 
     init {
@@ -36,6 +37,14 @@ internal open class ConcatExpression(
             (expression as Ast).renderTo(builder)
         }
         builder.sql(")")
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expressions)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        expressions = ctx.resolveVirtualPredicates(expressions)
+        return this
     }
 
     class NonNull(

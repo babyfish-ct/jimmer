@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 public class VirtualPredicateTest extends AbstractQueryTest {
 
     @Test
-    public void testCanBeMerged() {
+    public void testMergeAnd() {
         BookTable table = BookTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -37,7 +37,7 @@ public class VirtualPredicateTest extends AbstractQueryTest {
     }
 
     @Test
-    public void testCanNotBeMerged() {
+    public void testMergeOr() {
         BookTable table = BookTable.$;
         executeAndExpect(
                 getSqlClient()
@@ -76,7 +76,7 @@ public class VirtualPredicateTest extends AbstractQueryTest {
         executeAndExpect(
                 getSqlClient()
                         .createQuery(table)
-                        .where(table.authors(author -> author.firstName().eq("Alex")))
+                        .where(table.authors(author -> author.gender().eq(Gender.MALE)))
                         .where(
                                 Predicate.or(
                                         table.authors(author -> author.firstName().ilike("a")),
@@ -95,7 +95,7 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                                     "--->where " +
                                     "--->--->tb_3_.BOOK_ID = tb_1_.ID " +
                                     "--->and " +
-                                    "--->--->tb_2_.FIRST_NAME = ?" +
+                                    "--->--->tb_2_.GENDER = ?" +
                                     ") and (" +
                                     "--->exists(" +
                                     "--->--->select 1 " +

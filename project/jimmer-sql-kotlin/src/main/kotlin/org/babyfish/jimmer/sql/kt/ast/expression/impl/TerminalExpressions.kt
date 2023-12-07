@@ -2,9 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.PropExpression
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor
-import org.babyfish.jimmer.sql.ast.impl.TupleImplementor
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -80,6 +78,10 @@ internal class LiteralExpression<T: Any>(
         }
         builder.variable(value)
     }
+
+    override fun determineHasVirtualPredicate(): Boolean = false
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
 
     companion object {
 
@@ -210,6 +212,10 @@ internal class NullExpression<T: Any>(
     override fun renderTo(builder: SqlBuilder) {
         builder.nullVariable(type)
     }
+
+    override fun determineHasVirtualPredicate(): Boolean = false
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
 }
 
 internal class ConstantExpression<T: Number>(
@@ -226,4 +232,8 @@ internal class ConstantExpression<T: Number>(
     override fun renderTo(builder: SqlBuilder) {
         builder.sql(value.toString())
     }
+
+    override fun determineHasVirtualPredicate(): Boolean = false
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast = this
 }

@@ -4,7 +4,7 @@ import org.babyfish.jimmer.sql.ast.Predicate;
 
 public interface PredicateImplementor extends Predicate, ExpressionImplementor<Boolean> {
 
-    static Predicate[] EMPTY_PREDICATES = new Predicate[0];
+    Predicate[] EMPTY_PREDICATES = new Predicate[0];
 
     @Override
     default Predicate and(Predicate other) {

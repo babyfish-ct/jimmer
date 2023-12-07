@@ -15,7 +15,6 @@ import org.babyfish.jimmer.sql.kt.ast.expression.impl.ConstantExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.LiteralExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.NullExpression
 import org.babyfish.jimmer.sql.kt.ast.query.*
-import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTable
 import org.babyfish.jimmer.sql.kt.ast.table.impl.KTableImplementor
@@ -38,39 +37,26 @@ fun <T: Any> KNonNullExpression<T>.asNullable(): KNullableExpression<T> =
 
 
 fun and(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>? =
-    if (predicates.size == 1) {
-        predicates[0]
-    } else {
-        predicates
-            .mapNotNull { it?.toKtPredicateImpl() }
-            .let {
-                when (it.size) {
-                    0 -> null
-                    1 -> it.first()
-                    else -> AndPredicate(it)
-                }
-            }
+    predicates.filterNotNull().let {
+        when (it.size) {
+            0 -> null
+            1 -> it[0]
+            else -> AndPredicate(it)
+        }
     }
 
 fun or(vararg predicates: KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>? =
-    if (predicates.size == 1) {
-        predicates[0]
-    } else {
-        predicates
-            .mapNotNull { it?.toKtPredicateImpl() }
-            .let {
-                when (it.size) {
-                    0 -> null
-                    1 -> it.first()
-                    else -> OrPredicate(it)
-                }
-            }
+    predicates.filterNotNull().let {
+        when (it.size) {
+            0 -> null
+            1 -> it[0]
+            else -> OrPredicate(it)
+        }
     }
 
 
-
 fun KNonNullExpression<Boolean>.not(): KNonNullExpression<Boolean> =
-    this.toKtPredicateImpl().not()
+    this.toJavaPredicate().not().toKotlinPredicate()
 
 fun KExpression<*>.isNull(): KNonNullExpression<Boolean> =
     IsNullPredicate(this)
@@ -143,7 +129,7 @@ infix fun <E: Any> KTable<E>.eq(right: View<E>): KNonNullExpression<Boolean>? =
  */
 infix fun <E: Any> KTable<E>.eq(right: KExample<E>): KNonNullExpression<Boolean>? =
     right.toPredicate((this as KTableImplementor<*>).javaTable)?.let {
-        JavaPredicateWrapper(it as PredicateImplementor)
+        JavaToKotlinPredicateWrapper(it as PredicateImplementor)
     }
 
 infix fun <T: Any> KExpression<T>.eq(right: KExpression<T>): KNonNullExpression<Boolean> =

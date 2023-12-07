@@ -2,6 +2,9 @@ package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.sql.ast.Expression
 import org.babyfish.jimmer.sql.ast.Selection
+import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
+import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl
 import org.babyfish.jimmer.sql.ast.query.*
 import org.babyfish.jimmer.sql.ast.tuple.*
@@ -13,6 +16,7 @@ import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
 import org.babyfish.jimmer.sql.kt.ast.query.KMutableSubQuery
+import org.babyfish.jimmer.sql.kt.ast.query.Where
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTable
 import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTable
@@ -23,10 +27,13 @@ import org.babyfish.jimmer.sql.kt.impl.KWildSubQueriesImpl
 internal class KMutableSubQueryImpl<P: Any, E: Any>(
     private val javaSubQuery: MutableSubQueryImpl,
     parentTable: KNonNullTableEx<P>? = null
-) : KMutableSubQuery<P, E> {
+) : KMutableSubQuery<P, E>, MutableStatementImplementor {
 
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaSubQuery.getTable())
+
+    override val where: Where =
+        Where(this)
 
     override val parentTable: KNonNullTableEx<P> =
         parentTable ?: KNonNullTableExImpl(javaSubQuery.parent.getTable())
@@ -220,4 +227,11 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
 
     override val wildSubQueries: KWildSubQueries<E> =
         KWildSubQueriesImpl(javaSubQuery)
+
+    override fun hasVirtualPredicate(): Boolean =
+        javaSubQuery.hasVirtualPredicate()
+
+    override fun resolveVirtualPredicate(ctx: AstContext) {
+        javaSubQuery.resolveVirtualPredicate(ctx)
+    }
 }

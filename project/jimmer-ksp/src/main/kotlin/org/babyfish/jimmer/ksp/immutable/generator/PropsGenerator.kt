@@ -7,6 +7,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
 import org.babyfish.jimmer.ksp.annotation
 import org.babyfish.jimmer.ksp.className
 import org.babyfish.jimmer.ksp.Context
@@ -112,6 +113,12 @@ class PropsGenerator(
         if (isTableEx && !prop.isAssociation(true)) {
             return
         }
+        if (prop.isList && prop.isAssociation(true) && !isTableEx) {
+            if (!outerJoin) {
+                addPropLambda(type, prop)
+            }
+            return
+        }
         val receiverClassName = when {
             isTableEx -> K_TABLE_EX_CLASS_NAME
             prop.isAssociation(true) || prop.isNullable -> K_PROPS_CLASS_NAME
@@ -127,7 +134,7 @@ class PropsGenerator(
             prop.isAssociation(true) -> "join"
             else -> "get"
         }
-        val returnClassName =
+        val returnTypeName =
             when {
                 prop.isRemote ->
                     if (outerJoin) {
@@ -141,7 +148,7 @@ class PropsGenerator(
                     } else {
                         K_NON_NULL_TABLE_CLASS_NAME_EX
                     }
-                prop.isAssociation(true) && !isTableEx ->
+                !prop.isList && prop.isAssociation(true) && !isTableEx ->
                     if (outerJoin) {
                         K_NULLABLE_TABLE_CLASS_NAME
                     } else {
@@ -165,7 +172,7 @@ class PropsGenerator(
 
         addProperty(
             PropertySpec
-                .builder(propName, returnClassName)
+                .builder(propName, returnTypeName)
                 .receiver(receiverClassName)
                 .getter(
                     FunSpec
@@ -185,7 +192,7 @@ class PropsGenerator(
                                     prop.targetTypeName(overrideNullable = false),
                                     type.propsClassName,
                                     StringUtil.snake(prop.name, StringUtil.SnakeCase.UPPER),
-                                    returnClassName
+                                    returnTypeName
                                 )
                             } else {
                                 addCode(
@@ -197,6 +204,31 @@ class PropsGenerator(
                             }
                         }
                         .build()
+                )
+                .build()
+        )
+    }
+
+    private fun FileSpec.Builder.addPropLambda(
+        type: ImmutableType,
+        prop: ImmutableProp
+    ) {
+        addFunction(
+            FunSpec
+                .builder(prop.name)
+                .receiver(K_PROPS_CLASS_NAME.parameterizedBy(type.className))
+                .addParameter(
+                    "block",
+                    LambdaTypeName.get(
+                        receiver = K_NON_NULL_TABLE_CLASS_NAME_EX.parameterizedBy(prop.targetClassName),
+                        returnType = K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN).copy(nullable = true)
+                    )
+                )
+                .returns(K_NONNULL_EXPRESSION.parameterizedBy(BOOLEAN).copy(nullable = true))
+                .addStatement(
+                    "return exists(%T.%L.unwrap(), block)",
+                    type.propsClassName,
+                    StringUtil.snake(prop.name, SnakeCase.UPPER)
                 )
                 .build()
         )

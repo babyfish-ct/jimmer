@@ -158,6 +158,16 @@ public class PropExpressionImpl<T>
     }
 
     @Override
+    protected boolean determineHasVirtualPredicate() {
+        return false;
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        return this;
+    }
+
+    @Override
     public void renderTo(@NotNull SqlBuilder builder, boolean ignoreBrackets) {
         TableImplementor<?> tableImplementor = TableProxies.resolve(table, builder.getAstContext());
         EmbeddedColumns.Partial partial = getPartial(builder.getAstContext().getSqlClient().getMetadataStrategy());

@@ -1,19 +1,13 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
-import org.babyfish.jimmer.sql.ast.impl.Ast
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
-import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
-import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.*
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class AggregationExpression<T: Any>(
-    protected val expression: KExpression<*>
+    protected var expression: KExpression<*>
 ) : AbstractKExpression<T>() {
 
     override fun accept(visitor: AstVisitor) {
@@ -31,6 +25,14 @@ internal abstract class AggregationExpression<T: Any>(
         }
         renderExpression(builder)
         builder.sql(")")
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        ctx.resolveVirtualPredicate(expression)
+        return this
     }
 
     private fun validate(sqlClient: JSqlClientImplementor) {
@@ -89,6 +91,7 @@ internal abstract class AggregationExpression<T: Any>(
 
         override fun renderExpression(builder: SqlBuilder) {
             if (builder.astContext.sqlClient.getDialect().isTupleCountSupported) {
+                val expression = this.expression
                 if (expression is PropExpressionImplementor<*>) {
                     (expression as PropExpressionImplementor<*>).renderTo(builder, true)
                     return

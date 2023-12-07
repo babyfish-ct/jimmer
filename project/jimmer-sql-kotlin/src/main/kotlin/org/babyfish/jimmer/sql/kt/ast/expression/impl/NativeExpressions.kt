@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.SqlExpressions
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -30,7 +31,7 @@ class SqlDSL internal constructor(
 
 internal abstract class AbstractNativeExpression<T: Any>(
     private val type: Class<T>,
-    private val parts: List<Any>
+    private var parts: List<Any>
 ) : AbstractKExpression<T>() {
 
     override fun getType(): Class<T> = type
@@ -53,6 +54,20 @@ internal abstract class AbstractNativeExpression<T: Any>(
                 else -> error("Internal bug")
             }
         }
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        parts.any { it is KExpression<*> && hasVirtualPredicate(it) }
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        parts = parts.map {
+            if (it is KExpression<*>) {
+                ctx.resolveVirtualPredicate(it)
+            } else {
+                it
+            }
+        }
+        return this
     }
 }
 

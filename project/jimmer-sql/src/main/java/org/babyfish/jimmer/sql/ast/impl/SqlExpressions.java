@@ -4,10 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class SqlExpressions {
@@ -117,6 +114,28 @@ public class SqlExpressions {
                     builder.sql((String)part);
                 }
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(parts);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            ListIterator<Object> itr = this.parts.listIterator();
+            while (itr.hasNext()) {
+                Object part = itr.next();
+                Object newPart = ctx.resolveVirtualPredicate(part);
+                if (part == newPart) {
+                    continue;
+                }
+                if (newPart == null) {
+                    throw new IllegalArgumentException("Native SQL Expression does not support virtual predicate");
+                }
+                itr.set(newPart);
+            }
+            return this;
         }
 
         @Override

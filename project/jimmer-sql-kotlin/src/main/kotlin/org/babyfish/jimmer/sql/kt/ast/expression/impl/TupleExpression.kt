@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.Selection
-import org.babyfish.jimmer.sql.ast.impl.Ast
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.TupleExpressionImplementor
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.ast.tuple.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -52,6 +50,16 @@ internal class Tuple2Expression<T1, T2>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple2Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2)
+        )
 
     override fun size(): Int = 2
 
@@ -113,6 +121,18 @@ internal class Tuple3Expression<T1, T2, T3>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple3Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3)
+        )
 
     override fun size(): Int = 3
 
@@ -182,6 +202,20 @@ internal class Tuple4Expression<T1, T2, T3, T4>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3) ||
+            hasVirtualPredicate(selection4)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple4Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3),
+            ctx.resolveVirtualPredicate(selection4)
+        )
 
     override fun size(): Int = 4
 
@@ -259,6 +293,22 @@ internal class Tuple5Expression<T1, T2, T3, T4, T5>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3) ||
+            hasVirtualPredicate(selection4) ||
+            hasVirtualPredicate(selection5)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple5Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3),
+            ctx.resolveVirtualPredicate(selection4),
+            ctx.resolveVirtualPredicate(selection5)
+        )
 
     override fun size(): Int = 5
 
@@ -344,6 +394,24 @@ internal class Tuple6Expression<T1, T2, T3, T4, T5, T6>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3) ||
+            hasVirtualPredicate(selection4) ||
+            hasVirtualPredicate(selection5) ||
+            hasVirtualPredicate(selection6)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple6Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3),
+            ctx.resolveVirtualPredicate(selection4),
+            ctx.resolveVirtualPredicate(selection5),
+            ctx.resolveVirtualPredicate(selection6)
+        )
 
     override fun size(): Int = 6
 
@@ -437,6 +505,26 @@ internal class Tuple7Expression<T1, T2, T3, T4, T5, T6, T7>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3) ||
+            hasVirtualPredicate(selection4) ||
+            hasVirtualPredicate(selection5) ||
+            hasVirtualPredicate(selection6) ||
+            hasVirtualPredicate(selection7)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple7Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3),
+            ctx.resolveVirtualPredicate(selection4),
+            ctx.resolveVirtualPredicate(selection5),
+            ctx.resolveVirtualPredicate(selection6),
+            ctx.resolveVirtualPredicate(selection7)
+        )
 
     override fun size(): Int = 7
 
@@ -538,6 +626,28 @@ internal class Tuple8Expression<T1, T2, T3, T4, T5, T6, T7, T8>(
             }
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3) ||
+            hasVirtualPredicate(selection4) ||
+            hasVirtualPredicate(selection5) ||
+            hasVirtualPredicate(selection6) ||
+            hasVirtualPredicate(selection7) ||
+            hasVirtualPredicate(selection8)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple8Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3),
+            ctx.resolveVirtualPredicate(selection4),
+            ctx.resolveVirtualPredicate(selection5),
+            ctx.resolveVirtualPredicate(selection6),
+            ctx.resolveVirtualPredicate(selection7),
+            ctx.resolveVirtualPredicate(selection8)
+        )
 
     override fun size(): Int = 8
 
@@ -663,4 +773,28 @@ internal class Tuple9Expression<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
             8 -> selection9
             else -> throw IllegalArgumentException("index must between 0 and ${size() - 1}")
         }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(selection1) ||
+            hasVirtualPredicate(selection2) ||
+            hasVirtualPredicate(selection3) ||
+            hasVirtualPredicate(selection4) ||
+            hasVirtualPredicate(selection5) ||
+            hasVirtualPredicate(selection6) ||
+            hasVirtualPredicate(selection7) ||
+            hasVirtualPredicate(selection8) ||
+            hasVirtualPredicate(selection9)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        Tuple9Expression(
+            ctx.resolveVirtualPredicate(selection1),
+            ctx.resolveVirtualPredicate(selection2),
+            ctx.resolveVirtualPredicate(selection3),
+            ctx.resolveVirtualPredicate(selection4),
+            ctx.resolveVirtualPredicate(selection5),
+            ctx.resolveVirtualPredicate(selection6),
+            ctx.resolveVirtualPredicate(selection7),
+            ctx.resolveVirtualPredicate(selection8),
+            ctx.resolveVirtualPredicate(selection9)
+        )
 }

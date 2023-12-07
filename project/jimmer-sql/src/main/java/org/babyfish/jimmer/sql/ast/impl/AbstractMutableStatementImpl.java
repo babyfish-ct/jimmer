@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public abstract class AbstractMutableStatementImpl implements FilterableImplementor {
+public abstract class AbstractMutableStatementImpl implements FilterableImplementor, MutableStatementImplementor {
 
     private static final Predicate[] EMPTY_PREDICATES = new Predicate[0];
 
@@ -157,6 +157,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return sqlClient.createAssociationSubQuery(table);
     }
 
+    @Override
     public boolean hasVirtualPredicate() {
         for (Predicate predicate : predicates) {
             if (((Ast)predicate).hasVirtualPredicate()) {
@@ -166,6 +167,7 @@ public abstract class AbstractMutableStatementImpl implements FilterableImplemen
         return false;
     }
 
+    @Override
     public void resolveVirtualPredicate(AstContext ctx) {
         ctx.pushStatement(this);
 

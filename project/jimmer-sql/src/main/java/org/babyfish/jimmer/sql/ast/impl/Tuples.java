@@ -63,6 +63,20 @@ public class Tuples {
         }
 
         @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr2<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2)
+            );
+        }
+
+        @Override
         public int size() {
             return 2;
         }
@@ -148,6 +162,22 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr3<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3)
+            );
         }
 
         @Override
@@ -246,6 +276,24 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3) ||
+                    hasVirtualPredicate(expr4);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr4<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3),
+                    ctx.resolveVirtualPredicate(expr4)
+            );
         }
 
         @Override
@@ -353,6 +401,26 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3) ||
+                    hasVirtualPredicate(expr4) ||
+                    hasVirtualPredicate(expr5);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr5<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3),
+                    ctx.resolveVirtualPredicate(expr4),
+                    ctx.resolveVirtualPredicate(expr5)
+            );
         }
 
         @Override
@@ -469,6 +537,28 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3) ||
+                    hasVirtualPredicate(expr4) ||
+                    hasVirtualPredicate(expr5) ||
+                    hasVirtualPredicate(expr6);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr6<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3),
+                    ctx.resolveVirtualPredicate(expr4),
+                    ctx.resolveVirtualPredicate(expr5),
+                    ctx.resolveVirtualPredicate(expr6)
+            );
         }
 
         @Override
@@ -594,6 +684,30 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3) ||
+                    hasVirtualPredicate(expr4) ||
+                    hasVirtualPredicate(expr5) ||
+                    hasVirtualPredicate(expr6) ||
+                    hasVirtualPredicate(expr7);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr7<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3),
+                    ctx.resolveVirtualPredicate(expr4),
+                    ctx.resolveVirtualPredicate(expr5),
+                    ctx.resolveVirtualPredicate(expr6),
+                    ctx.resolveVirtualPredicate(expr7)
+            );
         }
 
         @Override
@@ -728,6 +842,32 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3) ||
+                    hasVirtualPredicate(expr4) ||
+                    hasVirtualPredicate(expr5) ||
+                    hasVirtualPredicate(expr6) ||
+                    hasVirtualPredicate(expr7) ||
+                    hasVirtualPredicate(expr8);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr8<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3),
+                    ctx.resolveVirtualPredicate(expr4),
+                    ctx.resolveVirtualPredicate(expr5),
+                    ctx.resolveVirtualPredicate(expr6),
+                    ctx.resolveVirtualPredicate(expr7),
+                    ctx.resolveVirtualPredicate(expr8)
+            );
         }
 
         @Override
@@ -871,6 +1011,34 @@ public class Tuples {
             if (!ignoreBrackets) {
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expr1) ||
+                    hasVirtualPredicate(expr2) ||
+                    hasVirtualPredicate(expr3) ||
+                    hasVirtualPredicate(expr4) ||
+                    hasVirtualPredicate(expr5) ||
+                    hasVirtualPredicate(expr6) ||
+                    hasVirtualPredicate(expr7) ||
+                    hasVirtualPredicate(expr8) ||
+                    hasVirtualPredicate(expr9);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return new Tuples.Expr9<>(
+                    ctx.resolveVirtualPredicate(expr1),
+                    ctx.resolveVirtualPredicate(expr2),
+                    ctx.resolveVirtualPredicate(expr3),
+                    ctx.resolveVirtualPredicate(expr4),
+                    ctx.resolveVirtualPredicate(expr5),
+                    ctx.resolveVirtualPredicate(expr6),
+                    ctx.resolveVirtualPredicate(expr7),
+                    ctx.resolveVirtualPredicate(expr8),
+                    ctx.resolveVirtualPredicate(expr9)
+            );
         }
 
         @Override

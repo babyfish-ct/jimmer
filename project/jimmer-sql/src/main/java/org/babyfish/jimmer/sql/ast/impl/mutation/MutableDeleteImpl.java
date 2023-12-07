@@ -31,7 +31,7 @@ public class MutableDeleteImpl
         extends AbstractMutableStatementImpl
         implements MutableDelete {
 
-    private MutableRootQueryImpl<TableEx<?>> deleteQuery;
+    private final MutableRootQueryImpl<TableEx<?>> deleteQuery;
 
     private boolean isDissociationDisabled;
 
@@ -120,23 +120,21 @@ public class MutableDeleteImpl
         );
 
         AstContext astContext = new AstContext(sqlClient);
-        Predicate predicate = deleteQuery.getPredicate(astContext);
         if (directly) {
             applyVirtualPredicates(astContext);
             applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
-        }
 
-        astContext.pushStatement(deleteQuery);
-        try {
-            AstVisitor visitor = new UseTableVisitor(astContext);
-            if (predicate != null) {
-                ((Ast) predicate).accept(visitor);
+            Predicate predicate = deleteQuery.getPredicate(astContext);
+            astContext.pushStatement(deleteQuery);
+            try {
+                AstVisitor visitor = new UseTableVisitor(astContext);
+                if (predicate != null) {
+                    ((Ast) predicate).accept(visitor);
+                }
+            } finally {
+                astContext.popStatement();
             }
-        } finally {
-            astContext.popStatement();
-        }
 
-        if (directly) {
             SqlBuilder builder = new SqlBuilder(astContext);
             astContext.pushStatement(this);
             try {

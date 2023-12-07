@@ -22,6 +22,16 @@ class NullExpression<T> extends AbstractExpression<T> {
     }
 
     @Override
+    protected boolean determineHasVirtualPredicate() {
+        return false;
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        return this;
+    }
+
+    @Override
     public Class<T> getType() {
         return type;
     }

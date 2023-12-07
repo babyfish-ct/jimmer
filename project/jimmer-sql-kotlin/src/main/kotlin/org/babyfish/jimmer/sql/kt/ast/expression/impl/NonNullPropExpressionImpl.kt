@@ -2,6 +2,8 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.meta.ImmutableProp
 import org.babyfish.jimmer.sql.ast.PropExpression
+import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl
 import org.babyfish.jimmer.sql.ast.table.Table
@@ -14,7 +16,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder
 import kotlin.reflect.KProperty1
 
 internal class NonNullPropExpressionImpl<T: Any>(
-    internal val javaPropExpression: PropExpressionImpl<T>
+    internal var javaPropExpression: PropExpressionImpl<T>
 ) : AbstractKExpression<T>(), KNonNullPropExpressionImplementor<T>, PropExpressionImplementor<T> {
 
     override fun getType(): Class<T> =
@@ -34,6 +36,14 @@ internal class NonNullPropExpressionImpl<T: Any>(
 
     override fun renderTo(builder: SqlBuilder) {
         javaPropExpression.renderTo(builder)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(javaPropExpression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast? {
+        javaPropExpression = ctx.resolveVirtualPredicate(javaPropExpression)
+        return this
     }
 
     override fun renderTo(builder: SqlBuilder, ignoreBrackets: Boolean) {

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -74,6 +75,16 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
                 builder.separator().sql(((FormulaTemplate)template).toSql(alias));
             }
         }
+    }
+
+    @Override
+    public boolean hasVirtualPredicate() {
+        return false;
+    }
+
+    @Override
+    public Ast resolveVirtualPredicate(AstContext ctx) {
+        return this;
     }
 
     @Override

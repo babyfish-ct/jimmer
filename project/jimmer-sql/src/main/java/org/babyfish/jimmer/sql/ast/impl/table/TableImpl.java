@@ -1020,4 +1020,14 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
                 (Function<Table<?>, Predicate>) block
         );
     }
+
+    @Override
+    public boolean hasVirtualPredicate() {
+        return false;
+    }
+
+    @Override
+    public Ast resolveVirtualPredicate(AstContext ctx) {
+        return this;
+    }
 }

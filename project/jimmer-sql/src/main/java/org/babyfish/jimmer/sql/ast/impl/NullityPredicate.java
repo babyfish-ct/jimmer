@@ -21,7 +21,7 @@ import java.util.Objects;
 
 class NullityPredicate extends AbstractPredicate {
 
-    private final Expression<?> expression;
+    private Expression<?> expression;
 
     private final boolean negative;
 
@@ -44,7 +44,7 @@ class NullityPredicate extends AbstractPredicate {
                 }
             }
         }
-        this.expression = validateNoVirtualPredicate(expression, "expression");
+        this.expression = expression;
         this.negative = negative;
     }
 
@@ -86,6 +86,17 @@ class NullityPredicate extends AbstractPredicate {
         } else {
             builder.sql(" is null");
         }
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(expression);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        this.expression = ctx.resolveVirtualPredicate(expression);
+        return this;
     }
 
     @Override

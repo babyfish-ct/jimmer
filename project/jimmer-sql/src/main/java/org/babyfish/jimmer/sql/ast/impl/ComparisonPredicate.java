@@ -17,8 +17,8 @@ abstract class ComparisonPredicate extends AbstractPredicate {
             Expression<?> left,
             Expression<?> right
     ) {
-        this.left = validateNoVirtualPredicate(left, "left");
-        this.right = validateNoVirtualPredicate(right, "right");
+        this.left = left;
+        this.right = right;
         Literals.bind(left, right);
         Literals.bind(right, left);
     }
@@ -38,6 +38,18 @@ abstract class ComparisonPredicate extends AbstractPredicate {
         builder.sql(operator());
         builder.sql(" ");
         renderChild((Ast) right, builder);
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(left) || hasVirtualPredicate(right);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        left = ctx.resolveVirtualPredicate(left);
+        right = ctx.resolveVirtualPredicate(right);
+        return this;
     }
 
     @Override

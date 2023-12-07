@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.table.JoinUtils
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
@@ -47,6 +48,9 @@ internal abstract class NullityPredicate(
         }
     }
 
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression)
+
     protected abstract fun isNegative(): Boolean
 }
 
@@ -76,6 +80,9 @@ internal class IsNullPredicate(
 
     override fun not(): AbstractKPredicate =
         IsNotNullPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast? =
+        IsNullPredicate(ctx.resolveVirtualPredicate(expression))
 }
 
 internal class IsNotNullPredicate(
@@ -86,4 +93,7 @@ internal class IsNotNullPredicate(
 
     override fun not(): AbstractKPredicate =
         IsNullPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast =
+        IsNotNullPredicate(ctx.resolveVirtualPredicate(expression))
 }

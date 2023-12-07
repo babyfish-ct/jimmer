@@ -10,6 +10,8 @@ interface AbstractKFilterable<E: Any, P: KProps<E>> {
 
     val table: P
 
+    val where: Where
+
     fun where(vararg predicates: KNonNullExpression<Boolean>?)
 
     fun <X: Any, R, SQ: KConfigurableSubQuery<R>> subQuery(
@@ -27,6 +29,15 @@ interface AbstractKFilterable<E: Any, P: KProps<E>> {
     val subQueries: KSubQueries<E>
 
     val wildSubQueries: KWildSubQueries<E>
+}
+
+@JvmInline
+value class Where(
+    private val filterable: AbstractKFilterable<*, *>
+) {
+    operator fun plusAssign(predicate: KNonNullExpression<Boolean>?) {
+        filterable.where(predicate)
+    }
 }
 
 fun <X> AbstractKFilterable<*, *>.whereIfNotNull(

@@ -102,7 +102,6 @@ class ImmutableProp(
             idViewBaseProp != null -> false
             isKotlinFormula || isTransient || (idViewBaseProp !== null && idViewBaseProp!!.isList)-> false
             isRemote && isReverse -> false
-            isList && isAssociation(true) -> isTableEx
             !isList && isRemote -> !isTableEx
             else -> true
         }

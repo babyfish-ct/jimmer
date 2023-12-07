@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class CaseBuilder<T> {
 
@@ -143,22 +144,18 @@ public class CaseBuilder<T> {
 
         private final Class<T> type;
 
-        private final List<Tuple2<Predicate, Expression<T>>> whens;
+        private List<Tuple2<Predicate, Expression<T>>> whens;
 
-        private final Expression<T> otherwise;
+        private Expression<T> otherwise;
 
         AnyExpr(
                 Class<T> type,
                 List<Tuple2<Predicate, Expression<T>>> whens,
                 Expression<T> otherwise
         ) {
-            for (Tuple2<Predicate, Expression<T>> when : whens) {
-                validateNoVirtualPredicate(when.get_1(), "conditional of each `when` item");
-                validateNoVirtualPredicate(when.get_2(), "result expression of each `when` item");
-            }
             this.type = type;
             this.whens = whens;
-            this.otherwise = validateNoVirtualPredicate(otherwise, "otherwise");
+            this.otherwise = otherwise;
         }
 
 
@@ -195,6 +192,24 @@ public class CaseBuilder<T> {
                 renderChild((Ast) otherwise, builder);
                 builder.sql(" end");
             });
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return whens.stream().anyMatch(it -> hasVirtualPredicate(it.get_1()) || hasVirtualPredicate(it.get_2())) ||
+                    hasVirtualPredicate(otherwise);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            this.whens = whens.stream().map(
+                    it -> new Tuple2<>(
+                            ctx.resolveVirtualPredicate(it.get_1()),
+                            ctx.resolveVirtualPredicate(it.get_2())
+                    )
+            ).collect(Collectors.toList());
+            this.otherwise = ctx.resolveVirtualPredicate(otherwise);
+            return this;
         }
 
         @Override

@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.Predicate
-import org.babyfish.jimmer.sql.ast.impl.Ast
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
@@ -16,59 +13,72 @@ internal abstract class AbstractKPredicate :
     override fun getType(): Class<Boolean> =
         Boolean::class.java
 
-    abstract override fun not(): AbstractKPredicate
+    abstract override fun not(): Predicate
 }
 
-internal fun KNonNullExpression<Boolean>.toJavaPredicate(): Predicate =
-    if (this is Predicate) {
-        if (this is JavaPredicateWrapper)
-            javaPredicate
-        else
-            this
-    } else {
-        PredicateWrapper(this)
-    }
-
-internal fun KNonNullExpression<Boolean>.toKtPredicateImpl(): AbstractKPredicate =
-    if (this is AbstractKPredicate) {
+internal fun KNonNullExpression<Boolean>.toJavaPredicate(): PredicateImplementor =
+    if (this is PredicateImplementor) {
         this
     } else {
-        PredicateWrapper(this)
+        KotlinToJavaPredicate(this)
     }
 
-internal class PredicateWrapper(
+@Suppress("UNCHECKED_CAST")
+internal fun Predicate.toKotlinPredicate(): KNonNullExpression<Boolean> =
+    if (this is KNonNullExpression<*>) {
+        this as KNonNullExpression<Boolean>
+    } else {
+        JavaToKotlinPredicateWrapper(this)
+    }
+
+internal class KotlinToJavaPredicate(
     private val expr: KNonNullExpression<Boolean>
-) : AbstractKPredicate() {
+) : AbstractKPredicate(), KNonNullExpression<Boolean> {
 
     override fun not(): AbstractKPredicate =
         NotPredicate(this)
 
-    @Suppress("UNCHECKED_CAST")
     override fun precedence(): Int =
-        (expr as ExpressionImplementor<Boolean>).precedence()
+        (expr as ExpressionImplementor<*>).precedence()
 
     override fun accept(visitor: AstVisitor) =
         (expr as Ast).accept(visitor)
 
     override fun renderTo(builder: SqlBuilder) =
         (expr as Ast).renderTo(builder)
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expr)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast? =
+        ctx.resolveVirtualPredicate(expr)?.let {
+            KotlinToJavaPredicate(it)
+        }
 }
 
-internal class JavaPredicateWrapper(
-    val javaPredicate: PredicateImplementor
-) : AbstractKPredicate() {
+internal class JavaToKotlinPredicateWrapper(
+    private val predicate: Predicate
+) : AbstractKPredicate(), KNonNullExpression<Boolean>, PredicateWrapper {
 
     override fun not(): AbstractKPredicate =
-        JavaPredicateWrapper(javaPredicate.not() as PredicateImplementor)
+        NotPredicate(this)
 
     override fun precedence(): Int =
-        javaPredicate.precedence()
+        (predicate as ExpressionImplementor<*>).precedence()
 
-    override fun accept(visitor: AstVisitor) {
-        (javaPredicate as Ast).accept(visitor)
-    }
+    override fun accept(visitor: AstVisitor) =
+        (predicate as Ast).accept(visitor)
 
-    override fun renderTo(builder: SqlBuilder) {
-        (javaPredicate as Ast).renderTo(builder)
-    }
+    override fun renderTo(builder: SqlBuilder) =
+        (predicate as Ast).renderTo(builder)
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(predicate)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast? =
+        ctx.resolveVirtualPredicate(predicate)?.let {
+            JavaToKotlinPredicateWrapper(it)
+        }
+
+    override fun unwrap(): Any = predicate
 }

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -11,7 +12,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 abstract class Coalesce<T: Any> internal constructor(
     private val prev: Coalesce<T>?,
-    internal val expression: KExpression<T>
+    internal var expression: KExpression<T>
 ) {
     internal fun accept(visitor: AstVisitor) {
         prev?.accept(visitor)
@@ -27,6 +28,15 @@ abstract class Coalesce<T: Any> internal constructor(
             builder.sql(", ")
         }
         (expression as Ast).renderTo(builder)
+    }
+
+    internal fun hasVirtualPredicate(): Boolean =
+        (prev?.hasVirtualPredicate() ?: false) ||
+            (expression as Ast).hasVirtualPredicate()
+
+    internal fun resolveVirtualPredicates(ctx: AstContext) {
+        prev?.resolveVirtualPredicates(ctx)
+        expression = ctx.resolveVirtualPredicate(expression)
     }
 }
 
@@ -76,6 +86,14 @@ internal abstract class CoalesceExpression<T: Any>(
             coalesce.renderTo(builder)
             builder.sql(")")
         }
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        coalesce.hasVirtualPredicate()
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        coalesce.resolveVirtualPredicates(ctx)
+        return this
     }
 }
 

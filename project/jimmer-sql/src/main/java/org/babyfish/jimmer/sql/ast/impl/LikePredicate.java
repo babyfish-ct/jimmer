@@ -10,7 +10,7 @@ import java.util.Objects;
 
 class LikePredicate extends AbstractPredicate {
 
-    private final StringExpression expression;
+    private StringExpression expression;
 
     private final String pattern;
 
@@ -91,6 +91,17 @@ class LikePredicate extends AbstractPredicate {
             }
             builder.variable(pattern);
         }
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(expression);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        expression = ctx.resolveVirtualPredicate(expression);
+        return this;
     }
 
     @Override

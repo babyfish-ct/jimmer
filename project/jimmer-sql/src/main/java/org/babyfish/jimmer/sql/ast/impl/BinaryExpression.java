@@ -10,14 +10,14 @@ abstract class BinaryExpression<N extends Number & Comparable<N>> extends Abstra
 
     private final Class<N> type;
     
-    private final Expression<N> left;
+    private Expression<N> left;
 
-    private final Expression<N> right;
+    private Expression<N> right;
 
     protected BinaryExpression(Class<N> type, Expression<N> left, Expression<N> right) {
         this.type = type;
-        this.left = validateNoVirtualPredicate(left, "left");
-        this.right = validateNoVirtualPredicate(right, "right");
+        this.left = left;
+        this.right = right;
     }
 
     @Override
@@ -40,6 +40,18 @@ abstract class BinaryExpression<N extends Number & Comparable<N>> extends Abstra
         builder.sql(operator());
         builder.sql(" ");
         renderChild((Ast) right, builder);
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(left) || hasVirtualPredicate(right);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        left = ctx.resolveVirtualPredicate(left);
+        right = ctx.resolveVirtualPredicate(right);
+        return this;
     }
 
     @Override

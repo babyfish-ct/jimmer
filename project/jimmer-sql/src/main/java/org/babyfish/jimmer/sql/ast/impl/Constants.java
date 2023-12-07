@@ -36,6 +36,16 @@ public class Constants {
         }
 
         @Override
+        protected boolean determineHasVirtualPredicate() {
+            return false;
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            return this;
+        }
+
+        @Override
         public int precedence() {
             return 0;
         }

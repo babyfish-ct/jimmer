@@ -24,11 +24,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
+abstract class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
 
     private final TypedQueryData data;
 
-    private final AbstractMutableQueryImpl baseQuery;
+    private AbstractMutableQueryImpl baseQuery;
 
     public AbstractConfigurableTypedQueryImpl(
             TypedQueryData data,
@@ -105,6 +105,17 @@ class AbstractConfigurableTypedQueryImpl implements TypedQueryImplementor {
         } finally {
             astContext.popStatement();
         }
+    }
+
+    @Override
+    public boolean hasVirtualPredicate() {
+        return baseQuery.hasVirtualPredicate();
+    }
+
+    @Override
+    public Ast resolveVirtualPredicate(AstContext ctx) {
+        baseQuery = ctx.resolveVirtualPredicate(baseQuery);
+        return this;
     }
 
     private void renderWithoutPaging(SqlBuilder builder, PropExpressionImplementor<?> idPropExpr) {

@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Selection;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
@@ -27,9 +28,9 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
 
     private final String operator;
 
-    private final TypedQueryImplementor left;
+    private TypedQueryImplementor left;
 
-    private final TypedQueryImplementor right;
+    private TypedQueryImplementor right;
 
     private final List<Selection<?>> selections;
 
@@ -140,6 +141,18 @@ class MergedTypedRootQueryImpl<R> implements TypedRootQueryImplementor<R>, Typed
         builder.separator();
         right.renderTo(builder);
         builder.leave();
+    }
+
+    @Override
+    public boolean hasVirtualPredicate() {
+        return left.hasVirtualPredicate() || right.hasVirtualPredicate();
+    }
+
+    @Override
+    public Ast resolveVirtualPredicate(AstContext ctx) {
+        left = ctx.resolveVirtualPredicate(left);
+        right = ctx.resolveVirtualPredicate(right);
+        return this;
     }
 
     @Override

@@ -47,6 +47,7 @@ public class Keywords {
                             "join",
                             "inverseJoin",
                             "inverseGetAssociatedId",
+                            "exists",
                             "fetch",
                             "asTableEx",
                             "__parent",

@@ -50,8 +50,7 @@ internal open class JavaFilter(
                     } else {
                         (it as TableProxy<Any>).__unwrap()
                     }
-                },
-                immutableType
+                }
             )
         )
     }

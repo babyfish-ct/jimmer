@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.*
@@ -147,10 +148,10 @@ class NullableSimpleCase<T: Any, R: Any> internal constructor(
 }
 
 internal data class SimpleMatch<T: Any, R: Any>(
-    val startExpression: KExpression<T>,
+    var startExpression: KExpression<T>,
     val prev: SimpleMatch<T, R>?,
-    val condValue: KExpression<T>?,
-    val value: KExpression<R>
+    var condValue: KExpression<T>?,
+    var value: KExpression<R>
 ) {
     constructor(startExpression: KExpression<T>, condValue: KExpression<T>, value: KExpression<R>):
         this(startExpression, null, condValue, value)
@@ -182,11 +183,22 @@ internal data class SimpleMatch<T: Any, R: Any>(
         builder.sql(" then ")
         (value as Ast).renderTo(builder)
     }
+
+    fun hasVirtualPredicate(): Boolean =
+        (prev?.hasVirtualPredicate() ?: false) ||
+            (startExpression as Ast).hasVirtualPredicate() ||
+            (condValue as Ast).hasVirtualPredicate() ||
+            (value as Ast).hasVirtualPredicate()
+
+    fun resolveVirtualPredicate(ctx: AstContext) {
+        prev?.resolveVirtualPredicate(ctx)
+        startExpression = ctx.resolveVirtualPredicate(startExpression)
+    }
 }
 
 internal abstract class SimpleCaseExpression<R: Any>(
     private val prev: SimpleMatch<*, R>,
-    private val expression: KExpression<R>
+    private var expression: KExpression<R>
 ) : AbstractKExpression<R>() {
 
     override fun precedence(): Int = 0
@@ -207,6 +219,16 @@ internal abstract class SimpleCaseExpression<R: Any>(
            (expression as Ast).renderTo(builder)
            builder.sql(" end")
        }
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        (prev?.hasVirtualPredicate() ?: false) ||
+            hasVirtualPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        prev.resolveVirtualPredicate(ctx)
+        expression = ctx.resolveVirtualPredicate(expression)
+        return this
     }
 }
 

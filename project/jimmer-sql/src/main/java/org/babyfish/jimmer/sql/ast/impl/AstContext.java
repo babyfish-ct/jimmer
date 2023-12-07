@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
+import org.babyfish.jimmer.sql.ast.impl.query.MutableStatementImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
@@ -103,11 +105,19 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
 
     @SuppressWarnings("unchecked")
     public <T> T resolveVirtualPredicate(T expression) {
-        if (expression instanceof VirtualPredicate) {
-            return (T) statementFrame.peekVpf().add((VirtualPredicate) expression);
+        if (expression == null) {
+            return null;
         }
-        if (((Ast)expression).hasVirtualPredicate()) {
+        T unwrapped = unwrap(expression);
+        if (unwrapped instanceof VirtualPredicate) {
+            return (T) statementFrame.peekVpf().add((VirtualPredicate) unwrapped);
+        }
+        if (expression instanceof Ast && ((Ast)expression).hasVirtualPredicate()) {
             return (T) ((Ast)expression).resolveVirtualPredicate(AstContext.this);
+        }
+        if (expression instanceof MutableStatementImplementor && ((MutableStatementImplementor)expression).hasVirtualPredicate()) {
+            ((MutableStatementImplementor)expression).resolveVirtualPredicate(AstContext.this);
+            return expression;
         }
         return expression;
     }
@@ -116,7 +126,7 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
     public <T> List<T> resolveVirtualPredicates(List<T> expressions) {
         boolean changed = false;
         for (T expression : expressions) {
-            if (((Ast)expression).hasVirtualPredicate()) {
+            if (expression instanceof Ast && ((Ast)expression).hasVirtualPredicate()) {
                 changed = true;
                 break;
             }
@@ -127,14 +137,7 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         VirtualPredicateFrame vpf = statementFrame.peekVpf();
         List<T> newExpressions = new ArrayList<>(expressions.size());
         for (T expression : expressions) {
-            T newExpression;
-            if (expression instanceof VirtualPredicate) {
-                newExpression = (T) vpf.add((VirtualPredicate) expression);
-            } else if (((Ast)expression).hasVirtualPredicate()) {
-                newExpression = (T) ((Ast) expression).resolveVirtualPredicate(AstContext.this);
-            } else {
-                newExpression = expression;
-            }
+            T newExpression = resolveVirtualPredicate(expression);
             if (newExpression != null) {
                 newExpressions.add(newExpression);
             }
@@ -142,7 +145,6 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         return newExpressions;
     }
 
-    @SuppressWarnings("unchecked")
     public Predicate[] resolveVirtualPredicates(Predicate[] predicates) {
         boolean changed = false;
         for (Predicate predicate : predicates) {
@@ -157,14 +159,7 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         VirtualPredicateFrame vpf = statementFrame.peekVpf();
         List<Predicate> newPredicates = new ArrayList<>(predicates.length);
         for (Predicate predicate : predicates) {
-            Predicate newPredicate;
-            if (predicate instanceof VirtualPredicate) {
-                newPredicate = vpf.add((VirtualPredicate) predicate);
-            } else if (((Ast)predicate).hasVirtualPredicate()) {
-                newPredicate = (Predicate) ((Ast) predicate).resolveVirtualPredicate(AstContext.this);
-            } else {
-                newPredicate = predicate;
-            }
+            Predicate newPredicate = resolveVirtualPredicate(predicate);
             if (newPredicate != null) {
                 newPredicates.add(newPredicate);
             }
@@ -174,6 +169,16 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
 
     public int modCount() {
         return modCount;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T unwrap(T o) {
+        while (true) {
+            if (!(o instanceof PredicateWrapper)) {
+                return o;
+            }
+            o = (T)((PredicateWrapper)o).unwrap();
+        }
     }
 
     private class StatementFrame {

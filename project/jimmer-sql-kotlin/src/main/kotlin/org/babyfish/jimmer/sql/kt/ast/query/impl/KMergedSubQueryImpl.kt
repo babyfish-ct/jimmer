@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.query.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.query.KTypedSubQuery
@@ -9,8 +10,8 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder
 @Suppress("UNCHECKED_CAST")
 internal abstract class KMergedSubQueryImpl<R>(
     private val operator: String,
-    private val left: Ast,
-    private val right: Ast,
+    private var left: Ast,
+    private var right: Ast,
 ) : KTypedSubQuery<R>, Ast, ExpressionImplementor<R> by (left as ExpressionImplementor<R>) {
 
     override fun accept(visitor: AstVisitor) {
@@ -24,6 +25,16 @@ internal abstract class KMergedSubQueryImpl<R>(
         builder.space('?').sql(operator).space('?')
         right.renderTo(builder)
         builder.leave()
+    }
+
+    override fun hasVirtualPredicate(): Boolean =
+        left.hasVirtualPredicate() ||
+            right.hasVirtualPredicate()
+
+    override fun resolveVirtualPredicate(ctx: AstContext): Ast {
+        left = ctx.resolveVirtualPredicate(left)
+        right = ctx.resolveVirtualPredicate(right)
+        return this
     }
 
     class NonNull<R: Any>(

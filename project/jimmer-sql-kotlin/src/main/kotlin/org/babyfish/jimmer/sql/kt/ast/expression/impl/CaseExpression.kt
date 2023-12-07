@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.kt.ast.expression.*
@@ -97,9 +98,10 @@ class NullableCase<R: Any> internal constructor(
 
 internal data class Match<R: Any>(
     val prev: Match<R>?,
-    val cond: KExpression<Boolean>,
-    val value: KExpression<R>
+    var cond: KExpression<Boolean>,
+    var value: KExpression<R>
 ) {
+
     fun accept(visitor: AstVisitor) {
         prev?.accept(visitor)
         (cond as Ast).accept(visitor)
@@ -118,11 +120,22 @@ internal data class Match<R: Any>(
         builder.sql(" then ")
         (value as Ast).renderTo(builder)
     }
+
+    fun hasVirtualPredicate(): Boolean =
+        (prev?.hasVirtualPredicate() ?: false) ||
+            (cond as Ast).hasVirtualPredicate() ||
+            (value as Ast).hasVirtualPredicate()
+
+    fun resolveVirtualPredicates(ctx: AstContext) {
+        prev?.resolveVirtualPredicates(ctx)
+        cond = ctx.resolveVirtualPredicate(cond)
+        value = ctx.resolveVirtualPredicate(value)
+    }
 }
 
 internal abstract class CaseExpression<R: Any>(
     private val prev: Match<R>,
-    private val expression: KExpression<R>
+    private var expression: KExpression<R>
 ) : AbstractKExpression<R>() {
 
     override fun precedence(): Int = 0
@@ -143,6 +156,16 @@ internal abstract class CaseExpression<R: Any>(
            (expression as Ast).renderTo(builder)
            builder.sql(" end")
        }
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        prev.hasVirtualPredicate() ||
+            hasVirtualPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        prev.resolveVirtualPredicates(ctx)
+        expression = ctx.resolveVirtualPredicate(expression)
+        return this
     }
 }
 

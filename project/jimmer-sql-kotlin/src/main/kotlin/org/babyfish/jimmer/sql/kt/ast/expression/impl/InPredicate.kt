@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
 import org.babyfish.jimmer.sql.ast.table.spi.PropExpressionImplementor
@@ -10,7 +11,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class InCollectionPredicate(
     private val negative: Boolean,
-    private val expression: KExpression<*>,
+    private var expression: KExpression<*>,
     private val values: Collection<*>
 ) : AbstractKPredicate() {
 
@@ -42,12 +43,20 @@ internal class InCollectionPredicate(
             builder.sql(")")
         }
     }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        expression = ctx.resolveVirtualPredicate(expression)
+        return this
+    }
 }
 
 internal class InSubQueryPredicate(
     private val negative: Boolean,
-    private val expression: KExpression<*>,
-    private val subQuery: KTypedSubQuery<*>
+    private var expression: KExpression<*>,
+    private var subQuery: KTypedSubQuery<*>
 ) : AbstractKPredicate() {
 
     override fun not(): AbstractKPredicate =
@@ -64,5 +73,14 @@ internal class InSubQueryPredicate(
         (expression as Ast).renderTo(builder)
         builder.sql(if (negative) " not in " else " in ")
         (subQuery as Ast).renderTo(builder)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression) || hasVirtualPredicate(subQuery)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        expression = ctx.resolveVirtualPredicate(expression)
+        subQuery = ctx.resolveVirtualPredicate(subQuery)
+        return this
     }
 }

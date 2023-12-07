@@ -1,7 +1,10 @@
 package org.babyfish.jimmer.sql.kt.ast.table
 
 import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KPropExpression
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty1
 
 interface KProps<E: Any> {
@@ -29,4 +32,7 @@ interface KProps<E: Any> {
     fun <X: Any> inverseOuterJoin(backProp: ImmutableProp): KNullableTable<X>
     fun <X: Any> inverseOuterJoinReference(backProp: KProperty1<X, E?>): KNullableTable<X>
     fun <X: Any> inverseOuterJoinList(backProp: KProperty1<X, List<E>>): KNullableTable<X>
+
+    fun <X: Any> exists(prop: String, block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>?
+    fun <X: Any> exists(prop: ImmutableProp, block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?): KNonNullExpression<Boolean>?
 }

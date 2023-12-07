@@ -135,7 +135,7 @@ public class CoalesceBuilder<T> {
         private List<Expression<?>> expressions;
 
         public Expr(List<Expression<?>> expressions) {
-            this.expressions = validateNoVirtualPredicate(expressions, i -> "expressions[" + i + ']');
+            this.expressions = expressions;
         }
 
         @Override
@@ -157,6 +157,17 @@ public class CoalesceBuilder<T> {
                 }
                 builder.leave();
             }
+        }
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            return hasVirtualPredicate(expressions);
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            this.expressions = ctx.resolveVirtualPredicates(expressions);
+            return this;
         }
 
         @Override

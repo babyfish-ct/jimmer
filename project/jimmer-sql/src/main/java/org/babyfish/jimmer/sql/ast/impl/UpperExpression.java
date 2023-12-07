@@ -9,7 +9,7 @@ import java.util.Objects;
 
 class UpperExpression extends AbstractExpression<String> implements StringExpressionImplementor {
 
-    private final Expression<String> raw;
+    private Expression<String> raw;
 
     UpperExpression(Expression<String> raw) {
         this.raw = raw;
@@ -30,6 +30,17 @@ class UpperExpression extends AbstractExpression<String> implements StringExpres
         builder.sql("upper(");
         ((Ast)raw).renderTo(builder);
         builder.sql(")");
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(raw);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        raw = ctx.resolveVirtualPredicate(raw);
+        return this;
     }
 
     @Override

@@ -14,13 +14,9 @@ public interface Ast {
 
     void renderTo(@NotNull SqlBuilder builder);
 
-    default boolean hasVirtualPredicate() {
-        return false;
-    }
+    boolean hasVirtualPredicate();
 
-    default Ast resolveVirtualPredicate(AstContext ctx) {
-        return this;
-    }
+    Ast resolveVirtualPredicate(AstContext ctx);
 
     static Ast from(Selection<?> selection, RootTableResolver resolver) {
         if (selection instanceof Table<?>) {

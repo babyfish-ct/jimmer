@@ -11,13 +11,13 @@ class ConcatExpression
         extends AbstractExpression<String>
         implements StringExpressionImplementor {
 
-    private final Expression<String> first;
+    private Expression<String> first;
 
-    private final List<Expression<String>> others;
+    private List<Expression<String>> others;
 
     ConcatExpression(Expression<String> first, List<Expression<String>> others) {
-        this.first = validateNoVirtualPredicate(first, "first");
-        this.others = validateNoVirtualPredicate(others, i -> "others[" + i + ']');
+        this.first = first;
+        this.others = others;
     }
 
     @Override
@@ -37,6 +37,18 @@ class ConcatExpression
             renderChild((Ast) other, builder);
         }
         builder.sql(")");
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(first) || hasVirtualPredicate(others);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        this.first = ctx.resolveVirtualPredicate(first);
+        this.others = ctx.resolveVirtualPredicates(others);
+        return this;
     }
 
     @Override

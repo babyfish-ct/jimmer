@@ -2,12 +2,18 @@ package org.babyfish.jimmer.sql.kt.ast.table.impl
 
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.sql.JoinType
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
+import org.babyfish.jimmer.sql.ast.impl.PredicateImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor
 import org.babyfish.jimmer.sql.ast.impl.table.TableSelection
+import org.babyfish.jimmer.sql.ast.table.TableEx
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.JavaToKotlinPredicateWrapper
+import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
+import org.babyfish.jimmer.sql.kt.ast.table.KNonNullTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KNullableTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KTableEx
 import org.babyfish.jimmer.sql.kt.ast.table.KWeakJoin
@@ -51,6 +57,26 @@ internal abstract class KTableExImpl<E: Any>(
             javaTable.weakJoinImplementor(weakJoinType.java, JoinType.LEFT)
         )
 
+    override fun <X : Any> exists(
+        prop: String,
+        block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?
+    ): KNonNullExpression<Boolean>? =
+        javaTable.exists<TableEx<X>>(prop) {
+            block(KNonNullTableExImpl(it as TableImplementor))?.toJavaPredicate()
+        }?.let {
+            JavaToKotlinPredicateWrapper(it as PredicateImplementor)
+        }
+
+    override fun <X : Any> exists(
+        prop: ImmutableProp,
+        block: KNonNullTableEx<X>.() -> KNonNullExpression<Boolean>?
+    ): KNonNullExpression<Boolean>? =
+        javaTable.exists<TableEx<X>>(prop) {
+            block(KNonNullTableExImpl(it as TableImplementor))?.toJavaPredicate()
+        }?.let {
+            JavaToKotlinPredicateWrapper(it as PredicateImplementor)
+        }
+
     override fun accept(visitor: AstVisitor) {
         javaTable.accept(visitor)
     }
@@ -58,4 +84,8 @@ internal abstract class KTableExImpl<E: Any>(
     override fun renderTo(builder: SqlBuilder) {
         javaTable.renderTo(builder)
     }
+
+    override fun hasVirtualPredicate(): Boolean = false
+
+    override fun resolveVirtualPredicate(ctx: AstContext): Ast = this
 }

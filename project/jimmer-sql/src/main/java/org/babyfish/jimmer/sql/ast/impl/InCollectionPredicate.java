@@ -28,7 +28,7 @@ class InCollectionPredicate extends AbstractPredicate {
             Collection<?> values,
             boolean negative
     ) {
-        this.expression = validateNoVirtualPredicate(expression, "expression");
+        this.expression = expression;
         this.values = values;
         this.negative = negative;
     }
@@ -74,6 +74,17 @@ class InCollectionPredicate extends AbstractPredicate {
     @Override
     public int precedence() {
         return 0;
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(expression);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        this.expression = ctx.resolveVirtualPredicate(expression);
+        return this;
     }
 
     @Override

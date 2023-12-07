@@ -1,17 +1,14 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
-import org.babyfish.jimmer.sql.ast.impl.Ast
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor
-import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences
+import org.babyfish.jimmer.sql.ast.impl.*
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class BinaryOperatorExpression<N: Number>(
-    private val left: KExpression<N>,
-    private val right: KExpression<N>
+    private var left: KExpression<N>,
+    private var right: KExpression<N>
 ) : AbstractKExpression<N>() {
 
     @Suppress("UNCHECKED_CAST")
@@ -29,6 +26,15 @@ internal abstract class BinaryOperatorExpression<N: Number>(
         builder.sql(operator())
         builder.sql(" ")
         renderChild((right as Ast), builder)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(left) || hasVirtualPredicate(right)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        left = ctx.resolveVirtualPredicate(left)
+        right = ctx.resolveVirtualPredicate(right)
+        return this
     }
 
     protected abstract fun operator(): String

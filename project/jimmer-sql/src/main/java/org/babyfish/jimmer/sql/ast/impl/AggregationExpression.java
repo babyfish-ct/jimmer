@@ -16,7 +16,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
     Expression<?> expression;
 
     public AggregationExpression(Expression<?> expression) {
-        this.expression = validateNoVirtualPredicate(expression, "expression");
+        this.expression = expression;
     }
 
     protected abstract String functionName();
@@ -45,6 +45,17 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
         }
         renderExpression(builder);
         builder.sql(")");
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(expression);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        this.expression = ctx.resolveVirtualPredicate(expression);
+        return this;
     }
 
     private void validate(JSqlClientImplementor sqlClient) {

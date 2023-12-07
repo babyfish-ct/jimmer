@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -8,8 +9,8 @@ import org.babyfish.jimmer.sql.kt.ast.expression.le
 import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal abstract class ComparisonPredicate(
-    protected val left: KExpression<*>,
-    protected val right: KExpression<*>
+    protected var left: KExpression<*>,
+    protected var right: KExpression<*>
 ) : AbstractKPredicate() {
 
     init {
@@ -31,6 +32,15 @@ internal abstract class ComparisonPredicate(
         builder.sql(operator())
         builder.sql(" ")
         renderChild((right as Ast), builder)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(left) || hasVirtualPredicate(right)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        left = ctx.resolveVirtualPredicate(left)
+        right = ctx.resolveVirtualPredicate(right)
+        return this
     }
 
     protected abstract fun operator(): String

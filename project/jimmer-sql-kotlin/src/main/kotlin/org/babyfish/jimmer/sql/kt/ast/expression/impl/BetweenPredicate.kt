@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
@@ -9,9 +10,9 @@ import kotlin.math.exp
 
 internal class BetweenPredicate<T: Comparable<*>>(
     private val negative: Boolean,
-    private val expression: KExpression<T>,
-    private val min: KNonNullExpression<T>,
-    private val max: KNonNullExpression<T>,
+    private var expression: KExpression<T>,
+    private var min: KNonNullExpression<T>,
+    private var max: KNonNullExpression<T>,
 ): AbstractKPredicate() {
 
     init {
@@ -36,5 +37,17 @@ internal class BetweenPredicate<T: Comparable<*>>(
         renderChild(min as Ast, builder)
         builder.sql(" and ")
         renderChild(max as Ast, builder)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression) ||
+            hasVirtualPredicate(min) ||
+            hasVirtualPredicate(max)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        expression = ctx.resolveVirtualPredicate(expression)
+        min = ctx.resolveVirtualPredicate(min)
+        max = ctx.resolveVirtualPredicate(max)
+        return this
     }
 }

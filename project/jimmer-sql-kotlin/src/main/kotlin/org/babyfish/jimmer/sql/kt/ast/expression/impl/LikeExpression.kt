@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.kt.ast.expression.impl
 
 import org.babyfish.jimmer.sql.ast.LikeMode
 import org.babyfish.jimmer.sql.ast.impl.Ast
+import org.babyfish.jimmer.sql.ast.impl.AstContext
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor
 import org.babyfish.jimmer.sql.ast.impl.ExpressionPrecedences
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
@@ -9,7 +10,7 @@ import org.babyfish.jimmer.sql.runtime.SqlBuilder
 
 internal class LikePredicate(
     private val negative: Boolean,
-    private val expression: KExpression<String>,
+    private var expression: KExpression<String>,
     private val insensitive: Boolean,
     private val pattern: String
 ) : AbstractKPredicate() {
@@ -65,5 +66,13 @@ internal class LikePredicate(
                 }
             )
             .variable(pattern)
+    }
+
+    override fun determineHasVirtualPredicate(): Boolean =
+        hasVirtualPredicate(expression)
+
+    override fun onResolveVirtualPredicate(ctx: AstContext): Ast {
+        expression = ctx.resolveVirtualPredicate(expression)
+        return this
     }
 }
