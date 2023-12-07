@@ -21,3 +21,9 @@ input BookStoreNullableIdInput {
     #allScalars
     id(books)? as bookIds
 }
+
+specification BookStoreSpecification {
+    name
+    notNull(website) as isWebsiteNotNull
+    null(website) as isWebsiteNull
+}

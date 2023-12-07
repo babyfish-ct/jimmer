@@ -247,7 +247,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     }
                     break;
                 case "null":
-                case "nonNull":
+                case "notNull":
                     break;
                 default:
                     throw ctx.exception(
@@ -544,8 +544,13 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.alias = alias;
         if (prop.required != null) {
             this.mandatory = Mandatory.REQUIRED;
-        } else if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ||
-                prop.optional != null ||
+        } else if (parent.modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
+            if ("null".equals(funcName) || "notNull".equals(funcName)) {
+                this.mandatory = Mandatory.REQUIRED;
+            } else {
+                this.mandatory = Mandatory.OPTIONAL;
+            }
+        } else if (prop.optional != null ||
                 prop.recursive != null ||
                 ctx.isImplicitId(baseProp, parent.modifiers)) {
             this.mandatory = Mandatory.OPTIONAL;

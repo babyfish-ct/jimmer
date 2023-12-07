@@ -805,19 +805,22 @@ public class DtoGenerator {
         }
 
         String funcName = prop.getFuncName();
+        String javaMethodName = funcName;
         if (funcName == null) {
             funcName = "eq";
+            javaMethodName = "eq";
         } else if ("null".equals(funcName)) {
-            funcName = "isNull";
+            javaMethodName = "isNull";
         } else if ("notNull".equals(funcName)) {
-            funcName = "isNotNull";
+            javaMethodName = "isNotNull";
         } else if ("id".equals(funcName)) {
             funcName = "associatedIdEq";
+            javaMethodName = "associatedIdEq";
         }
 
         CodeBlock.Builder cb = CodeBlock.builder();
         if (org.babyfish.jimmer.dto.compiler.Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
-            cb.add("__applier.$L(new $T[] { ", funcName, org.babyfish.jimmer.apt.immutable.generator.Constants.IMMUTABLE_PROP_CLASS_NAME);
+            cb.add("__applier.$L(new $T[] { ", javaMethodName, org.babyfish.jimmer.apt.immutable.generator.Constants.IMMUTABLE_PROP_CLASS_NAME);
             boolean addComma = false;
             for (ImmutableProp baseProp : prop.getBasePropMap().values()) {
                 if (addComma) {

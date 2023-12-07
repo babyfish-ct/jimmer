@@ -297,7 +297,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         if (p1.isNullable() != p2.isNullable()) {
             return false;
         }
-        if (!p1.getBasePath().equals(p2.getBaseProp())) {
+        if (!p1.getBasePath().equals(p2.getBasePath())) {
             return false;
         }
         if (!Objects.equals(p1.getFuncName(), p2.getFuncName())) {

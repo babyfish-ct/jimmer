@@ -54,6 +54,9 @@ public class PredicateApplier {
         if (value == null) {
             return;
         }
+        if (value instanceof String && ((String)value).isEmpty()) {
+            return;
+        }
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
@@ -64,6 +67,9 @@ public class PredicateApplier {
 
     public void ne(ImmutableProp prop, Object value) {
         if (value == null) {
+            return;
+        }
+        if (value instanceof String && ((String)value).isEmpty()) {
             return;
         }
         Context ctx = this.context;
@@ -110,8 +116,8 @@ public class PredicateApplier {
         ctx.statement().where(expr.le((Comparable<Comparable<?>>) value));
     }
 
-    public void isNull(ImmutableProp[] props, Object value) {
-        if (value == null) {
+    public void isNull(ImmutableProp[] props, boolean value) {
+        if (!value) {
             return;
         }
         Context ctx = this.context;
@@ -122,8 +128,8 @@ public class PredicateApplier {
         ctx.statement().where(Predicate.or(predicates));
     }
 
-    public void isNotNull(ImmutableProp[] props, Object value) {
-        if (value == null) {
+    public void isNotNull(ImmutableProp[] props, boolean value) {
+        if (!value) {
             return;
         }
         Context ctx = this.context;

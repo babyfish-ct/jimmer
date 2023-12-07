@@ -13,3 +13,9 @@ input BookStoreNullableIdInput {
 dynamic input DynamicBookStoreInput {
     #allScalars?
 }
+
+specification BookStoreSpecification {
+    name
+    notNull(website) as isWebsiteNotNull
+    null(website) as isWebsiteNull
+}

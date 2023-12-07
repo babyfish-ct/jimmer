@@ -613,16 +613,19 @@ class DtoGenerator private constructor(
 
         val funcName = when (prop.funcName) {
             null -> "eq"
-            "null" -> "isNull"
-            "notNull" -> "isNotNull"
             "id" -> "associatedIdEq"
             else -> prop.funcName
+        }
+        val ktFunName = when (funcName) {
+            "null" -> "isNull"
+            "notNull" -> "isNotNull"
+            else -> funcName
         }
 
         addCode(
             CodeBlock.builder()
                 .apply {
-                    add("__applier.%L(", funcName)
+                    add("__applier.%L(", ktFunName)
                     if (Constants.MULTI_ARGS_FUNC_NAMES.contains(funcName)) {
                         add("arrayOf(")
                         prop.basePropMap.values.forEachIndexed { index, baseProp ->
@@ -888,7 +891,7 @@ class DtoGenerator private constructor(
             if (funcName != null) {
                 when (funcName) {
                     "null", "notNull" ->
-                        return BOOLEAN
+                        return BOOLEAN.copy(nullable = prop.isNullable)
 
                     "valueIn", "valueNotIn" ->
                         return COLLECTION.parameterizedBy(propElementName(prop)).copy(nullable = prop.isNullable)
