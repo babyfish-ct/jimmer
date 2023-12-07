@@ -3,10 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl.query;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
-import org.babyfish.jimmer.sql.ast.impl.ExpressionImplementor;
-import org.babyfish.jimmer.sql.ast.impl.SubQueryFunctionExpression;
+import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.query.ConfigurableSubQuery;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
 import org.babyfish.jimmer.sql.ast.table.Table;
@@ -169,6 +166,17 @@ public class ConfigurableSubQueryImpl<R>
     @Override
     public int precedence() {
         return 0;
+    }
+
+    @Override
+    public boolean hasVirtualPredicate() {
+        return getBaseQuery().hasVirtualPredicate();
+    }
+
+    @Override
+    public Ast resolveVirtualPredicate(AstContext ctx) {
+        getBaseQuery().resolveVirtualPredicate(ctx);
+        return this;
     }
 
     @Override

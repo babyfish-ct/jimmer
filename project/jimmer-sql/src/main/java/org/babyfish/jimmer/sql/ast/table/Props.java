@@ -5,6 +5,7 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.JoinType;
+import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.PropExpression;
 
 import java.util.function.Function;
@@ -61,4 +62,8 @@ public interface Props {
             Function<XT, ? extends Table<?>> backPropBlock,
             JoinType joinType
     );
+
+    <XT extends Table<?>> Predicate exists(String prop, Function<XT, Predicate> block);
+
+    <XT extends Table<?>> Predicate exists(ImmutableProp prop, Function<XT, Predicate> block);
 }

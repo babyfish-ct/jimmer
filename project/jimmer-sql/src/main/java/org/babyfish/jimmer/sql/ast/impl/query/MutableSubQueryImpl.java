@@ -6,6 +6,8 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.Selection;
 import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
+import org.babyfish.jimmer.sql.ast.impl.Ast;
+import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.ExistsPredicate;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
 import org.babyfish.jimmer.sql.ast.query.*;
@@ -39,7 +41,7 @@ public class MutableSubQueryImpl
         StatementContext ctx = parent.getContext();
         if (ctx == null) {
             throw new IllegalStateException(
-                    "The current statement if lambda style, so the parent cannot be fluent style"
+                    "The parent cannot be fluent statement whose context is not resolved"
             );
         }
         this.parent = parent;
@@ -48,9 +50,26 @@ public class MutableSubQueryImpl
 
     public MutableSubQueryImpl(
             JSqlClientImplementor sqlClient,
+            ImmutableType immutableType
+    ) {
+        super(sqlClient, immutableType);
+    }
+
+    public MutableSubQueryImpl(
+            JSqlClientImplementor sqlClient,
             TableProxy<?> table
     ) {
         super(sqlClient, table);
+    }
+
+    public MutableSubQueryImpl(
+            AbstractMutableStatementImpl parent,
+            TableProxy<?> table
+    ) {
+        super(parent.getSqlClient(), table);
+        StatementContext ctx = parent.getContext();
+        this.parent = parent;
+        this.ctx = ctx;
     }
 
     @Override
@@ -353,6 +372,12 @@ public class MutableSubQueryImpl
                     "The sub query cannot be added to parent query because it is belong to another parent query"
             );
         }
+    }
+
+    @Override
+    public void resolveVirtualPredicate(AstContext ctx) {
+        setParent(ctx.getStatement());
+        super.resolveVirtualPredicate(ctx);
     }
 
     public Filter<?> filterOwner() {

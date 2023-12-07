@@ -14,6 +14,14 @@ public interface Ast {
 
     void renderTo(@NotNull SqlBuilder builder);
 
+    default boolean hasVirtualPredicate() {
+        return false;
+    }
+
+    default Ast resolveVirtualPredicate(AstContext ctx) {
+        return this;
+    }
+
     static Ast from(Selection<?> selection, RootTableResolver resolver) {
         if (selection instanceof Table<?>) {
             return TableProxies.resolve((Table<?>) selection, resolver);

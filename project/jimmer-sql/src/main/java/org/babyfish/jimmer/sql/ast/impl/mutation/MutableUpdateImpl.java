@@ -33,7 +33,7 @@ import java.util.*;
 
 public class MutableUpdateImpl
         extends AbstractMutableStatementImpl
-        implements MutableUpdate, Ast {
+        implements MutableUpdate {
 
     private final StatementContext ctx;
 
@@ -139,12 +139,14 @@ public class MutableUpdateImpl
             return 0;
         }
 
+        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
+        applyVirtualPredicates(builder.getAstContext());
+        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
+
         if (!triggerIgnored && getSqlClient().getTriggerType() != TriggerType.BINLOG_ONLY) {
-            return executeWithTrigger(con);
+            return executeWithTrigger(builder, con);
         }
 
-        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
-        applyGlobalFilters(builder.getAstContext(), FilterLevel.DEFAULT, null);
         renderTo(builder);
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         return getSqlClient()
@@ -163,9 +165,8 @@ public class MutableUpdateImpl
                 );
     }
 
-    private int executeWithTrigger(Connection con) {
+    private int executeWithTrigger(SqlBuilder builder, Connection con) {
 
-        SqlBuilder builder = new SqlBuilder(new AstContext(getSqlClient()));
         renderAsSelect(builder, null);
         Tuple3<String, List<Object>, List<Integer>> sqlResult = builder.build();
         List<ImmutableSpi> rows = Selectors.select(
@@ -231,18 +232,17 @@ public class MutableUpdateImpl
         return affectRowCount;
     }
 
-    @Override
     public void accept(@NotNull AstVisitor visitor) {
         accept(visitor, true);
     }
 
-    @Override
     public void renderTo(@NotNull SqlBuilder builder) {
         renderTo(builder, null);
     }
 
     private void accept(@NotNull AstVisitor visitor, boolean visitAssignments) {
         AstContext astContext = visitor.getAstContext();
+        Predicate predicate = getPredicate(astContext);
         astContext.pushStatement(this);
         try {
             if (visitAssignments) {
@@ -251,7 +251,7 @@ public class MutableUpdateImpl
                     ((Ast) e.getValue()).accept(visitor);
                 }
             }
-            for (Predicate predicate : getPredicates()) {
+            if (predicate != null) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -421,7 +421,7 @@ public class MutableUpdateImpl
         }
 
         if (ids == null) {
-            Predicate predicate = getPredicate();
+            Predicate predicate = getPredicate(builder.getAstContext());
             if (predicate != null) {
                 builder.separator();
                 ((Ast) predicate).renderTo(builder);

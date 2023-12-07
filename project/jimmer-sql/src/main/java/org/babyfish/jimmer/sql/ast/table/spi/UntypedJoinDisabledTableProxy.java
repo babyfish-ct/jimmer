@@ -130,6 +130,16 @@ public class UntypedJoinDisabledTableProxy<E> implements TableProxy<E> {
     }
 
     @Override
+    public <XT extends Table<?>> Predicate exists(String prop, Function<XT, Predicate> block) {
+        return table.exists(prop, block);
+    }
+
+    @Override
+    public <XT extends Table<?>> Predicate exists(ImmutableProp prop, Function<XT, Predicate> block) {
+        return table.exists(prop, block);
+    }
+
+    @Override
     public Predicate eq(Table<E> other) {
         return table.eq(other);
     }

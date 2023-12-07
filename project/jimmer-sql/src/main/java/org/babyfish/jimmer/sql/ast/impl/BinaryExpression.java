@@ -16,8 +16,8 @@ abstract class BinaryExpression<N extends Number & Comparable<N>> extends Abstra
 
     protected BinaryExpression(Class<N> type, Expression<N> left, Expression<N> right) {
         this.type = type;
-        this.left = left;
-        this.right = right;
+        this.left = validateNoVirtualPredicate(left, "left");
+        this.right = validateNoVirtualPredicate(right, "right");
     }
 
     @Override

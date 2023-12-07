@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class MergedTypedSubQueryImpl<R> implements ExpressionImplementor<R>, TypedSubQuery<R>, TypedQueryImplementor  {
+public class MergedTypedSubQueryImpl<R> extends AbstractExpression<R> implements TypedSubQuery<R>, TypedQueryImplementor  {
 
     private final JSqlClientImplementor sqlClient;
 
@@ -52,6 +52,18 @@ public class MergedTypedSubQueryImpl<R> implements ExpressionImplementor<R>, Typ
         builder.space('?').sql(operator).space('?');
         right.renderTo(builder);
         builder.leave();
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(left) || hasVirtualPredicate(right);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        ctx.resolveVirtualPredicate(left);
+        ctx.resolveVirtualPredicate(right);
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -140,4 +152,6 @@ public class MergedTypedSubQueryImpl<R> implements ExpressionImplementor<R>, Typ
         }
         return false;
     }
+
+
 }

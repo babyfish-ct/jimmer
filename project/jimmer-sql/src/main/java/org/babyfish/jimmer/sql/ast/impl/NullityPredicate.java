@@ -44,7 +44,7 @@ class NullityPredicate extends AbstractPredicate {
                 }
             }
         }
-        this.expression = expression;
+        this.expression = validateNoVirtualPredicate(expression, "expression");
         this.negative = negative;
     }
 

@@ -10,9 +10,7 @@ import org.babyfish.jimmer.sql.ast.impl.*;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.TableRowCountDestructive;
 import org.babyfish.jimmer.sql.ast.query.*;
-import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 
@@ -160,16 +158,16 @@ public abstract class AbstractMutableQueryImpl
         return this;
     }
 
-    public Predicate getHavingPredicate() {
-        freeze();
+    public Predicate getHavingPredicate(AstContext astContext) {
+        freeze(astContext);
         List<Predicate> ps = havingPredicates;
         return ps.isEmpty() ? null : ps.get(0);
     }
 
     @Override
-    protected void onFrozen() {
+    protected void onFrozen(AstContext astContext) {
         havingPredicates = mergePredicates(havingPredicates);
-        super.onFrozen();
+        super.onFrozen(astContext);
     }
 
     void accept(
@@ -183,13 +181,17 @@ public abstract class AbstractMutableQueryImpl
                     "Having clause cannot be used without group clause"
             );
         }
-        for (Predicate predicate : getPredicates()) {
+
+        Predicate predicate = getPredicate(visitor.getAstContext());
+        Predicate havingPredicate = getHavingPredicate(visitor.getAstContext());
+
+        if (predicate != null) {
             ((Ast)predicate).accept(visitor);
         }
         for (Expression<?> expression : groupByExpressions) {
             ((Ast)expression).accept(visitor);
         }
-        for (Predicate havingPredicate : havingPredicates) {
+        if (havingPredicate != null) {
             ((Ast)havingPredicate).accept(visitor);
         }
         AstContext astContext = visitor.getAstContext();
@@ -213,8 +215,8 @@ public abstract class AbstractMutableQueryImpl
 
     void renderTo(SqlBuilder builder, boolean withoutSortingAndPaging, boolean reverseOrder) {
 
-        Predicate predicate = getPredicate();
-        Predicate havingPredicate = getHavingPredicate();
+        Predicate predicate = getPredicate(builder.getAstContext());
+        Predicate havingPredicate = getHavingPredicate(builder.getAstContext());
 
         TableImplementor<?> tableImplementor = getTableImplementor();
         tableImplementor.renderTo(builder);
@@ -272,6 +274,11 @@ public abstract class AbstractMutableQueryImpl
     @Override
     public List<Predicate> getHavingPredicates() {
         return Collections.unmodifiableList(havingPredicates);
+    }
+
+    @Override
+    public void setHavingPredicates(List<Predicate> havingPredicates) {
+        this.havingPredicates = havingPredicates;
     }
 
     @Override

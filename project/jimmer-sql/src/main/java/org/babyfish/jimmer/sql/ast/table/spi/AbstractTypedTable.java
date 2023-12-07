@@ -8,6 +8,7 @@ import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.sql.ImmutableProps;
 import org.babyfish.jimmer.sql.JoinType;
 import org.babyfish.jimmer.sql.ast.*;
+import org.babyfish.jimmer.sql.ast.impl.AssociatedPredicate;
 import org.babyfish.jimmer.sql.ast.impl.ExampleImpl;
 import org.babyfish.jimmer.sql.ast.impl.PropExpressionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.*;
@@ -400,6 +401,20 @@ public abstract class AbstractTypedTable<E> implements TableProxy<E> {
                         joinType
                 )
         );
+    }
+
+    @Override
+    public <XT extends Table<?>> Predicate exists(String prop, Function<XT, Predicate> block) {
+        return exists(immutableType.getProp(prop), block);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> Predicate exists(ImmutableProp prop, Function<XT, Predicate> block) {
+        if (raw != null) {
+            return raw.exists(prop, block);
+        }
+        return new AssociatedPredicate(this, prop, (Function<Table<?>, Predicate>) block);
     }
 
     @Override

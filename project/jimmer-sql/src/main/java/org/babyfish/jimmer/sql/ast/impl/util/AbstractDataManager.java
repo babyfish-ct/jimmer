@@ -12,11 +12,11 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
     private final Node<K, V>[] tab = new Node[CAPACITY];
 
     protected V getValue(K key) {
-        int h = key.hashCode();
+        int h = hashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
         for (Node<K, V> node = tab[index]; node != null; node = node.next) {
-            if (key.equals(node.key)) {
+            if (equals(key, node.key)) {
                 return node.value;
             }
         }
@@ -24,12 +24,12 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
     }
 
     protected void putValue(K key, V value) {
-        int h = key.hashCode();
+        int h = hashCode(key);
         h = h ^ (h >>> 16);
         int index = (CAPACITY - 1) & h;
         Node<K, V> startNode = tab[index];
         for (Node<K, V> node = startNode; node != null; node = node.next) {
-            if (key.equals(node.key)) {
+            if (equals(key, node.key)) {
                 node.value = value;
                 return;
             }
@@ -71,6 +71,14 @@ public abstract class AbstractDataManager<K, V> extends Node<K, V> implements It
             node = after;
             return after.value;
         }
+    }
+
+    protected int hashCode(K key) {
+        return key.hashCode();
+    }
+
+    protected boolean equals(K key1, K key2) {
+        return key1.equals(key2);
     }
 }
 

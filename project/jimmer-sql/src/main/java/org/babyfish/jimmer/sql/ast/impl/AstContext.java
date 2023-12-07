@@ -1,8 +1,12 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
+import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
+import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
 import org.babyfish.jimmer.sql.ast.impl.table.TableProxies;
+import org.babyfish.jimmer.sql.ast.impl.util.AbstractDataManager;
 import org.babyfish.jimmer.sql.ast.impl.util.AbstractIdentityDataManager;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
@@ -10,11 +14,16 @@ import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.TableUsedState;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>, TableUsedState> implements RootTableResolver {
 
     private final JSqlClientImplementor sqlClient;
 
-    private StackFrame frame;
+    private StatementFrame statementFrame;
+
+    private int modCount;
 
     public AstContext(JSqlClientImplementor sqlClient) {
         this.sqlClient = sqlClient;
@@ -43,12 +52,12 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
     }
 
     public void pushStatement(AbstractMutableStatementImpl statement) {
-        StackFrame frame = this.frame;
-        this.frame = new StackFrame(statement, frame);
+        StatementFrame frame = this.statementFrame;
+        this.statementFrame = new StatementFrame(statement, frame);
     }
 
     public void popStatement() {
-        this.frame = this.frame.parent;
+        this.statementFrame = this.statementFrame.parent;
     }
 
     @SuppressWarnings("unchecked")
@@ -61,7 +70,7 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         if (tableImplementor != null) {
             return tableImplementor;
         }
-        for (StackFrame frame = this.frame; frame != null; frame = frame.parent) {
+        for (StatementFrame frame = this.statementFrame; frame != null; frame = frame.parent) {
             AbstractMutableStatementImpl statement = frame.statement;
             Table<?> stmtTable = statement.getTable();
             if (AbstractTypedTable.__refEquals(stmtTable, table)) {
@@ -81,18 +90,155 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
     }
 
     public AbstractMutableStatementImpl getStatement() {
-        return frame.statement;
+        return statementFrame.statement;
     }
 
-    private static class StackFrame {
+    public void pushVirtualPredicateContext(VirtualPredicate.Op op) {
+        statementFrame.pushVpf(op);
+    }
+
+    public void popVirtualPredicateContext() {
+        statementFrame.popVpf();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T resolveVirtualPredicate(T expression) {
+        if (expression instanceof VirtualPredicate) {
+            return (T) statementFrame.peekVpf().add((VirtualPredicate) expression);
+        }
+        if (((Ast)expression).hasVirtualPredicate()) {
+            return (T) ((Ast)expression).resolveVirtualPredicate(AstContext.this);
+        }
+        return expression;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> List<T> resolveVirtualPredicates(List<T> expressions) {
+        boolean changed = false;
+        for (T expression : expressions) {
+            if (((Ast)expression).hasVirtualPredicate()) {
+                changed = true;
+                break;
+            }
+        }
+        if (!changed) {
+            return expressions;
+        }
+        VirtualPredicateFrame vpf = statementFrame.peekVpf();
+        List<T> newExpressions = new ArrayList<>(expressions.size());
+        for (T expression : expressions) {
+            T newExpression;
+            if (expression instanceof VirtualPredicate) {
+                newExpression = (T) vpf.add((VirtualPredicate) expression);
+            } else if (((Ast)expression).hasVirtualPredicate()) {
+                newExpression = (T) ((Ast) expression).resolveVirtualPredicate(AstContext.this);
+            } else {
+                newExpression = expression;
+            }
+            if (newExpression != null) {
+                newExpressions.add(newExpression);
+            }
+        }
+        return newExpressions;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Predicate[] resolveVirtualPredicates(Predicate[] predicates) {
+        boolean changed = false;
+        for (Predicate predicate : predicates) {
+            if (((Ast)predicate).hasVirtualPredicate()) {
+                changed = true;
+                break;
+            }
+        }
+        if (!changed) {
+            return predicates;
+        }
+        VirtualPredicateFrame vpf = statementFrame.peekVpf();
+        List<Predicate> newPredicates = new ArrayList<>(predicates.length);
+        for (Predicate predicate : predicates) {
+            Predicate newPredicate;
+            if (predicate instanceof VirtualPredicate) {
+                newPredicate = vpf.add((VirtualPredicate) predicate);
+            } else if (((Ast)predicate).hasVirtualPredicate()) {
+                newPredicate = (Predicate) ((Ast) predicate).resolveVirtualPredicate(AstContext.this);
+            } else {
+                newPredicate = predicate;
+            }
+            if (newPredicate != null) {
+                newPredicates.add(newPredicate);
+            }
+        }
+        return newPredicates.toArray(PredicateImplementor.EMPTY_PREDICATES);
+    }
+
+    public int modCount() {
+        return modCount;
+    }
+
+    private class StatementFrame {
 
         final AbstractMutableStatementImpl statement;
 
-        final StackFrame parent;
+        final StatementFrame parent;
 
-        private StackFrame(AbstractMutableStatementImpl statement, StackFrame parent) {
+        private VirtualPredicateFrame vpFrame;
+
+        private StatementFrame(AbstractMutableStatementImpl statement, StatementFrame parent) {
             this.statement = statement;
             this.parent = parent;
+        }
+
+        public VirtualPredicateFrame peekVpf() {
+            VirtualPredicateFrame vpFrame = this.vpFrame;
+            if (vpFrame == null) {
+                this.vpFrame = vpFrame = new VirtualPredicateFrame(VirtualPredicate.Op.AND, null);
+            }
+            return vpFrame;
+        }
+
+        public void pushVpf(VirtualPredicate.Op op) {
+            this.vpFrame = new VirtualPredicateFrame(op, this.peekVpf());
+        }
+
+        public void popVpf() {
+            this.vpFrame = vpFrame.parent;
+        }
+    }
+
+    private class VirtualPredicateFrame extends AbstractDataManager<VirtualPredicate, VirtualPredicateMergedResult> {
+
+        private final VirtualPredicate.Op op;
+
+        private final VirtualPredicateFrame parent;
+
+        private VirtualPredicateFrame(VirtualPredicate.Op op, VirtualPredicateFrame parent) {
+            this.op = op;
+            this.parent = parent;
+        }
+
+        @Override
+        protected int hashCode(VirtualPredicate key) {
+            return System.identityHashCode(key.getTableImplementor(AstContext.this)) ^ key.getSubKey().hashCode();
+        }
+
+        @Override
+        protected boolean equals(VirtualPredicate key1, VirtualPredicate key2) {
+            return key1.getSubKey().equals(key2.getSubKey()) &&
+                    key1.getTableImplementor(AstContext.this) == key2.getTableImplementor(AstContext.this);
+        }
+
+        public Predicate add(VirtualPredicate virtualPredicate) {
+            VirtualPredicateMergedResult result = getValue(virtualPredicate);
+            if (result != null) {
+                result.merge(virtualPredicate);
+                return null;
+            }
+            result = new VirtualPredicateMergedResult(getStatement(), op);
+            putValue(virtualPredicate, result);
+            result.merge(virtualPredicate);
+            modCount++;
+            return result;
         }
     }
 }

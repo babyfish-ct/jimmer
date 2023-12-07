@@ -103,6 +103,7 @@ public class TableGenerator {
                     addProperty(prop, false);
                     addProperty(prop, true);
                 }
+                addExists(prop);
                 addIdProperty(prop, type.getIdPropName(prop.getName()));
             }
             addAsTableEx();
@@ -187,15 +188,22 @@ public class TableGenerator {
             ImmutableProp prop,
             boolean withJoinType
     ) {
-        MethodSpec method = PropsGenerator.property(
+        MethodSpec propertyMethod = PropsGenerator.property(
                 context,
                 isTableEx,
                 prop,
                 withJoinType,
                 true
         );
-        if (method != null) {
-            typeBuilder.addMethod(method);
+        if (propertyMethod != null) {
+            typeBuilder.addMethod(propertyMethod);
+        }
+    }
+
+    private void addExists(ImmutableProp prop) {
+        MethodSpec existsMethod = PropsGenerator.exists(prop, true);
+        if (existsMethod != null) {
+            typeBuilder.addMethod(existsMethod);
         }
     }
 

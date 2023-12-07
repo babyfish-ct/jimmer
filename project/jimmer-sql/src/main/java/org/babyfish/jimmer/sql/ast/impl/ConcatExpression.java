@@ -16,8 +16,8 @@ class ConcatExpression
     private final List<Expression<String>> others;
 
     ConcatExpression(Expression<String> first, List<Expression<String>> others) {
-        this.first = first;
-        this.others = others;
+        this.first = validateNoVirtualPredicate(first, "first");
+        this.others = validateNoVirtualPredicate(others, i -> "others[" + i + ']');
     }
 
     @Override

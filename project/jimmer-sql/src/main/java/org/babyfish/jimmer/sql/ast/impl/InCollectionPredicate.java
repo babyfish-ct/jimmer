@@ -28,7 +28,7 @@ class InCollectionPredicate extends AbstractPredicate {
             Collection<?> values,
             boolean negative
     ) {
-        this.expression = expression;
+        this.expression = validateNoVirtualPredicate(expression, "expression");
         this.values = values;
         this.negative = negative;
     }

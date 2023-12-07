@@ -21,7 +21,7 @@ class InSubQueryPredicate extends AbstractPredicate {
             TypedSubQuery<?> subQuery,
             boolean negative
     ) {
-        this.expression = expression;
+        this.expression = validateNoVirtualPredicate(expression, "expression");
         this.subQuery = subQuery;
         this.negative = negative;
     }
@@ -51,6 +51,17 @@ class InSubQueryPredicate extends AbstractPredicate {
         renderChild((Ast) expression, builder);
         builder.sql(negative ? " not in " : " in ");
         renderChild((Ast) subQuery, builder);
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(subQuery);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        ctx.resolveVirtualPredicate(subQuery);
+        return this;
     }
 
     @Override

@@ -18,6 +18,7 @@ import org.babyfish.jimmer.sql.collection.MutableIdViewList;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class Constants {
 
@@ -50,6 +51,9 @@ public class Constants {
 
     public static final ClassName COLLECTIONS_CLASS_NAME =
             ClassName.get(Collections.class);
+
+    public static final ClassName FUNCTION_CLASS_NAME =
+            ClassName.get(Function.class);
 
     public static final ClassName GENERATED_BY_CLASS_NAME =
             ClassName.get(GeneratedBy.class);
@@ -128,6 +132,12 @@ public class Constants {
 
     public static final ClassName JOIN_TYPE_CLASS_NAME =
             ClassName.get(JoinType.class);
+
+    public static final ClassName PREDICATE_CLASS_NAME =
+            ClassName.get(
+                    "org.babyfish.jimmer.sql.ast",
+                    "Predicate"
+            );
 
     public static final ClassName PROPS_CLASS_NAME =
             ClassName.get(

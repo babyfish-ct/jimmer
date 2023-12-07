@@ -60,7 +60,7 @@ public class SimpleCaseBuilder<C, T> {
             return (Expression<T>) new NumExpr(
                     type,
                     expression,
-                    (List<?>)whens,
+                    whens,
                     otherwise
             );
         }
@@ -202,12 +202,15 @@ public class SimpleCaseBuilder<C, T> {
                 List<Tuple2<Expression<?>, Expression<T>>> whens,
                 Expression<T> otherwise
         ) {
+            for (Tuple2<Expression<?>, Expression<T>> when : whens) {
+                validateNoVirtualPredicate(when.get_1(), "matched value of each `when` item");
+                validateNoVirtualPredicate(when.get_2(), "result expression of each `when` item");
+            }
             this.type = type;
-            this.expression = expression;
+            this.expression = validateNoVirtualPredicate(expression, "expression");
             this.whens = whens;
             this.otherwise = otherwise;
         }
-
 
         @Override
         public Class<T> getType() {

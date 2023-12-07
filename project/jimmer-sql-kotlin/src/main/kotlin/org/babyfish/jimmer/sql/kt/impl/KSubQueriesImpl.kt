@@ -26,9 +26,7 @@ internal class KSubQueriesImpl<P: Any>(
     ): SQ {
         val immutableType = ImmutableType.get(entityType.java)
         val subQuery = MutableSubQueryImpl(parent, immutableType)
-        val typedSubQuery = KMutableSubQueryImpl<P, E>(subQuery, parentTable).block()
-        subQuery.freeze()
-        return typedSubQuery
+        return KMutableSubQueryImpl<P, E>(subQuery, parentTable).block()
     }
 
     override fun <S : Any, T : Any, R, SQ : KConfigurableSubQuery<R>> forReference(
@@ -51,8 +49,6 @@ internal class KSubQueriesImpl<P: Any>(
     ): SQ {
         val associationType = AssociationType.of(immutableProp)
         val subQuery = MutableSubQueryImpl(parent, associationType)
-        val typedSubQuery = KMutableSubQueryImpl<P, Association<S, T>>(subQuery, parentTable).block()
-        subQuery.freeze()
-        return typedSubQuery
+        return KMutableSubQueryImpl<P, Association<S, T>>(subQuery, parentTable).block()
     }
 }

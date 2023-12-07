@@ -141,20 +141,24 @@ public class CaseBuilder<T> {
 
     private static class AnyExpr<T> extends AbstractExpression<T> {
 
-        private Class<T> type;
+        private final Class<T> type;
 
-        private List<Tuple2<Predicate, Expression<T>>> whens;
+        private final List<Tuple2<Predicate, Expression<T>>> whens;
 
-        private Expression<T> otherwise;
+        private final Expression<T> otherwise;
 
         AnyExpr(
                 Class<T> type,
                 List<Tuple2<Predicate, Expression<T>>> whens,
                 Expression<T> otherwise
         ) {
+            for (Tuple2<Predicate, Expression<T>> when : whens) {
+                validateNoVirtualPredicate(when.get_1(), "conditional of each `when` item");
+                validateNoVirtualPredicate(when.get_2(), "result expression of each `when` item");
+            }
             this.type = type;
             this.whens = whens;
-            this.otherwise = otherwise;
+            this.otherwise = validateNoVirtualPredicate(otherwise, "otherwise");
         }
 
 

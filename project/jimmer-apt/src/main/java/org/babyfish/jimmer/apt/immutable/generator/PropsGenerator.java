@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
+import org.babyfish.jimmer.impl.util.StringUtil;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
@@ -93,6 +94,7 @@ public class PropsGenerator {
                         addProp(prop, false);
                         addProp(prop, true);
                     }
+                    addExists(prop);
                     addIdProp(prop, type.getIdPropName(prop.getName()));
                 }
             }
@@ -148,15 +150,22 @@ public class PropsGenerator {
             ImmutableProp prop,
             boolean withJoinType
     ) {
-        MethodSpec method = property(
+        MethodSpec propertyMethod = property(
                 context,
                 false,
                 prop,
                 withJoinType,
                 false
         );
-        if (method != null) {
-            typeBuilder.addMethod(method);
+        if (propertyMethod != null) {
+            typeBuilder.addMethod(propertyMethod);
+        }
+    }
+
+    private void addExists(ImmutableProp prop) {
+        MethodSpec existsMethod = exists(prop, false);
+        if (existsMethod != null) {
+            typeBuilder.addMethod(existsMethod);
         }
     }
 
@@ -357,5 +366,39 @@ public class PropsGenerator {
                     typeName.box()
             );
         }
+    }
+
+    static MethodSpec exists(
+            ImmutableProp prop,
+            boolean withImplementation
+    ) {
+        if (!prop.isAssociation(true) || !prop.isList()) {
+            return null;
+        }
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder(prop.getName())
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(
+                        ParameterizedTypeName.get(
+                                Constants.FUNCTION_CLASS_NAME,
+                                prop.getTargetType().getTableExClassName(),
+                                Constants.PREDICATE_CLASS_NAME
+                        ),
+                        "block"
+                )
+                .returns(Constants.PREDICATE_CLASS_NAME);
+        if (withImplementation) {
+            builder.addAnnotation(Override.class);
+        } else {
+            builder.addModifiers(Modifier.ABSTRACT);
+        }
+        if (withImplementation) {
+            builder.addStatement(
+                    "return exists($T.$L.unwrap(), block)",
+                    prop.getDeclaringType().getPropsClassName(),
+                    StringUtil.snake(prop.getName(), StringUtil.SnakeCase.UPPER)
+            );
+        }
+        return builder.build();
     }
 }

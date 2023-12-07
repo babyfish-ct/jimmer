@@ -47,6 +47,16 @@ public abstract class SubQueryFunctionExpression<R> extends AbstractExpression<R
     }
 
     @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(subQuery);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        return (Ast) ctx.resolveVirtualPredicate(subQuery);
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(subQuery);
     }

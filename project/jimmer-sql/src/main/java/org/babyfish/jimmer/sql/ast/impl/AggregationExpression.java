@@ -16,7 +16,7 @@ abstract class AggregationExpression<T> extends AbstractExpression<T> {
     Expression<?> expression;
 
     public AggregationExpression(Expression<?> expression) {
-        this.expression = expression;
+        this.expression = validateNoVirtualPredicate(expression, "expression");
     }
 
     protected abstract String functionName();

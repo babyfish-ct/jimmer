@@ -8,7 +8,6 @@ import org.babyfish.jimmer.sql.ast.impl.AbstractMutableStatementImpl;
 import org.babyfish.jimmer.sql.ast.impl.Ast;
 import org.babyfish.jimmer.sql.ast.impl.AstContext;
 import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
-import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableRootQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.UseTableVisitor;
 import org.babyfish.jimmer.sql.ast.impl.table.StatementContext;
@@ -104,8 +103,8 @@ public class MutableDeleteImpl
     }
 
     @Override
-    protected void onFrozen() {
-        deleteQuery.freeze();
+    protected void onFrozen(AstContext astContext) {
+        deleteQuery.freeze(astContext);
     }
 
     @SuppressWarnings("unchecked")
@@ -121,15 +120,16 @@ public class MutableDeleteImpl
         );
 
         AstContext astContext = new AstContext(sqlClient);
-
+        Predicate predicate = deleteQuery.getPredicate(astContext);
         if (directly) {
+            applyVirtualPredicates(astContext);
             applyGlobalFilters(astContext, getContext().getFilterLevel(), null);
         }
 
         astContext.pushStatement(deleteQuery);
         try {
             AstVisitor visitor = new UseTableVisitor(astContext);
-            for (Predicate predicate : deleteQuery.getPredicates()) {
+            if (predicate != null) {
                 ((Ast) predicate).accept(visitor);
             }
         } finally {
@@ -193,6 +193,7 @@ public class MutableDeleteImpl
     }
 
     private void renderDirectly(SqlBuilder builder) {
+        Predicate predicate = deleteQuery.getPredicate(builder.getAstContext());
         TableImplementor<?> table = getTableImplementor();
         builder.sql("delete");
         if (getSqlClient().getDialect().isDeletedAliasRequired()) {
@@ -203,7 +204,6 @@ public class MutableDeleteImpl
                 .sql(table.getImmutableType().getTableName(getSqlClient().getMetadataStrategy()))
                 .sql(" ")
                 .sql(table.getAlias());
-        Predicate predicate = deleteQuery.getPredicate();
         if (predicate != null) {
             builder.enter(SqlBuilder.ScopeType.WHERE);
             ((Ast) predicate).renderTo(builder);

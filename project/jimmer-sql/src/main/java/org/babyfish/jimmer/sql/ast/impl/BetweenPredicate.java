@@ -25,8 +25,8 @@ class BetweenPredicate extends AbstractPredicate {
     ) {
         this.negative = negative;
         this.expression = expression;
-        this.min = min;
-        this.max = max;
+        this.min = validateNoVirtualPredicate(min, "min");
+        this.max = validateNoVirtualPredicate(max, "max");
         Literals.bind(min, expression);
         Literals.bind(min, expression);
     }

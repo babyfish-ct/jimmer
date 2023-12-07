@@ -17,8 +17,8 @@ abstract class ComparisonPredicate extends AbstractPredicate {
             Expression<?> left,
             Expression<?> right
     ) {
-        this.left = left;
-        this.right = right;
+        this.left = validateNoVirtualPredicate(left, "left");
+        this.right = validateNoVirtualPredicate(right, "right");
         Literals.bind(left, right);
         Literals.bind(right, left);
     }

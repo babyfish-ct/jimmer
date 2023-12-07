@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public class ExistsPredicate extends AbstractPredicate {
 
-    private final TypedSubQuery<?> subQuery;
+    private TypedSubQuery<?> subQuery;
 
     private final boolean negative;
 
@@ -71,5 +71,16 @@ public class ExistsPredicate extends AbstractPredicate {
     @Override
     public int hashCode() {
         return Objects.hash(subQuery, negative);
+    }
+
+    @Override
+    protected boolean determineHasVirtualPredicate() {
+        return hasVirtualPredicate(subQuery);
+    }
+
+    @Override
+    protected Ast onResolveVirtualPredicate(AstContext ctx) {
+        this.subQuery = ctx.resolveVirtualPredicate(subQuery);
+        return this;
     }
 }

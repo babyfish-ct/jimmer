@@ -44,9 +44,9 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
 
     private JoinType currentJoinType;
 
-    private final String alias;
+    private String alias;
 
-    private final String middleTableAlias;
+    private String middleTableAlias;
 
     public TableImpl(
             AbstractMutableStatementImpl statement,
@@ -79,6 +79,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         this.joinType = joinType;
         this.currentJoinType = joinType;
 
+        StatementContext ctx = statement.getContext();
         if (joinProp != null) {
             if (joinProp.isMiddleTableDefinition()) {
                 middleTableAlias = statement.getContext().allocateTableAlias();
@@ -90,7 +91,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         } else {
             middleTableAlias = null;
         }
-        alias = statement.getContext().allocateTableAlias();
+        alias = ctx.allocateTableAlias();
     }
 
     @Override
@@ -993,5 +994,30 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
             return TableRowCountDestructive.BREAK_ROW_COUNT;
         }
         return TableRowCountDestructive.NONE;
+    }
+
+    @Override
+    public <XT extends Table<?>> Predicate exists(String prop, Function<XT, Predicate> block) {
+        ImmutableProp joinProp = immutableType.getProps().get(prop);
+        if (joinProp == null) {
+            throw new IllegalArgumentException(
+                    "Illegal property name \"" +
+                            prop +
+                            "\", there is no such property \"" +
+                            immutableType +
+                            "\""
+            );
+        }
+        return exists(joinProp, block);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <XT extends Table<?>> Predicate exists(ImmutableProp prop, Function<XT, Predicate> block) {
+        return new AssociatedPredicate(
+                this,
+                prop,
+                (Function<Table<?>, Predicate>) block
+        );
     }
 }

@@ -32,7 +32,7 @@ public class TableProxies {
     public static <T extends Table<?>> T wrap(Table<?> table) {
         ImmutableType immutableType = table.getImmutableType();
         if (immutableType instanceof AssociationType || immutableType.isKotlinClass() || table instanceof AbstractTypedTable<?>) {
-            return (T)table;
+            return (T) table;
         }
         Class<?> javaClass = immutableType.getJavaClass();
         Constructor<?> constructor = WRAPPER_CACHE.get(javaClass);
