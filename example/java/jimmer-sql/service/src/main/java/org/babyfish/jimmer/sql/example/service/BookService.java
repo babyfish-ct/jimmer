@@ -32,7 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/book")
 @Transactional
-public class BookService {
+public class BookService implements Fetchers {
 
     private final BookRepository bookRepository;
 
@@ -117,16 +117,16 @@ public class BookService {
                     );
 
     private static final Fetcher<Book> COMPLEX_FETCHER =
-            BookFetcher.$
+            BOOK_FETCHER
                     .allScalarFields()
                     .tenant(false)
                     .store(
-                            BookStoreFetcher.$
+                            BOOK_STORE_FETCHER
                                     .allScalarFields()
                                     .avgPrice()
                     )
                     .authors(
-                            AuthorFetcher.$
+                            AUTHOR_FETCHER
                                     .allScalarFields()
                     );
 

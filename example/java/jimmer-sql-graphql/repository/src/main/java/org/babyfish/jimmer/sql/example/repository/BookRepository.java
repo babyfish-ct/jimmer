@@ -8,6 +8,7 @@ import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.example.model.Book;
 import org.babyfish.jimmer.sql.example.model.BookTable;
+import org.babyfish.jimmer.sql.example.model.Tables;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
 
@@ -16,9 +17,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface BookRepository extends JRepository<Book, Long> {
+public interface BookRepository extends JRepository<Book, Long>, Tables {
 
-    BookTable table = BookTable.$;
+    BookTable table = BOOK_TABLE;
 
     /**
      * Manually implement complex query.

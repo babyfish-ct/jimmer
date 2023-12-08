@@ -9,4 +9,3 @@ public interface BookStoreRepository extends JRepository<BookStore, Long> {
 
     List<BookStore> findByNameLikeOrderByName(String name);
 }
-

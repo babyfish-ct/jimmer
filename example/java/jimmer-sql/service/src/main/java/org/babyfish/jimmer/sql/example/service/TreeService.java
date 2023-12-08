@@ -3,10 +3,8 @@ package org.babyfish.jimmer.sql.example.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.ThrowsAll;
+import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.repository.TreeNodeRepository;
-import org.babyfish.jimmer.sql.example.model.TreeNode;
-import org.babyfish.jimmer.sql.example.model.TreeNodeDraft;
-import org.babyfish.jimmer.sql.example.model.TreeNodeFetcher;
 import org.babyfish.jimmer.sql.example.service.dto.FlatTreeNodeView;
 import org.babyfish.jimmer.sql.example.service.dto.RecursiveTreeInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
@@ -32,7 +30,7 @@ import java.util.List;
 @RestController
 @Transactional
 @RequestMapping("/tree")
-public class TreeService {
+public class TreeService implements Fetchers {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TreeService.class);
 
@@ -65,7 +63,7 @@ public class TreeService {
     @PutMapping("/root/recursive")
     @ThrowsAll(SaveErrorCode.class)
     public TreeNode saveTree(@RequestBody RecursiveTreeInput input) { // ❷
-        TreeNode rootNode = TreeNodeDraft.$.produce(
+        TreeNode rootNode = Objects.createTreeNode(
 
                 input.toEntity(),
 
@@ -93,10 +91,10 @@ public class TreeService {
     }
 
     private static final Fetcher<TreeNode> RECURSIVE_FETCHER =
-            TreeNodeFetcher.$
+            TREE_NODE_FETCHER
                     .allScalarFields()
                     .childNodes(
-                            TreeNodeFetcher.$.allScalarFields(),
+                            TREE_NODE_FETCHER.allScalarFields(),
                             RecursiveListFieldConfig::recursive
                     );
 }

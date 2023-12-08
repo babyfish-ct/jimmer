@@ -22,7 +22,7 @@ public class App {
         /*
          * First step, create new object from scratch
          */
-        Book book = BookDraft.$.produce(b -> {
+        Book book = Objects.createBook(b -> {
             b.setName("book");
             b.applyStore(s -> {
                 s.setName("store");
@@ -38,7 +38,7 @@ public class App {
         /*
          * Second step, make some "changes" based on the existing object to get a new object.
          */
-        Book newBook = BookDraft.$.produce(book, b -> {
+        Book newBook = Objects.createBook(book, b -> {
             b.setName(b.name() + "!");
             b.store().setName(b.store().name() + "!");
             for (AuthorDraft author : b.authors(false)) {
@@ -55,7 +55,7 @@ public class App {
         /*
          * First step, create new object from scratch
          */
-        TreeNode treeNode = TreeNodeDraft.$.produce(root -> {
+        TreeNode treeNode = Objects.createTreeNode(root -> {
             root.setName("Root").addIntoChildNodes(food -> {
                 food
                         .setName("Food")
@@ -76,7 +76,7 @@ public class App {
         /*
          * Second step, make some "changes" based on the existing object to get a new object.
          */
-        TreeNode newTreeNode = TreeNodeDraft.$.produce(
+        TreeNode newTreeNode = Objects.createTreeNode(
                 treeNode, // existing object
                 root -> {
                     root

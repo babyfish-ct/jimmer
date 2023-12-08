@@ -28,7 +28,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/author")
 @Transactional
-public class AuthorService {
+public class AuthorService implements Fetchers {
 
     private final AuthorRepository authorRepository;
 
@@ -62,23 +62,23 @@ public class AuthorService {
     }
 
     private static final Fetcher<Author> SIMPLE_FETCHER =
-            AuthorFetcher.$
+            AUTHOR_FETCHER
                     .firstName()
                     .lastName();
 
     private static final Fetcher<Author> DEFAULT_FETCHER =
-            AuthorFetcher.$
+            AUTHOR_FETCHER
                     .allScalarFields();
 
     private static final Fetcher<Author> COMPLEX_FETCHER =
-            AuthorFetcher.$
+            AUTHOR_FETCHER
                     .allScalarFields()
                     .books(
-                            BookFetcher.$
+                            BOOK_FETCHER
                                     .allScalarFields()
                                     .tenant(false)
                                     .store(
-                                            BookStoreFetcher.$
+                                            BOOK_STORE_FETCHER
                                                     .allScalarFields()
                                                     .avgPrice()
                                     )

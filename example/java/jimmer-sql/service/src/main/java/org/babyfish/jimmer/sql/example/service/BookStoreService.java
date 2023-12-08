@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/bookStore")
 @Transactional
-public class BookStoreService {
+public class BookStoreService implements Fetchers {
 
     private final BookStoreRepository bookStoreRepository;
 
@@ -75,35 +75,35 @@ public class BookStoreService {
     }
 
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
-            BookStoreFetcher.$.name();
+            BOOK_STORE_FETCHER.name();
 
     private static final Fetcher<BookStore> DEFAULT_FETCHER =
-            BookStoreFetcher.$.allScalarFields();
+            BOOK_STORE_FETCHER.allScalarFields();
 
     private static final Fetcher<BookStore> WITH_ALL_BOOKS_FETCHER =
-            BookStoreFetcher.$
+            BOOK_STORE_FETCHER
                     .allScalarFields()
                     .avgPrice()
                     .books(
-                            BookFetcher.$
+                            BOOK_FETCHER
                                     .allScalarFields()
                                     .tenant(false)
                                     .authors(
-                                            AuthorFetcher.$
+                                            AUTHOR_FETCHER
                                                     .allScalarFields()
                                     )
                     );
 
     private static final Fetcher<BookStore> WITH_NEWEST_BOOKS_FETCHER =
-            BookStoreFetcher.$
+            BOOK_STORE_FETCHER
                     .allScalarFields()
                     .avgPrice()
                     .newestBooks(
-                            BookFetcher.$
+                            BOOK_FETCHER
                                     .allScalarFields()
                                     .tenant(false)
                                     .authors(
-                                            AuthorFetcher.$
+                                            AUTHOR_FETCHER
                                                     .allScalarFields()
                                     )
                     );
