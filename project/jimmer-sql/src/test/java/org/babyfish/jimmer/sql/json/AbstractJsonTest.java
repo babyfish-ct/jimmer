@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.NativeDatabases;
 import org.babyfish.jimmer.sql.dialect.PostgresDialect;
-import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.pg.*;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +36,6 @@ public abstract class AbstractJsonTest {
         con.setAutoCommit(false);
         sqlClient = JSqlClient
                 .newBuilder()
-                .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setConnectionManager(
                         new ConnectionManager() {
                             @Override

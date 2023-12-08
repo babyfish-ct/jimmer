@@ -22,11 +22,16 @@ internal class KMutableUpdateImpl<E: Any>(
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaUpdate.getTable())
 
-    override val where: Where =
+    override val where: Where by lazy {
         Where(this)
+    }
 
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
         javaUpdate.where(*predicates.map { it?.toJavaPredicate() }.toTypedArray())
+    }
+
+    override fun where(block: () -> KNonNullPropExpression<Boolean>?) {
+        where(block())
     }
 
     @Suppress("UNCHECKED_CAST")

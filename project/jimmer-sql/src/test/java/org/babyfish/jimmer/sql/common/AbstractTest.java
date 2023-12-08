@@ -17,7 +17,6 @@ import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.loader.graphql.Loaders;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
-import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.calc.BookStoreMostPopularAuthorResolver;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.h2.Driver;
@@ -81,7 +80,6 @@ public class AbstractTest extends Tests {
         JSqlClient.Builder builder = JSqlClient.newBuilder()
                 .setExecutor(new ExecutorImpl())
                 .setDialect(new H2Dialect())
-                .setEntityManager(JimmerModule.ENTITY_MANAGER)
                 .setTransientResolverProvider(
                         new DefaultTransientResolverProvider() {
                             @Override

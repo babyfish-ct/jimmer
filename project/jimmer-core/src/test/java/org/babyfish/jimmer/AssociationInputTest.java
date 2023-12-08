@@ -3,16 +3,17 @@ package org.babyfish.jimmer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.babyfish.jimmer.model.AssociationInput;
 import org.babyfish.jimmer.model.AssociationInputDraft;
+import org.babyfish.jimmer.model.Objects;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ListIterator;
 
-public class AssociationInputTest {
+public class AssociationInputTest implements Objects {
 
     @Test
     public void test() throws JsonProcessingException {
-        AssociationInput input = AssociationInputDraft.$.produce(i -> {
+        AssociationInput input = Objects.createAssociationInput(i -> {
             i.setParentId(3L);
             i.childIds(true).add(10L);
             i.childIds(true).add(11L);

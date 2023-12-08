@@ -12,8 +12,6 @@ import org.babyfish.jimmer.runtime.Internal;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ImmutableObjects {
 
@@ -340,6 +338,45 @@ public class ImmutableObjects {
 
     public static <I> I fromString(Class<I> type, String json, ObjectMapper mapper) throws JsonProcessingException {
         return mapper.readValue(json, type);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <I> I deepClone(I immutable) {
+        if (immutable == null) {
+            return null;
+        }
+        ImmutableType immutableType = ImmutableType.get(immutable.getClass());
+        return (I) deepClone(immutableType, immutable);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object deepClone(ImmutableType type, Object immutable) {
+        ImmutableSpi from = (ImmutableSpi) immutable;
+        return Internal.produce(type, null, draft -> {
+            DraftSpi to = (DraftSpi) draft;
+            for (ImmutableProp prop : type.getProps().values()) {
+                PropId propId = prop.getId();
+                if (prop.isView() || !prop.isMutable() || !from.__isLoaded(propId)) {
+                    continue;
+                }
+                ImmutableType targetType = prop.getTargetType();
+                if (prop.isReferenceList(TargetLevel.OBJECT)) {
+                    List<Object> targets = (List<Object>) from.__get(propId);
+                    List<Object> clonedTargets = new ArrayList<>(targets.size());
+                    for (Object target : targets) {
+                        clonedTargets.add(deepClone(targetType, target));
+                    }
+                    to.__set(propId, clonedTargets);
+                } else if (prop.isReference(TargetLevel.OBJECT)) {
+                    Object target = from.__get(propId);
+                    if (target != null) {
+                        to.__set(propId, deepClone(targetType, target));
+                    }
+                } else {
+                    to.__set(propId, from.__get(propId));
+                }
+            }
+        });
     }
 
     public static boolean isLogicalDeleted(Object o) {

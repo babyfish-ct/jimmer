@@ -13,9 +13,9 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.function.Function;
 
-public class Fetchers {
+public class FetcherUtil {
 
-    private Fetchers() {}
+    private FetcherUtil() {}
 
     @SuppressWarnings("unchecked")
     public static void fetch(

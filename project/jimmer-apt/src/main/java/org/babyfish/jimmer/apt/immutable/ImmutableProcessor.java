@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.immutable;
 
 import org.babyfish.jimmer.apt.Context;
+import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.immutable.generator.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 
@@ -85,9 +86,10 @@ public class ImmutableProcessor {
                 ).generate();
             }
         }
-        new JimmerModuleGenerator(
+        new EntryProcessor(
+                context,
                 immutableTypeMap.keySet(),
                 filer
-        ).generate();
+        ).process();
     }
 }

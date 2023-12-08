@@ -6,7 +6,6 @@ import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
 import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.runtime.ConnectionManager;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExchange;
 import org.babyfish.jimmer.sql.runtime.MicroServiceExporter;
@@ -34,7 +33,6 @@ public class MicroServiceExchangeImpl implements MicroServiceExchange {
     private final JSqlClient orderClient =
             JSqlClient
                     .newBuilder()
-                    .setEntityManager(JimmerModule.ENTITY_MANAGER)
                     .setConnectionManager(CONNECTION_MANAGER)
                     .setMicroServiceName("order-service")
                     .setMicroServiceExchange(this)
@@ -43,7 +41,6 @@ public class MicroServiceExchangeImpl implements MicroServiceExchange {
     private final JSqlClient orderItemClient =
             JSqlClient
                     .newBuilder()
-                    .setEntityManager(JimmerModule.ENTITY_MANAGER)
                     .setConnectionManager(CONNECTION_MANAGER)
                     .setMicroServiceName("order-item-service")
                     .setMicroServiceExchange(this)
@@ -52,7 +49,6 @@ public class MicroServiceExchangeImpl implements MicroServiceExchange {
     private final JSqlClient productClient =
             JSqlClient
                     .newBuilder()
-                    .setEntityManager(JimmerModule.ENTITY_MANAGER)
                     .setConnectionManager(CONNECTION_MANAGER)
                     .setMicroServiceName("product-service")
                     .setMicroServiceExchange(this)

@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.runtime;
 
 import org.babyfish.jimmer.runtime.Internal;
 import org.babyfish.jimmer.sql.ast.Selection;
-import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -53,7 +53,7 @@ public class Selectors {
                         }
                 )
         );
-        Fetchers.fetch(sqlClient, con, selections, rows);
+        FetcherUtil.fetch(sqlClient, con, selections, rows);
         return rows;
     }
 
@@ -89,7 +89,7 @@ public class Selectors {
                                 results.add((R) reader.read(resultSet, ctx));
                                 ctx.resetCol();
                                 if (results.size() >= batchSize) {
-                                    Fetchers.fetch(sqlClient, con, selections, results);
+                                    FetcherUtil.fetch(sqlClient, con, selections, results);
                                     for (R result : results) {
                                         consumer.accept(result);
                                     }
@@ -97,7 +97,7 @@ public class Selectors {
                                 }
                             }
                         }
-                        Fetchers.fetch(sqlClient, con, selections, results);
+                        FetcherUtil.fetch(sqlClient, con, selections, results);
                         for (R result : results) {
                             consumer.accept(result);
                         }

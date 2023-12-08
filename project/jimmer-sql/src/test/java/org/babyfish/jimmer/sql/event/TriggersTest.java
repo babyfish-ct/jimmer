@@ -40,7 +40,7 @@ public class TriggersTest {
     @BeforeEach
     public void initialize() {
 
-        JSqlClient sqlClient = JSqlClient.newBuilder().setEntityManager(JimmerModule.ENTITY_MANAGER).build();
+        JSqlClient sqlClient = JSqlClient.newBuilder().build();
         triggers = (TriggersImpl) sqlClient.getTriggers();
         bookEvents = new ArrayList<>();
         bookStoreEvents = new ArrayList<>();

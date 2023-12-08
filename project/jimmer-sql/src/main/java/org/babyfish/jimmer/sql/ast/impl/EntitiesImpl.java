@@ -29,7 +29,7 @@ import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
-import org.babyfish.jimmer.sql.fetcher.impl.Fetchers;
+import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.runtime.Converters;
 import org.babyfish.jimmer.sql.runtime.ExecutionPurpose;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
@@ -38,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class EntitiesImpl implements Entities {
 
@@ -300,7 +299,7 @@ public class EntitiesImpl implements Entities {
                         );
                     }
                 }
-                Fetchers.fetch(
+                FetcherUtil.fetch(
                         sqlClient,
                         con,
                         Collections.singletonList(
@@ -415,7 +414,7 @@ public class EntitiesImpl implements Entities {
                         );
                     }
                 }
-                Fetchers.fetch(
+                FetcherUtil.fetch(
                         sqlClient,
                         con,
                         Collections.singletonList(

@@ -4,9 +4,9 @@ import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.meta.ForeignKeyStrategy;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
-import org.babyfish.jimmer.sql.model.JimmerModule;
 import org.babyfish.jimmer.sql.model.inheritance.*;
 import org.babyfish.jimmer.sql.runtime.DefaultDatabaseNamingStrategy;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,8 @@ public class EntityManagerTest {
                         "org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata.administrator",
                         "org.babyfish.jimmer.sql.model.inheritance.Role.administrators"
                 ),
-                JimmerModule.ENTITY_MANAGER.getAllBackProps(ImmutableType.get(Administrator.class)).stream()
+                EntityManager.fromResources(null, null)
+                        .getAllBackProps(ImmutableType.get(Administrator.class)).stream()
                         .map(Object::toString)
                         .sorted()
                         .collect(Collectors.toList())
@@ -33,7 +34,7 @@ public class EntityManagerTest {
                         "org.babyfish.jimmer.sql.model.inheritance.Administrator.roles",
                         "org.babyfish.jimmer.sql.model.inheritance.Permission.role"
                 ),
-                JimmerModule.ENTITY_MANAGER.getAllBackProps(ImmutableType.get(Role.class)).stream()
+                EntityManager.fromResources(null, null).getAllBackProps(ImmutableType.get(Role.class)).stream()
                         .map(Object::toString)
                         .sorted()
                         .collect(Collectors.toList())
@@ -42,7 +43,7 @@ public class EntityManagerTest {
                 Collections.singletonList(
                         "org.babyfish.jimmer.sql.model.inheritance.Role.permissions"
                 ),
-                JimmerModule.ENTITY_MANAGER.getAllBackProps(ImmutableType.get(Permission.class)).stream()
+                EntityManager.fromResources(null, null).getAllBackProps(ImmutableType.get(Permission.class)).stream()
                         .map(Object::toString)
                         .sorted()
                         .collect(Collectors.toList())
@@ -51,7 +52,7 @@ public class EntityManagerTest {
                 Collections.singletonList(
                         "org.babyfish.jimmer.sql.model.inheritance.Administrator.metadata"
                 ),
-                JimmerModule.ENTITY_MANAGER.getAllBackProps(ImmutableType.get(AdministratorMetadata.class)).stream()
+                EntityManager.fromResources(null, null).getAllBackProps(ImmutableType.get(AdministratorMetadata.class)).stream()
                         .map(Object::toString)
                         .sorted()
                         .collect(Collectors.toList())
@@ -66,19 +67,19 @@ public class EntityManagerTest {
         );
         Assertions.assertEquals(
                 ImmutableType.get(Role.class),
-                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "`roLE`", strategy)
+                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "`roLE`", strategy)
         );
         Assertions.assertEquals(
                 ImmutableType.get(Permission.class),
-                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "[PerMission]", strategy)
+                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "[PerMission]", strategy)
         );
         Assertions.assertEquals(
                 ImmutableType.get(Administrator.class),
-                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "\"Administrator\"", strategy)
+                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "\"Administrator\"", strategy)
         );
         Assertions.assertEquals(
                 AssociationType.of(AdministratorProps.ROLES),
-                JimmerModule.ENTITY_MANAGER.getNonNullTypeByServiceAndTable("", "`Administrator_Role_Mapping`", strategy)
+                EntityManager.fromResources(null, null).getNonNullTypeByServiceAndTable("", "`Administrator_Role_Mapping`", strategy)
         );
     }
 }

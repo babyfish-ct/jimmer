@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.ast.query
 import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.table.KProps
 import kotlin.reflect.KClass
 
@@ -13,6 +14,8 @@ interface AbstractKFilterable<E: Any, P: KProps<E>> {
     val where: Where
 
     fun where(vararg predicates: KNonNullExpression<Boolean>?)
+
+    fun where(block: () -> KNonNullPropExpression<Boolean>?)
 
     fun <X: Any, R, SQ: KConfigurableSubQuery<R>> subQuery(
         entityType: KClass<X>,

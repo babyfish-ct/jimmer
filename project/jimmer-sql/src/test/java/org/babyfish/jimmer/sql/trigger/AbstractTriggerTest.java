@@ -6,7 +6,7 @@ import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import org.babyfish.jimmer.sql.event.TriggerType;
-import org.babyfish.jimmer.sql.model.JimmerModule;
+import org.babyfish.jimmer.sql.runtime.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,7 @@ public class AbstractTriggerTest extends AbstractMutationTest {
             block.accept(builder);
             builder.setTriggerType(TriggerType.TRANSACTION_ONLY);
         });
-        for (ImmutableType type : JimmerModule.ENTITY_MANAGER.getAllTypes(null)) {
+        for (ImmutableType type : EntityManager.fromResources(null, null).getAllTypes(null)) {
             if (type.isEntity()) {
                 sqlClient.getTriggers(true).addEntityListener(type, e -> events.add(e.toString()));
                 for (ImmutableProp prop : type.getProps().values()) {

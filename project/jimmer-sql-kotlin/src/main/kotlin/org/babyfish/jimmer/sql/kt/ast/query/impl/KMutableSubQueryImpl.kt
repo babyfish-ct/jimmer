@@ -12,6 +12,7 @@ import org.babyfish.jimmer.sql.kt.KSubQueries
 import org.babyfish.jimmer.sql.kt.KWildSubQueries
 import org.babyfish.jimmer.sql.kt.ast.expression.KExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullExpression
+import org.babyfish.jimmer.sql.kt.ast.expression.KNonNullPropExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.KNullableExpression
 import org.babyfish.jimmer.sql.kt.ast.expression.impl.toJavaPredicate
 import org.babyfish.jimmer.sql.kt.ast.query.KConfigurableSubQuery
@@ -32,14 +33,19 @@ internal class KMutableSubQueryImpl<P: Any, E: Any>(
     override val table: KNonNullTableEx<E> =
         KNonNullTableExImpl(javaSubQuery.getTable())
 
-    override val where: Where =
-        Where(this)
-
     override val parentTable: KNonNullTableEx<P> =
         parentTable ?: KNonNullTableExImpl(javaSubQuery.parent.getTable())
 
+    override val where: Where by lazy {
+        Where(this)
+    }
+
     override fun where(vararg predicates: KNonNullExpression<Boolean>?) {
         javaSubQuery.where(*predicates.mapNotNull { it?.toJavaPredicate() }.toTypedArray())
+    }
+
+    override fun where(block: () -> KNonNullPropExpression<Boolean>?) {
+        where(block())
     }
 
     override fun orderBy(vararg expressions: KExpression<*>?) {
