@@ -8,7 +8,7 @@ plugins {
 	id("com.google.devtools.ksp") version "1.7.10-1.0.6"
 }
 
-val jimmerVersion = "0.8.44"
+val jimmerVersion: String by rootProject.extra
 
 group = "org.babyfish.jimmer.example.kt"
 version = jimmerVersion

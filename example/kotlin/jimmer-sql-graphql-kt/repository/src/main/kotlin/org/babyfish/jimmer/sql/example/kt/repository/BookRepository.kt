@@ -38,17 +38,12 @@ interface BookRepository : KRepository<Book, Long> {
                     where(table.store.name ilike it)
                 }
                 authorName?.takeIf { it.isNotEmpty() }?.let {
-                    where(
-                        table.id valueIn subQuery(Author::class) { // ❼
-                            where(
-                                or(
-                                    table.firstName ilike it,
-                                    table.lastName ilike it
-                                )
-                            )
-                            select(table.books.id)
-                        }
-                    )
+                    where += table.authors {
+                        or(
+                            firstName ilike it,
+                            lastName ilike it
+                        )
+                    }
                 }
 
                 orderBy(table.makeOrders(sortCode ?: "name asc"))
@@ -70,10 +65,10 @@ interface BookRepository : KRepository<Book, Long> {
     fun findAvgPriceGroupByStoreIds(storeIds: Collection<Long>): Map<Long, BigDecimal> =
         sql
             .createQuery(Book::class) {
-                where(table.store.id valueIn storeIds) // ⓬
-                groupBy(table.store.id) // ⓭
+                where(table.storeId valueIn storeIds)
+                groupBy(table.storeId)
                 select(
-                    table.store.id, // ⓮
+                    table.storeId.asNonNull(),
                     avg(table.price).asNonNull()
                 )
             }
@@ -86,9 +81,9 @@ interface BookRepository : KRepository<Book, Long> {
         sql
             .createQuery(Book::class) {
                 where(
-                    tuple(table.name, table.edition) valueIn subQuery(Book::class) {// ⓯
+                    tuple(table.name, table.edition) valueIn subQuery(Book::class) {
                         // Apply `filter` for sub query is better.
-                        where(table.store.id valueIn storeIds) // ⓰
+                        where(table.storeId valueIn storeIds)
                         groupBy(table.name)
                         select(
                             table.name,
@@ -97,7 +92,7 @@ interface BookRepository : KRepository<Book, Long> {
                     }
                 )
                 select(
-                    table.store.id, // ⓱
+                    table.storeId.asNonNull(),
                     table.id
                 )
             }

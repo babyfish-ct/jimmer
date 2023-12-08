@@ -11,14 +11,14 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import java.math.BigDecimal
 
-interface BookRepository : KRepository<Book, Long> { // ❶
+interface BookRepository : KRepository<Book, Long> {
 
     /**
      * Manually implement complex query.
      *
      * <p>The functionality of this method is the same as the super QBE method.[find]</p>
      */
-    fun findBooks( // ❷
+    fun findBooks(
         pageable: Pageable,
         name: String?,
         minPrice: BigDecimal?,
@@ -29,7 +29,7 @@ interface BookRepository : KRepository<Book, Long> { // ❶
     ): Page<Book> =
         sql
             .createQuery(Book::class) {
-                name?.takeIf { it.isNotEmpty() }?.let { // ❸
+                name?.takeIf { it.isNotEmpty() }?.let {
                     where(table.name ilike it)
                 }
                 minPrice?.let {
@@ -38,26 +38,21 @@ interface BookRepository : KRepository<Book, Long> { // ❶
                 maxPrice?.let {
                     where(table.price le it)
                 }
-                storeName?.takeIf { it.isNotEmpty() }?.let { // ❹
-                    where(table.store.name ilike it) // ❺
+                storeName?.takeIf { it.isNotEmpty() }?.let {
+                    where(table.store.name ilike it)
                 }
-                authorName?.takeIf { it.isNotEmpty() }?.let { // ❻
-                    where(
-                        table.id valueIn subQuery(Author::class) { // ❼
-                            where(
-                                or(
-                                    table.firstName ilike it,
-                                    table.lastName ilike it
-                                )
-                            )
-                            select(table.books.id)// ❽
-                        }
-                    )
+                authorName?.takeIf { it.isNotEmpty() }?.let {
+                    where += table.authors {
+                        or(
+                            firstName ilike it,
+                            lastName ilike it
+                        )
+                    }
                 }
-                orderBy(pageable.sort) // ❾
-                select(table.fetch(fetcher)) // ❿
+                orderBy(pageable.sort)
+                select(table.fetch(fetcher))
             }
-            .fetchPage(pageable) // ⓫
+            .fetchPage(pageable)
 
     /**
      * Super QBE.
@@ -74,10 +69,10 @@ interface BookRepository : KRepository<Book, Long> { // ❶
     fun findAvgPriceGroupByStoreIds(storeIds: Collection<Long>): Map<Long, BigDecimal> =
         sql
             .createQuery(Book::class) {
-                where(table.store.id valueIn storeIds) // ⓬
-                groupBy(table.store.id) // ⓭
+                where(table.storeId valueIn storeIds)
+                groupBy(table.storeId)
                 select(
-                    table.store.id, // ⓮
+                    table.storeId.asNonNull(),
                     avg(table.price).asNonNull()
                 )
             }
@@ -90,9 +85,9 @@ interface BookRepository : KRepository<Book, Long> { // ❶
         sql
             .createQuery(Book::class) {
                 where(
-                    tuple(table.name, table.edition) valueIn subQuery(Book::class) {// ⓯
+                    tuple(table.name, table.edition) valueIn subQuery(Book::class) {
                         // Apply `filter` for sub query is better.
-                        where(table.store.id valueIn storeIds) // ⓰
+                        where(table.storeId valueIn storeIds)
                         groupBy(table.name)
                         select(
                             table.name,
@@ -101,7 +96,7 @@ interface BookRepository : KRepository<Book, Long> { // ❶
                     }
                 )
                 select(
-                    table.store.id, // ⓱
+                    table.storeId.asNonNull(),
                     table.id
                 )
             }
@@ -110,26 +105,3 @@ interface BookRepository : KRepository<Book, Long> { // ❶
                 it._2
             }
 }
-
-/*----------------Documentation Links----------------
-❶ https://babyfish-ct.github.io/jimmer/docs/spring/repository/concept
-
-❷ https://babyfish-ct.github.io/jimmer/docs/spring/repository/default
-
-❸ ❹ ❻ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-where
-
-❺ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/
-
-❼ ⓯ https://babyfish-ct.github.io/jimmer/docs/query/sub-query
-
-❽ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#half-joins
-
-❾ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-order
-
-❿ https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/
-
-⓫ https://babyfish-ct.github.io/jimmer/docs/spring/repository/default#pagination
-  https://babyfish-ct.github.io/jimmer/docs/query/paging/
-
-⓬ ⓭ ⓮ ⓰ ⓱ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-join/optimization#ghost-joins
----------------------------------------------------*/
