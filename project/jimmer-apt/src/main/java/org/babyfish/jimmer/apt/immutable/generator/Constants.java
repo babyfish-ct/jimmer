@@ -5,6 +5,8 @@ import com.squareup.javapoet.ClassName;
 import org.babyfish.jimmer.*;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.impl.util.DtoPropAccessor;
+import org.babyfish.jimmer.internal.ClientException;
+import org.babyfish.jimmer.internal.GeneratedBy;
 import org.babyfish.jimmer.meta.PropId;
 import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.DraftContext;
@@ -61,6 +63,9 @@ public class Constants {
     public static final ClassName VIEW_CLASS_NAME =
             ClassName.get(View.class);
 
+    public static final ClassName INPUT_CLASS_NAME =
+            ClassName.get(Input.class);
+
     public static final ClassName JSPECIFICATION_CLASS_NAME =
             ClassName.get(
                     "org.babyfish.jimmer.sql.ast.query.specification",
@@ -78,9 +83,6 @@ public class Constants {
                     "org.babyfish.jimmer.sql.ast.query.specification",
                     "PredicateApplier"
             );
-
-    public static final ClassName VIEWABLE_INPUT_CLASS_NAME =
-            ClassName.get(ViewableInput.class);
 
     public static final ClassName LINKED_HASH_MAP_CLASS_NAME =
             ClassName.get(LinkedHashMap.class);
@@ -305,6 +307,9 @@ public class Constants {
                     "org.babyfish.jimmer.meta",
                     "ImmutableProp"
             );
+
+    public static final ClassName CLIENT_EXCEPTION_CLASS_NAME =
+            ClassName.get(ClientException.class);
 
     public static final String DRAFT_FIELD_CTX =
             "__ctx";

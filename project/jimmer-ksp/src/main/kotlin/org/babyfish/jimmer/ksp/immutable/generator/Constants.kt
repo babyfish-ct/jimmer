@@ -11,7 +11,8 @@ import org.babyfish.jimmer.meta.ImmutableType
 import org.babyfish.jimmer.runtime.*
 import org.babyfish.jimmer.sql.*
 import org.babyfish.jimmer.impl.validation.Validator
-import org.babyfish.jimmer.meta.ImmutableProp
+import org.babyfish.jimmer.internal.ClientException
+import org.babyfish.jimmer.internal.GeneratedBy
 import org.babyfish.jimmer.meta.PropId
 import org.babyfish.jimmer.meta.TypedProp
 import org.babyfish.jimmer.sql.collection.IdViewList
@@ -42,9 +43,9 @@ internal val JVM_STATIC_CLASS_NAME = JvmStatic::class.asClassName()
 internal val JSON_IGNORE_CLASS_NAME = JsonIgnore::class.asClassName()
 internal val JSON_PROPERTY_CLASS_NAME = JsonProperty::class.asClassName()
 internal val GENERATED_BY_CLASS_NAME = GeneratedBy::class.asClassName()
+internal val CLIENT_EXCEPTION_CLASS_NAME = ClientException::class.asClassName()
 internal val VIEW_CLASS_NAME = View::class.asClassName()
 internal val INPUT_CLASS_NAME = Input::class.asClassName()
-internal val VIEWABLE_INPUT_CLASS_NAME = ViewableInput::class.asClassName()
 internal val VIEW_METADATA_CLASS_NAME = ClassName(
     "org.babyfish.jimmer.sql.fetcher",
     "ViewMetadata"

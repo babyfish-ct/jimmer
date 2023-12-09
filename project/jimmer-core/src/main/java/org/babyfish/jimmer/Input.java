@@ -8,7 +8,7 @@ import org.babyfish.jimmer.client.ApiIgnore;
  * @param <E> The dynamic entity interface type
  */
 @ApiIgnore
-public interface Input<E> {
+public interface Input<E> extends View<E> {
 
     E toEntity();
 }

@@ -7,13 +7,14 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.client.ApiIgnore
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.client.meta.*
 import org.babyfish.jimmer.client.meta.impl.*
-import org.babyfish.jimmer.error.ErrorFamily
+import org.babyfish.jimmer.error.CodeBasedException
+import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.error.ErrorField
 import org.babyfish.jimmer.error.ErrorFields
 import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.internal.ClientException
 import org.babyfish.jimmer.ksp.*
 import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
@@ -157,93 +158,61 @@ class ClientProcessor(
                 }
             }
             func.returnType?.let { unresolvedType ->
-                if (unresolvedType.resolve().declaration.qualifiedName?.asString() != "kotlin.Unit") {
+                if (unresolvedType.realDeclaration.qualifiedName?.asString() != "kotlin.Unit") {
                     typeRef { type ->
                         fillType(unresolvedType)
                         operation.setReturnType(type)
                     }
                 }
             }
-            operation.errorMap = getErrorMap(func)
+            operation.setExceptionTypeNames(getExceptionTypeNames(func))
             service.addOperation(operation)
         }
     }
 
-    private fun SchemaBuilder<KSDeclaration>.getErrorMap(func: KSFunctionDeclaration): Map<TypeName, List<String>> {
-        val errorMap = mutableMapOf<TypeName, List<String>>()
-        for (anno in func.annotations) {
-            val qualifiedName = anno.annotationType.resolve().declaration.qualifiedName!!.asString()
-            val (enumTypeName, constants) = if (qualifiedName == THROWS_ALL_NAME) {
-                val enumDeclaration = anno.getClassArgument(ThrowsAll::value)!!
-                if (enumDeclaration.annotation(ErrorFamily::class) == null) {
-                    throw MetaException(
-                        builder.ancestorSource(),
-                        "it is decorated by `@ThrowsAll` with the argument \"" +
-                            enumDeclaration.qualifiedName +
-                            "\", however, that enum is not decorated by `@ErrorFamily`"
-                    )
-                }
-                enumDeclaration.toTypeName() to enumDeclaration.declarations.filter {
-                    it is KSClassDeclaration
-                }.map {
-                    it.simpleName.asString()
-                }.toList()
-            } else {
-                var enumDeclaration: KSClassDeclaration? = null
-                var constants: List<String>?= null
-                val valueProp = (anno.annotationType.resolve().declaration as KSClassDeclaration)
-                    .getDeclaredProperties()
-                    .firstOrNull { it.simpleName.asString() == "value" }
-                if (valueProp !== null) {
-                    val valueType = valueProp.type.resolve()
-                    enumDeclaration = when {
-                        valueProp.modifiers.contains(Modifier.VARARG) ->
-                            valueType.declaration
-                        valueType.declaration.qualifiedName?.asString() == "kotlin.Array" ->
-                            valueType.arguments[0].type?.resolve()?.declaration
-                        else -> null
-                    }?.takeIf { it is KSClassDeclaration && it.annotation(ErrorFamily::class) != null }
-                    as KSClassDeclaration?
-                    if (enumDeclaration !== null) {
-                        constants = anno.get<List<KSType>>("value")?.let { types ->
-                            types
-                                .map { it.declaration.simpleName.asString() }
-                                .also {
-                                    for (name in it) {
-                                        enumDeclaration
-                                            .declarations
-                                            .firstOrNull { item -> item.simpleName.asString() == name }
-                                            ?: throw MetaException(
-                                                ancestorSource(),
-                                                "It is decorated by `@" +
-                                                    anno.annotationType.resolve().declaration!!.qualifiedName!!.asString() +
-                                                    "` but there is no constant \"" +
-                                                    name +
-                                                    "\" in the enum \"" +
-                                                    enumDeclaration.fullName +
-                                                    "\""
-                                            )
-                                    }
-                                }
-                        }
-                    }
-                }
-                enumDeclaration?.toTypeName() to constants
-            }
-            if (enumTypeName !== null && constants !== null) {
-                if (errorMap.put(enumTypeName, constants) !== null) {
-                    throw MetaException(
-                        ancestorSource(),
-                        "It cannot be decorated by `@" +
-                            enumTypeName +
-                            "` because the error throwing of \"" +
-                            enumTypeName +
-                            "\" has already been declared"
-                    )
-                }
+    private fun getExceptionTypeNames(func: KSFunctionDeclaration): Set<TypeName> {
+        val throws = func.annotation("kotlin.Throws")
+            ?: func.annotation("kotlin.jvm.Throws")
+            ?: return emptySet()
+        val declarations = throws.getClassListArgument(Throws::exceptionClasses)
+        val exceptionTypeNames = mutableSetOf<TypeName>()
+        for (declaration in declarations) {
+            collectExceptionTypeNames(declaration, exceptionTypeNames)
+        }
+        return exceptionTypeNames
+    }
+
+    private fun collectExceptionTypeNames(declaration: KSClassDeclaration, exceptionTypeNames: MutableSet<TypeName>) {
+        val typeName = declaration.toTypeName();
+        if (typeName in exceptionTypeNames) {
+            return
+        }
+        val clientException = declaration.annotation(ClientException::class) ?: return
+        val code = clientException[ClientException::code] ?: ""
+        val subTypes = clientException.getClassListArgument(ClientException::subTypes)
+        if (code.isEmpty() && subTypes.isEmpty()) {
+            throw MetaException(
+                declaration,
+                "Illegal client exception, neither `code` nor `subTypes` of the annotation \"@" +
+                    ClientException::class.java.getName() +
+                    "\" is specified"
+            )
+        }
+        if (code.isNotEmpty() && subTypes.isNotEmpty()) {
+            throw MetaException(
+                declaration,
+                ("Illegal client exception, both `code` and `subTypes` of the annotation \"@" +
+                    ClientException::class.java.getName() +
+                    "\" is specified")
+            )
+        }
+        if (code.isNotEmpty()) {
+            exceptionTypeNames += typeName
+        } else {
+            for (subType in subTypes) {
+                collectExceptionTypeNames(subType, exceptionTypeNames)
             }
         }
-        return errorMap
     }
 
     private fun SchemaBuilder<KSDeclaration>.fillType(type: KSTypeReference) {
@@ -361,25 +330,25 @@ class ClientProcessor(
             typeRef.typeName = it.parentDeclaration!!.toTypeName().typeVariable(type.declaration.simpleName.asString())
             return
         }
-        typeRef.typeName = type.declaration.toTypeName()
+        typeRef.typeName = type.realDeclaration.toTypeName()
         if (typeRef.typeName == TypeName.OBJECT) {
-            throw MetaException(
+            throw UnambiguousTypeException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
                 ancestorSource(),
-                "Client Api system does not accept unambiguous type `java.lang.Object`"
+                "Client API system does not accept unambiguous type `java.lang.Object`"
             )
         }
         for (argument in type.arguments) {
             when (argument.variance) {
-                Variance.STAR -> throw MetaException(
+                Variance.STAR -> throw UnambiguousTypeException(
                     ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
                     ancestorSource(),
-                    "API type system does not accept generic argument <*>"
+                    "Client API type system does not accept generic argument <*>"
                 )
-                Variance.CONTRAVARIANT -> throw MetaException(
+                Variance.CONTRAVARIANT -> throw UnambiguousTypeException(
                     ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
                     ancestorSource(),
-                    "API type system does not accept generic argument <in...>"
+                    "Client API type system does not accept generic argument <in...>"
                 )
                 else -> typeRef { argType ->
                     fillType(argument.type!!)
@@ -410,11 +379,15 @@ class ClientProcessor(
                     continue
                 }
                 prop(propDeclaration, propDeclaration.name) { prop ->
-                    typeRef { type ->
-                        fillType(propDeclaration.type)
-                        prop.setType(type)
+                    try {
+                        typeRef { type ->
+                            fillType(propDeclaration.type)
+                            prop.setType(type)
+                        }
+                        definition.addProp(prop)
+                    } catch (ex: UnambiguousTypeException) {
+                        // Do nothing
                     }
-                    definition.addProp(prop)
                 }
             }
             for (funcDeclaration in declaration.getDeclaredFunctions()) {
@@ -422,7 +395,7 @@ class ClientProcessor(
                     funcDeclaration.isPublic() &&
                     funcDeclaration.parameters.isEmpty()) {
                     val returnTypReference = funcDeclaration.returnType ?: continue
-                    val returnTypeName = returnTypReference.resolve().declaration.qualifiedName?.asString() ?: continue
+                    val returnTypeName = returnTypReference.realDeclaration.qualifiedName?.asString() ?: continue
                     if (returnTypeName == "kotlin.Unit") {
                         continue
                     }
@@ -440,10 +413,12 @@ class ClientProcessor(
 
         if (declaration.classKind == ClassKind.CLASS || declaration.classKind == ClassKind.INTERFACE) {
             for (superTypeReference in declaration.superTypes) {
-                val superDeclaration = superTypeReference.resolve().declaration
+                val superDeclaration = superTypeReference.realDeclaration
                 if (superDeclaration.annotation(ApiIgnore::class) == null) {
                     val superName = superDeclaration.toTypeName()
-                    if (superName.isGenerationRequired) {
+                    if (superName.isGenerationRequired &&
+                        superName != CODE_BASED_EXCEPTION_NAME &&
+                        superName != CODE_BASED_RUNTIME_EXCEPTION_NAME) {
                         typeRef { superType ->
                             fillType(superTypeReference)
                             definition.addSuperType(superType)
@@ -459,11 +434,7 @@ class ClientProcessor(
         val definition = current<TypeDefinitionImpl<KSDeclaration>>()
         definition.isApiIgnore = declaration.annotation(ApiIgnore::class) !== null
 
-        if (declaration.annotation(ErrorFamily::class) != null) {
-            definition.kind = TypeDefinition.Kind.ERROR_ENUM
-        } else {
-            definition.kind = TypeDefinition.Kind.ENUM
-        }
+        definition.kind = TypeDefinition.Kind.ENUM
 
         fillErrorProps(declaration)
 
@@ -547,9 +518,14 @@ class ClientProcessor(
         return ApiOperation.AUTO_OPERATION_ANNOTATIONS.any { declaration.annotation(it) !== null }
     }
 
-    companion object {
+    private class UnambiguousTypeException(
+        declaration: KSDeclaration,
+        childDeclaration: KSDeclaration?,
+        reason: String,
+        cause: Throwable? = null
+    ) : MetaException(declaration, childDeclaration, reason, cause)
 
-        private val THROWS_ALL_NAME = ThrowsAll::class.qualifiedName!!
+    companion object {
 
         fun KSDeclaration.toTypeName(): TypeName {
             val simpleNames = mutableListOf<String>()
@@ -561,5 +537,35 @@ class ClientProcessor(
             simpleNames.reverse()
             return TypeName.of(packageName.asString(), simpleNames)
         }
+
+        val KSType.realDeclaration: KSDeclaration
+            get() = declaration.let {
+                if (it is KSTypeAlias) {
+                    it.findActualType()
+                } else {
+                    it
+                }
+            }
+
+        val KSTypeReference.realDeclaration: KSDeclaration
+            get() = resolve().declaration.let {
+                if (it is KSTypeAlias) {
+                    it.findActualType()
+                } else {
+                    it
+                }
+            }
+
+        private val FETCH_BY_NAME = TypeName.of(
+            FetchBy::class.java
+        )
+
+        private val CODE_BASED_EXCEPTION_NAME = TypeName.of(
+            CodeBasedException::class.java
+        )
+
+        private val CODE_BASED_RUNTIME_EXCEPTION_NAME = TypeName.of(
+            CodeBasedRuntimeException::class.java
+        )
     }
 }

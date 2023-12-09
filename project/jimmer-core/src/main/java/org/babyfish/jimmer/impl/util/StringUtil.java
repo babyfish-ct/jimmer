@@ -75,4 +75,11 @@ public class StringUtil {
         }
         return null;
     }
+
+    public static String upperHead(String text) {
+        if (text == null || text.isEmpty() || Character.isUpperCase(text.charAt(0))) {
+            return text;
+        }
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
+    }
 }

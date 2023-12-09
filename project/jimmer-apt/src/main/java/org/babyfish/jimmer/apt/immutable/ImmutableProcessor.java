@@ -28,9 +28,10 @@ public class ImmutableProcessor {
         this.messager = messager;
     }
 
-    public void process(RoundEnvironment roundEnv) {
+    public Map<TypeElement, ImmutableType> process(RoundEnvironment roundEnv) {
         Map<TypeElement, ImmutableType> immutableTypeMap = parseImmutableTypes(roundEnv);
-        generateJimmerTypes(immutableTypeMap, roundEnv);
+        generateJimmerTypes(immutableTypeMap);
+        return immutableTypeMap;
     }
 
     private Map<TypeElement, ImmutableType> parseImmutableTypes(RoundEnvironment roundEnv) {
@@ -47,7 +48,7 @@ public class ImmutableProcessor {
         return map;
     }
 
-    private void generateJimmerTypes(Map<TypeElement, ImmutableType> immutableTypeMap, RoundEnvironment roundEnv) {
+    private void generateJimmerTypes(Map<TypeElement, ImmutableType> immutableTypeMap) {
         for (ImmutableType immutableType : immutableTypeMap.values()) {
             new DraftGenerator(
                     immutableType,
@@ -86,10 +87,5 @@ public class ImmutableProcessor {
                 ).generate();
             }
         }
-        new EntryProcessor(
-                context,
-                immutableTypeMap.keySet(),
-                filer
-        ).process();
     }
 }

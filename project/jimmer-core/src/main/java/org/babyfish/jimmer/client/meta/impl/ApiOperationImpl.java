@@ -7,11 +7,11 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.type.CollectionType;
-import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
+import javax.lang.model.element.Element;
 import java.io.IOException;
 import java.util.*;
 
@@ -19,13 +19,13 @@ import java.util.*;
 @JsonDeserialize(using = ApiOperationImpl.Deserializer.class)
 public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
-    private static final JavaType ERROR_LIST_TYPE =
+    private static final JavaType TYPE_NAME_LIST_TYPE =
             CollectionType.construct(
                     List.class,
                     null,
                     null,
                     null,
-                    SimpleType.constructUnsafe(String.class)
+                    SimpleType.constructUnsafe(TypeName.class)
             );
 
     private String name;
@@ -36,7 +36,7 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     private TypeRefImpl<S> returnType;
 
-    private Map<TypeName, List<String>> errorMap = Collections.emptyMap();
+    private List<TypeRefImpl<S>> exceptionTypes = Collections.emptyList();
 
     private Doc doc;
 
@@ -106,21 +106,23 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
         this.returnType = returnType;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Map<TypeName, List<String>> getErrorMap() {
-        return errorMap;
+    public List<TypeRef> getExceptionTypes() {
+        return (List<TypeRef>) (List<?>) exceptionTypes;
     }
 
-    public void setErrorMap(Map<TypeName, List<String>> errorMap) {
-        if (errorMap.isEmpty()) {
-            this.errorMap = Collections.emptyMap();
-        } else {
-            Map<TypeName, List<String>> map = new LinkedHashMap<>((errorMap.size() * 4 + 2) / 3);
-            for (Map.Entry<TypeName, List<String>> e : errorMap.entrySet()) {
-                map.put(e.getKey(), Collections.unmodifiableList(e.getValue()));
-            }
-            this.errorMap = Collections.unmodifiableMap(map);
+    public void setExceptionTypeNames(Collection<TypeName> exceptionTypeNames) {
+        if (exceptionTypeNames.isEmpty()) {
+            this.exceptionTypes = Collections.emptyList();
         }
+        List<TypeRefImpl<S>> typeRefs = new ArrayList<>(exceptionTypeNames.size());
+        for (TypeName exceptionTypeName : exceptionTypeNames) {
+            TypeRefImpl<S> typeRef = new TypeRefImpl<>();
+            typeRef.setTypeName(exceptionTypeName);
+            typeRefs.add(typeRef);
+        }
+        this.exceptionTypes = Collections.unmodifiableList(typeRefs);
     }
 
     @Nullable
@@ -143,9 +145,7 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             if (returnType != null) {
                 returnType.accept(visitor);
             }
-            for (TypeName typeName : errorMap.keySet()) {
-                TypeRefImpl<S> typeRef = new TypeRefImpl<>();
-                typeRef.setTypeName(typeName);
+            for (TypeRefImpl<S> typeRef : exceptionTypes) {
                 typeRef.accept(visitor);
             }
         } finally {
@@ -194,14 +194,13 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             if (operation.getReturnType() != null) {
                 provider.defaultSerializeField("returnType", operation.getReturnType(), gen);
             }
-            if (!operation.getErrorMap().isEmpty()) {
-                gen.writeFieldName("errors");
-                gen.writeStartObject();
-                for (Map.Entry<TypeName, List<String>> e : operation.getErrorMap().entrySet()) {
-                    gen.writeFieldName(e.getKey().toString(true));
-                    gen.writeObject(e.getValue());
+            if (!operation.getExceptionTypes().isEmpty()) {
+                gen.writeFieldName("exceptions");
+                gen.writeStartArray();
+                for (TypeRef exceptionType : operation.getExceptionTypes()) {
+                    provider.defaultSerializeValue(exceptionType.getTypeName(), gen);
                 }
-                gen.writeEndObject();
+                gen.writeEndArray();
             }
             gen.writeEndObject();
         }
@@ -228,15 +227,9 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             if (jsonNode.has("returnType")) {
                 operation.setReturnType(ctx.readTreeAsValue(jsonNode.get("returnType"), TypeRefImpl.class));
             }
-            if (jsonNode.has("errors")) {
-                Map<TypeName, List<String>> errorMap = new LinkedHashMap<>();
-                for (Map.Entry<String, JsonNode> e : jsonNode.get("errors").properties()) {
-                    errorMap.put(
-                            TypeName.parse(e.getKey()),
-                            ctx.readTreeAsValue(e.getValue(), ERROR_LIST_TYPE)
-                    );
-                }
-                operation.setErrorMap(errorMap);
+            if (jsonNode.has("exceptions")) {
+                List<TypeName> typeNames = ctx.readTreeAsValue(jsonNode.get("exceptions"), TYPE_NAME_LIST_TYPE);
+                operation.setExceptionTypeNames(typeNames);
             }
             return operation;
         }

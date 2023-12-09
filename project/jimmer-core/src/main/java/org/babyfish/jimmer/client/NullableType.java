@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * Kotlin: List&lt;String?&gt;
  * Java: List&lt;@NullableType String&gt;
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE_USE)
 public @interface NullableType {
 }

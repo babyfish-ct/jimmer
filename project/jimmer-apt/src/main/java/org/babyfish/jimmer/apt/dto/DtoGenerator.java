@@ -81,7 +81,7 @@ public class DtoGenerator {
                                 ) :
                                 ParameterizedTypeName.get(
                                         dtoType.getModifiers().contains(DtoTypeModifier.INPUT) ?
-                                                org.babyfish.jimmer.apt.immutable.generator.Constants.VIEWABLE_INPUT_CLASS_NAME :
+                                                org.babyfish.jimmer.apt.immutable.generator.Constants.INPUT_CLASS_NAME :
                                                 org.babyfish.jimmer.apt.immutable.generator.Constants.VIEW_CLASS_NAME,
                                         dtoType.getBaseType().getClassName()
                                 )

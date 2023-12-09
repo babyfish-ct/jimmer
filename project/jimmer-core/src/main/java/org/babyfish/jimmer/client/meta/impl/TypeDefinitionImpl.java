@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @JsonDeserialize(using = TypeDefinitionImpl.Deserializer.class)
 public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements TypeDefinition {
 
-    private static final JavaType GROUPS_TYPE = CollectionType.construct(
+    private static final JavaType STRING_LIST_TYPE = CollectionType.construct(
             List.class,
             null,
             null,
@@ -30,6 +30,8 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
     private final TypeName typeName;
 
     private Kind kind;
+
+    private Error error;
 
     private boolean apiIgnore;
 
@@ -60,6 +62,26 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
 
     public void setKind(Kind kind) {
         this.kind = kind;
+    }
+
+    @Nullable
+    @Override
+    public Doc getDoc() {
+        return doc;
+    }
+
+    public void setDoc(Doc doc) {
+        this.doc = doc;
+    }
+
+    @Nullable
+    @Override
+    public Error getError() {
+        return error;
+    }
+
+    public void setError(Error error) {
+        this.error = error;
     }
 
     @Override
@@ -110,16 +132,6 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
         superTypes.add(superType);
     }
 
-    @Nullable
-    @Override
-    public Doc getDoc() {
-        return doc;
-    }
-
-    public void setDoc(Doc doc) {
-        this.doc = doc;
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public Map<String, EnumConstant> getEnumConstantMap() {
@@ -164,6 +176,12 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
                 gen.writeFieldName("kind");
                 gen.writeString(definition.getKind().name());
             }
+            if (definition.getDoc() != null) {
+                provider.defaultSerializeField("doc", definition.getDoc(), gen);
+            }
+            if (definition.getError() != null) {
+                provider.defaultSerializeField("error", definition.getError(), gen);
+            }
             if (definition.isApiIgnore()) {
                 gen.writeFieldName("apiIgnore");
                 gen.writeBoolean(true);
@@ -176,9 +194,6 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
             }
             if (!definition.getSuperTypes().isEmpty()) {
                 provider.defaultSerializeField("superTypes", definition.getSuperTypes(), gen);
-            }
-            if (!definition.getErrorPropMap().isEmpty()) {
-                provider.defaultSerializeField("errorProps", definition.getErrorPropMap().values(), gen);
             }
             if (!definition.getEnumConstantMap().isEmpty()) {
                 provider.defaultSerializeField("constants", definition.getEnumConstantMap().values(), gen);
@@ -200,11 +215,17 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
             if (jsonNode.has("kind")) {
                 definition.setKind(Kind.valueOf(jsonNode.get("kind").asText()));
             }
+            if (jsonNode.has("doc")) {
+                definition.setDoc(ctx.readTreeAsValue(jsonNode.get("doc"), Doc.class));
+            }
+            if (jsonNode.has("error")) {
+                definition.setError(ctx.readTreeAsValue(jsonNode.get("error"), Error.class));
+            }
             if (jsonNode.has("apiIgnore")) {
                 definition.setApiIgnore(jsonNode.get("apiIgnore").asBoolean());
             }
             if (jsonNode.has("groups")) {
-                definition.mergeGroups(ctx.readTreeAsValue(jsonNode.get("groups"), GROUPS_TYPE));
+                definition.mergeGroups(ctx.readTreeAsValue(jsonNode.get("groups"), STRING_LIST_TYPE));
             }
             if (jsonNode.has("props")) {
                 for (JsonNode propNode : jsonNode.get("props")) {
@@ -214,11 +235,6 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
             if (jsonNode.has("superTypes")) {
                 for (JsonNode superNode : jsonNode.get("superTypes")) {
                     definition.addSuperType(ctx.readTreeAsValue(superNode, TypeRefImpl.class));
-                }
-            }
-            if (jsonNode.has("errorProps")) {
-                for (JsonNode propNode : jsonNode.get("errorProps")) {
-                    definition.addErrorProp(ctx.readTreeAsValue(propNode, PropImpl.class));
                 }
             }
             if (jsonNode.has("constants")) {

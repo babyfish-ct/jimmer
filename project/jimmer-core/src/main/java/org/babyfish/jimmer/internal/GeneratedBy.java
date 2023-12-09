@@ -1,4 +1,4 @@
-package org.babyfish.jimmer;
+package org.babyfish.jimmer.internal;
 
 import kotlin.annotation.AnnotationTarget;
 

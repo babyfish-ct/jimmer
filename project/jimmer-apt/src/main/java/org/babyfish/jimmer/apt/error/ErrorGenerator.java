@@ -1,13 +1,16 @@
 package org.babyfish.jimmer.apt.error;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.MetaException;
+import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.generator.Constants;
-import org.babyfish.jimmer.error.CodeBasedException;
+import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.error.ErrorFamily;
 import org.babyfish.jimmer.error.ErrorField;
 import org.babyfish.jimmer.error.ErrorFields;
+import org.babyfish.jimmer.impl.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +19,7 @@ import javax.lang.model.element.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ErrorGenerator {
 
@@ -28,6 +32,8 @@ public class ErrorGenerator {
     private static final String[] EMPTY_STR_ARR = new String[0];
 
     private static final Map<String, TypeName> PRIMITIVE_TYPE_MAP;
+
+    private final Context context;
 
     private final TypeElement typeElement;
 
@@ -43,7 +49,12 @@ public class ErrorGenerator {
 
     private TypeSpec.Builder typeBuilder;
 
-    public ErrorGenerator(TypeElement typeElement, Filer filer) {
+    private Map<Element, List<Field>> declaredFieldsCache = new HashMap<>();
+
+    private Map<Element, List<Field>> fieldsCache = new HashMap<>();
+
+    public ErrorGenerator(Context context, TypeElement typeElement, Filer filer) {
+        this.context = context;
         this.typeElement = typeElement;
         this.filer = filer;
         this.packageName = packageName();
@@ -73,13 +84,18 @@ public class ErrorGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(exceptionName)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .superclass(CodeBasedException.class)
+                .superclass(CodeBasedRuntimeException.class)
                 .addAnnotation(
                         AnnotationSpec
                                 .builder(Constants.GENERATED_BY_CLASS_NAME)
                                 .addMember("type", "$T.class", className)
                                 .build()
-                );
+                )
+                .addAnnotation(clientException(typeElement));
+        String doc = context.getElements().getDocComment(typeElement);
+        if (doc != null && !doc.isEmpty()) {
+            typeBuilder.addJavadoc(doc);
+        }
         addMembers();
         try {
             JavaFile
@@ -122,16 +138,7 @@ public class ErrorGenerator {
 
     private void addMembers() {
 
-        addConstructor();
-
-        typeBuilder.addMethod(
-                MethodSpec
-                        .methodBuilder("getCode")
-                        .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                        .addAnnotation(Override.class)
-                        .returns(className)
-                        .build()
-        );
+        addCommonMembers(typeElement, typeBuilder);
 
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.ENUM_CONSTANT) {
@@ -145,18 +152,6 @@ public class ErrorGenerator {
                 addType(element);
             }
         }
-    }
-
-    private void addConstructor() {
-        typeBuilder.addMethod(
-                MethodSpec
-                        .constructorBuilder()
-                        .addModifiers(Modifier.PRIVATE)
-                        .addParameter(String.class, "message")
-                        .addParameter(Throwable.class, "cause")
-                        .addStatement("super(message, cause)")
-                        .build()
-        );
     }
 
     @SuppressWarnings("unchecked")
@@ -205,34 +200,15 @@ public class ErrorGenerator {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(javaName(element, true))
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .superclass(exceptionClassName);
+                .superclass(exceptionClassName)
+                .addAnnotation(clientException(element));
 
-        List<Field> fields = fieldsOf(element);
-        for (Field field : fields) {
-            FieldSpec.Builder fieldBuilder = FieldSpec
-                    .builder(field.type, field.name)
-                    .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
-                    .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
-            builder.addField(fieldBuilder.build());
+        String doc = context.getElements().getDocComment(element);
+        if (doc != null && !doc.isEmpty()) {
+            builder.addJavadoc(doc);
         }
 
-        MethodSpec.Builder initBuilder = MethodSpec
-                .constructorBuilder()
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(Constants.STRING_CLASS_NAME, "message")
-                .addParameter(Constants.THROWABLE_CLASS_NAME, "cause");
-        for (Field field : fields) {
-            ParameterSpec.Builder parameterBuilder =
-                    ParameterSpec
-                            .builder(field.type, field.name)
-                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
-            initBuilder.addParameter(parameterBuilder.build());
-        }
-        initBuilder.addStatement("super(message, cause)");
-        for (Field field : fields) {
-            initBuilder.addStatement("this.$L = $L", field.name, field.name);
-        }
-        builder.addMethod(initBuilder.build());
+        addCommonMembers(element, builder);
 
         builder.addMethod(
                 MethodSpec
@@ -255,6 +231,7 @@ public class ErrorGenerator {
                                 TypeName.OBJECT
                         )
                 );
+        List<Field> fields = fieldsOf(element);
         if (fields.isEmpty()) {
             getFieldsBuilder.addStatement("return $T.emptyMap()", Constants.COLLECTIONS_CLASS_NAME);
         } else if (fields.size() == 1) {
@@ -277,23 +254,63 @@ public class ErrorGenerator {
         }
         builder.addMethod(getFieldsBuilder.build());
 
-        for (Field field : fields) {
-            builder.addMethod(
-                    MethodSpec
-                            .methodBuilder(
-                                    (field.type.equals(TypeName.BOOLEAN) ? "is" : "get") +
-                                            Character.toUpperCase(field.name.charAt(0)) +
-                                            field.name.substring(1)
-                            )
-                            .addModifiers(Modifier.PUBLIC)
-                            .returns(field.type)
-                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class)
-                            .addStatement("return $L", field.name)
-                            .build()
-            );
+        typeBuilder.addType(builder.build());
+    }
+
+    private void addCommonMembers(Element element, TypeSpec.Builder builder) {
+
+        for (Field field : declaredFieldsOf(element)) {
+            FieldSpec.Builder fieldBuilder = FieldSpec
+                    .builder(field.type, field.name)
+                    .addModifiers(Modifier.FINAL)
+                    .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+            builder.addField(fieldBuilder.build());
         }
 
-        typeBuilder.addType(builder.build());
+        MethodSpec.Builder constructorBuilder = MethodSpec
+                .constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(Constants.STRING_CLASS_NAME, "message")
+                .addParameter(Constants.THROWABLE_CLASS_NAME, "cause");
+        for (Field field : fieldsOf(element)) {
+            ParameterSpec.Builder parameterBuilder =
+                    ParameterSpec
+                            .builder(field.type, field.name)
+                            .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+            constructorBuilder.addParameter(parameterBuilder.build());
+        }
+        if (element.getKind() == ElementKind.ENUM) {
+            constructorBuilder.addStatement("super(message, cause)");
+        } else {
+            CodeBlock.Builder cb = CodeBlock.builder();
+            cb.add("super(message, cause");
+            for (Field parentField : declaredFieldsOf(element.getEnclosingElement())) {
+                cb.add(", ").add(parentField.name);
+            }
+            cb.add(")");
+            constructorBuilder.addStatement(cb.build());
+        }
+        for (Field field : declaredFieldsOf(element)) {
+            constructorBuilder.addStatement("this.$L = $L", field.name, field.name);
+        }
+        builder.addMethod(constructorBuilder.build());
+
+        for (Field field : declaredFieldsOf(element)) {
+            MethodSpec.Builder mb = MethodSpec
+                    .methodBuilder(
+                            (field.type.equals(TypeName.BOOLEAN) ? "is" : "get") +
+                                    Character.toUpperCase(field.name.charAt(0)) +
+                                    field.name.substring(1)
+                    )
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(field.type)
+                    .addAnnotation(field.isNullable ? Nullable.class : NotNull.class);
+            if (!field.doc.isEmpty()) {
+                mb.addJavadoc(field.doc);
+            }
+            mb.addStatement("return $L", field.name);
+            builder.addMethod(mb.build());
+        }
     }
 
     private static String javaName(Element element, boolean upperHead) {
@@ -318,8 +335,12 @@ public class ErrorGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private static List<Field> fieldsOf(Element element) {
-        List<Field> fields = new ArrayList<>();
+    private List<Field> declaredFieldsOf(Element element) {
+        List<Field> fields = declaredFieldsCache.get(element);
+        if (fields != null) {
+            return fields;
+        }
+        Map<String, Field> map = new LinkedHashMap<>();
         for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
             String qualifiedName = ((TypeElement) annotationMirror.getAnnotationType().asElement())
                     .getQualifiedName()
@@ -329,16 +350,97 @@ public class ErrorGenerator {
                 if (itr.hasNext()) {
                     AnnotationValue annotationValue = itr.next();
                     for (AnnotationMirror childMirror : (List<AnnotationMirror>)annotationValue.getValue()) {
-                        fields.add(Field.of(childMirror, element));
+                        Field field = Field.of(childMirror, element);
+                        if (map.put(field.name, field) != null) {
+                            throw new MetaException(
+                                    element,
+                                    "Duplicate field \"" +
+                                            field.name +
+                                            "\""
+                            );
+                        }
                     }
                 }
                 break;
             } else if (qualifiedName.equals(ERROR_FIELD_NAME)) {
-                fields = Collections.singletonList(Field.of(annotationMirror, element));
+                Field field = Field.of(annotationMirror, element);
+                map.put(field.name, field);
                 break;
             }
         }
+        fields = Collections.unmodifiableList(new ArrayList<>(map.values()));
+        declaredFieldsCache.put(element, fields);
         return fields;
+    }
+
+    private List<Field> fieldsOf(Element element) {
+        List<Field> fields = fieldsCache.get(element);
+        if (fields != null) {
+            return fields;
+        }
+        List<Field> declaredFields = declaredFieldsOf(element);
+        if (element.getKind() == ElementKind.ENUM_CONSTANT) {
+            List<Field> sharedFields = declaredFieldsOf(element.getEnclosingElement());
+            if (!sharedFields.isEmpty()) {
+                Set<String> sharedFieldNames = sharedFields.stream().map(it -> it.name).collect(Collectors.toSet());
+                for (Field declaredField : declaredFields) {
+                    if (sharedFieldNames.contains(declaredField.name)) {
+                        throw new MetaException(
+                                element,
+                                "The field \"" +
+                                        declaredField.name +
+                                        "\" has been defined in enum"
+                        );
+                    }
+                }
+                List<Field> mergedFields = new ArrayList<>(sharedFields.size() + declaredFields.size());
+                mergedFields.addAll(sharedFields);
+                mergedFields.addAll(declaredFields);
+                mergedFields = Collections.unmodifiableList(mergedFields);
+                fields = mergedFields;
+            }
+        }
+        if (fields == null) {
+            fields = declaredFieldsOf(element);
+        }
+        fieldsCache.put(element, fields);
+        return fields;
+    }
+
+    private AnnotationSpec clientException(Element element) {
+        AnnotationSpec.Builder builder = AnnotationSpec
+                .builder(Constants.CLIENT_EXCEPTION_CLASS_NAME)
+                .addMember(
+                        "family",
+                        "$S",
+                        StringUtil.snake(className.simpleName(), StringUtil.SnakeCase.UPPER)
+                );
+        if (element.getKind() == ElementKind.ENUM) {
+            CodeBlock.Builder cb = CodeBlock.builder();
+            cb.add("{");
+            boolean addComma = false;
+            for (Element subElement : element.getEnclosedElements()) {
+                if (subElement.getKind() != ElementKind.ENUM_CONSTANT) {
+                    continue;
+                }
+                if (addComma) {
+                    cb.add(", ");
+                } else {
+                    addComma = true;
+                }
+                ClassName className = exceptionClassName.nestedClass(
+                        StringUtil.upperHead(
+                                StringUtil.identifier(subElement.getSimpleName().toString())
+                        )
+                );
+                cb.add("$T.class", className);
+            }
+            cb.add("}");
+            builder.addMember("subTypes", cb.build());
+        } else {
+            builder.addMember("code", "$S", element.getSimpleName().toString());
+        }
+        return builder.build();
     }
 
     private static class Field {
@@ -351,11 +453,14 @@ public class ErrorGenerator {
 
         final boolean isList;
 
-        private Field(String name, TypeName type, boolean isNullable, boolean isList) {
+        final String doc;
+
+        private Field(String name, TypeName type, boolean isNullable, boolean isList, String doc) {
             this.name = name;
             this.type = type;
             this.isNullable = isNullable;
             this.isList = isList;
+            this.doc = doc;
         }
 
         public static Field of(AnnotationMirror annotationMirror, Element constantElement) {
@@ -410,7 +515,8 @@ public class ErrorGenerator {
                         typeName
                 );
             }
-            return new Field(name, typeName, isNullable, isList);
+            String doc = Annotations.annotationValue(annotationMirror, "doc", "").trim();
+            return new Field(name, typeName, isNullable, isList, doc);
         }
     }
 

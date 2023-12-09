@@ -2,10 +2,7 @@ package org.babyfish.jimmer.client.meta;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public interface ApiOperation {
 
@@ -19,7 +16,7 @@ public interface ApiOperation {
     @Nullable
     TypeRef getReturnType();
 
-    Map<TypeName, List<String>> getErrorMap();
+    List<TypeRef> getExceptionTypes();
 
     Doc getDoc();
 

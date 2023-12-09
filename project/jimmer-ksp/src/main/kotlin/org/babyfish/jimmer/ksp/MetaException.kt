@@ -4,7 +4,7 @@ import com.google.devtools.ksp.symbol.*
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
 
-class MetaException(
+open class MetaException(
     val declaration: KSDeclaration,
     childDeclaration: KSDeclaration?,
     reason: String,

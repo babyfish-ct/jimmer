@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.SimpleType;
 
+import javax.lang.model.element.TypeElement;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -226,7 +227,7 @@ public class Doc {
         }
 
         private void commit() {
-            if (sb.charAt(sb.length() - 1) == '\n') {
+            if (sb.length() != 0 && sb.charAt(sb.length() - 1) == '\n') {
                 sb.setLength(sb.length() - 1);
             }
             if (currentParamName != null) {

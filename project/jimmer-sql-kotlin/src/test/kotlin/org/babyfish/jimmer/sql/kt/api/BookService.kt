@@ -33,9 +33,10 @@ interface BookService {
      * @param storeName Optional value to filter `store.name`
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
+     * @exception SystemException Test message
      */
-    @ThrowsAll(SystemErrorCode::class)
     @Api("mobile")
+    @Throws(SystemException::class)
     fun findSimpleBooks(
         name: String?,
         edition: Int?,
@@ -55,7 +56,7 @@ interface BookService {
      * @param authorName Optional value to filter `Author.firstName` or `Author.lastName`
      * @return A list of books objects, with long associations
      */
-    @ThrowsSystemError(SystemErrorCode.A, SystemErrorCode.B)
+    @Throws(SystemException.A::class, SystemException.C::class)
     @Api("pc")
     fun findComplexBooks(
         name: String?,

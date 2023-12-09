@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.client.meta.Api;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.model.AuthorFetcher;
@@ -39,7 +38,6 @@ public interface BookService {
      * @return A list of books objects, with short associations
      */
     @Api("mobile")
-    @ThrowsAll(SystemErrorCode.class)
     List<? extends @FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks(
             @Nullable String name,
             @Nullable Integer edition,
@@ -47,7 +45,7 @@ public interface BookService {
             @Nullable BigDecimal maxPrice,
             @Nullable String storeName,
             @Nullable String authorName
-    );
+    ) throws SystemException;
 
     /**
      * Find books with simple format
@@ -60,7 +58,6 @@ public interface BookService {
      * @return A list of books objects, with long associations
      */
     @Api("pc")
-    @ThrowsSystemError({SystemErrorCode.A, SystemErrorCode.B})
     List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooks(
             @Nullable String name,
             @Nullable Integer edition,
@@ -68,7 +65,7 @@ public interface BookService {
             @Nullable BigDecimal maxPrice,
             @Nullable String storeName,
             @Nullable String authorName
-    );
+    ) throws SystemException.A, SystemException.C;
 
     @Api("pc")
     List<? extends @FetchBy("COMPLEX_FETCHER") Book> findBySuperQBE(

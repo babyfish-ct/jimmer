@@ -103,6 +103,12 @@ fun KSAnnotation.getClassArgument(annoProp: KProperty1<out Annotation, KClass<*>
 fun <T> KSAnnotation.getListArgument(annoProp: KProperty1<out Annotation, Array<T>>): List<T>? =
     arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<T>?
 
+@Suppress("UNCHECKED_CAST")
+fun KSAnnotation.getClassListArgument(annoProp: KProperty1<out Annotation, Array<out KClass<*>>>): List<KSClassDeclaration> =
+    (arguments.firstOrNull { it.name?.asString() == annoProp.name }?.value as List<*>?)
+        ?.map { (it as KSType).declaration } as List<KSClassDeclaration>?
+        ?: emptyList()
+
 fun TypeName.isBuiltInType(nullable: Boolean? = null): Boolean {
     if (this !is ClassName) {
         return false

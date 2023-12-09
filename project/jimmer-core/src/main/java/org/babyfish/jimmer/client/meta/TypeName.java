@@ -146,6 +146,16 @@ public final class TypeName implements Comparable<TypeName> {
         return new TypeName(packageName, simpleNames);
     }
 
+    public static TypeName of(Class<?> type) {
+        Package pkg = type.getPackage();
+        List<String> simpleNames = new ArrayList<>();
+        while (type != null) {
+            simpleNames.add(0, type.getSimpleName());
+            type = type.getDeclaringClass();
+        }
+        return of(pkg == null ? null : pkg.getName(), simpleNames);
+    }
+
     public TypeName typeVariable(String typeVariable) {
         return new TypeName(packageName, new ArrayList<>(simpleNames), typeVariable);
     }

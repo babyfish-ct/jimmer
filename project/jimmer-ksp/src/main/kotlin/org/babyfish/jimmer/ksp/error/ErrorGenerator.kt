@@ -2,19 +2,19 @@ package org.babyfish.jimmer.ksp.error
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
-import org.babyfish.jimmer.error.CodeBasedException
+import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.error.ErrorField
-import org.babyfish.jimmer.ksp.annotations
-import org.babyfish.jimmer.ksp.className
-import org.babyfish.jimmer.ksp.get
-import org.babyfish.jimmer.ksp.getClassArgument
-import org.babyfish.jimmer.ksp.MetaException
+import org.babyfish.jimmer.impl.util.StringUtil
+import org.babyfish.jimmer.ksp.*
+import org.babyfish.jimmer.ksp.immutable.generator.CLIENT_EXCEPTION_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.GENERATED_BY_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
 import java.io.OutputStreamWriter
@@ -25,6 +25,10 @@ class ErrorGenerator(
 ) {
 
     private val enumClassName: ClassName = declaration.className()
+
+    private val declaredFieldsCache = mutableMapOf<KSDeclaration, Map<String, TypeName>>()
+
+    private val fieldsCache = mutableMapOf<KSClassDeclaration, Map<String, TypeName>>()
 
     private val exceptionSimpleName: String =
         declaration.longSimpleName.let {
@@ -47,7 +51,7 @@ class ErrorGenerator(
             Dependencies(false, *allFiles.toTypedArray()),
             declaration.packageName.asString(),
             exceptionSimpleName
-        ).use {
+        ).use { out ->
             val fileSpec = FileSpec
                 .builder(
                     declaration.packageName.asString(),
@@ -57,7 +61,7 @@ class ErrorGenerator(
                     addType(
                         TypeSpec
                             .classBuilder(exceptionSimpleName)
-                            .superclass(CodeBasedException::class)
+                            .superclass(CodeBasedRuntimeException::class)
                             .addModifiers(KModifier.ABSTRACT)
                             .addSuperclassConstructorParameter("message, cause")
                             .addAnnotation(
@@ -66,13 +70,38 @@ class ErrorGenerator(
                                     .addMember("type = %T::class", enumClassName)
                                     .build()
                             )
+                            .addAnnotation(
+                                AnnotationSpec
+                                    .builder(CLIENT_EXCEPTION_CLASS_NAME)
+                                    .addMember(
+                                        "family = %S",
+                                        StringUtil.snake(declaration.simpleName.asString(), StringUtil.SnakeCase.UPPER)
+                                    )
+                                    .apply {
+                                        val constants = declaration
+                                            .declarations
+                                            .filterIsInstance<KSClassDeclaration>()
+                                            .filter { it.classKind == ClassKind.ENUM_ENTRY }
+                                        addMember(
+                                            "subTypes = [${constants.joinToString { "%T::class" }}]",
+                                            *constants.map {
+                                                exceptionClassName.nestedClass(
+                                                    StringUtil.upperHead(
+                                                        StringUtil.identifier(it.simpleName.asString())
+                                                    )
+                                                )
+                                            }.toList().toTypedArray()
+                                        )
+                                    }
+                                    .build()
+                            )
                             .apply {
                                 addMembers()
                             }
                             .build()
                     )
                 }.build()
-            val writer = OutputStreamWriter(it, Charsets.UTF_8)
+            val writer = OutputStreamWriter(out, Charsets.UTF_8)
             fileSpec.writeTo(writer)
             writer.flush()
         }
@@ -80,29 +109,8 @@ class ErrorGenerator(
 
     private fun TypeSpec.Builder.addMembers() {
 
-        primaryConstructor(
-            FunSpec
-                .constructorBuilder()
-                .addModifiers(KModifier.PRIVATE)
-                .addParameter("message", STRING)
-                .addParameter(
-                    ParameterSpec
-                        .builder(
-                            "cause",
-                            THROWABLE.copy(nullable = true)
-                        )
-                        .defaultValue("null")
-                        .build()
-                )
-                .build()
-        )
-
-        addProperty(
-            PropertySpec
-                .builder("code", enumClassName)
-                .addModifiers(KModifier.ABSTRACT, KModifier.OVERRIDE)
-                .build()
-        )
+        addInit(declaration)
+        addFields(declaration)
 
         addType(
             TypeSpec
@@ -115,17 +123,39 @@ class ErrorGenerator(
                 .build()
         )
 
-        for (item in declaration.declarations.filterIsInstance<KSClassDeclaration>()) {
+        for (item in declaration.declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .filter { it.classKind == ClassKind.ENUM_ENTRY}
+        ) {
             addType(
                 TypeSpec
                     .classBuilder(ktName(item, true))
                     .superclass(exceptionClassName)
-                    .addSuperclassConstructorParameter("message, cause")
+                    .addAnnotation(
+                        AnnotationSpec
+                            .builder(CLIENT_EXCEPTION_CLASS_NAME)
+                            .addMember(
+                                "family = %S",
+                                StringUtil.snake(declaration.simpleName.asString(), StringUtil.SnakeCase.UPPER)
+                            )
+                            .addMember(
+                                "code = %S",
+                                StringUtil.snake(item.simpleName.asString(), StringUtil.SnakeCase.UPPER)
+                            )
+                            .build()
+                    )
                     .apply {
-                        val fields = fieldsOf(item)
-                        addInit(fields)
+                        val shared = fieldsOf(item.parentDeclaration as KSClassDeclaration)
+                        if (shared.isEmpty()) {
+                            addSuperclassConstructorParameter("message, cause")
+                        } else {
+                            addSuperclassConstructorParameter(
+                                "message, cause, " + shared.keys.joinToString()
+                            )
+                        }
+                        addInit(item)
                         addCode(item)
-                        addFields(fields)
+                        addFields(item)
                     }
                     .build()
             )
@@ -168,8 +198,8 @@ class ErrorGenerator(
                                 add("return %L(\n", ktName(item, true))
                                 indent()
                                 add("message,\ncause")
-                                for (field in fields) {
-                                    add(",\n").add(field.first)
+                                for ((name, _) in fields) {
+                                    add(",\n").add(name)
                                 }
                                 unindent()
                                 add("\n)\n")
@@ -181,12 +211,12 @@ class ErrorGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addInit(fields: List<Pair<String, TypeName>>) {
-        for (field in fields) {
+    private fun TypeSpec.Builder.addInit(declaration: KSClassDeclaration) {
+        for ((name, typeName) in declaredFieldsOf(declaration)) {
             addProperty(
                 PropertySpec
-                    .builder(field.first, field.second)
-                    .initializer(field.first)
+                    .builder(name, typeName)
+                    .initializer(name)
                     .build()
             )
         }
@@ -201,12 +231,12 @@ class ErrorGenerator(
                         .build()
                 )
                 .apply {
-                    for (field in fields) {
+                    for ((name, typeName) in fieldsOf(declaration)) {
                         addParameter(
                             ParameterSpec
-                                .builder(field.first, field.second)
+                                .builder(name, typeName)
                                 .apply {
-                                    if (field.second.isNullable) {
+                                    if (typeName.isNullable) {
                                         defaultValue("null")
                                     }
                                 }
@@ -232,7 +262,8 @@ class ErrorGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addFields(fields: List<Pair<String, TypeName>>) {
+    private fun TypeSpec.Builder.addFields(declaration: KSClassDeclaration) {
+        val fields = fieldsOf(declaration)
         addProperty(
             PropertySpec
                 .builder("fields", MAP.parameterizedBy(STRING, ANY.copy(nullable = true)), KModifier.OVERRIDE)
@@ -248,11 +279,14 @@ class ErrorGenerator(
                                     } else {
                                         add("return mapOf(\n")
                                         indent()
-                                        for (i in fields.indices) {
-                                            if (i != 0) {
+                                        var addComma = false
+                                        for (name in fields.keys) {
+                                            if (addComma) {
                                                 add(",\n")
+                                            } else {
+                                                addComma = true
                                             }
-                                            add("%S to %N", fields[i].first, fields[i].first)
+                                            add("%S to %N", name, name)
                                         }
                                         unindent()
                                         add("\n)\n")
@@ -264,6 +298,81 @@ class ErrorGenerator(
                 )
                 .build()
         )
+    }
+
+    private fun fieldsOf(declaration: KSClassDeclaration): Map<String, TypeName> {
+        val cached = fieldsCache[declaration]
+        if (cached !== null) {
+            return cached
+        }
+        return if (declaration.classKind == ClassKind.ENUM_CLASS) {
+            declaredFieldsOf(declaration)
+        } else {
+            val shared = declaredFieldsOf(declaration.parentDeclaration as KSClassDeclaration)
+            if (shared.isEmpty()) {
+                declaredFieldsOf(declaration)
+            } else {
+                val merged = shared.toMutableMap()
+                for ((name, typeName) in declaredFieldsOf(declaration)) {
+                    merged.put(name, typeName)?.let {
+                        throw MetaException(
+                            declaration,
+                            "The field \"${name}\" has already been defined in enum \"" +
+                                declaration.parentDeclaration!!.fullName +
+                                "\""
+                        )
+                    }
+                }
+                merged
+            }
+        }.also {
+            fieldsCache[declaration] = it
+        }
+    }
+
+    private fun declaredFieldsOf(declaration: KSClassDeclaration): Map<String, TypeName> {
+        val cached = declaredFieldsCache[declaration]
+        if (cached !== null) {
+            return cached
+        }
+        return declaration.annotations(ErrorField::class).map { anno ->
+            anno[ErrorField::name]!!.also {
+                if (it == "family" || it == "code") {
+                    throw MetaException(
+                        declaration,
+                        null,
+                        "The enum constant \"" +
+                            declaration.parentDeclaration?.qualifiedName?.asString() +
+                            '.' +
+                            declaration.simpleName.asString() +
+                            "\" is illegal, it cannot be decorated by \"@" +
+                            ErrorFamily::class.java.name +
+                            "\" with the name \"family\" or \"code\""
+                    )
+                }
+            } to
+                anno.getClassArgument(ErrorField::type)!!.toClassName()
+                    .let {
+                        if (anno[ErrorField::list] == true) {
+                            LIST.parameterizedBy(it)
+                        } else {
+                            it
+                        }
+                    }
+                    .copy(nullable = anno[ErrorField::nullable] == true)
+        }.let {
+            val map = mutableMapOf<String, TypeName>()
+            for ((name, typeName) in it) {
+                map.put(name, typeName)?.let {
+                    throw MetaException(
+                        declaration,
+                        "Duplicate field \"$name\""
+                    )
+                }
+            }
+            declaredFieldsCache[declaration] = map
+            map
+        }
     }
 
     companion object {
@@ -293,33 +402,5 @@ class ErrorGenerator(
             }
             return builder.toString()
         }
-
-        private fun fieldsOf(item: KSClassDeclaration): List<Pair<String, TypeName>> =
-            item.annotations(ErrorField::class).map { anno ->
-                anno[ErrorField::name]!!.also {
-                    if (it == "family" || it == "code") {
-                        throw MetaException(
-                            item,
-                            null,
-                            "The enum constant \"" +
-                                item.parentDeclaration?.qualifiedName?.asString() +
-                                '.' +
-                                item.simpleName.asString() +
-                                "\" is illegal, it cannot be decorated by \"@" +
-                                ErrorFamily::class.java.name +
-                                "\" with the name \"family\" or \"code\""
-                        )
-                    }
-                } to
-                    anno.getClassArgument(ErrorField::type)!!.toClassName()
-                        .let {
-                            if (anno[ErrorField::list] == true) {
-                                LIST.parameterizedBy(it)
-                            } else {
-                                it
-                            }
-                        }
-                        .copy(nullable = anno[ErrorField::nullable] == true)
-            }
     }
 }

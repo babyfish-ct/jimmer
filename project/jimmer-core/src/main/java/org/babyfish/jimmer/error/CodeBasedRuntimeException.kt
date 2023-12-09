@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.error
 
-abstract class CodeBasedException protected constructor(
+abstract class CodeBasedRuntimeException protected constructor(
     message: String,
     cause: Throwable?
-) : Exception(message, cause) {
+) : RuntimeException(message, cause) {
 
     abstract val code: Enum<*>
 

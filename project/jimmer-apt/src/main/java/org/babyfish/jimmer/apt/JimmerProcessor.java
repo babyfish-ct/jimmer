@@ -2,8 +2,10 @@ package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.client.ClientProcessor;
 import org.babyfish.jimmer.apt.dto.DtoProcessor;
+import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
+import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
@@ -107,10 +109,12 @@ public class JimmerProcessor extends AbstractProcessor {
             }
             if (!serverGenerated) {
                 serverGenerated = true;
-                new ImmutableProcessor(context, filer, messager).process(roundEnv);
-                new ErrorProcessor(context, filer).process(roundEnv);
+                Collection<TypeElement> immutableTypeElements =
+                        new ImmutableProcessor(context, filer, messager).process(roundEnv).keySet();
+                new EntryProcessor(context, immutableTypeElements, filer).process();
+                boolean errorGenerated = new ErrorProcessor(context, filer).process(roundEnv);
                 boolean dtoGenerated = new DtoProcessor(context, elements, filer, dtoDirs).process();
-                if (dtoGenerated) {
+                if (errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = roundEnv
                             .getRootElements()
                             .stream()

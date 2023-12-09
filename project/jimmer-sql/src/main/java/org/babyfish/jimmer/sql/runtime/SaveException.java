@@ -1,12 +1,12 @@
 package org.babyfish.jimmer.sql.runtime;
 
-import org.babyfish.jimmer.error.CodeBasedException;
+import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.Map;
 
-public class SaveException extends CodeBasedException {
+public class SaveException extends CodeBasedRuntimeException {
 
     private final SaveErrorCode code;
 
