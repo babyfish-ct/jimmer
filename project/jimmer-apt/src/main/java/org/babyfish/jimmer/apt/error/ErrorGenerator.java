@@ -6,10 +6,7 @@ import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.generator.Constants;
-import org.babyfish.jimmer.error.CodeBasedRuntimeException;
-import org.babyfish.jimmer.error.ErrorFamily;
-import org.babyfish.jimmer.error.ErrorField;
-import org.babyfish.jimmer.error.ErrorFields;
+import org.babyfish.jimmer.error.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +34,8 @@ public class ErrorGenerator {
 
     private final TypeElement typeElement;
 
+    private final boolean checkedException;
+
     private final Filer filer;
 
     private final String packageName;
@@ -53,9 +52,10 @@ public class ErrorGenerator {
 
     private Map<Element, List<Field>> fieldsCache = new HashMap<>();
 
-    public ErrorGenerator(Context context, TypeElement typeElement, Filer filer) {
+    public ErrorGenerator(Context context, TypeElement typeElement, boolean checkedException, Filer filer) {
         this.context = context;
         this.typeElement = typeElement;
+        this.checkedException = checkedException;
         this.filer = filer;
         this.packageName = packageName();
         String[] simpleNames = simpleNames();
@@ -84,7 +84,7 @@ public class ErrorGenerator {
         typeBuilder = TypeSpec
                 .classBuilder(exceptionName)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .superclass(CodeBasedRuntimeException.class)
+                .superclass(checkedException ? CodeBasedException.class : CodeBasedRuntimeException.class)
                 .addAnnotation(
                         AnnotationSpec
                                 .builder(Constants.GENERATED_BY_CLASS_NAME)

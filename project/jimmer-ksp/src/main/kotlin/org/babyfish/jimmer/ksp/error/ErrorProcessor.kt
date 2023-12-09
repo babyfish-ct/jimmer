@@ -8,7 +8,8 @@ import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.annotation
 
 class ErrorProcessor(
-    private val ctx: Context
+    private val ctx: Context,
+    private val checkedException: Boolean
 ) {
     fun process(): Collection<KSClassDeclaration> {
         val errorTypes = findErrorTypes()
@@ -35,7 +36,7 @@ class ErrorProcessor(
     private fun generateErrorTypes(declarations: Collection<KSClassDeclaration>) {
         val allFiles = ctx.resolver.getNewFiles().toList()
         for (declaration in declarations) {
-            ErrorGenerator(declaration, ctx.environment.codeGenerator).generate(allFiles)
+            ErrorGenerator(declaration, checkedException, ctx.environment.codeGenerator).generate(allFiles)
         }
     }
 }

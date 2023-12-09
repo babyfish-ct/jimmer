@@ -18,9 +18,12 @@ public class ErrorProcessor {
 
     private final Filer filer;
 
-    public ErrorProcessor(Context context, Filer filer) {
+    private final boolean checkedException;
+
+    public ErrorProcessor(Context context, boolean checkedException, Filer filer) {
         this.context = context;
         this.filer = filer;
+        this.checkedException = checkedException;
     }
 
     public boolean process(RoundEnvironment roundEnv) {
@@ -50,7 +53,7 @@ public class ErrorProcessor {
 
     private void generateErrorType(List<TypeElement> typeElements) {
         for (TypeElement typeElement : typeElements) {
-            new ErrorGenerator(context, typeElement, filer).generate();
+            new ErrorGenerator(context, typeElement, checkedException, filer).generate();
         }
     }
 }

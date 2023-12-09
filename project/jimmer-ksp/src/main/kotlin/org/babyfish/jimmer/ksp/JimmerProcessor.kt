@@ -38,6 +38,9 @@ class JimmerProcessor(
     private val dtoMutable: Boolean =
         environment.options["jimmer.dto.mutable"]?.trim() == "true"
 
+    private val checkedException: Boolean =
+        environment.options["jimmer.checkedException"]?.trim() == "true"
+
     private var serverGenerated = false
 
     private var explicitClientApi: Boolean? = null
@@ -61,7 +64,7 @@ class JimmerProcessor(
             val processedDeclarations = mutableListOf<KSClassDeclaration>()
             if (!serverGenerated) {
                 processedDeclarations += ImmutableProcessor(ctx).process()
-                processedDeclarations += ErrorProcessor(ctx).process()
+                processedDeclarations += ErrorProcessor(ctx, checkedException).process()
                 val dtoGenerated = DtoProcessor(ctx, dtoDirs, dtoMutable).process()
                 serverGenerated = true
                 if (dtoGenerated) {

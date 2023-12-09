@@ -9,6 +9,7 @@ import com.google.devtools.ksp.symbol.KSFile
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
+import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
 import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.error.ErrorField
@@ -18,9 +19,11 @@ import org.babyfish.jimmer.ksp.immutable.generator.CLIENT_EXCEPTION_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.GENERATED_BY_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
 import java.io.OutputStreamWriter
+import kotlin.reflect.KClass
 
 class ErrorGenerator(
     private val declaration: KSClassDeclaration,
+    private val checkedException: Boolean,
     private val codeGenerator: CodeGenerator
 ) {
 
@@ -47,6 +50,11 @@ class ErrorGenerator(
     )
 
     fun generate(allFiles: List<KSFile>) {
+        val superType: KClass<*> = if (checkedException) {
+            CodeBasedException::class
+        } else {
+            CodeBasedRuntimeException::class
+        }
         codeGenerator.createNewFile(
             Dependencies(false, *allFiles.toTypedArray()),
             declaration.packageName.asString(),
@@ -61,7 +69,7 @@ class ErrorGenerator(
                     addType(
                         TypeSpec
                             .classBuilder(exceptionSimpleName)
-                            .superclass(CodeBasedRuntimeException::class)
+                            .superclass(superType)
                             .addModifiers(KModifier.ABSTRACT)
                             .addSuperclassConstructorParameter("message, cause")
                             .addAnnotation(
