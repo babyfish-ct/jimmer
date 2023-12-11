@@ -531,6 +531,9 @@ alter table machine
     add constraint uq_machine
         unique(host, port);
 
+insert into machine(id, host, port, cpu_frequency, memory_size, disk_size)
+    values(1, 'localhost', 8080, 2, 8, 256);
+
 
 
 create table animal(
