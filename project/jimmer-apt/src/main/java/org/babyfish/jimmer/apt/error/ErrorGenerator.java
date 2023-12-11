@@ -429,9 +429,7 @@ public class ErrorGenerator {
                     addComma = true;
                 }
                 ClassName className = exceptionClassName.nestedClass(
-                        StringUtil.upperHead(
-                                StringUtil.identifier(subElement.getSimpleName().toString())
-                        )
+                        javaName(subElement, true)
                 );
                 cb.add("$T.class", className);
             }

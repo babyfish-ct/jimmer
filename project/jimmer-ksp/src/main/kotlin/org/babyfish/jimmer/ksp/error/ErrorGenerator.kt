@@ -94,9 +94,7 @@ class ErrorGenerator(
                                             "subTypes = [${constants.joinToString { "%T::class" }}]",
                                             *constants.map {
                                                 exceptionClassName.nestedClass(
-                                                    StringUtil.upperHead(
-                                                        StringUtil.identifier(it.simpleName.asString())
-                                                    )
+                                                    ktName(it, true)
                                                 )
                                             }.toList().toTypedArray()
                                         )
