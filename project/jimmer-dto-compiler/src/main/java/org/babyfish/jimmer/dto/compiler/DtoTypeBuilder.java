@@ -182,7 +182,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     qnCtx.start.getLine(),
                                     "Illegal type name \"" + qualifiedName + "\", " +
                                             "it is not super type of \"" +
-                                            this.baseType.getQualifiedName() +
+                                            this.baseType +
                                             "\""
                             );
                         }
@@ -334,7 +334,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 baseProp.getIdViewBaseProp() == null &&
                 baseProp.getManyToManyViewBaseProp() == null &&
                 !baseProp.isList() &&
-                ctx.getTargetType(baseProp) == null;
+                !baseProp.isAssociation(true);
     }
 
     private void collectSuperTypes(

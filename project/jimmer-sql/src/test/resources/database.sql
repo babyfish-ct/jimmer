@@ -22,6 +22,7 @@ drop table ms_order if exists;
 drop table employee if exists;
 drop table department if exists;
 drop table animal if exists;
+drop table machine if exists;
 drop table order_item_product_mapping if exists;
 drop table product if exists;
 drop table order_item if exists;
@@ -485,8 +486,6 @@ alter table order_item_product_mapping
             references product(product_alpha, product_beta)
                 on delete cascade;
 
-
-
 insert into order_(order_x, order_y, name) values
     ('001', '001', 'order-1'),
     ('001', '002', 'order-2');
@@ -512,6 +511,26 @@ insert into order_item_product_mapping(fk_order_item_a, fk_order_item_b, fk_orde
     (1, 2, 1, '00A', '00B'),
     (2, 1, 1, '00A', '00B'),
     (2, 1, 1, '00B', '00A');
+
+
+
+create table machine(
+    id bigint not null,
+    host varchar(20) not null,
+    port int not null,
+    cpu_frequency int not null,
+    memory_size int not null,
+    disk_size int not null
+);
+
+alter table machine
+    add constraint pk_machine
+        primary key(id);
+
+alter table machine
+    add constraint uq_machine
+        unique(host, port);
+
 
 
 create table animal(

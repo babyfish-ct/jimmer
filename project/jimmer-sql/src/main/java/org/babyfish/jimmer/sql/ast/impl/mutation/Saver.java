@@ -905,7 +905,8 @@ class Saver {
                     path,
                     "Key properties " +
                             actualKeyProps +
-                            " cannot guarantee uniqueness under that path"
+                            " cannot guarantee uniqueness under that path, " +
+                            "do you forget to add unique constraint for that key?"
             );
         }
 
