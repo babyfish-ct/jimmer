@@ -91,7 +91,7 @@ class ClientProcessor(
             )
         }
         val schema = current<SchemaImpl<KSDeclaration>>()
-        api(declaration, declaration.fullName) { service ->
+        api(declaration, declaration.toTypeName()) { service ->
             declaration.annotation(Api::class)?.get<List<String>>("value")?.takeIf { it.isNotEmpty() }.let { groups ->
                 service.groups = groups
             }
@@ -144,8 +144,11 @@ class ClientProcessor(
             func.docString?.let {
                 operation.doc = Doc.parse(it)
             }
+            var index = 0
             for (param in func.parameters) {
                 parameter(null, param.name!!.asString()) { parameter ->
+                    parameter.originalIndex = index++
+                    parameter.isDefaultValueSpecified = param.hasDefault
                     typeRef { type ->
                         fillType(param.type)
                         parameter.setType(type)

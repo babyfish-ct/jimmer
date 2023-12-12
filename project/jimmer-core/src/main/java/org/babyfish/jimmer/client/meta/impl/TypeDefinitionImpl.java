@@ -19,14 +19,6 @@ import java.util.stream.Collectors;
 @JsonDeserialize(using = TypeDefinitionImpl.Deserializer.class)
 public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements TypeDefinition {
 
-    private static final JavaType STRING_LIST_TYPE = CollectionType.construct(
-            List.class,
-            null,
-            null,
-            null,
-            SimpleType.constructUnsafe(String.class)
-    );
-
     private final TypeName typeName;
 
     private Kind kind;
@@ -204,6 +196,14 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
 
     public static class Deserializer extends JsonDeserializer<TypeDefinitionImpl<?>> {
 
+        private static final JavaType GROUPS_TYPE = CollectionType.construct(
+                List.class,
+                null,
+                null,
+                null,
+                SimpleType.constructUnsafe(String.class)
+        );
+
         @SuppressWarnings("unchecked")
         @Override
         public TypeDefinitionImpl<?> deserialize(JsonParser jp, DeserializationContext ctx) throws IOException, JacksonException {
@@ -212,6 +212,16 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
                     null,
                     ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class)
             );
+            if (jsonNode.has("groups")) {
+                definition.mergeGroups(
+                        Collections.unmodifiableList(
+                                ctx.readTreeAsValue(jsonNode.get("groups"), GROUPS_TYPE)
+                        )
+                );
+                if (!Schemas.isAllowed(ctx, definition.getGroups())) {
+                    return definition;
+                }
+            }
             if (jsonNode.has("kind")) {
                 definition.setKind(Kind.valueOf(jsonNode.get("kind").asText()));
             }
@@ -223,9 +233,6 @@ public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements 
             }
             if (jsonNode.has("apiIgnore")) {
                 definition.setApiIgnore(jsonNode.get("apiIgnore").asBoolean());
-            }
-            if (jsonNode.has("groups")) {
-                definition.mergeGroups(ctx.readTreeAsValue(jsonNode.get("groups"), STRING_LIST_TYPE));
             }
             if (jsonNode.has("props")) {
                 for (JsonNode propNode : jsonNode.get("props")) {

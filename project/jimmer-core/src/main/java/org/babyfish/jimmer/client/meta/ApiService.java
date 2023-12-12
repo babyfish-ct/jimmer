@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ApiService {
 
-    String getTypeName();
+    TypeName getTypeName();
 
     @Nullable
     List<String> getGroups();

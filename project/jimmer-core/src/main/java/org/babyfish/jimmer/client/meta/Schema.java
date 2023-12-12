@@ -4,7 +4,7 @@ import java.util.Map;
 
 public interface Schema {
 
-    Map<String, ApiService> getApiServiceMap();
+    Map<TypeName, ApiService> getApiServiceMap();
 
     Map<TypeName, TypeDefinition> getTypeDefinitionMap();
 }

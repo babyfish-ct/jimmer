@@ -2,6 +2,7 @@ package org.babyfish.jimmer.sql.fetcher;
 
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.jetbrains.annotations.Nullable;
 
 public interface Field {
 
@@ -24,8 +25,10 @@ public interface Field {
 
     int getOffset();
 
+    @Nullable
     RecursionStrategy<?> getRecursionStrategy();
 
+    @Nullable
     Fetcher<?> getChildFetcher();
 
     /**

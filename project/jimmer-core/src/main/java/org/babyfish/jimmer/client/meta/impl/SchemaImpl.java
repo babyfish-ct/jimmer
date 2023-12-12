@@ -18,28 +18,28 @@ import java.util.*;
 @JsonDeserialize(using = SchemaImpl.Deserializer.class)
 public class SchemaImpl<S> extends AstNode<S> implements Schema {
 
-    private Map<String, ApiServiceImpl<S>> apiServiceMap;
+    private Map<TypeName, ApiServiceImpl<S>> apiServiceMap;
 
     private Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap = new TreeMap<>();
 
-    SchemaImpl() {
+    public SchemaImpl() {
         this(null);
     }
 
-    SchemaImpl(Map<String, ApiServiceImpl<S>> apiServiceMap) {
+    public SchemaImpl(Map<TypeName, ApiServiceImpl<S>> apiServiceMap) {
         super(null);
         this.apiServiceMap = apiServiceMap != null ? apiServiceMap : new TreeMap<>();
     }
 
-    SchemaImpl(Map<String, ApiServiceImpl<S>> apiServiceMap, Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap) {
+    public SchemaImpl(Map<TypeName, ApiServiceImpl<S>> apiServiceMap, Map<TypeName, TypeDefinitionImpl<S>> typeDefinitionMap) {
         this.apiServiceMap = apiServiceMap;
         this.typeDefinitionMap = typeDefinitionMap;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map<String, ApiService> getApiServiceMap() {
-        return (Map<String, ApiService>) (Map<?, ?>) apiServiceMap;
+    public Map<TypeName, ApiService> getApiServiceMap() {
+        return (Map<TypeName, ApiService>) (Map<?, ?>) apiServiceMap;
     }
 
     @SuppressWarnings("unchecked")
@@ -96,11 +96,17 @@ public class SchemaImpl<S> extends AstNode<S> implements Schema {
             JsonNode jsonNode = jp.getCodec().readTree(jp);
             SchemaImpl<Object> schema = new SchemaImpl<>();
             for (JsonNode serviceNode : jsonNode.get("services")) {
-                schema.addApiService(ctx.readTreeAsValue(serviceNode, ApiServiceImpl.class));
+                ApiServiceImpl<Object> apiService = ctx.readTreeAsValue(serviceNode, ApiServiceImpl.class);
+                if (Schemas.isAllowed(ctx, apiService.getGroups())) {
+                    schema.addApiService(apiService);
+                }
             }
             if (ctx.getAttribute(Schemas.IGNORE_DEFINITIONS) == null) {
                 for (JsonNode definitionNode : jsonNode.get("definitions")) {
-                    schema.addTypeDefinition(ctx.readTreeAsValue(definitionNode, TypeDefinitionImpl.class));
+                    TypeDefinitionImpl<Object> typeDefinition = ctx.readTreeAsValue(definitionNode, TypeDefinitionImpl.class);
+                    if (Schemas.isAllowed(ctx, typeDefinition.getGroups())) {
+                        schema.addTypeDefinition(typeDefinition);
+                    }
                 }
             }
             return schema;

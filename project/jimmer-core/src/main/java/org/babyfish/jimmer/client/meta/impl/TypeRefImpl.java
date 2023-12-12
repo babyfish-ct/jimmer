@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @JsonSerialize(using = TypeRefImpl.Serializer.class)
 @JsonDeserialize(using = TypeRefImpl.Deserializer.class)
@@ -92,6 +93,30 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
         } finally {
             visitor.visitedAstNode(this);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TypeRefImpl<?> typeRef = (TypeRefImpl<?>) o;
+
+        if (nullable != typeRef.nullable) return false;
+        if (!typeName.equals(typeRef.typeName)) return false;
+        if (!arguments.equals(typeRef.arguments)) return false;
+        if (!Objects.equals(fetchBy, typeRef.fetchBy)) return false;
+        return Objects.equals(fetchOwner, typeRef.fetchOwner);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = typeName.hashCode();
+        result = 31 * result + (nullable ? 1 : 0);
+        result = 31 * result + arguments.hashCode();
+        result = 31 * result + (fetchBy != null ? fetchBy.hashCode() : 0);
+        result = 31 * result + (fetchOwner != null ? fetchOwner.hashCode() : 0);
+        return result;
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.fetcher.Field;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 import org.babyfish.jimmer.sql.fetcher.RecursionStrategy;
 import org.babyfish.jimmer.sql.meta.FormulaTemplate;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -24,8 +25,10 @@ class FieldImpl implements Field {
 
     private final int offset;
 
+    @Nullable
     private final RecursionStrategy<?> recursionStrategy;
 
+    @Nullable
     private final FetcherImpl<?> childFetcher;
 
     private final boolean isSimpleField;
@@ -61,6 +64,7 @@ class FieldImpl implements Field {
 
     FieldImpl(
             FieldImpl base,
+            @Nullable
             FetcherImpl<?> childFetcher
     ) {
         this.entityType = base.entityType;
@@ -106,6 +110,7 @@ class FieldImpl implements Field {
         return offset;
     }
 
+    @Nullable
     @Override
     public RecursionStrategy<?> getRecursionStrategy() {
         return recursionStrategy;

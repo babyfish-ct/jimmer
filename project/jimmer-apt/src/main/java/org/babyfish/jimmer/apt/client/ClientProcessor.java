@@ -145,7 +145,7 @@ public class ClientProcessor {
             );
         }
         SchemaImpl<Element> schema = builder.current();
-        builder.api(typeElement, typeElement.getQualifiedName().toString(), apiService -> {
+        builder.api(typeElement, typeName(typeElement), apiService -> {
             Api api = typeElement.getAnnotation(Api.class);
             if (api != null) {
                 apiService.setGroups(Arrays.asList(api.value()));
@@ -212,8 +212,10 @@ public class ClientProcessor {
                 operation.setGroups(groups);
             }
             operation.setDoc(Doc.parse(elements.getDocComment(method)));
+            int[] indexRef = new int[1];
             for (VariableElement parameterElement : method.getParameters()) {
                 builder.parameter(parameterElement, parameterElement.getSimpleName().toString(), parameter -> {
+                    parameter.setOriginalIndex(indexRef[0]++);
                     if (Annotations.annotationMirror(parameterElement, ApiIgnore.class) != null) {
                         operation.addIgnoredParameter(parameter);
                     } else {

@@ -19,15 +19,6 @@ import java.util.*;
 @JsonDeserialize(using = ApiOperationImpl.Deserializer.class)
 public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
-    private static final JavaType TYPE_NAME_LIST_TYPE =
-            CollectionType.construct(
-                    List.class,
-                    null,
-                    null,
-                    null,
-                    SimpleType.constructUnsafe(TypeName.class)
-            );
-
     private String name;
 
     private List<String> groups;
@@ -65,7 +56,7 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     public void setGroups(List<String> groups) {
         if (groups == null || groups.isEmpty()) {
-            this.groups = Collections.emptyList();
+            this.groups = null;
         } else {
             this.groups = Collections.unmodifiableList(groups);
         }
@@ -185,6 +176,9 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             gen.writeString(operation.getName());
             gen.writeFieldName("key");
             gen.writeString(operation.key());
+            if (operation.getGroups() != null) {
+                provider.defaultSerializeField("groups", operation.getGroups(), gen);
+            }
             if (operation.getDoc() != null) {
                 provider.defaultSerializeField("doc", operation.getDoc(), gen);
             }
@@ -208,6 +202,23 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
 
     public static class Deserializer extends JsonDeserializer<ApiOperationImpl<?>> {
 
+        private static final JavaType TYPE_NAME_LIST_TYPE =
+                CollectionType.construct(
+                        List.class,
+                        null,
+                        null,
+                        null,
+                        SimpleType.constructUnsafe(TypeName.class)
+                );
+
+        private static final CollectionType GROUPS_TYPE = CollectionType.construct(
+                List.class,
+                null,
+                null,
+                null,
+                SimpleType.constructUnsafe(String.class)
+        );
+
         @SuppressWarnings("unchecked")
         @Override
         public ApiOperationImpl<?> deserialize(JsonParser jp, DeserializationContext ctx) throws IOException, JacksonException {
@@ -215,6 +226,16 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
             String name = jsonNode.get("name").asText();
             ApiOperationImpl<Object> operation = new ApiOperationImpl<>(null, name);
             operation.setKey(jsonNode.get("key").asText());
+            if (jsonNode.has("groups")) {
+                operation.setGroups(
+                        Collections.unmodifiableList(
+                            ctx.readTreeAsValue(jsonNode.get("groups"), GROUPS_TYPE)
+                        )
+                );
+                if (!Schemas.isAllowed(ctx, operation.getGroups())) {
+                    return operation;
+                }
+            }
             if (jsonNode.has("doc")) {
                 operation.setDoc(ctx.readTreeAsValue(jsonNode.get("doc"), Doc.class));
             }

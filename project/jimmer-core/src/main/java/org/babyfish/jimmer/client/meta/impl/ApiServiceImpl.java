@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.type.SimpleType;
 import org.babyfish.jimmer.client.meta.ApiService;
 import org.babyfish.jimmer.client.meta.ApiOperation;
 import org.babyfish.jimmer.client.meta.Doc;
+import org.babyfish.jimmer.client.meta.TypeName;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.*;
 @JsonDeserialize(using = ApiServiceImpl.Deserializer.class)
 public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
 
-    private String typeName;
+    private TypeName typeName;
 
     private List<String> groups;
 
@@ -29,17 +30,17 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
 
     private Doc doc;
 
-    ApiServiceImpl(S source, String typeName) {
+    ApiServiceImpl(S source, TypeName typeName) {
         super(source);
         this.typeName = typeName;
     }
 
     @Override
-    public String getTypeName() {
+    public TypeName getTypeName() {
         return typeName;
     }
 
-    public void setTypeName(String typeName) {
+    public void setTypeName(TypeName typeName) {
         this.typeName = typeName;
     }
 
@@ -108,7 +109,7 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
 
     @Override
     public String toString() {
-        return typeName;
+        return typeName.toString();
     }
 
     @JsonValue
@@ -121,8 +122,7 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
         @Override
         public void serialize(ApiServiceImpl<?> service, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
-            gen.writeFieldName("typeName");
-            gen.writeString(service.getTypeName());
+            provider.defaultSerializeField("typeName", service.getTypeName(), gen);
             if (service.getGroups() != null) {
                 provider.defaultSerializeField("groups", service.getGroups(), gen);
             }
@@ -148,15 +148,21 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
 
         @SuppressWarnings("unchecked")
         @Override
-        public ApiServiceImpl<?> deserialize(JsonParser jp, DeserializationContext ctx) throws IOException, JacksonException {
+        public ApiServiceImpl<?> deserialize(JsonParser jp, DeserializationContext ctx) throws IOException {
             JsonNode jsonNode = jp.getCodec().readTree(jp);
-            ApiServiceImpl<Object> service = new ApiServiceImpl<>(null, jsonNode.get("typeName").asText());
+            ApiServiceImpl<Object> service = new ApiServiceImpl<>(
+                    null,
+                    ctx.readTreeAsValue(jsonNode.get("typeName"), TypeName.class)
+            );
             if (jsonNode.has("groups")) {
                 service.setGroups(
                         Collections.unmodifiableList(
                                 ctx.readTreeAsValue(jsonNode.get("groups"), GROUPS_TYPE)
                         )
                 );
+                if (!Schemas.isAllowed(ctx, service.getGroups())) {
+                    return service;
+                }
             }
             if (jsonNode.has("doc")) {
                 service.setDoc(
@@ -165,7 +171,10 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
             }
             if (jsonNode.has("operations")) {
                 for (JsonNode operationNode : jsonNode.get("operations")) {
-                    service.addOperation(ctx.readTreeAsValue(operationNode, ApiOperationImpl.class));
+                    ApiOperationImpl<Object> operation = ctx.readTreeAsValue(operationNode, ApiOperationImpl.class);
+                    if (Schemas.isAllowed(ctx, operation.getGroups())) {
+                        service.addOperation(operation);
+                    }
                 }
             }
             return service;

@@ -114,17 +114,15 @@ public class JimmerProcessor extends AbstractProcessor {
                 Collection<TypeElement> immutableTypeElements =
                         new ImmutableProcessor(context, filer, messager).process(roundEnv).keySet();
                 new EntryProcessor(context, immutableTypeElements, filer).process();
-                boolean errorGenerated = new ErrorProcessor(context, checkedException, filer).process(roundEnv);
-                boolean dtoGenerated = new DtoProcessor(context, elements, filer, dtoDirs).process();
-                if (errorGenerated || dtoGenerated) {
-                    delayedClientTypeNames = roundEnv
-                            .getRootElements()
-                            .stream()
-                            .filter(it -> it instanceof TypeElement)
-                            .map(it -> ((TypeElement)it).getQualifiedName().toString())
-                            .collect(Collectors.toList());
-                    return false;
-                }
+                new ErrorProcessor(context, checkedException, filer).process(roundEnv);
+                new DtoProcessor(context, elements, filer, dtoDirs).process();
+                delayedClientTypeNames = roundEnv
+                        .getRootElements()
+                        .stream()
+                        .filter(it -> it instanceof TypeElement)
+                        .map(it -> ((TypeElement)it).getQualifiedName().toString())
+                        .collect(Collectors.toList());
+                return false;
             }
             if (!clientGenerated) {
                 clientGenerated = true;

@@ -223,6 +223,8 @@ public class EntityManager {
                             }
                         }
                     }
+                } catch (IOException ex) {
+                    throw new IllegalStateException("Failed to load resource \"" + url + "\"", ex);
                 }
             }
         } catch (IOException ex) {
