@@ -64,10 +64,10 @@ class JimmerProcessor(
             val processedDeclarations = mutableListOf<KSClassDeclaration>()
             if (!serverGenerated) {
                 processedDeclarations += ImmutableProcessor(ctx).process()
-                processedDeclarations += ErrorProcessor(ctx, checkedException).process()
+                val errorGenerated = ErrorProcessor(ctx, checkedException).process()
                 val dtoGenerated = DtoProcessor(ctx, dtoDirs, dtoMutable).process()
                 serverGenerated = true
-                if (dtoGenerated) {
+                if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = resolver.getAllFiles().flatMap {  file ->
                         file.declarations.filterIsInstance<KSClassDeclaration>().map { it.fullName }
                     }.toList()

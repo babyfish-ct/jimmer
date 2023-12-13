@@ -11,10 +11,10 @@ class ErrorProcessor(
     private val ctx: Context,
     private val checkedException: Boolean
 ) {
-    fun process(): Collection<KSClassDeclaration> {
+    fun process(): Boolean {
         val errorTypes = findErrorTypes()
         generateErrorTypes(errorTypes)
-        return errorTypes
+        return errorTypes.isNotEmpty()
     }
 
     private fun findErrorTypes(): List<KSClassDeclaration> =
