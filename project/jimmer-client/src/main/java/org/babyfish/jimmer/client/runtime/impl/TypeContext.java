@@ -95,10 +95,12 @@ class TypeContext {
                         parseType(typeRef.getArguments().get(1))
                 );
             default:
-                if (isGenericSupported) {
-                    return staticObjectType(new StaticKey(typeName, Collections.emptyList()));
+                List<Type> arguments = typeRef.getArguments().stream().map(this::parseType).collect(Collectors.toList());
+                if (isGenericSupported && !arguments.isEmpty()) {
+                    StaticObjectTypeImpl raw = staticObjectType(new StaticKey(typeName, Collections.emptyList()));
+                    return new GenericObjectTypeImpl(raw, arguments);
                 }
-                return staticObjectType(new StaticKey(typeName, typeRef.getArguments().stream().map(this::parseType).collect(Collectors.toList())));
+                return staticObjectType(new StaticKey(typeName, arguments));
         }
     }
 
@@ -131,7 +133,7 @@ class TypeContext {
         }
     }
 
-    private ObjectType immutableObjectType(ImmutableKey key) {
+    private ImmutableObjectTypeImpl immutableObjectType(ImmutableKey key) {
         ImmutableObjectTypeImpl objectType = immutableTypeMap.get(key);
         if (objectType != null) {
             return objectType;
@@ -145,7 +147,7 @@ class TypeContext {
         return objectType;
     }
 
-    private ObjectType staticObjectType(StaticKey key) {
+    private StaticObjectTypeImpl staticObjectType(StaticKey key) {
         StaticObjectTypeImpl objectType = staticTypeMap.get(key);
         if (objectType != null) {
             return objectType;

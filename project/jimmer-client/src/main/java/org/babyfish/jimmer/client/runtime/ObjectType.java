@@ -15,11 +15,10 @@ public interface ObjectType extends Type {
     @Nullable
     ImmutableType getImmutableType();
 
-    @Nullable
-    String getFetchBy();
+    List<String> getSimpleNames();
 
     @Nullable
-    Class<?> getFetchOwner();
+    FetchByInfo getFetchByInfo();
 
     List<Type> getArguments();
 
@@ -30,4 +29,8 @@ public interface ObjectType extends Type {
     TypeDefinition.Error getError();
 
     Map<String, Property> getProperties();
+
+    boolean isRecursiveFetchedType();
+
+    ObjectType unwrap();
 }

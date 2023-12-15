@@ -27,6 +27,7 @@ public interface Operation {
         GET,
         POST,
         PUT,
-        DELETE
+        DELETE,
+        PATCH
     }
 }

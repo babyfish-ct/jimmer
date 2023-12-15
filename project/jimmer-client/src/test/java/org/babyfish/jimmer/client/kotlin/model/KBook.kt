@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.kotlin.model
 
-import org.babyfish.jimmer.client.Doc
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.Id
 import org.babyfish.jimmer.sql.ManyToMany
@@ -19,11 +18,15 @@ interface KBook {
 
     val price: BigDecimal?
 
-    @Doc("The bookstore to which the current book belongs, null is allowd")
+    /**
+     * The bookstore to which the current book belongs, null is allowed
+     */
     @ManyToOne
     val store: KBookStore?
 
-    @Doc("All authors involved in writing the work")
+    /**
+     * All authors involved in writing the work
+     */
     @ManyToMany
     val authors: List<KAuthor>
 }

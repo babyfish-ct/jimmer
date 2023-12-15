@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.java.model;
 
-import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.spring.java.bll.resolver.BookStoreNewestBooksResolver;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;

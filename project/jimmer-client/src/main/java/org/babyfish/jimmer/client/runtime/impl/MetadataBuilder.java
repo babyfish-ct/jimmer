@@ -64,6 +64,9 @@ public class MetadataBuilder implements Metadata.Builder {
         if (operationParser == null) {
             throw new IllegalStateException("Operation parse has not been set");
         }
+        if (parameterParser == null) {
+            throw new IllegalStateException("ParameterParser parse has not been set");
+        }
         Schema schema = loadSchema(groups);
         TypeContext ctx = new TypeContext(schema.getTypeDefinitionMap(), genericSupported);
 
@@ -77,14 +80,14 @@ public class MetadataBuilder implements Metadata.Builder {
         List<ObjectType> staticTypes = new ArrayList<>();
 
         for (ImmutableObjectTypeImpl immutableObjectType : ctx.immutableObjectTypes()) {
-            if (immutableObjectType.getFetchBy() != null) {
+            if (immutableObjectType.getFetchByInfo() != null) {
                 fetchedTypes.add(immutableObjectType);
             } else {
                 dynamicTypes.add(immutableObjectType);
             }
         }
         for (StaticObjectTypeImpl staticObjectType : ctx.staticObjectTypes()) {
-            if (!genericSupported || staticObjectType.getArguments().isEmpty()) {
+            if (staticObjectType.unwrap() == null) {
                 staticTypes.add(staticObjectType);
             }
         }

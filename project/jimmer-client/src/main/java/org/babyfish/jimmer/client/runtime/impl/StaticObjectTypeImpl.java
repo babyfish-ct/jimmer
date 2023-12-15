@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.client.runtime.FetchByInfo;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
@@ -14,6 +15,8 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
 
     private final Class<?> javaType;
 
+    private final List<String> simpleNames;
+
     private List<Type> arguments;
 
     @Nullable
@@ -26,11 +29,21 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
 
     public StaticObjectTypeImpl(Class<?> javaType) {
         this.javaType = javaType;
+        List<String> simpleNames = new ArrayList<>();
+        for (Class<?> type = javaType; type != null; type = type.getDeclaringClass()) {
+            simpleNames.add(0, type.getSimpleName());
+        }
+        this.simpleNames = Collections.unmodifiableList(simpleNames);
     }
 
     void init(TypeName typeName, List<Type> arguments, TypeContext ctx) {
-        this.arguments = arguments;
         TypeDefinition definition = ctx.definition(typeName);
+        if (arguments.isEmpty() && javaType.getTypeParameters().length != 0) {
+            arguments = Arrays.stream(javaType.getTypeParameters())
+                    .map(it -> new TypeVariableImpl(typeName.typeVariable(it.getName())))
+                    .collect(Collectors.toList());
+        }
+        this.arguments = arguments;
         Map<String, Property> properties = new LinkedHashMap<>();
         collectProperties(definition, ctx, properties);
         this.doc = definition.getDoc();
@@ -68,15 +81,14 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
         return null;
     }
 
-    @Nullable
     @Override
-    public String getFetchBy() {
-        return null;
+    public List<String> getSimpleNames() {
+        return simpleNames;
     }
 
     @Nullable
     @Override
-    public Class<?> getFetchOwner() {
+    public FetchByInfo getFetchByInfo() {
         return null;
     }
 
@@ -98,13 +110,19 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
         return error;
     }
 
-    void setError(@Nullable TypeDefinition.Error error) {
-        this.error = error;
-    }
-
     @Override
     public Map<String, Property> getProperties() {
         return properties;
+    }
+
+    @Override
+    public boolean isRecursiveFetchedType() {
+        return false;
+    }
+
+    @Override
+    public ObjectType unwrap() {
+        return null;
     }
 
     @Override

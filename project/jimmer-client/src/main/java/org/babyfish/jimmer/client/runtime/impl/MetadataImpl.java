@@ -1,11 +1,8 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
-import org.babyfish.jimmer.client.runtime.EnumType;
-import org.babyfish.jimmer.client.runtime.Metadata;
-import org.babyfish.jimmer.client.runtime.ObjectType;
-import org.babyfish.jimmer.client.runtime.Service;
+import org.babyfish.jimmer.client.runtime.*;
 
-import java.util.List;
+import java.util.*;
 
 public class MetadataImpl implements Metadata {
 
@@ -19,6 +16,8 @@ public class MetadataImpl implements Metadata {
     
     private final List<EnumType> enumTypes;
 
+    private final Map<Class<?>, Type> typeMap;
+
     public MetadataImpl(
             List<Service> services, 
             List<ObjectType> fetchedTypes, 
@@ -31,6 +30,20 @@ public class MetadataImpl implements Metadata {
         this.dynamicTypes = dynamicTypes;
         this.staticTypes = staticTypes;
         this.enumTypes = enumTypes;
+        Map<Class<?>, Type> typeMap = new HashMap();
+        for (ObjectType fetchedType : fetchedTypes) {
+            typeMap.put(fetchedType.getJavaType(), fetchedType);
+        }
+        for (ObjectType dynamicType : dynamicTypes) {
+            typeMap.put(dynamicType.getJavaType(), dynamicType);
+        }
+        for (ObjectType staticType : staticTypes) {
+            typeMap.put(staticType.getJavaType(), staticType);
+        }
+        for (EnumType enumType : enumTypes) {
+            typeMap.put(enumType.getJavaType(), enumType);
+        }
+        this.typeMap = typeMap;
     }
 
     @Override
@@ -56,6 +69,11 @@ public class MetadataImpl implements Metadata {
     @Override
     public List<EnumType> getEnumTypes() {
         return enumTypes;
+    }
+
+    @Override
+    public Type getType(Class<?> type) {
+        return typeMap.get(type);
     }
 
     @Override

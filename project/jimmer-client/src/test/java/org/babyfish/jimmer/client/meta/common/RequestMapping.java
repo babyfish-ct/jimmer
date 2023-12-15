@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.meta.common;
 
-import org.babyfish.jimmer.client.meta.Operation;
+import org.babyfish.jimmer.client.runtime.Operation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -4,5 +4,7 @@ import org.babyfish.jimmer.client.meta.TypeName;
 
 public interface TypeVariable extends Type {
 
+    String getName();
+
     TypeName getTypeName();
 }

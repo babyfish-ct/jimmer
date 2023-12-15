@@ -21,7 +21,7 @@ private fun collectAnnotationTypes(
     ctx: VisitContext
 ) {
     val declaration = annotation.annotationType.resolve().declaration
-    val qualifiedName = declaration.qualifiedName!!.asString()
+    val qualifiedName = declaration.qualifiedName?.asString() ?: return
     if (qualifiedName == ctx.annotationName) {
         ctx.set(annotation)
         return

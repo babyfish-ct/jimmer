@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.meta.Doc;
+import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;

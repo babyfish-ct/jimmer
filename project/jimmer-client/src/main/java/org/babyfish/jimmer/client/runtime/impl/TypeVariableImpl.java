@@ -14,6 +14,11 @@ public class TypeVariableImpl extends Graph implements TypeVariable {
     }
 
     @Override
+    public String getName() {
+        return typeName.getTypeVariable();
+    }
+
+    @Override
     public TypeName getTypeName() {
         return typeName;
     }

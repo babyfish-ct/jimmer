@@ -1,13 +1,10 @@
 package org.babyfish.jimmer.client.java.model;
 
-import org.babyfish.jimmer.client.Doc;
-import org.babyfish.jimmer.client.ExportFields;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@ExportFields
 public class BookInput {
 
     private final String name;
@@ -16,7 +13,6 @@ public class BookInput {
 
     private final BigDecimal price;
 
-    @Doc("Null is allowed")
     @Nullable
     private final Long storeId;
 

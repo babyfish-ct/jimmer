@@ -21,6 +21,8 @@ public interface Metadata {
 
     List<EnumType> getEnumTypes();
 
+    Type getType(Class<?> type);
+
     static Builder newBuilder() {
         return new MetadataBuilder();
     }

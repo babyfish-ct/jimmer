@@ -5,6 +5,7 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.meta.Prop;
 import org.babyfish.jimmer.client.meta.TypeDefinition;
 import org.babyfish.jimmer.client.meta.TypeName;
+import org.babyfish.jimmer.client.runtime.FetchByInfo;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
@@ -25,22 +26,21 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
 
     private Map<String, Property> properties;
 
-    private String fetchBy;
-
     private Doc doc;
 
-    private Class<?> fetchOwner;
+    private FetchByInfo fetchByInfo;
+
+    private boolean isRecursiveFetchedType;
 
     public ImmutableObjectTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
 
     void init(String fetchBy, TypeName fetchOwner, TypeContext ctx) {
-        this.fetchBy = fetchBy;
         Fetcher<?> fetcher;
         if (fetchBy != null) {
             Class<?> ownerType = ctx.javaType(fetchOwner);
-            this.fetchOwner = ownerType;
+            fetchByInfo = new FetchByInfo(fetchBy, ownerType);
             fetcher = staticFetcher(fetchBy, ownerType);
             if (fetcher == null) {
                 fetcher = kotlinFetcher(fetchBy, ownerType);
@@ -128,11 +128,14 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
                     parentRecursiveProp.getName(),
                     new PropertyImpl(
                             parentRecursiveProp.getName(),
-                            this,
+                            parentRecursiveProp.getType().getTypeName().toString().equals("java.util.List") ?
+                                new ListTypeImpl(this) :
+                                this,
                             parentRecursiveProp.getDoc()
                     )
             );
         }
+        this.isRecursiveFetchedType = parentRecursiveProp != null;
         this.properties = Collections.unmodifiableMap(properties);
     }
 
@@ -147,16 +150,15 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
         return immutableType;
     }
 
-    @Nullable
     @Override
-    public String getFetchBy() {
-        return fetchBy;
+    public List<String> getSimpleNames() {
+        return Collections.singletonList(getJavaType().getSimpleName());
     }
 
     @Nullable
     @Override
-    public Class<?> getFetchOwner() {
-        return fetchOwner;
+    public FetchByInfo getFetchByInfo() {
+        return fetchByInfo;
     }
 
     @Nullable
@@ -184,6 +186,16 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
     @Override
     public Map<String, Property> getProperties() {
         return properties;
+    }
+
+    @Override
+    public boolean isRecursiveFetchedType() {
+        return isRecursiveFetchedType;
+    }
+
+    @Override
+    public ObjectType unwrap() {
+        return null;
     }
 
     private Fetcher<?> staticFetcher(String fetchBy, Class<?> ownerType) {

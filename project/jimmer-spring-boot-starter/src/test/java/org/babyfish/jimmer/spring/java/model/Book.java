@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.java.model;
 
-import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.Id;
 import org.babyfish.jimmer.sql.ManyToMany;
@@ -26,7 +25,6 @@ public interface Book {
     /**
      * The bookstore to which the current book belongs, null is allowed
      */
-    @Doc("The bookstore to which the current book belongs, null is allowed")
     @ManyToOne
     @Nullable
     BookStore store();
@@ -34,7 +32,6 @@ public interface Book {
     /**
      * All authors involved in writing the work
      */
-    @Doc("All authors involved in writing the work")
     @ManyToMany
     List<Author> authors();
 }

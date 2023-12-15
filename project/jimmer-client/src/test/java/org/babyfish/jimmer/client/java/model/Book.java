@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.java.model;
 
-import org.babyfish.jimmer.client.Doc;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongConverter;
 import org.babyfish.jimmer.jackson.LongListConverter;
@@ -23,12 +22,10 @@ public interface Book {
 
     BigDecimal price();
 
-    @Doc("The bookstore to which the current book belongs, null is allowd")
     @ManyToOne
     @Nullable
     BookStore store();
 
-    @Doc("All authors involved in writing the work")
     @ManyToMany
     List<Author> authors();
 

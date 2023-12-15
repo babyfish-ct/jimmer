@@ -1,21 +1,24 @@
 package org.babyfish.jimmer.client.generator;
 
-import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.client.runtime.ObjectType;
+import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.source.Source;
+import org.babyfish.jimmer.client.source.SourceManager;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-public abstract class CodeWriter<C extends Context> {
+public abstract class CodeWriter {
 
-    protected final C ctx;
+    private final Context ctx;
 
-    protected final File file;
+    protected final Source source;
 
-    private final StringBuilder codeBuilder = new StringBuilder();
+    private final SourceManager sourceManager;
+
+    private final String indentText;
+
+    private Writer writer;
 
     private int indent;
 
@@ -23,179 +26,92 @@ public abstract class CodeWriter<C extends Context> {
 
     private Scope scope;
 
-    protected CodeWriter(C ctx, File file) {
+    public CodeWriter(Context ctx, Source source) {
         this.ctx = ctx;
-        this.file = file;
+        this.source = source;
+        this.sourceManager = ctx.sourceManager;
+        this.indentText = ctx.getIndent();
     }
 
-    public final C getContext() {
-        return ctx;
+    public abstract CodeWriter typeRef(Type type);
+
+    protected final Source getResource(Type type) {
+        Source importedSource;
+        if (type instanceof ObjectType) {
+            ObjectType objectType = (ObjectType) type;
+            ObjectType unwrapped = objectType.unwrap();
+            if (unwrapped != null) {
+                importedSource = sourceManager.getSource(unwrapped);
+            } else {
+                importedSource = sourceManager.getSource(objectType);
+            }
+        } else {
+            importedSource = sourceManager.getSource(type);
+        }
+        if (importedSource != null && importedSource.getRoot() != source.getRoot()) {
+            onMarkImportedType(type, importedSource);
+        }
+        return importedSource;
     }
 
-    public final File getFile() {
-        return file;
-    }
+    protected abstract void onMarkImportedType(Type type, Source source);
 
-    public final CodeWriter<C> codeIf(boolean cond, String ts) {
+    protected abstract void onFlushImportedTypes();
+
+    public final CodeWriter codeIf(boolean cond, String text) {
         if (cond) {
-            return code(ts);
+            return code(text);
         }
         return this;
     }
 
-    public final CodeWriter<C> codeIf(boolean cond, char c) {
+    public final CodeWriter codeIf(boolean cond, char c) {
         if (cond) {
             return code(c);
         }
         return this;
     }
 
-    public final CodeWriter<C> code(String ts) {
-        if (ts.isEmpty()) {
+    public final CodeWriter code(String text) {
+        if (text.isEmpty()) {
             return this;
         }
-        int size = ts.length();
+        int size = text.length();
         for (int i = 0; i < size; i++) {
-            doAdd(ts.charAt(i));
+            doAdd(text.charAt(i));
         }
         return this;
     }
 
-    public final CodeWriter<C> code(char c) {
+    public final CodeWriter code(char c) {
         doAdd(c);
         return this;
     }
 
-    public final CodeWriter<C> importFile(File file) {
-        return importFile(file, false, null);
-    }
-
-    public final CodeWriter<C> importFile(File file, List<String> nestedNames) {
-        return importFile(file, false, nestedNames);
-    }
-
-    public final CodeWriter<C> importFile(File file, boolean treatAsData) {
-        return importFile(file, treatAsData, null);
-    }
-
-    public final CodeWriter<C> importFile(File file, boolean treatAsData, List<String> nestedNames) {
-        if (file != null && !file.equals(this.file)) {
-            onImport(file, treatAsData, nestedNames);
-        }
-        return this;
-    }
-
-    protected abstract void onImport(File file, boolean treatAsData, List<String> nestedNames);
-
-    public final CodeWriter<C> typeRef(Type type) {
-        return typeRef(type, null);
-    }
-
-    public final CodeWriter<C> typeRef(Type type, List<String> nestedNames) {
-        if (type instanceof UnresolvedTypeVariable) {
-            code(((UnresolvedTypeVariable)type).getName());
-        } else if (type instanceof SimpleType) {
-            writeSimpleTypeRef((SimpleType) type);
-        } else if (type instanceof NullableType) {
-            writeNullableTypeRef((NullableType) type);
-        } else if (type instanceof ArrayType) {
-            writeArrayTypeRef((ArrayType) type);
-        } else if (type instanceof MapType) {
-            writeMapTypeRef((MapType) type);
-        } else {
-            File file = ctx.getFile(type);
-            if (file != null) {
-                importFile(file, nestedNames);
-                if (type instanceof ImmutableObjectType &&
-                        rawImmutableAsDynamic() &&
-                        ((ImmutableObjectType)type).getCategory() == ImmutableObjectType.Category.RAW) {
-                    writeDynamicTypeRef((ImmutableObjectType) type);
-                } else if (type instanceof StaticObjectType) {
-                    writeStaticTypeRef((StaticObjectType) type);
-                } else {
-                    code(file.getName());
-                }
-            } else if (type instanceof ImmutableObjectType) {
-                writeDtoTypeRef((ImmutableObjectType) type);
-            } else if (type instanceof StaticObjectType && (nestedNames == null || nestedNames.isEmpty())) {
-                StaticObjectType staticObjectType = (StaticObjectType) type;
-                List<String> simpleNames = new ArrayList<>();
-                while (staticObjectType.getDeclaringObjectType() != null) {
-                    simpleNames.add(staticObjectType.getJavaType().getSimpleName());
-                    staticObjectType = staticObjectType.getDeclaringObjectType();
-                }
-                if (!simpleNames.isEmpty()) {
-                    Collections.reverse(simpleNames);
-                    return typeRef(staticObjectType, simpleNames);
-                }
-            }
-        }
-        if (nestedNames != null) {
-            String sp = ctx.nestedTypeSeparator();
-            for (String nestedName : nestedNames) {
-                code(sp).code(nestedName);
-            }
-        }
-        return this;
-    }
-
-    public CodeWriter<C> separator() {
-        Scope scope = this.scope;
-        if (scope == null) {
-            throw new IllegalStateException("There is no existing scope");
-        }
-        if (scope.dirty) {
-            code(scope.separator);
-            if (scope.multiLines) {
-                code('\n');
-            }
-        }
-        return this;
-    }
-
-    public CodeWriter<C> document(Document document) {
-        if (document == null) {
-            return null;
-        }
-        boolean visitedFirstLine = false;
-        code("/**\n");
-        for (Document.Item item : document.getItems()) {
-            code(" * ");
-            if (item.getDepth() != 0) {
-                for (int i = item.getDepth(); i > 1; --i) {
-                    code(ctx.getIndent());
-                }
-                code('-').code(ctx.getIndent().substring(1));
-            } else {
-                if (visitedFirstLine) {
-                    code("\n * ");
-                }
-            }
-            code(item.getText());
-            code('\n');
-            visitedFirstLine = true;
-        }
-        code(" */\n");
-        return this;
-    }
-
     private void doAdd(char c) {
-        if (!lineDirty) {
-            for (int i = indent; i > 0; --i) {
-                codeBuilder.append(ctx.getIndent());
+        if (writer == null) {
+            throw new GeneratorException("The target writer of CodeWriter has not been set");
+        }
+        try {
+            if (!lineDirty) {
+                for (int i = indent; i > 0; --i) {
+                    writer.write(indentText);
+                }
+                lineDirty = true;
             }
-            lineDirty = true;
-        }
-        if (scope != null) {
-            scope.dirty();
-        }
-        codeBuilder.append(c);
-        if (c == '\n') {
-            lineDirty = false;
+            if (scope != null) {
+                scope.dirty();
+            }
+            writer.write(c);
+            if (c == '\n') {
+                lineDirty = false;
+            }
+        } catch (IOException ex) {
+            throw new GeneratorException("Cannot write code into writer", ex);
         }
     }
 
-    public CodeWriter<C> scope(ScopeType type, String separator, boolean multiLines, Runnable runnable) {
+    public CodeWriter scope(ScopeType type, String separator, boolean multiLines, Runnable runnable) {
         Scope oldScope = scope;
         Scope newScope = new Scope(oldScope, separator, multiLines);
 
@@ -220,51 +136,31 @@ public abstract class CodeWriter<C extends Context> {
         return this;
     }
 
-    protected abstract void write();
-
-    public final void flush() throws IOException {
-        OutputStreamWriter writer = new OutputStreamWriter(ctx.getOutputStream());
-        write();
-
-        writePackageHeader(writer);
-        writeImportHeader(writer);
-
-        writer.write(codeBuilder.toString());
-        writer.flush();
-    }
-
-    protected void writePackageHeader(Writer writer) throws IOException {}
-
-    protected abstract void writeImportHeader(Writer writer) throws IOException;
-
-    protected boolean rawImmutableAsDynamic() {
-        return false;
-    }
-
-    protected abstract void writeSimpleTypeRef(SimpleType simpleType);
-
-    protected abstract void writeNullableTypeRef(NullableType nullableType);
-
-    protected abstract void writeArrayTypeRef(ArrayType arrayType);
-
-    protected abstract void writeMapTypeRef(MapType mapType);
-
-    protected abstract void writeDynamicTypeRef(ImmutableObjectType type);
-
-    protected void writeStaticTypeRef(StaticObjectType type) {
-        code(getContext().getFile(type).getName());
-        List<Type> typeArguments = type.getTypeArguments();
-        if (!typeArguments.isEmpty()) {
-            scope(ScopeType.GENERIC, ", ", false, () -> {
-                for (Type typeArgument : typeArguments) {
-                    separator();
-                    typeRef(typeArgument);
-                }
-            });
+    public CodeWriter separator() {
+        Scope scope = this.scope;
+        if (scope == null) {
+            throw new IllegalStateException("There is no existing scope");
         }
+        if (scope.dirty) {
+            code(scope.separator);
+            if (scope.multiLines) {
+                code('\n');
+            }
+        }
+        return this;
     }
 
-    protected abstract void writeDtoTypeRef(ImmutableObjectType type);
+    public CodeWriter children() {
+        for (Source subSource : source.getSubSources()) {
+            subSource.getRender().render(this);
+        }
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <C extends Context> C getContext() {
+        return (C) ctx;
+    }
 
     public enum ScopeType {
         OBJECT("{", "}"),
@@ -307,5 +203,9 @@ public abstract class CodeWriter<C extends Context> {
                 }
             }
         }
+    }
+
+    void setWriter(Writer writer) {
+        this.writer = writer;
     }
 }

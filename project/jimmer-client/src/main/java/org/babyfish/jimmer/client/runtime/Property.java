@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.runtime;
 
 import org.babyfish.jimmer.client.meta.Doc;
+import org.jetbrains.annotations.Nullable;
 
 public interface Property {
 
@@ -8,5 +9,6 @@ public interface Property {
 
     Type getType();
 
+    @Nullable
     Doc getDoc();
 }
