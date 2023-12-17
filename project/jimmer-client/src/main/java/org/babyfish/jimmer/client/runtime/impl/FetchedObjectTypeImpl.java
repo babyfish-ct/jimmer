@@ -20,7 +20,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
+public class FetchedObjectTypeImpl extends Graph implements ObjectType {
 
     private final ImmutableType immutableType;
 
@@ -32,32 +32,28 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
 
     private boolean isRecursiveFetchedType;
 
-    public ImmutableObjectTypeImpl(ImmutableType immutableType) {
+    public FetchedObjectTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
 
     void init(String fetchBy, TypeName fetchOwner, TypeContext ctx) {
         Fetcher<?> fetcher;
-        if (fetchBy != null) {
-            Class<?> ownerType = ctx.javaType(fetchOwner);
-            fetchByInfo = new FetchByInfo(fetchBy, ownerType);
-            fetcher = staticFetcher(fetchBy, ownerType);
+        Class<?> ownerType = ctx.javaType(fetchOwner);
+        fetchByInfo = new FetchByInfo(fetchBy, ownerType);
+        fetcher = staticFetcher(fetchBy, ownerType);
+        if (fetcher == null) {
+            fetcher = kotlinFetcher(fetchBy, ownerType);
             if (fetcher == null) {
-                fetcher = kotlinFetcher(fetchBy, ownerType);
-                if (fetcher == null) {
-                    throw new IllegalApiException(
-                            "Illegal annotation \"@" +
-                                    FetchBy.class.getName() +
-                                    "\", there is no static fetcher \"" +
-                                    fetchBy +
-                                    "\" declared in \"" +
-                                    ownerType.getName() +
-                                    "\""
-                    );
-                }
+                throw new IllegalApiException(
+                        "Illegal annotation \"@" +
+                                FetchBy.class.getName() +
+                                "\", there is no static fetcher \"" +
+                                fetchBy +
+                                "\" declared in \"" +
+                                ownerType.getName() +
+                                "\""
+                );
             }
-        } else {
-            fetcher = null;
         }
         initProperties(fetcher, null, ctx);
     }
@@ -75,53 +71,33 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
                         idMetaProp.getDoc()
                 )
         );
-        if (fetcher != null) {
-            for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
-                ImmutableProp prop = field.getProp();
-                Prop metaProp = definition.getPropMap().get(field.getProp().getName());
-                Type type;
-                if (prop.isAssociation(TargetLevel.ENTITY)) {
-                    ImmutableObjectTypeImpl targetType = new ImmutableObjectTypeImpl(prop.getTargetType());
-                    targetType.initProperties(field.getChildFetcher(), field.getRecursionStrategy() != null ? metaProp : null, ctx);
-                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                        type = new ListTypeImpl(targetType);
-                    } else {
-                        type = targetType;
-                        if (metaProp.getType().isNullable()) {
-                            type = NullableTypeImpl.of(type);
-                        }
-                    }
-                } else {
-                    type = ctx.parseType(metaProp.getType());
-                }
-                properties.put(
-                        prop.getName(),
-                        new PropertyImpl(prop.getName(), type, metaProp.getDoc())
-                );
+        for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
+            if (field.isImplicit()) {
+                continue;
             }
-        } else {
-            for (ImmutableProp prop : immutableType.getProps().values()) {
-                Prop metaProp = definition.getPropMap().get(prop.getName());
-                Type type;
-                if (prop.isAssociation(TargetLevel.ENTITY)) {
-                    ImmutableObjectTypeImpl targetType = new ImmutableObjectTypeImpl(prop.getTargetType());
-                    targetType.initProperties(null, null, ctx);
-                    if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                        type = new ListTypeImpl(targetType);
-                    } else {
-                        type = targetType;
-                        if (metaProp.getType().isNullable()) {
-                            type = NullableTypeImpl.of(type);
-                        }
-                    }
+            ImmutableProp prop = field.getProp();
+            Prop metaProp = definition.getPropMap().get(field.getProp().getName());
+            Type type;
+            if (prop.isAssociation(TargetLevel.ENTITY)) {
+                FetchedObjectTypeImpl targetType = new FetchedObjectTypeImpl(prop.getTargetType());
+                Fetcher<?> childFetcher = field.getChildFetcher();
+                assert childFetcher != null;
+                targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                    type = new ListTypeImpl(targetType);
                 } else {
-                    type = ctx.parseType(metaProp.getType());
+                    type = targetType;
+                    if (metaProp.getType().isNullable()) {
+                        type = NullableTypeImpl.of(type);
+                    }
                 }
-                properties.put(
-                        prop.getName(),
-                        new PropertyImpl(prop.getName(), type, metaProp.getDoc())
-                );
+            } else {
+                type = ctx.parseType(metaProp.getType());
             }
+            properties.put(
+                    prop.getName(),
+                    new PropertyImpl(prop.getName(), type, metaProp.getDoc())
+            );
         }
         if (parentRecursiveProp != null) {
             properties.put(
@@ -148,6 +124,11 @@ public class ImmutableObjectTypeImpl extends Graph implements ObjectType {
     @Override
     public ImmutableType getImmutableType() {
         return immutableType;
+    }
+
+    @Override
+    public Kind getKind() {
+        return fetchByInfo != null ? Kind.FETCHED : Kind.DYNAMIC;
     }
 
     @Override

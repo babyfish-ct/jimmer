@@ -21,7 +21,7 @@ public class DtoWrapperRender implements Render {
     @Override
     public void render(CodeWriter writer) {
         writer.code("export type ").code(name).code(' ');
-        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, writer::children);
+        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, writer::renderChildren);
         writer.code('\n');
         for (Map.Entry<Type, String> e : recursiveTypeNames.entrySet()) {
             writer.code("interface ").code(e.getValue()).code(' ');

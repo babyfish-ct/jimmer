@@ -308,7 +308,7 @@ public abstract class AbstractMutationTest extends AbstractTest {
         }
 
         public void type(Class<? extends Throwable> type) {
-            Assertions.assertSame(type, throwable.getClass());
+            Assertions.assertTrue(type.isAssignableFrom(throwable.getClass()));
         }
 
         public void message(String message) {

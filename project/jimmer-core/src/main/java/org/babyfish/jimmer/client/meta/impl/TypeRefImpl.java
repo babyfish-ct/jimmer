@@ -147,7 +147,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
                 gen.writeFieldName("fetchBy");
                 gen.writeString(typeRef.getFetchBy());
                 gen.writeFieldName("fetcherOwner");
-                gen.writeString(typeRef.getFetcherOwner().toString(true));
+                gen.writeString(typeRef.getFetcherOwner().toString());
             }
             gen.writeEndObject();
         }

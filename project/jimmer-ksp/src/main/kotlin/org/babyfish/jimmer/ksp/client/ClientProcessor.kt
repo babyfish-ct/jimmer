@@ -480,9 +480,7 @@ class ClientProcessor(
                     }
                     finalType.isNullable = isNullable
                     prop.setType(finalType)
-                    if (doc != null) {
-                        prop.doc = Doc.parse(doc)
-                    }
+                    prop.setDoc(Doc.parse(doc));
                 }
                 container.addErrorProp(prop)
             }

@@ -132,8 +132,7 @@ class Saver {
             ) {
                 ImmutableType targetType = prop.getTargetType();
                 if (prop.isRemote() && prop.getMappedBy() != null) {
-                    throw new SaveException(
-                            SaveErrorCode.REVERSED_REMOTE_ASSOCIATION,
+                    throw new SaveException.ReversedRemoteAssociation(
                             path,
                             "The property \"" +
                                     prop +
@@ -142,8 +141,7 @@ class Saver {
                     );
                 }
                 if (prop.getSqlTemplate() instanceof JoinTemplate) {
-                    throw new SaveException(
-                            SaveErrorCode.UNSTRUCTURED_ASSOCIATION,
+                    throw new SaveException.UnstructuredAssociation(
                             path,
                             "The property \"" +
                                     prop +
@@ -174,8 +172,7 @@ class Saver {
                 Set<Object> associatedObjectIds = new LinkedHashSet<>();
                 if (associatedValue == null) {
                     if (prop.isInputNotNull()) {
-                        throw new SaveException(
-                                SaveErrorCode.NULL_TARGET,
+                        throw new SaveException.NullTarget(
                                 path,
                                 "The association \"" +
                                         prop +
@@ -199,8 +196,7 @@ class Saver {
                                 try {
                                     targetId = associatedObject.__get(targetIdPropId);
                                 } catch (UnloadedException ex) {
-                                    throw new SaveException(
-                                            SaveErrorCode.EMPTY_OBJECT,
+                                    throw new SaveException.EmptyObject(
                                             path,
                                             "An associated object of the property \"" +
                                                     prop +
@@ -209,8 +205,7 @@ class Saver {
                                 }
                                 idOnlyTargetIds.add(targetId);
                             } else if (prop.isRemote()) {
-                                throw new SaveException(
-                                        SaveErrorCode.LONG_REMOTE_ASSOCIATION,
+                                throw new SaveException.LongRemoteAssociation(
                                         path,
                                         "The property \"" +
                                                 prop +
@@ -268,8 +263,7 @@ class Saver {
                         addOutput(AffectedTable.of(targetType), rowCount);
                     } else {
                         if (childTableOperator.exists(currentId, associatedObjectIds)) {
-                            throw new SaveException(
-                                    SaveErrorCode.CANNOT_DISSOCIATE_TARGETS,
+                            throw new SaveException.CannotDissociateTarget(
                                     path.to(prop),
                                     "Cannot dissociate child objects because the dissociation action of the many-to-one property \"" +
                                             mappedBy +
@@ -333,8 +327,7 @@ class Saver {
                                 new FetcherImpl<>((Class<ImmutableSpi>) (prop.getTargetType().getJavaClass()))
                         );
             } catch (Exception ex) {
-                throw new SaveException(
-                        SaveErrorCode.FAILED_REMOTE_VALIDATION,
+                throw new SaveException.FailedRemoteValidation(
                         path,
                         "Cannot validate the id-only associated objects of remote association \"" +
                                 prop +
@@ -360,8 +353,7 @@ class Saver {
             illegalTargetIds.removeAll(new HashSet<>(existingTargetIds));
         }
         if (!illegalTargetIds.isEmpty()) {
-            throw new SaveException(
-                    SaveErrorCode.ILLEGAL_TARGET_ID,
+            throw new SaveException.IllegalTargetId(
                     path.to(prop),
                     "Illegal ids: " + illegalTargetIds
             );
@@ -444,8 +436,7 @@ class Saver {
                 null;
         if (id == null) {
             if (idGenerator == null) {
-                throw new SaveException(
-                        SaveErrorCode.NO_ID_GENERATOR,
+                throw new SaveException.NoIdGenerator(
                         path,
                         "Cannot save \"" +
                                 type + "\" " +
@@ -477,8 +468,7 @@ class Saver {
                 id = ((UserIdGenerator<?>)idGenerator).generate(type.getJavaClass());
                 setDraftId(draftSpi, id);
             } else if (!(idGenerator instanceof IdentityIdGenerator)) {
-                throw new SaveException(
-                        SaveErrorCode.ILLEGAL_ID_GENERATOR,
+                throw new SaveException.IllegalIdGenerator(
                         path,
                         "Illegal id generator type: \"" +
                                 idGenerator.getClass().getName() +
@@ -529,8 +519,7 @@ class Saver {
             }
         }
         if (props.isEmpty()) {
-            throw new SaveException(
-                    SaveErrorCode.NO_NON_ID_PROPS,
+            throw new SaveException.NoNonIdProps(
                     path,
                     "Cannot insert \"" +
                             type +
@@ -692,8 +681,7 @@ class Saver {
             }
         }
         if (type.getVersionProp() != null && version == null) {
-            throw new SaveException(
-                    SaveErrorCode.NO_VERSION,
+            throw new SaveException.NoVersion(
                     path,
                     "Cannot update \"" +
                             type +
@@ -719,8 +707,7 @@ class Saver {
             }
             cache.save(draftSpi, true);
         } else if (version != null || lambda != null) {
-            throw new SaveException(
-                    SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
+            throw new SaveException.OptimisticLockError(
                     path,
                     "Cannot update the entity whose type is \"" +
                             type +
@@ -854,7 +841,7 @@ class Saver {
         try {
             cached = cache.find(example, requiresKey);
         } catch (IllegalArgumentException ex) {
-            throw new SaveException(SaveErrorCode.NO_KEY_PROPS, path, ex.getMessage());
+            throw new SaveException.NoKeyProps(path, ex.getMessage());
         }
         if (cached != null) {
             return cached;
@@ -900,8 +887,7 @@ class Saver {
         });
 
         if (rows.size() > 1) {
-            throw new SaveException(
-                    SaveErrorCode.KEY_NOT_UNIQUE,
+            throw new SaveException.KeyNotUnique(
                     path,
                     "Key properties " +
                             actualKeyProps +
@@ -930,8 +916,7 @@ class Saver {
         }
         Collection<ImmutableProp> keyProps = data.getKeyProps(type);
         if (keyProps.isEmpty() && requiresKey) {
-            throw new SaveException(
-                    SaveErrorCode.NO_KEY_PROPS,
+            throw new SaveException.NoKeyProps(
                     path,
                     "Cannot save \"" +
                             type +
@@ -965,8 +950,7 @@ class Saver {
             Set<ImmutableProp> keyProps = data.getKeyProps(spi.__type());
             for (ImmutableProp keyProp : keyProps) {
                 if (validate && !spi.__isLoaded(keyProp.getId())) {
-                    throw new SaveException(
-                            SaveErrorCode.NEITHER_ID_NOR_KEY,
+                    throw new SaveException.NeitherIdNorKey(
                             path,
                             "Cannot save illegal entity object " +
                                     spi +
@@ -979,8 +963,7 @@ class Saver {
                 }
             }
         } else if (validate && !idPropLoaded) {
-            throw new SaveException(
-                    SaveErrorCode.NEITHER_ID_NOR_KEY,
+            throw new SaveException.NeitherIdNorKey(
                     path,
                     "Cannot save illegal entity object " +
                             spi +
@@ -997,8 +980,7 @@ class Saver {
         ImmutableProp idProp = type.getIdProp();
         Object convertedId = Converters.tryConvert(id, idProp.getElementClass());
         if (convertedId == null) {
-            throw new SaveException(
-                    SaveErrorCode.ILLEGAL_GENERATED_ID,
+            throw new SaveException.IllegalGeneratedId(
                     path,
                     "The type of generated id does not match the property \"" + idProp + "\""
             );

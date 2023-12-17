@@ -10,23 +10,29 @@ public class TypeScriptContext extends Context {
 
     private final boolean isMutable;
 
-    public TypeScriptContext(Metadata metadata, String indent, boolean isMutable) {
+    private final String apiName;
+
+    public TypeScriptContext(Metadata metadata) {
+        this(metadata, "    ", false, null);
+    }
+
+    public TypeScriptContext(Metadata metadata, String indent, boolean isMutable, String apiName) {
         super(metadata, indent);
         this.isMutable = isMutable;
+        this.apiName = apiName != null && !apiName.isEmpty() ? apiName : "Api";
     }
 
     public boolean isMutable() {
         return isMutable;
     }
 
-    @Override
-    protected boolean determineGenericSupported() {
-        return true;
+    public String getApiName() {
+        return apiName;
     }
 
     @Override
-    protected SourceManager createSourceManager(Metadata metadata, boolean isGenericSupported) {
-        return new TypeScriptSourceManager(metadata, isGenericSupported);
+    protected SourceManager createSourceManager() {
+        return new TypeScriptSourceManager(this);
     }
 
     @Override

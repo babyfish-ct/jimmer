@@ -4,13 +4,11 @@ import org.babyfish.jimmer.sql.DissociateAction;
 import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.ast.mutation.AffectedTable;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
-import org.babyfish.jimmer.sql.ast.mutation.SimpleSaveResult;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
 import static org.babyfish.jimmer.sql.common.Constants.*;
 
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
-import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadata;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
 import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
@@ -21,7 +19,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.UUID;
 

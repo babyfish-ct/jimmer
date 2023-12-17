@@ -1,15 +1,14 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.runtime.ObjectType;
-import org.babyfish.jimmer.client.runtime.Operation;
-import org.babyfish.jimmer.client.runtime.Parameter;
-import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.runtime.*;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
 public class OperationImpl implements Operation {
+
+    private final Service declaringService;
 
     private final Method javaMethod;
 
@@ -25,18 +24,24 @@ public class OperationImpl implements Operation {
 
     private List<ObjectType> exceptionTypes;
 
-    public OperationImpl(Method javaMethod) {
+    public OperationImpl(Service declaringService, Method javaMethod) {
+        this.declaringService = declaringService;
         this.javaMethod = javaMethod;
     }
 
     @Override
+    public Service getDeclaringService() {
+        return declaringService;
+    }
+
+    @Override
     public String getName() {
-        return null;
+        return javaMethod.getName();
     }
 
     @Override
     public Doc getDoc() {
-        return null;
+        return doc;
     }
 
     void setDoc(Doc doc) {

@@ -13,6 +13,7 @@ import org.babyfish.jimmer.client.meta.ApiService;
 import org.babyfish.jimmer.client.meta.ApiOperation;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.meta.TypeName;
+import org.babyfish.jimmer.impl.util.Classes;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

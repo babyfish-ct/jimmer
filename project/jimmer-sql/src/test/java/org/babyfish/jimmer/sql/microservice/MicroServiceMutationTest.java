@@ -3,15 +3,12 @@ package org.babyfish.jimmer.sql.microservice;
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.ast.mutation.AbstractEntitySaveCommand;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
-import org.babyfish.jimmer.sql.common.AbstractTest;
 import org.babyfish.jimmer.sql.model.microservice.Order;
 import org.babyfish.jimmer.sql.model.microservice.OrderDraft;
 import org.babyfish.jimmer.sql.model.microservice.OrderItemDraft;
 import org.babyfish.jimmer.sql.model.microservice.ProductDraft;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.junit.jupiter.api.Test;
-
-import java.sql.Connection;
 
 public class MicroServiceMutationTest extends AbstractMutationTest {
 

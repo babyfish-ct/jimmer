@@ -18,25 +18,65 @@ import java.util.regex.Pattern;
 
 @JsonSerialize(using = TypeName.Serializer.class)
 @JsonDeserialize(using = TypeName.Deserializer.class)
-public final class TypeName implements Comparable<TypeName> {
+public class TypeName implements Comparable<TypeName> {
 
     public static final TypeName VOID = new TypeName(null, "void");
 
-    public static final TypeName BOOLEAN = new TypeName(null, "boolean");
+    public static final TypeName BOOLEAN = new TypeName(null, "boolean") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Boolean");
+        }
+    };
 
-    public static final TypeName CHAR = new TypeName(null, "char");
+    public static final TypeName CHAR = new TypeName(null, "char") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Character");
+        }
+    };
 
-    public static final TypeName BYTE = new TypeName(null, "byte");
+    public static final TypeName BYTE = new TypeName(null, "byte") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Byte");
+        }
+    };
 
-    public static final TypeName SHORT = new TypeName(null, "short");
+    public static final TypeName SHORT = new TypeName(null, "short") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Short");
+        }
+    };
 
-    public static final TypeName INT = new TypeName(null, "int");
+    public static final TypeName INT = new TypeName(null, "int") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Integer");
+        }
+    };
 
-    public static final TypeName LONG = new TypeName(null, "long");
+    public static final TypeName LONG = new TypeName(null, "long") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Long");
+        }
+    };
 
-    public static final TypeName FLOAT = new TypeName(null, "float");
+    public static final TypeName FLOAT = new TypeName(null, "float") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Float");
+        }
+    };
 
-    public static final TypeName DOUBLE = new TypeName(null, "double");
+    public static final TypeName DOUBLE = new TypeName(null, "double") {
+        @Override
+        public TypeName box() {
+            return new TypeName("java.lang", "Double");
+        }
+    };
 
     public static final TypeName OBJECT = new TypeName("java.lang", "Object");
 
@@ -46,7 +86,7 @@ public final class TypeName implements Comparable<TypeName> {
 
     public static final TypeName MAP = new TypeName("java.util", "Map");
 
-    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
+    private static final Pattern DOLLAR_PATTERN = Pattern.compile("\\$");
 
     @Nullable
     private final String packageName;
@@ -58,7 +98,7 @@ public final class TypeName implements Comparable<TypeName> {
 
     private String javaString;
 
-    private String clientString;
+    private String jvmString;
 
     private TypeName(@Nullable String packageName, String simpleName) {
         this(packageName, Collections.singletonList(simpleName), null);
@@ -193,7 +233,7 @@ public final class TypeName implements Comparable<TypeName> {
     }
 
     public boolean isGenerationRequired() {
-        String text = toStringImpl(false);
+        String text = toString();
         switch (text) {
             case "boolean":
             case "char":
@@ -237,6 +277,10 @@ public final class TypeName implements Comparable<TypeName> {
         }
     }
 
+    public TypeName box() {
+        return this;
+    }
+
     @Override
     public int compareTo(@NotNull TypeName o) {
         return toString().compareTo(o.toString());
@@ -261,12 +305,12 @@ public final class TypeName implements Comparable<TypeName> {
         return toString(false);
     }
 
-    public String toString(boolean clientStyle) {
+    public String toString(boolean jvmStyle) {
         String str;
-        if (clientStyle) {
-            str = clientString;
+        if (jvmStyle) {
+            str = jvmString;
             if (str == null) {
-                clientString = str = toStringImpl(true);
+                jvmString = str = toStringImpl(true);
             }
         } else {
             str = javaString;
@@ -277,23 +321,19 @@ public final class TypeName implements Comparable<TypeName> {
         return str;
     }
 
-    private String toStringImpl(boolean clientStyle) {
+    private String toStringImpl(boolean jvmStyle) {
         StringBuilder builder = new StringBuilder();
         if (typeVariable != null) {
             builder.append('<');
         }
         if (packageName != null && !packageName.isEmpty()) {
             builder.append(packageName);
-            if (clientStyle) {
-                builder.append('/');
-            } else {
-                builder.append('.');
-            }
+            builder.append('.');
         }
         boolean addDot = false;
         for (String simpleName : simpleNames) {
             if (addDot) {
-                builder.append('.');
+                builder.append(jvmStyle ? '$' : '.');
             } else {
                 addDot = true;
             }
@@ -316,15 +356,15 @@ public final class TypeName implements Comparable<TypeName> {
         }
 
         String packageName;
-        int slashIndex = value.indexOf('/');
-        if (slashIndex != -1) {
-            packageName = value.substring(0, slashIndex);
-            value = value.substring(slashIndex + 1);
+        int lastDotIndex = value.lastIndexOf('.');
+        if (lastDotIndex != -1) {
+            packageName = value.substring(0, lastDotIndex);
+            value = value.substring(lastDotIndex + 1);
         } else {
             packageName = null;
         }
 
-        List<String> simpleNames = Collections.unmodifiableList(Arrays.asList(DOT_PATTERN.split(value)));
+        List<String> simpleNames = Collections.unmodifiableList(Arrays.asList(DOLLAR_PATTERN.split(value)));
 
         return new TypeName(packageName, simpleNames, typeVariable);
     }

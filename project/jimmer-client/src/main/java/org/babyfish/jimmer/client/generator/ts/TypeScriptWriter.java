@@ -4,9 +4,7 @@ import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
-import org.babyfish.jimmer.client.source.SourceManager;
 
-import java.io.Writer;
 import java.util.*;
 
 public class TypeScriptWriter extends CodeWriter {
@@ -45,20 +43,23 @@ public class TypeScriptWriter extends CodeWriter {
             }
         } else if (type instanceof ObjectType) {
             code(getResource(type).getName());
-            List<Type> arguments = ((ObjectType) type).getArguments();
-            if (!arguments.isEmpty()) {
-                scope(ScopeType.GENERIC, ", ", false, () -> {
-                    for (Type argument : arguments) {
-                        typeRef(argument);
-                    }
-                });
+            ObjectType objectType = (ObjectType) type;
+            if (objectType.getKind() == ObjectType.Kind.STATIC) {
+                List<Type> arguments = ((ObjectType) type).getArguments();
+                if (!arguments.isEmpty()) {
+                    scope(ScopeType.GENERIC, ", ", false, () -> {
+                        for (Type argument : arguments) {
+                            typeRef(argument);
+                        }
+                    });
+                }
             }
         }
         return this;
     }
 
     @Override
-    protected void onMarkImportedType(Type type, Source source) {
+    public void importSource(Source source, String name, boolean treatAsData) {
         List<String> currentDirs = this.source.getDirs();
         List<String> dirs = source.getDirs();
         int maxCount = Math.min(currentDirs.size(), dirs.size());
@@ -80,7 +81,7 @@ public class TypeScriptWriter extends CodeWriter {
         if (!path.startsWith("../")) {
             path = "./" + path;
         }
-        imports.computeIfAbsent(path, it -> new TreeSet<>()).add(source.getName());
+        imports.computeIfAbsent(path, it -> new TreeSet<>()).add(name);
     }
 
     @Override

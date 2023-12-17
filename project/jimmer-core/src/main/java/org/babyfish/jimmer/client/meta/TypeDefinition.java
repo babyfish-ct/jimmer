@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.meta;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -40,7 +42,8 @@ public interface TypeDefinition {
 
         private final String code;
 
-        public Error(String family, String code) {
+        @JsonCreator
+        public Error(@JsonProperty("family") String family, @JsonProperty("code") String code) {
             this.family = family;
             this.code = code;
         }

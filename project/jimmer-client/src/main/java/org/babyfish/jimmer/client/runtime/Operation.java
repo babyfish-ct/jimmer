@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface Operation {
 
+    Service getDeclaringService();
+
     String getName();
 
     Doc getDoc();

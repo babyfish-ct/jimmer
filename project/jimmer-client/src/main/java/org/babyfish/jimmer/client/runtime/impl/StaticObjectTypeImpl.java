@@ -82,6 +82,11 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
     }
 
     @Override
+    public Kind getKind() {
+        return error != null ? Kind.ERROR : Kind.STATIC;
+    }
+
+    @Override
     public List<String> getSimpleNames() {
         return simpleNames;
     }

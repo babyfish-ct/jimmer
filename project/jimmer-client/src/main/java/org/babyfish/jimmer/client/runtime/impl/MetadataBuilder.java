@@ -79,7 +79,7 @@ public class MetadataBuilder implements Metadata.Builder {
         List<ObjectType> dynamicTypes = new ArrayList<>();
         List<ObjectType> staticTypes = new ArrayList<>();
 
-        for (ImmutableObjectTypeImpl immutableObjectType : ctx.immutableObjectTypes()) {
+        for (FetchedObjectTypeImpl immutableObjectType : ctx.immutableObjectTypes()) {
             if (immutableObjectType.getFetchByInfo() != null) {
                 fetchedTypes.add(immutableObjectType);
             } else {
@@ -136,7 +136,7 @@ public class MetadataBuilder implements Metadata.Builder {
         for (Method method : service.getJavaType().getMethods()) {
             ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameterTypes());
             if (apiOperation != null) {
-                OperationImpl operation = operation(apiOperation, method, baseUri, ctx);
+                OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx);
                 operations.add(operation);
             }
         }
@@ -144,8 +144,8 @@ public class MetadataBuilder implements Metadata.Builder {
         return service;
     }
 
-    private OperationImpl operation(ApiOperation apiOperation, Method method, String baseUri, TypeContext ctx) {
-        OperationImpl operation = new OperationImpl(method);
+    private OperationImpl operation(Service service, ApiOperation apiOperation, Method method, String baseUri, TypeContext ctx) {
+        OperationImpl operation = new OperationImpl(service, method);
         String uri = operationParser.uri(method);
         operation.setUri(concatUri(baseUri, uri));
         operation.setDoc(apiOperation.getDoc());
@@ -172,21 +172,29 @@ public class MetadataBuilder implements Metadata.Builder {
     private ParameterImpl parameter(ApiParameter apiParameter, Parameter javaParameter, Method method, TypeContext ctx) {
         ParameterImpl parameter = new ParameterImpl(apiParameter.getName());
         String requestParam = parameterParser.requestParam(javaParameter);
-        if (requestParam != null && !requestParam.isEmpty()) {
-            parameter.setRequestParam(requestParam);
+        if (requestParam != null) {
+            if (requestParam.isEmpty()) {
+                parameter.setRequestParam(apiParameter.getName());
+            } else {
+                parameter.setRequestParam(requestParam);
+            }
         } else {
             String pathVariable = parameterParser.pathVariable(javaParameter);
-            if (pathVariable != null && !pathVariable.isEmpty()) {
-                parameter.setPathVariable(pathVariable);
+            if (pathVariable != null) {
+                if (pathVariable.isEmpty()) {
+                    parameter.setPathVariable(apiParameter.getName());
+                } else {
+                    parameter.setPathVariable(pathVariable);
+                }
             } else if (parameterParser.isRequestBody(javaParameter)) {
                 parameter.setRequestBody(true);
-            } else {
+            } else if (!apiParameter.getType().getTypeName().isGenerationRequired()) {
                 throw new IllegalApiException(
                         "Illegal API method \"" +
                                 method +
                                 "\", its parameter \"" +
                                 apiParameter.getName() +
-                                "\" is neither request param nor " +
+                                "\" is not simple type, but its neither request param nor " +
                                 "path variable nor request body"
                 );
             }

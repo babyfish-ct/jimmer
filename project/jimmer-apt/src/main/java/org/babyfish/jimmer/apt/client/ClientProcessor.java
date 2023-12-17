@@ -245,7 +245,7 @@ public class ClientProcessor {
         }
         Set<TypeName> exceptionTypeNames = new LinkedHashSet<>();
         for (TypeMirror type : exceptionTypes) {
-            TypeElement typeElement = (TypeElement)context.getTypes().asElement(type);
+            TypeElement typeElement = (TypeElement) context.getTypes().asElement(type);
             collectExceptionTypeNames(typeElement, exceptionTypeNames);
         }
         return exceptionTypeNames;
@@ -304,15 +304,25 @@ public class ClientProcessor {
 
     private void fillType(TypeMirror type) {
         if (type.getKind() != TypeKind.VOID) {
+            determineTypeAndArguments(type);
             determineNullity(type);
             determineFetchBy(type);
-            determineTypeAndArguments(type);
         }
     }
 
     private void determineNullity(TypeMirror type) {
         TypeRefImpl<Element> typeRef = builder.current();
+        Boolean forcedType = null;
+        if (typeRef.getTypeName().isPrimitive()) {
+            forcedType = context.getTypes().asElement(type) != null;
+        }
         if (type.getAnnotation(NullableType.class) != null) {
+            if (forcedType != null && !forcedType) {
+                throw new MetaException(
+                        builder.ancestorSource(),
+                        "Illegal annotation `@NullableType` which cannot be used to decorate primitive type"
+                );
+            }
             typeRef.setNullable(true);
         } else {
             Element element = builder.ancestorSource(PropImpl.class, ApiParameterImpl.class, ApiOperationImpl.class);
@@ -321,11 +331,22 @@ public class ClientProcessor {
                     TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
                     String annoClassName = annoElement.getSimpleName().toString();
                     if (annoClassName.equals("Null") || annoClassName.equals("Nullable")) {
+                        if (forcedType != null && !forcedType) {
+                            throw new MetaException(
+                                    builder.ancestorSource(),
+                                    "Illegal annotation `@" +
+                                            annoElement.getQualifiedName().toString() +
+                                            "` which cannot be used to decorate primitive type"
+                            );
+                        }
                         typeRef.setNullable(true);
                         break;
                     }
                 }
             }
+        }
+        if (forcedType != null && forcedType) {
+            typeRef.setNullable(true);
         }
     }
 
@@ -540,6 +561,32 @@ public class ClientProcessor {
                     "Client API system does not accept unambiguous type `java.lang.Object`"
             );
         }
+        switch (typeName.toString()) {
+            case "java.lang.Boolean":
+                typeName = TypeName.BOOLEAN;
+                break;
+            case "java.lang.Character":
+                typeName = TypeName.CHAR;
+                break;
+            case "java.lang.Byte":
+                typeName = TypeName.BYTE;
+                break;
+            case "java.lang.Short":
+                typeName = TypeName.SHORT;
+                break;
+            case "java.lang.Integer":
+                typeName = TypeName.INT;
+                break;
+            case "java.lang.Long":
+                typeName = TypeName.LONG;
+                break;
+            case "java.lang.Float":
+                typeName = TypeName.FLOAT;
+                break;
+            case "java.lang.Double":
+                typeName = TypeName.DOUBLE;
+                break;
+        }
         typeRef.setTypeName(typeName);
 
         for (TypeMirror typeMirror : declaredType.getTypeArguments()) {
@@ -558,6 +605,7 @@ public class ClientProcessor {
         }
 
         TypeDefinitionImpl<Element> typeDefinition = builder.current();
+        typeDefinition.setDoc(Doc.parse(context.getElements().getDocComment(typeElement)));
         typeDefinition.setApiIgnore(typeElement.getAnnotation(ApiIgnore.class) != null);
         if (immutable) {
             typeDefinition.setKind(TypeDefinition.Kind.IMMUTABLE);
@@ -600,6 +648,15 @@ public class ClientProcessor {
                             prop.setType(type);
                         });
                         prop.setDoc(Doc.parse(elements.getDocComment(executableElement)));
+                        if (prop.getDoc() == null) {
+                            Element fieldElement = typeElement.getEnclosedElements().stream().filter(
+                                    it -> it.getKind() == ElementKind.FIELD &&
+                                            it.getSimpleName().toString().equals(prop.getName())
+                            ).findFirst().orElse(null);
+                            if (fieldElement != null) {
+                                prop.setDoc(Doc.parse(context.getElements().getDocComment(fieldElement)));
+                            }
+                        }
                         typeDefinition.addProp(prop);
                     } catch (UnambiguousTypeException ex) {
                         // Do nothing

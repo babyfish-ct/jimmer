@@ -76,7 +76,7 @@ public class Doc {
     }
 
     public static Doc parse(String doc) {
-        if (doc == null) {
+        if (doc == null || doc.isEmpty()) {
             return null;
         }
 
@@ -141,7 +141,11 @@ public class Doc {
                 } else if (line.startsWith("@", start)) {
                     builder.switchToIgnored();
                 } else {
-                    builder.append(line.substring(start));
+                    if (line.charAt(0) <= ' ') {
+                        builder.append(line.substring(1));
+                    } else {
+                        builder.append(line);
+                    }
                 }
             }
         } catch (IOException ex) {

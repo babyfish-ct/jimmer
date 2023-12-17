@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator;
 
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.source.Source;
@@ -7,6 +8,10 @@ import org.babyfish.jimmer.client.source.SourceManager;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class CodeWriter {
 
@@ -49,12 +54,20 @@ public abstract class CodeWriter {
             importedSource = sourceManager.getSource(type);
         }
         if (importedSource != null && importedSource.getRoot() != source.getRoot()) {
-            onMarkImportedType(type, importedSource);
+            importSource(importedSource);
         }
         return importedSource;
     }
 
-    protected abstract void onMarkImportedType(Type type, Source source);
+    public final void importSource(Source source) {
+        importSource(source, source.getName(), false);
+    }
+
+    public final void importSource(Source source, String name) {
+        importSource(source, name, false);
+    }
+
+    public abstract void importSource(Source source, String name, boolean treatAsData);
 
     protected abstract void onFlushImportedTypes();
 
@@ -150,7 +163,43 @@ public abstract class CodeWriter {
         return this;
     }
 
-    public CodeWriter children() {
+    public CodeWriter doc(Doc doc, DocPart ... parts) {
+        if (doc == null) {
+            return this;
+        }
+        Set<DocPart> partSet = EnumSet.noneOf(DocPart.class);
+        partSet.addAll(Arrays.asList(parts));
+
+        code("/**\n");
+        code(" * ").code(doc.getValue().replace("\n", "\n * ")).code('\n');
+        if (partSet.contains(DocPart.PARAM)) {
+            for (Map.Entry<String, String> e : doc.getParameterValueMap().entrySet()) {
+                code(" * @param ").code(e.getKey()).code(' ').code(e.getValue().replace("\n", "\n * ")).code('\n');
+            }
+        }
+        if (partSet.contains(DocPart.RETURN) && doc.getReturnValue() != null) {
+            code(" * @return ").code(doc.getReturnValue().replace("\n", "\n * ")).code('\n');
+        }
+        if (partSet.contains(DocPart.PROPERTY)) {
+            for (Map.Entry<String, String> e : doc.getParameterValueMap().entrySet()) {
+                code("@property ").code(e.getKey()).code(' ').code(e.getValue().replace("\n", "\n * ")).code('\n');
+            }
+        }
+        code(" */\n");
+        return this;
+    }
+
+    public CodeWriter doc(String text) {
+        if (text == null || text.isEmpty()) {
+            return this;
+        }
+        code("/**\n");
+        code(" * ").code(text.replace("\n", "\n * ")).code('\n');
+        code(" */\n");
+        return this;
+    }
+
+    public CodeWriter renderChildren() {
         for (Source subSource : source.getSubSources()) {
             subSource.getRender().render(this);
         }
@@ -203,6 +252,12 @@ public abstract class CodeWriter {
                 }
             }
         }
+    }
+
+    public enum DocPart {
+        PARAM,
+        RETURN,
+        PROPERTY
     }
 
     void setWriter(Writer writer) {

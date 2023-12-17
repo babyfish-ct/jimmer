@@ -1,10 +1,8 @@
 package org.babyfish.jimmer.client.source;
 
 import org.babyfish.jimmer.client.generator.Render;
-import org.babyfish.jimmer.client.generator.SourceAwareRender;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 abstract class AbstractSource implements Source {
@@ -21,13 +19,12 @@ abstract class AbstractSource implements Source {
     public Source subSource(String name, Supplier<Render> renderCreator) {
         Map<String, Source> subSourceMap = this.subSourceMap;
         if (subSourceMap == null) {
-            this.subSourceMap = subSourceMap = new HashMap<>();
+            this.subSourceMap = subSourceMap = new LinkedHashMap<>();
         }
         Source subSource = subSourceMap.get(name);
         if (subSource == null) {
             subSource = new SubSource(name, renderCreator.get());
             subSourceMap.put(name, subSource);
-            bindRenderBackReference(subSource);
         }
         return subSource;
     }
@@ -69,14 +66,10 @@ abstract class AbstractSource implements Source {
     }
 
     static String toString(List<String> dirs, String name) {
-        return String.join("/", dirs) + '/' + name;
-    }
-
-    static void bindRenderBackReference(Source source) {
-        Render render = source.getRender();
-        if (render instanceof SourceAwareRender) {
-            ((SourceAwareRender)render).initialize(source);
+        if (dirs == null || dirs.isEmpty()) {
+            return name;
         }
+        return String.join("/", dirs) + '/' + name;
     }
 
     private class SubSource extends AbstractSource {

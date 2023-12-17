@@ -32,6 +32,34 @@ public class Classes {
         return type;
     }
 
+    public static Class<?> primitiveTypeOf(Class<?> type) {
+        if (type == Boolean.class) {
+            return boolean.class;
+        }
+        if (type == Character.class) {
+            return char.class;
+        }
+        if (type == Byte.class) {
+            return byte.class;
+        }
+        if (type == Short.class) {
+            return short.class;
+        }
+        if (type == Integer.class) {
+            return int.class;
+        }
+        if (type == Long.class) {
+            return long.class;
+        }
+        if (type == Float.class) {
+            return float.class;
+        }
+        if (type == Double.class) {
+            return double.class;
+        }
+        return type;
+    }
+
     public static boolean matches(Class<?> a, Class<?> b) {
         if (a == b) {
             return true;

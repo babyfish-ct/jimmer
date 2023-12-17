@@ -1,5 +1,9 @@
 package org.babyfish.jimmer.client.java.common;
 
+import org.babyfish.jimmer.client.meta.common.DeleteMapping;
+import org.babyfish.jimmer.client.meta.common.GetMapping;
+import org.babyfish.jimmer.client.meta.common.PutMapping;
+import org.babyfish.jimmer.client.meta.common.RequestMapping;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.runtime.Operation;
 
@@ -15,6 +19,16 @@ public class OperationParserImpl implements Metadata.OperationParser {
 
     @Override
     public Operation.HttpMethod http(Method method) {
-        return null;
+        RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
+        if (requestMapping != null && requestMapping.method().length != 0) {
+            return requestMapping.method()[0];
+        }
+        if (method.getAnnotation(PutMapping.class) != null) {
+            return Operation.HttpMethod.PUT;
+        }
+        if (method.getAnnotation(DeleteMapping.class) != null) {
+            return Operation.HttpMethod.DELETE;
+        }
+        return Operation.HttpMethod.GET;
     }
 }

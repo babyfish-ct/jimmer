@@ -4,6 +4,7 @@ import org.babyfish.jimmer.client.generator.Render;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 class SourceFile extends AbstractSource {
 
@@ -14,7 +15,7 @@ class SourceFile extends AbstractSource {
     public SourceFile(List<String> dirs, String name, Render render) {
         super(render);
         this.dirs = dirs;
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "source name cannot be null");
     }
 
     @Override

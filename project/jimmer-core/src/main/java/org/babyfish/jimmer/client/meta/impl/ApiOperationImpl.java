@@ -84,6 +84,9 @@ public class ApiOperationImpl<S> extends AstNode<S> implements ApiOperation {
                     "Illegal parameter \"" + parameter.getName() + "\", its type cannot be type variable"
             );
         }
+        if (typeName.isPrimitive() && parameter.getType().isNullable()) {
+            typeName = typeName.box();
+        }
         keyBuilder.append(':').append(typeName);
     }
 

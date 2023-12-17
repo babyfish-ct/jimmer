@@ -15,6 +15,8 @@ public interface ObjectType extends Type {
     @Nullable
     ImmutableType getImmutableType();
 
+    Kind getKind();
+
     List<String> getSimpleNames();
 
     @Nullable
@@ -33,4 +35,11 @@ public interface ObjectType extends Type {
     boolean isRecursiveFetchedType();
 
     ObjectType unwrap();
+
+    enum Kind {
+        FETCHED,
+        DYNAMIC,
+        STATIC,
+        ERROR
+    }
 }

@@ -40,6 +40,11 @@ public class GenericObjectTypeImpl extends Graph implements ObjectType {
     }
 
     @Override
+    public Kind getKind() {
+        return Kind.STATIC;
+    }
+
+    @Override
     public List<String> getSimpleNames() {
         return raw.getSimpleNames();
     }

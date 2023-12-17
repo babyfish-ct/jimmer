@@ -1,8 +1,6 @@
 package org.babyfish.jimmer.client.generator;
 
-import org.babyfish.jimmer.client.runtime.EnumType;
-import org.babyfish.jimmer.client.runtime.Metadata;
-import org.babyfish.jimmer.client.runtime.ObjectType;
+import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
@@ -17,44 +15,71 @@ public abstract class Context {
 
     private final String indent;
 
-    private final boolean isGenericSupported;
-
-    final SourceManager sourceManager;
+    SourceManager sourceManager;
 
     protected Context(Metadata metadata, String indent) {
         this.metadata = metadata;
-        this.indent = indent;
-        this.isGenericSupported = determineGenericSupported();
-        this.sourceManager = createSourceManager(metadata, isGenericSupported);
-        for (ObjectType objectType : metadata.getStaticTypes()) {
-            sourceManager.getSource(objectType);
+        this.indent = indent != null && !indent.isEmpty() ? indent : "    ";
+    }
+
+    private void init() {
+        if (this.sourceManager != null) {
+            return;
         }
-        for (ObjectType dynamicType : metadata.getDynamicTypes()) {
-            sourceManager.getSource(dynamicType);
+        this.sourceManager = createSourceManager();
+        for (Service service : metadata.getServices()) {
+            sourceManager.getSource(service);
+            for (Operation operation : service.getOperations()) {
+                sourceManager.getSource(operation);
+                Type returnType = operation.getReturnType();
+                if (returnType != null) {
+                    sourceManager.getSource(returnType);
+                }
+                for (Parameter parameter : operation.getParameters()) {
+                    sourceManager.getSource(parameter.getType());
+                }
+                for (Type exceptionType : operation.getExceptionTypes()) {
+                    sourceManager.getSource(exceptionType);
+                }
+            }
         }
-        for (ObjectType fetchedType : metadata.getFetchedTypes()) {
-            sourceManager.getSource(fetchedType);
-        }
-        for (EnumType enumType : metadata.getEnumTypes()) {
-            sourceManager.getSource(enumType);
-        }
+        sourceManager.createAdditionalSources();
+    }
+
+    public Metadata getMetadata() {
+        return metadata;
     }
 
     public String getIndent() {
         return indent;
     }
 
-    protected abstract boolean determineGenericSupported();
-
-    protected abstract SourceManager createSourceManager(Metadata metadata, boolean isGenericSupported);
+    protected abstract SourceManager createSourceManager();
 
     protected abstract CodeWriter createCodeWriter(Context ctx, Source source);
 
     public Collection<Source> getRootSources() {
+        init();
         return sourceManager.getRootSources();
     }
 
+    public Source getRootSource(String name) {
+        init();
+        return sourceManager.getRootSource(name);
+    }
+
+    public Source getSource(Service service) {
+        init();
+        return sourceManager.getSource(service);
+    }
+
+    public Source getSource(Operation operation) {
+        init();
+        return sourceManager.getSource(operation);
+    }
+
     public void render(Source source, Writer writer) {
+        init();
         CodeWriter codeWriter = this.createCodeWriter(this, source);
         StringWriter headWriter = new StringWriter();
         StringWriter bodyWriter = new StringWriter();
@@ -72,9 +97,5 @@ public abstract class Context {
         } catch (IOException ex) {
             throw new GeneratorException("Failed to write code for " + source);
         }
-    }
-
-    private void initialize(Source source) {
-
     }
 }

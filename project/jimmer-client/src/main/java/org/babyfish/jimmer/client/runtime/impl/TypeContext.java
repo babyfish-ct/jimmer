@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.meta.*;
-import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.runtime.TypeVariable;
 import org.babyfish.jimmer.meta.ImmutableType;
@@ -18,7 +17,9 @@ class TypeContext {
 
     private final Map<TypeName, Class<?>> javaTypeMap = new HashMap<>();
 
-    private final Map<ImmutableKey, ImmutableObjectTypeImpl> immutableTypeMap = new LinkedHashMap<>();
+    private final Map<ImmutableKey, FetchedObjectTypeImpl> immutableTypeMap = new LinkedHashMap<>();
+
+    private final Map<TypeName, DynamicObjectTypeImpl> dynamicTypeMap = new LinkedHashMap<>();
 
     private final Map<StaticKey, StaticObjectTypeImpl> staticTypeMap = new LinkedHashMap<>();
 
@@ -34,7 +35,7 @@ class TypeContext {
         this.isGenericSupported = isGenericSupported;
     }
 
-    Collection<ImmutableObjectTypeImpl> immutableObjectTypes() {
+    Collection<FetchedObjectTypeImpl> immutableObjectTypes() {
         return Collections.unmodifiableCollection(immutableTypeMap.values());
     }
 
@@ -81,7 +82,10 @@ class TypeContext {
         }
         TypeDefinition definition = definitionMap.get(typeName);
         if (definition != null && definition.getKind() == TypeDefinition.Kind.IMMUTABLE) {
-            return immutableObjectType(new ImmutableKey(typeName, typeRef.getFetchBy(), typeRef.getFetcherOwner()));
+            if (typeRef.getFetchBy() == null) {
+                return dynamicObjectType(typeName);
+            }
+            return fetchedObjectType(new ImmutableKey(typeName, typeRef.getFetchBy(), typeRef.getFetcherOwner()));
         }
         if (definition != null && definition.getKind() == TypeDefinition.Kind.ENUM) {
             return enumTypeMap.computeIfAbsent(typeName, it -> new EnumTypeImpl(javaType(it)));
@@ -107,7 +111,7 @@ class TypeContext {
     Class<?> javaType(TypeName typeName) {
         return javaTypeMap.computeIfAbsent(typeName, it -> {
             try {
-                return Class.forName(typeName.toString());
+                return Class.forName(typeName.toString(true));
             } catch (ClassNotFoundException ex) {
                 throw new RuntimeException(ex);
             }
@@ -133,18 +137,31 @@ class TypeContext {
         }
     }
 
-    private ImmutableObjectTypeImpl immutableObjectType(ImmutableKey key) {
-        ImmutableObjectTypeImpl objectType = immutableTypeMap.get(key);
+    private FetchedObjectTypeImpl fetchedObjectType(ImmutableKey key) {
+        FetchedObjectTypeImpl objectType = immutableTypeMap.get(key);
         if (objectType != null) {
             return objectType;
         }
-        objectType = new ImmutableObjectTypeImpl(
+        objectType = new FetchedObjectTypeImpl(
                 ImmutableType.get(javaType(key.typeName))
         );
         immutableTypeMap.put(key, objectType);
         objectType.init(key.fetchBy, key.ownerType, this);
         objectType.setDoc(definition(key.typeName).getDoc());
         return objectType;
+    }
+
+    private DynamicObjectTypeImpl dynamicObjectType(TypeName typeName) {
+        DynamicObjectTypeImpl objectType = dynamicTypeMap.get(typeName);
+        if (objectType != null) {
+            return objectType;
+        }
+        DynamicObjectTypeImpl newObjectType = new DynamicObjectTypeImpl(
+                ImmutableType.get(javaType(typeName))
+        );
+        dynamicTypeMap.put(typeName, newObjectType);
+        newObjectType.init(typeName, this);
+        return newObjectType;
     }
 
     private StaticObjectTypeImpl staticObjectType(StaticKey key) {

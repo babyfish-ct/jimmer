@@ -2,33 +2,23 @@ package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Render;
-import org.babyfish.jimmer.client.generator.SourceAwareRender;
 import org.babyfish.jimmer.client.runtime.*;
-import org.babyfish.jimmer.client.runtime.impl.ImmutableObjectTypeImpl;
-import org.babyfish.jimmer.client.source.Source;
+import org.babyfish.jimmer.client.runtime.impl.FetchedObjectTypeImpl;
 
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class FetchedTypeRender implements SourceAwareRender {
+public class FetchedTypeRender implements Render {
 
     private final String name;
 
     private final ObjectType objectType;
 
-    private Map<Type, String> recursiveTypeNames;
+    final Map<Type, String> recursiveTypeNames;
 
-    public FetchedTypeRender(String name, ObjectType objectType) {
+    public FetchedTypeRender(String name, ObjectType objectType, Map<Type, String> recursiveTypeNames) {
         this.name = name;
         this.objectType = objectType;
-    }
-
-    @Override
-    public void initialize(Source source) {
-        Source parentSource = source.getParent();
-        assert parentSource != null;
-        this.recursiveTypeNames = ((DtoWrapperRender)parentSource.getRender()).recursiveTypeNames;
+        this.recursiveTypeNames = recursiveTypeNames;
         collectRecursiveTypeNames(objectType);
     }
 
@@ -70,9 +60,7 @@ public class FetchedTypeRender implements SourceAwareRender {
             for (Property property : type.getProperties().values()) {
                 writer
                         .codeIf(ctx.isMutable(), "readonly ")
-                        .code(property.getName())
-                        .codeIf(property.getType() instanceof NullableType, '?')
-                        .code(": ");
+                        .code(property.getName());
                 Type targetType = property.getType();
                 boolean isNullable = targetType instanceof NullableType;
                 if (isNullable) {
@@ -83,7 +71,9 @@ public class FetchedTypeRender implements SourceAwareRender {
                     targetType = ((ListType)targetType).getElementType();
                 }
                 String recursiveTypeName = recursiveTypeNames.get(targetType);
-                if (targetType instanceof ImmutableObjectTypeImpl) {
+                writer.codeIf(property.getType() instanceof NullableType || recursiveTypeName != null, '?')
+                        .code(": ");
+                if (targetType instanceof FetchedObjectTypeImpl) {
                     ObjectType targetObjectType = (ObjectType) targetType;
                     writeResolvedType(writer, isNullable, isList, () -> {
                         if (recursiveTypeName != null) {
@@ -95,6 +85,7 @@ public class FetchedTypeRender implements SourceAwareRender {
                 } else {
                     writer.typeRef(property.getType());
                 }
+                writer.codeIf(recursiveTypeName != null, " | null | undefined");
                 writer.code(";\n");
             }
         });

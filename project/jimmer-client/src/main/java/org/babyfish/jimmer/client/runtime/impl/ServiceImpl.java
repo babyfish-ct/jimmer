@@ -32,6 +32,7 @@ public class ServiceImpl implements Service {
         this.doc = doc;
     }
 
+    @Override
     public List<Operation> getOperations() {
         return operations;
     }
