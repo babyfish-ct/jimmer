@@ -17,6 +17,11 @@ public class DynamicTypeRender implements Render {
     }
 
     @Override
+    public void export(CodeWriter writer) {
+        writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
+    }
+
+    @Override
     public void render(CodeWriter writer) {
         writer.code("export interface ").code(name).code(' ');
         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {

@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.meta.impl;
 import org.babyfish.jimmer.client.meta.*;
 import org.jetbrains.annotations.Nullable;
 
+import javax.lang.model.element.Element;
 import java.security.Principal;
 import java.util.*;
 import java.util.function.Consumer;

@@ -31,6 +31,10 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private boolean genericSupported;
 
+    private Set<Class<?>> ignoredParameterTypes = new LinkedHashSet<>();
+
+    private Set<Class<?>> illegalReturnTypes = new LinkedHashSet<>();
+
     @Override
     public Metadata.Builder setOperationParser(Metadata.OperationParser operationParser) {
         this.operationParser = operationParser;
@@ -60,6 +64,18 @@ public class MetadataBuilder implements Metadata.Builder {
     }
 
     @Override
+    public Metadata.Builder addIgnoredParameterTypes(Class<?> ... types) {
+        ignoredParameterTypes.addAll(Arrays.asList(types));
+        return this;
+    }
+
+    @Override
+    public Metadata.Builder addIllegalReturnTypes(Class<?>... types) {
+        illegalReturnTypes.addAll(Arrays.asList(types));
+        return this;
+    }
+
+    @Override
     public Metadata build() {
         if (operationParser == null) {
             throw new IllegalStateException("Operation parse has not been set");
@@ -75,18 +91,10 @@ public class MetadataBuilder implements Metadata.Builder {
             services.add(service(apiService, ctx));
         }
 
-        List<ObjectType> fetchedTypes = new ArrayList<>();
-        List<ObjectType> dynamicTypes = new ArrayList<>();
+        List<ObjectType> fetchedTypes = new ArrayList<>(ctx.fetchedTypes());
+        List<ObjectType> dynamicTypes = new ArrayList<>(ctx.dynamicTypes());
         List<ObjectType> staticTypes = new ArrayList<>();
-
-        for (FetchedObjectTypeImpl immutableObjectType : ctx.immutableObjectTypes()) {
-            if (immutableObjectType.getFetchByInfo() != null) {
-                fetchedTypes.add(immutableObjectType);
-            } else {
-                dynamicTypes.add(immutableObjectType);
-            }
-        }
-        for (StaticObjectTypeImpl staticObjectType : ctx.staticObjectTypes()) {
+        for (StaticObjectTypeImpl staticObjectType : ctx.staticTypes()) {
             if (staticObjectType.unwrap() == null) {
                 staticTypes.add(staticObjectType);
             }
@@ -94,6 +102,7 @@ public class MetadataBuilder implements Metadata.Builder {
         List<EnumType> enumTypes = new ArrayList<>(ctx.enumTypes());
 
         return new MetadataImpl(
+                genericSupported,
                 Collections.unmodifiableList(services),
                 Collections.unmodifiableList(fetchedTypes),
                 Collections.unmodifiableList(dynamicTypes),
@@ -153,10 +162,21 @@ public class MetadataBuilder implements Metadata.Builder {
         Parameter[] javaParameters = method.getParameters();
         List<org.babyfish.jimmer.client.runtime.Parameter> parameters = new ArrayList<>();
         for (ApiParameter apiParameter : apiOperation.getParameters()) {
-            parameters.add(parameter(apiParameter, javaParameters[apiParameter.getOriginalIndex()], method, ctx));
+            if (!ignoredParameterTypes.contains(javaParameters[apiParameter.getOriginalIndex()].getType())) {
+                parameters.add(parameter(apiParameter, javaParameters[apiParameter.getOriginalIndex()], method, ctx));
+            }
         }
         operation.setParameters(Collections.unmodifiableList(parameters));
         if (apiOperation.getReturnType() != null) {
+            if (illegalReturnTypes.contains(method.getReturnType())) {
+                throw new IllegalStateException(
+                        "Illegal method \"" +
+                                method +
+                                "\", The client API does not support the operation return type \"" +
+                                method.getReturnType().getName() +
+                                "\", please change the return type or add `@ApiIgnore` to the current operation"
+                );
+            }
             operation.setReturnType(ctx.parseType(apiOperation.getReturnType()));
         }
         operation.setExceptionTypes(

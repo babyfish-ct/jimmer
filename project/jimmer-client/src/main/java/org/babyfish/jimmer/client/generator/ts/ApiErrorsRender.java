@@ -7,6 +7,7 @@ import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.impl.util.StringUtil;
 
+import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,13 +33,18 @@ public class ApiErrorsRender implements Render {
     }
 
     @Override
+    public void export(CodeWriter writer) {
+        writer.code("export type {AllErrors, ").code(name).code("} from './").code(name).code("';\n");
+    }
+
+    @Override
     public void render(CodeWriter writer) {
         renderAllErrors(writer);
         renderApiErrors(writer);
     }
 
     private void renderAllErrors(CodeWriter writer) {
-        writer.code("export ApiErrors = ");
+        writer.code("export type AllErrors = ");
         if (usedExceptionTypes.isEmpty()) {
             writer.code("{};\n");
             return;
@@ -55,6 +61,7 @@ public class ApiErrorsRender implements Render {
                     for (Property property : exceptionType.getProperties().values()) {
                         writer.separator();
                         writer
+                                .doc(property.getDoc())
                                 .code(property.getName())
                                 .codeIf(property.getType() instanceof NullableType, '?')
                                 .code(": ")
@@ -68,7 +75,7 @@ public class ApiErrorsRender implements Render {
 
     private void renderApiErrors(CodeWriter writer) {
         TypeScriptContext ctx = writer.getContext();
-        writer.code("export ").code(name).code("Errors = ");
+        writer.code("export type ").code(name).code(" = ");
         if (usedExceptionTypes.isEmpty()) {
             writer.code("{};\n");
             return;
@@ -85,7 +92,7 @@ public class ApiErrorsRender implements Render {
                         }
                         writer.separator();
                         Source operationSource = ctx.getSource(operation);
-                        writer.code('\'').code(operationSource.getName()).code(": AllErrors & ");
+                        writer.code('\'').code(operationSource.getName()).code("': AllErrors & ");
                         writer.scope(CodeWriter.ScopeType.ARGUMENTS, " | ", false, () -> {
                             for (ObjectType exceptionType : operation.getExceptionTypes()) {
                                 TypeDefinition.Error error = exceptionType.getError();

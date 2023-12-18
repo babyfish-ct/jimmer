@@ -17,4 +17,7 @@ public interface TypeRef {
 
     @Nullable
     TypeName getFetcherOwner();
+
+    @Nullable
+    Doc getFetcherDoc();
 }

@@ -20,26 +20,26 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FetchedObjectTypeImpl extends Graph implements ObjectType {
+public class FetchedTypeImpl extends Graph implements ObjectType {
 
     private final ImmutableType immutableType;
 
     private Map<String, Property> properties;
 
-    private Doc doc;
-
     private FetchByInfo fetchByInfo;
+
+    private Doc doc;
 
     private boolean isRecursiveFetchedType;
 
-    public FetchedObjectTypeImpl(ImmutableType immutableType) {
+    public FetchedTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
 
-    void init(String fetchBy, TypeName fetchOwner, TypeContext ctx) {
+    void init(String fetchBy, TypeName fetchOwner, Doc fetcherDoc, TypeContext ctx) {
         Fetcher<?> fetcher;
         Class<?> ownerType = ctx.javaType(fetchOwner);
-        fetchByInfo = new FetchByInfo(fetchBy, ownerType);
+        fetchByInfo = new FetchByInfo(fetchBy, ownerType, fetcherDoc);
         fetcher = staticFetcher(fetchBy, ownerType);
         if (fetcher == null) {
             fetcher = kotlinFetcher(fetchBy, ownerType);
@@ -60,6 +60,7 @@ public class FetchedObjectTypeImpl extends Graph implements ObjectType {
 
     private void initProperties(Fetcher<?> fetcher, Prop parentRecursiveProp, TypeContext ctx) {
         TypeDefinition definition = ctx.definition(this.immutableType.getJavaClass());
+        this.doc = definition.getDoc();
         ImmutableProp idProp = immutableType.getIdProp();
         Prop idMetaProp = definition.getPropMap().get(idProp.getName());
         Map<String, Property> properties = new LinkedHashMap<>();
@@ -79,7 +80,7 @@ public class FetchedObjectTypeImpl extends Graph implements ObjectType {
             Prop metaProp = definition.getPropMap().get(field.getProp().getName());
             Type type;
             if (prop.isAssociation(TargetLevel.ENTITY)) {
-                FetchedObjectTypeImpl targetType = new FetchedObjectTypeImpl(prop.getTargetType());
+                FetchedTypeImpl targetType = new FetchedTypeImpl(prop.getTargetType());
                 Fetcher<?> childFetcher = field.getChildFetcher();
                 assert childFetcher != null;
                 targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
@@ -146,10 +147,6 @@ public class FetchedObjectTypeImpl extends Graph implements ObjectType {
     @Override
     public Doc getDoc() {
         return doc;
-    }
-
-    void setDoc(Doc doc) {
-        this.doc = doc;
     }
 
     @Nullable

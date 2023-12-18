@@ -37,7 +37,7 @@ interface KBookService {
         @RequestParam("authorName") authorName: String?,
         @RequestParam(value = "minPrice", required = false) minPrice: BigDecimal,
         @RequestParam(value = "maxPrice", required = false) maxPrice: BigDecimal
-    ): ResponseEntity<List<@FetchBy("COMPLEX_FETCHER") KBook>>
+    ): List<@FetchBy("COMPLEX_FETCHER") KBook>
 
     @GetMapping("/tuples")
     fun findTuples(

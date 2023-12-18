@@ -8,6 +8,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * The exception for save command
+ */
 @ClientException(
         family = "SAVE_ERROR_CODE",
         subTypes = {
@@ -55,6 +58,9 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     @Override
     public abstract SaveErrorCode getCode();
 
+    /**
+     * The path where this exception occurs.
+     */
     @NotNull
     public ExportedSavePath getExportedPath() {
         return exportedPath;
@@ -76,6 +82,9 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         return Collections.singletonMap("path", exportedPath);
     }
 
+    /**
+     * The associated object cannot be null
+     */
     @ClientException(family = "SAVE_ERROR_CODE", code = "NULL_TARGET")
     public static class NullTarget extends SaveException {
 
@@ -93,6 +102,9 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
+    /**
+     * The associated id that does not exists in database
+     */
     @ClientException(family = "SAVE_ERROR_CODE", code = "ILLEGAL_TARGET_ID")
     public static class IllegalTargetId extends SaveException {
 
@@ -110,6 +122,11 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
+    /**
+     * Some child objects need to be dissociated by in order to save the current object,
+     * however, no dissociation behavior if configured on the many-to-one/one-to-one association
+     * from child object to parent object, by either annotation or runtime overriding.
+     */
     @ClientException(family = "SAVE_ERROR_CODE", code = "CANNOT_DISSOCIATE_TARGETS")
     public static class CannotDissociateTarget extends SaveException {
 

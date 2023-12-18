@@ -40,7 +40,7 @@ public abstract class CodeWriter {
 
     public abstract CodeWriter typeRef(Type type);
 
-    protected final Source getResource(Type type) {
+    protected final Source getSource(Type type) {
         Source importedSource;
         if (type instanceof ObjectType) {
             ObjectType objectType = (ObjectType) type;
@@ -54,7 +54,7 @@ public abstract class CodeWriter {
             importedSource = sourceManager.getSource(type);
         }
         if (importedSource != null && importedSource.getRoot() != source.getRoot()) {
-            importSource(importedSource);
+            importSource(importedSource.getRoot());
         }
         return importedSource;
     }
@@ -67,7 +67,11 @@ public abstract class CodeWriter {
         importSource(source, name, false);
     }
 
-    public abstract void importSource(Source source, String name, boolean treatAsData);
+    public final void importSource(Source source, boolean treatAsValue) {
+        importSource(source, source.getName(), treatAsValue);
+    }
+
+    public abstract void importSource(Source source, String name, boolean treatAsValue);
 
     protected abstract void onFlushImportedTypes();
 
@@ -209,6 +213,10 @@ public abstract class CodeWriter {
     @SuppressWarnings("unchecked")
     public <C extends Context> C getContext() {
         return (C) ctx;
+    }
+
+    public Source getSource() {
+        return this.source;
     }
 
     public enum ScopeType {

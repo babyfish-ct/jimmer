@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface Metadata {
 
+    boolean isGenericSupported();
+
     List<Service> getServices();
 
     List<ObjectType> getFetchedTypes();
@@ -36,6 +38,10 @@ public interface Metadata {
         Builder setGroups(Collection<String> groups);
 
         Builder setGenericSupported(boolean genericSupported);
+
+        Builder addIgnoredParameterTypes(Class<?>... types);
+
+        Builder addIllegalReturnTypes(Class<?>... types);
 
         Metadata build();
     }

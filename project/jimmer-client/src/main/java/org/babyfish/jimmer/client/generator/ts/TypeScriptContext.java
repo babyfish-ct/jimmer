@@ -18,6 +18,11 @@ public class TypeScriptContext extends Context {
 
     public TypeScriptContext(Metadata metadata, String indent, boolean isMutable, String apiName) {
         super(metadata, indent);
+        if (!metadata.isGenericSupported()) {
+            throw new IllegalArgumentException(
+                    "TypeScriptContext only accept metadata which support generic"
+            );
+        }
         this.isMutable = isMutable;
         this.apiName = apiName != null && !apiName.isEmpty() ? apiName : "Api";
     }
@@ -38,5 +43,15 @@ public class TypeScriptContext extends Context {
     @Override
     protected CodeWriter createCodeWriter(Context context, Source source) {
         return new TypeScriptWriter(context, source);
+    }
+
+    @Override
+    protected boolean isIndexRequired() {
+        return true;
+    }
+
+    @Override
+    protected String getFileExtension() {
+        return "ts";
     }
 }

@@ -2,20 +2,22 @@ package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.Namespace;
+import org.babyfish.jimmer.client.generator.ts.fixed.ElementOfRender;
+import org.babyfish.jimmer.client.generator.ts.fixed.ExecutorRender;
+import org.babyfish.jimmer.client.generator.ts.fixed.RequestOfRender;
+import org.babyfish.jimmer.client.generator.ts.fixed.ResponseOfRender;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class TypeScriptSourceManager extends SourceManager {
 
     private final Namespace namespace = new Namespace();
 
-    private final Map<ObjectType, Source> dtoWrapperSourceMap = new HashMap<>();
+    private final Map<Class<?>, Source> dtoWrapperSourceMap = new HashMap<>();
 
     protected TypeScriptSourceManager(Context ctx) {
         super(ctx);
@@ -42,11 +44,11 @@ public class TypeScriptSourceManager extends SourceManager {
 
     @Override
     protected Source createFetchedTypeSource(ObjectType objectType) {
-        Source dtoWrapperSource = dtoWrapperSourceMap.get(objectType);
+        Source dtoWrapperSource = dtoWrapperSourceMap.get(objectType.getJavaType());
         if (dtoWrapperSource == null) {
             String name = namespace.allocate(String.join("_", objectType.getSimpleNames()) + "Dto");
             dtoWrapperSource = createRootSource("model/dto", name, () -> new DtoWrapperRender(name));
-            dtoWrapperSourceMap.put(objectType, dtoWrapperSource);
+            dtoWrapperSourceMap.put(objectType.getJavaType(), dtoWrapperSource);
         }
         FetchByInfo info = objectType.getFetchByInfo();
         assert info != null;
@@ -67,18 +69,16 @@ public class TypeScriptSourceManager extends SourceManager {
     @Override
     protected Source createEnumTypeSource(EnumType enumType) {
         String name = namespace.allocate(String.join("_", enumType.getJavaType().getSimpleName()));
-        return createRootSource("model/enums", name, () -> new EnumTypeRender(name));
-    }
-
-    @Override
-    protected Source createErrorTypeSource(ObjectType objectType) {
-        return null;
+        return createRootSource("model/enums", name, () -> new EnumTypeRender(name, enumType));
     }
 
     @Override
     public void createAdditionalSources() {
         TypeScriptContext ctx = getContext();
         createRootSource("", "Executor", ExecutorRender::new);
+        createRootSource("", "ElementOf", ElementOfRender::new);
+        createRootSource("", "RequestOf", RequestOfRender::new);
+        createRootSource("", "ResponseOf", ResponseOfRender::new);
         createRootSource("", ctx.getApiName(), () -> new ApiRender(ctx.getApiName(), ctx.getMetadata().getServices()));
         createRootSource(
                 "",

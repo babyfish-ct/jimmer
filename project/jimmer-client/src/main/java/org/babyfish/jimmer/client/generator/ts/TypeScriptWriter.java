@@ -9,7 +9,7 @@ import java.util.*;
 
 public class TypeScriptWriter extends CodeWriter {
 
-    private final NavigableMap<String, NavigableSet<String>> imports = new TreeMap<>();
+    private final NavigableMap<String, Import> imports = new TreeMap<>();
 
     private final boolean isMutable;
 
@@ -29,7 +29,7 @@ public class TypeScriptWriter extends CodeWriter {
         } else if (type instanceof MapType) {
             code(isMutable ? "{[key:string]: " : "{readonly [key:string]: ").typeRef(((MapType)type).getValueType()).code('}');
         } else if (type instanceof EnumType) {
-            code(getResource(type).getName());
+            code(fullName(getSource(type)));
         } else if (type instanceof SimpleType) {
             Class<?> javaType = ((SimpleType)type).getJavaType();
             if (javaType == boolean.class) {
@@ -42,13 +42,14 @@ public class TypeScriptWriter extends CodeWriter {
                 code("string");
             }
         } else if (type instanceof ObjectType) {
-            code(getResource(type).getName());
+            code(fullName(getSource(type)));
             ObjectType objectType = (ObjectType) type;
             if (objectType.getKind() == ObjectType.Kind.STATIC) {
                 List<Type> arguments = ((ObjectType) type).getArguments();
                 if (!arguments.isEmpty()) {
                     scope(ScopeType.GENERIC, ", ", false, () -> {
                         for (Type argument : arguments) {
+                            separator();
                             typeRef(argument);
                         }
                     });
@@ -59,7 +60,7 @@ public class TypeScriptWriter extends CodeWriter {
     }
 
     @Override
-    public void importSource(Source source, String name, boolean treatAsData) {
+    public void importSource(Source source, String name, boolean treatAsValue) {
         List<String> currentDirs = this.source.getDirs();
         List<String> dirs = source.getDirs();
         int maxCount = Math.min(currentDirs.size(), dirs.size());
@@ -81,22 +82,57 @@ public class TypeScriptWriter extends CodeWriter {
         if (!path.startsWith("../")) {
             path = "./" + path;
         }
-        imports.computeIfAbsent(path, it -> new TreeSet<>()).add(name);
+        Import imp = imports.computeIfAbsent(path, it -> new Import());
+        if (treatAsValue) {
+            imp.importedValues.add(name);
+        } else {
+            imp.importedTypes.add(name);
+        }
     }
 
     @Override
     protected void onFlushImportedTypes() {
-        for (Map.Entry<String, NavigableSet<String>> e : imports.entrySet()) {
-            code("import ");
-            scope(ScopeType.OBJECT, ", ", e.getValue().size() > 3, () -> {
-                for (String name : e.getValue()) {
-                    separator();
-                    code(name);
-                }
-            });
-            code(" from '");
-            code(e.getKey());
-            code("';\n");
+        for (Map.Entry<String, Import> e : imports.entrySet()) {
+            Set<String> types = e.getValue().importedTypes;
+            Set<String> values = e.getValue().importedValues;
+            if (!types.isEmpty()) {
+                code("import type ");
+                scope(ScopeType.OBJECT, ", ", types.size() > 3, () -> {
+                    for (String name : types) {
+                        separator();
+                        code(name);
+                    }
+                });
+                code(" from '");
+                code(e.getKey());
+                code("';\n");
+            }
+            if (!values.isEmpty()) {
+                code("import ");
+                scope(ScopeType.OBJECT, ", ", values.size() > 3, () -> {
+                    for (String name : values) {
+                        separator();
+                        code(name);
+                    }
+                });
+                code(" from '");
+                code(e.getKey());
+                code("';\n");
+            }
         }
+    }
+
+    private static String fullName(Source source) {
+        if (source.getParent() == null) {
+            return source.getName();
+        }
+        return fullName(source.getParent()) + "['" + source.getName() + "']";
+    }
+
+    private static class Import {
+
+        final NavigableSet<String> importedTypes = new TreeSet<>();
+
+        final NavigableSet<String> importedValues = new TreeSet<>();
     }
 }

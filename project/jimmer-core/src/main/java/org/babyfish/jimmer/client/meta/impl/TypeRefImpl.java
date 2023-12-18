@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.meta.TypeName;
 import org.babyfish.jimmer.client.meta.TypeRef;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,8 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
     private String fetchBy;
 
     private TypeName fetchOwner;
+
+    private Doc fetcherDoc;
 
     public TypeRefImpl() {
         super(null);
@@ -79,6 +82,16 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
 
     public void setFetcherOwner(TypeName fetchOwner) {
         this.fetchOwner = fetchOwner;
+    }
+
+    @Nullable
+    @Override
+    public Doc getFetcherDoc() {
+        return fetcherDoc;
+    }
+
+    public void setFetcherDoc(Doc fetcherDoc) {
+        this.fetcherDoc = fetcherDoc;
     }
 
     @Override
@@ -148,6 +161,7 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
                 gen.writeString(typeRef.getFetchBy());
                 gen.writeFieldName("fetcherOwner");
                 gen.writeString(typeRef.getFetcherOwner().toString());
+                provider.defaultSerializeField("fetcherDoc", typeRef.getFetcherDoc(), gen);
             }
             gen.writeEndObject();
         }
@@ -173,6 +187,9 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
             if (jsonNode.has("fetchBy")) {
                 typeRef.setFetchBy(jsonNode.get("fetchBy").asText());
                 typeRef.setFetcherOwner(TypeName.parse(jsonNode.get("fetcherOwner").asText()));
+                if (jsonNode.has("fetcherDoc")) {
+                    typeRef.setFetcherDoc(ctx.readTreeAsValue(jsonNode.get("fetcherDoc"), Doc.class));
+                }
             }
             return typeRef;
         }

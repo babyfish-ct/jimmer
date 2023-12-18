@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DynamicObjectTypeImpl implements ObjectType {
+public class DynamicTypeImpl implements ObjectType {
 
     private final ImmutableType immutableType;
 
@@ -24,12 +24,13 @@ public class DynamicObjectTypeImpl implements ObjectType {
 
     private Doc doc;
 
-    public DynamicObjectTypeImpl(ImmutableType immutableType) {
+    public DynamicTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
 
     void init(TypeName typeName, TypeContext ctx) {
         TypeDefinition definition = ctx.definition(typeName);
+        this.doc = definition.getDoc();
         Map<String, Property> properties = new LinkedHashMap<>((definition.getPropMap().size() * 4 + 2) / 3);
         for (Prop prop : definition.getPropMap().values()) {
             Property property = new PropertyImpl(prop.getName(), ctx.parseType(prop.getType()), prop.getDoc());

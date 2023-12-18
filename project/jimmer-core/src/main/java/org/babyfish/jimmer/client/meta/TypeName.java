@@ -86,6 +86,8 @@ public class TypeName implements Comparable<TypeName> {
 
     public static final TypeName MAP = new TypeName("java.util", "Map");
 
+    public static final TypeName OPTIONAL = new TypeName("java.util", "Optional");
+
     private static final Pattern DOLLAR_PATTERN = Pattern.compile("\\$");
 
     @Nullable

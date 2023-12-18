@@ -17,9 +17,9 @@ class TypeContext {
 
     private final Map<TypeName, Class<?>> javaTypeMap = new HashMap<>();
 
-    private final Map<ImmutableKey, FetchedObjectTypeImpl> immutableTypeMap = new LinkedHashMap<>();
+    private final Map<FetchedKey, FetchedTypeImpl> fetchedTypeMap = new LinkedHashMap<>();
 
-    private final Map<TypeName, DynamicObjectTypeImpl> dynamicTypeMap = new LinkedHashMap<>();
+    private final Map<TypeName, DynamicTypeImpl> dynamicTypeMap = new LinkedHashMap<>();
 
     private final Map<StaticKey, StaticObjectTypeImpl> staticTypeMap = new LinkedHashMap<>();
 
@@ -35,11 +35,15 @@ class TypeContext {
         this.isGenericSupported = isGenericSupported;
     }
 
-    Collection<FetchedObjectTypeImpl> immutableObjectTypes() {
-        return Collections.unmodifiableCollection(immutableTypeMap.values());
+    Collection<FetchedTypeImpl> fetchedTypes() {
+        return Collections.unmodifiableCollection(fetchedTypeMap.values());
     }
 
-    Collection<StaticObjectTypeImpl> staticObjectTypes() {
+    Collection<DynamicTypeImpl> dynamicTypes() {
+        return Collections.unmodifiableCollection(dynamicTypeMap.values());
+    }
+
+    Collection<StaticObjectTypeImpl> staticTypes() {
         return Collections.unmodifiableCollection(staticTypeMap.values());
     }
 
@@ -85,7 +89,7 @@ class TypeContext {
             if (typeRef.getFetchBy() == null) {
                 return dynamicObjectType(typeName);
             }
-            return fetchedObjectType(new ImmutableKey(typeName, typeRef.getFetchBy(), typeRef.getFetcherOwner()));
+            return fetchedObjectType(new FetchedKey(typeName, typeRef.getFetchBy(), typeRef.getFetcherOwner()), typeRef.getFetcherDoc());
         }
         if (definition != null && definition.getKind() == TypeDefinition.Kind.ENUM) {
             return enumTypeMap.computeIfAbsent(typeName, it -> new EnumTypeImpl(javaType(it)));
@@ -102,7 +106,7 @@ class TypeContext {
                 List<Type> arguments = typeRef.getArguments().stream().map(this::parseType).collect(Collectors.toList());
                 if (isGenericSupported && !arguments.isEmpty()) {
                     StaticObjectTypeImpl raw = staticObjectType(new StaticKey(typeName, Collections.emptyList()));
-                    return new GenericObjectTypeImpl(raw, arguments);
+                    return new GenericTypeImpl(raw, arguments);
                 }
                 return staticObjectType(new StaticKey(typeName, arguments));
         }
@@ -137,26 +141,25 @@ class TypeContext {
         }
     }
 
-    private FetchedObjectTypeImpl fetchedObjectType(ImmutableKey key) {
-        FetchedObjectTypeImpl objectType = immutableTypeMap.get(key);
+    private FetchedTypeImpl fetchedObjectType(FetchedKey key, Doc fetcherDoc) {
+        FetchedTypeImpl objectType = fetchedTypeMap.get(key);
         if (objectType != null) {
             return objectType;
         }
-        objectType = new FetchedObjectTypeImpl(
+        objectType = new FetchedTypeImpl(
                 ImmutableType.get(javaType(key.typeName))
         );
-        immutableTypeMap.put(key, objectType);
-        objectType.init(key.fetchBy, key.ownerType, this);
-        objectType.setDoc(definition(key.typeName).getDoc());
+        fetchedTypeMap.put(key, objectType);
+        objectType.init(key.fetchBy, key.ownerType, fetcherDoc, this);
         return objectType;
     }
 
-    private DynamicObjectTypeImpl dynamicObjectType(TypeName typeName) {
-        DynamicObjectTypeImpl objectType = dynamicTypeMap.get(typeName);
+    private DynamicTypeImpl dynamicObjectType(TypeName typeName) {
+        DynamicTypeImpl objectType = dynamicTypeMap.get(typeName);
         if (objectType != null) {
             return objectType;
         }
-        DynamicObjectTypeImpl newObjectType = new DynamicObjectTypeImpl(
+        DynamicTypeImpl newObjectType = new DynamicTypeImpl(
                 ImmutableType.get(javaType(typeName))
         );
         dynamicTypeMap.put(typeName, newObjectType);
@@ -201,7 +204,7 @@ class TypeContext {
         }
     }
 
-    private static class ImmutableKey {
+    private static class FetchedKey {
 
         final TypeName typeName;
 
@@ -211,7 +214,7 @@ class TypeContext {
         @Nullable
         final TypeName ownerType;
 
-        private ImmutableKey(TypeName typeName, @Nullable String fetchBy, @Nullable TypeName ownerType) {
+        private FetchedKey(TypeName typeName, @Nullable String fetchBy, @Nullable TypeName ownerType) {
             this.typeName = typeName;
             this.fetchBy = fetchBy;
             this.ownerType = ownerType;
@@ -222,7 +225,7 @@ class TypeContext {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ImmutableKey that = (ImmutableKey) o;
+            FetchedKey that = (FetchedKey) o;
 
             if (!typeName.equals(that.typeName)) return false;
             if (!Objects.equals(fetchBy, that.fetchBy)) return false;

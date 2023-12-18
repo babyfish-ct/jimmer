@@ -19,8 +19,13 @@ public class DtoWrapperRender implements Render {
     final Map<Type, String> recursiveTypeNames = new LinkedHashMap<>();
 
     @Override
+    public void export(CodeWriter writer) {
+        writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
+    }
+
+    @Override
     public void render(CodeWriter writer) {
-        writer.code("export type ").code(name).code(' ');
+        writer.code("export type ").code(name).code(" = ");
         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, writer::renderChildren);
         writer.code('\n');
         for (Map.Entry<Type, String> e : recursiveTypeNames.entrySet()) {

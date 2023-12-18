@@ -21,6 +21,11 @@ public class ApiRender implements Render {
     }
 
     @Override
+    public void export(CodeWriter writer) {
+        writer.code("export {").code(name).code("} from './").code(name).code("';\n");
+    }
+
+    @Override
     public void render(CodeWriter writer) {
 
         TypeScriptContext ctx = writer.getContext();
@@ -32,7 +37,7 @@ public class ApiRender implements Render {
         Source executorSource = ctx.getRootSource("Executor");
         writer.importSource(executorSource);
         for (Source source : serviceSources) {
-            writer.importSource(source);
+            writer.importSource(source, true);
         }
 
         writer.code("export class ").code(name).code(' ');

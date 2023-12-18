@@ -28,6 +28,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ClientProcessor {
 
@@ -307,46 +308,8 @@ public class ClientProcessor {
             determineTypeAndArguments(type);
             determineNullity(type);
             determineFetchBy(type);
-        }
-    }
-
-    private void determineNullity(TypeMirror type) {
-        TypeRefImpl<Element> typeRef = builder.current();
-        Boolean forcedType = null;
-        if (typeRef.getTypeName().isPrimitive()) {
-            forcedType = context.getTypes().asElement(type) != null;
-        }
-        if (type.getAnnotation(NullableType.class) != null) {
-            if (forcedType != null && !forcedType) {
-                throw new MetaException(
-                        builder.ancestorSource(),
-                        "Illegal annotation `@NullableType` which cannot be used to decorate primitive type"
-                );
-            }
-            typeRef.setNullable(true);
-        } else {
-            Element element = builder.ancestorSource(PropImpl.class, ApiParameterImpl.class, ApiOperationImpl.class);
-            if (element != null) {
-                for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
-                    TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
-                    String annoClassName = annoElement.getSimpleName().toString();
-                    if (annoClassName.equals("Null") || annoClassName.equals("Nullable")) {
-                        if (forcedType != null && !forcedType) {
-                            throw new MetaException(
-                                    builder.ancestorSource(),
-                                    "Illegal annotation `@" +
-                                            annoElement.getQualifiedName().toString() +
-                                            "` which cannot be used to decorate primitive type"
-                            );
-                        }
-                        typeRef.setNullable(true);
-                        break;
-                    }
-                }
-            }
-        }
-        if (forcedType != null && forcedType) {
-            typeRef.setNullable(true);
+            TypeRefImpl<Element> typeRef = builder.current();
+            removeOptional(typeRef);
         }
     }
 
@@ -450,6 +413,47 @@ public class ClientProcessor {
 
         typeRef.setFetchBy(constant);
         typeRef.setFetcherOwner(typeName(ownerElement));
+        typeRef.setFetcherDoc(Doc.parse(context.getElements().getDocComment(fetcherElement)));
+    }
+
+    private void determineNullity(TypeMirror type) {
+        TypeRefImpl<Element> typeRef = builder.current();
+        Boolean forcedType = null;
+        if (typeRef.getTypeName().isPrimitive()) {
+            forcedType = context.getTypes().asElement(type) != null;
+        }
+        if (type.getAnnotation(NullableType.class) != null) {
+            if (forcedType != null && !forcedType) {
+                throw new MetaException(
+                        builder.ancestorSource(),
+                        "Illegal annotation `@NullableType` which cannot be used to decorate primitive type"
+                );
+            }
+            typeRef.setNullable(true);
+        } else {
+            Element element = builder.ancestorSource(PropImpl.class, ApiParameterImpl.class, ApiOperationImpl.class);
+            if (element != null) {
+                for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+                    TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
+                    String annoClassName = annoElement.getSimpleName().toString();
+                    if (annoClassName.equals("Null") || annoClassName.equals("Nullable")) {
+                        if (forcedType != null && !forcedType) {
+                            throw new MetaException(
+                                    builder.ancestorSource(),
+                                    "Illegal annotation `@" +
+                                            annoElement.getQualifiedName().toString() +
+                                            "` which cannot be used to decorate primitive type"
+                            );
+                        }
+                        typeRef.setNullable(true);
+                        break;
+                    }
+                }
+            }
+        }
+        if (forcedType != null && forcedType) {
+            typeRef.setNullable(true);
+        }
     }
 
     private void determineTypeAndArguments(TypeMirror type) {
@@ -614,6 +618,7 @@ public class ClientProcessor {
         }
 
         if (!immutable || typeElement.getKind() == ElementKind.INTERFACE) {
+            boolean isClientException = typeElement.getAnnotation(ClientException.class) != null;
             for (Element element : typeElement.getEnclosedElements()) {
                 if (!(element instanceof ExecutableElement)) {
                     continue;
@@ -641,6 +646,9 @@ public class ClientProcessor {
                         continue;
                     }
                 }
+                if (isClientException && (name.equals("code") || name.equals("fields"))) {
+                    continue;
+                }
                 builder.prop(executableElement, name, prop -> {
                     try {
                         builder.typeRef(type -> {
@@ -648,20 +656,21 @@ public class ClientProcessor {
                             prop.setType(type);
                         });
                         prop.setDoc(Doc.parse(elements.getDocComment(executableElement)));
-                        if (prop.getDoc() == null) {
-                            Element fieldElement = typeElement.getEnclosedElements().stream().filter(
-                                    it -> it.getKind() == ElementKind.FIELD &&
-                                            it.getSimpleName().toString().equals(prop.getName())
-                            ).findFirst().orElse(null);
-                            if (fieldElement != null) {
-                                prop.setDoc(Doc.parse(context.getElements().getDocComment(fieldElement)));
-                            }
-                        }
                         typeDefinition.addProp(prop);
                     } catch (UnambiguousTypeException ex) {
                         // Do nothing
                     }
                 });
+            }
+            for (Element fieldElement : typeElement.getEnclosedElements()) {
+                if (fieldElement.getKind() != ElementKind.FIELD || fieldElement.getModifiers().contains(Modifier.STATIC)) {
+                    continue;
+                }
+                PropImpl prop = (PropImpl) typeDefinition.getPropMap().get(fieldElement.getSimpleName().toString());
+                if (prop == null || prop.getDoc() != null) {
+                    continue;
+                }
+                prop.setDoc(Doc.parse(context.getElements().getDocComment(fieldElement)));
             }
         }
 
@@ -788,6 +797,18 @@ public class ClientProcessor {
         }
         Collections.reverse(simpleNames);
         return TypeName.of(packageName, simpleNames);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void removeOptional(TypeRefImpl<?> typeRef) {
+        if (typeRef.getTypeName().equals(TypeName.OPTIONAL)) {
+            TypeRefImpl<Element> target = (TypeRefImpl<Element>) typeRef.getArguments().get(0);
+            typeRef.setTypeName(target.getTypeName());
+            typeRef.setFetchBy(target.getFetchBy());
+            typeRef.setFetcherOwner(target.getFetcherOwner());
+            typeRef.setFetcherDoc(target.getFetcherDoc());
+            target.setNullable(true);
+        }
     }
 
     private static class UnambiguousTypeException extends MetaException {

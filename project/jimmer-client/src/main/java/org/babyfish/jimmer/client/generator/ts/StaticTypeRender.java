@@ -19,12 +19,18 @@ public class StaticTypeRender implements Render {
     }
 
     @Override
+    public void export(CodeWriter writer) {
+        writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
+    }
+
+    @Override
     public void render(CodeWriter writer) {
         Doc doc = type.getDoc();
         writer.doc(doc).code("export interface ").code(name);
         if (!type.getArguments().isEmpty()) {
             writer.scope(CodeWriter.ScopeType.GENERIC, ", ", false, () -> {
                 for (Type argument : type.getArguments()) {
+                    writer.separator();
                     writer.typeRef(argument);
                 }
             });
@@ -38,7 +44,7 @@ public class StaticTypeRender implements Render {
                     writer.doc(doc.getPropertyValueMap().get(property.getName()));
                 }
                 writer
-                        .codeIf(ctx.isMutable(), "readonly ")
+                        .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName())
                         .code(": ")
                         .typeRef(property.getType())

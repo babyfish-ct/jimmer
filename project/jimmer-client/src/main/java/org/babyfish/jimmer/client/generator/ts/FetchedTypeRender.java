@@ -2,8 +2,9 @@ package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Render;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
-import org.babyfish.jimmer.client.runtime.impl.FetchedObjectTypeImpl;
+import org.babyfish.jimmer.client.runtime.impl.FetchedTypeImpl;
 
 import java.util.Map;
 
@@ -47,8 +48,12 @@ public class FetchedTypeRender implements Render {
 
     @Override
     public void render(CodeWriter writer) {
-        FetchByInfo info = objectType.getFetchByInfo();
-        assert info != null;
+        assert objectType.getFetchByInfo() != null;
+        Doc doc = objectType.getFetchByInfo().getDoc();
+        if (doc == null) {
+            doc = objectType.getDoc();
+        }
+        writer.doc(doc);
         writer.code('\'').code(name).code("': ");
         render(objectType, writer, recursiveTypeNames);
         writer.code('\n');
@@ -59,7 +64,8 @@ public class FetchedTypeRender implements Render {
         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
                 writer
-                        .codeIf(ctx.isMutable(), "readonly ")
+                        .doc(property.getDoc())
+                        .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName());
                 Type targetType = property.getType();
                 boolean isNullable = targetType instanceof NullableType;
@@ -73,7 +79,7 @@ public class FetchedTypeRender implements Render {
                 String recursiveTypeName = recursiveTypeNames.get(targetType);
                 writer.codeIf(property.getType() instanceof NullableType || recursiveTypeName != null, '?')
                         .code(": ");
-                if (targetType instanceof FetchedObjectTypeImpl) {
+                if (targetType instanceof FetchedTypeImpl) {
                     ObjectType targetObjectType = (ObjectType) targetType;
                     writeResolvedType(writer, isNullable, isList, () -> {
                         if (recursiveTypeName != null) {

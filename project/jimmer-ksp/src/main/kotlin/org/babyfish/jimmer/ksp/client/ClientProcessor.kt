@@ -325,6 +325,7 @@ class ClientProcessor(
         }
         typeRef.fetchBy = constant
         typeRef.fetcherOwner = owner.toTypeName()
+        typeRef.fetcherDoc = Doc.parse(field.docString)
     }
 
     private fun SchemaBuilder<KSDeclaration>.determineTypeNameAndArguments(type: KSType) {
@@ -377,8 +378,12 @@ class ClientProcessor(
         }
 
         if (!immutable || declaration.classKind == ClassKind.INTERFACE) {
+            val isClientException = declaration.annotation(ClientException::class) != null
             for (propDeclaration in declaration.getDeclaredProperties()) {
                 if (!propDeclaration.isPublic()) {
+                    continue
+                }
+                if (isClientException && (propDeclaration.name.let { it == "code" || it == "fields" })) {
                     continue
                 }
                 prop(propDeclaration, propDeclaration.name) { prop ->

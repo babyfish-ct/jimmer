@@ -22,6 +22,11 @@ public class ServiceRender implements Render {
     }
 
     @Override
+    public void export(CodeWriter writer) {
+        writer.code("export {").code(name).code("} from './").code(name).code("';\n");
+    }
+
+    @Override
     public void render(CodeWriter writer) {
         renderService(writer);
         renderOptions(writer);
@@ -32,18 +37,19 @@ public class ServiceRender implements Render {
         writer.doc(service.getDoc()).code("export class ").code(name).code(' ');
         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
             writer.code("\nconstructor(private executor: Executor) {}\n");
-            for (Operation operation : service.getOperations()) {
-                writer.renderChildren();
-            }
+            writer.renderChildren();
         });
         writer.code('\n');
     }
 
     private void renderOptions(CodeWriter writer) {
         TypeScriptContext ctx = writer.getContext();
-        writer.code("export type ").code(name).code("Options ");
+        writer.code("export type ").code(name).code("Options = ");
         writer.scope(CodeWriter.ScopeType.OBJECT, ", ", true, () -> {
             for (Operation operation : service.getOperations()) {
+                if (operation.getParameters().isEmpty()) {
+                    continue;
+                }
                 writer.separator().code('\'').code(ctx.getSource(operation).getName()).code("': ");
                 writer.scope(
                         CodeWriter.ScopeType.OBJECT,
@@ -57,7 +63,7 @@ public class ServiceRender implements Render {
                                     writer.doc(doc.getParameterValueMap().get(parameter.getName()));
                                 }
                                 writer
-                                        .codeIf(ctx.isMutable(), "readonly ")
+                                        .codeIf(!ctx.isMutable(), "readonly ")
                                         .code(parameter.getName())
                                         .codeIf(parameter.getType() instanceof NullableType, '?')
                                         .code(": ")

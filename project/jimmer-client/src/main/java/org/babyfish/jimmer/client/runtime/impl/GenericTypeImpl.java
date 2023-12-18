@@ -14,13 +14,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GenericObjectTypeImpl extends Graph implements ObjectType {
+public class GenericTypeImpl extends Graph implements ObjectType {
 
     private final StaticObjectTypeImpl raw;
 
     private final List<Type> arguments;
 
-    public GenericObjectTypeImpl(StaticObjectTypeImpl raw, List<Type> arguments) {
+    public GenericTypeImpl(StaticObjectTypeImpl raw, List<Type> arguments) {
         if (arguments.isEmpty()) {
             throw new IllegalArgumentException("argument cannot be empty");
         }
@@ -92,7 +92,7 @@ public class GenericObjectTypeImpl extends Graph implements ObjectType {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        GenericObjectTypeImpl that = (GenericObjectTypeImpl) o;
+        GenericTypeImpl that = (GenericTypeImpl) o;
 
         if (!raw.equals(that.raw)) return false;
         return arguments.equals(that.arguments);

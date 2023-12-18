@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.source;
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.*;
+import org.babyfish.jimmer.client.runtime.impl.IllegalApiException;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -20,7 +21,7 @@ public abstract class SourceManager {
 
     private final IdentityHashMap<Type, Source> typeSourceMap = new IdentityHashMap<>();
 
-    private final Map<String, Source> rootSourceMap = new HashMap<>();
+    private final Map<String, Source> rootSourceMap = new TreeMap<>();
 
     protected SourceManager(Context ctx) {
         this.ctx = ctx;
@@ -102,12 +103,11 @@ public abstract class SourceManager {
             return source;
         }
         if (objectType.getKind() == ObjectType.Kind.ERROR) {
-            source = createDynamicTypeSource(objectType);
-            if (source == null) {
-                throw new IllegalStateException(
-                        "The \"createErrorTypeSource\" of \"" + getClass().getName() + "\" cannot return null"
-                );
-            }
+            throw new IllegalApiException(
+                    "The exception type \"" +
+                            objectType.getJavaType().getName() +
+                            "\" can only be referenced by `java throws keyword` or `@kotlin.Throws`"
+            );
         } else if (objectType.getKind() == ObjectType.Kind.STATIC) {
             ObjectType unwrapped = objectType.unwrap();
             source = createStaticTypeSource(unwrapped != null ? unwrapped : objectType);
@@ -160,13 +160,11 @@ public abstract class SourceManager {
 
     protected abstract Source createDynamicTypeSource(ObjectType objectType);
 
-    protected abstract Source createErrorTypeSource(ObjectType objectType);
-
     protected abstract Source createEnumTypeSource(EnumType enumType);
 
     public void createAdditionalSources() {}
 
-    private static List<String> dirs(String dir) {
+    public static List<String> dirs(String dir) {
         if (dir.startsWith("/")) {
             dir = dir.substring(1);
         }

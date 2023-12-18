@@ -12,8 +12,14 @@ import org.jetbrains.annotations.Nullable;
 
 public interface AuthorService {
 
+    /**
+     * Simple author DTO
+     */
     Fetcher<Author> SIMPLE_FETCHER = AuthorFetcher.$.firstName().lastName();
 
+    /**
+     * Complex author DTO
+     */
     Fetcher<Author> COMPLEX_FETCHER = AuthorFetcher.$
             .allScalarFields()
             .gender(false)

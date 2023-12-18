@@ -1,14 +1,19 @@
 package org.babyfish.jimmer.client.runtime;
 
+import org.babyfish.jimmer.client.meta.Doc;
+
 public class FetchByInfo {
 
     private final String constant;
 
     private final Class<?> ownerType;
 
-    public FetchByInfo(String constant, Class<?> ownerType) {
+    private final Doc doc;
+
+    public FetchByInfo(String constant, Class<?> ownerType, Doc doc) {
         this.constant = constant;
         this.ownerType = ownerType;
+        this.doc = doc;
     }
 
     public String getConstant() {
@@ -17,6 +22,10 @@ public class FetchByInfo {
 
     public Class<?> getOwnerType() {
         return ownerType;
+    }
+
+    public Doc getDoc() {
+        return doc;
     }
 
     @Override
@@ -39,9 +48,6 @@ public class FetchByInfo {
 
     @Override
     public String toString() {
-        return "FetchInfo{" +
-                "constant='" + constant + '\'' +
-                ", ownerType=" + ownerType +
-                '}';
+        return ownerType.getName() + '/' + constant;
     }
 }

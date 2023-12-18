@@ -19,7 +19,8 @@ public class ParameterParserImpl implements Metadata.ParameterParser {
 
     @Override
     public boolean isDefault(Parameter javaParameter) {
-        return false;
+        RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
+        return requestParam != null && !requestParam.defaultVale().isEmpty();
     }
 
     @Nullable

@@ -4,10 +4,13 @@ import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Collection;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public abstract class Context {
 
@@ -27,23 +30,58 @@ public abstract class Context {
             return;
         }
         this.sourceManager = createSourceManager();
+        Set<Type> handledTypes = new HashSet<>();
         for (Service service : metadata.getServices()) {
             sourceManager.getSource(service);
             for (Operation operation : service.getOperations()) {
                 sourceManager.getSource(operation);
                 Type returnType = operation.getReturnType();
                 if (returnType != null) {
-                    sourceManager.getSource(returnType);
+                    initSource(returnType, handledTypes);
                 }
                 for (Parameter parameter : operation.getParameters()) {
-                    sourceManager.getSource(parameter.getType());
+                    initSource(parameter.getType(), handledTypes);
                 }
-                for (Type exceptionType : operation.getExceptionTypes()) {
-                    sourceManager.getSource(exceptionType);
+                for (ObjectType exceptionType : operation.getExceptionTypes()) {
+                    initSource(exceptionType, handledTypes);
                 }
             }
         }
         sourceManager.createAdditionalSources();
+    }
+
+    private void initSource(Type type, Set<Type> handledTypes) {
+        if (!handledTypes.add(type)) {
+            return;
+        }
+        if (type instanceof ObjectType) {
+            ObjectType objectType = (ObjectType) type;
+            switch (objectType.getKind()) {
+                case FETCHED:
+                    sourceManager.getSource(objectType);
+                    return;
+                case DYNAMIC:
+                    sourceManager.getSource(objectType);
+                case STATIC:
+                    sourceManager.getSource(objectType);
+                    for (Type argument : objectType.getArguments()) {
+                        initSource(argument, handledTypes);
+                    }
+                default:
+                    for (Property property : objectType.getProperties().values()) {
+                        initSource(property.getType(), handledTypes);
+                    }
+            }
+        } else if (type instanceof NullableType) {
+            initSource(((NullableType)type).getTargetType(), handledTypes);
+        } else if (type instanceof ListType) {
+            initSource(((ListType)type).getElementType(), handledTypes);
+        } else if (type instanceof MapType) {
+            initSource(((MapType)type).getKeyType(), handledTypes);
+            initSource(((MapType)type).getValueType(), handledTypes);
+        } else {
+            sourceManager.getSource(type);
+        }
     }
 
     public Metadata getMetadata() {
@@ -53,10 +91,6 @@ public abstract class Context {
     public String getIndent() {
         return indent;
     }
-
-    protected abstract SourceManager createSourceManager();
-
-    protected abstract CodeWriter createCodeWriter(Context ctx, Source source);
 
     public Collection<Source> getRootSources() {
         init();
@@ -76,6 +110,48 @@ public abstract class Context {
     public Source getSource(Operation operation) {
         init();
         return sourceManager.getSource(operation);
+    }
+
+    public void renderAll(OutputStream outputStream) {
+        ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+        try {
+            renderAll(zipOutputStream);
+            zipOutputStream.finish();
+        } catch (IOException ex) {
+            throw new GeneratorException("Cannot write source code into zip output stream", ex);
+        }
+    }
+
+    public void renderAll(ZipOutputStream zipOutputStream) throws IOException {
+        init();
+
+        Writer writer = new OutputStreamWriter(zipOutputStream, StandardCharsets.UTF_8);
+        Map<List<String>, List<Source>> sourceMultiMap = sourceManager
+                .getRootSources()
+                .stream()
+                .collect(
+                        Collectors.groupingBy(
+                                Source::getDirs,
+                                LinkedHashMap::new,
+                                Collectors.toList()
+                        )
+                );
+        String suffix = '.' + getFileExtension();
+        boolean isIndexRequired = isIndexRequired();
+        for (Map.Entry<List<String>, List<Source>> e : sourceMultiMap.entrySet()) {
+            String dir = String.join("/", e.getKey());
+            List<Source> sources = e.getValue();
+            if (isIndexRequired) {
+                zipOutputStream.putNextEntry(new ZipEntry(dir + "/index" + suffix));
+                renderIndex(sources, writer);
+                writer.flush();
+            }
+            for (Source source : sources) {
+                zipOutputStream.putNextEntry(new ZipEntry(dir + '/' + source.getName() + suffix));
+                render(source, writer);
+                writer.flush();
+            }
+        }
     }
 
     public void render(Source source, Writer writer) {
@@ -98,4 +174,50 @@ public abstract class Context {
             throw new GeneratorException("Failed to write code for " + source);
         }
     }
+
+    public void renderIndex(String dir, Writer writer) {
+        if (!isIndexRequired()) {
+            return;
+        }
+        init();
+        List<String> dirs = SourceManager.dirs(dir);
+        List<Source> sources = sourceManager
+                .getRootSources()
+                .stream()
+                .filter(it -> it.getDirs().equals(dirs))
+                .collect(Collectors.toList());
+        renderIndex(sources, writer);
+    }
+
+    private void renderIndex(List<Source> sources, Writer writer) {
+        StringWriter headWriter = new StringWriter();
+        StringWriter bodyWriter = new StringWriter();
+        for (Source source : sources) {
+            CodeWriter codeWriter = this.createCodeWriter(this, source);
+            codeWriter.setWriter(bodyWriter);
+            source.getRender().export(codeWriter);
+            codeWriter.setWriter(headWriter);
+            codeWriter.onFlushImportedTypes();
+        }
+        try {
+            String head = headWriter.toString();
+            if (!head.isEmpty()) {
+                writer.write(head);
+                writer.write('\n');
+            }
+            writer.write(bodyWriter.toString());
+        } catch (IOException ex) {
+            throw new GeneratorException("Failed to write index for " + String.join("/", sources.get(0).getDirs()));
+        }
+    }
+
+    protected abstract SourceManager createSourceManager();
+
+    protected abstract CodeWriter createCodeWriter(Context ctx, Source source);
+
+    protected boolean isIndexRequired() {
+        return false;
+    }
+
+    protected abstract String getFileExtension();
 }

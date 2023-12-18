@@ -34,6 +34,20 @@ public interface TreeService {
     );
 
     /**
+     * Create a static object tree, the value of each node must be integer.
+     * @param depth The depth of the tree
+     * @param breadth The child count of each tree node
+     * @param maxBound The max bound for the random integer value which is data of each node
+     * @return The static object tree with integer values.
+     */
+    @Api
+    Tree<Integer> getNumberTree(
+            @RequestParam Integer depth,
+            @RequestParam Integer breadth,
+            @RequestParam(defaultVale = "10") int maxBound
+    );
+
+    /**
      * Create a static object tree, the value of each node must be string.
      * @param depth The depth of the tree
      * @param breadth The child count of each tree node
@@ -52,9 +66,12 @@ public interface TreeService {
      */
     @Api
     @FetchBy("RECURSIVE_FETCHER") TreeNode getRootNode(
-            @RequestParam String name
+            @RequestParam(defaultVale = "X") String name
     );
 
+    /**
+     * Recursive tree node, for business scenarios: A, B and C
+     */
     TreeNodeFetcher RECURSIVE_FETCHER =
             Fetchers.TREE_NODE_FETCHER
                     .allScalarFields()

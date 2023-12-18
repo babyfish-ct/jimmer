@@ -14,12 +14,18 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-@Api
+@Api("bookService")
 @RequestMapping(value = "/java", method = Operation.HttpMethod.GET)
 public interface BookService {
 
+    /**
+     * Simple Book DTO
+     */
     Fetcher<Book> SIMPLE_FETCHER = BookFetcher.$.name().storeId();
 
+    /**
+     * Complex Book DTO
+     */
     Fetcher<Book> COMPLEX_FETCHER = BookFetcher.$
             .allScalarFields()
             .store(BookStoreFetcher.$.name())
@@ -27,6 +33,9 @@ public interface BookService {
                     AuthorFetcher.$.allScalarFields().gender(false)
             );
 
+    /**
+     * Author DTO used to be a part of return value of `BookService.findTuples`
+     */
     Fetcher<Author> AUTHOR_FETCHER = AuthorFetcher.$
             .allScalarFields()
             .books(
@@ -51,7 +60,7 @@ public interface BookService {
 
     @Api
     @GetMapping("/books/complex2")
-    ResponseEntity<List<@FetchBy("COMPLEX_FETCHER") Book>> findComplexBooksByArguments(
+    List<@FetchBy("COMPLEX_FETCHER") Book> findComplexBooksByArguments(
             FindBookArguments arguments
     );
 

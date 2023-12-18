@@ -6,6 +6,8 @@ import java.util.*;
 
 public class MetadataImpl implements Metadata {
 
+    private final boolean isGenericSupported;
+
     private final List<Service> services;
     
     private final List<ObjectType> fetchedTypes;
@@ -19,12 +21,14 @@ public class MetadataImpl implements Metadata {
     private final Map<Class<?>, Type> typeMap;
 
     public MetadataImpl(
-            List<Service> services, 
-            List<ObjectType> fetchedTypes, 
-            List<ObjectType> dynamicTypes, 
-            List<ObjectType> staticTypes, 
+            boolean isGenericSupported,
+            List<Service> services,
+            List<ObjectType> fetchedTypes,
+            List<ObjectType> dynamicTypes,
+            List<ObjectType> staticTypes,
             List<EnumType> enumTypes
     ) {
+        this.isGenericSupported = isGenericSupported;
         this.services = services;
         this.fetchedTypes = fetchedTypes;
         this.dynamicTypes = dynamicTypes;
@@ -44,6 +48,11 @@ public class MetadataImpl implements Metadata {
             typeMap.put(enumType.getJavaType(), enumType);
         }
         this.typeMap = typeMap;
+    }
+
+    @Override
+    public boolean isGenericSupported() {
+        return isGenericSupported;
     }
 
     @Override
