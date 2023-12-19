@@ -1,9 +1,8 @@
-package org.babyfish.jimmer.client.java.common;
+package org.babyfish.jimmer.client.common;
 
-import org.babyfish.jimmer.client.meta.common.DeleteMapping;
-import org.babyfish.jimmer.client.meta.common.GetMapping;
-import org.babyfish.jimmer.client.meta.common.PutMapping;
-import org.babyfish.jimmer.client.meta.common.RequestMapping;
+import org.babyfish.jimmer.client.common.DeleteMapping;
+import org.babyfish.jimmer.client.common.PutMapping;
+import org.babyfish.jimmer.client.common.RequestMapping;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.runtime.Operation;
 

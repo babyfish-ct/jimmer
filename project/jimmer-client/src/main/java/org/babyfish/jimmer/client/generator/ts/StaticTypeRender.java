@@ -20,7 +20,12 @@ public class StaticTypeRender implements Render {
 
     @Override
     public void export(CodeWriter writer) {
-        writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
+        writer
+                .code("export type {")
+                .code(name)
+                .code("} from './")
+                .code(name)
+                .code("';\n");
     }
 
     @Override

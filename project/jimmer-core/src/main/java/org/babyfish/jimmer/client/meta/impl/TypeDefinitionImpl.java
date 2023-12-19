@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @JsonSerialize(using = TypeDefinitionImpl.Serializer.class)
 @JsonDeserialize(using = TypeDefinitionImpl.Deserializer.class)
-public class TypeDefinitionImpl<S> extends ErrorPropContainerNode<S> implements TypeDefinition {
+public class TypeDefinitionImpl<S> extends AstNode<S> implements TypeDefinition {
 
     private final TypeName typeName;
 

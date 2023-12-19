@@ -1,8 +1,8 @@
-package org.babyfish.jimmer.client.java.common;
+package org.babyfish.jimmer.client.common;
 
-import org.babyfish.jimmer.client.meta.common.PathVariable;
-import org.babyfish.jimmer.client.meta.common.RequestBody;
-import org.babyfish.jimmer.client.meta.common.RequestParam;
+import org.babyfish.jimmer.client.common.PathVariable;
+import org.babyfish.jimmer.client.common.RequestBody;
+import org.babyfish.jimmer.client.common.RequestParam;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.jetbrains.annotations.Nullable;
 

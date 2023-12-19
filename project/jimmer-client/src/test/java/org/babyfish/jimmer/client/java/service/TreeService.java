@@ -6,7 +6,7 @@ import org.babyfish.jimmer.client.java.model.Tree;
 import org.babyfish.jimmer.client.java.model.TreeNode;
 import org.babyfish.jimmer.client.java.model.TreeNodeFetcher;
 import org.babyfish.jimmer.client.meta.Api;
-import org.babyfish.jimmer.client.meta.common.RequestParam;
+import org.babyfish.jimmer.client.common.RequestParam;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
 
 /**

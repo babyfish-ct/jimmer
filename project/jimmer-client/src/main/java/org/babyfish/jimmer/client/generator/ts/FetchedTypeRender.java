@@ -63,8 +63,8 @@ public class FetchedTypeRender implements Render {
         TypeScriptContext ctx = writer.getContext();
         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
+                DocUtils.doc(property, type.getDoc(), writer);
                 writer
-                        .doc(property.getDoc())
                         .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName());
                 Type targetType = property.getType();

@@ -20,6 +20,7 @@ import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.io.OutputStreamWriter
+import java.lang.IllegalStateException
 import java.nio.charset.StandardCharsets
 
 class ClientProcessor(
@@ -236,16 +237,13 @@ class ClientProcessor(
             .firstOrNull { it.fullName == FetchBy::class.qualifiedName }
             ?: return
         val entityType = typeReference.resolve()
-        entityType.declaration.run {
-            annotation(Immutable::class) !== null ||
-                annotation(Entity::class) !== null ||
-                annotation(MappedSuperclass::class) !== null ||
-                annotation(Embeddable::class) !== null
-        }.takeIf { it } ?: throw MetaException(
-            ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
-            ancestorSource(),
-            "Illegal type because \"$entityType\" which is decorated by `@FetchBy` is not entity type"
-        )
+        if (entityType.declaration.annotation(Entity::class) == null) {
+            throw MetaException(
+                ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
+                ancestorSource(),
+                "Illegal type because \"$entityType\" which is decorated by `@FetchBy` is not entity type"
+            )
+        }
         val constant = fetchBy[FetchBy::value] ?: throw MetaException(
             ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
             ancestorSource(),
@@ -363,13 +361,15 @@ class ClientProcessor(
 
     private fun SchemaBuilder<KSDeclaration>.fillDefinition(declaration: KSClassDeclaration, immutable: Boolean) {
 
+        val definition = current<TypeDefinitionImpl<KSDeclaration>>()
+        definition.isApiIgnore = declaration.annotation(ApiIgnore::class) !== null
+        definition.doc = Doc.parse(declaration.docString)
+
         if (declaration.classKind == ClassKind.ENUM_CLASS) {
             fillEnumDefinition(declaration)
             return
         }
 
-        val definition = current<TypeDefinitionImpl<KSDeclaration>>()
-        definition.isApiIgnore = declaration.annotation(ApiIgnore::class) !== null
         definition.kind = if (immutable) {
             TypeDefinition.Kind.IMMUTABLE
         } else {
@@ -407,6 +407,7 @@ class ClientProcessor(
                             fillType(ksTypeReference)
                             prop.setType(type)
                         }
+                        prop.doc = Doc.parse(propDeclaration.docString)
                         definition.addProp(prop)
                     } catch (ex: UnambiguousTypeException) {
                         // Do nothing
@@ -422,7 +423,9 @@ class ClientProcessor(
                     if (returnTypeName == "kotlin.Unit") {
                         continue
                     }
-                    val name = StringUtil.propName(funcDeclaration.simpleName.asString(), returnTypeName == "kotlin.Boolean")
+                    val name = StringUtil
+                        .propName(funcDeclaration.simpleName.asString(), returnTypeName == "kotlin.Boolean")
+                        ?: continue
                     prop(funcDeclaration, name) { prop ->
                         typeRef { type ->
                             fillType(returnTypReference)
@@ -455,54 +458,14 @@ class ClientProcessor(
     private fun SchemaBuilder<KSDeclaration>.fillEnumDefinition(declaration: KSClassDeclaration) {
 
         val definition = current<TypeDefinitionImpl<KSDeclaration>>()
-        definition.isApiIgnore = declaration.annotation(ApiIgnore::class) !== null
-
         definition.kind = TypeDefinition.Kind.ENUM
-
-        fillErrorProps(declaration)
 
         for (childDeclaration in declaration.declarations) {
             if (childDeclaration is KSClassDeclaration) {
                 constant(childDeclaration, childDeclaration.simpleName.asString()) {
-                    fillErrorProps(childDeclaration)
+                    it.doc = Doc.parse(childDeclaration.docString)
                     definition.addEnumConstant(it)
                 }
-            }
-        }
-    }
-
-    private fun SchemaBuilder<KSDeclaration>.fillErrorProps(declaration: KSDeclaration) {
-        val errorFields = declaration
-            .annotation(ErrorFields::class)
-            ?.let { it.get<List<KSAnnotation>>("value") }
-            ?.takeIf { it.isNotEmpty() }
-            ?: declaration
-                .annotation(ErrorField::class)
-                ?.let { listOf(it) }
-                ?: return
-        val container = current<ErrorPropContainerNode<KSDeclaration>>()
-        for (errorField in errorFields) {
-            val name = errorField[ErrorField::name]
-            val typeDeclaration = errorField.getClassArgument(ErrorField::type)!!
-            val isList = errorField[ErrorField::list] ?: false
-            val isNullable = errorField[ErrorField::nullable] ?: false
-            val doc = errorField[ErrorField::doc]?.takeIf { it.isNotEmpty() }
-            prop(declaration, name) { prop ->
-                typeRef { type ->
-                    type.typeName = typeDeclaration.toTypeName()
-                    val finalType = if (isList) {
-                        val listType = TypeRefImpl<KSDeclaration>()
-                        listType.typeName = TypeName.LIST
-                        listType.addArgument(type)
-                        listType
-                    } else {
-                        type
-                    }
-                    finalType.isNullable = isNullable
-                    prop.setType(finalType)
-                    prop.setDoc(Doc.parse(doc));
-                }
-                container.addErrorProp(prop)
             }
         }
     }
@@ -576,10 +539,6 @@ class ClientProcessor(
                     it
                 }
             }
-
-        private val FETCH_BY_NAME = TypeName.of(
-            FetchBy::class.java
-        )
 
         private val CODE_BASED_EXCEPTION_NAME = TypeName.of(
             CodeBasedException::class.java

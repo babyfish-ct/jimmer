@@ -1,9 +1,11 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Type;
 import org.babyfish.jimmer.client.runtime.TypeVariable;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.sql.Embeddable;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -20,6 +22,8 @@ class TypeContext {
     private final Map<FetchedKey, FetchedTypeImpl> fetchedTypeMap = new LinkedHashMap<>();
 
     private final Map<TypeName, DynamicTypeImpl> dynamicTypeMap = new LinkedHashMap<>();
+
+    private final Map<TypeName, EmbeddableTypeImpl> embeddableTypeMap = new LinkedHashMap<>();
 
     private final Map<StaticKey, StaticObjectTypeImpl> staticTypeMap = new LinkedHashMap<>();
 
@@ -41,6 +45,10 @@ class TypeContext {
 
     Collection<DynamicTypeImpl> dynamicTypes() {
         return Collections.unmodifiableCollection(dynamicTypeMap.values());
+    }
+
+    Collection<EmbeddableTypeImpl> embeddableTypes() {
+        return Collections.unmodifiableCollection(embeddableTypeMap.values());
     }
 
     Collection<StaticObjectTypeImpl> staticTypes() {
@@ -87,12 +95,15 @@ class TypeContext {
         TypeDefinition definition = definitionMap.get(typeName);
         if (definition != null && definition.getKind() == TypeDefinition.Kind.IMMUTABLE) {
             if (typeRef.getFetchBy() == null) {
-                return dynamicObjectType(typeName);
+                Class<?> javaType = javaType(typeName);
+                return javaType.isAnnotationPresent(Embeddable.class) ?
+                        embeddableType(typeName) :
+                        dynamicType(typeName);
             }
-            return fetchedObjectType(new FetchedKey(typeName, typeRef.getFetchBy(), typeRef.getFetcherOwner()), typeRef.getFetcherDoc());
+            return fetchedType(new FetchedKey(typeName, typeRef.getFetchBy(), typeRef.getFetcherOwner()), typeRef.getFetcherDoc());
         }
         if (definition != null && definition.getKind() == TypeDefinition.Kind.ENUM) {
-            return enumTypeMap.computeIfAbsent(typeName, it -> new EnumTypeImpl(javaType(it)));
+            return enumTypeMap.computeIfAbsent(typeName, it -> new EnumTypeImpl(javaType(it), definition(it)));
         }
         switch (typeName.toString()) {
             case "java.util.List":
@@ -105,10 +116,10 @@ class TypeContext {
             default:
                 List<Type> arguments = typeRef.getArguments().stream().map(this::parseType).collect(Collectors.toList());
                 if (isGenericSupported && !arguments.isEmpty()) {
-                    StaticObjectTypeImpl raw = staticObjectType(new StaticKey(typeName, Collections.emptyList()));
+                    StaticObjectTypeImpl raw = staticType(new StaticKey(typeName, Collections.emptyList()));
                     return new GenericTypeImpl(raw, arguments);
                 }
-                return staticObjectType(new StaticKey(typeName, arguments));
+                return staticType(new StaticKey(typeName, arguments));
         }
     }
 
@@ -141,7 +152,7 @@ class TypeContext {
         }
     }
 
-    private FetchedTypeImpl fetchedObjectType(FetchedKey key, Doc fetcherDoc) {
+    private FetchedTypeImpl fetchedType(FetchedKey key, Doc fetcherDoc) {
         FetchedTypeImpl objectType = fetchedTypeMap.get(key);
         if (objectType != null) {
             return objectType;
@@ -154,7 +165,7 @@ class TypeContext {
         return objectType;
     }
 
-    private DynamicTypeImpl dynamicObjectType(TypeName typeName) {
+    private DynamicTypeImpl dynamicType(TypeName typeName) {
         DynamicTypeImpl objectType = dynamicTypeMap.get(typeName);
         if (objectType != null) {
             return objectType;
@@ -167,7 +178,20 @@ class TypeContext {
         return newObjectType;
     }
 
-    private StaticObjectTypeImpl staticObjectType(StaticKey key) {
+    private EmbeddableTypeImpl embeddableType(TypeName typeName) {
+        EmbeddableTypeImpl objectType = embeddableTypeMap.get(typeName);
+        if (objectType != null) {
+            return objectType;
+        }
+        EmbeddableTypeImpl newObjectType = new EmbeddableTypeImpl(
+                ImmutableType.get(javaType(typeName))
+        );
+        embeddableTypeMap.put(typeName, newObjectType);
+        newObjectType.init(typeName, this);
+        return newObjectType;
+    }
+
+    private StaticObjectTypeImpl staticType(StaticKey key) {
         StaticObjectTypeImpl objectType = staticTypeMap.get(key);
         if (objectType != null) {
             return objectType;

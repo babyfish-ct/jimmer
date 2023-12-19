@@ -67,6 +67,12 @@ public class TypeScriptSourceManager extends SourceManager {
     }
 
     @Override
+    protected Source createEmbeddableTypeSource(ObjectType objectType) {
+        String name = namespace.allocate(String.join("_", objectType.getSimpleNames()));
+        return createRootSource("model/embeddable", name, () -> new EmbeddableTypeRender(name, objectType));
+    }
+
+    @Override
     protected Source createEnumTypeSource(EnumType enumType) {
         String name = namespace.allocate(String.join("_", enumType.getJavaType().getSimpleName()));
         return createRootSource("model/enums", name, () -> new EnumTypeRender(name, enumType));

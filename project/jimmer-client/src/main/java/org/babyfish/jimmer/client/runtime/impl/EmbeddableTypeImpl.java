@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DynamicTypeImpl implements ObjectType {
+public class EmbeddableTypeImpl implements ObjectType {
 
     private final ImmutableType immutableType;
 
@@ -24,7 +24,7 @@ public class DynamicTypeImpl implements ObjectType {
 
     private Doc doc;
 
-    public DynamicTypeImpl(ImmutableType immutableType) {
+    public EmbeddableTypeImpl(ImmutableType immutableType) {
         this.immutableType = immutableType;
     }
 
@@ -33,11 +33,7 @@ public class DynamicTypeImpl implements ObjectType {
         this.doc = definition.getDoc();
         Map<String, Property> properties = new LinkedHashMap<>((definition.getPropMap().size() * 4 + 2) / 3);
         for (Prop prop : definition.getPropMap().values()) {
-            Property property = new PropertyImpl(
-                    prop.getName(),
-                    ctx.parseType(prop.getType()),
-                    prop.getDoc()
-            );
+            Property property = new PropertyImpl(prop.getName(), ctx.parseType(prop.getType()), prop.getDoc());
             properties.put(property.getName(), property);
         }
         this.properties = Collections.unmodifiableMap(properties);
@@ -56,7 +52,7 @@ public class DynamicTypeImpl implements ObjectType {
 
     @Override
     public Kind getKind() {
-        return Kind.DYNAMIC;
+        return Kind.EMBEDDABLE;
     }
 
     @Override

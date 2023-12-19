@@ -24,13 +24,15 @@ public class EnumTypeRender implements Render {
     @Override
     public void render(CodeWriter writer) {
         writer.code("export const ").code(name).code("_CONSTANTS = ");
-        writer.scope(CodeWriter.ScopeType.LIST, ", ", enumType.getConstants().size() > 3, () -> {
-            for (String constant : enumType.getConstants()) {
+        writer.scope(CodeWriter.ScopeType.LIST, ", ", true, () -> {
+            for (EnumType.Constant constant : enumType.getConstants()) {
                 writer.separator();
-                writer.code('\'').code(constant).code('\'');
+                DocUtils.doc(constant.getDoc(), constant.getName(), enumType.getDoc(), writer);
+                writer.code('\'').code(constant.getName()).code('\'');
             }
         });
-        writer.code("as const;\n");
+        writer.code(" as const;\n");
+        writer.doc(enumType.getDoc());
         writer.code("export type ").code(name).code(" = typeof ").code(name).code("_CONSTANTS;\n");
     }
 }

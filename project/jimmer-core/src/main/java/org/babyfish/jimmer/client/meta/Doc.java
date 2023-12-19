@@ -76,6 +76,9 @@ public class Doc {
     }
 
     public static Doc parse(String doc) {
+        if (doc != null) {
+            doc = doc.trim(); // KSP does not trim the documentation
+        }
         if (doc == null || doc.isEmpty()) {
             return null;
         }
@@ -287,7 +290,7 @@ public class Doc {
 
             String value;
             Map<String, String> parameters;
-            String returnValue = null;
+            String returnValue;
             Map<String, String> properties;
 
             JsonNode jsonNode = jp.getCodec().readTree(jp);

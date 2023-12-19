@@ -2,16 +2,17 @@ package org.babyfish.jimmer.client.generator.ts;
 
 import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Render;
+import org.babyfish.jimmer.client.runtime.NullableType;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 
-public class DynamicTypeRender implements Render {
+public class EmbeddableTypeRender implements Render {
 
     private final String name;
 
     private final ObjectType type;
 
-    public DynamicTypeRender(String name, ObjectType type) {
+    public EmbeddableTypeRender(String name, ObjectType type) {
         this.name = name;
         this.type = type;
     }
@@ -24,15 +25,17 @@ public class DynamicTypeRender implements Render {
     @Override
     public void render(CodeWriter writer) {
         TypeScriptContext ctx = writer.getContext();
-        writer.doc(type.getDoc()).code("export interface ").code(name).code(' ');
+        writer.code("export interface ").code(name).code(' ');
         writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
                 DocUtils.doc(property, type.getDoc(), writer);
                 writer
                         .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName())
-                        .code("?: ")
-                        .typeRef(property.getType()).code("\n");
+                        .codeIf(property.getType() instanceof NullableType, '?')
+                        .code(": ")
+                        .typeRef(property.getType())
+                        .code("\n");
             }
         });
         writer.code('\n');

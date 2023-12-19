@@ -2,8 +2,8 @@ package org.babyfish.jimmer.client.java.service;
 
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.java.model.Author;
-import org.babyfish.jimmer.client.meta.common.GetMapping;
-import org.babyfish.jimmer.client.meta.common.PathVariable;
+import org.babyfish.jimmer.client.common.GetMapping;
+import org.babyfish.jimmer.client.common.PathVariable;
 import org.babyfish.jimmer.client.java.model.AuthorFetcher;
 import org.babyfish.jimmer.client.java.model.BookFetcher;
 import org.babyfish.jimmer.client.java.model.BookStoreFetcher;

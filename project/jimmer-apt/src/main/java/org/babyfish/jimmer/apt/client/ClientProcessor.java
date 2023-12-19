@@ -323,7 +323,7 @@ public class ClientProcessor {
         if (fetchBy == null) {
             return;
         }
-        if (!context.isImmutable(entityType)) {
+        if (!context.isEntity(entityType)) {
             throw new MetaException(
                     builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
@@ -604,13 +604,14 @@ public class ClientProcessor {
     @SuppressWarnings("unchecked")
     private void fillDefinition(TypeElement typeElement, boolean immutable) {
 
+        TypeDefinitionImpl<Element> typeDefinition = builder.current();
+        typeDefinition.setDoc(Doc.parse(context.getElements().getDocComment(typeElement)));
+
         if (typeElement.getKind() == ElementKind.ENUM) {
             fillEnumDefinition(typeElement);
             return;
         }
 
-        TypeDefinitionImpl<Element> typeDefinition = builder.current();
-        typeDefinition.setDoc(Doc.parse(context.getElements().getDocComment(typeElement)));
         typeDefinition.setApiIgnore(typeElement.getAnnotation(ApiIgnore.class) != null);
         if (immutable) {
             typeDefinition.setKind(TypeDefinition.Kind.IMMUTABLE);
@@ -729,6 +730,16 @@ public class ClientProcessor {
         TypeDefinitionImpl<Element> definition = builder.current();
         definition.setApiIgnore(typeElement.getAnnotation(ApiIgnore.class) != null);
         definition.setKind(TypeDefinition.Kind.ENUM);
+
+        for (Element constantElement : typeElement.getEnclosedElements()) {
+            if (constantElement.getKind() != ElementKind.ENUM_CONSTANT) {
+                continue;
+            }
+            builder.constant(constantElement, constantElement.getSimpleName().toString(), constant -> {
+                constant.setDoc(Doc.parse(context.getElements().getDocComment(constantElement)));
+                definition.addEnumConstant(constant);
+            });
+        }
     }
 
     public boolean isApiService(Element element) {

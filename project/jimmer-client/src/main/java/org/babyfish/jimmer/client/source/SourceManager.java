@@ -34,7 +34,7 @@ public abstract class SourceManager {
     public Source getRootSource(String name) {
         Source source = rootSourceMap.get(name);
         if (source == null) {
-            throw new IllegalStateException("No source \"" + name + "\"");
+            throw new IllegalArgumentException("No source \"" + name + "\"");
         }
         return source;
     }
@@ -123,6 +123,13 @@ public abstract class SourceManager {
                         "The \"createDynamicTypeSource\" of \"" + getClass().getName() + "\" cannot return null"
                 );
             }
+        } else if (objectType.getKind() == ObjectType.Kind.EMBEDDABLE) {
+            source = createEmbeddableTypeSource(objectType);
+            if (source == null) {
+                throw new IllegalStateException(
+                        "The \"createEmbeddableTypeSource\" of \"" + getClass().getName() + "\" cannot return null"
+                );
+            }
         } else {
             source = createFetchedTypeSource(objectType);
             if (source == null) {
@@ -159,6 +166,8 @@ public abstract class SourceManager {
     protected abstract Source createFetchedTypeSource(ObjectType objectType);
 
     protected abstract Source createDynamicTypeSource(ObjectType objectType);
+
+    protected abstract Source createEmbeddableTypeSource(ObjectType objectType);
 
     protected abstract Source createEnumTypeSource(EnumType enumType);
 

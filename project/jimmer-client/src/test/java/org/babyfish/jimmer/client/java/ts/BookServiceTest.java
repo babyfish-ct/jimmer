@@ -2,8 +2,8 @@ package org.babyfish.jimmer.client.java.ts;
 
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
-import org.babyfish.jimmer.client.java.common.OperationParserImpl;
-import org.babyfish.jimmer.client.java.common.ParameterParserImpl;
+import org.babyfish.jimmer.client.common.OperationParserImpl;
+import org.babyfish.jimmer.client.common.ParameterParserImpl;
 import org.babyfish.jimmer.client.java.service.BookService;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.source.Source;
@@ -27,11 +27,11 @@ public class BookServiceTest {
     @Test
     public void testService() {
         Context ctx = new TypeScriptContext(METADATA);
-        Source serviceSource = ctx.getRootSource("services/" + BookService.class.getSimpleName());
+        Source source = ctx.getRootSource("services/" + BookService.class.getSimpleName());
         StringWriter writer = new StringWriter();
-        ctx.render(serviceSource, writer);
+        ctx.render(source, writer);
         Assertions.assertEquals(
-                "import type {Executor} from '../';\n" +
+                        "import type {Executor} from '../';\n" +
                         "import type {AuthorDto, BookDto} from '../model/dto/';\n" +
                         "import type {Dynamic_Book} from '../model/dynamic/';\n" +
                         "import type {\n" +
@@ -41,6 +41,9 @@ public class BookServiceTest {
                         "    Tuple2\n" +
                         "} from '../model/static/';\n" +
                         "\n" +
+                        "/**\n" +
+                        " * The book service\n" +
+                        " */\n" +
                         "export class BookService {\n" +
                         "    \n" +
                         "    constructor(private executor: Executor) {}\n" +
@@ -52,6 +55,9 @@ public class BookServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
                         "    }\n" +
                         "    \n" +
+                        "    /**\n" +
+                        "     * @return A list of complex book DTOs\n" +
+                        "     */\n" +
                         "    async findBook(options: BookServiceOptions['findBook']): Promise<\n" +
                         "        BookDto['BookService/COMPLEX_FETCHER']\n" +
                         "    > {\n" +
@@ -59,6 +65,9 @@ public class BookServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER']\n" +
                         "    }\n" +
                         "    \n" +
+                        "    /**\n" +
+                        "     * @return A list of complex book DTOs\n" +
+                        "     */\n" +
                         "    async findComplexBooks(options: BookServiceOptions['findComplexBooks']): Promise<\n" +
                         "        ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
                         "    > {\n" +
@@ -103,6 +112,9 @@ public class BookServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
+                        "    /**\n" +
+                        "     * @return A list of complex book DTOs\n" +
+                        "     */\n" +
                         "    async findComplexBooksByArguments(options: BookServiceOptions['findComplexBooksByArguments']): Promise<\n" +
                         "        ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
                         "    > {\n" +
@@ -147,6 +159,9 @@ public class BookServiceTest {
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
                         "    }\n" +
                         "    \n" +
+                        "    /**\n" +
+                        "     * @return A list of simple book DTOs\n" +
+                        "     */\n" +
                         "    async findSimpleBooks(): Promise<\n" +
                         "        ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                         "    > {\n" +
@@ -241,9 +256,9 @@ public class BookServiceTest {
     @Test
     public void testBookDto() {
         Context ctx = new TypeScriptContext(METADATA);
-        Source bookDtoSource = ctx.getRootSource("model/dto/BookDto");
+        Source source = ctx.getRootSource("model/dto/BookDto");
         StringWriter writer = new StringWriter();
-        ctx.render(bookDtoSource, writer);
+        ctx.render(source, writer);
         Assertions.assertEquals(
                 "export type BookDto = {\n" +
                         "    /**\n" +
@@ -312,22 +327,77 @@ public class BookServiceTest {
     @Test
     public void testDynamicBook() {
         Context ctx = new TypeScriptContext(METADATA);
-        Source bookDtoSource = ctx.getRootSource("model/dynamic/Dynamic_Book");
+        Source source = ctx.getRootSource("model/dynamic/Dynamic_Book");
         StringWriter writer = new StringWriter();
-        ctx.render(bookDtoSource, writer);
+        ctx.render(source, writer);
         Assertions.assertEquals(
-                "import type {Dynamic_Author, Dynamic_BookStore} from './';\n" +
+                        "import type {Dynamic_Author, Dynamic_BookStore} from './';\n" +
                         "\n" +
+                        "/**\n" +
+                        " * The book object\n" +
+                        " */\n" +
                         "export interface Dynamic_Book {\n" +
-                        "    id?: string\n" +
-                        "    name?: string\n" +
-                        "    edition?: number\n" +
-                        "    price?: string\n" +
-                        "    store?: Dynamic_BookStore | null | undefined\n" +
-                        "    authors?: ReadonlyArray<Dynamic_Author>\n" +
-                        "    storeId?: string\n" +
-                        "    authorIds?: ReadonlyArray<string>\n" +
+                        "    /**\n" +
+                        "     * The id is long, but the client type is string\n" +
+                        "     * because JS cannot retain large long values\n" +
+                        "     */\n" +
+                        "    readonly id?: string\n" +
+                        "    /**\n" +
+                        "     * The name of this book,\n" +
+                        "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly name?: string\n" +
+                        "    /**\n" +
+                        "     * The edition of this book,\n" +
+                        "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly edition?: number\n" +
+                        "    /**\n" +
+                        "     * The price of this book\n" +
+                        "     */\n" +
+                        "    readonly price?: string\n" +
+                        "    /**\n" +
+                        "     * The many-to-one association from `Book` to `BookStore`\n" +
+                        "     */\n" +
+                        "    readonly store?: Dynamic_BookStore | null | undefined\n" +
+                        "    /**\n" +
+                        "     * The many-to-many association from `Book` to `Author`\n" +
+                        "     */\n" +
+                        "    readonly authors?: ReadonlyArray<Dynamic_Author>\n" +
+                        "    /**\n" +
+                        "     * The id view of `Book.store`\n" +
+                        "     */\n" +
+                        "    readonly storeId?: string\n" +
+                        "    /**\n" +
+                        "     * The id view of `Book.authors`\n" +
+                        "     */\n" +
+                        "    readonly authorIds?: ReadonlyArray<string>\n" +
                         "}\n",
+                writer.toString()
+        );
+    }
+    
+    @Test
+    public void testGender() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("model/enums/Gender");
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "export const Gender_CONSTANTS = [\n" +
+                        "    /**\n" +
+                        "     * BOYS\n" +
+                        "     */\n" +
+                        "    'MALE', \n" +
+                        "    /**\n" +
+                        "     * GIRLS\n" +
+                        "     */\n" +
+                        "    'FEMALE'\n" +
+                        "] as const;\n" +
+                        "/**\n" +
+                        " * The gender, which can only be `MALE` or `FEMALE`\n" +
+                        " */\n" +
+                        "export type Gender = typeof Gender_CONSTANTS;\n",
                 writer.toString()
         );
     }

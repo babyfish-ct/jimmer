@@ -61,12 +61,13 @@ public abstract class Context {
                     sourceManager.getSource(objectType);
                     return;
                 case DYNAMIC:
-                    sourceManager.getSource(objectType);
+                case EMBEDDABLE:
                 case STATIC:
                     sourceManager.getSource(objectType);
                     for (Type argument : objectType.getArguments()) {
                         initSource(argument, handledTypes);
                     }
+                    // No break
                 default:
                     for (Property property : objectType.getProperties().values()) {
                         initSource(property.getType(), handledTypes);

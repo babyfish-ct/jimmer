@@ -141,11 +141,18 @@ public class MetadataBuilder implements Metadata.Builder {
         ServiceImpl service = new ServiceImpl(ctx.javaType(apiService.getTypeName()));
         service.setDoc(apiService.getDoc());
         String baseUri = operationParser.uri(service.getJavaType());
-        List<Operation> operations = new ArrayList<>(apiService.getOperations().size());
+        Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {
             ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameterTypes());
             if (apiOperation != null) {
                 OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx);
+                operationMap.put(apiOperation, operation);
+            }
+        }
+        List<Operation> operations = new ArrayList<>(apiService.getOperations().size());
+        for (ApiOperation apiOperation : apiService.getOperations()) {
+            Operation operation = operationMap.get(apiOperation);
+            if (operation != null) {
                 operations.add(operation);
             }
         }

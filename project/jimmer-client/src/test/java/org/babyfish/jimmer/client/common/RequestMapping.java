@@ -1,4 +1,4 @@
-package org.babyfish.jimmer.client.meta.common;
+package org.babyfish.jimmer.client.common;
 
 import org.babyfish.jimmer.client.runtime.Operation;
 

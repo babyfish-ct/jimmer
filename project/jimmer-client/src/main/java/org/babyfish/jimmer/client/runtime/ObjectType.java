@@ -39,6 +39,7 @@ public interface ObjectType extends Type {
     enum Kind {
         FETCHED,
         DYNAMIC,
+        EMBEDDABLE,
         STATIC,
         ERROR
     }

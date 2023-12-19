@@ -2,19 +2,14 @@ package org.babyfish.jimmer.client.java.ts;
 
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
-import org.babyfish.jimmer.client.java.common.OperationParserImpl;
-import org.babyfish.jimmer.client.java.common.ParameterParserImpl;
+import org.babyfish.jimmer.client.common.OperationParserImpl;
+import org.babyfish.jimmer.client.common.ParameterParserImpl;
 import org.babyfish.jimmer.client.runtime.Metadata;
-import org.babyfish.jimmer.client.source.Source;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class IndexTest {
 
@@ -23,6 +18,7 @@ public class IndexTest {
                     .newBuilder()
                     .setOperationParser(new OperationParserImpl())
                     .setParameterParameter(new ParameterParserImpl())
+                    .setGroups(Arrays.asList("bookService", "treeService"))
                     .setGenericSupported(true)
                     .build();
 
@@ -95,11 +91,5 @@ public class IndexTest {
                         "export type {Tuple2} from './Tuple2';\n",
                 writer.toString()
         );
-    }
-
-    @Test
-    public void tmp() throws IOException {
-        Context ctx = new TypeScriptContext(METADATA);
-        ctx.renderAll(Files.newOutputStream(Paths.get("/Users/chentao/tmp/new-ts.zip")));
     }
 }

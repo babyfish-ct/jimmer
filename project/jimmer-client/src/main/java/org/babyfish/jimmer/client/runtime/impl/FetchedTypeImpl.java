@@ -129,7 +129,7 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
 
     @Override
     public Kind getKind() {
-        return fetchByInfo != null ? Kind.FETCHED : Kind.DYNAMIC;
+        return Kind.FETCHED;
     }
 
     @Override

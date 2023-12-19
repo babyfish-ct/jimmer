@@ -175,7 +175,9 @@ public abstract class CodeWriter {
         partSet.addAll(Arrays.asList(parts));
 
         code("/**\n");
-        code(" * ").code(doc.getValue().replace("\n", "\n * ")).code('\n');
+        if (doc.getValue() != null) {
+            code(" * ").code(doc.getValue().replace("\n", "\n * ")).code('\n');
+        }
         if (partSet.contains(DocPart.PARAM)) {
             for (Map.Entry<String, String> e : doc.getParameterValueMap().entrySet()) {
                 code(" * @param ").code(e.getKey()).code(' ').code(e.getValue().replace("\n", "\n * ")).code('\n');
