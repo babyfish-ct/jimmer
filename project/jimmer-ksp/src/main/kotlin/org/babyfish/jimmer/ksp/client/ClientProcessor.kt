@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.client
 
+import com.fasterxml.jackson.annotation.JsonValue
 import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.*
@@ -11,8 +12,6 @@ import org.babyfish.jimmer.client.meta.*
 import org.babyfish.jimmer.client.meta.impl.*
 import org.babyfish.jimmer.error.CodeBasedException
 import org.babyfish.jimmer.error.CodeBasedRuntimeException
-import org.babyfish.jimmer.error.ErrorField
-import org.babyfish.jimmer.error.ErrorFields
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.internal.ClientException
 import org.babyfish.jimmer.ksp.*
@@ -20,8 +19,9 @@ import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.io.OutputStreamWriter
-import java.lang.IllegalStateException
+import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets
+import javax.lang.model.element.Element
 
 class ClientProcessor(
     private val ctx: Context,
@@ -48,6 +48,8 @@ class ClientProcessor(
             )
         }
     }
+
+    private val jsonValueTypeNameStack = mutableSetOf<TypeName>()
 
     fun process() {
         for (file in ctx.resolver.getAllFiles()) {
@@ -219,10 +221,19 @@ class ClientProcessor(
     }
 
     private fun SchemaBuilder<KSDeclaration>.fillType(type: KSTypeReference) {
-        val resolvedType = type.resolve()
-        determineNullity(resolvedType)
-        determineFetchBy(type)
-        determineTypeNameAndArguments(resolvedType)
+        val typeRef = current<TypeRefImpl<KSDeclaration>>()
+        try {
+            val resolvedType = type.resolve()
+            determineNullity(resolvedType)
+            determineFetchBy(type)
+            determineTypeNameAndArguments(resolvedType)
+            typeRef.removeOptional()
+        } catch (ex: JsonValueTypeChangeException) {
+            typeRef.replaceBy(
+                ex.typeRef,
+                typeRef.isNullable || ex.typeRef.isNullable
+            )
+        }
     }
 
     private fun SchemaBuilder<KSDeclaration>.determineNullity(type: KSType) {
@@ -332,6 +343,9 @@ class ClientProcessor(
             return
         }
         typeRef.typeName = type.realDeclaration.toTypeName()
+        jsonValueTypeRef(typeRef.typeName)?.let {
+            throw JsonValueTypeChangeException(it)
+        }
         if (typeRef.typeName == TypeName.OBJECT) {
             throw UnambiguousTypeException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
@@ -357,6 +371,38 @@ class ClientProcessor(
                 }
             }
         }
+    }
+
+    private fun SchemaBuilder<KSDeclaration>.jsonValueTypeRef(typeName: TypeName): TypeRefImpl<KSDeclaration>? {
+        val declaration = ctx.resolver.getClassDeclarationByName(typeName.toString()) ?: return null
+        val jsonValueFun = declaration
+            .getDeclaredFunctions()
+            .firstOrNull {
+                it.annotation(JsonValue::class) !== null &&
+                    it.parameters.isEmpty() &&
+                    it.returnType?.realDeclaration?.qualifiedName?.asString() != "kotlin.Unit"
+            } ?: return null
+        if (!jsonValueTypeNameStack.add(typeName)) {
+            throw MetaException(
+                ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
+                ancestorSource(),
+                "Cannot resolve \"" +
+                    JsonValue::class.java.getName() +
+                    "\" because of dead recursion: " +
+                    jsonValueTypeNameStack
+            )
+        }
+        try {
+            var result: TypeRefImpl<KSDeclaration>? = null
+            typeRef {
+                fillType(jsonValueFun.returnType!!)
+                result = it
+            }
+            return result
+        } finally {
+            jsonValueTypeNameStack.remove(typeName);
+        }
+        return null
     }
 
     private fun SchemaBuilder<KSDeclaration>.fillDefinition(declaration: KSClassDeclaration, immutable: Boolean) {
@@ -509,6 +555,10 @@ class ClientProcessor(
         cause: Throwable? = null
     ) : MetaException(declaration, childDeclaration, reason, cause)
 
+    private class JsonValueTypeChangeException(
+        val typeRef: TypeRefImpl<KSDeclaration>
+    ): RuntimeException()
+
     companion object {
 
         fun KSDeclaration.toTypeName(): TypeName {
@@ -539,6 +589,13 @@ class ClientProcessor(
                     it
                 }
             }
+
+        private fun TypeRefImpl<KSDeclaration>.removeOptional() {
+            if (typeName == TypeName.OPTIONAL) {
+                val target = arguments[0] as TypeRefImpl<KSDeclaration>
+                replaceBy(target, null)
+            }
+        }
 
         private val CODE_BASED_EXCEPTION_NAME = TypeName.of(
             CodeBasedException::class.java

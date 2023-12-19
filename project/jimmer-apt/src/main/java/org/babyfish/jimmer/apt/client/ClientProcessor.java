@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.client;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
@@ -51,6 +52,8 @@ public class ClientProcessor {
     private final boolean explicitApi;
 
     private final SchemaBuilder<Element> builder;
+
+    private final Set<TypeName> jsonValueTypeNameStack = new HashSet<>();
 
     public ClientProcessor(Context context, Elements elements, Filer filer, boolean explicitApi, Collection<String> delayedClientTypeNames) {
         this.context = context;
@@ -305,11 +308,15 @@ public class ClientProcessor {
 
     private void fillType(TypeMirror type) {
         if (type.getKind() != TypeKind.VOID) {
-            determineTypeAndArguments(type);
-            determineNullity(type);
-            determineFetchBy(type);
             TypeRefImpl<Element> typeRef = builder.current();
-            removeOptional(typeRef);
+            try {
+                determineTypeAndArguments(type);
+                determineNullity(type);
+                determineFetchBy(type);
+                removeOptional(typeRef);
+            } catch (JsonValueTypeChangeException ex) {
+                typeRef.replaceBy(ex.typeRef, typeRef.isNullable() || ex.typeRef.isNullable());
+            }
         }
     }
 
@@ -492,7 +499,7 @@ public class ClientProcessor {
                 handleWildcardType((WildcardType) type);
                 break;
             case INTERSECTION:
-                handleIntersectionTpe((IntersectionType) type);
+                handleIntersectionType((IntersectionType) type);
                 break;
             case ARRAY:
                 handleArrayType((ArrayType) type);
@@ -526,7 +533,7 @@ public class ClientProcessor {
         fillType(typeMirror);
     }
 
-    private void handleIntersectionTpe(IntersectionType intersectionType) {
+    private void handleIntersectionType(IntersectionType intersectionType) {
         fillType(intersectionType.getBounds().get(0));
     }
 
@@ -591,14 +598,57 @@ public class ClientProcessor {
                 typeName = TypeName.DOUBLE;
                 break;
         }
-        typeRef.setTypeName(typeName);
 
+        TypeRefImpl<Element> jsonValueTypeRef = jsonValueTypeRef(typeName);
+        if (jsonValueTypeRef != null) {
+            throw new JsonValueTypeChangeException(jsonValueTypeRef);
+        }
+
+        typeRef.setTypeName(typeName);
         for (TypeMirror typeMirror : declaredType.getTypeArguments()) {
             builder.typeRef(argument -> {
                 fillType(typeMirror);
                 typeRef.addArgument(argument);
             });
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private TypeRefImpl<Element> jsonValueTypeRef(TypeName typeName) {
+        TypeElement typeElement = context.getElements().getTypeElement(typeName.toString());
+        for (Element element : typeElement.getEnclosedElements()) {
+            if (element.getAnnotation(JsonValue.class) == null) {
+                continue;
+            }
+            if (element.getKind() != ElementKind.METHOD || element.getModifiers().contains(Modifier.STATIC)) {
+                continue;
+            }
+            ExecutableElement methodElement = (ExecutableElement) element;
+            if (!methodElement.getParameters().isEmpty() || methodElement.getReturnType().getKind() == TypeKind.VOID) {
+                continue;
+            }
+            if (!jsonValueTypeNameStack.add(typeName)) {
+                throw new MetaException(
+                        builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
+                        builder.ancestorSource(),
+                        "Cannot resolve \"" +
+                                JsonValue.class.getName() +
+                                "\" because of dead recursion: " +
+                                jsonValueTypeNameStack
+                );
+            }
+            try {
+                TypeRefImpl<Element>[] jsonValueTypRef = (TypeRefImpl<Element>[]) new TypeRefImpl[1];
+                builder.typeRef(type -> {
+                    fillType(methodElement.getReturnType());
+                    jsonValueTypRef[0] = type;
+                });
+                return jsonValueTypRef[0];
+            } finally {
+                jsonValueTypeNameStack.remove(typeName);
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -822,14 +872,10 @@ public class ClientProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private static void removeOptional(TypeRefImpl<?> typeRef) {
+    private static void removeOptional(TypeRefImpl<Element> typeRef) {
         if (typeRef.getTypeName().equals(TypeName.OPTIONAL)) {
             TypeRefImpl<Element> target = (TypeRefImpl<Element>) typeRef.getArguments().get(0);
-            typeRef.setTypeName(target.getTypeName());
-            typeRef.setFetchBy(target.getFetchBy());
-            typeRef.setFetcherOwner(target.getFetcherOwner());
-            typeRef.setFetcherDoc(target.getFetcherDoc());
-            target.setNullable(true);
+            typeRef.replaceBy(target, true);
         }
     }
 
@@ -837,6 +883,15 @@ public class ClientProcessor {
 
         public UnambiguousTypeException(Element element, Element childElement, String reason) {
             super(element, childElement, reason);
+        }
+    }
+
+    private static class JsonValueTypeChangeException extends RuntimeException {
+
+        final TypeRefImpl<Element> typeRef;
+
+        private JsonValueTypeChangeException(TypeRefImpl<Element> typeRef) {
+            this.typeRef = typeRef;
         }
     }
 }

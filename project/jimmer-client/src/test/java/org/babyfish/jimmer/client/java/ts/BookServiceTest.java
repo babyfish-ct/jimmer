@@ -59,10 +59,10 @@ public class BookServiceTest {
                         "     * @return A list of complex book DTOs\n" +
                         "     */\n" +
                         "    async findBook(options: BookServiceOptions['findBook']): Promise<\n" +
-                        "        BookDto['BookService/COMPLEX_FETCHER']\n" +
+                        "        BookDto['BookService/COMPLEX_FETCHER'] | null | undefined\n" +
                         "    > {\n" +
                         "        let _uri = '/';\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER']\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER'] | null | undefined\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -290,6 +290,7 @@ public class BookServiceTest {
                         "        readonly store?: {\n" +
                         "            readonly id: string;\n" +
                         "            readonly name: string;\n" +
+                        "            readonly level: number;\n" +
                         "        } | null | undefined;\n" +
                         "        /**\n" +
                         "         * The many-to-many association from `Book` to `Author`\n" +

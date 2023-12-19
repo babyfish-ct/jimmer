@@ -207,6 +207,7 @@ class KBookServiceTest {
                 "            readonly id: number;\n" +
                 "            readonly name?: string | null | undefined;\n" +
                 "            readonly coordinate: KCoordinate;\n" +
+                "            readonly level: number;\n" +
                 "        } | null | undefined;\n" +
                 "        /**\n" +
                 "         * All authors involved in writing the work\n" +

@@ -35,7 +35,7 @@ public interface BookService {
      */
     Fetcher<Book> COMPLEX_FETCHER = BookFetcher.$
             .allScalarFields()
-            .store(BookStoreFetcher.$.name())
+            .store(BookStoreFetcher.$.name().level())
             .authors(
                     AuthorFetcher.$.allScalarFields().gender(false)
             );

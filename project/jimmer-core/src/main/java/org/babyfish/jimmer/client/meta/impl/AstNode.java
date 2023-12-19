@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public abstract class AstNode<S> {
 
-    private S source;
+    protected S source;
 
     AstNode(S source) {
         this.source = source;

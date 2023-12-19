@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.java.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.babyfish.jimmer.jackson.JsonConverter;
 import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.Entity;
@@ -17,6 +18,27 @@ public interface BookStore {
 
     String name();
 
+    Level level();
+
     @OneToMany(mappedBy = "store")
     List<Book> books();
+
+    enum Level {
+        LOW,
+        MIDDLE,
+        HIGH;
+
+        @JsonValue
+        public int toInt() {
+            switch (this) {
+                case LOW:
+                    return 10;
+                case MIDDLE:
+                    return 20;
+                case HIGH:
+                    return 30;
+            }
+            throw new AssertionError("Internal BUG");
+        }
+    }
 }

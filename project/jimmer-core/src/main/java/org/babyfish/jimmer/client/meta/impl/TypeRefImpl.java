@@ -94,6 +94,15 @@ public class TypeRefImpl<S> extends AstNode<S> implements TypeRef {
         this.fetcherDoc = fetcherDoc;
     }
 
+    public void replaceBy(TypeRefImpl<S> typeRef, Boolean isNullable) {
+        source = typeRef.source;
+        typeName = typeRef.typeName;
+        nullable = isNullable != null ? isNullable : typeRef.nullable;
+        fetchBy = typeRef.fetchBy;
+        fetchOwner = typeRef.fetchOwner;
+        fetcherDoc = typeRef.fetcherDoc;
+    }
+
     @Override
     public void accept(AstNodeVisitor<S> visitor) {
         visitor.visitAstNode(this);
