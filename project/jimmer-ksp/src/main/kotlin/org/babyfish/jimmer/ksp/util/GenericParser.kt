@@ -24,11 +24,11 @@ class GenericParser(
         }
     }
 
-    fun parse(): List<TypeName> {
+    fun parse(): Result {
         try {
             parse(declaration.asType(emptyList()))
         } catch (ex: Finished) {
-            return ex.arguments
+            return ex.result
         }
         throw MetaException(
             declaration,
@@ -46,9 +46,7 @@ class GenericParser(
                     "it does not specify type argument for \"$superName\""
                 )
             }
-            throw Finished(
-                type.arguments.map { resolve(it) }
-            )
+            throw Finished(Result(type.arguments, type.arguments.map { resolve(it) }))
         } else {
             if (type.arguments.isNotEmpty()) {
                 val parameters = type.declaration.typeParameters
@@ -110,7 +108,12 @@ class GenericParser(
                 resolve(arg.type!!.resolve())
         }
 
+    data class Result(
+        val arguments: List<KSTypeArgument>,
+        val argumentTypeNames: List<TypeName>
+    )
+
     private class Finished(
-        val arguments: List<TypeName>
+        val result: Result
     ) : Exception()
 }

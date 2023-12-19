@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.model.hr;
 
 import org.babyfish.jimmer.jackson.JsonConverter;
-import org.babyfish.jimmer.jackson.LongConverter;
+import org.babyfish.jimmer.jackson.LongToStringConverter;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,7 +12,7 @@ import java.util.List;
 public interface Department {
 
     @Id
-    @JsonConverter(LongConverter.class)
+    @JsonConverter(LongToStringConverter.class)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     long id();
 

@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.apt.dto;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
@@ -466,7 +467,7 @@ public class DtoGenerator {
                 .builder(typeName, prop.getName())
                 .addModifiers(Modifier.PRIVATE);
         for (AnnotationMirror annotationMirror : prop.getBaseProp().getAnnotations()) {
-            if (isCopyableAnnotation(annotationMirror, false) &&
+            if (isCopyableAnnotation(annotationMirror) &&
                 prop.getAnnotations().stream().noneMatch(
                         it -> it.getQualifiedName().equals(Annotations.qualifiedName(annotationMirror))
                 )
@@ -1277,7 +1278,7 @@ public class DtoGenerator {
         if ("id".equals(funcName)) {
             metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
             if (metadata != null && baseProp.isList() && !dtoType.getModifiers().contains(DtoTypeModifier.SPECIFICATION)) {
-                metadata = metadata.toListMetadata();
+                metadata = metadata.toListMetadata(baseProp.context());
             }
             return metadata;
         }
@@ -1287,19 +1288,19 @@ public class DtoGenerator {
         if ("associatedIdIn".equals(funcName) || "associatedIdNotIn".equals(funcName)) {
             metadata = baseProp.getTargetType().getIdProp().getConverterMetadata();
             if (metadata != null) {
-                return metadata.toListMetadata();
+                return metadata.toListMetadata(baseProp.context());
             }
         }
         if (baseProp.getIdViewBaseProp() != null) {
             metadata = baseProp.getIdViewBaseProp().getTargetType().getIdProp().getConverterMetadata();
             if (metadata != null) {
-                return baseProp.isList() ? metadata.toListMetadata() : metadata;
+                return baseProp.isList() ? metadata.toListMetadata(baseProp.context()) : metadata;
             }
         }
         return null;
     }
 
-    private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror, boolean forMethod) {
+    private static boolean isCopyableAnnotation(AnnotationMirror annotationMirror) {
         Target target = annotationMirror.getAnnotationType().asElement().getAnnotation(Target.class);
         if (target != null) {
             boolean acceptField = Arrays.stream(target.value()).anyMatch(it -> it == ElementType.FIELD);

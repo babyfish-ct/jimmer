@@ -5,6 +5,7 @@ import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Annotations;
+import org.babyfish.jimmer.apt.util.ConverterMetadata;
 import org.babyfish.jimmer.apt.util.GenericParser;
 import org.babyfish.jimmer.client.*;
 import org.babyfish.jimmer.client.meta.*;
@@ -28,7 +29,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ClientProcessor {
 
@@ -383,7 +383,7 @@ public class ClientProcessor {
                         "fetcher",
                         element,
                         "org.babyfish.jimmer.sql.fetcher.Fetcher"
-                ).parse().get(0).toString();
+                ).parse().argumentTypeNames.get(0).toString();
             } else {
                 if (!element.getQualifiedName().toString().equals("org.babyfish.jimmer.sql.fetcher.Fetcher")) {
                     throw new MetaException(
@@ -601,6 +601,7 @@ public class ClientProcessor {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void fillDefinition(TypeElement typeElement, boolean immutable) {
 
         if (typeElement.getKind() == ElementKind.ENUM) {
@@ -649,10 +650,20 @@ public class ClientProcessor {
                 if (isClientException && (name.equals("code") || name.equals("fields"))) {
                     continue;
                 }
+                ConverterMetadata metadata;
+                if (immutable) {
+                    metadata = context
+                            .getImmutableType(typeElement)
+                            .getProps()
+                            .get(name)
+                            .getConverterMetadata();
+                } else {
+                    metadata = null;
+                }
                 builder.prop(executableElement, name, prop -> {
                     try {
                         builder.typeRef(type -> {
-                            fillType(executableElement.getReturnType());
+                            fillType(metadata != null ? metadata.getTargetType() : executableElement.getReturnType());
                             prop.setType(type);
                         });
                         prop.setDoc(Doc.parse(elements.getDocComment(executableElement)));
@@ -666,7 +677,7 @@ public class ClientProcessor {
                 if (fieldElement.getKind() != ElementKind.FIELD || fieldElement.getModifiers().contains(Modifier.STATIC)) {
                     continue;
                 }
-                PropImpl prop = (PropImpl) typeDefinition.getPropMap().get(fieldElement.getSimpleName().toString());
+                PropImpl<Element> prop = (PropImpl<Element>) typeDefinition.getPropMap().get(fieldElement.getSimpleName().toString());
                 if (prop == null || prop.getDoc() != null) {
                     continue;
                 }

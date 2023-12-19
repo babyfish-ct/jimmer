@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.client.java.model;
 
 import org.babyfish.jimmer.jackson.JsonConverter;
-import org.babyfish.jimmer.jackson.LongConverter;
-import org.babyfish.jimmer.jackson.LongListConverter;
+import org.babyfish.jimmer.jackson.LongToStringConverter;
+import org.babyfish.jimmer.jackson.LongListToStringListConverter;
 import org.babyfish.jimmer.sql.*;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +19,7 @@ public interface Book {
      * The id is long, but the client type is string
      * because JS cannot retain large long values
      */
-    @JsonConverter(LongConverter.class)
+    @JsonConverter(LongToStringConverter.class)
     @Id
     long id();
 
@@ -56,14 +56,14 @@ public interface Book {
     /**
      * The id view of `Book.store`
      */
-    @JsonConverter(LongConverter.class)
+    @JsonConverter(LongToStringConverter.class)
     @IdView
     Long storeId();
 
     /**
      * The id view of `Book.authors`
      */
-    @JsonConverter(LongListConverter.class)
+    @JsonConverter(LongListToStringListConverter.class)
     @IdView("authors")
     List<Long> authorIds();
 }

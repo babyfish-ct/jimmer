@@ -32,7 +32,12 @@ public class IndexTest {
         StringWriter writer = new StringWriter();
         ctx.renderIndex("", writer);
         Assertions.assertEquals(
-                "",
+                "export {Api} from './Api';\n" +
+                        "export type {AllErrors, ApiErrors} from './ApiErrors';\n" +
+                        "export type {ElementOf} from './ElementOf';\n" +
+                        "export type {Executor} from './Executor';\n" +
+                        "export type {RequestOf} from './RequestOf';\n" +
+                        "export type {ResponseOf} from './ResponseOf';\n",
                 writer.toString()
         );
     }
@@ -43,7 +48,8 @@ public class IndexTest {
         StringWriter writer = new StringWriter();
         ctx.renderIndex("services", writer);
         Assertions.assertEquals(
-                "",
+                "export {BookService} from './BookService';\n" +
+                        "export {TreeService} from './TreeService';\n",
                 writer.toString()
         );
     }
@@ -54,7 +60,9 @@ public class IndexTest {
         StringWriter writer = new StringWriter();
         ctx.renderIndex("model/dto", writer);
         Assertions.assertEquals(
-                "",
+                "export type {AuthorDto} from './AuthorDto';\n" +
+                        "export type {BookDto} from './BookDto';\n" +
+                        "export type {TreeNodeDto} from './TreeNodeDto';\n",
                 writer.toString()
         );
     }
@@ -65,7 +73,9 @@ public class IndexTest {
         StringWriter writer = new StringWriter();
         ctx.renderIndex("model/dynamic", writer);
         Assertions.assertEquals(
-                "",
+                "export type {Dynamic_Author} from './Dynamic_Author';\n" +
+                        "export type {Dynamic_Book} from './Dynamic_Book';\n" +
+                        "export type {Dynamic_BookStore} from './Dynamic_BookStore';\n",
                 writer.toString()
         );
     }
@@ -76,7 +86,13 @@ public class IndexTest {
         StringWriter writer = new StringWriter();
         ctx.renderIndex("model/static", writer);
         Assertions.assertEquals(
-                "",
+                "export type {BookInput} from './BookInput';\n" +
+                        "export type {ExportedSavePath} from './ExportedSavePath';\n" +
+                        "export type {ExportedSavePath_Node} from './ExportedSavePath_Node';\n" +
+                        "export type {FindBookArguments} from './FindBookArguments';\n" +
+                        "export type {Page} from './Page';\n" +
+                        "export type {Tree} from './Tree';\n" +
+                        "export type {Tuple2} from './Tuple2';\n",
                 writer.toString()
         );
     }

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.jackson;
 
-public class LongConverter implements Converter<Long, String> {
+public class LongToStringConverter implements Converter<Long, String> {
 
     @Override
     public String output(Long value) {

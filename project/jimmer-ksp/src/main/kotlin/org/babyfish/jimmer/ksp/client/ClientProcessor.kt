@@ -49,7 +49,6 @@ class ClientProcessor(
     }
 
     fun process() {
-
         for (file in ctx.resolver.getAllFiles()) {
             for (declaration in file.declarations) {
                 builder.handleService(declaration)
@@ -386,10 +385,26 @@ class ClientProcessor(
                 if (isClientException && (propDeclaration.name.let { it == "code" || it == "fields" })) {
                     continue
                 }
+                val ksTypeReference = declaration
+                    .takeIf { immutable }
+                    ?.let {
+                        ctx.typeOf(declaration)
+                            .properties[propDeclaration.name]!!
+                            .converterMetadata
+                            ?.targetType
+                    }
+                    ?.let {
+                        val resolver = ctx.resolver
+                        when (it.variance) {
+                            Variance.STAR -> resolver.createKSTypeReferenceFromKSType(resolver.builtIns.anyType.makeNullable())
+                            Variance.CONTRAVARIANT -> resolver.createKSTypeReferenceFromKSType(resolver.builtIns.anyType)
+                            else -> it.type
+                        }
+                    } ?: propDeclaration.type
                 prop(propDeclaration, propDeclaration.name) { prop ->
                     try {
                         typeRef { type ->
-                            fillType(propDeclaration.type)
+                            fillType(ksTypeReference)
                             prop.setType(type)
                         }
                         definition.addProp(prop)

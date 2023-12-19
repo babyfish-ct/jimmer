@@ -2,20 +2,20 @@ package org.babyfish.jimmer.model;
 
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.jackson.JsonConverter;
-import org.babyfish.jimmer.jackson.LongConverter;
-import org.babyfish.jimmer.jackson.LongListConverter;
+import org.babyfish.jimmer.jackson.LongToStringConverter;
+import org.babyfish.jimmer.jackson.LongListToStringListConverter;
 
 import java.util.List;
 
 @Immutable
 public interface LongData {
 
-    @JsonConverter(LongConverter.class)
+    @JsonConverter(LongToStringConverter.class)
     long notNullValue();
 
-    @JsonConverter(LongConverter.class)
+    @JsonConverter(LongToStringConverter.class)
     Long nullableValue();
 
-    @JsonConverter(LongListConverter.class)
+    @JsonConverter(LongListToStringListConverter.class)
     List<Long> values();
 }

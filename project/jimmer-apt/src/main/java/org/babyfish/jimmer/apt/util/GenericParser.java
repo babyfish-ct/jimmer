@@ -30,11 +30,11 @@ public class GenericParser {
         this.superName = superName;
     }
 
-    public List<TypeName> parse() {
+    public Result parse() {
         try {
             parse((DeclaredType) element.asType());
         } catch (Finished ex) {
-            return ex.arguments;
+            return ex.result;
         }
         throw new MetaException(
                 element,
@@ -61,7 +61,10 @@ public class GenericParser {
                 );
             }
             throw new Finished(
-                    arguments.stream().map(this::resolve).collect(Collectors.toList())
+                    new Result(
+                            arguments,
+                            arguments.stream().map(this::resolve).collect(Collectors.toList())
+                    )
             );
         } else {
             if (!arguments.isEmpty()) {
@@ -134,12 +137,24 @@ public class GenericParser {
         return resolve(type);
     }
 
+    public static class Result {
+
+        public final List<? extends TypeMirror> arguments;
+
+        public final List<TypeName> argumentTypeNames;
+
+        public Result(List<? extends TypeMirror> arguments, List<TypeName> argumentTypeNames) {
+            this.arguments = arguments;
+            this.argumentTypeNames = argumentTypeNames;
+        }
+    }
+
     private static class Finished extends Exception {
 
-        final List<TypeName> arguments;
+        final Result result;
 
-        private Finished(List<TypeName> arguments) {
-            this.arguments = arguments;
+        private Finished(Result result) {
+            this.result = result;
         }
     }
 }

@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.jackson;
 
 /**
- * @see LongConverter
- * @see LongListConverter
+ * @see LongToStringConverter
+ * @see LongListToStringListConverter
  */
 public interface Converter<S, T> {
 

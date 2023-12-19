@@ -27,7 +27,7 @@ import org.babyfish.jimmer.sql.*
 import kotlin.reflect.KClass
 
 class ImmutableProp(
-    private val ctx: Context,
+    val ctx: Context,
     val declaringType: ImmutableType,
     val id: Int,
     val propDeclaration: KSPropertyDeclaration
@@ -357,7 +357,7 @@ class ImmutableProp(
                 null
             } else {
                 val declaration = jsonConverter.getClassArgument(JsonConverter::value)!!
-                converterMetadataOf(declaration).also {
+                ctx.resolver.converterMetadataOf(declaration).also {
                     if (it.sourceTypeName != typeName(overrideNullable = false)) {
                         throw MetaException(
                             propDeclaration,

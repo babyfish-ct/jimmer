@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.jackson;
 
-import org.babyfish.jimmer.jackson.Converter;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class LongListConverter implements Converter<List<Long>, List<String>> {
+public class LongListToStringListConverter implements Converter<List<Long>, List<String>> {
 
     @Override
     public List<String> output(List<Long> value) {

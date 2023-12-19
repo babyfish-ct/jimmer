@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.kt.model.hr
 
 import org.babyfish.jimmer.jackson.JsonConverter
-import org.babyfish.jimmer.jackson.LongConverter
+import org.babyfish.jimmer.jackson.LongToStringConverter
 import org.babyfish.jimmer.sql.*
 import java.time.LocalDateTime
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 interface Department {
 
     @Id
-    @JsonConverter(LongConverter::class)
+    @JsonConverter(LongToStringConverter::class)
     val id: Long
 
     val name: String

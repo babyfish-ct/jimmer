@@ -19,7 +19,7 @@ abstract class AbstractSource implements Source {
     public Source subSource(String name, Supplier<Render> renderCreator) {
         Map<String, Source> subSourceMap = this.subSourceMap;
         if (subSourceMap == null) {
-            this.subSourceMap = subSourceMap = new LinkedHashMap<>();
+            this.subSourceMap = subSourceMap = new TreeMap<>();
         }
         Source subSource = subSourceMap.get(name);
         if (subSource == null) {

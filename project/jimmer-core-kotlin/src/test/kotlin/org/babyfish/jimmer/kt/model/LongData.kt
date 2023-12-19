@@ -2,18 +2,18 @@ package org.babyfish.jimmer.kt.model
 
 import org.babyfish.jimmer.Immutable
 import org.babyfish.jimmer.jackson.JsonConverter
-import org.babyfish.jimmer.jackson.LongConverter
-import org.babyfish.jimmer.jackson.LongListConverter
+import org.babyfish.jimmer.jackson.LongToStringConverter
+import org.babyfish.jimmer.jackson.LongListToStringListConverter
 
 @Immutable
 interface LongData {
 
-    @JsonConverter(LongConverter::class)
+    @JsonConverter(LongToStringConverter::class)
     val nonNullValue: Long
 
-    @JsonConverter(LongConverter::class)
+    @JsonConverter(LongToStringConverter::class)
     val nullableValue: Long?
 
-    @JsonConverter(LongListConverter::class)
+    @JsonConverter(LongListToStringListConverter::class)
     val values: List<Long>
 }

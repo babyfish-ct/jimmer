@@ -1,18 +1,20 @@
 package org.babyfish.jimmer.apt.util;
 
 import com.squareup.javapoet.*;
+import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.MetaException;
 import org.babyfish.jimmer.apt.immutable.generator.Constants;
 import org.babyfish.jimmer.jackson.Converter;
 
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.type.*;
-import java.util.HashMap;
+import javax.lang.model.type.TypeMirror;
 import java.util.List;
-import java.util.Map;
 
 public class ConverterMetadata {
+
+    private final TypeMirror sourceType;
+
+    private final TypeMirror targetType;
 
     private final TypeName sourceTypeName;
 
@@ -25,13 +27,28 @@ public class ConverterMetadata {
                     "It should not have type parameters"
             );
         }
-        List<TypeName> arguments = new GenericParser("converter", converterElement, Converter.class.getName()).parse();
-        return new ConverterMetadata(arguments.get(0), arguments.get(1));
+        GenericParser.Result result = new GenericParser("converter", converterElement, Converter.class.getName()).parse();
+        return new ConverterMetadata(
+                result.arguments.get(0),
+                result.arguments.get(1),
+                result.argumentTypeNames.get(0),
+                result.argumentTypeNames.get(1)
+        );
     }
 
-    public ConverterMetadata(TypeName sourceTypeName, TypeName targetTypeName) {
+    public ConverterMetadata(TypeMirror sourceType, TypeMirror targetType, TypeName sourceTypeName, TypeName targetTypeName) {
+        this.sourceType = sourceType;
+        this.targetType = targetType;
         this.sourceTypeName = sourceTypeName;
         this.targetTypeName = targetTypeName;
+    }
+
+    public TypeMirror getSourceType() {
+        return sourceType;
+    }
+
+    public TypeMirror getTargetType() {
+        return targetType;
     }
 
     public TypeName getSourceTypeName() {
@@ -42,8 +59,20 @@ public class ConverterMetadata {
         return targetTypeName;
     }
 
-    public ConverterMetadata toListMetadata() {
-        return new ListMetadata();
+    public ConverterMetadata toListMetadata(Context ctx) {
+        TypeElement listElement = ctx.getElements().getTypeElement(List.class.getName());
+        return new ListMetadata(
+                ctx.getTypes().getDeclaredType(listElement, sourceType),
+                ctx.getTypes().getDeclaredType(listElement, targetType),
+                ParameterizedTypeName.get(
+                        Constants.LIST_CLASS_NAME,
+                        sourceTypeName
+                ),
+                ParameterizedTypeName.get(
+                        Constants.LIST_CLASS_NAME,
+                        targetTypeName
+                )
+        );
     }
 
     @Override
@@ -72,23 +101,14 @@ public class ConverterMetadata {
                 '}';
     }
 
-    private class ListMetadata extends ConverterMetadata {
+    private static class ListMetadata extends ConverterMetadata {
 
-        public ListMetadata() {
-            super(
-                    ParameterizedTypeName.get(
-                            Constants.LIST_CLASS_NAME,
-                            sourceTypeName
-                    ),
-                    ParameterizedTypeName.get(
-                            Constants.LIST_CLASS_NAME,
-                            targetTypeName
-                    )
-            );
+        public ListMetadata(TypeMirror sourceType, TypeMirror targetType, TypeName sourceTypeName, TypeName targetTypeName) {
+            super(sourceType, targetType, sourceTypeName, targetTypeName);
         }
 
         @Override
-        public ConverterMetadata toListMetadata() {
+        public ConverterMetadata toListMetadata(Context context) {
             throw new UnsupportedOperationException("The current object is already list metadata");
         }
     }

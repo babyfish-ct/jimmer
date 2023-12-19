@@ -140,14 +140,17 @@ public abstract class Context {
         boolean isIndexRequired = isIndexRequired();
         for (Map.Entry<List<String>, List<Source>> e : sourceMultiMap.entrySet()) {
             String dir = String.join("/", e.getKey());
+            if (!dir.isEmpty()) {
+                dir += '/';
+            }
             List<Source> sources = e.getValue();
             if (isIndexRequired) {
-                zipOutputStream.putNextEntry(new ZipEntry(dir + "/index" + suffix));
+                zipOutputStream.putNextEntry(new ZipEntry(dir + "index" + suffix));
                 renderIndex(sources, writer);
                 writer.flush();
             }
             for (Source source : sources) {
-                zipOutputStream.putNextEntry(new ZipEntry(dir + '/' + source.getName() + suffix));
+                zipOutputStream.putNextEntry(new ZipEntry(dir + source.getName() + suffix));
                 render(source, writer);
                 writer.flush();
             }
