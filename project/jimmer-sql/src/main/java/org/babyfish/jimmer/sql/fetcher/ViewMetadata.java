@@ -2,7 +2,7 @@ package org.babyfish.jimmer.sql.fetcher;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.View;
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.ClassCache;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -15,8 +15,8 @@ import java.util.function.Function;
 
 public final class ViewMetadata<E, V extends View<E>> {
 
-    private static final StaticCache<Class<View<?>>, ViewMetadata<?, ?>> cache =
-            new StaticCache<>(ViewMetadata::create, false);
+    private static final ClassCache<ViewMetadata<?, ?>> cache =
+            new ClassCache<>(ViewMetadata::create, false);
 
     private final Fetcher<E> fetcher;
 
@@ -64,10 +64,10 @@ public final class ViewMetadata<E, V extends View<E>> {
 
     @SuppressWarnings("unchecked")
     public static <E, V extends View<E>> ViewMetadata<E, V> of(Class<V> viewType) {
-        return (ViewMetadata<E, V>) cache.get((Class<View<?>>)viewType);
+        return (ViewMetadata<E, V>) cache.get(viewType);
     }
 
-    public static ViewMetadata<?, ?> create(Class<View<?>> viewType) {
+    private static ViewMetadata<?, ?> create(Class<?> viewType) {
         if (!View.class.isAssignableFrom(viewType)) {
             throw new IllegalArgumentException(
                     "The type \"" +

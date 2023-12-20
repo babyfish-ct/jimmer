@@ -1461,7 +1461,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.detail(ex -> {
                             Assertions.assertEquals(
                                     SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
-                                    ((SaveException)ex).getCode()
+                                    ((SaveException)ex).getSaveErrorCode()
                             );
                         });
                     });
@@ -1511,7 +1511,7 @@ public class SaveWithTriggerTest extends AbstractTriggerTest {
                         it.detail(ex -> {
                             Assertions.assertEquals(
                                     SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
-                                    ((SaveException)ex).getCode()
+                                    ((SaveException)ex).getSaveErrorCode()
                             );
                         });
                     });

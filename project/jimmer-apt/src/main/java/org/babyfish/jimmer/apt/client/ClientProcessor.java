@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.client;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.babyfish.jimmer.Immutable;
 import org.babyfish.jimmer.apt.Context;
@@ -631,7 +632,7 @@ public class ClientProcessor {
                 throw new MetaException(
                         builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                         builder.ancestorSource(),
-                        "Cannot resolve \"" +
+                        "Cannot resolve \"@" +
                                 JsonValue.class.getName() +
                                 "\" because of dead recursion: " +
                                 jsonValueTypeNameStack
@@ -680,7 +681,9 @@ public class ClientProcessor {
                         executableElement.getModifiers().contains(Modifier.STATIC) ||
                         !executableElement.getModifiers().contains(Modifier.PUBLIC) ||
                         executableElement.getReturnType().getKind() == TypeKind.VOID ||
-                        executableElement.getAnnotation(ApiIgnore.class) != null) {
+                        executableElement.getAnnotation(ApiIgnore.class) != null ||
+                        executableElement.getAnnotation(JsonIgnore.class) != null
+                ) {
                     continue;
                 }
                 String name = executableElement.getSimpleName().toString();
@@ -729,10 +732,15 @@ public class ClientProcessor {
                     continue;
                 }
                 PropImpl<Element> prop = (PropImpl<Element>) typeDefinition.getPropMap().get(fieldElement.getSimpleName().toString());
-                if (prop == null || prop.getDoc() != null) {
+                if (prop == null) {
                     continue;
                 }
-                prop.setDoc(Doc.parse(context.getElements().getDocComment(fieldElement)));
+                if (fieldElement.getAnnotation(JsonIgnore.class) != null) {
+                    typeDefinition.getPropMap().remove(fieldElement.getSimpleName().toString());
+                }
+                if (prop.getDoc() == null) {
+                    prop.setDoc(Doc.parse(context.getElements().getDocComment(fieldElement)));
+                }
             }
         }
 

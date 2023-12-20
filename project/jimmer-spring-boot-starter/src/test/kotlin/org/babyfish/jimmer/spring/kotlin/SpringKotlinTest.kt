@@ -1,11 +1,9 @@
 package org.babyfish.jimmer.spring.kotlin
 
-import org.babyfish.jimmer.client.meta.Metadata
 import org.babyfish.jimmer.spring.AbstractTest
 import org.babyfish.jimmer.spring.cfg.JimmerProperties
 import org.babyfish.jimmer.spring.cfg.MetadataCondition
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig
-import org.babyfish.jimmer.spring.client.MetadataFactoryBean
 import org.babyfish.jimmer.spring.client.TypeScriptController
 import org.babyfish.jimmer.spring.datasource.DataSources
 import org.babyfish.jimmer.spring.datasource.TxCallback
@@ -36,8 +34,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
-import java.sql.Connection
-import java.sql.PreparedStatement
 import javax.sql.DataSource
 
 @SpringBootTest(properties = ["jimmer.client.ts.path=/my-ts.zip", "jimmer.language=kotlin"])

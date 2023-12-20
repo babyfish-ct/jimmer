@@ -1,35 +1,20 @@
 package org.babyfish.jimmer.error
 
+import java.lang.RuntimeException
+
 abstract class CodeBasedRuntimeException protected constructor(
     message: String,
     cause: Throwable?
 ) : RuntimeException(message, cause) {
 
-    abstract val code: Enum<*>
+    private val metadata: ClientExceptionMetadata =
+        ClientExceptionMetadata.of(this.javaClass)
 
     abstract val fields: Map<String, Any?>
 
-    companion object {
+    val family: String
+        get() = metadata.family
 
-        @JvmStatic
-        fun familyName(name: String): String {
-            var prevLower = false
-            val size = name.length
-            val builder = StringBuilder()
-            for (i in 0 until size) {
-                val c = name[i]
-                if (Character.isUpperCase(c)) {
-                    if (prevLower) {
-                        builder.append("_")
-                    }
-                    prevLower = false
-                    builder.append(c)
-                } else {
-                    prevLower = true
-                    builder.append(c.uppercaseChar())
-                }
-            }
-            return builder.toString()
-        }
-    }
+    val code: String
+        get() = metadata.code
 }

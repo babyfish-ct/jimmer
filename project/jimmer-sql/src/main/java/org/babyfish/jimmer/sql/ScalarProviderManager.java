@@ -9,13 +9,13 @@ import com.fasterxml.jackson.databind.type.SimpleType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import org.babyfish.jimmer.impl.util.PropCache;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.jackson.ImmutableModule;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.runtime.ScalarProvider;
-import org.babyfish.jimmer.impl.util.StaticCache;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.*;
@@ -27,8 +27,8 @@ class ScalarProviderManager {
 
     private static final ObjectMapper DEFAULT_OBJECT_MAPPER;
 
-    private final StaticCache<Class<?>, ScalarProvider<?, ?>> typeScalarProviderCache =
-            new StaticCache<>(this::createProvider, true);
+    private final ClassCache<ScalarProvider<?, ?>> typeScalarProviderCache =
+            new ClassCache<>(this::createProvider, true);
 
     private final PropCache<ScalarProvider<?, ?>> propScalarProviderCache =
             new PropCache<>(this::createProvider, true);

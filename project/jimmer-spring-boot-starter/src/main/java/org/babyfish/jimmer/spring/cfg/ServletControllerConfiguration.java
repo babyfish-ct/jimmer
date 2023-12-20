@@ -3,7 +3,6 @@ package org.babyfish.jimmer.spring.cfg;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
-import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.cloud.MicroServiceExporterController;
 import org.babyfish.jimmer.sql.JSqlClient;

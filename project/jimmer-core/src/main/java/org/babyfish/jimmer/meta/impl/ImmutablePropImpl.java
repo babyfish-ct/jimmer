@@ -929,7 +929,7 @@ class ImmutablePropImpl implements ImmutableProp, ImmutablePropImplementor {
             return targetType;
         }
         if (isAssociation(TargetLevel.OBJECT)) {
-            targetType = Metadata.tryGet(elementClass);
+            targetType = (ImmutableTypeImpl) Metadata.tryGet(elementClass);
             if (targetType == null) {
                 throw new ModelException(
                         "Cannot resolve target type of \"" +

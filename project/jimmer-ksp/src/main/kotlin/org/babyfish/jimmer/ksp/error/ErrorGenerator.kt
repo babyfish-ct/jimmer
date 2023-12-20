@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.error
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.ClassKind
@@ -33,6 +34,19 @@ class ErrorGenerator(
 
     private val fieldsCache = mutableMapOf<KSClassDeclaration, Map<String, TypeName>>()
 
+    private val family: String =
+        declaration.longSimpleName.let {
+            when {
+                it.endsWith("_ErrorCode") -> it.substring(0, it.length - 10)
+                it.endsWith("ErrorCode") -> it.substring(0, it.length - 9)
+                it.endsWith("_Error") -> it.substring(0, it.length - 6)
+                it.endsWith("Error") -> it.substring(0, it.length - 5)
+                else -> it
+            }
+        }.let {
+            StringUtil.snake(it, StringUtil.SnakeCase.UPPER)
+        }
+
     private val exceptionSimpleName: String =
         declaration.longSimpleName.let {
             when {
@@ -41,8 +55,8 @@ class ErrorGenerator(
                 it.endsWith("_Error") -> it.substring(0, it.length - 6)
                 it.endsWith("Error") -> it.substring(0, it.length - 5)
                 else -> it
-            } + "Exception"
-        }
+            }
+        } + "Exception"
 
     private val exceptionClassName = ClassName(
         declaration.packageName.asString(),
@@ -81,10 +95,7 @@ class ErrorGenerator(
                             .addAnnotation(
                                 AnnotationSpec
                                     .builder(CLIENT_EXCEPTION_CLASS_NAME)
-                                    .addMember(
-                                        "family = %S",
-                                        StringUtil.snake(declaration.simpleName.asString(), StringUtil.SnakeCase.UPPER)
-                                    )
+                                    .addMember("family = %S", family)
                                     .apply {
                                         val constants = declaration
                                             .declarations
@@ -116,6 +127,7 @@ class ErrorGenerator(
     private fun TypeSpec.Builder.addMembers() {
 
         addInit(declaration)
+        addGetEnum(declaration)
         addFields(declaration)
 
         addType(
@@ -160,7 +172,7 @@ class ErrorGenerator(
                             )
                         }
                         addInit(item)
-                        addCode(item)
+                        addGetEnum(item)
                         addFields(item)
                     }
                     .build()
@@ -254,16 +266,36 @@ class ErrorGenerator(
         )
     }
 
-    private fun TypeSpec.Builder.addCode(item: KSClassDeclaration) {
+    private fun TypeSpec.Builder.addGetEnum(declaration: KSClassDeclaration) {
         addProperty(
             PropertySpec
-                .builder("code", enumClassName, KModifier.OVERRIDE)
-                .getter(
-                    FunSpec
-                        .getterBuilder()
-                        .addStatement("return %T.%N", enumClassName, item.simpleName.asString())
+                .builder(
+                    StringUtil.identifier(this@ErrorGenerator.declaration.simpleName.asString()),
+                    enumClassName
+                )
+                .apply {
+                    if (declaration.classKind == ClassKind.ENUM_CLASS) {
+                        addModifiers(KModifier.ABSTRACT)
+                    } else {
+                        addModifiers(KModifier.OVERRIDE)
+                    }
+                }
+                .addAnnotation(
+                    AnnotationSpec
+                        .builder(JsonIgnore::class.asTypeName())
+                        .useSiteTarget(AnnotationSpec.UseSiteTarget.GET)
                         .build()
                 )
+                .apply {
+                    if (declaration.classKind == ClassKind.ENUM_ENTRY) {
+                        getter(
+                            FunSpec
+                                .getterBuilder()
+                                .addStatement("return %T.%N", enumClassName, declaration.simpleName.asString())
+                                .build()
+                        )
+                    }
+                }
                 .build()
         )
     }

@@ -1,7 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.ast.Predicate;
@@ -23,8 +23,8 @@ public class WeakJoinHandle {
                     WeakJoin.class.getName() +
                     "\"";
 
-    private static final StaticCache<Class<? extends WeakJoin<?, ?>>, WeakJoinHandle> CACHE =
-            new StaticCache<>(WeakJoinHandle::create, false);
+    private static final ClassCache<WeakJoinHandle> CACHE =
+            new ClassCache<>(WeakJoinHandle::create, false);
 
     private final ImmutableType sourceType;
 
@@ -96,7 +96,7 @@ public class WeakJoinHandle {
     }
 
     @SuppressWarnings("unchecked")
-    private static WeakJoinHandle create(Class<? extends WeakJoin<?, ?>> weakJoinType) {
+    private static WeakJoinHandle create(Class<?> weakJoinType) {
         Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(weakJoinType, WeakJoin.class);
         if (typeArguments == null || typeArguments.isEmpty()) {
             throw new IllegalArgumentException(

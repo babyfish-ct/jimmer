@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.sql.ast.impl.table;
 
 import org.babyfish.jimmer.impl.util.TypeCache;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.ModelException;
 import org.babyfish.jimmer.sql.association.meta.AssociationType;
 import org.babyfish.jimmer.sql.ast.table.Table;
-import org.babyfish.jimmer.sql.ast.table.TableEx;
 import org.babyfish.jimmer.sql.ast.table.spi.AbstractTypedTable;
 import org.babyfish.jimmer.sql.ast.table.spi.TableProxy;
-import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -17,14 +16,14 @@ import java.lang.reflect.Modifier;
 
 public class TableProxies {
 
-    private static final StaticCache<Class<?>, Constructor<?>> WRAPPER_CACHE =
-            new StaticCache<>(TableProxies::createWrapperConstructor);
+    private static final ClassCache<Constructor<?>> WRAPPER_CACHE =
+            new ClassCache<>(TableProxies::createWrapperConstructor);
 
     private static final TypeCache<Constructor<?>> FLUENT_CACHE =
             new TypeCache<>(TableProxies::createFluentConstructor);
 
-    private static final StaticCache<Class<?>, TableProxy<?>> ROOT_PROXY_CACHE =
-            new StaticCache<>(TableProxies::createRootProxy);
+    private static final ClassCache<TableProxy<?>> ROOT_PROXY_CACHE =
+            new ClassCache<>(TableProxies::createRootProxy);
 
     private TableProxies() {}
 

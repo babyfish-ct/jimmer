@@ -2,6 +2,7 @@ package org.babyfish.jimmer.impl.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -29,7 +30,7 @@ public class StaticCache<K, V> {
 
     public StaticCache(Function<K, V> creator, boolean nullable) {
         this.creator = creator;
-        negativeMap = nullable ? new LRUMap<>() : null;
+        this.negativeMap = nullable ? new LRUMap<>() : null;
     }
     
     public V get(K key) {
@@ -50,26 +51,39 @@ public class StaticCache<K, V> {
         if (value == null) {
             (lock = cacheLock.writeLock()).lock();
             try {
-                if (negativeMap != null && negativeMap.containsKey(key)) {
-                    return null;
-                }
-                value = positiveMap.get(key);
-                if (value == null) {
-                    value = creator.apply(key);
-                    if (value != null) {
-                        positiveMap.put(key, value);
-                    } else if (negativeMap != null) {
-                        negativeMap.put(key, null);
-                    } else {
-                        throw new IllegalStateException(
-                                "The creator cannot return null because current static cache does not accept null values"
-                        );
-                    }
-                }
+                return getWithoutLock(key);
             } finally {
                 lock.unlock();
             }
         }
         return value;
     }
+
+    protected final V getWithoutLock(K key) {
+        if (negativeMap != null && negativeMap.containsKey(key)) {
+            return null;
+        }
+        V value = positiveMap.get(key);
+        if (value == null) {
+            value = creator.apply(key);
+            if (value != null) {
+                positiveMap.put(key, value);
+                try {
+                    onCreated(key, value);
+                } catch (RuntimeException | Error ex) {
+                    positiveMap.remove(key);
+                    throw ex;
+                }
+            } else if (negativeMap != null) {
+                negativeMap.put(key, null);
+            } else {
+                throw new IllegalStateException(
+                        "The creator cannot return null because current static cache does not accept null values"
+                );
+            }
+        }
+        return value;
+    }
+
+    protected void onCreated(K key, V value) {}
 }

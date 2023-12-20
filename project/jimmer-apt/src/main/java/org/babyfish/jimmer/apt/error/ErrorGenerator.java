@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.apt.error;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.squareup.javapoet.*;
 import org.babyfish.jimmer.apt.Context;
 import org.babyfish.jimmer.apt.GeneratorException;
@@ -42,6 +43,8 @@ public class ErrorGenerator {
 
     private final ClassName className;
 
+    private final String family;
+
     private final String exceptionName;
 
     private final ClassName exceptionClassName;
@@ -64,19 +67,18 @@ public class ErrorGenerator {
                 simpleNames[0],
                 Arrays.copyOfRange(simpleNames, 1, simpleNames.length)
         );
-        String exceptionName = String.join("_", simpleNames);
-        if (exceptionName.endsWith("_ErrorCode")) {
-            exceptionName = exceptionName.substring(0, exceptionName.length() - 10) + "Exception";
-        } else if (exceptionName.endsWith("ErrorCode")) {
-            exceptionName = exceptionName.substring(0, exceptionName.length() - 9) + "Exception";
-        } else if (exceptionName.endsWith("_Error")) {
-            exceptionName = exceptionName.substring(0, exceptionName.length() - 6) + "Exception";
-        } else if (exceptionName.endsWith("Error")) {
-            exceptionName = exceptionName.substring(0, exceptionName.length() - 5) + "Exception";
-        } else {
-            exceptionName = exceptionName + "Exception";
+        String name = String.join("_", simpleNames);
+        if (name.endsWith("_ErrorCode")) {
+            name = name.substring(0, name.length() - 10);
+        } else if (name.endsWith("ErrorCode")) {
+            name = name.substring(0, name.length() - 9);
+        } else if (name.endsWith("_Error")) {
+            name = name.substring(0, name.length() - 6);
+        } else if (name.endsWith("Error")) {
+            name = name.substring(0, name.length() - 5);
         }
-        this.exceptionName = exceptionName;
+        this.family = StringUtil.snake(name, StringUtil.SnakeCase.UPPER);
+        this.exceptionName = name + "Exception";
         this.exceptionClassName = ClassName.get(packageName, exceptionName);
     }
 
@@ -139,6 +141,7 @@ public class ErrorGenerator {
     private void addMembers() {
 
         addCommonMembers(typeElement, typeBuilder);
+        addGetEnum();
 
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.ENUM_CONSTANT) {
@@ -152,6 +155,15 @@ public class ErrorGenerator {
                 addType(element);
             }
         }
+    }
+
+    private void addGetEnum() {
+        MethodSpec.Builder builder = MethodSpec
+                .methodBuilder("get" + typeElement.getSimpleName().toString())
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addAnnotation(JsonIgnore.class)
+                .returns(className);
+        typeBuilder.addMethod(builder.build());
     }
 
     @SuppressWarnings("unchecked")
@@ -212,8 +224,9 @@ public class ErrorGenerator {
 
         builder.addMethod(
                 MethodSpec
-                        .methodBuilder("getCode")
+                        .methodBuilder("get" + typeElement.getSimpleName().toString())
                         .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(JsonIgnore.class)
                         .addAnnotation(Override.class)
                         .returns(className)
                         .addStatement("return $T.$L", className, element.getSimpleName().toString())
@@ -410,11 +423,7 @@ public class ErrorGenerator {
     private AnnotationSpec clientException(Element element) {
         AnnotationSpec.Builder builder = AnnotationSpec
                 .builder(Constants.CLIENT_EXCEPTION_CLASS_NAME)
-                .addMember(
-                        "family",
-                        "$S",
-                        StringUtil.snake(className.simpleName(), StringUtil.SnakeCase.UPPER)
-                );
+                .addMember("family", "$S", family);
         if (element.getKind() == ElementKind.ENUM) {
             CodeBlock.Builder cb = CodeBlock.builder();
             cb.add("{");

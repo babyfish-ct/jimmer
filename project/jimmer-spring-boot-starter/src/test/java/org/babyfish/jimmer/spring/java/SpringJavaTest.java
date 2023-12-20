@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.java;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
@@ -8,7 +7,6 @@ import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.babyfish.jimmer.spring.cfg.MetadataCondition;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
-import org.babyfish.jimmer.spring.client.MetadataFactoryBean;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.java.bll.ErrorService;

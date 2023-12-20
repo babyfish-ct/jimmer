@@ -3,7 +3,7 @@ package org.babyfish.jimmer.jackson.meta;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.apache.commons.lang3.reflect.TypeUtils;
-import org.babyfish.jimmer.impl.util.StaticCache;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.jackson.Converter;
 import org.babyfish.jimmer.jackson.impl.JacksonUtils;
 
@@ -14,12 +14,10 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ConverterMetadata {
 
-    private static final StaticCache<Class<?>, ConverterMetadata> CACHE = new StaticCache<>(
+    private static final ClassCache<ConverterMetadata> CACHE = new ClassCache<>(
             ConverterMetadata::create,
             false
     );

@@ -386,7 +386,7 @@ class ClientProcessor(
             throw MetaException(
                 ancestorSource(ApiOperationImpl::class.java, ApiParameterImpl::class.java),
                 ancestorSource(),
-                "Cannot resolve \"" +
+                "Cannot resolve \"@" +
                     JsonValue::class.java.getName() +
                     "\" because of dead recursion: " +
                     jsonValueTypeNameStack

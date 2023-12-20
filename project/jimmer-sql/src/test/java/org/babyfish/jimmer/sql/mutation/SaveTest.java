@@ -789,7 +789,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.detail(ex -> {
                             Assertions.assertEquals(
                                     SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
-                                    ((SaveException)ex).getCode()
+                                    ((SaveException)ex).getSaveErrorCode()
                             );
                         });
                     });
@@ -828,7 +828,7 @@ public class SaveTest extends AbstractMutationTest {
                         it.detail(ex -> {
                             Assertions.assertEquals(
                                     SaveErrorCode.OPTIMISTIC_LOCK_ERROR,
-                                    ((SaveException)ex).getCode()
+                                    ((SaveException)ex).getSaveErrorCode()
                             );
                         });
                     });

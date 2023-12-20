@@ -4,28 +4,27 @@ import kotlin.reflect.KClass;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.Immutable;
+import org.babyfish.jimmer.impl.util.ClassCache;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.spi.TableDelegate;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.Embeddable;
 import org.babyfish.jimmer.sql.Entity;
 import org.babyfish.jimmer.sql.MappedSuperclass;
-import org.babyfish.jimmer.impl.util.StaticCache;
 
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.BiFunction;
 
 public class Metadata {
 
     private Metadata() {}
 
-    private static final StaticCache<Class<?>, ImmutableTypeImpl> CACHE =
-            new StaticCache<>(Metadata::create);
+    private static final ClassCache<ImmutableTypeImpl> CACHE =
+            new ClassCache<>(Metadata::create);
 
-    public static ImmutableTypeImpl get(Class<?> javaClass) {
+    public static ImmutableType get(Class<?> javaClass) {
         ImmutableTypeImpl immutableType = CACHE.get(javaClass);
         if (immutableType == null) {
             throw new IllegalArgumentException(
@@ -35,7 +34,7 @@ public class Metadata {
         return immutableType;
     }
 
-    public static ImmutableTypeImpl tryGet(Class<?> javaClass) {
+    public static ImmutableType tryGet(Class<?> javaClass) {
         return CACHE.get(javaClass);
     }
 
