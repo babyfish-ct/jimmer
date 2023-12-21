@@ -90,18 +90,8 @@ open class SpringKotlinTest : AbstractTest() {
         @ConditionalOnProperty("jimmer.client.ts.path")
         @ConditionalOnMissingBean(TypeScriptController::class)
         @Bean
-        open fun typeScriptController(metadata: Metadata, properties: JimmerProperties): TypeScriptController {
-            return TypeScriptController(metadata, properties)
-        }
-
-        @Conditional(MetadataCondition::class)
-        @ConditionalOnMissingBean(Metadata::class)
-        @Bean
-        open fun metadataFactoryBean(
-            ctx: ApplicationContext,
-            @Autowired(required = false) parameterNameDiscoverer: ParameterNameDiscoverer?
-        ): MetadataFactoryBean {
-            return MetadataFactoryBean(ctx, parameterNameDiscoverer)
+        open fun typeScriptController(properties: JimmerProperties): TypeScriptController {
+            return TypeScriptController(properties)
         }
     }
 

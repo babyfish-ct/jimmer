@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.spring.client;
 
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
-import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,14 +46,8 @@ public class CodeBasedExceptionAdvice {
 
     protected Map<String, Object> resultMap(CodeBasedRuntimeException ex) {
         Map<String, Object> resultMap = new LinkedHashMap<>();
-        resultMap.put(
-                "family",
-                StringUtil.snake(ex.getCode().getDeclaringClass().getSimpleName(), StringUtil.SnakeCase.UPPER)
-        );
-        resultMap.put(
-                "code",
-                ex.getCode().name()
-        );
+        resultMap.put("family", ex.getFamily());
+        resultMap.put("code", ex.getCode());
         resultMap.putAll(ex.getFields());
         if (errorTranslator.isDebugInfoSupported()) {
             resultMap.put("debugInfo", debugInfoMap(ex));

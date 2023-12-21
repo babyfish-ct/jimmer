@@ -50,7 +50,14 @@ public class MetadataBuilder implements Metadata.Builder {
     @Override
     public Metadata.Builder setGroups(Collection<String> groups) {
         if (groups != null && !groups.isEmpty()) {
-            this.groups = new HashSet<>(groups);
+            Set<String> set = new HashSet<>((groups.size() * 4 + 2) / 3);
+            for (String group : groups) {
+                String trim = group.trim();
+                if (!trim.isEmpty()) {
+                    set.add(trim);
+                }
+                this.groups = set.isEmpty() ? null : set;
+            }
         } else {
             this.groups = null;
         }

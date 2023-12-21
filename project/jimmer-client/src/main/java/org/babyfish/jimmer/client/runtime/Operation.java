@@ -27,9 +27,12 @@ public interface Operation {
 
     enum HttpMethod {
         GET,
+        HEAD,
         POST,
         PUT,
+        PATCH,
         DELETE,
-        PATCH
+        OPTIONS,
+        TRACE
     }
 }

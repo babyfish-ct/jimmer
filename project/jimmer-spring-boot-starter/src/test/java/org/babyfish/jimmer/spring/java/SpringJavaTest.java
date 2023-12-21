@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.java;
 
-import org.babyfish.jimmer.client.meta.Metadata;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
@@ -177,25 +176,15 @@ public class SpringJavaTest extends AbstractTest {
         @ConditionalOnProperty("jimmer.client.ts.path")
         @ConditionalOnMissingBean(TypeScriptController.class)
         @Bean
-        public TypeScriptController typeScriptController(Metadata metadata, JimmerProperties properties) {
-            return new TypeScriptController(metadata, properties);
+        public TypeScriptController typeScriptController(JimmerProperties properties) {
+            return new TypeScriptController(properties);
         }
 
         @ConditionalOnProperty("jimmer.client.java-feign.path")
         @ConditionalOnMissingBean(JavaFeignController.class)
         @Bean
-        public JavaFeignController javaFeignController(Metadata metadata, JimmerProperties properties) {
-            return new JavaFeignController(metadata, properties);
-        }
-
-        @Conditional(MetadataCondition.class)
-        @ConditionalOnMissingBean(Metadata.class)
-        @Bean
-        public MetadataFactoryBean metadataFactoryBean(
-                ApplicationContext ctx,
-                @Autowired(required = false) ParameterNameDiscoverer parameterNameDiscoverer
-        ) {
-            return new MetadataFactoryBean(ctx, parameterNameDiscoverer);
+        public JavaFeignController javaFeignController(JimmerProperties properties) {
+            return new JavaFeignController(properties);
         }
     }
 
@@ -818,7 +807,7 @@ public class SpringJavaTest extends AbstractTest {
                 .andExpect(
                         content().string(
                                 "{" +
-                                        "\"family\":\"GEOGRAPHY_ERROR_CODE\"," +
+                                        "\"family\":\"GEOGRAPHY\"," +
                                         "\"code\":\"ILLEGAL_POSITION\"," +
                                         "\"longitude\":104.06," +
                                         "\"latitude\":30.67" +

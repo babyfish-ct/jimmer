@@ -1,5 +1,7 @@
 package org.babyfish.jimmer.client.generator;
 
+import org.babyfish.jimmer.client.EnableImplicitApi;
+import org.babyfish.jimmer.client.meta.Api;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
@@ -123,8 +125,15 @@ public abstract class Context {
         }
     }
 
-    public void renderAll(ZipOutputStream zipOutputStream) throws IOException {
+    private void renderAll(ZipOutputStream zipOutputStream) throws IOException {
         init();
+        if (metadata.getServices().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "There no exported API to render client code, please " +
+                            "1. Used \"@" + EnableImplicitApi.class.getName() + "\" to decorate any class; " +
+                            "2. Used \"@" + Api.class.getName() + "\" to decorates all controllers and all operations. "
+            );
+        }
 
         Writer writer = new OutputStreamWriter(zipOutputStream, StandardCharsets.UTF_8);
         Map<List<String>, List<Source>> sourceMultiMap = sourceManager

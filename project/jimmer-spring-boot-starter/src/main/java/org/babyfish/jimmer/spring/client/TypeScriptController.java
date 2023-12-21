@@ -2,17 +2,12 @@ package org.babyfish.jimmer.spring.client;
 
 import org.babyfish.jimmer.client.generator.ts.TypeScriptContext;
 import org.babyfish.jimmer.client.runtime.Metadata;
-import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
 
 @Controller
 public class TypeScriptController {
@@ -29,30 +24,14 @@ public class TypeScriptController {
             @RequestParam(name = "indent", defaultValue = "0") int indent,
             @RequestParam(name = "groups", required = false) String groups
     ) {
-        Metadata metadata = Metadata
-                .newBuilder()
-                .setOperationParser()
-                .build();
+        Metadata metadata = Metadatas.create(apiName, indent, groups);
         TypeScriptContext ctx = new TypeScriptContext(metadata);
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/zip");
         StreamingResponseBody body = out -> {
             JimmerProperties.Client.TypeScript ts = properties.getClient().getTs();
-
+            ctx.renderAll(out);
         };
         return ResponseEntity.ok().headers(headers).body(body);
-    }
-
-    private static class OperationParserImpl implements Metadata.OperationParser {
-
-        @Override
-        public String uri(AnnotatedElement element) {
-            return null;
-        }
-
-        @Override
-        public Operation.HttpMethod http(Method method) {
-            return null;
-        }
     }
 }
