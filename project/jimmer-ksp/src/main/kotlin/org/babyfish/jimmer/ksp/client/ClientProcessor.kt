@@ -21,13 +21,14 @@ import org.babyfish.jimmer.sql.MappedSuperclass
 import java.io.OutputStreamWriter
 import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets
-import javax.lang.model.element.Element
 
 class ClientProcessor(
     private val ctx: Context,
     private val explicitClientApi: Boolean,
     private val delayedClientTypeNames: Collection<String>?
 ) {
+    private val clientExceptionContext = ClientExceptionContext()
+
     private val builder = object: SchemaBuilder<KSDeclaration>(null) {
 
         override fun loadSource(typeName: String): KSClassDeclaration? =
@@ -182,41 +183,19 @@ class ClientProcessor(
         val declarations = throws.getClassListArgument(Throws::exceptionClasses)
         val exceptionTypeNames = mutableSetOf<TypeName>()
         for (declaration in declarations) {
-            collectExceptionTypeNames(declaration, exceptionTypeNames)
+            if (declaration.annotation(ClientException::class) !== null) {
+                collectExceptionTypeNames(clientExceptionContext[declaration], exceptionTypeNames)
+            }
         }
         return exceptionTypeNames
     }
 
-    private fun collectExceptionTypeNames(declaration: KSClassDeclaration, exceptionTypeNames: MutableSet<TypeName>) {
-        val typeName = declaration.toTypeName();
-        if (typeName in exceptionTypeNames) {
-            return
+    private fun collectExceptionTypeNames(metadata: ClientExceptionMetadata, exceptionTypeNames: MutableSet<TypeName>) {
+        if (metadata.code != null) {
+            exceptionTypeNames += metadata.declaration.toTypeName()
         }
-        val clientException = declaration.annotation(ClientException::class) ?: return
-        val code = clientException[ClientException::code] ?: ""
-        val subTypes = clientException.getClassListArgument(ClientException::subTypes)
-        if (code.isEmpty() && subTypes.isEmpty()) {
-            throw MetaException(
-                declaration,
-                "Illegal client exception, neither `code` nor `subTypes` of the annotation \"@" +
-                    ClientException::class.java.getName() +
-                    "\" is specified"
-            )
-        }
-        if (code.isNotEmpty() && subTypes.isNotEmpty()) {
-            throw MetaException(
-                declaration,
-                ("Illegal client exception, both `code` and `subTypes` of the annotation \"@" +
-                    ClientException::class.java.getName() +
-                    "\" is specified")
-            )
-        }
-        if (code.isNotEmpty()) {
-            exceptionTypeNames += typeName
-        } else {
-            for (subType in subTypes) {
-                collectExceptionTypeNames(subType, exceptionTypeNames)
-            }
+        for (subMetadata in metadata.subMetadatas) {
+            collectExceptionTypeNames(subMetadata, exceptionTypeNames)
         }
     }
 
@@ -480,6 +459,16 @@ class ClientProcessor(
                         definition.addProp(prop)
                     }
                 }
+            }
+        }
+
+        if (declaration.annotation(ClientException::class) != null) {
+            val metadata = clientExceptionContext[declaration]
+            if (metadata.code !== null) {
+                definition.error = TypeDefinition.Error(
+                    metadata.family,
+                    metadata.code
+                )
             }
         }
 

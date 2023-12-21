@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface ClientException {
 
-    String family();
+    String family() default "";
 
     String code() default "";
 

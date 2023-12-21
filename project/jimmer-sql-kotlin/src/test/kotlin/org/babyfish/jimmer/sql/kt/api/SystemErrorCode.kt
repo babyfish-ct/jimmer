@@ -4,7 +4,7 @@ import org.babyfish.jimmer.error.ErrorFamily
 import org.babyfish.jimmer.error.ErrorField
 import java.time.LocalDateTime
 
-@ErrorFamily
+@ErrorFamily("SYSTEM_FAMILY")
 @ErrorField(name = "tags", type = String::class, list = true, doc = "TagList")
 @ErrorField(name = "timestamp", type = LocalDateTime::class, doc = "Error created time")
 enum class SystemErrorCode {

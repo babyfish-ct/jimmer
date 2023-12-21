@@ -35,17 +35,18 @@ class ErrorGenerator(
     private val fieldsCache = mutableMapOf<KSClassDeclaration, Map<String, TypeName>>()
 
     private val family: String =
-        declaration.longSimpleName.let {
-            when {
-                it.endsWith("_ErrorCode") -> it.substring(0, it.length - 10)
-                it.endsWith("ErrorCode") -> it.substring(0, it.length - 9)
-                it.endsWith("_Error") -> it.substring(0, it.length - 6)
-                it.endsWith("Error") -> it.substring(0, it.length - 5)
-                else -> it
+        declaration.annotation(ErrorFamily::class)?.get(ErrorFamily::value)?.takeIf { it.isNotEmpty() }
+            ?: declaration.longSimpleName.let {
+                when {
+                    it.endsWith("_ErrorCode") -> it.substring(0, it.length - 10)
+                    it.endsWith("ErrorCode") -> it.substring(0, it.length - 9)
+                    it.endsWith("_Error") -> it.substring(0, it.length - 6)
+                    it.endsWith("Error") -> it.substring(0, it.length - 5)
+                    else -> it
+                }
+            }.let {
+                StringUtil.snake(it, StringUtil.SnakeCase.UPPER)
             }
-        }.let {
-            StringUtil.snake(it, StringUtil.SnakeCase.UPPER)
-        }
 
     private val exceptionSimpleName: String =
         declaration.longSimpleName.let {
@@ -152,10 +153,7 @@ class ErrorGenerator(
                     .addAnnotation(
                         AnnotationSpec
                             .builder(CLIENT_EXCEPTION_CLASS_NAME)
-                            .addMember(
-                                "family = %S",
-                                StringUtil.snake(declaration.simpleName.asString(), StringUtil.SnakeCase.UPPER)
-                            )
+                            .addMember("family = %S", family)
                             .addMember(
                                 "code = %S",
                                 StringUtil.snake(item.simpleName.asString(), StringUtil.SnakeCase.UPPER)

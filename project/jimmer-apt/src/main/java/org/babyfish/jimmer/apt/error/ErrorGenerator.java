@@ -77,7 +77,11 @@ public class ErrorGenerator {
         } else if (name.endsWith("Error")) {
             name = name.substring(0, name.length() - 5);
         }
-        this.family = StringUtil.snake(name, StringUtil.SnakeCase.UPPER);
+        String family = typeElement.getAnnotation(ErrorFamily.class).value();
+        if (family.isEmpty()) {
+            family = StringUtil.snake(name, StringUtil.SnakeCase.UPPER);
+        }
+        this.family = family;
         this.exceptionName = name + "Exception";
         this.exceptionClassName = ClassName.get(packageName, exceptionName);
     }

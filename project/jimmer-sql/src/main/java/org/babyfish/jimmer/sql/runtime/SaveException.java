@@ -86,7 +86,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     /**
      * The associated object cannot be null
      */
-    @ClientException(family = "SAVE_COMMAND", code = "NULL_TARGET")
+    @ClientException(code = "NULL_TARGET")
     public static class NullTarget extends SaveException {
 
         public NullTarget(@NotNull SavePath path, String message) {
@@ -107,7 +107,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
     /**
      * The associated id that does not exists in database
      */
-    @ClientException(family = "SAVE_COMMAND", code = "ILLEGAL_TARGET_ID")
+    @ClientException(code = "ILLEGAL_TARGET_ID")
     public static class IllegalTargetId extends SaveException {
 
         public IllegalTargetId(@NotNull SavePath path, String message) {
@@ -130,7 +130,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
      * however, no dissociation behavior if configured on the many-to-one/one-to-one association
      * from child object to parent object, by either annotation or runtime overriding.
      */
-    @ClientException(family = "SAVE_COMMAND", code = "CANNOT_DISSOCIATE_TARGETS")
+    @ClientException(code = "CANNOT_DISSOCIATE_TARGETS")
     public static class CannotDissociateTarget extends SaveException {
 
         public CannotDissociateTarget(@NotNull SavePath path, String message) {
@@ -148,7 +148,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "NO_ID_GENERATOR")
+    @ClientException(code = "NO_ID_GENERATOR")
     public static class NoIdGenerator extends SaveException {
 
         public NoIdGenerator(@NotNull SavePath path, String message) {
@@ -166,7 +166,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "ILLEGAL_ID_GENERATOR")
+    @ClientException(code = "ILLEGAL_ID_GENERATOR")
     public static class IllegalIdGenerator extends SaveException {
 
         public IllegalIdGenerator(@NotNull SavePath path, String message) {
@@ -184,7 +184,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "ILLEGAL_GENERATED_ID")
+    @ClientException(code = "ILLEGAL_GENERATED_ID")
     public static class IllegalGeneratedId extends SaveException {
 
         public IllegalGeneratedId(@NotNull SavePath path, String message) {
@@ -202,7 +202,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "EMPTY_OBJECT")
+    @ClientException(code = "EMPTY_OBJECT")
     public static class EmptyObject extends SaveException {
 
         public EmptyObject(@NotNull SavePath path, String message) {
@@ -220,7 +220,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "NO_KEY_PROPS")
+    @ClientException(code = "NO_KEY_PROPS")
     public static class NoKeyProps extends SaveException {
 
         public NoKeyProps(@NotNull SavePath path, String message) {
@@ -238,7 +238,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "NO_NON_ID_PROPS")
+    @ClientException(code = "NO_NON_ID_PROPS")
     public static class NoNonIdProps extends SaveException {
 
         public NoNonIdProps(@NotNull SavePath path, String message) {
@@ -256,7 +256,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "NO_VERSION")
+    @ClientException(code = "NO_VERSION")
     public static class NoVersion extends SaveException {
 
         public NoVersion(@NotNull SavePath path, String message) {
@@ -274,7 +274,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "OPTIMISTIC_LOCK_ERROR")
+    @ClientException(code = "OPTIMISTIC_LOCK_ERROR")
     public static class OptimisticLockError extends SaveException {
 
         public OptimisticLockError(@NotNull SavePath path, String message) {
@@ -292,7 +292,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "KEY_NOT_UNIQUE")
+    @ClientException(code = "KEY_NOT_UNIQUE")
     public static class KeyNotUnique extends SaveException {
 
         public KeyNotUnique(@NotNull SavePath path, String message) {
@@ -310,7 +310,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "NEITHER_ID_NOR_KEY")
+    @ClientException(code = "NEITHER_ID_NOR_KEY")
     public static class NeitherIdNorKey extends SaveException {
 
         public NeitherIdNorKey(@NotNull SavePath path, String message) {
@@ -328,7 +328,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "REVERSED_REMOTE_ASSOCIATION")
+    @ClientException(code = "REVERSED_REMOTE_ASSOCIATION")
     public static class ReversedRemoteAssociation extends SaveException {
 
         public ReversedRemoteAssociation(@NotNull SavePath path, String message) {
@@ -346,7 +346,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "LONG_REMOTE_ASSOCIATION")
+    @ClientException(code = "LONG_REMOTE_ASSOCIATION")
     public static class LongRemoteAssociation extends SaveException {
 
         public LongRemoteAssociation(@NotNull SavePath path, String message) {
@@ -364,7 +364,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "FAILED_REMOTE_VALIDATION")
+    @ClientException(code = "FAILED_REMOTE_VALIDATION")
     public static class FailedRemoteValidation extends SaveException {
 
         public FailedRemoteValidation(@NotNull SavePath path, String message) {
@@ -382,7 +382,7 @@ public abstract class SaveException extends CodeBasedRuntimeException {
         }
     }
 
-    @ClientException(family = "SAVE_COMMAND", code = "UNSTRUCTURED_ASSOCIATION")
+    @ClientException(code = "UNSTRUCTURED_ASSOCIATION")
     public static class UnstructuredAssociation extends SaveException {
 
         public UnstructuredAssociation(@NotNull SavePath path, String message) {

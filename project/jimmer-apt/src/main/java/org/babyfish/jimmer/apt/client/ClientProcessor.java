@@ -44,6 +44,8 @@ public class ClientProcessor {
 
     private final Context context;
 
+    private final ClientExceptionContext clientExceptionContext;
+
     private final Elements elements;
 
     private final Collection<String> delayedClientTypeNames;
@@ -58,6 +60,7 @@ public class ClientProcessor {
 
     public ClientProcessor(Context context, Elements elements, Filer filer, boolean explicitApi, Collection<String> delayedClientTypeNames) {
         this.context = context;
+        this.clientExceptionContext = new ClientExceptionContext(context);
         this.elements = elements;
         this.explicitApi = explicitApi;
         this.delayedClientTypeNames = delayedClientTypeNames;
@@ -251,59 +254,19 @@ public class ClientProcessor {
         Set<TypeName> exceptionTypeNames = new LinkedHashSet<>();
         for (TypeMirror type : exceptionTypes) {
             TypeElement typeElement = (TypeElement) context.getTypes().asElement(type);
-            collectExceptionTypeNames(typeElement, exceptionTypeNames);
+            if (typeElement.getAnnotation(ClientException.class) != null) {
+                collectExceptionTypeNames(clientExceptionContext.get(typeElement), exceptionTypeNames);
+            }
         }
         return exceptionTypeNames;
     }
 
-    private void collectExceptionTypeNames(TypeElement typeElement, Set<TypeName> exceptionTypeNames) {
-        TypeName typeName = typeName(typeElement);
-        if (exceptionTypeNames.contains(typeName)) {
-            return;
+    private void collectExceptionTypeNames(ClientExceptionMetadata metadata, Set<TypeName> exceptionTypeNames) {
+        if (metadata.getCode() != null) {
+            exceptionTypeNames.add(typeName(metadata.getElement()));
         }
-        AnnotationMirror clientException = Annotations.annotationMirror(typeElement, ClientException.class);
-        if (clientException == null) {
-            return;
-        }
-        String code = Annotations.annotationValue(clientException, "code", "");
-        List<Object> subTypes = Annotations.annotationValue(clientException, "subTypes", Collections.emptyList());
-        if (code.isEmpty() && subTypes.isEmpty()) {
-            throw new MetaException(
-                    typeElement,
-                    "Illegal client exception, neither `code` nor `subTypes` of the annotation \"@" +
-                            ClientException.class.getName() +
-                            "\" is specified"
-            );
-        }
-        if (!code.isEmpty() && !subTypes.isEmpty()) {
-            throw new MetaException(
-                    typeElement,
-                    "Illegal client exception, both `code` and `subTypes` of the annotation \"@" +
-                            ClientException.class.getName() +
-                            "\" is specified"
-            );
-        }
-        if (!code.isEmpty()) {
-            exceptionTypeNames.add(typeName);
-        } else {
-            for (Object subType : subTypes) {
-                String qualifiedName = subType.toString();
-                if (qualifiedName.endsWith(".class")) {
-                    qualifiedName = qualifiedName.substring(0, qualifiedName.length() - 6);
-                }
-                TypeElement subTypeElement = context.getElements().getTypeElement(qualifiedName);
-                if (subTypeElement == null) {
-                    throw new MetaException(
-                            typeElement,
-                            "Illegal client exception, the sub type \"" +
-                                    qualifiedName +
-                                    "\" of annotation \"@" +
-                                    ClientException.class.getName() +
-                                    "\" is not a class"
-                    );
-                }
-                collectExceptionTypeNames(subTypeElement, exceptionTypeNames);
-            }
+        for (ClientExceptionMetadata subMetadata : metadata.getSubMetdatas()) {
+            collectExceptionTypeNames(subMetadata, exceptionTypeNames);
         }
      }
 
@@ -745,13 +708,16 @@ public class ClientProcessor {
         }
 
         ClientException clientException = typeElement.getAnnotation(ClientException.class);
-        if (clientException != null && !clientException.family().isEmpty() && !clientException.code().isEmpty()) {
-            typeDefinition.setError(
-                    new TypeDefinition.Error(
-                            clientException.family(),
-                            clientException.code()
-                    )
-            );
+        if (clientException != null) {
+            ClientExceptionMetadata metadata = clientExceptionContext.get(typeElement);
+            if (metadata.getCode() != null && !metadata.getCode().isEmpty()) {
+                typeDefinition.setError(
+                        new TypeDefinition.Error(
+                                metadata.getFamily(),
+                                metadata.getCode()
+                        )
+                );
+            }
         }
 
         if (typeElement.getKind() == ElementKind.CLASS || typeElement.getKind() == ElementKind.INTERFACE) {

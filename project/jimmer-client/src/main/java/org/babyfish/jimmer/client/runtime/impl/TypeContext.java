@@ -29,6 +29,8 @@ class TypeContext {
 
     private final Map<TypeName, EnumTypeImpl> enumTypeMap = new TreeMap<>();
 
+    private final Map<TypeDefinition.Error, StaticObjectTypeImpl> errorTypeMap = new HashMap<>();
+
     private GenericReplace genericReplace;
 
     public TypeContext(
@@ -203,6 +205,22 @@ class TypeContext {
         this.generic(javaType(key.typeName), key.arguments, () -> {
             newObjectType.init(key.typeName, key.arguments, this);
         });
+        if (newObjectType.getError() != null && !newObjectType.getError().getCode().isEmpty()) {
+            StaticObjectTypeImpl conflictType = errorTypeMap.put(newObjectType.getError(), newObjectType);
+            if (conflictType != null) {
+                throw new IllegalApiException(
+                        "Conflict exceptions, the error family \"" +
+                                newObjectType.getError().getFamily() +
+                                "\" and code \"" +
+                                newObjectType.getError().getCode() +
+                                "\" are shared by \"" +
+                                newObjectType.getJavaType().getName() +
+                                "\" and \"" +
+                                conflictType.getJavaType().getTypeName() +
+                                "\""
+                );
+            }
+        }
         return newObjectType;
     }
 

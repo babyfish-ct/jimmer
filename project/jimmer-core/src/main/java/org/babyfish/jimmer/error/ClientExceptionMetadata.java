@@ -69,6 +69,8 @@ class ClientExceptionMetadata {
                             type.getName() +
                             "\", the exception type extends \"" +
                             CodeBasedException.class.getName() +
+                            "\" or \"" +
+                            CodeBasedRuntimeException.class.getName() +
                             "\" must be decorated by \"@" +
                             ClientException.class.getName() +
                             "\""
@@ -104,17 +106,15 @@ class ClientExceptionMetadata {
                             "it cannot be abstract"
             );
         }
-        if (subTypes.length != 0) {
-            if (!Modifier.isAbstract(type.getModifiers())) {
-                throw new ModelException(
-                        "Illegal type \"" +
-                                type.getName() +
-                                "\", it is decorated by @\"" +
-                                ClientException.class.getName() +
-                                "\" and the \"subTypes\" of the annotation is specified so that " +
-                                "it must be abstract"
-                );
-            }
+        if (subTypes.length != 0 && !Modifier.isAbstract(type.getModifiers())) {
+            throw new ModelException(
+                    "Illegal type \"" +
+                            type.getName() +
+                            "\", it is decorated by @\"" +
+                            ClientException.class.getName() +
+                            "\" and the \"subTypes\" of the annotation is specified so that " +
+                            "it must be abstract"
+            );
         }
 
         Class<?> superType = type.getSuperclass();
@@ -147,6 +147,16 @@ class ClientExceptionMetadata {
         String family = ce.family();
         if (family.isEmpty()) {
             family = superMetadata != null ? superMetadata.family : "DEFAULT";
+        } else if (superMetadata != null && !superMetadata.getFamily().equals(family)) {
+            throw new ModelException(
+                    "Illegal type \"" +
+                            type.getName() +
+                            "\", its family is \"" +
+                            family +
+                            "\" but the family of super exception is \"" +
+                            superMetadata.getFamily() +
+                            "\""
+            );
         }
         return new ClientExceptionMetadata(
                 type,
@@ -161,6 +171,31 @@ class ClientExceptionMetadata {
         Class<?>[] subTypes = ce.subTypes();
         Set<ClientExceptionMetadata> metadataSet = new LinkedHashSet<>((subTypes.length * 4 + 2) / 3);
         for (Class<?> subType : subTypes) {
+            if (subType.getSuperclass() != exceptionType) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                exceptionType.getName() +
+                                "\", it is decorated by \"@" +
+                                ClientException.class.getName() +
+                                "\" which specifies the sub type \"" +
+                                subType.getName() +
+                                "\", " +
+                                "but the super type of that sub type is not current type"
+                );
+            }
+            if (subType.getAnnotation(ClientException.class) == null) {
+                throw new ModelException(
+                        "Illegal type \"" +
+                                exceptionType.getName() +
+                                "\", it is decorated by \"@" +
+                                ClientException.class.getName() +
+                                "\" which specifies the sub type \"" +
+                                subType.getName() +
+                                "\", but that sub type is not decorated by \"@" +
+                                ClientException.class.getName() +
+                                "\""
+                );
+            }
             metadataSet.add(CACHE.internallyGet(subType));
         }
         this.subMetadatas = Collections.unmodifiableList(new ArrayList<>(metadataSet));
