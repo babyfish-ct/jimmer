@@ -8,6 +8,8 @@ import java.util.function.Function;
 
 public interface FetcherSelection<T> extends Selection<T> {
 
+    FetchPath getPath();
+
     Fetcher<?> getFetcher();
 
     @Nullable

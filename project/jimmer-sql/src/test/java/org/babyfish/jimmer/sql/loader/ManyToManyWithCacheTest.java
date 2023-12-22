@@ -20,7 +20,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                             .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                     ctx -> {
                         if (useSql) {
@@ -59,7 +59,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                             .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                     ctx -> {
                         ctx.sql(
@@ -91,7 +91,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 AuthorFetcher.$.firstName().lastName()
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -144,7 +144,7 @@ public class ManyToManyWithCacheTest extends AbstractCachedLoaderTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(

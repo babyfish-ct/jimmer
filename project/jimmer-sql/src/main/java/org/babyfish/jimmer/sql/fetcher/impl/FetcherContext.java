@@ -9,10 +9,7 @@ import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 class FetcherContext {
@@ -25,7 +22,7 @@ class FetcherContext {
 
     private FetchingCache cache = new FetchingCache();
 
-    private Map<Field, FetcherTask> taskMap = new LinkedHashMap<>();
+    private Map<FetchedField, FetcherTask> taskMap = new LinkedHashMap<>();
 
     public static void using(
             JSqlClientImplementor sqlClient,
@@ -52,7 +49,7 @@ class FetcherContext {
     }
 
     @SuppressWarnings("unchecked")
-    public void add(Fetcher<?> fetcher, DraftSpi draft) {
+    private void add(FetchPath path, Fetcher<?> fetcher, DraftSpi draft) {
         FetcherImplementor<?> fetcherImplementor = (FetcherImplementor<?>) fetcher;
         for (PropId shownPropId : fetcherImplementor.__shownPropIds()) {
             draft.__show(shownPropId, true);
@@ -70,11 +67,12 @@ class FetcherContext {
                 ) {
                     return;
                 }
-                FetcherTask task = taskMap.computeIfAbsent(field, it ->
+                FetcherTask task = taskMap.computeIfAbsent(new FetchedField(path, field), it ->
                         new FetcherTask(
                                 cache,
                                 sqlClient,
                                 con,
+                                path,
                                 field
                         )
                 );
@@ -83,21 +81,59 @@ class FetcherContext {
         }
     }
 
-    public void addAll(Fetcher<?> fetcher, Collection<@Nullable DraftSpi> drafts) {
+    public void addAll(FetchPath path, Fetcher<?> fetcher, Collection<@Nullable DraftSpi> drafts) {
         for (DraftSpi draft : drafts) {
             if (draft != null) {
-                add(fetcher, draft);
+                add(path, fetcher, draft);
             }
         }
     }
 
     public void execute() {
         while (!taskMap.isEmpty()) {
-            Iterator<Map.Entry<Field, FetcherTask>> itr = taskMap.entrySet().iterator();
-            Map.Entry<Field, FetcherTask> e = itr.next();
+            Iterator<Map.Entry<FetchedField, FetcherTask>> itr = taskMap.entrySet().iterator();
+            Map.Entry<FetchedField, FetcherTask> e = itr.next();
             if (e.getValue().execute()) {
                 taskMap.remove(e.getKey());
             }
+        }
+    }
+
+    private static class FetchedField {
+
+        final FetchPath path;
+
+        final Field field;
+
+        private FetchedField(FetchPath path, Field field) {
+            this.path = path;
+            this.field = field;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            FetchedField that = (FetchedField) o;
+
+            if (!Objects.equals(path, that.path)) return false;
+            return field.equals(that.field);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = path != null ? path.hashCode() : 0;
+            result = 31 * result + field.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Key{" +
+                    "path='" + path + '\'' +
+                    ", field=" + field +
+                    '}';
         }
     }
 }

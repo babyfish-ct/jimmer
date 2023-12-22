@@ -19,7 +19,7 @@ public class TransientWithCacheTest extends AbstractCachedLoaderTest {
             boolean useSql = i == 0;
             connectAndExpect(
                     con -> {
-                        return new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("avgPrice"))
+                        return new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("avgPrice"))
                                 .load(Entities.BOOK_STORES);
                     },
                     ctx -> {

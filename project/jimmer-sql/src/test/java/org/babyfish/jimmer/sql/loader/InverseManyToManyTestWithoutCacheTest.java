@@ -18,7 +18,7 @@ public class InverseManyToManyTestWithoutCacheTest extends AbstractQueryTest {
         Fetcher<Author> fetcher = AuthorFetcher.$
                 .books();
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -59,7 +59,7 @@ public class InverseManyToManyTestWithoutCacheTest extends AbstractQueryTest {
                         )
                 );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -95,7 +95,7 @@ public class InverseManyToManyTestWithoutCacheTest extends AbstractQueryTest {
                         BookFetcher.$.name().edition()
                 );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -157,7 +157,7 @@ public class InverseManyToManyTestWithoutCacheTest extends AbstractQueryTest {
                         )
                 );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("books"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                         .load(Entities.AUTHORS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(

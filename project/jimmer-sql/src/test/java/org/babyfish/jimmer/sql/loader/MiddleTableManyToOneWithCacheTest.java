@@ -19,7 +19,7 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("country"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("country"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                     ctx -> {
                         if (useSql) {
@@ -55,7 +55,7 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("country"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("country"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                     ctx -> {
                         ctx.sql(
@@ -89,7 +89,7 @@ public class MiddleTableManyToOneWithCacheTest extends AbstractCachedLoaderTest 
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("country"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("country"))
                             .load(Entities.AUTHORS_FOR_MANY_TO_ONE),
                     ctx -> {
                         if (useSql) {

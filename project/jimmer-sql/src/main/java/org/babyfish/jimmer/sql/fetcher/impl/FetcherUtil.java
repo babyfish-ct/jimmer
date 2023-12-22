@@ -67,6 +67,7 @@ public class FetcherUtil {
                             fetch(
                                     sqlClient,
                                     con,
+                                    selection.getPath(),
                                     selection.getFetcher(),
                                     (List<DraftSpi>) values
                             );
@@ -101,11 +102,12 @@ public class FetcherUtil {
     private static void fetch(
             JSqlClientImplementor sqlClient,
             Connection con,
+            FetchPath path,
             Fetcher<?> fetcher,
             List<@Nullable DraftSpi> drafts
     ) {
         FetcherContext.using(sqlClient, con, (ctx, isRoot) -> {
-            ctx.addAll(fetcher, drafts);
+            ctx.addAll(path, fetcher, drafts);
             if (isRoot) {
                 ctx.execute();
             }

@@ -7,6 +7,7 @@ import org.babyfish.jimmer.sql.ast.impl.AstVisitor;
 import org.babyfish.jimmer.sql.ast.table.Table;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.Field;
+import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
@@ -17,6 +18,8 @@ import java.util.function.Function;
 
 public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
+    private final FetchPath path;
+
     private final Table<?> table;
 
     private final Fetcher<?> fetcher;
@@ -25,12 +28,21 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
     private final Function<?, T> converter;
 
     public FetcherSelectionImpl(Table<T> table, Fetcher<T> fetcher) {
+        this.path = null;
+        this.table = table;
+        this.fetcher = fetcher;
+        this.converter = null;
+    }
+
+    public FetcherSelectionImpl(Table<T> table, FetchPath path, Fetcher<T> fetcher) {
+        this.path = path;
         this.table = table;
         this.fetcher = fetcher;
         this.converter = null;
     }
 
     public FetcherSelectionImpl(Table<?> table, Fetcher<?> fetcher, @Nullable Function<?, T> converter) {
+        this.path = null;
         this.table = table;
         this.fetcher = fetcher;
         this.converter = converter;
@@ -38,6 +50,11 @@ public class FetcherSelectionImpl<T> implements FetcherSelection<T>, Ast {
 
     public Table<?> getTable() {
         return table;
+    }
+
+    @Override
+    public FetchPath getPath() {
+        return path;
     }
 
     @Override

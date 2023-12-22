@@ -18,7 +18,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
     public void loadParentId() {
         Fetcher<Book> fetcher = BookFetcher.$.store();
         connectAndExpect(
-            con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("store"))
+            con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                     .load(Entities.BOOKS_FOR_MANY_TO_ONE),
             ctx -> {
                 ctx.sql(
@@ -60,7 +60,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("store"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                         .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
@@ -105,7 +105,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 BookStoreFetcher.$.name()
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("store"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                         .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(
@@ -164,7 +164,7 @@ public class ManyToOneWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("store"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                         .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                 ctx -> {
                     ctx.sql(

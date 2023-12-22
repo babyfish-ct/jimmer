@@ -18,7 +18,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
     public void loadTargetIds() {
         Fetcher<Book> fetcher = BookFetcher.$.authors();
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -53,7 +53,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor)getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor)getSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -84,7 +84,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                 AuthorFetcher.$.firstName().lastName()
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(
@@ -133,7 +133,7 @@ public class ManyToManyWithoutCacheTest extends AbstractQueryTest {
                 )
         );
         connectAndExpect(
-                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, fetcher.getFieldMap().get("authors"))
+                con -> new DataLoader((JSqlClientImplementor) getSqlClient(), con, null, fetcher.getFieldMap().get("authors"))
                         .load(Entities.BOOKS_FOR_MANY_TO_MANY),
                 ctx -> {
                     ctx.sql(

@@ -8,11 +8,12 @@ import java.sql.Connection;
 
 public class DataLoader extends AbstractDataLoader {
 
-    public DataLoader(JSqlClientImplementor sqlClient, Connection con, Field field) {
+    public DataLoader(JSqlClientImplementor sqlClient, Connection con, FetchPath path, Field field) {
         super(
                 sqlClient,
                 con,
                 field.getEntityType(),
+                path,
                 field.getProp(),
                 field.getChildFetcher(),
                 field.getFilter(),
