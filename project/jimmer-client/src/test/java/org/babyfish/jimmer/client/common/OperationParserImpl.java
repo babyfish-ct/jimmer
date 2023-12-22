@@ -10,6 +10,18 @@ public class OperationParserImpl implements Metadata.OperationParser {
 
     @Override
     public String uri(AnnotatedElement element) {
+        GetMapping getMapping = element.getAnnotation(GetMapping.class);
+        if (getMapping != null) {
+            return getMapping.value();
+        }
+        PutMapping putMapping = element.getAnnotation(PutMapping.class);
+        if (putMapping != null) {
+            return putMapping.value();
+        }
+        DeleteMapping deleteMapping = element.getAnnotation(DeleteMapping.class);
+        if (deleteMapping != null) {
+            return deleteMapping.value();
+        }
         return null;
     }
 
