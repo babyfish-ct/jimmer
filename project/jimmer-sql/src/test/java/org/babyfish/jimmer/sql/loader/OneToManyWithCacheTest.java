@@ -18,7 +18,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         if (useSql) {
@@ -71,7 +71,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         ctx.sql(
@@ -113,7 +113,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         if (useSql) {
@@ -214,7 +214,7 @@ public class OneToManyWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("books"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("books"))
                             .load(Entities.BOOK_STORES),
                     ctx -> {
                         ctx.sql(

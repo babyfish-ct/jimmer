@@ -14,6 +14,7 @@ import org.babyfish.jimmer.sql.ast.impl.EntitiesImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.FilterLevel;
 import org.babyfish.jimmer.sql.ast.impl.query.Queries;
+import org.babyfish.jimmer.sql.ast.impl.table.FetcherSelectionImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.TableImplementor;
 import org.babyfish.jimmer.sql.ast.query.MutableQuery;
 import org.babyfish.jimmer.sql.ast.query.Sortable;
@@ -26,10 +27,7 @@ import org.babyfish.jimmer.sql.cache.CacheAbandonedCallback;
 import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.FieldFilter;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherFactory;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
-import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
-import org.babyfish.jimmer.sql.fetcher.impl.FieldFilterArgsImpl;
+import org.babyfish.jimmer.sql.fetcher.impl.*;
 import org.babyfish.jimmer.sql.filter.CacheableFilter;
 import org.babyfish.jimmer.sql.filter.Filter;
 import org.babyfish.jimmer.sql.meta.ColumnDefinition;
@@ -52,6 +50,8 @@ public abstract class AbstractDataLoader {
     private final JSqlClientImplementor sqlClient;
 
     private final Connection con;
+
+    private final FetchPath path;
 
     private final ImmutableProp prop;
 
@@ -82,6 +82,7 @@ public abstract class AbstractDataLoader {
             JSqlClientImplementor sqlClient,
             Connection con,
             ImmutableType entityType,
+            FetchPath path,
             ImmutableProp prop,
             Fetcher<?> fetcher,
             FieldFilter<?> propFilter,
@@ -137,6 +138,7 @@ public abstract class AbstractDataLoader {
         }
         this.sqlClient = sqlClient;
         this.con = con;
+        this.path = FetchPath.of(path, prop);
         this.prop = prop;
         this.storage = prop.getStorage(sqlClient.getMetadataStrategy());
         this.remote = prop.isRemote();
@@ -633,7 +635,7 @@ public abstract class AbstractDataLoader {
     private List<Tuple2<Object, ImmutableSpi>> querySourceTargetPairs(
             Collection<Object> sourceIds
     ) {
-        return executeTupleQuery(sourceIds, target -> target.fetch(fetcher));
+        return executeTupleQuery(sourceIds, target -> new FetcherSelectionImpl<>(target, path, fetcher));
     }
 
     @SuppressWarnings("unchecked")
@@ -646,7 +648,7 @@ public abstract class AbstractDataLoader {
             applyGlobalFilter(q, target);
             applyDefaultOrder(q, target);
             return q.select(
-                    ((Table<ImmutableSpi>)target).fetch(fetcher)
+                    new FetcherSelectionImpl<>((Table<ImmutableSpi>)target, path, fetcher)
             );
         }).execute(con);
     }
@@ -896,7 +898,9 @@ public abstract class AbstractDataLoader {
                 q.where(pkExpr.in(targetIds));
                 applyPropFilter(q, target, map.keySet());
                 applyGlobalFilter(q, target);
-                return q.select(((Table<ImmutableSpi>)target).fetch(fetcher));
+                return q.select(
+                        new FetcherSelectionImpl<>((Table<ImmutableSpi>)target, path, fetcher)
+                );
             }).execute(con);
         }
 

@@ -45,6 +45,7 @@ class DataLoader extends AbstractDataLoader {
                 sqlClient,
                 con,
                 null,
+                null,
                 prop,
                 prop.isAssociation(TargetLevel.ENTITY) ?
                         targetFetcher(prop.getTargetType()) :

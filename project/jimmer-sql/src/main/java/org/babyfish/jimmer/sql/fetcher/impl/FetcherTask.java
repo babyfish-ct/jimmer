@@ -33,13 +33,14 @@ class FetcherTask {
             FetchingCache cache,
             JSqlClientImplementor sqlClient,
             Connection con,
+            FetchPath path,
             Field field
     ) {
         this.cache = cache;
         this.sqlClient = sqlClient;
         this.field = field;
         this.batchSize = determineBatchSize();
-        this.dataLoader = new DataLoader(sqlClient, con, field);
+        this.dataLoader = new DataLoader(sqlClient, con, path, field);
     }
 
     public void add(DraftSpi draft) {

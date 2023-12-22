@@ -5,7 +5,6 @@ import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.runtime.DraftSpi;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
 import org.babyfish.jimmer.sql.fetcher.Field;
-import org.babyfish.jimmer.sql.fetcher.FieldFilter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +14,7 @@ public class FetchingCache {
 
     private static final Object NULL = new Object();
 
-    private Map<FieldKey, Map<Object, Object>> map = new HashMap<>();
+    private final Map<FieldKey, Map<Object, Object>> map = new HashMap<>();
 
     public Object createKey(Field field, ImmutableSpi owner) {
         ImmutableProp prop = field.getProp();
@@ -51,48 +50,31 @@ public class FetchingCache {
 
     private static class FieldKey {
 
-        private final ImmutableProp prop;
+        private final Field field;
 
-        private final FieldFilter<?> filter;
-
-        private final int limit;
-
-        private final int offset;
-
-        FieldKey(Field field) {
-            this(field.getProp(), field.getFilter(), field.getLimit(), field.getOffset());
-        }
-
-        FieldKey(ImmutableProp prop, FieldFilter<?> filter, int limit, int offset) {
-            this.prop = prop;
-            this.filter = filter;
-            this.limit = limit;
-            this.offset = offset;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(prop, filter, limit, offset);
+        private FieldKey(Field field) {
+            this.field = field;
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
+
             FieldKey fieldKey = (FieldKey) o;
-            return limit == fieldKey.limit &&
-                    offset == fieldKey.offset &&
-                    prop.equals(fieldKey.prop) &&
-                    Objects.equals(filter, fieldKey.filter);
+
+            return field.equals(fieldKey.field);
+        }
+
+        @Override
+        public int hashCode() {
+            return field.hashCode();
         }
 
         @Override
         public String toString() {
             return "FieldKey{" +
-                    "prop=" + prop +
-                    ", filter=" + filter +
-                    ", limit=" + limit +
-                    ", offset=" + offset +
+                    "field=" + field +
                     '}';
         }
     }

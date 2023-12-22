@@ -20,7 +20,7 @@ public class ManyToOneWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("store"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                             .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                     ctx -> {
                         if (useSql) {
@@ -65,7 +65,7 @@ public class ManyToOneWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor)getCachedSqlClient(), con, fetcher.getFieldMap().get("store"))
+                    con -> new DataLoader((JSqlClientImplementor)getCachedSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                             .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                     ctx -> {
                         ctx.sql(
@@ -113,7 +113,7 @@ public class ManyToOneWithCacheTest extends AbstractCachedLoaderTest {
         for (int i = 0; i < 2; i++) {
             boolean useSql = i == 0;
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("store"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                             .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                     ctx -> {
                         if (useSql) {
@@ -176,7 +176,7 @@ public class ManyToOneWithCacheTest extends AbstractCachedLoaderTest {
         );
         for (int i = 0; i < 2; i++) {
             connectAndExpect(
-                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, fetcher.getFieldMap().get("store"))
+                    con -> new DataLoader((JSqlClientImplementor) getCachedSqlClient(), con, null, fetcher.getFieldMap().get("store"))
                             .load(Entities.BOOKS_FOR_MANY_TO_ONE),
                     ctx -> {
                         ctx.sql(

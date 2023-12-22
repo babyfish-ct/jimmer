@@ -28,6 +28,7 @@ import org.babyfish.jimmer.sql.cache.CacheEnvironment;
 import org.babyfish.jimmer.sql.cache.CacheLoader;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.ViewMetadata;
+import org.babyfish.jimmer.sql.fetcher.impl.FetchPath;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherSelection;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherUtil;
 import org.babyfish.jimmer.sql.runtime.Converters;
@@ -306,6 +307,11 @@ public class EntitiesImpl implements Entities {
                                 new FetcherSelection<E>() {
 
                                     @Override
+                                    public FetchPath getPath() {
+                                        return null;
+                                    }
+
+                                    @Override
                                     public Fetcher<?> getFetcher() {
                                         return fetcher;
                                     }
@@ -419,6 +425,11 @@ public class EntitiesImpl implements Entities {
                         con,
                         Collections.singletonList(
                                 new FetcherSelection<E>() {
+
+                                    @Override
+                                    public FetchPath getPath() {
+                                        return null;
+                                    }
 
                                     @Override
                                     public Fetcher<?> getFetcher() {
