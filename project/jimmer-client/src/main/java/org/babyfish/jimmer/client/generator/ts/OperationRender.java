@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.runtime.impl.IllegalApiException;
@@ -24,14 +24,14 @@ public class OperationRender implements Render {
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
         writer
                 .code('\n')
-                .doc(operation.getDoc(), CodeWriter.DocPart.PARAM, CodeWriter.DocPart.RETURN)
+                .doc(operation.getDoc(), SourceWriter.DocPart.PARAM, SourceWriter.DocPart.RETURN)
                 .code("async ")
                 .code(name);
         if (!operation.getParameters().isEmpty()) {
-            writer.scope(CodeWriter.ScopeType.ARGUMENTS, ", ", false, () -> {
+            writer.scope(SourceWriter.ScopeType.ARGUMENTS, ", ", false, () -> {
                 writer.code("options: ").code(writer.getSource().getRoot().getName()).code("Options['").code(name).code("']");
             });
         } else {
@@ -41,17 +41,17 @@ public class OperationRender implements Render {
         if (operation.getReturnType() == null) {
             writer.code("<void>");
         } else {
-            writer.scope(CodeWriter.ScopeType.GENERIC, ", ", true, () -> {
+            writer.scope(SourceWriter.ScopeType.GENERIC, ", ", true, () -> {
                 writer.typeRef(operation.getReturnType());
             });
         }
-        writer.code(' ').scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+        writer.code(' ').scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             renderImpl(writer);
         });
         writer.code('\n');
     }
 
-    private void renderImpl(CodeWriter writer) {
+    private void renderImpl(SourceWriter writer) {
         List<UriPart> parts = UriPart.parts(operation.getUri());
         if (parts.get(0).variable) {
             Parameter parameter = pathVariableParameter(operation, parts.get(0).text);
@@ -133,7 +133,7 @@ public class OperationRender implements Render {
                 PathBuilder builder = e.getValue();
                 writer.code("_value = options").code(builder.toString()).code(";\n");
                 writer.code("if (_value !== undefined && _value !== null) ");
-                writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
                     writer.code("_uri += _separator\n");
                     writer.code("_uri += '").code(e.getKey() + "=").code("'\n");
                     writer.code("_uri += encodeURIComponent(_value);\n");

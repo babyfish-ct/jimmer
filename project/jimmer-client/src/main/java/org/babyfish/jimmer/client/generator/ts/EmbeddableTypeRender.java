@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.NullableType;
 import org.babyfish.jimmer.client.runtime.ObjectType;
@@ -18,15 +18,15 @@ public class EmbeddableTypeRender implements Render {
     }
 
     @Override
-    public void export(CodeWriter writer) {
+    public void export(SourceWriter writer) {
         writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
         TypeScriptContext ctx = writer.getContext();
         writer.code("export interface ").code(name).code(' ');
-        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+        writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
                 DocUtils.doc(property, type.getDoc(), writer);
                 writer

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
@@ -47,7 +47,7 @@ public class FetchedTypeRender implements Render {
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
         assert objectType.getFetchByInfo() != null;
         Doc doc = objectType.getFetchByInfo().getDoc();
         if (doc == null) {
@@ -59,9 +59,9 @@ public class FetchedTypeRender implements Render {
         writer.code('\n');
     }
 
-    static void render(ObjectType type, CodeWriter writer, Map<Type, String> recursiveTypeNames) {
+    static void render(ObjectType type, SourceWriter writer, Map<Type, String> recursiveTypeNames) {
         TypeScriptContext ctx = writer.getContext();
-        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+        writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             for (Property property : type.getProperties().values()) {
                 DocUtils.doc(property, type.getDoc(), writer);
                 writer
@@ -97,7 +97,7 @@ public class FetchedTypeRender implements Render {
         });
     }
 
-    private static void writeResolvedType(CodeWriter writer, boolean isNullable, boolean isList, Runnable block) {
+    private static void writeResolvedType(SourceWriter writer, boolean isNullable, boolean isList, Runnable block) {
         TypeScriptContext ctx = writer.getContext();
         if (isList) {
             writer.code(ctx.isMutable() ? "Array<" : "ReadonlyArray<");

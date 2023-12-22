@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts.fixed;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 
 public class RequestOfRender implements Render {
@@ -11,12 +11,12 @@ public class RequestOfRender implements Render {
                     ";\n";
 
     @Override
-    public void export(CodeWriter writer) {
+    public void export(SourceWriter writer) {
         writer.code("export type {RequestOf} from './RequestOf';\n");
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
         writer.code(CODE);
     }
 }

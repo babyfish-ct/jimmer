@@ -7,7 +7,6 @@ import org.babyfish.jimmer.client.source.Source;
 import org.babyfish.jimmer.client.source.SourceManager;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -169,7 +168,7 @@ public abstract class Context {
 
     public void render(Source source, Writer writer) {
         init();
-        CodeWriter codeWriter = this.createCodeWriter(this, source);
+        SourceWriter codeWriter = this.createCodeWriter(this, source);
         StringWriter headWriter = new StringWriter();
         StringWriter bodyWriter = new StringWriter();
         codeWriter.setWriter(bodyWriter);
@@ -206,7 +205,7 @@ public abstract class Context {
         StringWriter headWriter = new StringWriter();
         StringWriter bodyWriter = new StringWriter();
         for (Source source : sources) {
-            CodeWriter codeWriter = this.createCodeWriter(this, source);
+            SourceWriter codeWriter = this.createCodeWriter(this, source);
             codeWriter.setWriter(bodyWriter);
             source.getRender().export(codeWriter);
             codeWriter.setWriter(headWriter);
@@ -226,7 +225,7 @@ public abstract class Context {
 
     protected abstract SourceManager createSourceManager();
 
-    protected abstract CodeWriter createCodeWriter(Context ctx, Source source);
+    protected abstract SourceWriter createCodeWriter(Context ctx, Source source);
 
     protected boolean isIndexRequired() {
         return false;

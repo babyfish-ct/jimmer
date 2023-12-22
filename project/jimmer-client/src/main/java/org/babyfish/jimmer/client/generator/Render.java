@@ -2,7 +2,7 @@ package org.babyfish.jimmer.client.generator;
 
 public interface Render {
 
-    default void export(CodeWriter writer) {}
+    default void export(SourceWriter writer) {}
 
-    void render(CodeWriter writer);
+    void render(SourceWriter writer);
 }

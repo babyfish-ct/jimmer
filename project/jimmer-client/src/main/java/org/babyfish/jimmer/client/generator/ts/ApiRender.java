@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.Service;
 import org.babyfish.jimmer.client.source.Source;
@@ -21,12 +21,12 @@ public class ApiRender implements Render {
     }
 
     @Override
-    public void export(CodeWriter writer) {
+    public void export(SourceWriter writer) {
         writer.code("export {").code(name).code("} from './").code(name).code("';\n");
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
 
         TypeScriptContext ctx = writer.getContext();
         List<Source> serviceSources = services
@@ -41,7 +41,7 @@ public class ApiRender implements Render {
         }
 
         writer.code("export class ").code(name).code(' ');
-        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+        writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             for (Source source : serviceSources) {
                 writer
                         .code("\nreadonly ")
@@ -51,7 +51,7 @@ public class ApiRender implements Render {
                         .code('\n');
             }
             writer.code("\nconstructor(executor: ").code(executorSource.getName()).code(") ");
-            writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+            writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
                 for (Source source : serviceSources) {
                     writer
                             .code("this.")

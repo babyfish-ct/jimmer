@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 
 import java.util.*;
 
-public class TypeScriptWriter extends CodeWriter {
+public class TypeScriptWriter extends SourceWriter {
 
     private final NavigableMap<String, Import> imports = new TreeMap<>();
 
@@ -19,7 +19,7 @@ public class TypeScriptWriter extends CodeWriter {
     }
 
     @Override
-    public CodeWriter typeRef(Type type) {
+    public SourceWriter typeRef(Type type) {
         if (type instanceof TypeVariable) {
             code(((TypeVariable)type).getName());
         } else if (type instanceof NullableType) {

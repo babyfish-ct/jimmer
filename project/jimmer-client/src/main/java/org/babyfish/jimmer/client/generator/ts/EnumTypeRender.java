@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.EnumType;
 
@@ -16,15 +16,15 @@ public class EnumTypeRender implements Render {
     }
 
     @Override
-    public void export(CodeWriter writer) {
+    public void export(SourceWriter writer) {
         writer.code("export type {").code(name).code("} from './").code(name).code("';\n");
         writer.code("export {").code(name).code("_CONSTANTS} from './").code(name).code("';\n");
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
         writer.code("export const ").code(name).code("_CONSTANTS = ");
-        writer.scope(CodeWriter.ScopeType.LIST, ", ", true, () -> {
+        writer.scope(SourceWriter.ScopeType.LIST, ", ", true, () -> {
             for (EnumType.Constant constant : enumType.getConstants()) {
                 writer.separator();
                 DocUtils.doc(constant.getDoc(), constant.getName(), enumType.getDoc(), writer);

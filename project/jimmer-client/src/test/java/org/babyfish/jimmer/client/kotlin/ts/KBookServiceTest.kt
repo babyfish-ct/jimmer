@@ -34,7 +34,8 @@ class KBookServiceTest {
                 "    async deleteBook(options: KBookServiceOptions['deleteBook']): Promise<\n" +
                 "        number\n" +
                 "    > {\n" +
-                "        let _uri = '/';\n" +
+                "        let _uri = '/book/';\n" +
+                "        _uri += encodeURIComponent(options.id);\n" +
                 "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
                 "    }\n" +
                 "    \n" +
@@ -44,7 +45,7 @@ class KBookServiceTest {
                 "    async findComplexBooks(options: KBookServiceOptions['findComplexBooks']): Promise<\n" +
                 "        ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
                 "    > {\n" +
-                "        let _uri = '/';\n" +
+                "        let _uri = '/books/complex';\n" +
                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                 "        let _value: any = undefined;\n" +
                 "        _value = options.name;\n" +
@@ -91,14 +92,14 @@ class KBookServiceTest {
                 "    async findSimpleBooks(): Promise<\n" +
                 "        ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
                 "    > {\n" +
-                "        let _uri = '/';\n" +
+                "        let _uri = '/books/simple';\n" +
                 "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
                 "    }\n" +
                 "    \n" +
                 "    async findTuples(options: KBookServiceOptions['findTuples']): Promise<\n" +
                 "        KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
                 "    > {\n" +
-                "        let _uri = '/';\n" +
+                "        let _uri = '/tuples';\n" +
                 "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                 "        let _value: any = undefined;\n" +
                 "        _value = options.name;\n" +
@@ -128,7 +129,7 @@ class KBookServiceTest {
                 "    async saveBooks(options: KBookServiceOptions['saveBooks']): Promise<\n" +
                 "        Dynamic_KBook | null | undefined\n" +
                 "    > {\n" +
-                "        let _uri = '/';\n" +
+                "        let _uri = '/book';\n" +
                 "        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_KBook | null | undefined\n" +
                 "    }\n" +
                 "    \n" +

@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.NullableType;
@@ -8,8 +8,6 @@ import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.client.runtime.Parameter;
 import org.babyfish.jimmer.client.runtime.Service;
 import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
-
-import java.util.Map;
 
 public class ServiceRender implements Render {
 
@@ -23,37 +21,37 @@ public class ServiceRender implements Render {
     }
 
     @Override
-    public void export(CodeWriter writer) {
+    public void export(SourceWriter writer) {
         writer.code("export {").code(name).code("} from './").code(name).code("';\n");
     }
 
     @Override
-    public void render(CodeWriter writer) {
+    public void render(SourceWriter writer) {
         renderService(writer);
         renderOptions(writer);
     }
 
-    private void renderService(CodeWriter writer) {
+    private void renderService(SourceWriter writer) {
         writer.importSource(writer.getContext().getRootSource("Executor"));
         writer.doc(service.getDoc()).code("export class ").code(name).code(' ');
-        writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+        writer.scope(SourceWriter.ScopeType.OBJECT, "", true, () -> {
             writer.code("\nconstructor(private executor: Executor) {}\n");
             writer.renderChildren();
         });
         writer.code('\n');
     }
 
-    private void renderOptions(CodeWriter writer) {
+    private void renderOptions(SourceWriter writer) {
         TypeScriptContext ctx = writer.getContext();
         writer.code("export type ").code(name).code("Options = ");
-        writer.scope(CodeWriter.ScopeType.OBJECT, ", ", true, () -> {
+        writer.scope(SourceWriter.ScopeType.OBJECT, ", ", true, () -> {
             for (Operation operation : service.getOperations()) {
                 if (operation.getParameters().isEmpty()) {
                     continue;
                 }
                 writer.separator().code('\'').code(ctx.getSource(operation).getName()).code("': ");
                 writer.scope(
-                        CodeWriter.ScopeType.OBJECT,
+                        SourceWriter.ScopeType.OBJECT,
                         ", ",
                         true,
                         () -> {

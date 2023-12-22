@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.runtime.*;
 
@@ -30,23 +31,54 @@ public class OpenApiGenerator {
         this.headers = headers;
     }
 
-    public void generate( Writer writer) throws IOException {
-        Map<String, Object> finalMap = new LinkedHashMap<>();
-        if (headers != null) {
-            finalMap.putAll(headers);
-        }
-        finalMap.put("paths", generateOperations());
-        new ObjectMapper().writeValue(writer, finalMap);
+    public void generate(Writer writer) throws IOException {
+        YmlWriter ymlWriter = new YmlWriter(writer);
+        generatePaths(ymlWriter);
     }
 
-    private Map<String, Object> generateOperations() {
-        Map<String, Object> pathMap = new LinkedHashMap<>();
-        for (Service service : metadata.getServices()) {
-            for (Operation operation : service.getOperations()) {
-                pathMap.put(operation.getUri(), genericOperation(service, operation));
+    private void generatePaths(YmlWriter writer) {
+        writer.object("paths", ()-> {
+            for (Service service : metadata.getServices()) {
+                for (Operation operation : service.getOperations()) {
+                    writer.object(operation.getUri(), () -> {
+                        writer.list("tags", () -> {
+                            writer.code(serviceNameManager.get(service));
+                        });
+                        writer.prop("operationId", operation.getName());
+                        if (!operation.getParameters().isEmpty()) {
+                            writer.list("parameters", () -> {
+                                for (Parameter parameter : operation.getParameters()) {
+                                    String requestParam = parameter.getRequestParam();
+                                    String name = requestParam != null ? requestParam : parameter.getPathVariable();
+                                    if (name == null && parameter.isRequestBody()) {
+                                        continue;
+                                    }
+                                    if (name != null) {
+                                        writer.listItem(() -> {
+                                            writer.prop("name", name);
+                                            writer.prop("in", requestParam != null ? "query" : "path");
+                                            if (!(parameter.getType() instanceof NullableType)) {
+                                                writer.prop("required", "true");
+                                            }
+                                        });
+                                    } else {
+                                        for (Property property : ((ObjectType)parameter.getType()).getProperties().values()) {
+                                            writer.listItem(() -> {
+                                                writer.prop("name", property.getName());
+                                                writer.prop("in", "query");
+                                                if (!(property.getType() instanceof NullableType)) {
+                                                    writer.prop("required", "true");
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
             }
-        }
-        return pathMap;
+        });
     }
 
     private Object genericOperation(Service service, Operation operation) {

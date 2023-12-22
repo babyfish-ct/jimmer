@@ -1,6 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
-import org.babyfish.jimmer.client.generator.CodeWriter;
+import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.runtime.Metadata;
 import org.babyfish.jimmer.client.source.Source;
@@ -41,7 +41,7 @@ public class TypeScriptContext extends Context {
     }
 
     @Override
-    protected CodeWriter createCodeWriter(Context context, Source source) {
+    protected SourceWriter createCodeWriter(Context context, Source source) {
         return new TypeScriptWriter(context, source);
     }
 
