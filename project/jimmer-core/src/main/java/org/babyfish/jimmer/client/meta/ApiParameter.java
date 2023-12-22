@@ -7,6 +7,4 @@ public interface ApiParameter {
     TypeRef getType();
 
     int getOriginalIndex();
-
-    boolean isDefaultValueSpecified();
 }

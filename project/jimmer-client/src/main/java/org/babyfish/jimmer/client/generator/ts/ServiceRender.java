@@ -7,6 +7,7 @@ import org.babyfish.jimmer.client.runtime.NullableType;
 import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.client.runtime.Parameter;
 import org.babyfish.jimmer.client.runtime.Service;
+import org.babyfish.jimmer.client.runtime.impl.NullableTypeImpl;
 
 import java.util.Map;
 
@@ -65,9 +66,13 @@ public class ServiceRender implements Render {
                                 writer
                                         .codeIf(!ctx.isMutable(), "readonly ")
                                         .code(parameter.getName())
-                                        .codeIf(parameter.getType() instanceof NullableType, '?')
+                                        .codeIf(parameter.getType() instanceof NullableType || parameter.getDefaultValue() != null, '?')
                                         .code(": ")
-                                        .typeRef(parameter.getType());
+                                        .typeRef(
+                                                parameter.getDefaultValue() != null ?
+                                                        NullableTypeImpl.of(parameter.getType()) :
+                                                        parameter.getType()
+                                        );
                             }
                         }
                 );

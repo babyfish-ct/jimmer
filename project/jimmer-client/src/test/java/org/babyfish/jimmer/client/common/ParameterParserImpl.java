@@ -18,9 +18,12 @@ public class ParameterParserImpl implements Metadata.ParameterParser {
     }
 
     @Override
-    public boolean isDefault(Parameter javaParameter) {
+    public String defaultValue(Parameter javaParameter) {
         RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
-        return requestParam != null && !requestParam.defaultVale().isEmpty();
+        if (requestParam == null || requestParam.defaultVale().isEmpty()) {
+            return null;
+        }
+        return requestParam.defaultVale();
     }
 
     @Nullable

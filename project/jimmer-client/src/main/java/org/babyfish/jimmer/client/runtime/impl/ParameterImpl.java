@@ -15,6 +15,8 @@ public class ParameterImpl implements Parameter {
 
     private boolean requestBody;
 
+    private String defaultValue;
+
     public ParameterImpl(String name) {
         this.name = name;
     }
@@ -58,5 +60,14 @@ public class ParameterImpl implements Parameter {
 
     void setRequestBody(boolean requestBody) {
         this.requestBody = requestBody;
+    }
+
+    @Override
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 }

@@ -151,7 +151,6 @@ class ClientProcessor(
             for (param in func.parameters) {
                 parameter(null, param.name!!.asString()) { parameter ->
                     parameter.originalIndex = index++
-                    parameter.isDefaultValueSpecified = param.hasDefault
                     typeRef { type ->
                         fillType(param.type)
                         parameter.setType(type)

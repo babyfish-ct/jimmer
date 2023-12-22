@@ -19,8 +19,6 @@ public class ApiParameterImpl<S> extends AstNode<S> implements ApiParameter {
 
     private TypeRefImpl<S> type;
 
-    private boolean defaultValueSpecified;
-
     private int originalIndex;
 
     ApiParameterImpl(S source, String name) {
@@ -40,15 +38,6 @@ public class ApiParameterImpl<S> extends AstNode<S> implements ApiParameter {
 
     public void setType(TypeRefImpl<S> type) {
         this.type = type;
-    }
-
-    @Override
-    public boolean isDefaultValueSpecified() {
-        return defaultValueSpecified;
-    }
-
-    public void setDefaultValueSpecified(boolean defaultValueSpecified) {
-        this.defaultValueSpecified = defaultValueSpecified;
     }
 
     @Override
@@ -88,10 +77,6 @@ public class ApiParameterImpl<S> extends AstNode<S> implements ApiParameter {
             provider.defaultSerializeField("type", parameter.getType(), gen);
             gen.writeFieldName("index");
             gen.writeNumber(parameter.getOriginalIndex());
-            if (parameter.isDefaultValueSpecified()) {
-                gen.writeFieldName("default");
-                gen.writeBoolean(true);
-            }
             gen.writeEndObject();
         }
     }
@@ -105,9 +90,6 @@ public class ApiParameterImpl<S> extends AstNode<S> implements ApiParameter {
             ApiParameterImpl<Object> parameter = new ApiParameterImpl<>(null, jsonNode.get("name").asText());
             parameter.setType((TypeRefImpl<Object>) ctx.readTreeAsValue(jsonNode.get("type"), TypeRefImpl.class));
             parameter.setOriginalIndex(jsonNode.get("index").asInt());
-            if (jsonNode.has("default")) {
-                parameter.setDefaultValueSpecified(true);
-            }
             return parameter;
         }
     }

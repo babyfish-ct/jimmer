@@ -10,6 +10,8 @@ public interface EnumType extends Type {
 
     Class<?> getJavaType();
 
+    List<String> getSimpleNames();
+
     List<Constant> getConstants();
 
     @Nullable

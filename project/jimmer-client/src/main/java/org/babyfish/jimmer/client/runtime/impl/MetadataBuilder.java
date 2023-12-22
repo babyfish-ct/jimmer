@@ -234,12 +234,8 @@ public class MetadataBuilder implements Metadata.Builder {
             }
         }
         Type type = ctx.parseType(apiParameter.getType());
-        if (!apiParameter.getType().isNullable() &&
-                (apiParameter.isDefaultValueSpecified() || parameterParser.isDefault(javaParameter))) {
-            parameter.setType(NullableTypeImpl.of(type));
-        } else {
-            parameter.setType(type);
-        }
+        parameter.setType(type);
+        parameter.setDefaultValue(parameterParser.defaultValue(javaParameter));
         return parameter;
     }
 

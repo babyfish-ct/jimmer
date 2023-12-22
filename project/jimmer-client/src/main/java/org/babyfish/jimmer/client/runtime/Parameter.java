@@ -11,4 +11,6 @@ public interface Parameter {
     String getPathVariable();
 
     boolean isRequestBody();
+
+    String getDefaultValue();
 }

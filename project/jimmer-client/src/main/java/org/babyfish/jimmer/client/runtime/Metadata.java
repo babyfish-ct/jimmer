@@ -58,7 +58,7 @@ public interface Metadata {
         @Nullable
         String requestParam(Parameter javaParameter);
 
-        boolean isDefault(Parameter javaParameter);
+        String defaultValue(Parameter javaParameter);
 
         @Nullable
         String pathVariable(Parameter javaParameter);

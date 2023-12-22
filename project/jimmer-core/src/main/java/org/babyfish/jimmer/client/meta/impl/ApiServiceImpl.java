@@ -41,10 +41,6 @@ public class ApiServiceImpl<S> extends AstNode<S> implements ApiService {
         return typeName;
     }
 
-    public void setTypeName(TypeName typeName) {
-        this.typeName = typeName;
-    }
-
     @Nullable
     @Override
     public List<String> getGroups() {

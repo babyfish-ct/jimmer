@@ -135,9 +135,12 @@ public class Metadatas {
         }
 
         @Override
-        public boolean isDefault(Parameter javaParameter) {
+        public String defaultValue(Parameter javaParameter) {
             RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
-            return requestParam != null && !requestParam.defaultValue().isEmpty();
+            if (requestParam == null || requestParam.defaultValue().isEmpty()) {
+                return null;
+            }
+            return requestParam.defaultValue();
         }
 
         @Nullable
