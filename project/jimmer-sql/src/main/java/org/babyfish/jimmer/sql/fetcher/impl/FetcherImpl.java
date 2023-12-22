@@ -491,6 +491,20 @@ public class FetcherImpl<E> implements FetcherImplementor<E> {
                                 ManyToManyView.class.getName()
                 );
             }
+            if (loaderImpl.getRecursionStrategy() != null) {
+                while (childFetcher != null) {
+                    Field deeperField = childFetcher.getFieldMap().get(prop);
+                    if (deeperField != null && deeperField.getRecursionStrategy() != null) {
+                        throw new IllegalArgumentException(
+                                "The \"" +
+                                        immutableProp +
+                                        "\" of current fetcher is already recursive, so " +
+                                        "the same property of child fetcher cannot be recursive"
+                        );
+                    }
+                    childFetcher = deeperField != null ? deeperField.getChildFetcher() : null;
+                }
+            }
         }
         return addImpl(immutableProp, loaderImpl);
     }
