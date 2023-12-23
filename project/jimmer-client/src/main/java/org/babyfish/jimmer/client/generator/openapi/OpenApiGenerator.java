@@ -41,8 +41,8 @@ public class OpenApiGenerator {
         writer.object("paths", ()-> {
             for (Service service : metadata.getServices()) {
                 for (Operation operation : service.getOperations()) {
-                    writer.description(Description.of(Doc.valueOf(operation.getDoc()), true));
                     writer.object(operation.getUri(), () -> {
+                        writer.description(Description.of(Doc.valueOf(operation.getDoc()), true));
                         writer.list("tags", () -> {
                             writer.code(serviceNameManager.get(service));
                         });
@@ -188,8 +188,12 @@ public class OpenApiGenerator {
                 String returnDoc = operation.getDoc() != null ? operation.getDoc().getReturnValue() : null;
                 writer.description(Description.of(returnDoc != null ? returnDoc : "OK"));
                 if (operation.getReturnType() != null) {
-                    writer.object("schema", () -> {
-                        generateType(operation.getReturnType(), writer);
+                    writer.object("content", () -> {
+                        writer.object("application/json", () -> {
+                            writer.object("schema", () -> {
+                                generateType(operation.getReturnType(), writer);
+                            });
+                        });
                     });
                 }
             });
@@ -197,18 +201,22 @@ public class OpenApiGenerator {
                 writer.object(e.getKey().toString(), () -> {
                     List<ObjectType> exceptionTypes = e.getValue();
                     writer.prop("description", "ERROR");
-                    writer.object("schema", () -> {
-                        if (exceptionTypes.size() == 1) {
-                            generateType(operation.getReturnType(), writer);
-                        } else {
-                            writer.list("oneOf", () -> {
-                                for (ObjectType exceptionType : exceptionTypes) {
-                                    writer.listItem(() -> {
-                                        generateType(exceptionType, writer);
+                    writer.object("content", () -> {
+                        writer.object("application/json", () -> {
+                            writer.object("schema", () -> {
+                                if (exceptionTypes.size() == 1) {
+                                    generateType(operation.getReturnType(), writer);
+                                } else {
+                                    writer.list("oneOf", () -> {
+                                        for (ObjectType exceptionType : exceptionTypes) {
+                                            writer.listItem(() -> {
+                                                generateType(exceptionType, writer);
+                                            });
+                                        }
                                     });
                                 }
                             });
-                        }
+                        });
                     });
                 });
             }
