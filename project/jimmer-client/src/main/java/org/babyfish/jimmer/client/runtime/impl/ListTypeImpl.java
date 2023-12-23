@@ -19,6 +19,21 @@ public class ListTypeImpl extends Graph implements ListType {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ListTypeImpl listType = (ListTypeImpl) o;
+
+        return elementType.equals(listType.elementType);
+    }
+
+    @Override
+    public int hashCode() {
+        return elementType.hashCode();
+    }
+
+    @Override
     protected String toStringImpl(Set<Graph> stack) {
         return "list<" + string(elementType, stack) + '>';
     }

@@ -24,6 +24,21 @@ public class TypeVariableImpl extends Graph implements TypeVariable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TypeVariableImpl that = (TypeVariableImpl) o;
+
+        return typeName.equals(that.typeName);
+    }
+
+    @Override
+    public int hashCode() {
+        return typeName.hashCode();
+    }
+
+    @Override
     protected String toStringImpl(Set<Graph> stack) {
         return typeName.toString();
     }

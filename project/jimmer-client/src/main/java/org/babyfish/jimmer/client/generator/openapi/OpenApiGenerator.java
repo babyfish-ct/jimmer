@@ -1,9 +1,9 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
 import org.babyfish.jimmer.client.generator.Namespace;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -19,51 +19,29 @@ public class OpenApiGenerator {
 
     private final OperationNameManager operationNameManager = new OperationNameManager();
 
-    private final FetcherContext fetcherContext = new FetcherContext();
-
-    private final TypeNameManager typeNameManager = new TypeNameManager(fetcherContext);
+    private final TypeNameManager typeNameManager;
 
     public OpenApiGenerator(Metadata metadata,Map<String, Object> headers) {
-        if (!metadata.isGenericSupported()) {
+        if (metadata.isGenericSupported()) {
             throw new IllegalArgumentException("OpenApiGenerator does not support generic");
         }
         this.metadata = metadata;
         this.headers = headers;
-        for (ObjectType fetchedType : metadata.getFetchedTypes()) {
-            fetcherContext.fetch(fetchedType.getFetchByInfo(), () -> {
-                allocateFetchedTypeNames(fetchedType);
-            });
-        }
+        this.typeNameManager = new TypeNameManager(metadata);
     }
 
-    private void allocateFetchedTypeNames(ObjectType objectType) {
-        typeNameManager.get(objectType);
-        for (Property property : objectType.getProperties().values()) {
-            Type type = property.getType();
-            if (type instanceof NullableType) {
-                type = ((NullableType)type).getTargetType();
-            }
-            if (type instanceof ListType) {
-                type = ((ListType)type).getElementType();
-            }
-            if (type instanceof ObjectType) {
-                ObjectType targetType = (ObjectType) type;
-                if (targetType.getKind() == ObjectType.Kind.FETCHED) {
-                    typeNameManager.get(targetType);
-                }
-            }
-        }
-    }
-
-    public void generate(Writer writer) throws IOException {
+    public void generate(Writer writer) {
         YmlWriter ymlWriter = new YmlWriter(writer);
+        ymlWriter.prop("openapi", "3.0.1");
         generatePaths(ymlWriter);
+        generateTypeDefinitions(ymlWriter);
     }
 
     private void generatePaths(YmlWriter writer) {
         writer.object("paths", ()-> {
             for (Service service : metadata.getServices()) {
                 for (Operation operation : service.getOperations()) {
+                    writer.description(Description.of(Doc.valueOf(operation.getDoc()), true));
                     writer.object(operation.getUri(), () -> {
                         writer.list("tags", () -> {
                             writer.code(serviceNameManager.get(service));
@@ -81,20 +59,40 @@ public class OpenApiGenerator {
                                                     });
                                                 });
                                             });
-                                        });
-                                        continue;
-                                    }
-                                    String requestParam = parameter.getRequestParam();
-                                    String name = requestParam != null ? requestParam : parameter.getPathVariable();
-                                    if (name != null) {
-                                        writer.listItem(() -> {
-                                            writer.prop("name", name);
-                                            writer.prop("in", requestParam != null ? "query" : "path");
                                             if (!(parameter.getType() instanceof NullableType)) {
                                                 writer.prop("required", "true");
                                             }
+                                            writer.description(
+                                                    Description.of(Doc.paramOf(operation.getDoc(), parameter.getName()))
+                                            );
+                                        });
+                                        continue;
+                                    }
+                                    String requestHeader = parameter.getRequestHeader();
+                                    String requestParam = parameter.getRequestParam();
+                                    String name = requestHeader != null ?
+                                            requestHeader :
+                                            requestParam != null ? requestParam : parameter.getPathVariable();
+                                    if (name != null) {
+                                        writer.listItem(() -> {
+                                            writer.prop("name", name);
+                                            writer.prop(
+                                                    "in",
+                                                    requestHeader != null ?
+                                                            "header" :
+                                                            requestParam != null ? "query" : "path"
+                                            );
+                                            if (!(parameter.getType() instanceof NullableType)) {
+                                                writer.prop("required", "true");
+                                            }
+                                            writer.description(
+                                                    Description.of(Doc.paramOf(operation.getDoc(), parameter.getName()))
+                                            );
                                             writer.object("schema", () -> {
                                                 this.generateType(parameter.getType(), writer);
+                                                if (parameter.getDefaultValue() != null) {
+                                                    writer.prop("default", parameter.getDefaultValue());
+                                                }
                                             });
                                         });
                                     } else {
@@ -105,6 +103,11 @@ public class OpenApiGenerator {
                                                 if (!(property.getType() instanceof NullableType)) {
                                                     writer.prop("required", "true");
                                                 }
+                                                String doc = Doc.valueOf(property.getDoc());
+                                                if (doc == null) {
+                                                    doc = Doc.propertyOf(((ObjectType) parameter.getType()).getDoc(), property.getName());
+                                                }
+                                                writer.description(Description.of(doc));
                                                 writer.object("schema", () -> {
                                                     this.generateType(property.getType(), writer);
                                                 });
@@ -183,7 +186,7 @@ public class OpenApiGenerator {
         writer.object("responses", () -> {
             writer.object("200", () -> {
                 String returnDoc = operation.getDoc() != null ? operation.getDoc().getReturnValue() : null;
-                writer.prop("description", returnDoc != null ? returnDoc : "OK");
+                writer.description(Description.of(returnDoc != null ? returnDoc : "OK"));
                 if (operation.getReturnType() != null) {
                     writer.object("schema", () -> {
                         generateType(operation.getReturnType(), writer);
@@ -212,6 +215,39 @@ public class OpenApiGenerator {
         });
     }
 
+    private void generateTypeDefinitions(YmlWriter writer) {
+        writer.object("components", () -> {
+           writer.object("schemas", () -> {
+               for (ObjectType fetchedType : typeNameManager.exportObjectTypes().values()) {
+                   generateTypeDefinition(fetchedType, writer);
+               }
+           });
+        });
+    }
+
+    private void generateTypeDefinition(ObjectType type, YmlWriter writer) {
+        writer.object(typeNameManager.get(type), () -> {
+            writer.prop("type", "object");
+            writer.object("properties", () -> {
+                for (Property property : type.getProperties().values()) {
+                    writer.object(property.getName(), () -> {
+                        if (!(property.getType() instanceof NullableType)) {
+                            writer.prop("required", "true");
+                        }
+                        String doc = Doc.valueOf(property.getDoc());
+                        if (doc == null) {
+                            doc = Doc.propertyOf(type.getDoc(), property.getName());
+                        }
+                        writer.description(Description.of(doc));
+                        writer.object("schema", () -> {
+                            generateType(property.getType(), writer);
+                        });
+                    });
+                }
+            });
+        });
+    }
+
     private static class ServiceNameManager {
 
         private final Map<Service, String> nameMap = new HashMap<>();
@@ -234,46 +270,28 @@ public class OpenApiGenerator {
         }
     }
 
-    private static class FetcherContext {
-
-        private final LinkedList<FetchByInfo> fetchByInfoStack = new LinkedList<>();
-
-        public void fetch(FetchByInfo info, Runnable block) {
-            if (info == null) {
-                block.run();
-            } else {
-                fetchByInfoStack.push(info);
-                try {
-                    block.run();
-                } finally {
-                    fetchByInfoStack.pop();
-                }
-            }
-        }
-
-        public FetchByInfo fetchByInfo() {
-            return fetchByInfoStack.peek();
-        }
-
-
-    }
-
     private static class TypeNameManager {
-
-        private final FetcherContext ctx;
 
         private final Map<Type, String> typeNameMap = new HashMap<>();
 
         private final Namespace namespace = new Namespace();
 
-        private TypeNameManager(FetcherContext ctx) {
-            this.ctx = ctx;
+        public TypeNameManager(Metadata metadata) {
+            for (ObjectType fetchedType : metadata.getFetchedTypes()) {
+                get(fetchedType);
+            }
+            for (ObjectType dynamicType : metadata.getDynamicTypes()) {
+                get(dynamicType);
+            }
+            for (ObjectType staticType : metadata.getStaticTypes()) {
+                get(staticType);
+            }
         }
 
         public String get(ObjectType type) {
             String typeName = typeNameMap.get(type);
             if (typeName == null) {
-                typeName = getImpl(type);
+                typeName = namespace.allocate(getImpl(type));
                 typeNameMap.put(type, typeName);
             }
             return typeName;
@@ -283,13 +301,13 @@ public class OpenApiGenerator {
             if (type instanceof ObjectType) {
                 ObjectType objectType = (ObjectType) type;
                 StringBuilder builder = new StringBuilder();
+                if (objectType.getKind() == ObjectType.Kind.DYNAMIC) {
+                    builder.append("Dynamic_");
+                }
                 builder.append(String.join("_", objectType.getSimpleNames()));
                 FetchByInfo info = null;
                 if (objectType.getKind() == ObjectType.Kind.FETCHED) {
                     info = objectType.getFetchByInfo();
-                    if (info == null) {
-                        info = ctx.fetchByInfo();
-                    }
                 }
                 if (info != null) {
                     builder.append('_').append(info.getOwnerType().getSimpleName())
@@ -298,7 +316,11 @@ public class OpenApiGenerator {
                 for (Type argument : objectType.getArguments()) {
                     builder.append('_').append(getImpl(argument));
                 }
-                return namespace.allocate(builder.toString());
+                String name = builder.toString();
+                if (info != null) {
+                    collectMoreFetchedTypeNames(objectType, name);
+                }
+                return name;
             } else if (type instanceof NullableType) {
                 return getImpl(((NullableType) type).getTargetType());
             } else if (type instanceof ListType) {
@@ -310,6 +332,39 @@ public class OpenApiGenerator {
             } else {
                 return ((SimpleType)type).getJavaType().getSimpleName();
             }
+        }
+
+        private void collectMoreFetchedTypeNames(ObjectType objectType, String prefix) {
+            for (Property property : objectType.getProperties().values()) {
+                Type type = property.getType();
+                if (type instanceof NullableType) {
+                    type = ((NullableType)type).getTargetType();
+                }
+                if (type instanceof ListType) {
+                    type = ((ListType)type).getElementType();
+                }
+                if (type instanceof ObjectType) {
+                    ObjectType targetType = (ObjectType) type;
+                    if (targetType.getKind() == ObjectType.Kind.FETCHED) {
+                        if (!typeNameMap.containsKey(targetType)) {
+                            String name = prefix + '_' + property.getName();
+                            typeNameMap.put(targetType, name);
+                            collectMoreFetchedTypeNames(targetType, name);
+                        }
+                    }
+                }
+            }
+        }
+
+        public NavigableMap<String, ObjectType> exportObjectTypes() {
+            NavigableMap<String, ObjectType> typeMap = new TreeMap<>();
+            for (Map.Entry<Type, String> e : typeNameMap.entrySet()) {
+                Type type = e.getKey();
+                if (type instanceof ObjectType) {
+                    typeMap.put(e.getValue(), (ObjectType) type);
+                }
+            }
+            return typeMap;
         }
     }
 }

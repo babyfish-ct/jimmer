@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.TypeElement;
 import java.io.BufferedReader;
@@ -155,6 +156,22 @@ public class Doc {
             throw new AssertionError("Cannot parse documentation comment");
         }
         return builder.build();
+    }
+
+    public static String valueOf(@Nullable Doc doc) {
+        return doc != null ? doc.getValue() : null;
+    }
+
+    public static String returnOf(@Nullable Doc doc) {
+        return doc != null ? doc.getReturnValue() : null;
+    }
+
+    public static String paramOf(@Nullable Doc doc, String param) {
+        return doc != null ? doc.getParameterValueMap().get(param) : null;
+    }
+
+    public static String propertyOf(@Nullable Doc doc, String property) {
+        return doc != null ? doc.getPropertyValueMap().get(property) : null;
     }
 
     private static int indexOfNonWhiteSpace(String line, int start) {

@@ -68,6 +68,15 @@ public class BookServiceTest {
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
+                                "     * Find Complex DTOs\n" +
+                                "     * \n" +
+                                "     * <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>\n" +
+                                "     * \n" +
+                                "     * @param name The book name\n" +
+                                "     * @param storeName The name of the associated book store\n" +
+                                "     * @param authorName The names of the associated authors\n" +
+                                "     * @param minPrice The min price of the book\n" +
+                                "     * @param maxPrice The max price of the book\n" +
                                 "     * @return A list of complex book DTOs\n" +
                                 "     */\n" +
                                 "    async findComplexBooks(options: BookServiceOptions['findComplexBooks']): Promise<\n" +
@@ -115,6 +124,10 @@ public class BookServiceTest {
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
+                                "     * Find Complex DTOs\n" +
+                                "     * \n" +
+                                "     * <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>\n" +
+                                "     * \n" +
                                 "     * @return A list of complex book DTOs\n" +
                                 "     */\n" +
                                 "    async findComplexBooksByArguments(options: BookServiceOptions['findComplexBooksByArguments']): Promise<\n" +
@@ -162,6 +175,10 @@ public class BookServiceTest {
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
+                                "     * Find Simple DTOs\n" +
+                                "     * \n" +
+                                "     * <p>The simple DTO only supports `id`, `name` and `storeId`</p>\n" +
+                                "     * \n" +
                                 "     * @return A list of simple book DTOs\n" +
                                 "     */\n" +
                                 "    async findSimpleBooks(): Promise<\n" +
@@ -215,20 +232,39 @@ public class BookServiceTest {
                                 "        return (await this.executor({uri: _uri, method: 'GET', body: options.input})) as Dynamic_Book\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async version(): Promise<\n" +
+                                "    async version(options: BookServiceOptions['version']): Promise<\n" +
                                 "        number\n" +
                                 "    > {\n" +
                                 "        let _uri = '/';\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET'})) as number\n" +
+                                "        const _headers: {[key:string]: string} = {accessToken: options.accessToken};\n" +
+                                "        if (options.resourcePath) {\n" +
+                                "            _headers['resourcePath'] = options.resourcePath\n" +
+                                "        }\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET', headers: _headers})) as number\n" +
                                 "    }\n" +
                                 "}\n" +
                                 "export type BookServiceOptions = {\n" +
                                 "    'findComplexBooks': {\n" +
+                                "        /**\n" +
+                                "         * The book name\n" +
+                                "         */\n" +
                                 "        readonly name: string, \n" +
+                                "        /**\n" +
+                                "         * The name of the associated book store\n" +
+                                "         */\n" +
                                 "        readonly storeName?: string | null | undefined, \n" +
+                                "        /**\n" +
+                                "         * The names of the associated authors\n" +
+                                "         */\n" +
                                 "        readonly authorName?: string | null | undefined, \n" +
-                                "        readonly minPrice: number, \n" +
-                                "        readonly maxPrice: number\n" +
+                                "        /**\n" +
+                                "         * The min price of the book\n" +
+                                "         */\n" +
+                                "        readonly minPrice?: number | null | undefined, \n" +
+                                "        /**\n" +
+                                "         * The max price of the book\n" +
+                                "         */\n" +
+                                "        readonly maxPrice?: number | null | undefined\n" +
                                 "    }, \n" +
                                 "    'findComplexBooksByArguments': {\n" +
                                 "        readonly arguments: FindBookArguments\n" +
@@ -249,6 +285,10 @@ public class BookServiceTest {
                                 "    }, \n" +
                                 "    'deleteBook': {\n" +
                                 "        readonly id: number\n" +
+                                "    }, \n" +
+                                "    'version': {\n" +
+                                "        readonly accessToken: string, \n" +
+                                "        readonly path?: string | null | undefined\n" +
                                 "    }\n" +
                                 "}\n",
                 writer.toString()

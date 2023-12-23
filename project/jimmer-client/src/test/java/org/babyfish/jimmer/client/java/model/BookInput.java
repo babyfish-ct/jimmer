@@ -32,6 +32,27 @@ public class BookInput {
         this.authorIds = authorIds;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public int getEdition() {
+        return edition;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    @Nullable
+    public Long getStoreId() {
+        return storeId;
+    }
+
+    public List<Long> getAuthorIds() {
+        return authorIds;
+    }
+
     @Override
     public String toString() {
         return "BookInput{" +

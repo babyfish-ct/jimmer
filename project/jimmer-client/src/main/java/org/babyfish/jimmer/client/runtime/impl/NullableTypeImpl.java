@@ -19,14 +19,36 @@ public class NullableTypeImpl extends Graph implements NullableType {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        NullableTypeImpl that = (NullableTypeImpl) o;
+
+        return targetType.equals(that.targetType);
+    }
+
+    @Override
+    public int hashCode() {
+        return targetType.hashCode();
+    }
+
+    @Override
     protected String toStringImpl(Set<Graph> stack) {
         return string(targetType, stack) + '?';
     }
 
-    public static NullableType of(Type targetType) {
-        if (targetType instanceof NullableType) {
-            return (NullableType) targetType;
+    public static NullableType of(Type type) {
+        if (type instanceof NullableType) {
+            return (NullableType) type;
         }
-        return new NullableTypeImpl(targetType);
+        return new NullableTypeImpl(type);
+    }
+
+    public static Type unwrap(Type type) {
+        if (type instanceof NullableType) {
+            return ((NullableType) type).getTargetType();
+        }
+        return type;
     }
 }

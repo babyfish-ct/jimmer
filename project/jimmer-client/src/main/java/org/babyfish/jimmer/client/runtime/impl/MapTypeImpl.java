@@ -27,6 +27,24 @@ public class MapTypeImpl extends Graph implements MapType {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MapTypeImpl mapType = (MapTypeImpl) o;
+
+        if (!keyType.equals(mapType.keyType)) return false;
+        return valueType.equals(mapType.valueType);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = keyType.hashCode();
+        result = 31 * result + valueType.hashCode();
+        return result;
+    }
+
+    @Override
     protected String toStringImpl(Set<Graph> stack) {
         return "map<" + string(keyType, stack) + ", " + string(valueType, stack) + ">";
     }

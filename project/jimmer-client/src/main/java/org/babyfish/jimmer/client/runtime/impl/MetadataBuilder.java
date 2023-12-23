@@ -5,12 +5,7 @@ import org.babyfish.jimmer.client.meta.impl.ApiServiceImpl;
 import org.babyfish.jimmer.client.meta.impl.SchemaImpl;
 import org.babyfish.jimmer.client.meta.impl.Schemas;
 import org.babyfish.jimmer.client.meta.impl.TypeDefinitionImpl;
-import org.babyfish.jimmer.client.runtime.EnumType;
-import org.babyfish.jimmer.client.runtime.Metadata;
-import org.babyfish.jimmer.client.runtime.ObjectType;
-import org.babyfish.jimmer.client.runtime.Operation;
-import org.babyfish.jimmer.client.runtime.Service;
-import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.runtime.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -205,35 +200,56 @@ public class MetadataBuilder implements Metadata.Builder {
 
     private ParameterImpl parameter(ApiParameter apiParameter, Parameter javaParameter, Method method, TypeContext ctx) {
         ParameterImpl parameter = new ParameterImpl(apiParameter.getName());
-        String requestParam = parameterParser.requestParam(javaParameter);
-        if (requestParam != null) {
-            if (requestParam.isEmpty()) {
-                parameter.setRequestParam(apiParameter.getName());
+        String requestHeader = parameterParser.requestHeader(javaParameter);
+        if (requestHeader != null) {
+            if (requestHeader.isEmpty()) {
+                parameter.setRequestHeader(apiParameter.getName());
             } else {
-                parameter.setRequestParam(requestParam);
+                parameter.setRequestHeader(requestHeader);
             }
         } else {
-            String pathVariable = parameterParser.pathVariable(javaParameter);
-            if (pathVariable != null) {
-                if (pathVariable.isEmpty()) {
-                    parameter.setPathVariable(apiParameter.getName());
+            String requestParam = parameterParser.requestParam(javaParameter);
+            if (requestParam != null) {
+                if (requestParam.isEmpty()) {
+                    parameter.setRequestParam(apiParameter.getName());
                 } else {
-                    parameter.setPathVariable(pathVariable);
+                    parameter.setRequestParam(requestParam);
                 }
-            } else if (parameterParser.isRequestBody(javaParameter)) {
-                parameter.setRequestBody(true);
-            } else if (!apiParameter.getType().getTypeName().isGenerationRequired()) {
-                throw new IllegalApiException(
-                        "Illegal API method \"" +
-                                method +
-                                "\", its parameter \"" +
-                                apiParameter.getName() +
-                                "\" is not simple type, but its neither request param nor " +
-                                "path variable nor request body"
-                );
+            } else {
+                String pathVariable = parameterParser.pathVariable(javaParameter);
+                if (pathVariable != null) {
+                    if (pathVariable.isEmpty()) {
+                        parameter.setPathVariable(apiParameter.getName());
+                    } else {
+                        parameter.setPathVariable(pathVariable);
+                    }
+                } else if (parameterParser.isRequestBody(javaParameter)) {
+                    parameter.setRequestBody(true);
+                } else if (!apiParameter.getType().getTypeName().isGenerationRequired()) {
+                    throw new IllegalApiException(
+                            "Illegal API method \"" +
+                                    method +
+                                    "\", its parameter \"" +
+                                    apiParameter.getName() +
+                                    "\" is not simple type, but its neither request param nor " +
+                                    "path variable nor request body"
+                    );
+                }
             }
         }
         Type type = ctx.parseType(apiParameter.getType());
+        if (requestHeader != null && !NullableTypeImpl.unwrap(type).equals(SimpleTypeImpl.of(TypeName.STRING))) {
+            throw new IllegalApiException(
+                    "Illegal API method \"" +
+                            method +
+                            "\", its parameter \"" +
+                            apiParameter.getName() +
+                            "\" is http header parameter but its type is not string"
+            );
+        }
+        if (parameterParser.isOptional(javaParameter)) {
+            type = NullableTypeImpl.of(type);
+        }
         parameter.setType(type);
         parameter.setDefaultValue(parameterParser.defaultValue(javaParameter));
         return parameter;

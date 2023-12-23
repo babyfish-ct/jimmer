@@ -52,6 +52,10 @@ public interface BookService {
             );
 
     /**
+     * Find Simple DTOs
+     *
+     * <p>The simple DTO only supports `id`, `name` and `storeId`</p>
+     *
      * @return A list of simple book DTOs
      */
     @Api
@@ -59,6 +63,15 @@ public interface BookService {
     List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks();
 
     /**
+     * Find Complex DTOs
+     *
+     * <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>
+     *
+     * @param name The book name
+     * @param storeName The name of the associated book store
+     * @param authorName The names of the associated authors
+     * @param minPrice The min price of the book
+     * @param maxPrice The max price of the book
      * @return A list of complex book DTOs
      */
     @Api
@@ -72,6 +85,10 @@ public interface BookService {
     );
 
     /**
+     * Find Complex DTOs
+     *
+     * <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>
+     *
      * @return A list of complex book DTOs
      */
     @Api
@@ -114,5 +131,5 @@ public interface BookService {
 
     @Api
     @RequestMapping("version")
-    int version();
+    int version(@RequestHeader("accessToken") String accessToken, @Nullable @RequestHeader("resourcePath") String path);
 }

@@ -10,7 +10,8 @@ public class ExecutorRender implements Render {
                     "    (args: {\n" +
                     "        readonly uri: string,\n" +
                     "        readonly method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',\n" +
-                    "        readonly body?: any\n" +
+                    "        readonly headers?: {readonly [key:string]: string},\n" +
+                    "        readonly body?: any,\n" +
                     "    }) => Promise<any>\n" +
                     ";\n";
 

@@ -6,6 +6,8 @@ public interface Parameter {
 
     Type getType();
 
+    String getRequestHeader();
+
     String getRequestParam();
 
     String getPathVariable();

@@ -122,6 +122,20 @@ public class Metadatas {
 
         @Nullable
         @Override
+        public String requestHeader(Parameter javaParameter) {
+            RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
+            if (requestHeader == null) {
+                return null;
+            }
+            String name = requestHeader.value();
+            if (name.isEmpty()) {
+                name = requestHeader.name();
+            }
+            return name;
+        }
+
+        @Nullable
+        @Override
         public String requestParam(Parameter javaParameter) {
             RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
             if (requestParam == null) {
@@ -132,15 +146,6 @@ public class Metadatas {
                 name = requestParam.name();
             }
             return name;
-        }
-
-        @Override
-        public String defaultValue(Parameter javaParameter) {
-            RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
-            if (requestParam == null || requestParam.defaultValue().isEmpty()) {
-                return null;
-            }
-            return requestParam.defaultValue();
         }
 
         @Nullable
@@ -155,6 +160,28 @@ public class Metadatas {
                 name = pathVariable.name();
             }
             return name;
+        }
+
+        @Override
+        public String defaultValue(Parameter javaParameter) {
+            RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
+            if (requestHeader != null && !requestHeader.defaultValue().isEmpty()) {
+                return requestHeader.defaultValue();
+            }
+            RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
+            if (requestParam != null && !requestParam.defaultValue().isEmpty()) {
+                return requestParam.defaultValue();
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isOptional(Parameter javaParameter) {
+            RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
+            if (requestParam != null) {
+                return !requestParam.required();
+            }
+            return false;
         }
 
         @Override

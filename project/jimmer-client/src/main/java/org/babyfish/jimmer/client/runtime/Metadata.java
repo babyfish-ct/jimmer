@@ -56,12 +56,18 @@ public interface Metadata {
     interface ParameterParser {
 
         @Nullable
-        String requestParam(Parameter javaParameter);
+        String requestHeader(Parameter javaParameter);
 
-        String defaultValue(Parameter javaParameter);
+        @Nullable
+        String requestParam(Parameter javaParameter);
 
         @Nullable
         String pathVariable(Parameter javaParameter);
+
+        @Nullable
+        String defaultValue(Parameter javaParameter);
+
+        boolean isOptional(Parameter javaParameter);
 
         boolean isRequestBody(Parameter javaParameter);
     }

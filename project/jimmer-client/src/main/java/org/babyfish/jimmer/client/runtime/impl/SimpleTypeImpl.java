@@ -56,6 +56,21 @@ public class SimpleTypeImpl extends Graph implements SimpleType {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SimpleTypeImpl that = (SimpleTypeImpl) o;
+
+        return javaType.equals(that.javaType);
+    }
+
+    @Override
+    public int hashCode() {
+        return javaType.hashCode();
+    }
+
+    @Override
     protected String toStringImpl(Set<Graph> stack) {
         return javaType.getName();
     }

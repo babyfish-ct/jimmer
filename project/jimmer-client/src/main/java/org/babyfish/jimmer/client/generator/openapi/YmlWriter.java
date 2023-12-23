@@ -32,4 +32,24 @@ public class YmlWriter extends CodeWriter<YmlWriter> {
         code(name).code(": ").code(value).code('\n');
         return this;
     }
+
+    public YmlWriter description(Description description) {
+        if (description.getSummary() != null) {
+            prop("summary", description.getSummary());
+        }
+        if (!description.getDescriptionLines().isEmpty()) {
+            code("description: ");
+            if (description.getDescriptionLines().size() == 1) {
+                code(description.getDescriptionLines().get(0)).code('\n');
+            } else {
+                code("|+");
+                scope(ScopeType.BLANK, "", true, () -> {
+                    for (String line : description.getDescriptionLines()) {
+                        code(line).code('\n');
+                    }
+                });
+            }
+        }
+        return this;
+    }
 }

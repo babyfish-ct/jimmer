@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.client.generator.ts;
 
+import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.runtime.*;
@@ -62,6 +63,7 @@ public class OperationRender implements Render {
         } else {
             writer.code("let _uri = '").code(parts.get(0).text).code("';\n");
         }
+
         for (int i = 1; i < parts.size(); i++) {
             if (parts.get(i).variable) {
                 Parameter parameter = pathVariableParameter(operation, parts.get(i).text);
@@ -76,7 +78,10 @@ public class OperationRender implements Render {
 
         Map<String, PathBuilder> pathBuilderMap = new LinkedHashMap<>();
         for (Parameter parameter : operation.getParameters()) {
-            if (parameter.getPathVariable() == null && parameter.getRequestParam() == null && !parameter.isRequestBody()) {
+            if (parameter.getPathVariable() == null &&
+                    parameter.getRequestParam() == null &&
+                    parameter.getRequestHeader() == null &&
+                    !parameter.isRequestBody()) {
                 PathBuilder builder = new PathBuilder();
                 builder.dot().append(parameter.getName());
                 Type type = parameter.getType();
@@ -108,8 +113,32 @@ public class OperationRender implements Render {
                 }
             }
         }
+
+        boolean hasHeader = operation.getParameters().stream().anyMatch(it -> it.getRequestHeader() != null);
+        if (hasHeader) {
+            writer.code("const _headers: {[key:string]: string} = ");
+            writer.scope(CodeWriter.ScopeType.OBJECT, ", ", false, () -> {
+                for (Parameter parameter : operation.getParameters()) {
+                    String header = parameter.getRequestHeader();
+                    if (header == null || parameter.getType() instanceof NullableType) {
+                        continue;
+                    }
+                    writer.separator().code(header).code(": options.").code(header);
+                }
+            });
+            writer.code(";\n");
+        }
         for (Parameter parameter : operation.getParameters()) {
-            if (parameter.getRequestParam() != null) {
+            if (parameter.getRequestHeader() != null) {
+                String header = parameter.getRequestHeader();
+                Type type = parameter.getType();
+                if (type instanceof NullableType) {
+                    writer.code("if (options.").code(header).code(") ");
+                    writer.scope(CodeWriter.ScopeType.OBJECT, "", true, () -> {
+                        writer.code("_headers['").code(header).code("'] = options.").code(header).code('\n');
+                    }).code('\n');
+                }
+            } else if (parameter.getRequestParam() != null) {
                 PathBuilder builder = new PathBuilder();
                 builder.dot().append(parameter.getName());
                 Type type = parameter.getType();
@@ -145,6 +174,9 @@ public class OperationRender implements Render {
         writer.code("return (await this.executor({uri: _uri, method: '")
                 .code(operation.getHttpMethod().name())
                 .code("'");
+        if (hasHeader) {
+            writer.code(", headers: _headers");
+        }
         for (Parameter parameter : operation.getParameters()) {
             if (parameter.isRequestBody()) {
                 writer.code(", body: options.").code(parameter.getName());

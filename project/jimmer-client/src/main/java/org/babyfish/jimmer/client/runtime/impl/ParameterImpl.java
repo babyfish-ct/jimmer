@@ -9,6 +9,8 @@ public class ParameterImpl implements Parameter {
 
     private Type type;
 
+    private String requestHeader;
+
     private String requestParam;
 
     private String pathVariable;
@@ -33,6 +35,15 @@ public class ParameterImpl implements Parameter {
 
     void setType(Type type) {
         this.type = type;
+    }
+
+    @Override
+    public String getRequestHeader() {
+        return requestHeader;
+    }
+
+    void setRequestHeader(String requestHeader) {
+        this.requestHeader = requestHeader;
     }
 
     @Override

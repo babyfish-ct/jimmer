@@ -145,8 +145,8 @@ class KBookServiceTest {
                 "        readonly name?: string | null | undefined, \n" +
                 "        readonly storeName?: string | null | undefined, \n" +
                 "        readonly authorName?: string | null | undefined, \n" +
-                "        readonly minPrice: number, \n" +
-                "        readonly maxPrice: number\n" +
+                "        readonly minPrice?: number | null | undefined, \n" +
+                "        readonly maxPrice?: number | null | undefined\n" +
                 "    }, \n" +
                 "    'findTuples': {\n" +
                 "        readonly name?: string | null | undefined, \n" +
