@@ -145,8 +145,8 @@ class KBookServiceTest {
                 "        readonly name?: string | null | undefined, \n" +
                 "        readonly storeName?: string | null | undefined, \n" +
                 "        readonly authorName?: string | null | undefined, \n" +
-                "        readonly minPrice: string, \n" +
-                "        readonly maxPrice: string\n" +
+                "        readonly minPrice: number, \n" +
+                "        readonly maxPrice: number\n" +
                 "    }, \n" +
                 "    'findTuples': {\n" +
                 "        readonly name?: string | null | undefined, \n" +
@@ -200,7 +200,7 @@ class KBookServiceTest {
                 "        /**\n" +
                 "         * The price of this book\n" +
                 "         */\n" +
-                "        readonly price?: string | null | undefined;\n" +
+                "        readonly price?: number | null | undefined;\n" +
                 "        /**\n" +
                 "         * The bookstore to which the current book belongs, null is allowed\n" +
                 "         */\n" +
@@ -263,11 +263,11 @@ class KBookServiceTest {
                 "    /**\n" +
                 "     * The latitude, from -180 to +180\n" +
                 "     */\n" +
-                "    readonly longitude: string\n" +
+                "    readonly longitude: number;\n" +
                 "    /**\n" +
                 "     * The latitude, from -90 to +90\n" +
                 "     */\n" +
-                "    readonly latitude: string\n" +
+                "    readonly latitude: number;\n" +
                 "}\n",
             writer.toString()
         )
@@ -291,29 +291,29 @@ class KBookServiceTest {
                 "     * The id is long, but the client type is string\n" +
                 "     * because JS cannot retain large long values\n" +
                 "     */\n" +
-                "    readonly id?: string\n" +
+                "    readonly id?: string;\n" +
                 "    /**\n" +
                 "     * The name of this book,\n" +
                 "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
                 "     */\n" +
-                "    readonly name?: string | null | undefined\n" +
+                "    readonly name?: string | null | undefined;\n" +
                 "    /**\n" +
                 "     * The edition of this book,\n" +
                 "     *  <p>Together with `name`, this property forms the key of the book</p>\n" +
                 "     */\n" +
-                "    readonly edition?: number\n" +
+                "    readonly edition?: number;\n" +
                 "    /**\n" +
                 "     * The price of this book\n" +
                 "     */\n" +
-                "    readonly price?: string | null | undefined\n" +
+                "    readonly price?: number | null | undefined;\n" +
                 "    /**\n" +
                 "     * The bookstore to which the current book belongs, null is allowed\n" +
                 "     */\n" +
-                "    readonly store?: Dynamic_KBookStore | null | undefined\n" +
+                "    readonly store?: Dynamic_KBookStore | null | undefined;\n" +
                 "    /**\n" +
                 "     * All authors involved in writing the work\n" +
                 "     */\n" +
-                "    readonly authors?: ReadonlyArray<Dynamic_KAuthor>\n" +
+                "    readonly authors?: ReadonlyArray<Dynamic_KAuthor>;\n" +
                 "}\n",
             writer.toString()
         )

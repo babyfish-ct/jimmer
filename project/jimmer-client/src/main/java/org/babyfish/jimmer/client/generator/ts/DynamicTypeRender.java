@@ -32,7 +32,7 @@ public class DynamicTypeRender implements Render {
                         .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName())
                         .code("?: ")
-                        .typeRef(property.getType()).code("\n");
+                        .typeRef(property.getType()).code(";\n");
             }
         });
         writer.code('\n');

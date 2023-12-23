@@ -5,6 +5,8 @@ import org.babyfish.jimmer.client.generator.Context;
 import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.client.source.Source;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 
 public class TypeScriptWriter extends SourceWriter {
@@ -36,7 +38,7 @@ public class TypeScriptWriter extends SourceWriter {
                 code("boolean");
             } else if (javaType == char.class) {
                 code("string");
-            } else if (javaType.isPrimitive()) {
+            } else if (javaType.isPrimitive() || javaType == BigInteger.class || javaType == BigDecimal.class) {
                 code("number");
             } else {
                 code("string");

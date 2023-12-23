@@ -94,7 +94,7 @@ public interface BookService {
     );
 
     /**
-     * @return A list of complex book DTOs
+     * @return An optional complex book DTO
      */
     @Api
     @GetMapping("/book/{id}")

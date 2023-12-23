@@ -57,7 +57,7 @@ public class BookServiceTest {
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
-                                "     * @return A list of complex book DTOs\n" +
+                                "     * @return An optional complex book DTO\n" +
                                 "     */\n" +
                                 "    async findBook(options: BookServiceOptions['findBook']): Promise<\n" +
                                 "        BookDto['BookService/COMPLEX_FETCHER'] | null | undefined\n" +
@@ -227,8 +227,8 @@ public class BookServiceTest {
                                 "        readonly name: string, \n" +
                                 "        readonly storeName?: string | null | undefined, \n" +
                                 "        readonly authorName?: string | null | undefined, \n" +
-                                "        readonly minPrice: string, \n" +
-                                "        readonly maxPrice: string\n" +
+                                "        readonly minPrice: number, \n" +
+                                "        readonly maxPrice: number\n" +
                                 "    }, \n" +
                                 "    'findComplexBooksByArguments': {\n" +
                                 "        readonly arguments: FindBookArguments\n" +
@@ -285,7 +285,7 @@ public class BookServiceTest {
                         "        /**\n" +
                         "         * The price of this book\n" +
                         "         */\n" +
-                        "        readonly price: string;\n" +
+                        "        readonly price: number;\n" +
                         "        /**\n" +
                         "         * The many-to-one association from `Book` to `BookStore`\n" +
                         "         */\n" +
@@ -344,37 +344,37 @@ public class BookServiceTest {
                         "     * The id is long, but the client type is string\n" +
                         "     * because JS cannot retain large long values\n" +
                         "     */\n" +
-                        "    readonly id?: string\n" +
+                        "    readonly id?: string;\n" +
                         "    /**\n" +
                         "     * The name of this book,\n" +
                         "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
                         "     */\n" +
-                        "    readonly name?: string\n" +
+                        "    readonly name?: string;\n" +
                         "    /**\n" +
                         "     * The edition of this book,\n" +
                         "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
                         "     */\n" +
-                        "    readonly edition?: number\n" +
+                        "    readonly edition?: number;\n" +
                         "    /**\n" +
                         "     * The price of this book\n" +
                         "     */\n" +
-                        "    readonly price?: string\n" +
+                        "    readonly price?: number;\n" +
                         "    /**\n" +
                         "     * The many-to-one association from `Book` to `BookStore`\n" +
                         "     */\n" +
-                        "    readonly store?: Dynamic_BookStore | null | undefined\n" +
+                        "    readonly store?: Dynamic_BookStore | null | undefined;\n" +
                         "    /**\n" +
                         "     * The many-to-many association from `Book` to `Author`\n" +
                         "     */\n" +
-                        "    readonly authors?: ReadonlyArray<Dynamic_Author>\n" +
+                        "    readonly authors?: ReadonlyArray<Dynamic_Author>;\n" +
                         "    /**\n" +
                         "     * The id view of `Book.store`\n" +
                         "     */\n" +
-                        "    readonly storeId?: string\n" +
+                        "    readonly storeId?: string;\n" +
                         "    /**\n" +
                         "     * The id view of `Book.authors`\n" +
                         "     */\n" +
-                        "    readonly authorIds?: ReadonlyArray<string>\n" +
+                        "    readonly authorIds?: ReadonlyArray<string>;\n" +
                         "}\n",
                 writer.toString()
         );

@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.babyfish.jimmer.client.generator.CodeWriter;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.runtime.*;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class OpenApiGenerator {
 
@@ -24,11 +23,36 @@ public class OpenApiGenerator {
 
     private final TypeNameManager typeNameManager = new TypeNameManager(fetcherContext);
 
-    private final TypeRefManager typeRefManager = new TypeRefManager(typeNameManager);
-
     public OpenApiGenerator(Metadata metadata,Map<String, Object> headers) {
+        if (!metadata.isGenericSupported()) {
+            throw new IllegalArgumentException("OpenApiGenerator does not support generic");
+        }
         this.metadata = metadata;
         this.headers = headers;
+        for (ObjectType fetchedType : metadata.getFetchedTypes()) {
+            fetcherContext.fetch(fetchedType.getFetchByInfo(), () -> {
+                allocateFetchedTypeNames(fetchedType);
+            });
+        }
+    }
+
+    private void allocateFetchedTypeNames(ObjectType objectType) {
+        typeNameManager.get(objectType);
+        for (Property property : objectType.getProperties().values()) {
+            Type type = property.getType();
+            if (type instanceof NullableType) {
+                type = ((NullableType)type).getTargetType();
+            }
+            if (type instanceof ListType) {
+                type = ((ListType)type).getElementType();
+            }
+            if (type instanceof ObjectType) {
+                ObjectType targetType = (ObjectType) type;
+                if (targetType.getKind() == ObjectType.Kind.FETCHED) {
+                    typeNameManager.get(targetType);
+                }
+            }
+        }
     }
 
     public void generate(Writer writer) throws IOException {
@@ -44,15 +68,24 @@ public class OpenApiGenerator {
                         writer.list("tags", () -> {
                             writer.code(serviceNameManager.get(service));
                         });
-                        writer.prop("operationId", operation.getName());
+                        writer.prop("operationId", operationNameManager.get(operation));
                         if (!operation.getParameters().isEmpty()) {
                             writer.list("parameters", () -> {
                                 for (Parameter parameter : operation.getParameters()) {
-                                    String requestParam = parameter.getRequestParam();
-                                    String name = requestParam != null ? requestParam : parameter.getPathVariable();
-                                    if (name == null && parameter.isRequestBody()) {
+                                    if (parameter.isRequestBody()) {
+                                        writer.object("requestBody", () -> {
+                                            writer.object("content", () -> {
+                                                writer.object("application/json", () -> {
+                                                    writer.object("schema", () -> {
+                                                        generateType(parameter.getType(), writer);
+                                                    });
+                                                });
+                                            });
+                                        });
                                         continue;
                                     }
+                                    String requestParam = parameter.getRequestParam();
+                                    String name = requestParam != null ? requestParam : parameter.getPathVariable();
                                     if (name != null) {
                                         writer.listItem(() -> {
                                             writer.prop("name", name);
@@ -60,6 +93,9 @@ public class OpenApiGenerator {
                                             if (!(parameter.getType() instanceof NullableType)) {
                                                 writer.prop("required", "true");
                                             }
+                                            writer.object("schema", () -> {
+                                                this.generateType(parameter.getType(), writer);
+                                            });
                                         });
                                     } else {
                                         for (Property property : ((ObjectType)parameter.getType()).getProperties().values()) {
@@ -69,6 +105,9 @@ public class OpenApiGenerator {
                                                 if (!(property.getType() instanceof NullableType)) {
                                                     writer.prop("required", "true");
                                                 }
+                                                writer.object("schema", () -> {
+                                                    this.generateType(property.getType(), writer);
+                                                });
                                             });
                                         }
                                     }
@@ -76,159 +115,101 @@ public class OpenApiGenerator {
                             });
                         }
                     });
+                    generateResponses(operation, writer);
                 }
             }
         });
     }
 
-    private Object genericOperation(Service service, Operation operation) {
-        Map<String, Object> op = new LinkedHashMap<>();
-        Map<String, Object> detail = new LinkedHashMap<>();
-        op.put(operation.getHttpMethod().name().toLowerCase(), detail);
-        detail.put("tags", new String[] {serviceNameManager.get(service)});
-        detail.put("operationId", operationNameManager.get(operation));
-        List<Object> parameters = new ArrayList<>(operation.getParameters().size());
-        detail.put("parameters", parameters);
-        if (!operation.getParameters().isEmpty()) {
-            for (Parameter parameter : operation.getParameters()) {
-                String name = parameter.getRequestParam();
-                if (name == null) {
-                    name = parameter.getPathVariable();
+    private void generateType(Type type, YmlWriter writer) {
+        if (type instanceof ObjectType) {
+            writer.prop("$ref", "#/components/schemas/" + typeNameManager.get((ObjectType) type));
+        } else if (type instanceof ListType) {
+            writer
+                    .prop("type", "array")
+                    .object("items", () -> {
+                        generateType(((ListType)type).getElementType(), writer);
+                    });
+        } else if (type instanceof MapType) {
+            throw new UnsupportedOperationException("TODO");
+        } else if (type instanceof NullableType) {
+            generateType(((NullableType)type).getTargetType(), writer);
+        } else if (type instanceof EnumType) {
+            writer.prop("type", "string");
+            writer.list("enum", () -> {
+                for (EnumType.Constant constant : ((EnumType)type).getConstants()) {
+                    writer.listItem(() -> writer.code(constant.getName()).code('\n'));
                 }
-                if (name != null) {
-                    parameters.add(
-                            generateParam(
-                                    name,
-                                    parameter.getType(),
-                                    parameter.getRequestParam() != null ? "query" : "path",
-                                    parameter.getDefaultValue()
-                            )
-                    );
-                    continue;
-                }
-                if (parameter.isRequestBody()) {
-                    detail.put("requestBody", generateRequestBody(operation, parameter));
-                }
-                if (parameter.getType() instanceof ObjectType) {
-                    for (Property property : ((ObjectType)parameter.getType()).getProperties().values()) {
-                        parameters.add(
-                                generateParam(
-                                        property.getName(),
-                                        property.getType(),
-                                        "query",
-                                        null
-                                )
-                        );
-                    }
-                }
+            });
+        } else  {
+            SimpleType simpleType = (SimpleType) type;
+            Class<?> javaType = simpleType.getJavaType();
+            if (boolean.class == javaType) {
+                writer.prop("type", "boolean");
+            } else if (char.class == javaType) {
+                writer.prop("type", "string");
+            } else if (byte.class == javaType) {
+                writer.prop("type", "integer");
+            } else if (short.class == javaType) {
+                writer.prop("type", "integer");
+            } else if (int.class == javaType) {
+                writer.prop("type", "integer");
+                writer.prop("format", "int32");
+            } else if (long.class == javaType) {
+                writer.prop("type", "integer");
+                writer.prop("format", "int64");
+            } else if (float.class == javaType) {
+                writer.prop("type", "number");
+                writer.prop("format", "float");
+            } else if (double.class == javaType) {
+                writer.prop("type", "number");
+                writer.prop("format", "double");
+            } else if (BigDecimal.class == javaType) {
+                writer.prop("type", "number");
+            } else if (BigInteger.class == javaType) {
+                writer.prop("type", "number");
+            } else {
+                writer.prop("type", "string");
             }
         }
-        Map<Integer, List<Response>> responseMap = new TreeMap<>();
-        responseMap.put(
-                200,
-                Collections.singletonList(
-                        new Response(
-                                operation.getReturnType(),
-                                operation.getDoc() != null ?
-                                        operation.getDoc().getReturnValue() :
-                                        null
-                        )
-                )
-        );
+    }
+
+    private void generateResponses(Operation operation, YmlWriter writer) {
+        Map<Integer, List<ObjectType>> exceptionTypeMap = new TreeMap<>();
         for (ObjectType exceptionType : operation.getExceptionTypes()) {
-            responseMap.computeIfAbsent(500, it -> new ArrayList<>())
-                    .add(
-                            new Response(
-                                    exceptionType,
-                                    operation.getDoc() != null ?
-                                            operation.getDoc().getReturnValue() :
-                                            null
-                            )
-                    );
+            exceptionTypeMap.computeIfAbsent(500, it -> new ArrayList<>())
+                    .add(exceptionType);
         }
-        op.put("responses", generateResponses(responseMap));
-        return op;
-    }
-
-    private Object generateParam(String name, Type type, String in, String defaultValue) {
-        Map<String, Object> param = new LinkedHashMap<>();
-        if (name != null) {
-            param.put("name", name);
-            param.put("in", in);
-            param.put("required", type instanceof NullableType);
-        }
-        Map<String, Object> schema = typeRefManager.get(type);
-        if (defaultValue != null) {
-            schema = new LinkedHashMap<>(schema);
-            if (type instanceof SimpleType) {
-                Class<?> javaType = ((SimpleType)type).getJavaType();
-                if (boolean.class == javaType) {
-                    schema.put("default", Boolean.parseBoolean(defaultValue));
-                } else if (float.class == javaType) {
-                    schema.put("default", Float.parseFloat(defaultValue));
-                } else if (double.class == javaType) {
-                    schema.put("default", Double.parseDouble(defaultValue));
-                } else if (long.class == javaType) {
-                    schema.put("default", Long.parseLong(defaultValue));
-                } else if (javaType.isPrimitive() && javaType != char.class) {
-                    schema.put("default", Integer.parseInt(defaultValue));
-                } else {
-                    schema.put("default", defaultValue);
+        writer.object("responses", () -> {
+            writer.object("200", () -> {
+                String returnDoc = operation.getDoc() != null ? operation.getDoc().getReturnValue() : null;
+                writer.prop("description", returnDoc != null ? returnDoc : "OK");
+                if (operation.getReturnType() != null) {
+                    writer.object("schema", () -> {
+                        generateType(operation.getReturnType(), writer);
+                    });
                 }
-            } else {
-                schema.put("default", defaultValue);
+            });
+            for (Map.Entry<Integer, List<ObjectType>> e : exceptionTypeMap.entrySet()) {
+                writer.object(e.getKey().toString(), () -> {
+                    List<ObjectType> exceptionTypes = e.getValue();
+                    writer.prop("description", "ERROR");
+                    writer.object("schema", () -> {
+                        if (exceptionTypes.size() == 1) {
+                            generateType(operation.getReturnType(), writer);
+                        } else {
+                            writer.list("oneOf", () -> {
+                                for (ObjectType exceptionType : exceptionTypes) {
+                                    writer.listItem(() -> {
+                                        generateType(exceptionType, writer);
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
             }
-        }
-        param.put("schema", schema);
-        return param;
-    }
-
-    private Object generateRequestBody(Operation operation, Parameter parameter) {
-        Map<String, Object> requestBody = new LinkedHashMap<>(3);
-        if (operation.getDoc() != null) {
-            requestBody.put("description", operation.getDoc().getParameterValueMap().get(parameter.getName()));
-        }
-        Map<String, Object> content = new LinkedHashMap<>();
-        requestBody.put("content", content);
-        Object schema = generateParam(null, parameter.getType(), null, null);
-        content.put("application/json", schema);
-        return requestBody;
-    }
-
-    private Object generateResponses(Map<Integer, List<Response>> responseMap) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        for (Map.Entry<Integer, List<Response>> e : responseMap.entrySet()) {
-            int httpStatus = e.getKey();
-            List<Response> responses = e.getValue();
-            Map<String, Object> subMap = new LinkedHashMap<>();
-            if (httpStatus == 200) {
-                subMap.put("description", responses.get(0).doc != null ? responses.get(0).doc : "OK");
-            } else {
-                subMap.put("description", "ERROR");
-            }
-            Map<String, Object> type = new LinkedHashMap<>();
-            if (responses.size() == 1) {
-                type.put("$ref", typeRefManager.get(responses.get(0).type));
-            } else {
-                List<Object> types = new ArrayList<>();
-                for (Response response : responses) {
-                    types.add(
-                            Collections.singletonMap(
-                                    "$ref",
-                                    typeRefManager.get(response.type)
-                            )
-                    );
-                }
-                type.put("oneOf", types);
-            }
-            Map<String, Object> content = new LinkedHashMap<>();
-            Map<String, Object> schema = new LinkedHashMap<>();
-            schema.put("schema", type);
-            content.put("*/*", schema);
-            subMap.put("content", content);
-            map.put(Integer.toString(httpStatus), subMap);
-        }
-        return map;
+        });
     }
 
     private static class ServiceNameManager {
@@ -271,15 +252,17 @@ public class OpenApiGenerator {
         }
 
         public FetchByInfo fetchByInfo() {
-            return fetchByInfoStack.pop();
+            return fetchByInfoStack.peek();
         }
+
+
     }
 
     private static class TypeNameManager {
 
         private final FetcherContext ctx;
 
-        private final Map<Type, Map<String, Object>> typeMapMap = new HashMap<>();
+        private final Map<Type, String> typeNameMap = new HashMap<>();
 
         private final Namespace namespace = new Namespace();
 
@@ -288,7 +271,12 @@ public class OpenApiGenerator {
         }
 
         public String get(ObjectType type) {
-            return getImpl(type);
+            String typeName = typeNameMap.get(type);
+            if (typeName == null) {
+                typeName = getImpl(type);
+                typeNameMap.put(type, typeName);
+            }
+            return typeName;
         }
 
         private String getImpl(Type type) {
@@ -322,89 +310,6 @@ public class OpenApiGenerator {
             } else {
                 return ((SimpleType)type).getJavaType().getSimpleName();
             }
-        }
-    }
-
-    private static class TypeRefManager {
-
-        private final TypeNameManager typeNameManager;
-
-        private final Map<Type, Map<String, Object>> typeMap = new HashMap<>();
-
-        private TypeRefManager(TypeNameManager typeNameManager) {
-            this.typeNameManager = typeNameManager;
-        }
-
-        public Map<String, Object> get(Type type) {
-            return typeMap.computeIfAbsent(type, this::create);
-        }
-
-        private Map<String, Object> create(Type type) {
-            if (type instanceof ObjectType) {
-                return Collections.singletonMap(
-                        "$ref",
-                        "#/components/schemas/" + typeNameManager.get((ObjectType) type)
-                );
-            } else if (type instanceof ListType) {
-                Map<String, Object> map = new LinkedHashMap<>(3);
-                map.put("type", "array");
-                map.put("items", create(((ListType)type).getElementType()));
-                return Collections.unmodifiableMap(map);
-            } else if (type instanceof MapType) {
-                throw new UnsupportedOperationException("TODO");
-            } else if (type instanceof NullableType) {
-                return create(((NullableType)type).getTargetType());
-            } else if (type instanceof EnumType) {
-                Map<String, Object> map = new LinkedHashMap<>(3);
-                map.put("type", "string");
-                map.put("enum", ((EnumType)type).getConstants().stream().map(EnumType.Constant::getName).collect(Collectors.toList()));
-                return Collections.unmodifiableMap(map);
-            } else  {
-                SimpleType simpleType = (SimpleType) type;
-                Class<?> javaType = simpleType.getJavaType();
-                if (boolean.class == javaType) {
-                    return Collections.singletonMap("type", "boolean");
-                } else if (char.class == javaType) {
-                    return Collections.singletonMap("type", "string");
-                } else if (byte.class == javaType) {
-                    return Collections.singletonMap("type", "integer");
-                } else if (short.class == javaType) {
-                    return Collections.singletonMap("type", "integer");
-                } else if (int.class == javaType) {
-                    Map<String, Object> map = new LinkedHashMap<>(3);
-                    map.put("type", "integer");
-                    map.put("format", "int32");
-                    return Collections.unmodifiableMap(map);
-                } else if (long.class == javaType) {
-                    Map<String, Object> map = new LinkedHashMap<>(3);
-                    map.put("type", "integer");
-                    map.put("format", "int32");
-                    return Collections.unmodifiableMap(map);
-                } else if (float.class == javaType) {
-                    Map<String, Object> map = new LinkedHashMap<>(3);
-                    map.put("type", "number");
-                    map.put("format", "float");
-                    return Collections.unmodifiableMap(map);
-                } else if (double.class == javaType) {
-                    Map<String, Object> map = new LinkedHashMap<>(3);
-                    map.put("type", "number");
-                    map.put("format", "double");
-                    return Collections.unmodifiableMap(map);
-                }
-                return Collections.singletonMap("type", "string");
-            }
-        }
-    }
-
-    private static class Response {
-
-        final Type type;
-
-        final String doc;
-
-        private Response(Type type, String doc) {
-            this.type = type;
-            this.doc = doc;
         }
     }
 }

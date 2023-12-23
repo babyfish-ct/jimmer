@@ -35,7 +35,7 @@ public class EmbeddableTypeRender implements Render {
                         .codeIf(property.getType() instanceof NullableType, '?')
                         .code(": ")
                         .typeRef(property.getType())
-                        .code("\n");
+                        .code(";\n");
             }
         });
         writer.code('\n');
