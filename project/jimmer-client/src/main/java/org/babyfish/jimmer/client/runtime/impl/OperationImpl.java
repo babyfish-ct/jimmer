@@ -4,7 +4,11 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OperationImpl implements Operation {
 
@@ -16,7 +20,7 @@ public class OperationImpl implements Operation {
 
     private String uri;
 
-    private HttpMethod httpMethod;
+    private List<HttpMethod> httpMethods;
 
     private List<Parameter> parameters;
 
@@ -58,12 +62,14 @@ public class OperationImpl implements Operation {
     }
 
     @Override
-    public HttpMethod getHttpMethod() {
-        return httpMethod;
+    public List<HttpMethod> getHttpMethods() {
+        return httpMethods;
     }
 
-    void setHttpMethod(HttpMethod httpMethod) {
-        this.httpMethod = httpMethod;
+    void setHttpMethods(HttpMethod[] httpMethods) {
+        this.httpMethods = Collections.unmodifiableList(
+                Arrays.stream(httpMethods).distinct().collect(Collectors.toList())
+        );
     }
 
     @Override
@@ -104,7 +110,7 @@ public class OperationImpl implements Operation {
                 "javaMethod=" + javaMethod +
                 ", doc=" + doc +
                 ", uri='" + uri + '\'' +
-                ", httpMethod=" + httpMethod +
+                ", httpMethods=" + httpMethods +
                 ", parameters=" + parameters +
                 ", exceptionTypes=" + exceptionTypes +
                 '}';

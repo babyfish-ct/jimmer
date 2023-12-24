@@ -8,10 +8,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface Metadata {
 
     boolean isGenericSupported();
+
+    Map<String, List<Operation>> getPathMap();
 
     List<Service> getServices();
 
@@ -50,7 +53,7 @@ public interface Metadata {
 
         String uri(AnnotatedElement element);
 
-        Operation.HttpMethod http(Method method);
+        Operation.HttpMethod[] http(Method method);
     }
 
     interface ParameterParser {

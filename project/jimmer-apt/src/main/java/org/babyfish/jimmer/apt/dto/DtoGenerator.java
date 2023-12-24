@@ -27,6 +27,8 @@ public class DtoGenerator {
 
     private static final String[] EMPTY_STR_ARR = new String[0];
 
+    private final Context ctx;
+
     private final DtoType<ImmutableType, ImmutableProp> dtoType;
 
     private final Filer filer;
@@ -42,13 +44,15 @@ public class DtoGenerator {
     private TypeSpec.Builder typeBuilder;
 
     public DtoGenerator(
+            Context ctx,
             DtoType<ImmutableType, ImmutableProp> dtoType,
             Filer filer
     ) {
-        this(dtoType, filer, null, null);
+        this(ctx, dtoType, filer, null, null);
     }
 
     private DtoGenerator(
+            Context ctx,
             DtoType<ImmutableType, ImmutableProp> dtoType,
             Filer filer,
             DtoGenerator parent,
@@ -60,6 +64,7 @@ public class DtoGenerator {
         if ((parent == null) != (innerClassName == null)) {
             throw new IllegalArgumentException("The nullity values of `parent` and `innerClassName` must be same");
         }
+        this.ctx = ctx;
         this.dtoType = dtoType;
         this.filer = filer;
         this.parent = parent;
@@ -98,6 +103,14 @@ public class DtoGenerator {
                             )
                             .build()
             );
+        }
+        if (dtoType.getDoc() != null) {
+            typeBuilder.addJavadoc(dtoType.getDoc());
+        } else {
+            String doc = ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement());
+            if (doc != null && !doc.isEmpty()) {
+                typeBuilder.addJavadoc(doc);
+            }
         }
         for (Anno anno : dtoType.getAnnotations()) {
             typeBuilder.addAnnotation(annotationOf(anno));
@@ -203,6 +216,7 @@ public class DtoGenerator {
         for (DtoProp<ImmutableType, ImmutableProp> prop : dtoType.getDtoProps()) {
             if (prop.isNewTarget() && prop.getTargetType() != null && prop.getTargetType().getName() == null) {
                 new DtoGenerator(
+                        ctx,
                         prop.getTargetType(),
                         null,
                         this,

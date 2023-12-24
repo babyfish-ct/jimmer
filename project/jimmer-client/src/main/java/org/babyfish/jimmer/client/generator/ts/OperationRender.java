@@ -172,7 +172,7 @@ public class OperationRender implements Render {
             }
         }
         writer.code("return (await this.executor({uri: _uri, method: '")
-                .code(operation.getHttpMethod().name())
+                .code(operation.getHttpMethods().get(0).name())
                 .code("'");
         if (hasHeader) {
             writer.code(", headers: _headers");

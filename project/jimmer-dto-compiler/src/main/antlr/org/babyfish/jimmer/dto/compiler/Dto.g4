@@ -36,6 +36,7 @@ importedType
 
 dtoType
     :
+    (doc = DocComment)?
     (annotations += annotation)*
     (modifiers += Identifier)*
     name=Identifier
@@ -86,6 +87,7 @@ aliasGroupProp
 
 positiveProp
     :
+    (doc = DocComment)?
     (annotations += annotation)*
     '+'?
     (
@@ -98,7 +100,7 @@ positiveProp
     (optional = '?' | required = '!')?
     ('as' alias=Identifier)?
     (
-        (annotations += annotation)* dtoBody (recursive='*')?
+        (childDoc = DocComment)? (annotations += annotation)* dtoBody (recursive='*')?
         |
         '->' enumBody
     )?
@@ -199,11 +201,18 @@ Identifier
     ;
 
 WhiteSpace
-    :    (' ' | '\u0009' | '\u000C' | '\r' | '\n') -> skip
+    :
+    (' ' | '\u0009' | '\u000C' | '\r' | '\n') -> skip
+    ;
+
+DocComment
+    :
+    ('/**' .*? '*/')
     ;
 
 BlockComment
-    :    ('/*' .*? '*/') -> skip
+    :
+    ('/*' .*? '*/') -> skip
     ;
 
 LineComment

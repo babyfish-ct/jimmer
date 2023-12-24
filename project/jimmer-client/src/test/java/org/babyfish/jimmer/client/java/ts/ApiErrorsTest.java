@@ -103,7 +103,7 @@ public class ApiErrorsTest {
                         "    };\n" +
                         "export type ApiErrors = {\n" +
                         "    'bookService': {\n" +
-                        "        'saveBooks': AllErrors & ({\n" +
+                        "        'saveBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NULL_TARGET', \n" +
                         "                readonly [key:string]: any\n" +
@@ -172,7 +172,7 @@ public class ApiErrorsTest {
                         "                code: 'UNSTRUCTURED_ASSOCIATION', \n" +
                         "                readonly [key:string]: any\n" +
                         "            }), \n" +
-                        "        'updateBooks': AllErrors & ({\n" +
+                        "        'updateBook': AllErrors & ({\n" +
                         "                family: 'SAVE_COMMAND', \n" +
                         "                code: 'NULL_TARGET', \n" +
                         "                readonly [key:string]: any\n" +

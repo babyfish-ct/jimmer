@@ -74,33 +74,26 @@ public class Metadatas {
         }
 
         @Override
-        public Operation.HttpMethod http(Method method) {
+        public Operation.HttpMethod[] http(Method method) {
             RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
             if (requestMapping != null) {
                 if (requestMapping.method().length == 0) {
-                    return Operation.HttpMethod.GET;
+                    return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
                 }
-                switch (requestMapping.method()[0]) {
-                    case HEAD: return Operation.HttpMethod.HEAD;
-                    case POST: return Operation.HttpMethod.POST;
-                    case PUT: return Operation.HttpMethod.PUT;
-                    case PATCH: return Operation.HttpMethod.PATCH;
-                    case DELETE: return Operation.HttpMethod.DELETE;
-                    case OPTIONS: return Operation.HttpMethod.OPTIONS;
-                    case TRACE: return Operation.HttpMethod.TRACE;
-                    default: return Operation.HttpMethod.GET;
-                }
+                return Arrays.stream(requestMapping.method())
+                        .map(OperationParserImpl::httpMethod)
+                        .toArray(Operation.HttpMethod[]::new);
             }
             if (method.getAnnotation(PostMapping.class) != null) {
-                return Operation.HttpMethod.POST;
+                return new Operation.HttpMethod[] { Operation.HttpMethod.POST };
             }
             if (method.getAnnotation(PutMapping.class) != null) {
-                return Operation.HttpMethod.PUT;
+                return new Operation.HttpMethod[] { Operation.HttpMethod.PUT };
             }
             if (method.getAnnotation(DeleteMapping.class) != null) {
-                return Operation.HttpMethod.DELETE;
+                return new Operation.HttpMethod[] { Operation.HttpMethod.DELETE };
             }
-            return Operation.HttpMethod.GET;
+            return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
         }
 
         private static String uri(String[] value, String[] path) {
@@ -115,6 +108,19 @@ public class Metadatas {
                 }
             }
             return null;
+        }
+
+        private static Operation.HttpMethod httpMethod(RequestMethod method) {
+            switch (method) {
+                case HEAD: return Operation.HttpMethod.HEAD;
+                case POST: return Operation.HttpMethod.POST;
+                case PUT: return Operation.HttpMethod.PUT;
+                case PATCH: return Operation.HttpMethod.PATCH;
+                case DELETE: return Operation.HttpMethod.DELETE;
+                case OPTIONS: return Operation.HttpMethod.OPTIONS;
+                case TRACE: return Operation.HttpMethod.TRACE;
+                default: return Operation.HttpMethod.GET;
+            }
         }
     }
 

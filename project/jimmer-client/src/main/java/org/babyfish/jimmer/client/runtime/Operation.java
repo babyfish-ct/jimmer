@@ -13,7 +13,7 @@ public interface Operation {
 
     Doc getDoc();
 
-    HttpMethod getHttpMethod();
+    List<HttpMethod> getHttpMethods();
 
     String getUri();
 

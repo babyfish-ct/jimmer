@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.client.java.model.Book
+    -> package org.babyfish.jimmer.client.java.model.dto
+
+/**
+ * The book input defined by DTO language
+ */
+BookInput {
+    #allScalars(this)
+    - id
+    id(store)
+    id(authors) as authorIds
+}

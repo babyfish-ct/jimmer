@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.client.java.service;
 
 import org.babyfish.jimmer.client.FetchBy;
+import org.babyfish.jimmer.client.common.GetMapping;
 import org.babyfish.jimmer.client.java.model.Fetchers;
 import org.babyfish.jimmer.client.java.model.Tree;
 import org.babyfish.jimmer.client.java.model.TreeNode;
@@ -28,6 +29,7 @@ public interface TreeService {
      * @return The static object tree with integer values.
      */
     @Api
+    @GetMapping("/numberTree")
     Tree<Integer> getNumberTree(
             @RequestParam Integer depth,
             @RequestParam Integer breadth
@@ -41,6 +43,7 @@ public interface TreeService {
      * @return The static object tree with integer values.
      */
     @Api
+    @GetMapping("/numberTree2")
     Tree<Integer> getNumberTree(
             @RequestParam Integer depth,
             @RequestParam Integer breadth,
@@ -54,6 +57,7 @@ public interface TreeService {
      * @return The static object tree with string values.
      */
     @Api
+    @GetMapping("/stringTree")
     Tree<String> getStringTree(
             @RequestParam Integer depth,
             @RequestParam Integer breadth
@@ -65,6 +69,7 @@ public interface TreeService {
      * @return The fetched object tree
      */
     @Api
+    @GetMapping("/rootNode")
     @FetchBy("RECURSIVE_FETCHER") TreeNode getRootNode(
             @RequestParam(defaultVale = "X") String name
     );

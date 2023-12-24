@@ -3,10 +3,10 @@ package org.babyfish.jimmer.client.java.service;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.client.common.*;
 import org.babyfish.jimmer.client.java.model.*;
+import org.babyfish.jimmer.client.java.model.dto.BookInput;
 import org.babyfish.jimmer.client.meta.Api;
 import org.babyfish.jimmer.client.java.model.Author;
 import org.babyfish.jimmer.client.java.model.Book;
-import org.babyfish.jimmer.client.java.model.BookInput;
 import org.babyfish.jimmer.client.java.model.Page;
 import org.babyfish.jimmer.client.runtime.Operation;
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2;
@@ -118,18 +118,18 @@ public interface BookService {
     Optional<@FetchBy("COMPLEX_FETCHER") Book> findBook(@PathVariable("id") long id);
 
     @Api
-    @PutMapping("/book")
-    Book saveBooks(@RequestBody BookInput input) throws SaveException;
+    @PostMapping("/book")
+    Book saveBook(@RequestBody BookInput input) throws SaveException;
 
     @Api
-    @PatchMapping("/book")
-    Book updateBooks(@RequestBody BookInput input) throws SaveException;
+    @PutMapping("/book")
+    Book updateBook(@RequestBody BookInput input) throws SaveException;
 
     @Api
     @DeleteMapping("/book/{id}")
     int deleteBook(@PathVariable("id") long id);
 
     @Api
-    @RequestMapping("version")
+    @GetMapping("/version")
     int version(@RequestHeader("accessToken") String accessToken, @Nullable @RequestHeader("resourcePath") String path);
 }

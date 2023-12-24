@@ -128,6 +128,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public @Nullable String getDoc() {
+        return null;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("@optional ").append(baseProp.getName());

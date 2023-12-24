@@ -14,6 +14,10 @@ public class OperationParserImpl implements Metadata.OperationParser {
         if (getMapping != null) {
             return getMapping.value();
         }
+        PostMapping postMapping = element.getAnnotation(PostMapping.class);
+        if (postMapping != null) {
+            return postMapping.value();
+        }
         PutMapping putMapping = element.getAnnotation(PutMapping.class);
         if (putMapping != null) {
             return putMapping.value();
@@ -26,17 +30,20 @@ public class OperationParserImpl implements Metadata.OperationParser {
     }
 
     @Override
-    public Operation.HttpMethod http(Method method) {
+    public Operation.HttpMethod[] http(Method method) {
         RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
         if (requestMapping != null && requestMapping.method().length != 0) {
-            return requestMapping.method()[0];
+            return requestMapping.method();
+        }
+        if (method.getAnnotation(PostMapping.class) != null) {
+            return new Operation.HttpMethod[] { Operation.HttpMethod.POST };
         }
         if (method.getAnnotation(PutMapping.class) != null) {
-            return Operation.HttpMethod.PUT;
+            return new Operation.HttpMethod[] { Operation.HttpMethod.PUT };
         }
         if (method.getAnnotation(DeleteMapping.class) != null) {
-            return Operation.HttpMethod.DELETE;
+            return new Operation.HttpMethod[] { Operation.HttpMethod.DELETE };
         }
-        return Operation.HttpMethod.GET;
+        return new Operation.HttpMethod[] { Operation.HttpMethod.GET };
     }
 }

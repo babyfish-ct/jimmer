@@ -23,6 +23,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
 
     private final List<Anno> annotations;
 
+    @Nullable
+    private final String doc;
+
     private final DtoType<T, P> targetType;
 
     private final EnumType enumType;
@@ -45,6 +48,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
             @Nullable String alias,
             int aliasLine,
             List<Anno> annotations,
+            @Nullable String doc,
             @Nullable DtoType<T, P> targetType,
             @Nullable EnumType enumType,
             Mandatory mandatory,
@@ -56,6 +60,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.nextProp = null;
         this.baseLine = baseLine;
         this.annotations = annotations;
+        this.doc = doc;
         this.alias = alias;
         this.aliasLine = aliasLine;
         this.targetType = targetType;
@@ -85,6 +90,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.alias = next.getAlias();
         this.aliasLine = next.getAliasLine();
         this.annotations = next.getAnnotations();
+        this.doc = next.getDoc();
         this.targetType = next.getTargetType();
         this.enumType = next.getEnumType();
         if (head.isNullable() || next.isNullable()) {
@@ -120,6 +126,7 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
         this.nextProp = null;
         this.baseLine = original.getBaseLine();
         this.annotations = original.getAnnotations();
+        this.doc = original.getDoc();
         this.alias = getBaseProp().getName();
         this.aliasLine = original.getAliasLine();
         this.targetType = targetType;
@@ -166,6 +173,10 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public List<Anno> getAnnotations() {
         return annotations;
+    }
+
+    public String getDoc() {
+        return doc;
     }
 
     @Override
@@ -257,6 +268,9 @@ class DtoPropImpl<T extends BaseType, P extends BaseProp> implements DtoProp<T, 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        if (doc != null) {
+            builder.append("@doc(").append(doc.replace("\n", "\\n")).append(')');
+        }
         if (mandatory == Mandatory.OPTIONAL) {
             builder.append("@optional ");
         } else if (mandatory == Mandatory.REQUIRED) {

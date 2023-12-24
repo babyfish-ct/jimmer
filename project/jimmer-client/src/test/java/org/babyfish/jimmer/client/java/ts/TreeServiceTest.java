@@ -79,7 +79,7 @@ public class TreeServiceTest {
                         "    async getNumberTree(options: TreeServiceOptions['getNumberTree']): Promise<\n" +
                         "        Tree<number | null | undefined>\n" +
                         "    > {\n" +
-                        "        let _uri = '/';\n" +
+                        "        let _uri = '/numberTree';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.depth;\n" +
@@ -109,7 +109,7 @@ public class TreeServiceTest {
                         "    async getNumberTree_2(options: TreeServiceOptions['getNumberTree_2']): Promise<\n" +
                         "        Tree<number | null | undefined>\n" +
                         "    > {\n" +
-                        "        let _uri = '/';\n" +
+                        "        let _uri = '/numberTree2';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.depth;\n" +
@@ -144,7 +144,7 @@ public class TreeServiceTest {
                         "    async getRootNode(options: TreeServiceOptions['getRootNode']): Promise<\n" +
                         "        TreeNodeDto['TreeService/RECURSIVE_FETCHER']\n" +
                         "    > {\n" +
-                        "        let _uri = '/';\n" +
+                        "        let _uri = '/rootNode';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.name;\n" +
@@ -166,7 +166,7 @@ public class TreeServiceTest {
                         "    async getStringTree(options: TreeServiceOptions['getStringTree']): Promise<\n" +
                         "        Tree<string>\n" +
                         "    > {\n" +
-                        "        let _uri = '/';\n" +
+                        "        let _uri = '/stringTree';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
                         "        let _value: any = undefined;\n" +
                         "        _value = options.depth;\n" +

@@ -96,7 +96,7 @@ public class DtoProcessor {
         boolean result = false;
         for (List<DtoType<ImmutableType, ImmutableProp>> dtoTypes : dtoTypeMap.values()) {
             for (DtoType<ImmutableType, ImmutableProp> dtoType : dtoTypes) {
-                new DtoGenerator(dtoType, filer).generate();
+                new DtoGenerator(context, dtoType, filer).generate();
                 result = true;
             }
         }

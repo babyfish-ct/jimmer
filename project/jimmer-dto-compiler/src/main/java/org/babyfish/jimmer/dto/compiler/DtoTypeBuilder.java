@@ -21,6 +21,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
 
     final List<Anno> annotations;
 
+    final String doc;
+
     final Set<DtoTypeModifier> modifiers;
 
     final P recursiveBaseProp;
@@ -51,6 +53,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             DtoParser.DtoBodyContext body,
             Token name,
             List<DtoParser.AnnotationContext> annotations,
+            String doc,
             Set<DtoTypeModifier> modifiers,
             P recursiveBaseProp,
             String recursiveAlias,
@@ -72,6 +75,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             parsedAnnotations = Collections.unmodifiableList(parsedAnnotations);
             this.annotations = parsedAnnotations;
         }
+        this.doc = doc;
         this.modifiers = Collections.unmodifiableSet(modifiers);
         this.recursiveBaseProp = recursiveBaseProp;
         this.recursiveAlias = recursiveAlias;
@@ -135,7 +139,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     this,
                                     baseProp,
                                     allScalars.start.getLine(),
-                                    mandatory
+                                    mandatory,
+                                    null
                             )
                     );
                 }
@@ -205,7 +210,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                         this,
                                         baseProp,
                                         qnCtx.stop.getLine(),
-                                        mandatory
+                                        mandatory,
+                                        null
                                 )
                         );
                     }
@@ -361,7 +367,8 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 annotations,
                 modifiers,
                 name != null ? name.getText() : null,
-                ctx.getDtoFilePath()
+                ctx.getDtoFilePath(),
+                doc
         );
 
         Map<String, AbstractProp> propMap = resolveDeclaredProps();

@@ -143,12 +143,28 @@ public class MetadataBuilder implements Metadata.Builder {
         ServiceImpl service = new ServiceImpl(ctx.javaType(apiService.getTypeName()));
         service.setDoc(apiService.getDoc());
         String baseUri = operationParser.uri(service.getJavaType());
+        Map<String, Operation> endpointMap = new HashMap<>();
         Map<ApiOperation, Operation> operationMap = new IdentityHashMap<>((apiService.getOperations().size() * 4 + 2) / 3);
         for (Method method : service.getJavaType().getMethods()) {
             ApiOperation apiOperation = apiService.findOperation(method.getName(), method.getParameterTypes());
             if (apiOperation != null) {
                 OperationImpl operation = operation(service, apiOperation, method, baseUri, ctx);
                 operationMap.put(apiOperation, operation);
+                for (Operation.HttpMethod httpMethod : operation.getHttpMethods()) {
+                    String endpoint = httpMethod.name() + ':' + operation.getUri();
+                    Operation conflictOperation = endpointMap.put(endpoint, operation);
+                    if (conflictOperation != null) {
+                        throw new IllegalApiException(
+                                "Conflict endpoint \"" +
+                                        endpoint +
+                                        "\" which is shared by \"" +
+                                        conflictOperation.getJavaMethod() +
+                                        "\" and \"" +
+                                        operation.getJavaMethod() +
+                                        "\""
+                        );
+                    }
+                }
             }
         }
         List<Operation> operations = new ArrayList<>(apiService.getOperations().size());
@@ -167,7 +183,7 @@ public class MetadataBuilder implements Metadata.Builder {
         String uri = operationParser.uri(method);
         operation.setUri(concatUri(baseUri, uri));
         operation.setDoc(apiOperation.getDoc());
-        operation.setHttpMethod(operationParser.http(method));
+        operation.setHttpMethods(operationParser.http(method));
         Parameter[] javaParameters = method.getParameters();
         List<org.babyfish.jimmer.client.runtime.Parameter> parameters = new ArrayList<>();
         for (ApiParameter apiParameter : apiOperation.getParameters()) {

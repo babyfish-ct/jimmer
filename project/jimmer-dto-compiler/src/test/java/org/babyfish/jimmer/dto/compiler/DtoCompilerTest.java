@@ -525,6 +525,43 @@ public class DtoCompilerTest {
     }
 
     @Test
+    public void testDoc() {
+        List<DtoType<BaseType, BaseProp>> dtoTypes = MyDtoCompiler.treeNode(
+                "/**\n" +
+                        " * The recursive tree input\n" +
+                        " */\n" +
+                        "input TreeNodeInput {\n" +
+                        "    /**\n" +
+                        "     * The name of current tree node\n" +
+                        "     */\n" +
+                        "    name\n" +
+                        "    /**\n" +
+                        "     * The child nodes of current tree node\n" +
+                        "     */\n" +
+                        "    childNodes /** recursive childNodes */{\n" +
+                        "        name\n" +
+                        "    }*\n" +
+                        "}\n"
+        );
+        assertContentEquals(
+                "[" +
+                        "--->@doc(The recursive tree input)" +
+                        "--->input TreeNodeInput {" +
+                        "--->--->" +
+                        "--->--->@doc(The name of current tree node)" +
+                        "--->--->name, " +
+                        "--->--->@doc(The child nodes of current tree node)" +
+                        "--->--->@optional childNodes: @doc(recursive childNodes)input {" +
+                        "--->--->--->name, " +
+                        "--->--->--->@optional childNodes: ..." +
+                        "--->--->}*" +
+                        "--->}" +
+                        "]",
+                dtoTypes.toString()
+        );
+    }
+
+    @Test
     public void testIllegalPropertyName() {
         DtoAstException ex = Assertions.assertThrows(DtoAstException.class, () -> {
             MyDtoCompiler.book(
@@ -693,7 +730,8 @@ public class DtoCompilerTest {
         Assertions.assertEquals(
                 "Error at line 2 of \"<project>/src/main/dto/org/babyfish/jimmer/sql/model/Book.dto\": " +
                         "Cannot call the function \"flat\" " +
-                        "because the current prop \"entity::authors\" is list",
+                        "because the current prop \"entity::authors\" is list " +
+                        "and the current dto type is not specification",
                 ex.getMessage()
         );
     }

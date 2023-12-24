@@ -91,13 +91,13 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                     "If modifiers 'dynamic' can only be used for input"
             );
         }
-        Set<String> superSet = new LinkedHashSet<>();
         DtoTypeBuilder<T, P> typeBuilder = new DtoTypeBuilder<>(
                 null,
                 compiler.getBaseType(),
                 type.body,
                 type.name,
                 type.annotations,
+                Docs.parse(type.doc),
                 modifiers,
                 null,
                 null,

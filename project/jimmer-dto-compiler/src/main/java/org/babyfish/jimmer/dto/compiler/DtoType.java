@@ -22,6 +22,9 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Nullable
     private final String dtoFilePath;
 
+    @Nullable
+    private final String doc;
+
     private List<AbstractProp> props;
 
     private List<DtoProp<T, P>> dtoProps;
@@ -30,15 +33,14 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
 
     private List<DtoProp<T, P>> hiddenFlatProps;
 
-    private Set<String> generatedDtoTypeNames = new HashSet<>();
-
     DtoType(
             T baseType,
             @Nullable String packageName,
             List<Anno> annotations,
             Set<DtoTypeModifier> modifiers,
             @Nullable String name,
-            @Nullable String dtoFilePath
+            @Nullable String dtoFilePath,
+            @Nullable String doc
     ) {
         this.baseType = baseType;
         this.packageName = packageName != null ? packageName : defaultPackageName(baseType.getPackageName());
@@ -46,6 +48,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         this.modifiers = modifiers;
         this.name = name;
         this.dtoFilePath = dtoFilePath;
+        this.doc = doc;
     }
 
     public T getBaseType() {
@@ -123,6 +126,10 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
         return annotations;
     }
 
+    public String getDoc() {
+        return doc;
+    }
+
     void setProps(List<AbstractProp> props) {
         if (props == null) {
             throw new IllegalArgumentException("`props` cannot be null");
@@ -136,6 +143,9 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        if (doc != null) {
+            builder.append("@doc(").append(doc.replace("\n", "\\n")).append(')');
+        }
         for (Anno anno : annotations) {
             builder.append(anno).append(' ');
         }
@@ -217,6 +227,7 @@ public class DtoType<T extends BaseType, P extends BaseProp> {
                     packageName,
                     annotations,
                     modifiers,
+                    null,
                     null,
                     null
             );

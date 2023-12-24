@@ -8,6 +8,8 @@ public class MetadataImpl implements Metadata {
 
     private final boolean isGenericSupported;
 
+    private final Map<String, List<Operation>> pathMap;
+
     private final List<Service> services;
     
     private final List<ObjectType> fetchedTypes;
@@ -29,6 +31,7 @@ public class MetadataImpl implements Metadata {
             List<EnumType> enumTypes
     ) {
         this.isGenericSupported = isGenericSupported;
+        this.pathMap = getPathMap(services);
         this.services = services;
         this.fetchedTypes = fetchedTypes;
         this.dynamicTypes = dynamicTypes;
@@ -50,9 +53,45 @@ public class MetadataImpl implements Metadata {
         this.typeMap = typeMap;
     }
 
+    private static Map<String, List<Operation>> getPathMap(List<Service> services) {
+        Map<String, Map<Operation.HttpMethod, Operation>> map = new TreeMap<>();
+        for (Service service : services) {
+            for (Operation operation : service.getOperations()) {
+                Map<Operation.HttpMethod, Operation> subMap =
+                        map.computeIfAbsent(operation.getUri(), it ->new TreeMap<>());
+                for (Operation.HttpMethod method : operation.getHttpMethods()) {
+                    Operation conflictOperation = subMap.put(method, operation);
+                    if (conflictOperation != null) {
+                        throw new IllegalApiException(
+                                "Conflict HTTP endpoint \"" +
+                                        method +
+                                        ":" +
+                                        operation.getUri() +
+                                        "\" which is shared by \"" +
+                                        conflictOperation.getJavaMethod() +
+                                        "\" and \"" +
+                                        operation.getJavaMethod() +
+                                        "\""
+                        );
+                    }
+                }
+            }
+        }
+        Map<String, List<Operation>> pathMap = new TreeMap<>();
+        for (Map.Entry<String, Map<Operation.HttpMethod, Operation>> e : map.entrySet()) {
+            pathMap.put(e.getKey(), Collections.unmodifiableList(new ArrayList<>(e.getValue().values())));
+        }
+        return Collections.unmodifiableMap(pathMap);
+    }
+
     @Override
     public boolean isGenericSupported() {
         return isGenericSupported;
+    }
+
+    @Override
+    public Map<String, List<Operation>> getPathMap() {
+        return pathMap;
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class OpenApiGenerator {
 
@@ -39,94 +40,105 @@ public class OpenApiGenerator {
 
     private void generatePaths(YmlWriter writer) {
         writer.object("paths", ()-> {
-            for (Service service : metadata.getServices()) {
-                for (Operation operation : service.getOperations()) {
-                    writer.object(operation.getUri(), () -> {
-                        writer.description(Description.of(Doc.valueOf(operation.getDoc()), true));
-                        writer.list("tags", () -> {
-                            writer.code(serviceNameManager.get(service));
-                        });
-                        writer.prop("operationId", operationNameManager.get(operation));
-                        if (!operation.getParameters().isEmpty()) {
-                            writer.list("parameters", () -> {
-                                for (Parameter parameter : operation.getParameters()) {
-                                    if (parameter.isRequestBody()) {
-                                        writer.object("requestBody", () -> {
-                                            writer.object("content", () -> {
-                                                writer.object("application/json", () -> {
-                                                    writer.object("schema", () -> {
-                                                        generateType(parameter.getType(), writer);
-                                                    });
-                                                });
-                                            });
-                                            if (!(parameter.getType() instanceof NullableType)) {
-                                                writer.prop("required", "true");
-                                            }
-                                            writer.description(
-                                                    Description.of(Doc.paramOf(operation.getDoc(), parameter.getName()))
-                                            );
-                                        });
-                                        continue;
-                                    }
-                                    String requestHeader = parameter.getRequestHeader();
-                                    String requestParam = parameter.getRequestParam();
-                                    String name = requestHeader != null ?
-                                            requestHeader :
-                                            requestParam != null ? requestParam : parameter.getPathVariable();
-                                    if (name != null) {
-                                        writer.listItem(() -> {
-                                            writer.prop("name", name);
-                                            writer.prop(
-                                                    "in",
-                                                    requestHeader != null ?
-                                                            "header" :
-                                                            requestParam != null ? "query" : "path"
-                                            );
-                                            if (!(parameter.getType() instanceof NullableType)) {
-                                                writer.prop("required", "true");
-                                            }
-                                            writer.description(
-                                                    Description.of(Doc.paramOf(operation.getDoc(), parameter.getName()))
-                                            );
-                                            writer.object("schema", () -> {
-                                                this.generateType(parameter.getType(), writer);
-                                                if (parameter.getDefaultValue() != null) {
-                                                    writer.prop("default", parameter.getDefaultValue());
-                                                }
-                                            });
-                                        });
-                                    } else {
-                                        for (Property property : ((ObjectType)parameter.getType()).getProperties().values()) {
-                                            writer.listItem(() -> {
-                                                writer.prop("name", property.getName());
-                                                writer.prop("in", "query");
-                                                if (!(property.getType() instanceof NullableType)) {
-                                                    writer.prop("required", "true");
-                                                }
-                                                String doc = Doc.valueOf(property.getDoc());
-                                                if (doc == null) {
-                                                    doc = Doc.propertyOf(((ObjectType) parameter.getType()).getDoc(), property.getName());
-                                                }
-                                                writer.description(Description.of(doc));
-                                                writer.object("schema", () -> {
-                                                    this.generateType(property.getType(), writer);
-                                                });
-                                            });
-                                        }
-                                    }
-                                }
+            for (Map.Entry<String, List<Operation>> e : metadata.getPathMap().entrySet()) {
+                writer.object(e.getKey(), () -> {
+                    for (Operation operation : e.getValue()) {
+                        for (Operation.HttpMethod method : operation.getHttpMethods()) {
+                            writer.object(method.name().toLowerCase(), () -> {
+                                generateOperation(operation, writer);
                             });
                         }
-                    });
-                    generateResponses(operation, writer);
-                }
+                    }
+                });
             }
         });
     }
 
+    private void generateOperation(Operation operation, YmlWriter writer) {
+        writer.description(Description.of(Doc.valueOf(operation.getDoc()), true));
+        writer.list("tags", () -> {
+            writer.listItem(() -> {
+                writer.code(serviceNameManager.get(operation.getDeclaringService()));
+            });
+        });
+        writer.prop("operationId", operationNameManager.get(operation));
+        List<Parameter> httpParameters = operation.getParameters().stream().filter(it -> !it.isRequestBody()).collect(Collectors.toList());
+        Parameter requestBodyParameter = operation.getParameters().stream().filter(it -> it.isRequestBody()).findFirst().orElse(null);
+        if (!httpParameters.isEmpty()) {
+            writer.list("parameters", () -> {
+                for (Parameter parameter : httpParameters) {
+                    String requestHeader = parameter.getRequestHeader();
+                    String requestParam = parameter.getRequestParam();
+                    String name = requestHeader != null ?
+                            requestHeader :
+                            requestParam != null ? requestParam : parameter.getPathVariable();
+                    if (name != null) {
+                        writer.listItem(() -> {
+                            writer.prop("name", name);
+                            writer.prop(
+                                    "in",
+                                    requestHeader != null ?
+                                            "header" :
+                                            requestParam != null ? "query" : "path"
+                            );
+                            if (!(parameter.getType() instanceof NullableType)) {
+                                writer.prop("required", "true");
+                            }
+                            writer.description(
+                                    Description.of(Doc.paramOf(operation.getDoc(), parameter.getName()))
+                            );
+                            writer.object("schema", () -> {
+                                this.generateType(parameter.getType(), writer);
+                                if (parameter.getDefaultValue() != null) {
+                                    writer.prop("default", parameter.getDefaultValue());
+                                }
+                            });
+                        });
+                    } else {
+                        for (Property property : ((ObjectType) parameter.getType()).getProperties().values()) {
+                            writer.listItem(() -> {
+                                writer.prop("name", property.getName());
+                                writer.prop("in", "query");
+                                if (!(property.getType() instanceof NullableType)) {
+                                    writer.prop("required", "true");
+                                }
+                                String doc = Doc.valueOf(property.getDoc());
+                                if (doc == null) {
+                                    doc = Doc.propertyOf(((ObjectType) parameter.getType()).getDoc(), property.getName());
+                                }
+                                writer.description(Description.of(doc));
+                                writer.object("schema", () -> {
+                                    this.generateType(property.getType(), writer);
+                                });
+                            });
+                        }
+                    }
+                }
+            });
+            if (requestBodyParameter != null) {
+                writer.object("requestBody", () -> {
+                    writer.object("content", () -> {
+                        writer.object("application/json", () -> {
+                            writer.object("schema", () -> {
+                                generateType(requestBodyParameter.getType(), writer);
+                            });
+                        });
+                    });
+                    if (!(requestBodyParameter.getType() instanceof NullableType)) {
+                        writer.prop("required", "true");
+                    }
+                    writer.description(
+                            Description.of(Doc.paramOf(operation.getDoc(), requestBodyParameter.getName()))
+                    );
+                });
+            }
+        }
+        generateResponses(operation, writer);
+    }
+
     private void generateType(Type type, YmlWriter writer) {
         if (type instanceof ObjectType) {
-            writer.prop("$ref", "#/components/schemas/" + typeNameManager.get((ObjectType) type));
+            writer.prop("$ref", "'#/components/schemas/" + typeNameManager.get((ObjectType) type) + '\'');
         } else if (type instanceof ListType) {
             writer
                     .prop("type", "array")
@@ -236,20 +248,16 @@ public class OpenApiGenerator {
     private void generateTypeDefinition(ObjectType type, YmlWriter writer) {
         writer.object(typeNameManager.get(type), () -> {
             writer.prop("type", "object");
+            writer.description(Description.of(Doc.valueOf(type.getDoc())));
             writer.object("properties", () -> {
                 for (Property property : type.getProperties().values()) {
                     writer.object(property.getName(), () -> {
-                        if (!(property.getType() instanceof NullableType)) {
-                            writer.prop("required", "true");
-                        }
                         String doc = Doc.valueOf(property.getDoc());
                         if (doc == null) {
                             doc = Doc.propertyOf(type.getDoc(), property.getName());
                         }
                         writer.description(Description.of(doc));
-                        writer.object("schema", () -> {
-                            generateType(property.getType(), writer);
-                        });
+                        generateType(property.getType(), writer);
                     });
                 }
             });

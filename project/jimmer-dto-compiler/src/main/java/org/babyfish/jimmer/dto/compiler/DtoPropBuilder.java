@@ -34,11 +34,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
 
     private final Set<LikeOption> likeOptions;
 
+    @Nullable
+    private String doc;
+
     DtoPropBuilder(
             DtoTypeBuilder<T, P> parent,
             P baseProp,
             int line,
-            Mandatory mandatory
+            Mandatory mandatory,
+            @Nullable String doc
     ) {
         this.parent = Objects.requireNonNull(parent, "parent cannot be null");
         this.basePropMap = Collections.singletonMap(
@@ -61,6 +65,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         this.enumType = null;
         this.recursive = false;
         this.likeOptions = Collections.emptySet();
+        this.doc = doc;
     }
 
     DtoPropBuilder(
@@ -164,6 +169,20 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
             annotations = Collections.unmodifiableList(annotations);
         }
         this.annotations = annotations;
+        if (!this.annotations.isEmpty() && "flat".equals(funcName)) {
+            throw ctx.exception(
+                    prop.annotations.get(0).start.getLine(),
+                    "Illegal annotation, flat property does not accept annotations"
+            );
+        }
+
+        if (prop.doc != null && "flat".equals(funcName)) {
+            throw ctx.exception(
+                    prop.doc.getLine(),
+                    "Illegal documentation comment, flat property does not accept documentation comments"
+            );
+        }
+        this.doc = Docs.parse(prop.doc);
 
         P baseProp = basePropMap.values().iterator().next();
 
@@ -202,7 +221,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 prop.func.getLine(),
                                 "Cannot call the function \"flat\" because the current prop \"" +
                                         baseProp +
-                                        "\" is list"
+                                        "\" is list and the current dto type is not specification"
                         );
                     }
                     break;
@@ -504,6 +523,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     dtoBody,
                     null,
                     prop.annotations,
+                    Docs.parse(prop.childDoc),
                     parent.modifiers.contains(DtoTypeModifier.INPUT) ?
                             Collections.singleton(DtoTypeModifier.INPUT) :
                             parent.modifiers.contains(DtoTypeModifier.SPECIFICATION) ?
@@ -692,6 +712,7 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                 alias,
                 aliasLine,
                 annotations,
+                doc,
                 targetTypeBuilder != null ? targetTypeBuilder.build() : null,
                 enumType,
                 mandatory,

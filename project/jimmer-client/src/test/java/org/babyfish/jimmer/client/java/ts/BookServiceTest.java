@@ -218,24 +218,24 @@ public class BookServiceTest {
                                 "        return (await this.executor({uri: _uri, method: 'GET'})) as Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async saveBooks(options: BookServiceOptions['saveBooks']): Promise<\n" +
+                                "    async saveBook(options: BookServiceOptions['saveBook']): Promise<\n" +
+                                "        Dynamic_Book\n" +
+                                "    > {\n" +
+                                "        let _uri = '/book';\n" +
+                                "        return (await this.executor({uri: _uri, method: 'POST', body: options.input})) as Dynamic_Book\n" +
+                                "    }\n" +
+                                "    \n" +
+                                "    async updateBook(options: BookServiceOptions['updateBook']): Promise<\n" +
                                 "        Dynamic_Book\n" +
                                 "    > {\n" +
                                 "        let _uri = '/book';\n" +
                                 "        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_Book\n" +
                                 "    }\n" +
                                 "    \n" +
-                                "    async updateBooks(options: BookServiceOptions['updateBooks']): Promise<\n" +
-                                "        Dynamic_Book\n" +
-                                "    > {\n" +
-                                "        let _uri = '/';\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET', body: options.input})) as Dynamic_Book\n" +
-                                "    }\n" +
-                                "    \n" +
                                 "    async version(options: BookServiceOptions['version']): Promise<\n" +
                                 "        number\n" +
                                 "    > {\n" +
-                                "        let _uri = '/';\n" +
+                                "        let _uri = '/version';\n" +
                                 "        const _headers: {[key:string]: string} = {accessToken: options.accessToken};\n" +
                                 "        if (options.resourcePath) {\n" +
                                 "            _headers['resourcePath'] = options.resourcePath\n" +
@@ -277,10 +277,10 @@ public class BookServiceTest {
                                 "    'findBook': {\n" +
                                 "        readonly id: number\n" +
                                 "    }, \n" +
-                                "    'saveBooks': {\n" +
+                                "    'saveBook': {\n" +
                                 "        readonly input: BookInput\n" +
                                 "    }, \n" +
-                                "    'updateBooks': {\n" +
+                                "    'updateBook': {\n" +
                                 "        readonly input: BookInput\n" +
                                 "    }, \n" +
                                 "    'deleteBook': {\n" +

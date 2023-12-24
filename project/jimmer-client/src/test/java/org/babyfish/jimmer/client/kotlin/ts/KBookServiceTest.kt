@@ -126,18 +126,18 @@ class KBookServiceTest {
                 "        return (await this.executor({uri: _uri, method: 'GET'})) as KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
                 "    }\n" +
                 "    \n" +
-                "    async saveBooks(options: KBookServiceOptions['saveBooks']): Promise<\n" +
-                "        Dynamic_KBook | null | undefined\n" +
+                "    async saveBook(options: KBookServiceOptions['saveBook']): Promise<\n" +
+                "        Dynamic_KBook\n" +
                 "    > {\n" +
                 "        let _uri = '/book';\n" +
-                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_KBook | null | undefined\n" +
+                "        return (await this.executor({uri: _uri, method: 'POST', body: options.input})) as Dynamic_KBook\n" +
                 "    }\n" +
                 "    \n" +
                 "    async updateBook(options: KBookServiceOptions['updateBook']): Promise<\n" +
-                "        Dynamic_KBook | null | undefined\n" +
+                "        Dynamic_KBook\n" +
                 "    > {\n" +
-                "        let _uri = '/';\n" +
-                "        return (await this.executor({uri: _uri, method: 'GET', body: options.input})) as Dynamic_KBook | null | undefined\n" +
+                "        let _uri = '/book';\n" +
+                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_KBook\n" +
                 "    }\n" +
                 "}\n" +
                 "export type KBookServiceOptions = {\n" +
@@ -153,11 +153,11 @@ class KBookServiceTest {
                 "        readonly pageIndex: number, \n" +
                 "        readonly pageSize: number\n" +
                 "    }, \n" +
-                "    'saveBooks': {\n" +
-                "        readonly input?: KBookInput | null | undefined\n" +
+                "    'saveBook': {\n" +
+                "        readonly input: KBookInput\n" +
                 "    }, \n" +
                 "    'updateBook': {\n" +
-                "        readonly input?: KBookInput | null | undefined\n" +
+                "        readonly input: KBookInput\n" +
                 "    }, \n" +
                 "    'deleteBook': {\n" +
                 "        readonly id: number\n" +
