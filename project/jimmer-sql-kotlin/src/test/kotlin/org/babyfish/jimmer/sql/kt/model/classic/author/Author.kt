@@ -6,30 +6,57 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import org.babyfish.jimmer.sql.kt.model.Organization
 import javax.validation.constraints.NotBlank
 
+/**
+ * The Author entity
+ */
 @Entity
 interface Author {
 
+    /**
+     * The id property
+     */
     @Id
     val id: Long
 
+    /**
+     * The firstName property
+     */
     @Key
     val firstName: @NotBlank String
 
+    /**
+     * The lastName property
+     */
     @Key
     val lastName: @NotBlank String
 
+    /**
+     * The fullName property
+     */
     @Formula(dependencies = ["firstName", "lastName"])
     val fullName: String
         get() = "$firstName $lastName"
 
+    /**
+     * The fullName2 property
+     */
     @Formula(sql = "concat(%alias.FIRST_NAME, ' ', %alias.LAST_NAME)")
     val fullName2: String
 
+    /**
+     * The gender property
+     */
     val gender: Gender
 
+    /**
+     * The books property
+     */
     @ManyToMany(mappedBy = "authors")
     val books: List<Book>
 
+    /**
+     * The organization property
+     */
     @Transient
     val organization: Organization
 

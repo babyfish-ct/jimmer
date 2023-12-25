@@ -2,6 +2,7 @@ package org.babyfish.jimmer.dto.compiler;
 
 import org.antlr.v4.runtime.Token;
 import org.babyfish.jimmer.dto.compiler.spi.BaseProp;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,11 +17,15 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     private final List<Anno> annotations;
 
-    public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations) {
+    @Nullable
+    private final String doc;
+
+    public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations, String doc) {
         this.alias = alias.getText();
         this.line = alias.getLine();
         this.typeRef = typeRef;
         this.annotations = annotations;
+        this.doc = doc;
     }
 
     @Override
@@ -39,6 +44,11 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     public List<Anno> getAnnotations() {
         return annotations;
+    }
+
+    @Nullable
+    public String getDoc() {
+        return doc;
     }
 
     public UserProp build() {

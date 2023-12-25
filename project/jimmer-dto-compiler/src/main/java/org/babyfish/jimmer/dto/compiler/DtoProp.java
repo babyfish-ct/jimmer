@@ -22,9 +22,6 @@ public interface DtoProp<T extends BaseType, P extends BaseProp> extends DtoProp
     @Nullable
     DtoProp<T, P> getNextProp();
 
-    @Nullable
-    String getDoc();
-
     String getName();
 
     boolean isNullable();

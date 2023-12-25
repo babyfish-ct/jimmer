@@ -86,7 +86,7 @@ class DtoProcessor(
         val allFiles = ctx.resolver.getAllFiles().toList()
         for (dtoTypes in dtoTypeMap.values) {
             for (dtoType in dtoTypes) {
-                DtoGenerator(dtoType, dtoMutable, ctx.environment.codeGenerator).generate(allFiles)
+                DtoGenerator(ctx, dtoType, dtoMutable, ctx.environment.codeGenerator).generate(allFiles)
             }
         }
     }

@@ -113,6 +113,7 @@ negativeProp
 
 userProp
     :
+    (doc = DocComment)?
     (annotations += annotation)*
     prop = Identifier ':' typeRef
     ;

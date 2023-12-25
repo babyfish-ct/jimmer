@@ -323,7 +323,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                             "so it must be declared in dto type with the modifier 'specification'"
             );
         }
-        UserProp userProp = new UserProp(prop.prop, typeRef, annotations);
+        UserProp userProp = new UserProp(prop.prop, typeRef, annotations, prop.doc != null ? prop.doc.getText() : null);
         if (aliasPositivePropMap.put(userProp.getAlias(), userProp) != null) {
             throw ctx.exception(
                     prop.prop.getLine(),

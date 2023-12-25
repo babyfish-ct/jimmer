@@ -7,6 +7,9 @@ import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 @Shallow
 BookView {
 
+    /**
+     * The name of DTO type BookView
+     */
     @Shallow
     name
 

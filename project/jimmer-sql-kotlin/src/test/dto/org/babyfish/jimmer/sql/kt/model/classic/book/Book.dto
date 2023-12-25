@@ -1,9 +1,15 @@
 import java.time.LocalDateTime
 import testpkg.annotations.{Job, Task, Priority, Shallow, Deep }
 
+/**
+ * The BookView DTO
+ */
 @Shallow
 BookView {
 
+    /**
+     * The id of BookView
+     */
     @Shallow
     name
 
@@ -17,8 +23,12 @@ BookView {
         @Deep
         name
     }
-    authors @Deep {
 
+    authors /** Nested DTO: BookView.TargetOf_authors */@Deep {
+
+        /**
+         * The firstName of author DTO
+         */
         @Deep
         firstName
 

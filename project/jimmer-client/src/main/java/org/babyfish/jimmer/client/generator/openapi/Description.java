@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
-import org.babyfish.jimmer.client.meta.Doc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -14,7 +14,7 @@ public class OpenApiGenerator {
 
     private final Metadata metadata;
 
-    private final Map<String, Object> headers;
+    private final OpenApiProperties properties;
 
     private final ServiceNameManager serviceNameManager = new ServiceNameManager();
 
@@ -22,20 +22,29 @@ public class OpenApiGenerator {
 
     private final TypeNameManager typeNameManager;
 
-    public OpenApiGenerator(Metadata metadata,Map<String, Object> headers) {
+    public OpenApiGenerator(Metadata metadata, OpenApiProperties properties) {
         if (metadata.isGenericSupported()) {
             throw new IllegalArgumentException("OpenApiGenerator does not support generic");
         }
         this.metadata = metadata;
-        this.headers = headers;
+        this.properties = properties != null ? properties : new OpenApiProperties(null, null, null, null);
         this.typeNameManager = new TypeNameManager(metadata);
     }
 
     public void generate(Writer writer) {
         YmlWriter ymlWriter = new YmlWriter(writer);
         ymlWriter.prop("openapi", "3.0.1");
+        generateInfo(ymlWriter);
         generatePaths(ymlWriter);
         generateTypeDefinitions(ymlWriter);
+    }
+
+    private void generateInfo(YmlWriter writer) {
+        if (properties.getInfo() != null) {
+            writer.object("info", () -> {
+                properties.getInfo().writeTo(writer);
+            });
+        }
     }
 
     private void generatePaths(YmlWriter writer) {
@@ -89,9 +98,7 @@ public class OpenApiGenerator {
                             );
                             writer.object("schema", () -> {
                                 this.generateType(parameter.getType(), writer);
-                                if (parameter.getDefaultValue() != null) {
-                                    writer.prop("default", parameter.getDefaultValue());
-                                }
+                                writer.prop("default", parameter.getDefaultValue());
                             });
                         });
                     } else {
@@ -257,6 +264,9 @@ public class OpenApiGenerator {
                             doc = Doc.propertyOf(type.getDoc(), property.getName());
                         }
                         writer.description(Description.of(doc));
+                        if (property.getType() instanceof NullableType) {
+                            writer.prop("nullable", "true");
+                        }
                         generateType(property.getType(), writer);
                     });
                 }

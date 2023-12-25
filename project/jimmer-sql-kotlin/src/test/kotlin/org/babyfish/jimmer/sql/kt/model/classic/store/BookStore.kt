@@ -7,27 +7,51 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.Book
 import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 
+/**
+ * The BookStore property
+ */
 @Entity
 interface BookStore {
 
+    /**
+     * The id property
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long
 
+    /**
+     * The name property
+     */
     @Key
     val name: @NotBlank String
 
+    /**
+     * The version property
+     */
     @Version
     val version: Int
 
+    /**
+     * The calculated property: avgPrice
+     */
     @Transient(BookStoreAvgPriceResolver::class)
     val avgPrice: BigDecimal
-    
+
+    /**
+     * The website property
+     */
     val website: @NotBlank String?
 
+    /**
+     * The books property
+     */
     @OneToMany(mappedBy = "store")
     val books: List<Book>
 
+    /**
+     * The `newestBooks` property
+     */
     @Transient(BookStoreNewestBooksResolver::class)
     val newestBook: List<Book>
 }

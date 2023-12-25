@@ -9,4 +9,6 @@ public interface AbstractProp {
     int getAliasLine();
 
     List<Anno> getAnnotations();
+
+    String getDoc();
 }

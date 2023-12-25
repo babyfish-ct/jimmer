@@ -626,6 +626,11 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         return annotations;
     }
 
+    @Override
+    public String getDoc() {
+        return doc;
+    }
+
     public DtoTypeBuilder<T, P> getTargetBuilder() {
         return targetTypeBuilder;
     }

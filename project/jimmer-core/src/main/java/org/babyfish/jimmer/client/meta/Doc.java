@@ -29,6 +29,8 @@ public class Doc {
 
     private final Map<String, String> propertyValueMap;
 
+    private String toString;
+
     @JsonCreator
     public Doc(
             String value,
@@ -68,12 +70,28 @@ public class Doc {
 
     @Override
     public String toString() {
-        return "Doc{" +
-                "value='" + value + '\'' +
-                ", parameterValueMap=" + parameterValueMap +
-                ", returnValue='" + returnValue + '\'' +
-                ", propertyValueMap=" + propertyValueMap +
-                '}';
+        String str = toString;
+        if (str == null) {
+            this.toString = str = toStringImpl();
+        }
+        return str;
+    }
+
+    private String toStringImpl() {
+        StringBuilder builder = new StringBuilder();
+        if (value != null) {
+            builder.append(value).append('\n');
+        }
+        for (Map.Entry<String, String> e : parameterValueMap.entrySet()) {
+            builder.append("@param ").append(e.getKey()).append(' ').append(e.getValue()).append('\n');
+        }
+        for (Map.Entry<String, String> e : propertyValueMap.entrySet()) {
+            builder.append("@property ").append(e.getKey()).append(' ').append(e.getValue()).append('\n');
+        }
+        if (returnValue != null) {
+            builder.append("@return ").append(returnValue).append('\n');
+        }
+        return builder.toString();
     }
 
     public static Doc parse(String doc) {

@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.dto
 
+import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.AnnotationUseSiteTarget
@@ -9,31 +10,26 @@ import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toAnnotationSpec
+import org.babyfish.jimmer.client.meta.Doc
 import org.babyfish.jimmer.dto.compiler.*
 import org.babyfish.jimmer.dto.compiler.Anno.*
 import org.babyfish.jimmer.impl.util.StringUtil
 import org.babyfish.jimmer.impl.util.StringUtil.SnakeCase
+import org.babyfish.jimmer.ksp.Context
 import org.babyfish.jimmer.ksp.annotation
+import org.babyfish.jimmer.ksp.fullName
 import org.babyfish.jimmer.ksp.get
 import org.babyfish.jimmer.ksp.immutable.generator.*
-import org.babyfish.jimmer.ksp.immutable.generator.CLASS_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.DTO_PROP_ACCESSOR
-import org.babyfish.jimmer.ksp.immutable.generator.GENERATED_BY_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.INPUT_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JSON_PROPERTY_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.JVM_STATIC_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_ARGS_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.K_SPECIFICATION_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.VIEW_CLASS_NAME
-import org.babyfish.jimmer.ksp.immutable.generator.VIEW_METADATA_CLASS_NAME
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableProp
 import org.babyfish.jimmer.ksp.immutable.meta.ImmutableType
 import org.babyfish.jimmer.ksp.util.ConverterMetadata
 import java.io.OutputStreamWriter
+import java.lang.annotation.ElementType
 import java.util.*
 import kotlin.math.min
 
 class DtoGenerator private constructor(
+    private val ctx: Context,
     private val dtoType: DtoType<ImmutableType, ImmutableProp>,
     private val mutable: Boolean,
     private val codeGenerator: CodeGenerator?,
@@ -42,7 +38,11 @@ class DtoGenerator private constructor(
 ) {
     private val root: DtoGenerator = parent?.root ?: this
 
+    private val document: Document = Document(dtoType)
+
     private val depth: Int = parent?.depth?.let { it + 1 } ?: 0
+
+    private val useSiteTargetMap = mutableMapOf<String, AnnotationUseSiteTarget>()
 
     init {
         if ((codeGenerator === null) == (parent === null)) {
@@ -55,10 +55,11 @@ class DtoGenerator private constructor(
     private var _typeBuilder: TypeSpec.Builder? = null
     
     constructor(
+        ctx: Context,
         dtoType: DtoType<ImmutableType, ImmutableProp>,
         mutable: Boolean,
         codeGenerator: CodeGenerator?,
-    ): this(dtoType, mutable, codeGenerator, null, null)
+    ): this(ctx, dtoType, mutable, codeGenerator, null, null)
 
     val typeBuilder: TypeSpec.Builder
         get() = _typeBuilder ?: error("Type builder is not ready")
@@ -111,7 +112,8 @@ class DtoGenerator private constructor(
                         }
                         _typeBuilder = builder
                         try {
-                            addMembers(allFiles)
+                            addDoc()
+                            addMembers()
                             addType(builder.build())
                         } finally {
                             _typeBuilder = null
@@ -134,7 +136,8 @@ class DtoGenerator private constructor(
                 }
             _typeBuilder = builder
             try {
-                addMembers(allFiles)
+                addDoc()
+                addMembers()
                 parent.typeBuilder.addType(builder.build())
             } finally {
                 _typeBuilder = null
@@ -168,7 +171,13 @@ class DtoGenerator private constructor(
         }
     }
 
-    private fun addMembers(allFiles: List<KSFile>) {
+    private fun addDoc() {
+        document.get()?.let {
+            typeBuilder.addKdoc(it)
+        }
+    }
+
+    private fun addMembers() {
 
         val isSpecification = dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION)
         typeBuilder.addSuperinterface(
@@ -218,12 +227,13 @@ class DtoGenerator private constructor(
             val targetType = prop.targetType
             if (targetType != null && prop.isNewTarget) {
                 DtoGenerator(
+                    ctx,
                     targetType,
                     mutable,
                     null,
                     this,
                     targetSimpleName(prop)
-                ).generate(allFiles)
+                ).generate(emptyList())
             }
         }
     }
@@ -323,6 +333,9 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.name)
                     .apply {
+                        document[prop]?.let {
+                            addKdoc(it)
+                        }
                         if (!prop.isNullable) {
                             addAnnotation(
                                 AnnotationSpec
@@ -341,12 +354,21 @@ class DtoGenerator private constructor(
                             addAnnotation(
                                 object : KSAnnotation by anno {
                                     override val useSiteTarget: AnnotationUseSiteTarget?
-                                        get() = AnnotationUseSiteTarget.FIELD
+                                        get() = useSiteTarget(anno.fullName)
                                 }.toAnnotationSpec()
                             )
                         }
                         for (anno in prop.annotations) {
-                            addAnnotation(annotationOf(anno, AnnotationSpec.UseSiteTarget.FIELD))
+                            addAnnotation(
+                                annotationOf(
+                                    anno,
+                                    when (useSiteTarget(anno.qualifiedName)){
+                                        AnnotationUseSiteTarget.GET -> AnnotationSpec.UseSiteTarget.GET
+                                        AnnotationUseSiteTarget.FIELD -> AnnotationSpec.UseSiteTarget.FIELD
+                                        else -> AnnotationSpec.UseSiteTarget.PROPERTY
+                                    }
+                                )
+                            )
                         }
                     }
                     .build()
@@ -359,6 +381,9 @@ class DtoGenerator private constructor(
                     .mutable(mutable)
                     .initializer(prop.alias)
                     .apply {
+                        document[prop]?.let {
+                            addKdoc(it)
+                        }
                         if (!prop.typeRef.isNullable) {
                             addAnnotation(
                                 AnnotationSpec
@@ -1126,6 +1151,77 @@ class DtoGenerator private constructor(
             return null
         }
 
+    private fun useSiteTarget(typeName: String): AnnotationUseSiteTarget =
+        useSiteTargetMap.computeIfAbsent(typeName) { tn ->
+            val annotation = ctx.resolver.getClassDeclarationByName(tn)
+                ?: error("Internal bug, cannot resolve annotation type \"$typeName\"")
+            annotation.annotation(Target::class)?.get<List<Any>>("allowedTargets")?.let { list ->
+                val targets = list.map { enumValueOf<AnnotationTarget>(it.toString().simpleName()) }
+                when {
+                    AnnotationTarget.PROPERTY_GETTER in targets || AnnotationTarget.FUNCTION in targets ->
+                        AnnotationUseSiteTarget.GET
+                    AnnotationTarget.FIELD in targets ->
+                        AnnotationUseSiteTarget.FIELD
+                    else ->
+                        AnnotationUseSiteTarget.PROPERTY
+                }
+            } ?: annotation.annotation(java.lang.annotation.Target::class)?.get<List<Any>>("value")?.let { list ->
+                val targets = list.map { enumValueOf<ElementType>(it.toString().simpleName()) }
+                when {
+                    ElementType.METHOD in targets -> AnnotationUseSiteTarget.GET
+                    ElementType.FIELD in targets -> AnnotationUseSiteTarget.FIELD
+                    else -> AnnotationUseSiteTarget.PROPERTY
+                }
+            } ?: AnnotationUseSiteTarget.PROPERTY
+        }
+
+    private class Document(
+        dtoType: DtoType<ImmutableType, ImmutableProp>
+    ) {
+        private val dtoTypeDoc: Doc?
+        private val baseTypeDoc: Doc?
+
+        init {
+            dtoTypeDoc = Doc.parse(dtoType.doc)
+            baseTypeDoc = Doc.parse(dtoType.baseType.classDeclaration.docString)
+        }
+
+        fun get(): String? {
+            return dtoTypeDoc?.toString() ?: baseTypeDoc?.toString()
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        operator fun get(prop: AbstractProp): String? {
+            val baseProp = (prop as? DtoProp<*, ImmutableProp?>)?.getBaseProp()
+            if (prop.doc !== null) {
+                val doc = Doc.parse(prop.doc)
+                if (doc != null) {
+                    return doc.toString()
+                }
+            }
+            if (dtoTypeDoc != null) {
+                val name = prop.getAlias() ?: baseProp!!.name
+                val doc = dtoTypeDoc.parameterValueMap[name]
+                if (doc != null) {
+                    return doc
+                }
+            }
+            if (baseProp != null) {
+                val doc = Doc.parse(baseProp.propDeclaration.docString)
+                if (doc != null) {
+                    return doc.toString()
+                }
+            }
+            if (baseTypeDoc != null && baseProp != null) {
+                val doc = baseTypeDoc.parameterValueMap[baseProp.name]
+                if (doc != null) {
+                    return doc
+                }
+            }
+            return null
+        }
+    }
+
     companion object {
 
         @JvmStatic
@@ -1284,5 +1380,14 @@ class DtoGenerator private constructor(
                 }
             }
         }
+
+        private fun String.simpleName() =
+            lastIndexOf('.').let {
+                if (it == -1) {
+                    this
+                } else {
+                    substring(it + 1)
+                }
+            }
     }
 }

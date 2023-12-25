@@ -7,6 +7,7 @@ import org.babyfish.jimmer.apt.immutable.generator.Annotations;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableProp;
 import org.babyfish.jimmer.apt.immutable.meta.ImmutableType;
 import org.babyfish.jimmer.apt.util.ConverterMetadata;
+import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.dto.compiler.*;
 import org.babyfish.jimmer.impl.util.StringUtil;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
@@ -30,6 +31,8 @@ public class DtoGenerator {
     private final Context ctx;
 
     private final DtoType<ImmutableType, ImmutableProp> dtoType;
+
+    private final Document document;
 
     private final Filer filer;
 
@@ -66,6 +69,7 @@ public class DtoGenerator {
         }
         this.ctx = ctx;
         this.dtoType = dtoType;
+        this.document = new Document(ctx, dtoType);
         this.filer = filer;
         this.parent = parent;
         this.root = parent != null ? parent.root : this;
@@ -104,13 +108,9 @@ public class DtoGenerator {
                             .build()
             );
         }
-        if (dtoType.getDoc() != null) {
-            typeBuilder.addJavadoc(dtoType.getDoc());
-        } else {
-            String doc = ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement());
-            if (doc != null && !doc.isEmpty()) {
-                typeBuilder.addJavadoc(doc);
-            }
+        String doc = document.get();
+        if (doc != null) {
+            typeBuilder.addJavadoc(doc);
         }
         for (Anno anno : dtoType.getAnnotations()) {
             typeBuilder.addAnnotation(annotationOf(anno));
@@ -520,6 +520,10 @@ public class DtoGenerator {
                 )
                 .addModifiers(Modifier.PUBLIC)
                 .returns(typeName);
+        String doc = document.get(prop);
+        if (doc != null) {
+            getterBuilder.addJavadoc(doc);
+        }
         if (!typeName.isPrimitive()) {
             if (prop.isNullable()) {
                 getterBuilder.addAnnotation(Nullable.class);
@@ -582,6 +586,10 @@ public class DtoGenerator {
                 )
                 .addModifiers(Modifier.PUBLIC)
                 .returns(typeName);
+        String doc = document.get(prop);
+        if (doc != null) {
+            getterBuilder.addJavadoc(doc);
+        }
         if (!typeName.isPrimitive()) {
             if (prop.getTypeRef().isNullable()) {
                 getterBuilder.addAnnotation(Nullable.class);
@@ -1395,6 +1403,71 @@ public class DtoGenerator {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    private class Document {
+
+        private final Context ctx;
+
+        private final Doc dtoTypeDoc;
+
+        private final Doc baseTypeDoc;
+
+        public Document(Context ctx, DtoType<ImmutableType, ImmutableProp> dtoType) {
+            this.ctx = ctx;
+            dtoTypeDoc = Doc.parse(dtoType.getDoc());
+            baseTypeDoc = Doc.parse(ctx.getElements().getDocComment(dtoType.getBaseType().getTypeElement()));
+        }
+
+        public String get() {
+            if (dtoTypeDoc != null) {
+                return dtoTypeDoc.toString();
+            }
+            if (baseTypeDoc != null) {
+                return baseTypeDoc.toString();
+            }
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        public String get(AbstractProp prop) {
+            ImmutableProp baseProp;
+            if (prop instanceof DtoProp<?, ?>) {
+                baseProp = ((DtoProp<?, ImmutableProp>) prop).getBaseProp();
+            } else {
+                baseProp = null;
+            }
+            if (prop.getDoc() != null) {
+                Doc doc = Doc.parse(prop.getDoc());
+                if (doc != null) {
+                    return doc.toString();
+                }
+            }
+            if (dtoTypeDoc != null) {
+                String name = prop.getAlias();
+                if (name == null) {
+                    assert baseProp != null;
+                    name = baseProp.getName();
+                }
+                String doc = dtoTypeDoc.getParameterValueMap().get(name);
+                if (doc != null) {
+                    return doc;
+                }
+            }
+            if (baseProp != null) {
+                Doc doc = Doc.parse(ctx.getElements().getDocComment(baseProp.toElement()));
+                if (doc != null) {
+                    return doc.toString();
+                }
+            }
+            if (baseTypeDoc != null && baseProp != null) {
+                String doc = baseTypeDoc.getParameterValueMap().get(baseProp.getName());
+                if (doc != null) {
+                    return doc;
+                }
+            }
+            return null;
         }
     }
 }

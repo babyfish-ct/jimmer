@@ -9,6 +9,9 @@ import org.babyfish.jimmer.sql.OneToMany;
 
 import java.util.List;
 
+/**
+ * BookStore Entity
+ */
 @Entity
 public interface BookStore {
 

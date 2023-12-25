@@ -29,7 +29,9 @@ public class YmlWriter extends CodeWriter<YmlWriter> {
     }
 
     public YmlWriter prop(String name, String value) {
-        code(name).code(": ").code(value).code('\n');
+        if (value != null && !value.isEmpty()) {
+            code(name).code(": ").code(value.replace("\n", "\\n")).code('\n');
+        }
         return this;
     }
 
