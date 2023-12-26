@@ -244,6 +244,7 @@ public class BookServiceTest {
                                 "    }\n" +
                                 "}\n" +
                                 "export type BookServiceOptions = {\n" +
+                                "    'findSimpleBooks': {}, \n" +
                                 "    'findComplexBooks': {\n" +
                                 "        /**\n" +
                                 "         * The book name\n" +

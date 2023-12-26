@@ -1,9 +1,7 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
 import java.io.StringWriter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OpenApiProperties {
 
@@ -11,14 +9,14 @@ public class OpenApiProperties {
 
     private final List<Server> servers;
 
-    private final Map<String, List<Object>> securityMap;
+    private final List<Map<String, List<String>>> securities;
 
     private final Components components;
 
-    public OpenApiProperties(Info info, List<Server> servers, Map<String, List<Object>> securityMap, Components components) {
+    public OpenApiProperties(Info info, List<Server> servers, List<Map<String, List<String>>> securities, Components components) {
         this.info = info;
         this.servers = servers != null && !servers.isEmpty() ? Collections.unmodifiableList(servers) : Collections.emptyList();
-        this.securityMap = securityMap != null && !securityMap.isEmpty() ? Collections.unmodifiableMap(securityMap) : Collections.emptyMap();
+        this.securities = securities != null && !securities.isEmpty() ? Collections.unmodifiableList(securities) : Collections.emptyList();
         this.components = components;
     }
 
@@ -30,12 +28,73 @@ public class OpenApiProperties {
         return servers;
     }
 
-    public Map<String, List<Object>> getSecurityMap() {
-        return securityMap;
+    public List<Map<String, List<String>>> getSecurities() {
+        return securities;
     }
 
     public Components getComponents() {
         return components;
+    }
+
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
+    public static InfoBuilder newInfoBuilder() {
+        return new InfoBuilder();
+    }
+
+    public static ContactBuilder newContactBuilder() {
+        return new ContactBuilder();
+    }
+
+    public static LicenseBuilder newLicenseBuilder(){
+        return new LicenseBuilder();
+    }
+
+    public static ServerBuilder newServerBuilder() {
+        return new ServerBuilder();
+    }
+
+    public static VariableBuilder newVariableBuilder() {
+        return new VariableBuilder();
+    }
+
+    public static ComponentsBuilder newComponentsBuilder() {
+        return new ComponentsBuilder();
+    }
+
+    public static SecuritySchemeBuilder newSecuritySchemeBuilder() {
+        return new SecuritySchemeBuilder();
+    }
+
+    public static FlowsBuilder newFlowsBuilder() {
+        return new FlowsBuilder();
+    }
+
+    public static FlowBuilder newFlowBuilder() {
+        return new FlowBuilder();
+    }
+
+    public static abstract class Node {
+
+        public abstract void writeTo(YmlWriter writer);
+
+        @Override
+        public String toString() {
+            StringWriter writer = new StringWriter();
+            YmlWriter ymlWriter = new YmlWriter(writer);
+            writeTo(ymlWriter);
+            return writer.toString();
+        }
+
+        public static void writeNodeTo(String objectName, Node node, YmlWriter writer) {
+            if (node != null) {
+                writer.object(objectName, () -> {
+                    node.writeTo(writer);
+                });
+            }
+        }
     }
 
     public static class Info extends Node {
@@ -46,13 +105,13 @@ public class OpenApiProperties {
 
         private final String termsOfService;
 
-        private final Concat contact;
+        private final Contact contact;
 
         private final License license;
 
         private final String version;
 
-        public Info(String title, String description, String termsOfService, Concat contact, License license, String version) {
+        public Info(String title, String description, String termsOfService, Contact contact, License license, String version) {
             this.title = title;
             this.description = description;
             this.termsOfService = termsOfService;
@@ -73,7 +132,7 @@ public class OpenApiProperties {
             return termsOfService;
         }
 
-        public Concat getContact() {
+        public Contact getContact() {
             return contact;
         }
 
@@ -86,7 +145,7 @@ public class OpenApiProperties {
         }
 
         @Override
-        protected void writeTo(YmlWriter writer) {
+        public void writeTo(YmlWriter writer) {
             writer.prop("title", title);
             writer.description(Description.of(description));
             writer.prop("termsOfService", termsOfService);
@@ -94,65 +153,65 @@ public class OpenApiProperties {
             writeNodeTo("license", license, writer);
             writer.prop("version", version);
         }
+    }
 
-        public static class Concat extends Node {
+    public static class Contact extends Node {
 
-            private final String name;
+        private final String name;
 
-            private final String url;
+        private final String url;
 
-            private final String email;
+        private final String email;
 
-            public Concat(String name, String url, String email) {
-                this.name = name;
-                this.url = url;
-                this.email = email;
-            }
-
-            public String getName() {
-                return name;
-            }
-
-            public String getUrl() {
-                return url;
-            }
-
-            public String getEmail() {
-                return email;
-            }
-
-            @Override
-            protected void writeTo(YmlWriter writer) {
-                writer.prop("name", name);
-                writer.prop("url", url);
-                writer.prop("email", email);
-            }
+        public Contact(String name, String url, String email) {
+            this.name = name;
+            this.url = url;
+            this.email = email;
         }
 
-        public  static class License extends Node {
+        public String getName() {
+            return name;
+        }
 
-            private final String name;
+        public String getUrl() {
+            return url;
+        }
 
-            private final String identifier;
+        public String getEmail() {
+            return email;
+        }
 
-            private License(String name, String identifier) {
-                this.name = name;
-                this.identifier = identifier;
-            }
+        @Override
+        public void writeTo(YmlWriter writer) {
+            writer.prop("name", name);
+            writer.prop("url", url);
+            writer.prop("email", email);
+        }
+    }
 
-            public String getName() {
-                return name;
-            }
+    public  static class License extends Node {
 
-            public String getIdentifier() {
-                return identifier;
-            }
+        private final String name;
 
-            @Override
-            protected void writeTo(YmlWriter writer) {
-                writer.prop("name", name);
-                writer.prop("identifier", identifier);
-            }
+        private final String identifier;
+
+        private License(String name, String identifier) {
+            this.name = name;
+            this.identifier = identifier;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        @Override
+        public void writeTo(YmlWriter writer) {
+            writer.prop("name", name);
+            writer.prop("identifier", identifier);
         }
     }
 
@@ -183,7 +242,7 @@ public class OpenApiProperties {
         }
 
         @Override
-        protected void writeTo(YmlWriter writer) {
+        public void writeTo(YmlWriter writer) {
             writer.prop("url", url);
             writer.prop("description", description);
             if (!variables.isEmpty()) {
@@ -194,269 +253,240 @@ public class OpenApiProperties {
                 }
             }
         }
+    }
 
-        public static class Variable extends Node {
+    public static class Variable extends Node {
 
-            private final List<String> enums;
+        private final List<String> enums;
 
-            private final String defaultValue;
+        private final String defaultValue;
 
-            private final String description;
+        private final String description;
 
-            public Variable(List<String> enums, String defaultValue, String description) {
-                this.enums = enums != null && !enums.isEmpty() ? Collections.unmodifiableList(enums) : Collections.emptyList();
-                this.defaultValue = defaultValue;
-                this.description = description;
+        public Variable(List<String> enums, String defaultValue, String description) {
+            this.enums = enums != null && !enums.isEmpty() ? Collections.unmodifiableList(enums) : Collections.emptyList();
+            this.defaultValue = defaultValue;
+            this.description = description;
+        }
+
+        public List<String> getEnums() {
+            return enums;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        @Override
+        public void writeTo(YmlWriter writer) {
+            if (!enums.isEmpty()) {
+                writer.list("enum", () -> {
+                    for (String en : enums) {
+                        writer.listItem(() -> writer.code(en).code('\n'));
+                    }
+                });
             }
-
-            public List<String> getEnums() {
-                return enums;
-            }
-
-            public String getDefaultValue() {
-                return defaultValue;
-            }
-
-            public String getDescription() {
-                return description;
-            }
-
-            @Override
-            protected void writeTo(YmlWriter writer) {
-                if (!enums.isEmpty()) {
-                    writer.list("enum", () -> {
-                       for (String en : enums) {
-                           writer.listItem(() -> writer.code(en).code('\n'));
-                       }
-                    });
-                }
-                writer.prop("default", defaultValue);
-                writer.prop("description", description);
-            }
+            writer.prop("default", defaultValue);
+            writer.prop("description", description);
         }
     }
 
     public static class Components extends Node {
 
-        private final List<SecurityScheme> securitySchemes;
+        private final Map<String, SecurityScheme> securitySchemes;
 
-        public Components(List<SecurityScheme> securitySchemes) {
+        public Components(Map<String, SecurityScheme> securitySchemes) {
             this.securitySchemes = securitySchemes != null && !securitySchemes.isEmpty() ?
-                    Collections.unmodifiableList(securitySchemes) :
-                    Collections.emptyList();
+                    Collections.unmodifiableMap(securitySchemes) :
+                    Collections.emptyMap();
         }
 
-        public List<SecurityScheme> getSecuritySchemes() {
+        public Map<String, SecurityScheme> getSecuritySchemes() {
             return securitySchemes;
         }
 
         @Override
-        protected void writeTo(YmlWriter writer) {
-            writer.list("securitySchemes", () -> {
-                for (SecurityScheme securityScheme : securitySchemes) {
-                    writer.listItem(() -> {
-                        securityScheme.writeTo(writer);
+        public void writeTo(YmlWriter writer) {
+            writer.object("securitySchemes", () -> {
+                for (Map.Entry<String, SecurityScheme> e : securitySchemes.entrySet()) {
+                    writer.object(e.getKey(), () -> {
+                        e.getValue().writeTo(writer);
                     });
                 }
             });
         }
+    }
 
-        public static class SecurityScheme extends Node {
+    public static class SecurityScheme extends Node {
 
-            private final String type;
+        private final String type;
 
-            private final String description;
+        private final String description;
 
-            private final String name;
+        private final String name;
 
-            private final In in;
+        private final In in;
 
-            private final String scheme;
+        private final String scheme;
 
-            private final String bearerFormat;
+        private final String bearerFormat;
 
-            private final Flows flows;
+        private final Flows flows;
 
-            private final String openIdConnectUrl;
+        private final String openIdConnectUrl;
 
-            private SecurityScheme(String type, String description, String name, In in, String scheme, String bearerFormat, Flows flows, String openIdConnectUrl) {
-                this.type = type;
-                this.description = description;
-                this.name = name;
-                this.in = in;
-                this.scheme = scheme;
-                this.bearerFormat = bearerFormat;
-                this.flows = flows;
-                this.openIdConnectUrl = openIdConnectUrl;
-            }
+        private SecurityScheme(String type, String description, String name, In in, String scheme, String bearerFormat, Flows flows, String openIdConnectUrl) {
+            this.type = type;
+            this.description = description;
+            this.name = name;
+            this.in = in;
+            this.scheme = scheme;
+            this.bearerFormat = bearerFormat;
+            this.flows = flows;
+            this.openIdConnectUrl = openIdConnectUrl;
+        }
 
-            public String getType() {
-                return type;
-            }
+        public String getType() {
+            return type;
+        }
 
-            public String getDescription() {
-                return description;
-            }
+        public String getDescription() {
+            return description;
+        }
 
-            public String getName() {
-                return name;
-            }
+        public String getName() {
+            return name;
+        }
 
-            public In getIn() {
-                return in;
-            }
+        public In getIn() {
+            return in;
+        }
 
-            public String getScheme() {
-                return scheme;
-            }
+        public String getScheme() {
+            return scheme;
+        }
 
-            public String getBearerFormat() {
-                return bearerFormat;
-            }
+        public String getBearerFormat() {
+            return bearerFormat;
+        }
 
-            public Flows getFlows() {
-                return flows;
-            }
+        public Flows getFlows() {
+            return flows;
+        }
 
-            public String getOpenIdConnectUrl() {
-                return openIdConnectUrl;
-            }
+        public String getOpenIdConnectUrl() {
+            return openIdConnectUrl;
+        }
 
-            @Override
-            protected void writeTo(YmlWriter writer) {
-                writer.prop("type", type);
-                writer.prop("description", description);
-                writer.prop("name", name);
-                writer.prop("in", in.name().toLowerCase());
-                writer.prop("scheme", scheme);
-                writer.prop("bearerFormat", bearerFormat);
-                writeNodeTo("flows", flows, writer);
-                writer.prop("openIdConnectUrl", openIdConnectUrl);
-            }
-
-            private static class Flows extends Node {
-
-                private final Flow implicit;
-
-                private final Flow password;
-
-                private final Flow clientCredentials;
-
-                private final Flow authorizationCode;
-
-                private Flows(Flow implicit, Flow password, Flow clientCredentials, Flow authorizationCode) {
-                    this.implicit = implicit;
-                    this.password = password;
-                    this.clientCredentials = clientCredentials;
-                    this.authorizationCode = authorizationCode;
-                }
-
-                public Flow getImplicit() {
-                    return implicit;
-                }
-
-                public Flow getPassword() {
-                    return password;
-                }
-
-                public Flow getClientCredentials() {
-                    return clientCredentials;
-                }
-
-                public Flow getAuthorizationCode() {
-                    return authorizationCode;
-                }
-
-                @Override
-                protected void writeTo(YmlWriter writer) {
-                    writeNodeTo("implicit", implicit, writer);
-                    writeNodeTo("password", password, writer);
-                    writeNodeTo("clientCredentials", clientCredentials, writer);
-                    writeNodeTo("authorizationCode", authorizationCode, writer);
-                }
-
-                private static class Flow extends Node {
-
-                    private final String authorizationUrl;
-
-                    private final String tokenUrl;
-
-                    private final String refreshUrl;
-
-                    private Map<String, String> scopes;
-
-                    private Flow(String authorizationUrl, String tokenUrl, String refreshUrl, Map<String, String> scopes) {
-                        this.authorizationUrl = authorizationUrl;
-                        this.tokenUrl = tokenUrl;
-                        this.refreshUrl = refreshUrl;
-                        this.scopes = scopes != null && !scopes.isEmpty() ?
-                                Collections.unmodifiableMap(scopes) :
-                                Collections.emptyMap();
-                    }
-
-                    public String getAuthorizationUrl() {
-                        return authorizationUrl;
-                    }
-
-                    public String getTokenUrl() {
-                        return tokenUrl;
-                    }
-
-                    public String getRefreshUrl() {
-                        return refreshUrl;
-                    }
-
-                    public Map<String, String> getScopes() {
-                        return scopes;
-                    }
-
-                    @Override
-                    protected void writeTo(YmlWriter writer) {
-                        writer.prop("authorizationUrl", authorizationUrl);
-                        writer.prop("tokenUrl", tokenUrl);
-                        writer.prop("refreshUrl", refreshUrl);
-                        writer.object("scopes", () -> {
-                            for (Map.Entry<String, String> e : scopes.entrySet()) {
-                                writer.prop(e.getKey(), e.getValue());
-                            }
-                        });
-                    }
-                }
-            }
+        @Override
+        public void writeTo(YmlWriter writer) {
+            writer.prop("type", type);
+            writer.prop("description", description);
+            writer.prop("name", name);
+            writer.prop("in", in.name().toLowerCase());
+            writer.prop("scheme", scheme);
+            writer.prop("bearerFormat", bearerFormat);
+            writeNodeTo("flows", flows, writer);
+            writer.prop("openIdConnectUrl", openIdConnectUrl);
         }
     }
 
-    public static abstract class Node {
+    public static class Flows extends Node {
 
-        protected abstract void writeTo(YmlWriter writer);
+        private final Flow implicit;
 
-        @Override
-        public String toString() {
-            StringWriter writer = new StringWriter();
-            YmlWriter ymlWriter = new YmlWriter(writer);
-            writeTo(ymlWriter);
-            return writer.toString();
+        private final Flow password;
+
+        private final Flow clientCredentials;
+
+        private final Flow authorizationCode;
+
+        private Flows(Flow implicit, Flow password, Flow clientCredentials, Flow authorizationCode) {
+            this.implicit = implicit;
+            this.password = password;
+            this.clientCredentials = clientCredentials;
+            this.authorizationCode = authorizationCode;
         }
 
-        protected static void writeNodeTo(String objectName, Node node, YmlWriter writer) {
-            if (node != null) {
-                writer.object(objectName, () -> {
-                    node.writeTo(writer);
-                });
-            }
+        public Flow getImplicit() {
+            return implicit;
+        }
+
+        public Flow getPassword() {
+            return password;
+        }
+
+        public Flow getClientCredentials() {
+            return clientCredentials;
+        }
+
+        public Flow getAuthorizationCode() {
+            return authorizationCode;
+        }
+
+        @Override
+        public void writeTo(YmlWriter writer) {
+            writeNodeTo("implicit", implicit, writer);
+            writeNodeTo("password", password, writer);
+            writeNodeTo("clientCredentials", clientCredentials, writer);
+            writeNodeTo("authorizationCode", authorizationCode, writer);
+        }
+    }
+
+    public static class Flow extends Node {
+
+        private final String authorizationUrl;
+
+        private final String tokenUrl;
+
+        private final String refreshUrl;
+
+        private final Map<String, String> scopes;
+
+        private Flow(String authorizationUrl, String tokenUrl, String refreshUrl, Map<String, String> scopes) {
+            this.authorizationUrl = authorizationUrl;
+            this.tokenUrl = tokenUrl;
+            this.refreshUrl = refreshUrl;
+            this.scopes = scopes != null && !scopes.isEmpty() ?
+                    Collections.unmodifiableMap(scopes) :
+                    Collections.emptyMap();
+        }
+
+        public String getAuthorizationUrl() {
+            return authorizationUrl;
+        }
+
+        public String getTokenUrl() {
+            return tokenUrl;
+        }
+
+        public String getRefreshUrl() {
+            return refreshUrl;
+        }
+
+        public Map<String, String> getScopes() {
+            return scopes;
+        }
+
+        @Override
+        public void writeTo(YmlWriter writer) {
+            writer.prop("authorizationUrl", authorizationUrl);
+            writer.prop("tokenUrl", tokenUrl);
+            writer.prop("refreshUrl", refreshUrl);
+            writer.object("scopes", () -> {
+                for (Map.Entry<String, String> e : scopes.entrySet()) {
+                    writer.prop(e.getKey(), e.getValue());
+                }
+            });
         }
     }
 
     public enum In {
         QUERY, HEADER, COOKIE
-    }
-
-    public static Builder newBuilder() {
-        return new Builder();
-    }
-
-    public static InfoBuilder newInfoBuilder() {
-        return new InfoBuilder();
     }
 
     public static class Builder {
@@ -465,7 +495,7 @@ public class OpenApiProperties {
 
         private List<Server> servers;
 
-        private Map<String, List<Object>> securityMap;
+        private List<Map<String, List<String>>> securities;
 
         private Components components;
 
@@ -479,8 +509,8 @@ public class OpenApiProperties {
             return this;
         }
 
-        public Builder setSecurityMap(Map<String, List<Object>> securityMap) {
-            this.securityMap = securityMap;
+        public Builder setSecurities(List<Map<String, List<String>>> securities) {
+            this.securities = securities;
             return this;
         }
 
@@ -490,7 +520,7 @@ public class OpenApiProperties {
         }
 
         public OpenApiProperties build() {
-            return new OpenApiProperties(info, servers, securityMap, components);
+            return new OpenApiProperties(info, servers, securities, components);
         }
     }
 
@@ -502,9 +532,9 @@ public class OpenApiProperties {
 
         private String termsOfService;
 
-        private Info.Concat contact;
+        private Contact contact;
 
-        private Info.License license;
+        private License license;
 
         private String version;
 
@@ -523,12 +553,12 @@ public class OpenApiProperties {
             return this;
         }
 
-        public InfoBuilder setContact(Info.Concat contact) {
+        public InfoBuilder setContact(Contact contact) {
             this.contact = contact;
             return this;
         }
 
-        public InfoBuilder setLicense(Info.License license) {
+        public InfoBuilder setLicense(License license) {
             this.license = license;
             return this;
         }
@@ -540,6 +570,285 @@ public class OpenApiProperties {
 
         public Info build() {
             return new Info(title, description, termsOfService, contact, license, version);
+        }
+    }
+
+    public static class ContactBuilder {
+
+        private String name;
+
+        private String url;
+
+        private String email;
+
+        public ContactBuilder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public ContactBuilder setUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
+        public ContactBuilder setEmail(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Contact build() {
+            return new Contact(name, url, email);
+        }
+    }
+
+    public static class LicenseBuilder {
+
+        private String name;
+
+        private String identifier;
+
+        public LicenseBuilder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public LicenseBuilder setIdentifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public License build() {
+            return new License(name, identifier);
+        }
+    }
+
+    public static class ServerBuilder {
+
+        private String url;
+
+        private String description;
+
+        private Map<String, Variable> variables;
+
+        public ServerBuilder setUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
+        public ServerBuilder setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public ServerBuilder setVariables(Map<String, Variable> variables) {
+            this.variables = variables;
+            return this;
+        }
+
+        public Server build() {
+            return new Server(url, description, variables);
+        }
+    }
+
+    public static class VariableBuilder {
+
+        private List<String> enums;
+
+        private String defaultValue;
+
+        private String description;
+
+        public VariableBuilder setEnums(List<String> enums) {
+            this.enums = enums;
+            return this;
+        }
+
+        public VariableBuilder setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public VariableBuilder setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Variable build() {
+            return new Variable(enums, defaultValue, description);
+        }
+    }
+
+    public static class ComponentsBuilder {
+
+        private Map<String, SecurityScheme> securitySchemes;
+
+        public ComponentsBuilder setSecuritySchemes(Map<String, SecurityScheme> securitySchemes) {
+            this.securitySchemes = securitySchemes != null ? securitySchemes : new LinkedHashMap<>();
+            return this;
+        }
+
+        public ComponentsBuilder addSecurityScheme(String name, SecurityScheme securityScheme) {
+            if (securitySchemes == null) {
+                securitySchemes = new LinkedHashMap<>();
+            }
+            securitySchemes.put(name, securityScheme);
+            return this;
+        }
+
+        public Components build() {
+            return new Components(securitySchemes);
+        }
+    }
+
+    public static class SecuritySchemeBuilder {
+
+        private String type;
+
+        private String description;
+
+        private String name;
+
+        private In in;
+
+        private String scheme;
+
+        private String bearerFormat;
+
+        private Flows flows;
+
+        private String openIdConnectUrl;
+
+        public SecuritySchemeBuilder setType(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setIn(In in) {
+            this.in = in;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setScheme(String scheme) {
+            this.scheme = scheme;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setBearerFormat(String bearerFormat) {
+            this.bearerFormat = bearerFormat;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setFlows(Flows flows) {
+            this.flows = flows;
+            return this;
+        }
+
+        public SecuritySchemeBuilder setOpenIdConnectUrl(String openIdConnectUrl) {
+            this.openIdConnectUrl = openIdConnectUrl;
+            return this;
+        }
+
+        public SecurityScheme build() {
+            return new SecurityScheme(
+                    type,
+                    description,
+                    name,
+                    in,
+                    scheme,
+                    bearerFormat,
+                    flows,
+                    openIdConnectUrl
+            );
+        }
+    }
+
+    public static class FlowsBuilder {
+
+        private Flow implicit;
+
+        private Flow password;
+
+        private Flow clientCredentials;
+
+        private Flow authorizationCode;
+
+        public FlowsBuilder setImplicit(Flow implicit) {
+            this.implicit = implicit;
+            return this;
+        }
+
+        public FlowsBuilder setPassword(Flow password) {
+            this.password = password;
+            return this;
+        }
+
+        public FlowsBuilder setClientCredentials(Flow clientCredentials) {
+            this.clientCredentials = clientCredentials;
+            return this;
+        }
+
+        public FlowsBuilder setAuthorizationCode(Flow authorizationCode) {
+            this.authorizationCode = authorizationCode;
+            return this;
+        }
+
+        public Flows build() {
+            return new Flows(
+                    implicit,
+                    password,
+                    clientCredentials,
+                    authorizationCode
+            );
+        }
+    }
+
+    public static class FlowBuilder {
+
+        private String authorizationUrl;
+
+        private String tokenUrl;
+
+        private String refreshUrl;
+
+        private Map<String, String> scopes;
+
+        public FlowBuilder setAuthorizationUrl(String authorizationUrl) {
+            this.authorizationUrl = authorizationUrl;
+            return this;
+        }
+
+        public FlowBuilder setTokenUrl(String tokenUrl) {
+            this.tokenUrl = tokenUrl;
+            return this;
+        }
+
+        public FlowBuilder setRefreshUrl(String refreshUrl) {
+            this.refreshUrl = refreshUrl;
+            return this;
+        }
+
+        public FlowBuilder setScopes(Map<String, String> scopes) {
+            this.scopes = scopes;
+            return this;
+        }
+
+        public Flow build() {
+            return new Flow(
+                    authorizationUrl,
+                    tokenUrl,
+                    refreshUrl,
+                    scopes
+            );
         }
     }
 }

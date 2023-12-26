@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.cfg;
 
+import org.babyfish.jimmer.client.generator.openapi.OpenApiProperties;
 import org.babyfish.jimmer.sql.EnumType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
@@ -71,6 +72,8 @@ public class JimmerProperties {
 
     private final Map<String, Client> clients;
 
+    private final OpenApiProperties openapi;
+
     public JimmerProperties(
             @Nullable String language,
             @Nullable String dialect,
@@ -93,8 +96,9 @@ public class JimmerProperties {
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
             @Nullable Client client,
-            @Nullable Map<String, Client> clients
-    ) {
+            @Nullable Map<String, Client> clients,
+            OpenApiProperties openapi) {
+        this.openapi = openapi;
         if (language == null) {
             this.language = "java";
         } else {
@@ -365,6 +369,10 @@ public class JimmerProperties {
         return client;
     }
 
+    public OpenApiProperties getOpenapi() {
+        return openapi;
+    }
+
     @Override
     public String toString() {
         return "JimmerProperties{" +
@@ -385,6 +393,7 @@ public class JimmerProperties {
                 ", errorTranslator=" + errorTranslator +
                 ", client=" + client +
                 ", clients=" + clients +
+                ", openapi=" + openapi +
                 '}';
     }
 

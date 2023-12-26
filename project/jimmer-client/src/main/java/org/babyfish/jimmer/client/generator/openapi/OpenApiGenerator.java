@@ -35,14 +35,61 @@ public class OpenApiGenerator {
         YmlWriter ymlWriter = new YmlWriter(writer);
         ymlWriter.prop("openapi", "3.0.1");
         generateInfo(ymlWriter);
+        generateSecurity(ymlWriter);
+        generateServers(ymlWriter);
         generatePaths(ymlWriter);
-        generateTypeDefinitions(ymlWriter);
+        generateComponents(ymlWriter);
     }
 
     private void generateInfo(YmlWriter writer) {
-        if (properties.getInfo() != null) {
-            writer.object("info", () -> {
-                properties.getInfo().writeTo(writer);
+        writer.object("info", () -> {
+            OpenApiProperties.Info info = properties.getInfo();
+            if (info == null) {
+                info = OpenApiProperties
+                        .newInfoBuilder()
+                        .setTitle("<No title>")
+                        .setDescription("<No Description>")
+                        .setVersion("1.0.0")
+                        .build();
+            }
+            info.writeTo(writer);
+        });
+    }
+
+    private void generateSecurity(YmlWriter writer) {
+        if (!properties.getSecurities().isEmpty()) {
+            writer.list("security", () -> {
+                for (Map<String, List<String>> map : properties.getSecurities()) {
+                    writer.listItem(() -> {
+                        for (Map.Entry<String, List<String>> e : map.entrySet()) {
+                            if (e.getValue().isEmpty()) {
+                                writer.prop(e.getKey(), "[]");
+                            } else {
+                                writer.list(e.getKey(), () -> {
+                                    for (String value : e.getValue()) {
+                                        if (value != null) {
+                                            writer.listItem(() -> {
+                                                writer.code(value).code('\n');
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void generateServers(YmlWriter writer) {
+        if (!properties.getServers().isEmpty()) {
+            writer.list("servers", () -> {
+                for (OpenApiProperties.Server server : properties.getServers()) {
+                    writer.listItem(() -> {
+                        server.writeTo(writer);
+                    });
+                }
             });
         }
     }
@@ -72,7 +119,7 @@ public class OpenApiGenerator {
         });
         writer.prop("operationId", operationNameManager.get(operation));
         List<Parameter> httpParameters = operation.getParameters().stream().filter(it -> !it.isRequestBody()).collect(Collectors.toList());
-        Parameter requestBodyParameter = operation.getParameters().stream().filter(it -> it.isRequestBody()).findFirst().orElse(null);
+        Parameter requestBodyParameter = operation.getParameters().stream().filter(Parameter::isRequestBody).findFirst().orElse(null);
         if (!httpParameters.isEmpty()) {
             writer.list("parameters", () -> {
                 for (Parameter parameter : httpParameters) {
@@ -242,13 +289,14 @@ public class OpenApiGenerator {
         });
     }
 
-    private void generateTypeDefinitions(YmlWriter writer) {
+    private void generateComponents(YmlWriter writer) {
         writer.object("components", () -> {
            writer.object("schemas", () -> {
                for (ObjectType fetchedType : typeNameManager.exportObjectTypes().values()) {
                    generateTypeDefinition(fetchedType, writer);
                }
            });
+           generateSecuritySchemes(writer);
         });
     }
 
@@ -272,6 +320,22 @@ public class OpenApiGenerator {
                 }
             });
         });
+    }
+
+    private void generateSecuritySchemes(YmlWriter writer) {
+        if (properties.getComponents() == null) {
+            return;
+        }
+        Map<String, OpenApiProperties.SecurityScheme> securitySchemes = properties.getComponents().getSecuritySchemes();
+        if (!securitySchemes.isEmpty()) {
+            writer.object("securitySchemes", () -> {
+                for (Map.Entry<String, OpenApiProperties.SecurityScheme> e : securitySchemes.entrySet()) {
+                    writer.object(e.getKey(), () -> {
+                        e.getValue().writeTo(writer);
+                    });
+                }
+            });
+        }
     }
 
     private static class ServiceNameManager {

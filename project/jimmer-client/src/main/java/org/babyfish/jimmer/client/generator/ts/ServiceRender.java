@@ -46,14 +46,11 @@ public class ServiceRender implements Render {
         writer.code("export type ").code(name).code("Options = ");
         writer.scope(SourceWriter.ScopeType.OBJECT, ", ", true, () -> {
             for (Operation operation : service.getOperations()) {
-                if (operation.getParameters().isEmpty()) {
-                    continue;
-                }
                 writer.separator().code('\'').code(ctx.getSource(operation).getName()).code("': ");
                 writer.scope(
                         SourceWriter.ScopeType.OBJECT,
                         ", ",
-                        true,
+                        !operation.getParameters().isEmpty(),
                         () -> {
                             Doc doc = operation.getDoc();
                             for (Parameter parameter : operation.getParameters()) {

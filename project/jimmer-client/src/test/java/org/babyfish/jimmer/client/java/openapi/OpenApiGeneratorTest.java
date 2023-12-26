@@ -32,6 +32,33 @@ public class OpenApiGeneratorTest {
                                         .setVersion("2.0.0")
                                         .build()
                         )
+                        .setSecurities(
+                                Collections.singletonList(
+                                    Collections.singletonMap("tenantHeader", Collections.emptyList())
+                                )
+                        )
+                        .setServers(
+                                Collections.singletonList(
+                                        OpenApiProperties
+                                                .newServerBuilder()
+                                                .setUrl("http://localhost:8080")
+                                                .build()
+                                )
+                        )
+                        .setComponents(
+                                OpenApiProperties
+                                        .newComponentsBuilder()
+                                        .addSecurityScheme(
+                                                "tenantHeader",
+                                                OpenApiProperties
+                                                        .newSecuritySchemeBuilder()
+                                                        .setType("apiKey")
+                                                        .setName("tenant")
+                                                        .setIn(OpenApiProperties.In.HEADER)
+                                                        .build()
+                                        )
+                                        .build()
+                        )
                         .build()
         );
         StringWriter writer = new StringWriter();

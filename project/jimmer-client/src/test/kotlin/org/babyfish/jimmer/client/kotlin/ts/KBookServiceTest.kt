@@ -141,6 +141,7 @@ class KBookServiceTest {
                 "    }\n" +
                 "}\n" +
                 "export type KBookServiceOptions = {\n" +
+                "    'findSimpleBooks': {}, \n" +
                 "    'findComplexBooks': {\n" +
                 "        readonly name?: string | null | undefined, \n" +
                 "        readonly storeName?: string | null | undefined, \n" +
