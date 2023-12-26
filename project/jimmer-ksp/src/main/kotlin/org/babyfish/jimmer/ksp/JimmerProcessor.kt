@@ -87,6 +87,9 @@ class JimmerProcessor(
         } catch (ex: MetaException) {
             environment.logger.error(ex.message!!, ex.declaration)
             emptyList()
+        } catch (ex: Throwable) {
+            environment.logger.error(ex.message!!)
+            emptyList()
         }
     }
 }

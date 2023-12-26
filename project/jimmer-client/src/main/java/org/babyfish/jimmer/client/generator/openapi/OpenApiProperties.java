@@ -5,75 +5,52 @@ import java.util.*;
 
 public class OpenApiProperties {
 
-    private final Info info;
+    private Info info;
 
-    private final List<Server> servers;
+    private List<Server> servers = Collections.emptyList();
 
-    private final List<Map<String, List<String>>> securities;
+    private List<Map<String, List<String>>> securities = Collections.emptyList();
 
-    private final Components components;
-
-    public OpenApiProperties(Info info, List<Server> servers, List<Map<String, List<String>>> securities, Components components) {
-        this.info = info;
-        this.servers = servers != null && !servers.isEmpty() ? Collections.unmodifiableList(servers) : Collections.emptyList();
-        this.securities = securities != null && !securities.isEmpty() ? Collections.unmodifiableList(securities) : Collections.emptyList();
-        this.components = components;
-    }
+    private Components components;
 
     public Info getInfo() {
         return info;
+    }
+
+    public OpenApiProperties setInfo(Info info) {
+        this.info = info;
+        return this;
     }
 
     public List<Server> getServers() {
         return servers;
     }
 
+    public OpenApiProperties setServers(List<Server> servers) {
+        this.servers = servers != null && !servers.isEmpty() ?
+                Collections.unmodifiableList(servers) :
+                Collections.emptyList();
+        return this;
+    }
+
     public List<Map<String, List<String>>> getSecurities() {
         return securities;
+    }
+
+    public OpenApiProperties setSecurities(List<Map<String, List<String>>> securities) {
+        this.securities = securities != null && !securities.isEmpty() ?
+                Collections.unmodifiableList(securities) :
+                Collections.emptyList();
+        return this;
     }
 
     public Components getComponents() {
         return components;
     }
 
-    public static Builder newBuilder() {
-        return new Builder();
-    }
-
-    public static InfoBuilder newInfoBuilder() {
-        return new InfoBuilder();
-    }
-
-    public static ContactBuilder newContactBuilder() {
-        return new ContactBuilder();
-    }
-
-    public static LicenseBuilder newLicenseBuilder(){
-        return new LicenseBuilder();
-    }
-
-    public static ServerBuilder newServerBuilder() {
-        return new ServerBuilder();
-    }
-
-    public static VariableBuilder newVariableBuilder() {
-        return new VariableBuilder();
-    }
-
-    public static ComponentsBuilder newComponentsBuilder() {
-        return new ComponentsBuilder();
-    }
-
-    public static SecuritySchemeBuilder newSecuritySchemeBuilder() {
-        return new SecuritySchemeBuilder();
-    }
-
-    public static FlowsBuilder newFlowsBuilder() {
-        return new FlowsBuilder();
-    }
-
-    public static FlowBuilder newFlowBuilder() {
-        return new FlowBuilder();
+    public OpenApiProperties setComponents(Components components) {
+        this.components = components;
+        return this;
     }
 
     public static abstract class Node {
@@ -99,49 +76,70 @@ public class OpenApiProperties {
 
     public static class Info extends Node {
 
-        private final String title;
+        private String title;
 
-        private final String description;
+        private String description;
 
-        private final String termsOfService;
+        private String termsOfService;
 
-        private final Contact contact;
+        private Contact contact;
 
-        private final License license;
+        private License license;
 
-        private final String version;
-
-        public Info(String title, String description, String termsOfService, Contact contact, License license, String version) {
-            this.title = title;
-            this.description = description;
-            this.termsOfService = termsOfService;
-            this.contact = contact;
-            this.license = license;
-            this.version = version;
-        }
+        private String version;
 
         public String getTitle() {
             return title;
+        }
+
+        public Info setTitle(String title) {
+            this.title = title;
+            return this;
         }
 
         public String getDescription() {
             return description;
         }
 
+        public Info setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
         public String getTermsOfService() {
             return termsOfService;
+        }
+
+        public Info setTermsOfService(String termsOfService) {
+            this.termsOfService = termsOfService;
+            return this;
         }
 
         public Contact getContact() {
             return contact;
         }
 
+        public Info setContact(Contact contact) {
+            this.contact = contact;
+            return this;
+        }
+
         public License getLicense() {
             return license;
         }
 
+        public Info setLicense(License license) {
+            this.license = license;
+            return this;
+        }
+
         public String getVersion() {
             return version;
+        }
+
+        public Info setVersion(String version) {
+            this.version = version;
+            return this;
         }
 
         @Override
@@ -157,28 +155,34 @@ public class OpenApiProperties {
 
     public static class Contact extends Node {
 
-        private final String name;
+        private String name;
 
-        private final String url;
+        private String url;
 
-        private final String email;
-
-        public Contact(String name, String url, String email) {
-            this.name = name;
-            this.url = url;
-            this.email = email;
-        }
+        private String email;
 
         public String getName() {
             return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
 
         public String getUrl() {
             return url;
         }
 
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
         public String getEmail() {
             return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
         }
 
         @Override
@@ -191,21 +195,24 @@ public class OpenApiProperties {
 
     public  static class License extends Node {
 
-        private final String name;
+        private String name;
 
-        private final String identifier;
-
-        private License(String name, String identifier) {
-            this.name = name;
-            this.identifier = identifier;
-        }
+        private String identifier;
 
         public String getName() {
             return name;
         }
 
+        public void setName(String name) {
+            this.name = name;
+        }
+
         public String getIdentifier() {
             return identifier;
+        }
+
+        public void setIdentifier(String identifier) {
+            this.identifier = identifier;
         }
 
         @Override
@@ -217,28 +224,39 @@ public class OpenApiProperties {
 
     public static class Server extends Node {
 
-        private final String url;
+        private String url;
 
-        private final String description;
+        private String description;
 
-        private final Map<String, Variable> variables;
-
-        public Server(String url, String description, Map<String, Variable> variables) {
-            this.url = url;
-            this.description = description;
-            this.variables = variables != null && !variables.isEmpty() ? Collections.unmodifiableMap(variables) : Collections.emptyMap();
-        }
+        private Map<String, Variable> variables = Collections.emptyMap();
 
         public String getUrl() {
             return url;
+        }
+
+        public Server setUrl(String url) {
+            this.url = url;
+            return this;
         }
 
         public String getDescription() {
             return description;
         }
 
+        public Server setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
         public Map<String, Variable> getVariables() {
             return variables;
+        }
+
+        public Server setVariables(Map<String, Variable> variables) {
+            this.variables = variables != null && !variables.isEmpty() ?
+                    Collections.unmodifiableMap(variables) :
+                    Collections.emptyMap();
+            return this;
         }
 
         @Override
@@ -257,28 +275,34 @@ public class OpenApiProperties {
 
     public static class Variable extends Node {
 
-        private final List<String> enums;
+        private List<String> enums = Collections.emptyList();
 
-        private final String defaultValue;
+        private String defaultValue;
 
-        private final String description;
-
-        public Variable(List<String> enums, String defaultValue, String description) {
-            this.enums = enums != null && !enums.isEmpty() ? Collections.unmodifiableList(enums) : Collections.emptyList();
-            this.defaultValue = defaultValue;
-            this.description = description;
-        }
+        private String description;
 
         public List<String> getEnums() {
             return enums;
+        }
+
+        public void setEnums(List<String> enums) {
+            this.enums = enums != null && enums.isEmpty() ? enums : Collections.emptyList();
         }
 
         public String getDefaultValue() {
             return defaultValue;
         }
 
+        public void setDefaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
         public String getDescription() {
             return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
 
         @Override
@@ -297,16 +321,17 @@ public class OpenApiProperties {
 
     public static class Components extends Node {
 
-        private final Map<String, SecurityScheme> securitySchemes;
-
-        public Components(Map<String, SecurityScheme> securitySchemes) {
-            this.securitySchemes = securitySchemes != null && !securitySchemes.isEmpty() ?
-                    Collections.unmodifiableMap(securitySchemes) :
-                    Collections.emptyMap();
-        }
+        private Map<String, SecurityScheme> securitySchemes = Collections.emptyMap();
 
         public Map<String, SecurityScheme> getSecuritySchemes() {
             return securitySchemes;
+        }
+
+        public Components setSecuritySchemes(Map<String, SecurityScheme> securitySchemes) {
+            this.securitySchemes = securitySchemes != null && !securitySchemes.isEmpty() ?
+                Collections.unmodifiableMap(securitySchemes) :
+                Collections.emptyMap();
+            return this;
         }
 
         @Override
@@ -323,63 +348,92 @@ public class OpenApiProperties {
 
     public static class SecurityScheme extends Node {
 
-        private final String type;
+        private String type;
 
-        private final String description;
+        private String description;
 
-        private final String name;
+        private String name;
 
-        private final In in;
+        private In in = In.HEADER;
 
-        private final String scheme;
+        private String scheme;
 
-        private final String bearerFormat;
+        private String bearerFormat;
 
-        private final Flows flows;
+        private Flows flows;
 
-        private final String openIdConnectUrl;
-
-        private SecurityScheme(String type, String description, String name, In in, String scheme, String bearerFormat, Flows flows, String openIdConnectUrl) {
-            this.type = type;
-            this.description = description;
-            this.name = name;
-            this.in = in;
-            this.scheme = scheme;
-            this.bearerFormat = bearerFormat;
-            this.flows = flows;
-            this.openIdConnectUrl = openIdConnectUrl;
-        }
+        private String openIdConnectUrl;
 
         public String getType() {
             return type;
+        }
+
+        public SecurityScheme setType(String type) {
+            this.type = type;
+            return this;
         }
 
         public String getDescription() {
             return description;
         }
 
+        public SecurityScheme setDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
         public String getName() {
             return name;
+        }
+
+        public SecurityScheme setName(String name) {
+            this.name = name;
+            return this;
         }
 
         public In getIn() {
             return in;
         }
 
+        public SecurityScheme setIn(In in) {
+            this.in = in != null ? in : In.HEADER;
+            return this;
+        }
+
         public String getScheme() {
             return scheme;
+        }
+
+        public SecurityScheme setScheme(String scheme) {
+            this.scheme = scheme;
+            return this;
         }
 
         public String getBearerFormat() {
             return bearerFormat;
         }
 
+        public SecurityScheme setBearerFormat(String bearerFormat) {
+            this.bearerFormat = bearerFormat;
+            return this;
+        }
+
         public Flows getFlows() {
             return flows;
         }
 
+        public SecurityScheme setFlows(Flows flows) {
+            this.flows = flows;
+            return this;
+        }
+
         public String getOpenIdConnectUrl() {
             return openIdConnectUrl;
+        }
+
+        public SecurityScheme setOpenIdConnectUrl(String openIdConnectUrl) {
+            this.openIdConnectUrl = openIdConnectUrl;
+            return this;
         }
 
         @Override
@@ -397,35 +451,44 @@ public class OpenApiProperties {
 
     public static class Flows extends Node {
 
-        private final Flow implicit;
+        private Flow implicit;
 
-        private final Flow password;
+        private Flow password;
 
-        private final Flow clientCredentials;
+        private Flow clientCredentials;
 
-        private final Flow authorizationCode;
-
-        private Flows(Flow implicit, Flow password, Flow clientCredentials, Flow authorizationCode) {
-            this.implicit = implicit;
-            this.password = password;
-            this.clientCredentials = clientCredentials;
-            this.authorizationCode = authorizationCode;
-        }
+        private Flow authorizationCode;
 
         public Flow getImplicit() {
             return implicit;
+        }
+
+        public void setImplicit(Flow implicit) {
+            this.implicit = implicit;
         }
 
         public Flow getPassword() {
             return password;
         }
 
+        public void setPassword(Flow password) {
+            this.password = password;
+        }
+
         public Flow getClientCredentials() {
             return clientCredentials;
         }
 
+        public void setClientCredentials(Flow clientCredentials) {
+            this.clientCredentials = clientCredentials;
+        }
+
         public Flow getAuthorizationCode() {
             return authorizationCode;
+        }
+
+        public void setAuthorizationCode(Flow authorizationCode) {
+            this.authorizationCode = authorizationCode;
         }
 
         @Override
@@ -439,37 +502,46 @@ public class OpenApiProperties {
 
     public static class Flow extends Node {
 
-        private final String authorizationUrl;
+        private String authorizationUrl;
 
-        private final String tokenUrl;
+        private String tokenUrl;
 
-        private final String refreshUrl;
+        private String refreshUrl;
 
-        private final Map<String, String> scopes;
-
-        private Flow(String authorizationUrl, String tokenUrl, String refreshUrl, Map<String, String> scopes) {
-            this.authorizationUrl = authorizationUrl;
-            this.tokenUrl = tokenUrl;
-            this.refreshUrl = refreshUrl;
-            this.scopes = scopes != null && !scopes.isEmpty() ?
-                    Collections.unmodifiableMap(scopes) :
-                    Collections.emptyMap();
-        }
+        private Map<String, String> scopes = Collections.emptyMap();
 
         public String getAuthorizationUrl() {
             return authorizationUrl;
+        }
+
+        public void setAuthorizationUrl(String authorizationUrl) {
+            this.authorizationUrl = authorizationUrl;
         }
 
         public String getTokenUrl() {
             return tokenUrl;
         }
 
+        public void setTokenUrl(String tokenUrl) {
+            this.tokenUrl = tokenUrl;
+        }
+
         public String getRefreshUrl() {
             return refreshUrl;
         }
 
+        public void setRefreshUrl(String refreshUrl) {
+            this.refreshUrl = refreshUrl;
+        }
+
         public Map<String, String> getScopes() {
             return scopes;
+        }
+
+        public void setScopes(Map<String, String> scopes) {
+            this.scopes = scopes != null && !scopes.isEmpty() ?
+                    Collections.unmodifiableMap(scopes) :
+                    Collections.emptyMap();
         }
 
         @Override
@@ -487,368 +559,5 @@ public class OpenApiProperties {
 
     public enum In {
         QUERY, HEADER, COOKIE
-    }
-
-    public static class Builder {
-
-        private Info info;
-
-        private List<Server> servers;
-
-        private List<Map<String, List<String>>> securities;
-
-        private Components components;
-
-        public Builder setInfo(Info info) {
-            this.info = info;
-            return this;
-        }
-
-        public Builder setServers(List<Server> servers) {
-            this.servers = servers;
-            return this;
-        }
-
-        public Builder setSecurities(List<Map<String, List<String>>> securities) {
-            this.securities = securities;
-            return this;
-        }
-
-        public Builder setComponents(Components components) {
-            this.components = components;
-            return this;
-        }
-
-        public OpenApiProperties build() {
-            return new OpenApiProperties(info, servers, securities, components);
-        }
-    }
-
-    public static class InfoBuilder {
-
-        private String title;
-
-        private String description;
-
-        private String termsOfService;
-
-        private Contact contact;
-
-        private License license;
-
-        private String version;
-
-        public InfoBuilder setTitle(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public InfoBuilder setDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public InfoBuilder setTermsOfService(String termsOfService) {
-            this.termsOfService = termsOfService;
-            return this;
-        }
-
-        public InfoBuilder setContact(Contact contact) {
-            this.contact = contact;
-            return this;
-        }
-
-        public InfoBuilder setLicense(License license) {
-            this.license = license;
-            return this;
-        }
-
-        public InfoBuilder setVersion(String version) {
-            this.version = version;
-            return this;
-        }
-
-        public Info build() {
-            return new Info(title, description, termsOfService, contact, license, version);
-        }
-    }
-
-    public static class ContactBuilder {
-
-        private String name;
-
-        private String url;
-
-        private String email;
-
-        public ContactBuilder setName(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public ContactBuilder setUrl(String url) {
-            this.url = url;
-            return this;
-        }
-
-        public ContactBuilder setEmail(String email) {
-            this.email = email;
-            return this;
-        }
-
-        public Contact build() {
-            return new Contact(name, url, email);
-        }
-    }
-
-    public static class LicenseBuilder {
-
-        private String name;
-
-        private String identifier;
-
-        public LicenseBuilder setName(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public LicenseBuilder setIdentifier(String identifier) {
-            this.identifier = identifier;
-            return this;
-        }
-
-        public License build() {
-            return new License(name, identifier);
-        }
-    }
-
-    public static class ServerBuilder {
-
-        private String url;
-
-        private String description;
-
-        private Map<String, Variable> variables;
-
-        public ServerBuilder setUrl(String url) {
-            this.url = url;
-            return this;
-        }
-
-        public ServerBuilder setDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public ServerBuilder setVariables(Map<String, Variable> variables) {
-            this.variables = variables;
-            return this;
-        }
-
-        public Server build() {
-            return new Server(url, description, variables);
-        }
-    }
-
-    public static class VariableBuilder {
-
-        private List<String> enums;
-
-        private String defaultValue;
-
-        private String description;
-
-        public VariableBuilder setEnums(List<String> enums) {
-            this.enums = enums;
-            return this;
-        }
-
-        public VariableBuilder setDefaultValue(String defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
-        }
-
-        public VariableBuilder setDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Variable build() {
-            return new Variable(enums, defaultValue, description);
-        }
-    }
-
-    public static class ComponentsBuilder {
-
-        private Map<String, SecurityScheme> securitySchemes;
-
-        public ComponentsBuilder setSecuritySchemes(Map<String, SecurityScheme> securitySchemes) {
-            this.securitySchemes = securitySchemes != null ? securitySchemes : new LinkedHashMap<>();
-            return this;
-        }
-
-        public ComponentsBuilder addSecurityScheme(String name, SecurityScheme securityScheme) {
-            if (securitySchemes == null) {
-                securitySchemes = new LinkedHashMap<>();
-            }
-            securitySchemes.put(name, securityScheme);
-            return this;
-        }
-
-        public Components build() {
-            return new Components(securitySchemes);
-        }
-    }
-
-    public static class SecuritySchemeBuilder {
-
-        private String type;
-
-        private String description;
-
-        private String name;
-
-        private In in;
-
-        private String scheme;
-
-        private String bearerFormat;
-
-        private Flows flows;
-
-        private String openIdConnectUrl;
-
-        public SecuritySchemeBuilder setType(String type) {
-            this.type = type;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setDescription(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setName(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setIn(In in) {
-            this.in = in;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setScheme(String scheme) {
-            this.scheme = scheme;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setBearerFormat(String bearerFormat) {
-            this.bearerFormat = bearerFormat;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setFlows(Flows flows) {
-            this.flows = flows;
-            return this;
-        }
-
-        public SecuritySchemeBuilder setOpenIdConnectUrl(String openIdConnectUrl) {
-            this.openIdConnectUrl = openIdConnectUrl;
-            return this;
-        }
-
-        public SecurityScheme build() {
-            return new SecurityScheme(
-                    type,
-                    description,
-                    name,
-                    in,
-                    scheme,
-                    bearerFormat,
-                    flows,
-                    openIdConnectUrl
-            );
-        }
-    }
-
-    public static class FlowsBuilder {
-
-        private Flow implicit;
-
-        private Flow password;
-
-        private Flow clientCredentials;
-
-        private Flow authorizationCode;
-
-        public FlowsBuilder setImplicit(Flow implicit) {
-            this.implicit = implicit;
-            return this;
-        }
-
-        public FlowsBuilder setPassword(Flow password) {
-            this.password = password;
-            return this;
-        }
-
-        public FlowsBuilder setClientCredentials(Flow clientCredentials) {
-            this.clientCredentials = clientCredentials;
-            return this;
-        }
-
-        public FlowsBuilder setAuthorizationCode(Flow authorizationCode) {
-            this.authorizationCode = authorizationCode;
-            return this;
-        }
-
-        public Flows build() {
-            return new Flows(
-                    implicit,
-                    password,
-                    clientCredentials,
-                    authorizationCode
-            );
-        }
-    }
-
-    public static class FlowBuilder {
-
-        private String authorizationUrl;
-
-        private String tokenUrl;
-
-        private String refreshUrl;
-
-        private Map<String, String> scopes;
-
-        public FlowBuilder setAuthorizationUrl(String authorizationUrl) {
-            this.authorizationUrl = authorizationUrl;
-            return this;
-        }
-
-        public FlowBuilder setTokenUrl(String tokenUrl) {
-            this.tokenUrl = tokenUrl;
-            return this;
-        }
-
-        public FlowBuilder setRefreshUrl(String refreshUrl) {
-            this.refreshUrl = refreshUrl;
-            return this;
-        }
-
-        public FlowBuilder setScopes(Map<String, String> scopes) {
-            this.scopes = scopes;
-            return this;
-        }
-
-        public Flow build() {
-            return new Flow(
-                    authorizationUrl,
-                    tokenUrl,
-                    refreshUrl,
-                    scopes
-            );
-        }
     }
 }

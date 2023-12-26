@@ -32,6 +32,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
         if (typeBuilderMap.containsKey(name)) {
             throw exception(
                     type.name.getLine(),
+                    type.name.getCharPositionInLine(),
                     "Duplicated dto type name \"" +
                             name +
                             "\""
@@ -59,6 +60,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 default:
                     throw exception(
                             modifier.getLine(),
+                            modifier.getCharPositionInLine(),
                             "If the modifier of dto type is specified, it must be " +
                                     "'input', 'specification', 'abstract', 'unsafe' or 'dynamic'"
                     );
@@ -66,6 +68,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
             if (!modifiers.add(dtoTypeModifier)) {
                 throw exception(
                         modifier.getLine(),
+                        modifier.getCharPositionInLine(),
                         "Duplicated modifier \"" + modifier.getText() + "\""
                 );
             }
@@ -74,6 +77,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
             throw exception(
                     type.name.getLine(),
+                    type.name.getCharPositionInLine(),
                     "If modifiers 'input' and 'specification' cannot appear at the same time"
             );
         }
@@ -81,6 +85,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 !modifiers.contains(DtoTypeModifier.INPUT)) {
             throw exception(
                     type.name.getLine(),
+                    type.name.getCharPositionInLine(),
                     "If modifiers 'unsafe' can only be used for input"
             );
         }
@@ -88,6 +93,7 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
                 !modifiers.contains(DtoTypeModifier.INPUT)) {
             throw exception(
                     type.name.getLine(),
+                    type.name.getCharPositionInLine(),
                     "If modifiers 'dynamic' can only be used for input"
             );
         }
@@ -171,11 +177,11 @@ class CompilerContext<T extends BaseType, P extends BaseProp> {
 
     public String resolve(DtoParser.QualifiedNameContext ctx) { return importing.resolve(ctx); }
 
-    public String resolve(String qualifiedName, int qualifiedNameLine) {
-        return importing.resolve(qualifiedName, qualifiedNameLine);
+    public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
+        return importing.resolve(qualifiedName, qualifiedNameLine, qualifiedNameCol);
     }
     
-    public DtoAstException exception(int line, String message) {
-        return compiler.exception(line, message);
+    public DtoAstException exception(int line, int col, String message) {
+        return compiler.exception(line, col, message);
     }
 }

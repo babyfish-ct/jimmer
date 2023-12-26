@@ -17,12 +17,12 @@ public class Metadatas {
 
     private Metadatas() {}
 
-    public static Metadata create(String apiName, int indent, @Nullable String groups) {
+    public static Metadata create(boolean isGenericSupported, @Nullable String groups) {
         return Metadata
                 .newBuilder()
                 .setOperationParser(new OperationParserImpl())
                 .setParameterParameter(new ParameterParserImpl())
-                .setGenericSupported(true)
+                .setGenericSupported(isGenericSupported)
                 .setGroups(
                         groups != null && !groups.isEmpty() ?
                                 Arrays.asList(COMMA_PATTERN.split(groups)) :

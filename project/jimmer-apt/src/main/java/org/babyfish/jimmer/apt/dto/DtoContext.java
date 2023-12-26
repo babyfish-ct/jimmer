@@ -97,7 +97,7 @@ public class DtoContext {
     private static void collectDtoFiles(String projectDir, String dtoDir, File file, List<String> paths, List<DtoFile> dtoFiles) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
             dtoFiles.add(
-                    new DtoFile(projectDir, dtoDir, paths, file.getName(), () ->
+                    new DtoFile(file, projectDir, dtoDir, paths, file.getName(), () ->
                             new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8)
                     )
             );

@@ -47,6 +47,7 @@ class AnnoParser {
             case "Nullable":
                 throw this.ctx.exception(
                         ctx.stop.getLine(),
+                        ctx.stop.getCharPositionInLine(),
                         "Annotation whose simple name is \"Nullable\" " +
                                 "is forbidden by DTO language"
                 );
@@ -54,6 +55,7 @@ class AnnoParser {
                 if (!typeName.equals("javax.validation.constraints.Null")) {
                     throw this.ctx.exception(
                             ctx.stop.getLine(),
+                            ctx.stop.getCharPositionInLine(),
                             "Annotation whose simple name is \"Null\" " +
                                     "but qualified name is not \"javax.validation.constraints.Null\" " +
                                     "is forbidden by DTO language"
@@ -64,6 +66,7 @@ class AnnoParser {
                 if (!typeName.equals("javax.validation.constraints.NotNull")) {
                     throw this.ctx.exception(
                             ctx.stop.getLine(),
+                            ctx.stop.getCharPositionInLine(),
                             "Annotation whose simple name is \"NotNull\" " +
                                     "but qualified name is not \"javax.validation.constraints.NotNull\" " +
                                     "is forbidden by DTO language"
@@ -73,6 +76,7 @@ class AnnoParser {
             case "NonNull":
                 throw this.ctx.exception(
                         ctx.stop.getLine(),
+                        ctx.stop.getCharPositionInLine(),
                         "Annotation whose simple name is \"NonNull\" " +
                                 "is forbidden by DTO language"
                 );
@@ -81,6 +85,7 @@ class AnnoParser {
                 !typeName.startsWith("org.babyfish.jimmer.client.")) {
             throw this.ctx.exception(
                     ctx.stop.getLine(),
+                    ctx.stop.getCharPositionInLine(),
                     "Jimmer annotation \"" +
                             typeName +
                             "\" is forbidden by DTO language"
@@ -99,6 +104,7 @@ class AnnoParser {
             if (argumentMap.containsKey(name)) {
                 throw this.ctx.exception(
                         namedCtx.name.getLine(),
+                        namedCtx.name.getCharPositionInLine(),
                         "Duplicated annotation argument \"" +
                                 name +
                                 "\""
@@ -151,6 +157,7 @@ class AnnoParser {
             if (ctx.enumPart.parts.size() == 1) {
                 throw this.ctx.exception(
                         ctx.enumPart.parts.get(0).getLine(),
+                        ctx.enumPart.parts.get(0).getCharPositionInLine(),
                         "It looks like enum constant, '.' is expected"
                 );
             }
@@ -158,7 +165,8 @@ class AnnoParser {
             enumParts = enumParts.subList(0, enumParts.size() - 1);
             String qualifiedName = this.ctx.resolve(
                     enumParts.stream().map(Token::getText).collect(Collectors.joining(".")),
-                    enumParts.get(enumParts.size() - 1).getLine()
+                    enumParts.get(enumParts.size() - 1).getLine(),
+                    enumParts.get(enumParts.size() - 1).getCharPositionInLine()
             );
             return new Anno.EnumValue(
                     qualifiedName,

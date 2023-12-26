@@ -31,7 +31,7 @@ class DtoProcessor(
             } catch (ex: DtoAstException) {
                 throw DtoException(
                     "Failed to parse \"" +
-                        dtoFile.path +
+                        dtoFile.absolutePath +
                         "\": " +
                         ex.message,
                     ex
@@ -39,7 +39,7 @@ class DtoProcessor(
             } catch (ex: Throwable) {
                 throw DtoException(
                     "Failed to read \"" +
-                        dtoFile.path +
+                        dtoFile.absolutePath +
                         "\": " +
                         ex.message,
                     ex
@@ -49,7 +49,7 @@ class DtoProcessor(
             if (classDeclaration === null) {
                 throw DtoException(
                     "Failed to parse \"" +
-                        dtoFile.path +
+                        dtoFile.absolutePath +
                         "\": No entity type \"" +
                         compiler.sourceTypeName +
                         "\""
@@ -61,7 +61,7 @@ class DtoProcessor(
             if (classDeclaration.annotation(Entity::class) == null) {
                 throw DtoException(
                     "Failed to parse \"" +
-                        dtoFile.path +
+                        dtoFile.absolutePath +
                         "\": the \"" +
                         compiler.sourceTypeName +
                         "\" is not decorated by \"@" +

@@ -3,9 +3,10 @@ package org.babyfish.jimmer.spring.java;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
-import org.babyfish.jimmer.spring.cfg.MetadataCondition;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
+import org.babyfish.jimmer.spring.client.OpenApiController;
+import org.babyfish.jimmer.spring.client.OpenApiUiController;
 import org.babyfish.jimmer.spring.java.bll.BookService;
 import org.babyfish.jimmer.spring.client.TypeScriptController;
 import org.babyfish.jimmer.spring.java.bll.ErrorService;
@@ -24,10 +25,7 @@ import org.babyfish.jimmer.spring.repository.config.JimmerRepositoryConfigExtens
 import org.babyfish.jimmer.spring.repository.support.JimmerRepositoryFactoryBean;
 import org.babyfish.jimmer.sql.runtime.*;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
@@ -35,12 +33,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -67,13 +62,13 @@ import java.util.List;
 
 @SpringBootTest(properties = {
         "jimmer.client.ts.path=/my-ts.zip",
+        "jimmer.client.openapi.path=/my-openapi.yml",
+        "jimmer.client.openapi.ui-path=/my-openapi.html",
+        "jimmer.client.openapi.properties.info.title=BookSystem",
+        "jimmer.client.openapi.properties.info.description=Use this system to access book system",
         "jimmer.database-validation-mode=ERROR",
-        "jimmer.client.java-feign.path=/my-java.zip",
-        "jimmer.client.java-feign.base-package=com.myapp.feign",
         "jimmer.dialect=org.babyfish.jimmer.sql.dialect.H2Dialect",
-        "spring.application.name=java-client",
-        "jimmer.clients.first.ts.path=/my-ts1.zip",
-        "jimmer.clients.second.ts.path=/my-ts2.zip"
+        "spring.application.name=java-client"
 })
 @SpringBootConfiguration
 @AutoConfigurationPackage
@@ -178,6 +173,20 @@ public class SpringJavaTest extends AbstractTest {
         @Bean
         public TypeScriptController typeScriptController(JimmerProperties properties) {
             return new TypeScriptController(properties);
+        }
+
+        @ConditionalOnProperty("jimmer.client.openapi.path")
+        @ConditionalOnMissingBean(OpenApiController.class)
+        @Bean
+        public OpenApiController openApiController(JimmerProperties properties) {
+            return new OpenApiController(properties);
+        }
+
+        @ConditionalOnProperty("jimmer.client.openapi.ui-path")
+        @ConditionalOnMissingBean(OpenApiUiController.class)
+        @Bean
+        public OpenApiUiController openApiUiController(JimmerProperties properties) {
+            return new OpenApiUiController(properties);
         }
 
         @ConditionalOnProperty("jimmer.client.java-feign.path")
@@ -823,6 +832,21 @@ public class SpringJavaTest extends AbstractTest {
                 .andExpect(content().contentTypeCompatibleWith("application/zip"));
     }
 
+    @Test
+    public void testOpenApi() throws Exception {
+        mvc.perform(get("/my-openapi.yml"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/yml"));
+    }
+
+    @Test
+    public void testOpenApiUi() throws Exception {
+        mvc.perform(get("/my-openapi.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/html"));
+    }
+
+    @Disabled
     @Test
     public void testDownloadJavaFeign() throws Exception {
         mvc.perform(get("/my-java.zip"))

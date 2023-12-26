@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Collections;
 
 @ConstructorBinding
 @ConfigurationProperties("jimmer")
@@ -70,10 +70,6 @@ public class JimmerProperties {
     @NotNull
     private final Client client;
 
-    private final Map<String, Client> clients;
-
-    private final OpenApiProperties openapi;
-
     public JimmerProperties(
             @Nullable String language,
             @Nullable String dialect,
@@ -95,10 +91,7 @@ public class JimmerProperties {
             @Nullable Collection<String> executorContextPrefixes,
             @Nullable String microServiceName,
             @Nullable ErrorTranslator errorTranslator,
-            @Nullable Client client,
-            @Nullable Map<String, Client> clients,
-            OpenApiProperties openapi) {
-        this.openapi = openapi;
+            @Nullable Client client) {
         if (language == null) {
             this.language = "java";
         } else {
@@ -225,7 +218,6 @@ public class JimmerProperties {
         } else {
             this.client = client;
         }
-        this.clients = clients;
     }
 
     @NotNull
@@ -369,10 +361,6 @@ public class JimmerProperties {
         return client;
     }
 
-    public OpenApiProperties getOpenapi() {
-        return openapi;
-    }
-
     @Override
     public String toString() {
         return "JimmerProperties{" +
@@ -392,8 +380,6 @@ public class JimmerProperties {
                 ", microServiceName='" + microServiceName + '\'' +
                 ", errorTranslator=" + errorTranslator +
                 ", client=" + client +
-                ", clients=" + clients +
-                ", openapi=" + openapi +
                 '}';
     }
 
@@ -501,18 +487,18 @@ public class JimmerProperties {
         private final TypeScript ts;
 
         @NotNull
-        private final JavaFeign javaFeign;
+        private final Openapi openapi;
 
-        public Client(@Nullable TypeScript ts, @Nullable JavaFeign javaFeign) {
+        public Client(@Nullable TypeScript ts, @Nullable Openapi openapi) {
             if (ts == null) {
                 this.ts = new TypeScript(null, "Api", 4, false, false);
             } else {
                 this.ts = ts;
             }
-            if (javaFeign == null) {
-                this.javaFeign = new JavaFeign(null, "", 4, "");
+            if (openapi == null) {
+                this.openapi = new Openapi("/openapi.yml", "/openapi.html", null);
             } else {
-                this.javaFeign = javaFeign;
+                this.openapi = openapi;
             }
         }
 
@@ -522,15 +508,15 @@ public class JimmerProperties {
         }
 
         @NotNull
-        public JavaFeign getJavaFeign() {
-            return javaFeign;
+        public Openapi getOpenapi() {
+            return openapi;
         }
 
         @Override
         public String toString() {
             return "Client{" +
                     "ts=" + ts +
-                    ", javaFeign=" + javaFeign +
+                    ", openapi=" + openapi +
                     '}';
         }
 
@@ -544,8 +530,6 @@ public class JimmerProperties {
             private final String apiName;
 
             private final int indent;
-
-            private final boolean anonymous;
 
             private final boolean mutable;
 
@@ -564,7 +548,6 @@ public class JimmerProperties {
                     this.apiName = apiName;
                 }
                 this.indent = indent != 0 ? Math.max(indent, 2) : 4;
-                this.anonymous = anonymous;
                 this.mutable = mutable;
             }
 
@@ -582,10 +565,6 @@ public class JimmerProperties {
                 return indent;
             }
 
-            public boolean isAnonymous() {
-                return anonymous;
-            }
-
             public boolean isMutable() {
                 return mutable;
             }
@@ -594,7 +573,65 @@ public class JimmerProperties {
             public String toString() {
                 return "TypeScript{" +
                         "path='" + path + '\'' +
-                        ", anonymous=" + anonymous +
+                        '}';
+            }
+        }
+
+        @ConstructorBinding
+        public static class Openapi {
+
+            private final String path;
+
+            private final String uiPath;
+
+            private final OpenApiProperties properties;
+
+            public Openapi(String path, String uiPath, OpenApiProperties properties) {
+                this.path = path != null && !path.isEmpty() ? path : "/openapi.yml";
+                this.uiPath = uiPath != null && !uiPath.isEmpty() ? uiPath : "/openapi.html";
+                OpenApiProperties.Info info = properties != null ? properties.getInfo() : null;
+                this.properties = new OpenApiProperties()
+                        .setInfo(
+                                new OpenApiProperties.Info()
+                                        .setTitle(
+                                                info != null && info.getTitle() != null ?
+                                                        info.getTitle() :
+                                                        "<`jimmer.client.openapi.properties.info.title` is unspecified>"
+                                        )
+                                        .setDescription(
+                                                info != null && info.getDescription() != null ?
+                                                        info.getDescription() :
+                                                        "<`jimmer.client.openapi.properties.info.description` is unspecified>"
+                                        )
+                                        .setVersion(
+                                                info != null && info.getVersion() != null ?
+                                                        info.getVersion() :
+                                                        "<`jimmer.client.openapi.properties.info.version` is unspecified>"
+                                        )
+                        )
+                        .setServers(properties != null ? properties.getServers() : Collections.emptyList())
+                        .setSecurities(properties != null ? properties.getSecurities() : Collections.emptyList())
+                        .setComponents(properties != null ? properties.getComponents() : null);
+            }
+
+            public String getPath() {
+                return path;
+            }
+
+            public String getUiPath() {
+                return uiPath;
+            }
+
+            public OpenApiProperties getProperties() {
+                return properties;
+            }
+
+            @Override
+            public String toString() {
+                return "Openapi{" +
+                        "apiPath='" + path + '\'' +
+                        ", uiPath='" + uiPath + '\'' +
+                        ", properties=" + properties +
                         '}';
             }
         }

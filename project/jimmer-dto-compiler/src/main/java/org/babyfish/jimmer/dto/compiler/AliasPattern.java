@@ -19,18 +19,21 @@ class AliasPattern {
         if (pattern.prefix != null && pattern.suffix != null) {
             throw ctx.exception(
                     pattern.suffix.getLine(),
+                    pattern.suffix.getCharPositionInLine(),
                     "The `^` and `$` cannot appear at the same time"
             );
         }
         if (pattern.original == null && pattern.replacement == null) {
             throw ctx.exception(
                     pattern.translator.getLine(),
+                    pattern.translator.getCharPositionInLine(),
                     "There is no identifier to the left or right of the converter '->'"
             );
         }
         if (pattern.prefix == null && pattern.original == null && pattern.suffix == null) {
             throw ctx.exception(
                     pattern.translator.getLine(),
+                    pattern.translator.getCharPositionInLine(),
                     "There is nothing to the left of the converter '->', which is not allowed"
             );
         }
@@ -41,10 +44,10 @@ class AliasPattern {
     }
 
     public String alias(Token token) {
-        return alias(token.getText(), token.getLine());
+        return alias(token.getText(), token.getLine(), token.getCharPositionInLine());
     }
 
-    public String alias(String text, int line) {
+    public String alias(String text, int line, int col) {
         if (original == null) {
             if (isPrefix) {
                 return join(replacement, text);
@@ -64,6 +67,7 @@ class AliasPattern {
             }
             throw ctx.exception(
                     line,
+                    col,
                     "The property \"" +
                             text +
                             "\" does not match the alias pattern \"" +
@@ -83,6 +87,7 @@ class AliasPattern {
             }
             throw ctx.exception(
                     line,
+                    col,
                     "The property \"" +
                             text +
                             "\" does not match the alias pattern \"" +
@@ -105,6 +110,7 @@ class AliasPattern {
         }
         throw ctx.exception(
                 line,
+                col,
                 "The property \"" +
                         text +
                         "\" does not match the alias pattern \"" +

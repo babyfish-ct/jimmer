@@ -56,7 +56,7 @@ class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
 
     private fun collectDtoFiles(projectDir: String, dtoDir: String, file: File, paths: MutableList<String>, dtoFiles: MutableList<DtoFile>) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
-            dtoFiles += DtoFile(projectDir, dtoDir, paths, file.name) {
+            dtoFiles += DtoFile(file, projectDir, dtoDir, paths, file.name) {
                 file.reader(Charsets.UTF_8)
             }
         } else {

@@ -16,16 +16,7 @@ import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@SupportedAnnotationTypes({
-        "org.babyfish.jimmer.Immutable",
-        "org.babyfish.jimmer.sql.Entity",
-        "org.babyfish.jimmer.sql.MappedSuperclass",
-        "org.babyfish.jimmer.sql.Embeddable",
-        "org.babyfish.jimmer.sql.EnableDtoGeneration",
-        "org.babyfish.jimmer.error.ErrorFamily",
-        "org.babyfish.jimmer.client.Api",
-        "org.springframework.web.bind.annotation.RestController"
-})
+@SupportedAnnotationTypes("*")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class JimmerProcessor extends AbstractProcessor {
 
@@ -133,6 +124,8 @@ public class JimmerProcessor extends AbstractProcessor {
             }
         } catch (MetaException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
+        } catch (RuntimeException | Error ex) {
+            messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
         }
         return true;
     }

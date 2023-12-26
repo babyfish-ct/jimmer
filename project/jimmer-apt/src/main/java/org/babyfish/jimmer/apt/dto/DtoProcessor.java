@@ -46,7 +46,7 @@ public class DtoProcessor {
             } catch (DtoAstException ex) {
                 throw new DtoException(
                         "Failed to parse \"" +
-                                dtoFile.getPath() +
+                                dtoFile.getAbsolutePath() +
                                 "\": " +
                                 ex.getMessage(),
                         ex
@@ -54,7 +54,7 @@ public class DtoProcessor {
             } catch (Throwable ex) {
                 throw new DtoException(
                         "Failed to read \"" +
-                                dtoFile.getPath() +
+                                dtoFile.getAbsolutePath() +
                                 "\": " +
                                 ex.getMessage(),
                         ex
@@ -64,7 +64,7 @@ public class DtoProcessor {
             if (typeElement == null) {
                 throw new DtoException(
                         "Failed to parse \"" +
-                                dtoFile.getPath() +
+                                dtoFile.getAbsolutePath() +
                                 "\": No entity type \"" +
                                 compiler.getSourceTypeName() +
                                 "\""
@@ -76,7 +76,7 @@ public class DtoProcessor {
             if (typeElement.getAnnotation(Entity.class) == null) {
                 throw new DtoException(
                         "Failed to parse \"" +
-                                dtoFile.getPath() +
+                                dtoFile.getAbsolutePath() +
                                 "\": the \"" +
                                 compiler.getSourceTypeName() +
                                 "\" is not decorated by \"@" +

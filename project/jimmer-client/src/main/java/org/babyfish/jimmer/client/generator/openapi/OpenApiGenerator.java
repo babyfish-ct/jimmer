@@ -1,12 +1,17 @@
 package org.babyfish.jimmer.client.generator.openapi;
 
+import org.babyfish.jimmer.client.generator.GeneratorException;
 import org.babyfish.jimmer.client.generator.Namespace;
 import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.runtime.*;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,8 +32,13 @@ public class OpenApiGenerator {
             throw new IllegalArgumentException("OpenApiGenerator does not support generic");
         }
         this.metadata = metadata;
-        this.properties = properties != null ? properties : new OpenApiProperties(null, null, null, null);
+        this.properties = properties != null ? properties : new OpenApiProperties();
         this.typeNameManager = new TypeNameManager(metadata);
+    }
+
+    public void generate(OutputStream out) throws IOException {
+        OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+        generate(writer);
     }
 
     public void generate(Writer writer) {
@@ -39,18 +49,21 @@ public class OpenApiGenerator {
         generateServers(ymlWriter);
         generatePaths(ymlWriter);
         generateComponents(ymlWriter);
+        try {
+            writer.flush();
+        } catch (IOException ex) {
+            throw new GeneratorException("Cannot flush the writer");
+        }
     }
 
     private void generateInfo(YmlWriter writer) {
         writer.object("info", () -> {
             OpenApiProperties.Info info = properties.getInfo();
             if (info == null) {
-                info = OpenApiProperties
-                        .newInfoBuilder()
-                        .setTitle("<No title>")
-                        .setDescription("<No Description>")
-                        .setVersion("1.0.0")
-                        .build();
+                info = new OpenApiProperties.Info();
+                info.setTitle("<No title>");
+                info.setDescription("<No Description>");
+                info.setVersion("1.0.0");
             }
             info.writeTo(writer);
         });

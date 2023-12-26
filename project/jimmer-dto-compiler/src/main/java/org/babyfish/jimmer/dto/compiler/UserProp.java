@@ -13,6 +13,8 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
 
     private final int line;
 
+    private final int col;
+
     private final TypeRef typeRef;
 
     private final List<Anno> annotations;
@@ -23,6 +25,7 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
     public UserProp(Token alias, TypeRef typeRef, List<Anno> annotations, String doc) {
         this.alias = alias.getText();
         this.line = alias.getLine();
+        this.col = alias.getCharPositionInLine();
         this.typeRef = typeRef;
         this.annotations = annotations;
         this.doc = doc;
@@ -36,6 +39,11 @@ public class UserProp implements AbstractProp, AbstractPropBuilder {
     @Override
     public int getAliasLine() {
         return line;
+    }
+
+    @Override
+    public int getAliasColumn() {
+        return col;
     }
 
     public TypeRef getTypeRef() {

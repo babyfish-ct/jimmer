@@ -2,7 +2,6 @@ package org.babyfish.jimmer.spring.kotlin
 
 import org.babyfish.jimmer.spring.AbstractTest
 import org.babyfish.jimmer.spring.cfg.JimmerProperties
-import org.babyfish.jimmer.spring.cfg.MetadataCondition
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig
 import org.babyfish.jimmer.spring.client.TypeScriptController
 import org.babyfish.jimmer.spring.datasource.DataSources

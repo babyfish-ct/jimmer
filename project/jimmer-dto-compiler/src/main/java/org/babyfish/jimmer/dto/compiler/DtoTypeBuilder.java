@@ -102,6 +102,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (!allScalars.name.getText().equals("allScalars")) {
             throw ctx.exception(
                     allScalars.name.getLine(),
+                    allScalars.name.getCharPositionInLine(),
                     "Illegal allScalars name \"" +
                             allScalars.name.getText() +
                             "\", it must be \"allScalars\""
@@ -111,6 +112,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (!positivePropMap.isEmpty() || !negativePropAliasMap.isEmpty()) {
             throw ctx.exception(
                     allScalars.name.getLine(),
+                    allScalars.name.getCharPositionInLine(),
                     "`#allScalars` must be defined at the beginning"
             );
         }
@@ -122,6 +124,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (modifiers.contains(DtoTypeModifier.SPECIFICATION)) {
                 throw ctx.exception(
                         allScalars.name.getLine(),
+                        allScalars.name.getCharPositionInLine(),
                         "Unnecessary optional modifier '?', all properties of specification are automatically optional"
                 );
             }
@@ -139,6 +142,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                     this,
                                     baseProp,
                                     allScalars.start.getLine(),
+                                    allScalars.start.getCharPositionInLine(),
                                     mandatory,
                                     null
                             )
@@ -161,6 +165,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         } else {
                             throw ctx.exception(
                                     qnCtx.start.getLine(),
+                                    qnCtx.start.getCharPositionInLine(),
                                     "Illegal type name \"" + qualifiedName + "\", " +
                                             "it matches several types: " +
                                             baseTypes
@@ -185,6 +190,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                         if (baseType == null) {
                             throw ctx.exception(
                                     qnCtx.start.getLine(),
+                                    qnCtx.start.getCharPositionInLine(),
                                     "Illegal type name \"" + qualifiedName + "\", " +
                                             "it is not super type of \"" +
                                             this.baseType +
@@ -196,6 +202,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 if (!handledBaseTypes.add(baseType)) {
                     throw ctx.exception(
                             qnCtx.start.getLine(),
+                            qnCtx.start.getCharPositionInLine(),
                             "Illegal type name \"" + qualifiedName + "\", " +
                                     "it is not super type of \"" +
                                     baseType.getName() +
@@ -210,6 +217,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                                         this,
                                         baseProp,
                                         qnCtx.stop.getLine(),
+                                        qnCtx.stop.getCharPositionInLine(),
                                         mandatory,
                                         null
                                 )
@@ -250,6 +258,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (!valid) {
                 throw ctx.exception(
                         propBuilder.getBaseLine(),
+                        propBuilder.getBaseColumn(),
                         "Base property \"" +
                                 baseProp +
                                 "\" cannot be referenced too many times"
@@ -262,6 +271,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (conflictPropBuilder != null && conflictPropBuilder != propBuilder) {
                 throw ctx.exception(
                         propBuilder.getAliasLine(),
+                        propBuilder.getAliasColumn(),
                         "Duplicated property alias \"" +
                                 propBuilder.getAlias() +
                                 "\""
@@ -276,6 +286,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (negativePropAliasMap.put(prop.prop.getText(), false) != null) {
             throw ctx.exception(
                     prop.prop.getLine(),
+                    prop.prop.getCharPositionInLine(),
                     "Duplicate negative property alias \"" +
                             prop.prop.getText() +
                             "\""
@@ -317,6 +328,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 !TypeRef.TNS_WITH_DEFAULT_VALUE.contains(typeRef.getTypeName())) {
             throw ctx.exception(
                     prop.prop.getLine(),
+                    prop.prop.getCharPositionInLine(),
                     "Illegal user defined property \"" +
                             prop.prop.getText() +
                             "\", it is not null but its default value cannot be determined, " +
@@ -327,6 +339,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
         if (aliasPositivePropMap.put(userProp.getAlias(), userProp) != null) {
             throw ctx.exception(
                     prop.prop.getLine(),
+                    prop.prop.getCharPositionInLine(),
                     "Duplicated property alias \"" +
                             prop.prop.getText() +
                             "\""
@@ -411,6 +424,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (declaredPropMap.put(abstractProp.getAlias(), abstractProp) != null) {
                 throw ctx.exception(
                         abstractProp.getAliasLine(),
+                        abstractProp.getAliasColumn(),
                         "Duplicated property alias \"" +
                                 builder.getAlias() +
                                 "\""
@@ -428,6 +442,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
                 if (declaredPropMap.put(dtoProp.getAlias(), dtoProp) != null) {
                     throw ctx.exception(
                             dtoProp.getAliasLine(),
+                            dtoProp.getAliasColumn(),
                             "Duplicated property alias \"" +
                                     dtoProp.getAlias() +
                                     "\""
@@ -441,6 +456,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (conflictProp != null) {
                 throw ctx.exception(
                         conflictProp.getAliasLine(),
+                        conflictProp.getAliasColumn(),
                         "Duplicated property alias \"" +
                                 conflictProp.getAlias() +
                                 "\""
@@ -463,6 +479,7 @@ class DtoTypeBuilder<T extends BaseType, P extends BaseProp> {
             if (!negativePropAliasMap.get(token.getText())) {
                 throw ctx.exception(
                         token.getLine(),
+                        token.getCharPositionInLine(),
                         "There is no property alias \"" +
                                 token.getText() +
                                 "\" that is need to be removed"

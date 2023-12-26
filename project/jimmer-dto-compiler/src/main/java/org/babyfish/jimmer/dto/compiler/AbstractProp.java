@@ -8,6 +8,8 @@ public interface AbstractProp {
 
     int getAliasLine();
 
+    int getAliasColumn();
+
     List<Anno> getAnnotations();
 
     String getDoc();

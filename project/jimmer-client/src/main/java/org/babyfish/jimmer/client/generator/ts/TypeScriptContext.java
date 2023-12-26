@@ -13,11 +13,11 @@ public class TypeScriptContext extends Context {
     private final String apiName;
 
     public TypeScriptContext(Metadata metadata) {
-        this(metadata, "    ", false, null);
+        this(metadata, 4, false, null);
     }
 
-    public TypeScriptContext(Metadata metadata, String indent, boolean isMutable, String apiName) {
-        super(metadata, indent);
+    public TypeScriptContext(Metadata metadata, int indent, boolean isMutable, String apiName) {
+        super(metadata, indent(indent));
         if (!metadata.isGenericSupported()) {
             throw new IllegalArgumentException(
                     "TypeScriptContext only accept metadata which support generic"
@@ -53,5 +53,13 @@ public class TypeScriptContext extends Context {
     @Override
     protected String getFileExtension() {
         return "ts";
+    }
+
+    private static String indent(int indent) {
+        StringBuilder indentBuilder = new StringBuilder();
+        for (int i = indent; i > 0; --i) {
+            indentBuilder.append(' ');
+        }
+        return indentBuilder.toString();
     }
 }

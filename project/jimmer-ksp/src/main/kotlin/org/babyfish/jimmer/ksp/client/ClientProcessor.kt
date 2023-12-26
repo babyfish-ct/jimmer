@@ -19,7 +19,6 @@ import org.babyfish.jimmer.sql.Embeddable
 import org.babyfish.jimmer.sql.Entity
 import org.babyfish.jimmer.sql.MappedSuperclass
 import java.io.OutputStreamWriter
-import java.lang.RuntimeException
 import java.nio.charset.StandardCharsets
 
 class ClientProcessor(

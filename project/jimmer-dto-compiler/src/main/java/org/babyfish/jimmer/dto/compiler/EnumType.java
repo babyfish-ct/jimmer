@@ -49,11 +49,13 @@ public class EnumType {
                 if (valueMap.containsKey(constant)) {
                     throw ctx.exception(
                             mapping.constant.getLine(),
+                            mapping.constant.getCharPositionInLine(),
                             "Duplicated enum constant: \"" + constant + "\""
                     );
                 }
                 throw ctx.exception(
                         mapping.constant.getLine(),
+                        mapping.constant.getCharPositionInLine(),
                         "Illegal enum constant: \"" + constant + "\""
                 );
             }
@@ -61,6 +63,7 @@ public class EnumType {
             if (isNumeric != null && isNumeric != (valueToken.getType() == DtoParser.IntegerLiteral)) {
                 throw ctx.exception(
                         mapping.constant.getLine(),
+                        mapping.constant.getCharPositionInLine(),
                         "Illegal value of enum constant: \"" +
                                 constant +
                                 "\", integer value and string value cannot be mixed"
@@ -72,6 +75,7 @@ public class EnumType {
             if (conflictConstant != null) {
                 throw ctx.exception(
                         mapping.constant.getLine(),
+                        mapping.constant.getCharPositionInLine(),
                         "Illegal enum constant: \"" + constant + "\", " +
                                 "its value is same with the value of \"" + conflictConstant + "\""
                 );
@@ -80,6 +84,7 @@ public class EnumType {
         if (!constantSet.isEmpty()) {
             throw ctx.exception(
                     enumBody.start.getLine(),
+                    enumBody.start.getCharPositionInLine(),
                     "The mapping(s) for " + constantSet + " is(are) not defined"
             );
         }

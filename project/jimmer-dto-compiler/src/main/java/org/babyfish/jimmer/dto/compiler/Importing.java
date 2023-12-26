@@ -24,24 +24,28 @@ class Importing {
     public void add(DtoParser.ImportStatementContext ctx) {
         String path = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
         if (ctx.alias != null) {
-            add0(ctx.alias, path, ctx.parts.get(ctx.parts.size() - 1).getLine());
+            Token lastPart = ctx.parts.get(ctx.parts.size() - 1);
+            add0(ctx.alias, path, lastPart.getLine(), lastPart.getCharPositionInLine());
         } else if (!ctx.importedTypes.isEmpty()) {
             for (DtoParser.ImportedTypeContext importedType : ctx.importedTypes) {
                 add0(
                         importedType.alias != null ? importedType.alias : importedType.name,
                         path + '.' + importedType.name.getText(),
-                        importedType.name.getLine()
+                        importedType.name.getLine(),
+                        importedType.name.getCharPositionInLine()
                 );
             }
         } else {
-            add0(ctx.parts.get(ctx.parts.size() - 1), path, ctx.parts.get(ctx.parts.size() - 1).getLine());
+            Token lastPart = ctx.parts.get(ctx.parts.size() - 1);
+            add0(lastPart, path, lastPart.getLine(), lastPart.getCharPositionInLine());
         }
     }
 
-    private void add0(Token alias, String qualifiedName, int qualifiedNameLine) {
+    private void add0(Token alias, String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
         if (AUTO_IMPORTED_TYPES.contains(qualifiedName)) {
             throw ctx.exception(
                     qualifiedNameLine,
+                    qualifiedNameCol,
                     "\"" +
                             qualifiedName +
                             "\" cannot be imported because it is built-in type"
@@ -50,6 +54,7 @@ class Importing {
         if (typeMap.put(alias.getText(), qualifiedName) != null) {
             throw ctx.exception(
                     alias.getLine(),
+                    alias.getCharPositionInLine(),
                     "Duplicated imported alias \"" +
                             alias.getText() +
                             "\""
@@ -63,6 +68,7 @@ class Importing {
         if (expectedArgumentCount != null && expectedArgumentCount != ctx.genericArguments.size()) {
             throw this.ctx.exception(
                     ctx.qualifiedName().stop.getLine(),
+                    ctx.qualifiedName().stop.getCharPositionInLine(),
                     "Illegal type \"" +
                             ctx.getText() +
                             "\", the expected generic argument count is " +
@@ -97,12 +103,14 @@ class Importing {
                             default:
                                 throw this.ctx.exception(
                                         arg.modifier.getLine(),
+                                        arg.modifier.getCharPositionInLine(),
                                         "The generic argument modifier is neither \"in\" nor \"out\""
                                 );
                         }
                         if (expectedArgumentCount != null) {
                             throw this.ctx.exception(
                                     arg.modifier.getLine(),
+                                    arg.modifier.getCharPositionInLine(),
                                     "The modifier \"" +
                                             arg.modifier.getText() +
                                             "\" of the generic argument of standard collection cannot be specified"
@@ -128,10 +136,10 @@ class Importing {
 
     public String resolve(DtoParser.QualifiedNameContext ctx) {
         String qualifiedName = ctx.parts.stream().map(Token::getText).collect(Collectors.joining("."));
-        return resolve(qualifiedName, ctx.stop.getLine());
+        return resolve(qualifiedName, ctx.stop.getLine(), ctx.stop.getCharPositionInLine());
     }
 
-    public String resolve(String qualifiedName, int qualifiedNameLine) {
+    public String resolve(String qualifiedName, int qualifiedNameLine, int qualifiedNameCol) {
         if (STANDARD_TYPES.containsKey(qualifiedName)) {
             return qualifiedName;
         }
@@ -139,6 +147,7 @@ class Importing {
         if (suggested != null) {
             throw this.ctx.exception(
                     qualifiedNameLine,
+                    qualifiedNameCol,
                     "Illegal type \"" +
                             qualifiedName +
                             "\", please use \"" +

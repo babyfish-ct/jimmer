@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
-    private final String dtoFilePath;
+    private final DtoFile dtoFile;
 
     private T baseType;
 
@@ -24,7 +24,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     private final String targetPackageName;
 
     protected DtoCompiler(DtoFile dtoFile) throws IOException {
-        this.dtoFilePath = dtoFile.getPath();
+        this.dtoFile = dtoFile;
         try (Reader reader = dtoFile.openReader()) {
             DtoLexer lexer = new DtoLexer(new ANTLRInputStream(reader));
             DtoParser parser = new DtoParser(new CommonTokenStream(lexer));
@@ -69,7 +69,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
     }
 
     public String getDtoFilePath() {
-        return dtoFilePath;
+        return dtoFile.getPath();
     }
 
     public String getSourceTypeName() {
@@ -108,8 +108,8 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
 
     protected abstract boolean isSameType(P baseProp1, P baseProp2);
 
-    DtoAstException exception(int line, String message) {
-        return new DtoAstException(dtoFilePath, line, message);
+    DtoAstException exception(int line, int col, String message) {
+        return new DtoAstException(dtoFile, line, col, message);
     }
 
     private class DtoErrorListener extends BaseErrorListener {
@@ -122,7 +122,7 @@ public abstract class DtoCompiler<T extends BaseType, P extends BaseProp> {
                 int charPositionInLine,
                 String msg,
                 RecognitionException ex) {
-            throw exception(line, msg);
+            throw exception(line, charPositionInLine, msg);
         }
     }
 }

@@ -1,10 +1,13 @@
 package org.babyfish.jimmer.dto.compiler;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 
 public final class DtoFile {
+
+    private final File file;
 
     private final String projectDir;
 
@@ -18,7 +21,8 @@ public final class DtoFile {
 
     private final ReaderOpener readerOpener;
 
-    public DtoFile(String projectDir, String dtoDir, List<String> packagePaths, String name, ReaderOpener readerOpener) {
+    public DtoFile(File file, String projectDir, String dtoDir, List<String> packagePaths, String name, ReaderOpener readerOpener) {
+        this.file = file;
         this.projectDir = projectDir;
         this.dtoDir = dtoDir;
         this.packageName = String.join(".", packagePaths);
@@ -27,6 +31,10 @@ public final class DtoFile {
                 (packagePaths.isEmpty() ? "" : '/' + String.join("/", packagePaths)) +
                 '/' + name;
         this.readerOpener = readerOpener;
+    }
+
+    public File getFile() {
+        return file;
     }
 
     public String getProjectDir() {
@@ -43,6 +51,10 @@ public final class DtoFile {
 
     public String getName() {
         return name;
+    }
+
+    public String getAbsolutePath() {
+        return file.getAbsolutePath();
     }
 
     public String getPath() {

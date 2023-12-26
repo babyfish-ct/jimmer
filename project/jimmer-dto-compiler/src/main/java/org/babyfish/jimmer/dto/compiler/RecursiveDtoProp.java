@@ -41,6 +41,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
     }
 
     @Override
+    public int getBaseColumn() {
+        return 0;
+    }
+
+    @Override
     public String getName() {
         return alias != null ? alias : baseProp.getName();
     }
@@ -73,6 +78,11 @@ class RecursiveDtoProp<T extends BaseType, P extends BaseProp> implements DtoPro
 
     @Override
     public int getAliasLine() {
+        return 0;
+    }
+
+    @Override
+    public int getAliasColumn() {
         return 0;
     }
 

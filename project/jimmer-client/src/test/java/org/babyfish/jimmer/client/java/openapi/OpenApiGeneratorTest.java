@@ -22,15 +22,12 @@ public class OpenApiGeneratorTest {
                 .build();
         OpenApiGenerator generator = new OpenApiGenerator(
                 metadata,
-                OpenApiProperties
-                        .newBuilder()
+                new OpenApiProperties()
                         .setInfo(
-                                OpenApiProperties
-                                        .newInfoBuilder()
+                                new OpenApiProperties.Info()
                                         .setTitle("Book System")
                                         .setDescription("You can use this system the operate book data")
                                         .setVersion("2.0.0")
-                                        .build()
                         )
                         .setSecurities(
                                 Collections.singletonList(
@@ -39,27 +36,22 @@ public class OpenApiGeneratorTest {
                         )
                         .setServers(
                                 Collections.singletonList(
-                                        OpenApiProperties
-                                                .newServerBuilder()
+                                        new OpenApiProperties.Server()
                                                 .setUrl("http://localhost:8080")
-                                                .build()
                                 )
                         )
                         .setComponents(
-                                OpenApiProperties
-                                        .newComponentsBuilder()
-                                        .addSecurityScheme(
-                                                "tenantHeader",
-                                                OpenApiProperties
-                                                        .newSecuritySchemeBuilder()
-                                                        .setType("apiKey")
-                                                        .setName("tenant")
-                                                        .setIn(OpenApiProperties.In.HEADER)
-                                                        .build()
+                                new OpenApiProperties.Components()
+                                        .setSecuritySchemes(
+                                                Collections.singletonMap(
+                                                        "tenantHeader",
+                                                        new OpenApiProperties.SecurityScheme()
+                                                                .setType("apiKey")
+                                                                .setName("tenant")
+                                                                .setIn(OpenApiProperties.In.HEADER)
+                                                )
                                         )
-                                        .build()
                         )
-                        .build()
         );
         StringWriter writer = new StringWriter();
         generator.generate(writer);

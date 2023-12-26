@@ -13,7 +13,11 @@ interface DtoPropImplementor extends AbstractProp {
 
     int getBaseLine();
 
+    int getBaseColumn();
+
     int getAliasLine();
+
+    int getAliasColumn();
 
     @Nullable
     String getFuncName();
