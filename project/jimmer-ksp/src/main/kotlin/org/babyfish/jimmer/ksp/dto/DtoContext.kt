@@ -2,6 +2,7 @@ package org.babyfish.jimmer.ksp.dto
 
 import com.google.devtools.ksp.symbol.KSFile
 import org.babyfish.jimmer.dto.compiler.DtoFile
+import org.babyfish.jimmer.dto.compiler.OsFile
 import java.io.File
 
 class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
@@ -56,9 +57,7 @@ class DtoContext(anyFile: KSFile?, dtoDirs: Collection<String>) {
 
     private fun collectDtoFiles(projectDir: String, dtoDir: String, file: File, paths: MutableList<String>, dtoFiles: MutableList<DtoFile>) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
-            dtoFiles += DtoFile(file, projectDir, dtoDir, paths, file.name) {
-                file.reader(Charsets.UTF_8)
-            }
+            dtoFiles += DtoFile(OsFile.of(file), projectDir, dtoDir, paths, file.name)
         } else {
             val subFiles = file.listFiles()
             if (subFiles != null) {

@@ -1,14 +1,13 @@
 package org.babyfish.jimmer.apt.dto;
 
 import org.babyfish.jimmer.dto.compiler.DtoFile;
+import org.babyfish.jimmer.dto.compiler.OsFile;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.processing.Filer;
 import javax.tools.StandardLocation;
 import java.io.*;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 
 public class DtoContext {
@@ -97,9 +96,7 @@ public class DtoContext {
     private static void collectDtoFiles(String projectDir, String dtoDir, File file, List<String> paths, List<DtoFile> dtoFiles) {
         if (file.isFile() && file.getName().endsWith(".dto")) {
             dtoFiles.add(
-                    new DtoFile(file, projectDir, dtoDir, paths, file.getName(), () ->
-                            new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8)
-                    )
+                    new DtoFile(OsFile.of(file), projectDir, dtoDir, paths, file.getName())
             );
         } else {
             File[] subFiles = file.listFiles();

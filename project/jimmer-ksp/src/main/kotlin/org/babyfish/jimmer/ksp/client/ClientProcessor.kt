@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.ksp.client
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonValue
 import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.Dependencies
@@ -402,10 +403,13 @@ class ClientProcessor(
         if (!immutable || declaration.classKind == ClassKind.INTERFACE) {
             val isClientException = declaration.annotation(ClientException::class) != null
             for (propDeclaration in declaration.getDeclaredProperties()) {
-                if (!propDeclaration.isPublic()) {
+                if (!propDeclaration.isPublic() ||
+                    propDeclaration.annotation(ApiIgnore::class) != null ||
+                    propDeclaration.annotation(JsonIgnore::class) != null) {
                     continue
                 }
-                if (isClientException && (propDeclaration.name.let { it == "code" || it == "fields" })) {
+                if (isClientException &&
+                    propDeclaration.name.let { it == "code" || it == "fields" }) {
                     continue
                 }
                 val ksTypeReference = declaration

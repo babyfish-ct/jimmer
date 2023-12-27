@@ -318,6 +318,16 @@ public class OpenApiGenerator {
             writer.prop("type", "object");
             writer.description(Description.of(Doc.valueOf(type.getDoc())));
             writer.object("properties", () -> {
+                if (type.getError() != null) {
+                    writer.object("family", () -> {
+                       writer.prop("type", "string");
+                       writer.prop("enum", '[' + type.getError().getFamily() + ']');
+                    });
+                    writer.object("code", () -> {
+                        writer.prop("type", "string");
+                        writer.prop("enum", '[' + type.getError().getCode() + ']');
+                    });
+                }
                 for (Property property : type.getProperties().values()) {
                     writer.object(property.getName(), () -> {
                         String doc = Doc.valueOf(property.getDoc());

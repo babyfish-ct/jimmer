@@ -16,13 +16,13 @@ public class DtoAstException extends RuntimeException {
 
     public DtoAstException(DtoFile file, int lineNumber, int colNumber, String message) {
         super(
-                file.getFile().getAbsolutePath() +
+                file.getAbsolutePath() +
                         ':' +
                         lineNumber +
                         " : " +
-                        message + positionString(file.getFile(), lineNumber, colNumber)
+                        message + positionString(file, lineNumber, colNumber)
         );
-        this.absolutePath = file.getFile().getAbsolutePath();
+        this.absolutePath = file.getAbsolutePath();
         this.path = file.getPath();
         this.lineNumber = lineNumber;
         this.colNumber = colNumber;
@@ -40,10 +40,8 @@ public class DtoAstException extends RuntimeException {
         return lineNumber;
     }
 
-    private static String positionString(File file, int lineNumber, int colNumber) {
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8)
-        )) {
+    private static String positionString(DtoFile dtoFile, int lineNumber, int colNumber) {
+        try (BufferedReader reader = new BufferedReader(dtoFile.openReader())) {
             int lineNo = 1;
             while (true) {
                 String line = reader.readLine();

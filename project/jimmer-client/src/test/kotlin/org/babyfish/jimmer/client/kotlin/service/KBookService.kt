@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.client.kotlin.service
 
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.client.common.*
 import org.babyfish.jimmer.client.kotlin.model.*
 import org.babyfish.jimmer.client.meta.Api
@@ -45,12 +44,12 @@ interface KBookService {
 
     @Api
     @PostMapping("/book")
-    @ThrowsAll(KBusinessError::class)
+    @Throws(KBusinessException::class)
     fun saveBook(@RequestBody input: KBookInput): KBook
 
     @Api
     @PutMapping("/book")
-    @ThrowsAll(KBusinessError::class)
+    @Throws(KBusinessException::class)
     fun updateBook(@RequestBody input: KBookInput): KBook
 
     @Api

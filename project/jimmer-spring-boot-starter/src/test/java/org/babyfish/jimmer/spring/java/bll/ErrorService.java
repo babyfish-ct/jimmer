@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.spring.java.bll;
 
-import org.babyfish.jimmer.client.ThrowsAll;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -10,7 +9,6 @@ import java.math.BigDecimal;
 public class ErrorService {
 
     @GetMapping("/error/test")
-    @ThrowsAll(GeographyErrorCode.class)
     public void test() {
         try {
             validatePosition();

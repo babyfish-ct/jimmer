@@ -2,7 +2,6 @@ package org.babyfish.jimmer.sql.kt.api
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.client.meta.Api
 import org.babyfish.jimmer.sql.fetcher.Fetcher
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
