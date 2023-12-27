@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.example;
 
 import org.babyfish.jimmer.client.EnableImplicitApi;
+import org.babyfish.jimmer.sql.EnableDtoGeneration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -10,10 +11,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * `@Embeddable`, `@Immutable`, or `@ErrorFamily` so that `jimmer-apt`
  * cannot handle current subproject.
  *
- * <p>This empty classes uses `@EnableDtoGeneration` to enable the `jimmer-apt` manually.</p>
+ * <p>This class uses `@EnableDtoGeneration` to enable the `jimmer-apt` manually.</p>
  *
  * <p>This is only required by java, not kotlin(kotlin uses KSP, not APT). </p>
  */
+@EnableDtoGeneration
 @EnableImplicitApi
 @SpringBootApplication
 public class App {

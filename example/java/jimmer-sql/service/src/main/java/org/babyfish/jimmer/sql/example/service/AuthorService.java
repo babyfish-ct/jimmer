@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.service;
 
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.repository.AuthorRepository;
 import org.babyfish.jimmer.sql.example.model.*;
@@ -9,6 +8,7 @@ import org.babyfish.jimmer.sql.example.service.dto.AuthorInput;
 import org.babyfish.jimmer.sql.example.service.dto.AuthorSpecification;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
+import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -37,12 +37,12 @@ public class AuthorService implements Fetchers {
     }
 
     @GetMapping("/simpleList")
-    public List<@FetchBy("SIMPLE_FETCHER") Author> findSimpleAuthors() { // ❶ ❷ ❸
+    public List<@FetchBy("SIMPLE_FETCHER") Author> findSimpleAuthors() {
         return authorRepository.findAll(SIMPLE_FETCHER, AuthorProps.FIRST_NAME, AuthorProps.LAST_NAME);
     }
 
     @GetMapping("/list")
-    public List<@FetchBy("DEFAULT_FETCHER") Author> findAuthors( // ❷
+    public List<@FetchBy("DEFAULT_FETCHER") Author> findAuthors(
             AuthorSpecification specification,
             @RequestParam(defaultValue = "firstName asc, lastName asc") String sortCode
     ) {
@@ -55,7 +55,7 @@ public class AuthorService implements Fetchers {
 
     @GetMapping("/{id}")
     @Nullable
-    public @FetchBy("COMPLEX_FETCHER") Author findComplexAuthor( // ❸
+    public @FetchBy("COMPLEX_FETCHER") Author findComplexAuthor(
             @PathVariable("id") long id
     ) {
         return authorRepository.findNullable(id, COMPLEX_FETCHER);
@@ -85,8 +85,7 @@ public class AuthorService implements Fetchers {
                     );
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode.class) // ❹
-    public Author saveAuthor(AuthorInput input) { // ❺
+    public Author saveAuthor(AuthorInput input) throws SaveException {
         return authorRepository.save(input);
     }
 
@@ -95,9 +94,3 @@ public class AuthorService implements Fetchers {
         authorRepository.deleteById(id);
     }
 }
-
-/*----------------Documentation Links----------------
-❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
-❹ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
-❺ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
----------------------------------------------------*/

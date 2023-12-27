@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.example.service;
 import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.repository.BookStoreRepository;
+import org.babyfish.jimmer.sql.example.service.dto.BookStoreInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;

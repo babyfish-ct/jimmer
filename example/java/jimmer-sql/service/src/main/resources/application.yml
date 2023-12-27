@@ -40,6 +40,9 @@ jimmer:
   client:
     ts:
       path: /ts.zip
+    openapi:
+      path: /openapi.yml
+      ui-path: /openapi.html
     
 springdoc:
   swagger-ui:

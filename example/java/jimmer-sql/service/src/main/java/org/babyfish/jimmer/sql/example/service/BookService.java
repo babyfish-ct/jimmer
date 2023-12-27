@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.service;
 
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.client.ThrowsAll;
 import org.babyfish.jimmer.spring.model.SortUtils;
 import org.babyfish.jimmer.sql.example.model.*;
 import org.babyfish.jimmer.sql.example.repository.BookRepository;
@@ -9,7 +8,7 @@ import org.babyfish.jimmer.sql.example.service.dto.BookInput;
 import org.babyfish.jimmer.sql.example.service.dto.BookSpecification;
 import org.babyfish.jimmer.sql.example.service.dto.CompositeBookInput;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
-import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
+import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -41,7 +40,7 @@ public class BookService implements Fetchers {
     }
 
     @GetMapping("/simpleList")
-    public List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks() { // ❶
+    public List<@FetchBy("SIMPLE_FETCHER") Book> findSimpleBooks() {
         return bookRepository.findAll(SIMPLE_FETCHER, BookProps.NAME, BookProps.EDITION.desc());
     }
 
@@ -50,7 +49,7 @@ public class BookService implements Fetchers {
      * {@link #findBooksBySuperQBE(int, int, String, BookSpecification)}
      */
     @GetMapping("/list")
-    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks( // ❷
+    public Page<@FetchBy("DEFAULT_FETCHER") Book> findBooks(
             @RequestParam(defaultValue = "0") int pageIndex,
             @RequestParam(defaultValue = "5") int pageSize,
             // The `sortCode` also support implicit join, like `store.name asc`
@@ -93,7 +92,7 @@ public class BookService implements Fetchers {
 
     @GetMapping("/{id}")
     @Nullable
-    public @FetchBy("COMPLEX_FETCHER") Book findComplexBook( // ❸
+    public @FetchBy("COMPLEX_FETCHER") Book findComplexBook(
             @PathVariable("id") long id
     ) {
         return bookRepository.findNullable(id, COMPLEX_FETCHER);
@@ -131,14 +130,12 @@ public class BookService implements Fetchers {
                     );
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode.class) // ❹
-    public Book saveBook(@RequestBody BookInput input) { // ❺
+    public Book saveBook(@RequestBody BookInput input) throws SaveException {
         return bookRepository.save(input);
     }
 
     @PutMapping("/composite")
-    @ThrowsAll(SaveErrorCode.class) // ❻
-    public Book saveCompositeBook(@RequestBody CompositeBookInput input) { // ❼
+    public Book saveCompositeBook(@RequestBody CompositeBookInput input) throws SaveException {
         return bookRepository.save(input);
     }
 
@@ -147,9 +144,3 @@ public class BookService implements Fetchers {
         bookRepository.deleteById(id);
     }
 }
-
-/*----------------Documentation Links----------------
-❶ ❷ ❸ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
-❹ ❻ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
-❺ ❼ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
----------------------------------------------------*/
