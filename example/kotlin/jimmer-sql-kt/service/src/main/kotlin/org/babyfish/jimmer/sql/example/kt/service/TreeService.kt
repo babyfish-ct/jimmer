@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.kt.service
 
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.example.kt.repository.TreeNodeRepository
 import org.babyfish.jimmer.kt.new
 import org.babyfish.jimmer.sql.example.kt.model.TreeNode
@@ -10,6 +9,7 @@ import org.babyfish.jimmer.sql.example.kt.service.dto.FlatTreeNodeView
 import org.babyfish.jimmer.sql.example.kt.service.dto.RecursiveTreeInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
+import org.babyfish.jimmer.sql.runtime.SaveException
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
@@ -43,7 +43,7 @@ class TreeService(
         treeNodeRepository.findByParentIsNullAndName(rootName, RECURSIVE_FETCHER)
 
     @PutMapping("/root/recursive")
-    @ThrowsAll(SaveErrorCode::class)
+    @Throws(SaveException::class)
     fun saveTree(
         @RequestBody input: RecursiveTreeInput // ❷
     ): TreeNode {

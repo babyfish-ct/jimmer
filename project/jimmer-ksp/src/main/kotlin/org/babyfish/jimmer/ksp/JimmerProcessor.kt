@@ -5,6 +5,7 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.*
 import org.babyfish.jimmer.client.EnableImplicitApi
+import org.babyfish.jimmer.dto.compiler.DtoAstException
 import org.babyfish.jimmer.dto.compiler.DtoUtils
 import org.babyfish.jimmer.ksp.client.ClientProcessor
 import org.babyfish.jimmer.ksp.dto.DtoProcessor
@@ -87,7 +88,7 @@ class JimmerProcessor(
         } catch (ex: MetaException) {
             environment.logger.error(ex.message!!, ex.declaration)
             emptyList()
-        } catch (ex: Throwable) {
+        } catch (ex: DtoAstException) {
             environment.logger.error(ex.message!!)
             emptyList()
         }

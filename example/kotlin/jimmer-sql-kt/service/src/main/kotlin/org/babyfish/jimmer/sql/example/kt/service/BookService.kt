@@ -1,7 +1,6 @@
 package org.babyfish.jimmer.sql.example.kt.service
 
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.spring.model.SortUtils
 import org.babyfish.jimmer.sql.example.kt.model.Book
 import org.babyfish.jimmer.sql.example.kt.model.by
@@ -11,6 +10,7 @@ import org.babyfish.jimmer.sql.example.kt.service.dto.BookSpecification
 import org.babyfish.jimmer.sql.example.kt.service.dto.CompositeBookInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
+import org.babyfish.jimmer.sql.runtime.SaveException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
@@ -89,12 +89,12 @@ class BookService(
         bookRepository.findNullable(id, COMPLEX_FETCHER)
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode::class) // ❹
+    @Throws(SaveException::class) // ❹
     fun saveBook(@RequestBody input: BookInput): Book = // ❺
         bookRepository.save(input)
 
     @PutMapping("/composite")
-    @ThrowsAll(SaveErrorCode::class) // ❻
+    @Throws(SaveException::class) // ❻
     fun saveBook(@RequestBody input: CompositeBookInput): Book = // ❼
         bookRepository.save(input)
 

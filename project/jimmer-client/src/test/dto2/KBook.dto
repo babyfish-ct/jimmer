@@ -1,0 +1,12 @@
+export org.babyfish.jimmer.client.kotlin.model.KBook
+    -> package org.babyfish.jimmer.client.kotlin.model.dto
+
+/**
+ * The book input defined by DTO language
+ */
+KBookInput {
+    #allScalars(this)
+    - id
+    id(store)
+    id(authors) as authorIds
+}

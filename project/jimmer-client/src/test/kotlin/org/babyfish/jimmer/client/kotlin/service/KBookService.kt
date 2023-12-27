@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.kotlin.service
 import org.babyfish.jimmer.client.FetchBy
 import org.babyfish.jimmer.client.common.*
 import org.babyfish.jimmer.client.kotlin.model.*
+import org.babyfish.jimmer.client.kotlin.model.dto.KBookInput
 import org.babyfish.jimmer.client.meta.Api
 import org.babyfish.jimmer.sql.ast.tuple.Tuple2
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher

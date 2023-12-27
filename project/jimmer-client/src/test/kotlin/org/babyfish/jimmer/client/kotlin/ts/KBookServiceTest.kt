@@ -189,6 +189,14 @@ class KBookServiceTest {
                 "         */\n" +
                 "        readonly id: string;\n" +
                 "        /**\n" +
+                "         * Created time\n" +
+                "         */\n" +
+                "        readonly createdTime: string;\n" +
+                "        /**\n" +
+                "         * Modified time\n" +
+                "         */\n" +
+                "        readonly modifiedTime: string;\n" +
+                "        /**\n" +
                 "         * The name of this book,\n" +
                 "         * <p>Together with `edition`, this property forms the key of the book</p>\n" +
                 "         */\n" +

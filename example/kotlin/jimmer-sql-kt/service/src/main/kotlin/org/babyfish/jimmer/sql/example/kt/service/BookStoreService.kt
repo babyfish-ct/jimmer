@@ -1,13 +1,13 @@
 package org.babyfish.jimmer.sql.example.kt.service
 
 import org.babyfish.jimmer.client.FetchBy
-import org.babyfish.jimmer.client.ThrowsAll
 import org.babyfish.jimmer.sql.example.kt.model.BookStore
 import org.babyfish.jimmer.sql.example.kt.model.by
 import org.babyfish.jimmer.sql.example.kt.repository.BookStoreRepository
 import org.babyfish.jimmer.sql.example.kt.service.dto.BookStoreInput
 import org.babyfish.jimmer.sql.kt.fetcher.newFetcher
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode
+import org.babyfish.jimmer.sql.runtime.SaveException
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
@@ -60,7 +60,7 @@ class BookStoreService(
         bookStoreRepository.findNullable(id, WITH_NEWEST_BOOKS_FETCHER)
 
     @PutMapping
-    @ThrowsAll(SaveErrorCode::class) // ❻
+    @Throws(SaveException::class) // ❻
     fun saveBookStore(@RequestBody input: BookStoreInput): BookStore = // ❼
         bookStoreRepository.save(input)
 

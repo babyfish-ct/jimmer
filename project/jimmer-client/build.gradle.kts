@@ -38,6 +38,7 @@ tasks.withType(JavaCompile::class) {
 
 ksp {
     arg("jimmer.source.includes", "org.babyfish.jimmer.client.kotlin.")
+    arg("jimmer.dto.dirs", "src/test/dto2")
 }
 
 kotlin {

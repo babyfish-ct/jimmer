@@ -18,7 +18,7 @@ import java.math.BigDecimal
  *  <p>Together with `name`, this property forms the key of the book</p>
  */
 @Entity
-interface KBook {
+interface KBook : KBaseEntity {
 
     /**
      * The id is long, but the client type is string

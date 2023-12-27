@@ -453,12 +453,16 @@ class ClientProcessor(
                     val name = StringUtil
                         .propName(funcDeclaration.simpleName.asString(), returnTypeName == "kotlin.Boolean")
                         ?: continue
-                    prop(funcDeclaration, name) { prop ->
-                        typeRef { type ->
-                            fillType(returnTypReference)
-                            prop.setType(type)
+                    try {
+                        prop(funcDeclaration, name) { prop ->
+                            typeRef { type ->
+                                fillType(returnTypReference)
+                                prop.setType(type)
+                            }
+                            definition.addProp(prop)
                         }
-                        definition.addProp(prop)
+                    } catch (ex: UnambiguousTypeException) {
+                        // Do nothing
                     }
                 }
             }

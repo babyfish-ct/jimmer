@@ -1,14 +1,8 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.FetchBy;
-import org.babyfish.jimmer.client.meta.Doc;
-import org.babyfish.jimmer.client.meta.Prop;
-import org.babyfish.jimmer.client.meta.TypeDefinition;
-import org.babyfish.jimmer.client.meta.TypeName;
-import org.babyfish.jimmer.client.runtime.FetchByInfo;
-import org.babyfish.jimmer.client.runtime.ObjectType;
-import org.babyfish.jimmer.client.runtime.Property;
-import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.meta.*;
+import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -62,13 +56,13 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
         TypeDefinition definition = ctx.definition(this.immutableType.getJavaClass());
         this.doc = definition.getDoc();
         ImmutableProp idProp = immutableType.getIdProp();
-        Prop idMetaProp = definition.getPropMap().get(idProp.getName());
+        Prop idMetaProp = getProp(definition, idProp.getName(), ctx);
         Map<String, Property> properties = new LinkedHashMap<>();
         properties.put(
                 idProp.getName(),
                 new PropertyImpl(
                         idProp.getName(),
-                        ctx.parseType(definition.getPropMap().get(idMetaProp.getName()).getType()),
+                        ctx.parseType(getProp(definition, idMetaProp.getName(), ctx).getType()),
                         idMetaProp.getDoc()
                 )
         );
@@ -77,7 +71,7 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
                 continue;
             }
             ImmutableProp prop = field.getProp();
-            Prop metaProp = definition.getPropMap().get(field.getProp().getName());
+            Prop metaProp = getProp(definition, field.getProp().getName(), ctx);
             Type type;
             if (prop.isAssociation(TargetLevel.ENTITY)) {
                 FetchedTypeImpl targetType = new FetchedTypeImpl(prop.getTargetType());
@@ -114,6 +108,29 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
         }
         this.isRecursiveFetchedType = parentRecursiveProp != null;
         this.properties = Collections.unmodifiableMap(properties);
+    }
+
+    private Prop getProp(TypeDefinition definition, String name, TypeContext ctx) {
+        Prop prop = getProp0(definition, name, ctx);
+        if (prop == null) {
+            throw new IllegalApiException("There is no property \"" + name + "\" in \"" + definition.getTypeName() + "\"");
+        }
+        return prop;
+    }
+
+    private Prop getProp0(TypeDefinition definition, String name, TypeContext ctx) {
+        Prop prop = definition.getPropMap().get(name);
+        if (prop != null) {
+            return prop;
+        }
+        for (TypeRef superTypeRef : definition.getSuperTypes()) {
+            TypeDefinition superTypeDefinition = ctx.definition(superTypeRef.getTypeName());
+            prop = getProp0(superTypeDefinition, name, ctx);
+            if (prop != null) {
+                return prop;
+            }
+        }
+        return null;
     }
 
     @Override

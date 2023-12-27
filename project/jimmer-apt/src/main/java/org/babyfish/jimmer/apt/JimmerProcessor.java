@@ -6,6 +6,7 @@ import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
+import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
 import javax.annotation.processing.*;
@@ -133,7 +134,7 @@ public class JimmerProcessor extends AbstractProcessor {
             }
         } catch (MetaException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
-        } catch (RuntimeException | Error ex) {
+        } catch (DtoAstException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
         }
         return true;
