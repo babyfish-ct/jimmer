@@ -458,7 +458,7 @@ class DtoGenerator private constructor(
                             .apply {
                                 if (prop is DtoProp<*, *>) {
                                     if (isSimpleProp(prop as DtoProp<ImmutableType, ImmutableProp>)) {
-                                        add("base.%L", prop.name)
+                                        add("base.%L", prop.baseProp.name)
                                     } else {
                                         if (!prop.isNullable && prop.isBaseNullable) {
                                             add(

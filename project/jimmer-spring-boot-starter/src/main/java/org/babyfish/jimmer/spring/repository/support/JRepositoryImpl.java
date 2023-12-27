@@ -96,7 +96,7 @@ public class JRepositoryImpl<E, ID> implements JRepository<E, ID> {
     @Override
     public Pager pager(Pageable pageable) {
         if (pageable == null || pageable.isUnpaged()) {
-            return new PagerImpl(0, 0);
+            return new PagerImpl(0, Integer.MAX_VALUE);
         }
         return new PagerImpl(pageable.getPageNumber(), pageable.getPageSize());
     }

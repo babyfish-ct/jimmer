@@ -38,7 +38,7 @@ fun <E> KConfigurableRootQuery<*, E>.fetchPage(
     con: Connection? = null
 ): Page<E> =
     if (pageable === null || pageable.isUnpaged) {
-        fetchPage(0, 0, con)
+        fetchPage(0, Int.MAX_VALUE, con)
     } else {
         fetchPage(pageable.pageNumber, pageable.pageSize, con)
     }

@@ -90,41 +90,14 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
                     gen.writeFieldName(propNameConverter.fieldName(prop));
                     JsonSerializer<?> serializer;
                     if (prop.getConverterMetadata() == null) {
-                        serializer = provider.findTypedValueSerializer(
-                                prop.getReturnClass(),
-                                true,
+                        serializer = provider.findValueSerializer(
+                                JacksonUtils.getJacksonType(prop),
                                 BeanProps.get(provider.getTypeFactory(), prop)
                         );
                     } else {
                         serializer = provider.findTypedValueSerializer(
-                                JacksonUtils.getJacksonType(prop),
+                                prop.getConverterMetadata().getTargetJacksonType(),
                                 true,
-                                BeanProps.get(provider.getTypeFactory(), prop)
-                        );
-                    }
-                    if (serializer instanceof DateSerializer) {
-                        serializer = ((DateSerializer) serializer).createContextual(
-                                provider,
-                                BeanProps.get(provider.getTypeFactory(), prop)
-                        );
-                    } else if (serializer instanceof LocalDateSerializer) {
-                        serializer = ((LocalDateSerializer) serializer).createContextual(
-                                provider,
-                                BeanProps.get(provider.getTypeFactory(), prop)
-                        );
-                    } else if (serializer instanceof LocalDateTimeSerializer) {
-                        serializer = ((LocalDateTimeSerializer) serializer).createContextual(
-                                provider,
-                                BeanProps.get(provider.getTypeFactory(), prop)
-                        );
-                    } else if (serializer instanceof OffsetDateTimeSerializer) {
-                        serializer = ((OffsetDateTimeSerializer) serializer).createContextual(
-                                provider,
-                                BeanProps.get(provider.getTypeFactory(), prop)
-                        );
-                    } else if (serializer instanceof ZonedDateTimeSerializer) {
-                        serializer = ((ZonedDateTimeSerializer) serializer).createContextual(
-                                provider,
                                 BeanProps.get(provider.getTypeFactory(), prop)
                         );
                     }

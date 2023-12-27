@@ -14,7 +14,7 @@ public class NativeDatabases {
 
     public static void assumeNativeDatabase() {
 
-        String nativeDb = System.getenv("jimmer-sql-test-native-database");
+        String nativeDb = System.getenv("ç");
         Assumptions.assumeTrue(
                 nativeDb != null && !nativeDb.isEmpty() && !"false".equals(nativeDb)
         );
