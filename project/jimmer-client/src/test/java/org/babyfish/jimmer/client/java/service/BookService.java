@@ -100,11 +100,11 @@ public interface BookService {
     @Api
     @GetMapping("/tuples")
     Page<
-                Tuple2<
-                        ? extends @FetchBy("COMPLEX_FETCHER") Book,
-                        ? extends @FetchBy(value = "AUTHOR_FETCHER", nullable = true) Author
-                >
-        > findTuples(
+                        Tuple2<
+                                ? extends @FetchBy("COMPLEX_FETCHER") Book,
+                                ? extends @FetchBy(value = "AUTHOR_FETCHER", nullable = true) Author
+                        >
+                > findTuples(
             @RequestParam("name") @Nullable String name,
             @RequestParam("pageIndex") int pageIndex,
             @RequestParam("pageSize") int pageSize

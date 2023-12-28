@@ -1,8 +1,10 @@
 package org.babyfish.jimmer.spring.java;
 
+import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
+import org.babyfish.jimmer.spring.cfg.ClientPathCondition;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.OpenApiController;
@@ -34,6 +36,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
@@ -42,6 +45,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.support.JdbcTransactionManager;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
@@ -63,7 +67,7 @@ import java.util.List;
 @SpringBootTest(properties = {
         "jimmer.client.ts.path=/my-ts.zip",
         "jimmer.client.openapi.path=/my-openapi.yml",
-        "jimmer.client.openapi.ui-path=/my-openapi.html",
+        "jimmer.client.openapi.uiPath=/my-openapi.html",
         "jimmer.client.openapi.properties.info.title=BookSystem",
         "jimmer.client.openapi.properties.info.description=Use this system to access book system",
         "jimmer.database-validation-mode=ERROR",
@@ -75,6 +79,7 @@ import java.util.List;
 @EnableJimmerRepositories
 @EnableConfigurationProperties(JimmerProperties.class)
 @Import({SqlClientConfig.class, ErrorTranslatorConfig.class})
+@EnableImplicitApi
 public class SpringJavaTest extends AbstractTest {
 
     private final static List<String> TRANSACTION_EVENTS = new ArrayList<>();
@@ -168,21 +173,21 @@ public class SpringJavaTest extends AbstractTest {
             return webAppContextSetup(ctx).build();
         }
 
-        @ConditionalOnProperty("jimmer.client.ts.path")
+        @Conditional(ClientPathCondition.TypeScript.class)
         @ConditionalOnMissingBean(TypeScriptController.class)
         @Bean
         public TypeScriptController typeScriptController(JimmerProperties properties) {
             return new TypeScriptController(properties);
         }
 
-        @ConditionalOnProperty("jimmer.client.openapi.path")
+        @Conditional(ClientPathCondition.OpenApi.class)
         @ConditionalOnMissingBean(OpenApiController.class)
         @Bean
         public OpenApiController openApiController(JimmerProperties properties) {
             return new OpenApiController(properties);
         }
 
-        @ConditionalOnProperty("jimmer.client.openapi.ui-path")
+        @Conditional(ClientPathCondition.OpenApiUI.class)
         @ConditionalOnMissingBean(OpenApiUiController.class)
         @Bean
         public OpenApiUiController openApiUiController(JimmerProperties properties) {
@@ -834,16 +839,57 @@ public class SpringJavaTest extends AbstractTest {
 
     @Test
     public void testOpenApi() throws Exception {
-        mvc.perform(get("/my-openapi.yml"))
+        MvcResult result = mvc.perform(get("/my-openapi.yml"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("application/yml"));
+                .andExpect(content().contentTypeCompatibleWith("application/yml"))
+                .andReturn();
+        Thread.sleep(100);
+        Assertions.assertTrue(
+                result.getResponse().getContentAsString().startsWith(
+                        "openapi: 3.0.1\n" +
+                                "info:\n" +
+                                "  title: BookSystem\n" +
+                                "  description: Use this system to access book system\n" +
+                                "  version: <`jimmer.client.openapi.properties.info.version` is unspecified>"
+                )
+        );
     }
 
     @Test
     public void testOpenApiUi() throws Exception {
-        mvc.perform(get("/my-openapi.html"))
+        MvcResult result = mvc.perform(get("/my-openapi.html"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("text/html"));
+                .andExpect(content().contentTypeCompatibleWith("text/html"))
+                .andReturn();
+        Thread.sleep(100);
+        Assertions.assertEquals(
+                "<!DOCTYPE html>\n" +
+                        "<html lang=\"en\">\n" +
+                        "<head>\n" +
+                        "  <meta charset=\"utf-8\" />\n" +
+                        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n" +
+                        "  <meta\n" +
+                        "    name=\"description\"\n" +
+                        "    content=\"SwaggerUI\"\n" +
+                        "  />\n" +
+                        "  <title>SwaggerUI</title>\n" +
+                        "  <link rel=\"stylesheet\" href=\"https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css\" />\n" +
+                        "</head>\n" +
+                        "<body>\n" +
+                        "<div id=\"swagger-ui\"></div>\n" +
+                        "<script src=\"https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js\" crossorigin></script>\n" +
+                        "<script>\n" +
+                        "  window.onload = () => {\n" +
+                        "    window.ui = SwaggerUIBundle({\n" +
+                        "      url: '/my-openapi.yml',\n" +
+                        "      dom_id: '#swagger-ui',\n" +
+                        "    });\n" +
+                        "  };\n" +
+                        "</script>\n" +
+                        "</body>\n" +
+                        "</html>",
+                result.getResponse().getContentAsString()
+        );
     }
 
     @Disabled

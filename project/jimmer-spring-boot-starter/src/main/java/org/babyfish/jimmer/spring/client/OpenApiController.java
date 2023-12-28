@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+
 @Controller
 public class OpenApiController {
 
@@ -27,7 +31,11 @@ public class OpenApiController {
         OpenApiGenerator generator = new OpenApiGenerator(metadata, properties.getClient().getOpenapi().getProperties());
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/yml");
-        StreamingResponseBody body = generator::generate;
+        StreamingResponseBody body = out -> {
+            Writer writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+            generator.generate(writer);
+            writer.flush();
+        };
         return ResponseEntity.ok().headers(headers).body(body);
     }
 }

@@ -53,18 +53,18 @@ public class BookServiceTest {
                                 "    > {\n" +
                                 "        let _uri = '/book/';\n" +
                                 "        _uri += encodeURIComponent(options.id);\n" +
-                                "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
+                                "        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<number>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
                                 "     * @return An optional complex book DTO\n" +
                                 "     */\n" +
                                 "    async findBook(options: BookServiceOptions['findBook']): Promise<\n" +
-                                "        BookDto['BookService/COMPLEX_FETCHER'] | null | undefined\n" +
+                                "        BookDto['BookService/COMPLEX_FETCHER'] | undefined\n" +
                                 "    > {\n" +
                                 "        let _uri = '/book/';\n" +
                                 "        _uri += encodeURIComponent(options.id);\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER'] | null | undefined\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<BookDto['BookService/COMPLEX_FETCHER'] | undefined>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
@@ -120,7 +120,7 @@ public class BookServiceTest {
                                 "            _uri += encodeURIComponent(_value);\n" +
                                 "            _separator = '&';\n" +
                                 "        }\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
@@ -171,7 +171,7 @@ public class BookServiceTest {
                                 "            _uri += encodeURIComponent(_value);\n" +
                                 "            _separator = '&';\n" +
                                 "        }\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookDto['BookService/COMPLEX_FETCHER']>>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    /**\n" +
@@ -185,7 +185,7 @@ public class BookServiceTest {
                                 "        ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
                                 "    > {\n" +
                                 "        let _uri = '/books/simple';\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookDto['BookService/SIMPLE_FETCHER']>>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    async findTuples(options: BookServiceOptions['findTuples']): Promise<\n" +
@@ -215,21 +215,21 @@ public class BookServiceTest {
                                 "            _uri += encodeURIComponent(_value);\n" +
                                 "            _separator = '&';\n" +
                                 "        }\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET'})) as Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Page<Tuple2<BookDto['BookService/COMPLEX_FETCHER'], AuthorDto['BookService/AUTHOR_FETCHER']>>>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    async saveBook(options: BookServiceOptions['saveBook']): Promise<\n" +
                                 "        Dynamic_Book\n" +
                                 "    > {\n" +
                                 "        let _uri = '/book';\n" +
-                                "        return (await this.executor({uri: _uri, method: 'POST', body: options.input})) as Dynamic_Book\n" +
+                                "        return (await this.executor({uri: _uri, method: 'POST', body: options.body})) as Promise<Dynamic_Book>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    async updateBook(options: BookServiceOptions['updateBook']): Promise<\n" +
                                 "        Dynamic_Book\n" +
                                 "    > {\n" +
                                 "        let _uri = '/book';\n" +
-                                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_Book\n" +
+                                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_Book>;\n" +
                                 "    }\n" +
                                 "    \n" +
                                 "    async version(options: BookServiceOptions['version']): Promise<\n" +
@@ -240,7 +240,7 @@ public class BookServiceTest {
                                 "        if (options.resourcePath) {\n" +
                                 "            _headers['resourcePath'] = options.resourcePath\n" +
                                 "        }\n" +
-                                "        return (await this.executor({uri: _uri, method: 'GET', headers: _headers})) as number\n" +
+                                "        return (await this.executor({uri: _uri, method: 'GET', headers: _headers})) as Promise<number>;\n" +
                                 "    }\n" +
                                 "}\n" +
                                 "export type BookServiceOptions = {\n" +
@@ -253,25 +253,25 @@ public class BookServiceTest {
                                 "        /**\n" +
                                 "         * The name of the associated book store\n" +
                                 "         */\n" +
-                                "        readonly storeName?: string | null | undefined, \n" +
+                                "        readonly storeName?: string | undefined, \n" +
                                 "        /**\n" +
                                 "         * The names of the associated authors\n" +
                                 "         */\n" +
-                                "        readonly authorName?: string | null | undefined, \n" +
+                                "        readonly authorName?: string | undefined, \n" +
                                 "        /**\n" +
                                 "         * The min price of the book\n" +
                                 "         */\n" +
-                                "        readonly minPrice?: number | null | undefined, \n" +
+                                "        readonly minPrice?: number | undefined, \n" +
                                 "        /**\n" +
                                 "         * The max price of the book\n" +
                                 "         */\n" +
-                                "        readonly maxPrice?: number | null | undefined\n" +
+                                "        readonly maxPrice?: number | undefined\n" +
                                 "    }, \n" +
                                 "    'findComplexBooksByArguments': {\n" +
                                 "        readonly arguments: FindBookArguments\n" +
                                 "    }, \n" +
                                 "    'findTuples': {\n" +
-                                "        readonly name?: string | null | undefined, \n" +
+                                "        readonly name?: string | undefined, \n" +
                                 "        readonly pageIndex: number, \n" +
                                 "        readonly pageSize: number\n" +
                                 "    }, \n" +
@@ -279,17 +279,17 @@ public class BookServiceTest {
                                 "        readonly id: number\n" +
                                 "    }, \n" +
                                 "    'saveBook': {\n" +
-                                "        readonly input: BookInput\n" +
+                                "        readonly body: BookInput\n" +
                                 "    }, \n" +
                                 "    'updateBook': {\n" +
-                                "        readonly input: BookInput\n" +
+                                "        readonly body: BookInput\n" +
                                 "    }, \n" +
                                 "    'deleteBook': {\n" +
                                 "        readonly id: number\n" +
                                 "    }, \n" +
                                 "    'version': {\n" +
                                 "        readonly accessToken: string, \n" +
-                                "        readonly path?: string | null | undefined\n" +
+                                "        readonly path?: string | undefined\n" +
                                 "    }\n" +
                                 "}\n",
                 writer.toString()
@@ -403,7 +403,7 @@ public class BookServiceTest {
                         "    /**\n" +
                         "     * The many-to-one association from `Book` to `BookStore`\n" +
                         "     */\n" +
-                        "    readonly store?: Dynamic_BookStore | null | undefined;\n" +
+                        "    readonly store?: Dynamic_BookStore | undefined;\n" +
                         "    /**\n" +
                         "     * The many-to-many association from `Book` to `Author`\n" +
                         "     */\n" +
@@ -416,6 +416,44 @@ public class BookServiceTest {
                         "     * The id view of `Book.authors`\n" +
                         "     */\n" +
                         "    readonly authorIds?: ReadonlyArray<string>;\n" +
+                        "}\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testBookInput() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source source = ctx.getRootSource("model/static/BookInput");
+        StringWriter writer = new StringWriter();
+        ctx.render(source, writer);
+        Assertions.assertEquals(
+                "/**\n" +
+                        " * The book input defined by DTO language\n" +
+                        " */\n" +
+                        "export interface BookInput {\n" +
+                        "    /**\n" +
+                        "     * The name of this book,\n" +
+                        "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly name: string;\n" +
+                        "    /**\n" +
+                        "     * The edition of this book,\n" +
+                        "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly edition: number;\n" +
+                        "    /**\n" +
+                        "     * The price of this book\n" +
+                        "     */\n" +
+                        "    readonly price: number;\n" +
+                        "    /**\n" +
+                        "     * The many-to-one association from `Book` to `BookStore`\n" +
+                        "     */\n" +
+                        "    readonly storeId?: string | undefined;\n" +
+                        "    /**\n" +
+                        "     * The many-to-many association from `Book` to `Author`\n" +
+                        "     */\n" +
+                        "    readonly authorIds: ReadonlyArray<string>;\n" +
                         "}\n",
                 writer.toString()
         );

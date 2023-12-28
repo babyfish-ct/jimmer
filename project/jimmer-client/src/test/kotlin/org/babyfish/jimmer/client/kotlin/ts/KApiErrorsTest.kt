@@ -23,7 +23,7 @@ class KApiErrorsTest {
                 "    } | {\n" +
                 "        family: 'KBUSINESS', \n" +
                 "        code: 'SERVICE_IS_SUSPENDED', \n" +
-                "        planedResumeTime?: string | null | undefined\n" +
+                "        planedResumeTime?: string | undefined\n" +
                 "    };\n" +
                 "export type ApiErrors = {\n" +
                 "    'kbookService': {\n" +

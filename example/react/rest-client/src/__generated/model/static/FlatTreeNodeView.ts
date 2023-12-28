@@ -1,14 +1,8 @@
 export interface FlatTreeNodeView {
-    
-    readonly grandParentId?: number;
-    
-    readonly grandParentName?: string;
-    
     readonly id: number;
-    
     readonly name: string;
-    
-    readonly parentId?: number;
-    
-    readonly parentName?: string;
+    readonly parentId: number | null | undefined;
+    readonly parentName: string | null | undefined;
+    readonly grandParentId: number | null | undefined;
+    readonly grandParentName: string | null | undefined;
 }

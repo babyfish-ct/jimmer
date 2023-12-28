@@ -15,9 +15,12 @@ public class TypeScriptWriter extends SourceWriter {
 
     private final boolean isMutable;
 
+    private final NullRenderMode nullRenderMode;
+
     public TypeScriptWriter(Context ctx, Source source) {
         super(ctx, source);
         this.isMutable = this.<TypeScriptContext>getContext().isMutable();
+        this.nullRenderMode = this.<TypeScriptContext>getContext().getNullRenderMode();
     }
 
     @Override
@@ -25,7 +28,12 @@ public class TypeScriptWriter extends SourceWriter {
         if (type instanceof TypeVariable) {
             code(((TypeVariable)type).getName());
         } else if (type instanceof NullableType) {
-            typeRef(((NullableType)type).getTargetType()).code(" | null | undefined");
+            typeRef(((NullableType) type).getTargetType());
+            if (this.nullRenderMode == NullRenderMode.NULL_OR_UNDEFINED) {
+                code(" | null | undefined");
+            } else {
+                code(" | undefined");
+            }
         } else if (type instanceof ListType) {
             code(isMutable ? "Array<" : "ReadonlyArray<").typeRef(((ListType)type).getElementType()).code('>');
         } else if (type instanceof MapType) {

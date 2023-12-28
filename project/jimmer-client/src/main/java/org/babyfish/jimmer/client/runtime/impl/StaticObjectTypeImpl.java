@@ -64,9 +64,35 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
                 );
             }
         }
-        for (TypeRef superType : definition.getSuperTypes()) {
-            TypeDefinition superDefinition = ctx.definition(superType.getTypeName());
-            collectProperties(superDefinition, ctx, properties);
+        for (TypeRef superTypeRef : definition.getSuperTypes()) {
+            TypeDefinition superDefinition = ctx.definition(superTypeRef.getTypeName());
+            if (superDefinition == null || superDefinition.getPropMap().isEmpty()) {
+                continue;
+            }
+            List<Type> arguments;
+            if (superTypeRef.getArguments().isEmpty()) {
+                arguments = Collections.emptyList();
+            } else {
+                arguments = new ArrayList<>(superTypeRef.getArguments().size());
+                for (TypeRef arg : superTypeRef.getArguments()) {
+                    arguments.add(ctx.parseType(arg));
+                }
+            }
+            ctx.generic(ctx.javaType(superDefinition.getTypeName()), arguments, () -> {
+                for (Prop superProp : superDefinition.getPropMap().values()) {
+                    if (properties.containsKey(superProp.getName())) {
+                        continue;
+                    }
+                    properties.put(
+                            superProp.getName(),
+                            new PropertyImpl(
+                                    superProp.getName(),
+                                    ctx.parseType(superProp.getType()),
+                                    superProp.getDoc()
+                            )
+                    );
+                }
+            });
         }
     }
 

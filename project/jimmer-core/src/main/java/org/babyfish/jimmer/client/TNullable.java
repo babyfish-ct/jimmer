@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
  * <p>List&lt;String?&gt;</p>
  *
  * However,it is useful for java, for example
- * <p>List&lt;@NullableType String&gt;</p>
+ * <p>List&lt;@TNullable String&gt;</p>
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE_USE)
-public @interface NullableType {
+public @interface TNullable {
 }

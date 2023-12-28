@@ -17,21 +17,21 @@ import org.springframework.context.annotation.Conditional;
 @Conditional(HttpServletCondition.class)
 public class ServletControllerConfiguration {
 
-    @ConditionalOnProperty("jimmer.client.ts.path")
+    @Conditional(ClientPathCondition.TypeScript.class)
     @ConditionalOnMissingBean(TypeScriptController.class)
     @Bean
     public TypeScriptController typeScriptController(JimmerProperties properties) {
         return new TypeScriptController(properties);
     }
 
-    @ConditionalOnProperty("jimmer.client.openapi.path")
+    @Conditional(ClientPathCondition.OpenApi.class)
     @ConditionalOnMissingBean(OpenApiController.class)
     @Bean
     public OpenApiController openApiController(JimmerProperties properties) {
         return new OpenApiController(properties);
     }
 
-    @ConditionalOnProperty("jimmer.client.openapi.uiPath")
+    @Conditional(ClientPathCondition.OpenApiUI.class)
     @ConditionalOnMissingBean(OpenApiUiController.class)
     @Bean
     public OpenApiUiController openApiUiController(JimmerProperties properties) {

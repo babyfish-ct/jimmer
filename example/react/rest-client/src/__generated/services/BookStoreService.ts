@@ -1,7 +1,7 @@
-import type { Dynamic, Executor } from '../';
-import type { BookStoreDto } from '../model/dto';
-import type { BookStore } from '../model/entities';
-import type { BookStoreInput } from '../model/static';
+import type {Executor} from '../';
+import type {BookStoreDto} from '../model/dto/';
+import type {Dynamic_BookStore} from '../model/dynamic/';
+import type {BookStoreInput} from '../model/static/';
 
 export class BookStoreService {
     
@@ -10,25 +10,25 @@ export class BookStoreService {
     async deleteBookStore(options: BookStoreServiceOptions['deleteBookStore']): Promise<void> {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'})) as void
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as 
     }
     
     async findComplexStoreWithAllBooks(options: BookStoreServiceOptions['findComplexStoreWithAllBooks']): Promise<
-        BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | undefined
+        BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | null | undefined
     > {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
         _uri += '/withAllBooks';
-        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | undefined
+        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | null | undefined
     }
     
     async findComplexStoreWithNewestBooks(options: BookStoreServiceOptions['findComplexStoreWithNewestBooks']): Promise<
-        BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
+        BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | null | undefined
     > {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
         _uri += '/withNewestBooks';
-        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
+        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | null | undefined
     }
     
     async findComplexStores(): Promise<
@@ -53,19 +53,26 @@ export class BookStoreService {
     }
     
     async saveBookStore(options: BookStoreServiceOptions['saveBookStore']): Promise<
-        Dynamic<BookStore>
+        Dynamic_BookStore
     > {
         let _uri = '/bookStore/';
-        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<BookStore>
+        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_BookStore
     }
 }
-
 export type BookStoreServiceOptions = {
-    'deleteBookStore': {readonly id: number},
-    'findComplexStoreWithAllBooks': {readonly id: number},
-    'findComplexStoreWithNewestBooks': {readonly id: number},
-    'findComplexStores': {},
-    'findSimpleStores': {},
-    'findStores': {},
-    'saveBookStore': {readonly body: BookStoreInput}
+    'findSimpleStores': {}, 
+    'findStores': {}, 
+    'findComplexStores': {}, 
+    'findComplexStoreWithAllBooks': {
+        readonly id: number
+    }, 
+    'findComplexStoreWithNewestBooks': {
+        readonly id: number
+    }, 
+    'saveBookStore': {
+        readonly input: BookStoreInput
+    }, 
+    'deleteBookStore': {
+        readonly id: number
+    }
 }

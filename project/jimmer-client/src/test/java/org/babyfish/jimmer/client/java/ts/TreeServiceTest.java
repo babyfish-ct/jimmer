@@ -77,7 +77,7 @@ public class TreeServiceTest {
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
                         "    async getNumberTree(options: TreeServiceOptions['getNumberTree']): Promise<\n" +
-                        "        Tree<number | null | undefined>\n" +
+                        "        Tree<number | undefined>\n" +
                         "    > {\n" +
                         "        let _uri = '/numberTree';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
@@ -96,7 +96,7 @@ public class TreeServiceTest {
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Tree<number | null | undefined>\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number | undefined>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -107,7 +107,7 @@ public class TreeServiceTest {
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
                         "    async getNumberTree_2(options: TreeServiceOptions['getNumberTree_2']): Promise<\n" +
-                        "        Tree<number | null | undefined>\n" +
+                        "        Tree<number | undefined>\n" +
                         "    > {\n" +
                         "        let _uri = '/numberTree2';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
@@ -133,7 +133,7 @@ public class TreeServiceTest {
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Tree<number | null | undefined>\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number | undefined>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -154,7 +154,7 @@ public class TreeServiceTest {
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as TreeNodeDto['TreeService/RECURSIVE_FETCHER']\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -183,7 +183,7 @@ public class TreeServiceTest {
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Tree<string>\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<string>>;\n" +
                         "    }\n" +
                         "}\n" +
                         "export type TreeServiceOptions = {\n" +
@@ -191,41 +191,41 @@ public class TreeServiceTest {
                         "        /**\n" +
                         "         * The depth of the tree\n" +
                         "         */\n" +
-                        "        readonly depth?: number | null | undefined, \n" +
+                        "        readonly depth?: number | undefined, \n" +
                         "        /**\n" +
                         "         * The child count of each tree node\n" +
                         "         */\n" +
-                        "        readonly breadth?: number | null | undefined\n" +
+                        "        readonly breadth?: number | undefined\n" +
                         "    }, \n" +
                         "    'getNumberTree_2': {\n" +
                         "        /**\n" +
                         "         * The depth of the tree\n" +
                         "         */\n" +
-                        "        readonly depth?: number | null | undefined, \n" +
+                        "        readonly depth?: number | undefined, \n" +
                         "        /**\n" +
                         "         * The child count of each tree node\n" +
                         "         */\n" +
-                        "        readonly breadth?: number | null | undefined, \n" +
+                        "        readonly breadth?: number | undefined, \n" +
                         "        /**\n" +
                         "         * The max bound for the random integer value which is data of each node\n" +
                         "         */\n" +
-                        "        readonly maxBound?: number | null | undefined\n" +
+                        "        readonly maxBound?: number | undefined\n" +
                         "    }, \n" +
                         "    'getStringTree': {\n" +
                         "        /**\n" +
                         "         * The depth of the tree\n" +
                         "         */\n" +
-                        "        readonly depth?: number | null | undefined, \n" +
+                        "        readonly depth?: number | undefined, \n" +
                         "        /**\n" +
                         "         * The child count of each tree node\n" +
                         "         */\n" +
-                        "        readonly breadth?: number | null | undefined\n" +
+                        "        readonly breadth?: number | undefined\n" +
                         "    }, \n" +
                         "    'getRootNode': {\n" +
                         "        /**\n" +
                         "         * The optional string value to filter root nodes.\n" +
                         "         */\n" +
-                        "        readonly name?: string | null | undefined\n" +
+                        "        readonly name?: string | undefined\n" +
                         "    }\n" +
                         "}\n",
                 writer.toString()

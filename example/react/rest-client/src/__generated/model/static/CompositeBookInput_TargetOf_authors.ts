@@ -1,7 +1,6 @@
 import type {Gender} from '../enums/';
 
-export interface AuthorInput {
-    readonly id: number | null | undefined;
+export interface CompositeBookInput_TargetOf_authors {
     readonly firstName: string;
     readonly lastName: string;
     readonly gender: Gender;

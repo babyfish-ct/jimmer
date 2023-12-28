@@ -36,7 +36,7 @@ class KBookServiceTest {
                 "    > {\n" +
                 "        let _uri = '/book/';\n" +
                 "        _uri += encodeURIComponent(options.id);\n" +
-                "        return (await this.executor({uri: _uri, method: 'DELETE'})) as number\n" +
+                "        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<number>;\n" +
                 "    }\n" +
                 "    \n" +
                 "    /**\n" +
@@ -83,7 +83,7 @@ class KBookServiceTest {
                 "            _uri += encodeURIComponent(_value);\n" +
                 "            _separator = '&';\n" +
                 "        }\n" +
-                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<KBookDto['KBookService/COMPLEX_FETCHER']>>;\n" +
                 "    }\n" +
                 "    \n" +
                 "    /**\n" +
@@ -93,7 +93,7 @@ class KBookServiceTest {
                 "        ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
                 "    > {\n" +
                 "        let _uri = '/books/simple';\n" +
-                "        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<KBookDto['KBookService/SIMPLE_FETCHER']>>;\n" +
                 "    }\n" +
                 "    \n" +
                 "    async findTuples(options: KBookServiceOptions['findTuples']): Promise<\n" +
@@ -123,42 +123,42 @@ class KBookServiceTest {
                 "            _uri += encodeURIComponent(_value);\n" +
                 "            _separator = '&';\n" +
                 "        }\n" +
-                "        return (await this.executor({uri: _uri, method: 'GET'})) as KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>\n" +
+                "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<KPage<Tuple2<KBookDto['KBookService/COMPLEX_FETCHER'], KAuthorDto['KBookService/AUTHOR_FETCHER']>>>;\n" +
                 "    }\n" +
                 "    \n" +
                 "    async saveBook(options: KBookServiceOptions['saveBook']): Promise<\n" +
                 "        Dynamic_KBook\n" +
                 "    > {\n" +
                 "        let _uri = '/book';\n" +
-                "        return (await this.executor({uri: _uri, method: 'POST', body: options.input})) as Dynamic_KBook\n" +
+                "        return (await this.executor({uri: _uri, method: 'POST', body: options.body})) as Promise<Dynamic_KBook>;\n" +
                 "    }\n" +
                 "    \n" +
                 "    async updateBook(options: KBookServiceOptions['updateBook']): Promise<\n" +
                 "        Dynamic_KBook\n" +
                 "    > {\n" +
                 "        let _uri = '/book';\n" +
-                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_KBook\n" +
+                "        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_KBook>;\n" +
                 "    }\n" +
                 "}\n" +
                 "export type KBookServiceOptions = {\n" +
                 "    'findSimpleBooks': {}, \n" +
                 "    'findComplexBooks': {\n" +
-                "        readonly name?: string | null | undefined, \n" +
-                "        readonly storeName?: string | null | undefined, \n" +
-                "        readonly authorName?: string | null | undefined, \n" +
-                "        readonly minPrice?: number | null | undefined, \n" +
-                "        readonly maxPrice?: number | null | undefined\n" +
+                "        readonly name?: string | undefined, \n" +
+                "        readonly storeName?: string | undefined, \n" +
+                "        readonly authorName?: string | undefined, \n" +
+                "        readonly minPrice?: number | undefined, \n" +
+                "        readonly maxPrice?: number | undefined\n" +
                 "    }, \n" +
                 "    'findTuples': {\n" +
-                "        readonly name?: string | null | undefined, \n" +
+                "        readonly name?: string | undefined, \n" +
                 "        readonly pageIndex: number, \n" +
                 "        readonly pageSize: number\n" +
                 "    }, \n" +
                 "    'saveBook': {\n" +
-                "        readonly input: KBookInput\n" +
+                "        readonly body: KBookInput\n" +
                 "    }, \n" +
                 "    'updateBook': {\n" +
-                "        readonly input: KBookInput\n" +
+                "        readonly body: KBookInput\n" +
                 "    }, \n" +
                 "    'deleteBook': {\n" +
                 "        readonly id: number\n" +
@@ -200,7 +200,7 @@ class KBookServiceTest {
                 "         * The name of this book,\n" +
                 "         * <p>Together with `edition`, this property forms the key of the book</p>\n" +
                 "         */\n" +
-                "        readonly name?: string | null | undefined;\n" +
+                "        readonly name?: string | undefined;\n" +
                 "        /**\n" +
                 "         * The edition of this book,\n" +
                 "         *  <p>Together with `name`, this property forms the key of the book</p>\n" +
@@ -209,13 +209,13 @@ class KBookServiceTest {
                 "        /**\n" +
                 "         * The price of this book\n" +
                 "         */\n" +
-                "        readonly price?: number | null | undefined;\n" +
+                "        readonly price?: number | undefined;\n" +
                 "        /**\n" +
                 "         * The bookstore to which the current book belongs, null is allowed\n" +
                 "         */\n" +
                 "        readonly store?: {\n" +
                 "            readonly id: number;\n" +
-                "            readonly name?: string | null | undefined;\n" +
+                "            readonly name?: string | undefined;\n" +
                 "            readonly coordinate: KCoordinate;\n" +
                 "            readonly level: number;\n" +
                 "        } | null | undefined;\n" +
@@ -254,7 +254,7 @@ class KBookServiceTest {
                 "         * The name of this book,\n" +
                 "         * <p>Together with `edition`, this property forms the key of the book</p>\n" +
                 "         */\n" +
-                "        readonly name?: string | null | undefined;\n" +
+                "        readonly name?: string | undefined;\n" +
                 "    }\n" +
                 "}\n",
             writer.toString()
@@ -305,7 +305,7 @@ class KBookServiceTest {
                 "     * The name of this book,\n" +
                 "     * <p>Together with `edition`, this property forms the key of the book</p>\n" +
                 "     */\n" +
-                "    readonly name?: string | null | undefined;\n" +
+                "    readonly name?: string | undefined;\n" +
                 "    /**\n" +
                 "     * The edition of this book,\n" +
                 "     *  <p>Together with `name`, this property forms the key of the book</p>\n" +
@@ -314,11 +314,11 @@ class KBookServiceTest {
                 "    /**\n" +
                 "     * The price of this book\n" +
                 "     */\n" +
-                "    readonly price?: number | null | undefined;\n" +
+                "    readonly price?: number | undefined;\n" +
                 "    /**\n" +
                 "     * The bookstore to which the current book belongs, null is allowed\n" +
                 "     */\n" +
-                "    readonly store?: Dynamic_KBookStore | null | undefined;\n" +
+                "    readonly store?: Dynamic_KBookStore | undefined;\n" +
                 "    /**\n" +
                 "     * All authors involved in writing the work\n" +
                 "     */\n" +

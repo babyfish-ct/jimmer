@@ -12,11 +12,13 @@ public class TypeScriptContext extends Context {
 
     private final String apiName;
 
+    private final NullRenderMode nullRenderMode;
+
     public TypeScriptContext(Metadata metadata) {
-        this(metadata, 4, false, null);
+        this(metadata, 4, false, null, NullRenderMode.UNDEFINED);
     }
 
-    public TypeScriptContext(Metadata metadata, int indent, boolean isMutable, String apiName) {
+    public TypeScriptContext(Metadata metadata, int indent, boolean isMutable, String apiName, NullRenderMode nullRenderMode) {
         super(metadata, indent(indent));
         if (!metadata.isGenericSupported()) {
             throw new IllegalArgumentException(
@@ -25,10 +27,15 @@ public class TypeScriptContext extends Context {
         }
         this.isMutable = isMutable;
         this.apiName = apiName != null && !apiName.isEmpty() ? apiName : "Api";
+        this.nullRenderMode = nullRenderMode != null ? nullRenderMode : NullRenderMode.UNDEFINED;
     }
 
     public boolean isMutable() {
         return isMutable;
+    }
+
+    public NullRenderMode getNullRenderMode() {
+        return nullRenderMode;
     }
 
     public String getApiName() {

@@ -1,32 +1,10 @@
-import type { Gender } from '../enums';
+import type {CompositeBookInput_TargetOf_authors, CompositeBookInput_TargetOf_store} from './';
 
 export interface CompositeBookInput {
-    
-    readonly authors: ReadonlyArray<CompositeBookInput_TargetOf_authors>;
-    
+    readonly id: number | null | undefined;
+    readonly name: string;
     readonly edition: number;
-    
-    readonly id?: number;
-    
-    readonly name: string;
-    
     readonly price: number;
-    
-    readonly store?: CompositeBookInput_TargetOf_store;
-}
-
-export interface CompositeBookInput_TargetOf_authors {
-    
-    readonly firstName: string;
-    
-    readonly gender: Gender;
-    
-    readonly lastName: string;
-}
-
-export interface CompositeBookInput_TargetOf_store {
-    
-    readonly name: string;
-    
-    readonly website?: string;
+    readonly store: CompositeBookInput_TargetOf_store | null | undefined;
+    readonly authors: ReadonlyArray<CompositeBookInput_TargetOf_authors>;
 }

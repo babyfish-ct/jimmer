@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.spring.cfg;
 
 import org.babyfish.jimmer.client.generator.openapi.OpenApiProperties;
+import org.babyfish.jimmer.client.generator.ts.NullRenderMode;
 import org.babyfish.jimmer.sql.EnumType;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.dialect.DefaultDialect;
@@ -491,7 +492,7 @@ public class JimmerProperties {
 
         public Client(@Nullable TypeScript ts, @Nullable Openapi openapi) {
             if (ts == null) {
-                this.ts = new TypeScript(null, "Api", 4, false, false);
+                this.ts = new TypeScript(null, "Api", 4, false, null);
             } else {
                 this.ts = ts;
             }
@@ -533,7 +534,15 @@ public class JimmerProperties {
 
             private final boolean mutable;
 
-            public TypeScript(@Nullable String path, @Nullable String apiName, int indent, boolean anonymous, boolean mutable) {
+            private final NullRenderMode nullRenderMode;
+
+            public TypeScript(
+                    @Nullable String path,
+                    @Nullable String apiName,
+                    int indent,
+                    boolean mutable,
+                    @Nullable NullRenderMode nullRenderMode
+            ) {
                 if (path == null || path.isEmpty()) {
                     this.path = null;
                 } else {
@@ -549,6 +558,7 @@ public class JimmerProperties {
                 }
                 this.indent = indent != 0 ? Math.max(indent, 2) : 4;
                 this.mutable = mutable;
+                this.nullRenderMode = nullRenderMode != null ? nullRenderMode : NullRenderMode.UNDEFINED;
             }
 
             @Nullable
@@ -569,6 +579,10 @@ public class JimmerProperties {
                 return mutable;
             }
 
+            public NullRenderMode getNullRenderMode() {
+                return nullRenderMode;
+            }
+
             @Override
             public String toString() {
                 return "TypeScript{" +
@@ -587,8 +601,22 @@ public class JimmerProperties {
             private final OpenApiProperties properties;
 
             public Openapi(String path, String uiPath, OpenApiProperties properties) {
-                this.path = path != null && !path.isEmpty() ? path : "/openapi.yml";
-                this.uiPath = uiPath != null && !uiPath.isEmpty() ? uiPath : "/openapi.html";
+                if (path == null || path.isEmpty()) {
+                    this.path = null;
+                } else {
+                    if (!path.startsWith("/")) {
+                        throw new IllegalArgumentException("`jimmer.client.openapi.path` must start with \"/\"");
+                    }
+                    this.path = path;
+                }
+                if (uiPath == null || uiPath.isEmpty()) {
+                    this.uiPath = null;
+                } else {
+                    if (!uiPath.startsWith("/")) {
+                        throw new IllegalArgumentException("`jimmer.client.openapi.ui-path` must start with \"/\"");
+                    }
+                    this.uiPath = uiPath;
+                }
                 OpenApiProperties.Info info = properties != null ? properties.getInfo() : null;
                 this.properties = new OpenApiProperties()
                         .setInfo(

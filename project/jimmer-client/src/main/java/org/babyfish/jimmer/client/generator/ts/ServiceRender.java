@@ -60,7 +60,7 @@ public class ServiceRender implements Render {
                                 }
                                 writer
                                         .codeIf(!ctx.isMutable(), "readonly ")
-                                        .code(parameter.getName())
+                                        .code(parameter.isRequestBody() ? "body" : parameter.getName())
                                         .codeIf(parameter.getType() instanceof NullableType || parameter.getDefaultValue() != null, '?')
                                         .code(": ")
                                         .typeRef(

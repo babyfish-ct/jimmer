@@ -229,6 +229,7 @@ public class ClientProcessor {
                     } else {
                         builder.typeRef(type -> {
                             fillType(parameterElement.asType());
+                            setNullityByJetBrainsAnnotation(type, parameterElement);
                             parameter.setType(type);
                         });
                         operation.addParameter(parameter);
@@ -238,6 +239,7 @@ public class ClientProcessor {
             if (method.getReturnType().getKind() != TypeKind.VOID) {
                 builder.typeRef(type -> {
                     fillType(method.getReturnType());
+                    setNullityByJetBrainsAnnotation(type, method);
                     operation.setReturnType(type);
                 });
             }
@@ -393,7 +395,7 @@ public class ClientProcessor {
         if (typeRef.getTypeName().isPrimitive()) {
             forcedType = context.getTypes().asElement(type) != null;
         }
-        if (type.getAnnotation(NullableType.class) != null) {
+        if (type.getAnnotation(TNullable.class) != null) {
             if (forcedType != null && !forcedType) {
                 throw new MetaException(
                         builder.ancestorSource(),
@@ -401,26 +403,6 @@ public class ClientProcessor {
                 );
             }
             typeRef.setNullable(true);
-        } else {
-            Element element = builder.ancestorSource(PropImpl.class, ApiParameterImpl.class, ApiOperationImpl.class);
-            if (element != null) {
-                for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
-                    TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
-                    String annoClassName = annoElement.getSimpleName().toString();
-                    if (annoClassName.equals("Null") || annoClassName.equals("Nullable")) {
-                        if (forcedType != null && !forcedType) {
-                            throw new MetaException(
-                                    builder.ancestorSource(),
-                                    "Illegal annotation `@" +
-                                            annoElement.getQualifiedName().toString() +
-                                            "` which cannot be used to decorate primitive type"
-                            );
-                        }
-                        typeRef.setNullable(true);
-                        break;
-                    }
-                }
-            }
         }
         if (forcedType != null && forcedType) {
             typeRef.setNullable(true);
@@ -681,6 +663,7 @@ public class ClientProcessor {
                     try {
                         builder.typeRef(type -> {
                             fillType(metadata != null ? metadata.getTargetType() : executableElement.getReturnType());
+                            setNullityByJetBrainsAnnotation(type, executableElement);
                             prop.setType(type);
                         });
                         prop.setDoc(Doc.parse(elements.getDocComment(executableElement)));
@@ -801,6 +784,35 @@ public class ClientProcessor {
         return ApiOperation.AUTO_OPERATION_ANNOTATIONS.stream().anyMatch(it ->
             Annotations.annotationMirror(element, it) != null
         );
+    }
+
+    private void setNullityByJetBrainsAnnotation(TypeRefImpl<Element> typeRef, Element element) {
+        if (typeRef.isNullable()) {
+            return;
+        }
+        Boolean forcedNullity = null;
+        if (typeRef.getTypeName().isPrimitive()) {
+            forcedNullity = context.getElements().getTypeElement(typeRef.getTypeName().toString()) != null;
+        }
+        for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+            TypeElement annoElement = (TypeElement) annotationMirror.getAnnotationType().asElement();
+            String annoClassName = annoElement.getSimpleName().toString();
+            if (annoClassName.equals("Null") || annoClassName.equals("Nullable")) {
+                if (forcedNullity != null) {
+                    throw new MetaException(
+                            builder.ancestorSource(),
+                            "Illegal annotation `@" +
+                                    annoElement.getQualifiedName().toString() +
+                                    "` which cannot be used to decorate primitive type"
+                    );
+                }
+                typeRef.setNullable(true);
+                break;
+            }
+        }
+        if (forcedNullity != null) {
+            typeRef.setNullable(forcedNullity);
+        }
     }
 
     private static TypeName unboxedTypeName(TypeMirror type) {

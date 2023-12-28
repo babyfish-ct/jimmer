@@ -1,13 +1,6 @@
-export interface ExportedSavePath {
-    
-    readonly nodes: ReadonlyArray<ExportedSavePath_Node>;
-    
-    readonly rootTypeName: string;
-}
+import type {ExportedSavePath_Node} from './';
 
-export interface ExportedSavePath_Node {
-    
-    readonly prop: string;
-    
-    readonly targetTypeName: string;
+export interface ExportedSavePath {
+    readonly rootTypeName: string;
+    readonly nodes: ReadonlyArray<ExportedSavePath_Node>;
 }

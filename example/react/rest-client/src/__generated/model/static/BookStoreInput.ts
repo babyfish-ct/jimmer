@@ -1,8 +1,5 @@
 export interface BookStoreInput {
-    
-    readonly id?: number;
-    
+    readonly id: number | null | undefined;
     readonly name: string;
-    
-    readonly website?: string;
+    readonly website?: string | null | undefined;
 }

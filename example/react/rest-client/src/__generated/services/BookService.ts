@@ -1,7 +1,12 @@
-import type { Dynamic, Executor } from '../';
-import type { BookDto } from '../model/dto';
-import type { Book } from '../model/entities';
-import type { BookInput, BookSpecification, CompositeBookInput, Page } from '../model/static';
+import type {Executor} from '../';
+import type {BookDto} from '../model/dto/';
+import type {Dynamic_Book} from '../model/dynamic/';
+import type {
+    BookInput, 
+    BookSpecification, 
+    CompositeBookInput, 
+    Page
+} from '../model/static/';
 
 export class BookService {
     
@@ -10,9 +15,13 @@ export class BookService {
     async deleteBook(options: BookServiceOptions['deleteBook']): Promise<void> {
         let _uri = '/book/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'})) as void
+        return (await this.executor({uri: _uri, method: 'DELETE'}))
     }
     
+    /**
+     * The functionality of this method is the same as
+     * {@link #findBooksBySuperQBE(int, int, String, BookSpecification)}
+     */
     async findBooks(options: BookServiceOptions['findBooks']): Promise<
         Page<BookDto['BookService/DEFAULT_FETCHER']>
     > {
@@ -78,23 +87,20 @@ export class BookService {
         return (await this.executor({uri: _uri, method: 'GET'})) as Page<BookDto['BookService/DEFAULT_FETCHER']>
     }
     
+    /**
+     * The functionality of this method is the same as
+     * {@link #findBooks(int, int, String, String, BigDecimal, BigDecimal, String, String)}
+     */
     async findBooksBySuperQBE(options: BookServiceOptions['findBooksBySuperQBE']): Promise<
         Page<BookDto['BookService/DEFAULT_FETCHER']>
     > {
         let _uri = '/book/list/bySuperQBE';
         let _separator = _uri.indexOf('?') === -1 ? '?' : '&';
         let _value: any = undefined;
-        _value = options.specification.authorName;
+        _value = options.specification.name;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'authorName='
-            _uri += encodeURIComponent(_value);
-            _separator = '&';
-        }
-        _value = options.specification.maxPrice;
-        if (_value !== undefined && _value !== null) {
-            _uri += _separator
-            _uri += 'maxPrice='
+            _uri += 'name='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
@@ -105,10 +111,10 @@ export class BookService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        _value = options.specification.name;
+        _value = options.specification.maxPrice;
         if (_value !== undefined && _value !== null) {
             _uri += _separator
-            _uri += 'name='
+            _uri += 'maxPrice='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
@@ -116,6 +122,13 @@ export class BookService {
         if (_value !== undefined && _value !== null) {
             _uri += _separator
             _uri += 'storeName='
+            _uri += encodeURIComponent(_value);
+            _separator = '&';
+        }
+        _value = options.specification.authorName;
+        if (_value !== undefined && _value !== null) {
+            _uri += _separator
+            _uri += 'authorName='
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
@@ -144,11 +157,11 @@ export class BookService {
     }
     
     async findComplexBook(options: BookServiceOptions['findComplexBook']): Promise<
-        BookDto['BookService/COMPLEX_FETCHER'] | undefined
+        BookDto['BookService/COMPLEX_FETCHER'] | null | undefined
     > {
         let _uri = '/book/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER'] | undefined
+        return (await this.executor({uri: _uri, method: 'GET'})) as BookDto['BookService/COMPLEX_FETCHER'] | null | undefined
     }
     
     async findSimpleBooks(): Promise<
@@ -159,40 +172,47 @@ export class BookService {
     }
     
     async saveBook(options: BookServiceOptions['saveBook']): Promise<
-        Dynamic<Book>
+        Dynamic_Book
     > {
         let _uri = '/book/';
-        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>
+        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_Book
     }
     
     async saveCompositeBook(options: BookServiceOptions['saveCompositeBook']): Promise<
-        Dynamic<Book>
+        Dynamic_Book
     > {
         let _uri = '/book/composite';
-        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Dynamic<Book>
+        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_Book
     }
 }
-
 export type BookServiceOptions = {
-    'deleteBook': {readonly id: number},
+    'findSimpleBooks': {}, 
     'findBooks': {
-        readonly pageIndex?: number, 
-        readonly pageSize?: number, 
-        readonly sortCode?: string, 
-        readonly name?: string, 
-        readonly minPrice?: number, 
-        readonly maxPrice?: number, 
-        readonly storeName?: string, 
-        readonly authorName?: string
-    },
+        readonly pageIndex?: number | null | undefined, 
+        readonly pageSize?: number | null | undefined, 
+        readonly sortCode?: string | null | undefined, 
+        readonly name?: string | null | undefined, 
+        readonly minPrice?: number | null | undefined, 
+        readonly maxPrice?: number | null | undefined, 
+        readonly storeName?: string | null | undefined, 
+        readonly authorName?: string | null | undefined
+    }, 
     'findBooksBySuperQBE': {
-        readonly pageIndex?: number, 
-        readonly pageSize?: number, 
-        readonly sortCode?: string, 
+        readonly pageIndex?: number | null | undefined, 
+        readonly pageSize?: number | null | undefined, 
+        readonly sortCode?: string | null | undefined, 
         readonly specification: BookSpecification
-    },
-    'findComplexBook': {readonly id: number},
-    'findSimpleBooks': {},
-    'saveBook': {readonly body: BookInput},
-    'saveCompositeBook': {readonly body: CompositeBookInput}
+    }, 
+    'findComplexBook': {
+        readonly id: number
+    }, 
+    'saveBook': {
+        input: BookInput
+    }, 
+    'saveCompositeBook': {
+        readonly input: CompositeBookInput
+    }, 
+    'deleteBook': {
+        readonly id: number
+    }
 }

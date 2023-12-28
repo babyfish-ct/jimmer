@@ -36,11 +36,6 @@ public class OpenApiGenerator {
         this.typeNameManager = new TypeNameManager(metadata);
     }
 
-    public void generate(OutputStream out) throws IOException {
-        OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-        generate(writer);
-    }
-
     public void generate(Writer writer) {
         YmlWriter ymlWriter = new YmlWriter(writer);
         ymlWriter.prop("openapi", "3.0.1");
@@ -108,6 +103,9 @@ public class OpenApiGenerator {
     }
 
     private void generatePaths(YmlWriter writer) {
+        if (metadata.getPathMap().isEmpty()) {
+            return;
+        }
         writer.object("paths", ()-> {
             for (Map.Entry<String, List<Operation>> e : metadata.getPathMap().entrySet()) {
                 writer.object(e.getKey(), () -> {

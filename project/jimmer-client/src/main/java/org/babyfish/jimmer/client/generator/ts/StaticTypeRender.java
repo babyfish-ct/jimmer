@@ -3,6 +3,7 @@ package org.babyfish.jimmer.client.generator.ts;
 import org.babyfish.jimmer.client.generator.SourceWriter;
 import org.babyfish.jimmer.client.generator.Render;
 import org.babyfish.jimmer.client.meta.Doc;
+import org.babyfish.jimmer.client.runtime.NullableType;
 import org.babyfish.jimmer.client.runtime.ObjectType;
 import org.babyfish.jimmer.client.runtime.Property;
 import org.babyfish.jimmer.client.runtime.Type;
@@ -51,6 +52,7 @@ public class StaticTypeRender implements Render {
                 writer
                         .codeIf(!ctx.isMutable(), "readonly ")
                         .code(property.getName())
+                        .codeIf(property.getType() instanceof NullableType, '?')
                         .code(": ")
                         .typeRef(property.getType())
                         .code(";\n");

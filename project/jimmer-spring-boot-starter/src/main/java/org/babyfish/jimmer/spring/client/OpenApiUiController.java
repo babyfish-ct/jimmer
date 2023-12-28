@@ -21,7 +21,7 @@ public class OpenApiUiController {
         this.properties = properties;
     }
 
-    @GetMapping("${jimmer.client.openapi.ui-path}")
+    @GetMapping("${jimmer.client.openapi.uiPath}")
     public ResponseEntity<StreamingResponseBody> download(
             @RequestParam(name = "groups", required = false) String groups
     ) {
@@ -37,15 +37,21 @@ public class OpenApiUiController {
     }
 
     private String html(String groups) throws IOException {
+        String path = properties.getClient().getOpenapi().getPath();
+        String resource = path != null && !path.isEmpty() ?
+                "META-INF/jimmer/openapi/index.html.template" :
+                "META-INF/jimmer/openapi/on-api.html.template";
         StringBuilder builder = new StringBuilder();
         char[] buf = new char[1024];
-        try (Reader reader = new InputStreamReader(OpenApiController.class.getClassLoader().getResourceAsStream("META-INF/jimmer/openapi/index.html.template"))) {
+        try (Reader reader = new InputStreamReader(OpenApiController.class.getClassLoader().getResourceAsStream(resource))) {
             int len;
             if ((len = reader.read(buf)) != -1) {
                 builder.append(buf, 0, len);
             }
         }
-        String path = properties.getClient().getOpenapi().getPath();
+        if (path == null || path.isEmpty()) {
+            return builder.toString();
+        }
         if (groups != null && !groups.isEmpty()) {
             path += "?groups=" + URLEncoder.encode(groups, "utf-8");
         }

@@ -3,6 +3,6 @@ export type Executor =
         readonly uri: string,
         readonly method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
         readonly headers?: {readonly [key:string]: string},
-        readonly body?: any
+        readonly body?: any,
     }) => Promise<any>
 ;

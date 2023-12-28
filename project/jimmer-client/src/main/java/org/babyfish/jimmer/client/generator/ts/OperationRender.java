@@ -179,10 +179,16 @@ public class OperationRender implements Render {
         }
         for (Parameter parameter : operation.getParameters()) {
             if (parameter.isRequestBody()) {
-                writer.code(", body: options.").code(parameter.getName());
+                writer.code(", body: options.body");
             }
         }
-        writer.code("})) as ").typeRef(operation.getReturnType());
+        writer.code("})) as Promise<");
+        if (operation.getReturnType() == null) {
+            writer.code("void");
+        } else {
+            writer.typeRef(operation.getReturnType());
+        }
+        writer.code(">;");
     }
 
     private static Parameter pathVariableParameter(Operation operation, String pathVariable) {

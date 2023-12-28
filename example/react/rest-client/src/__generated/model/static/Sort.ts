@@ -1,8 +1,5 @@
 export interface Sort {
-    
-    readonly empty: boolean;
-    
     readonly sorted: boolean;
-    
+    readonly empty: boolean;
     readonly unsorted: boolean;
 }

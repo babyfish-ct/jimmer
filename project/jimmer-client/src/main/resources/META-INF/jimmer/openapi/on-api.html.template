@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+    <div style="font-size:2rem;text-align:center">
+        Cannot view API because `jimmer.client.openapi.path` is unspecified
+    </div>
+</body>
+<html>

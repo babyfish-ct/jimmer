@@ -135,7 +135,7 @@ class TypeContext {
         });
     }
 
-    private void generic(Class<?> rawType, List<Type> arguments, Runnable block) {
+    void generic(Class<?> rawType, List<Type> arguments, Runnable block) {
         if (arguments.isEmpty()) {
             block.run();
             return;
