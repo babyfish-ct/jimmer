@@ -4,7 +4,6 @@ import org.babyfish.jimmer.client.EnableImplicitApi;
 import org.babyfish.jimmer.spring.AbstractTest;
 import org.babyfish.jimmer.spring.cfg.ErrorTranslatorConfig;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
-import org.babyfish.jimmer.spring.cfg.ClientPathCondition;
 import org.babyfish.jimmer.spring.cfg.SqlClientConfig;
 import org.babyfish.jimmer.spring.client.JavaFeignController;
 import org.babyfish.jimmer.spring.client.OpenApiController;
@@ -173,21 +172,21 @@ public class SpringJavaTest extends AbstractTest {
             return webAppContextSetup(ctx).build();
         }
 
-        @Conditional(ClientPathCondition.TypeScript.class)
+        @ConditionalOnProperty("jimmer.client.ts.path")
         @ConditionalOnMissingBean(TypeScriptController.class)
         @Bean
         public TypeScriptController typeScriptController(JimmerProperties properties) {
             return new TypeScriptController(properties);
         }
 
-        @Conditional(ClientPathCondition.OpenApi.class)
+        @ConditionalOnProperty("jimmer.client.openapi.path")
         @ConditionalOnMissingBean(OpenApiController.class)
         @Bean
         public OpenApiController openApiController(JimmerProperties properties) {
             return new OpenApiController(properties);
         }
 
-        @Conditional(ClientPathCondition.OpenApiUI.class)
+        @ConditionalOnProperty("jimmer.client.openapi.ui-path")
         @ConditionalOnMissingBean(OpenApiUiController.class)
         @Bean
         public OpenApiUiController openApiUiController(JimmerProperties properties) {

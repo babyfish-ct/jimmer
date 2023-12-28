@@ -21,7 +21,7 @@ public class OpenApiUiController {
         this.properties = properties;
     }
 
-    @GetMapping("${jimmer.client.openapi.uiPath}")
+    @GetMapping("${jimmer.client.openapi.ui-path}")
     public ResponseEntity<StreamingResponseBody> download(
             @RequestParam(name = "groups", required = false) String groups
     ) {
