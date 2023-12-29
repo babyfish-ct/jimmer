@@ -72,6 +72,12 @@ public class OpenApiGeneratorTest {
                         "      tags:\n" +
                         "        - BookService\n" +
                         "      operationId: saveBook\n" +
+                        "      requestBody:\n" +
+                        "        content:\n" +
+                        "          application/json:\n" +
+                        "            schema:\n" +
+                        "              $ref: '#/components/schemas/BookInput'\n" +
+                        "        required: true\n" +
                         "      responses:\n" +
                         "        200:\n" +
                         "          description: OK\n" +
@@ -106,6 +112,12 @@ public class OpenApiGeneratorTest {
                         "      tags:\n" +
                         "        - BookService\n" +
                         "      operationId: updateBook\n" +
+                        "      requestBody:\n" +
+                        "        content:\n" +
+                        "          application/json:\n" +
+                        "            schema:\n" +
+                        "              $ref: '#/components/schemas/BookInput'\n" +
+                        "        required: true\n" +
                         "      responses:\n" +
                         "        200:\n" +
                         "          description: OK\n" +
