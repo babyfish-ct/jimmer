@@ -47,7 +47,7 @@ jimmer:
         info:
           title: Jimmer REST Example(Java)
           description: This is the OpenAPI UI of Jimmer REST Example(Java)
-          version: 0.8.62
+          version: 0.8.64
         securities:
           - tenantHeader: [ ]
         components:

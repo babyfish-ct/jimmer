@@ -10,7 +10,7 @@
         If some rest controller are supported, please choose one solution:
         <ul>
             <li>Use "@EnableImplicitApi" to decorate any class.</li>
-            <li>Use "@Api" to decorates all controllers and all operations.</li>
+            <li>Use "@Api" to decorate all controllers and all operations.</li>
         </ul>
     </div>
 </body>
