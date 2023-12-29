@@ -180,23 +180,23 @@ public class OpenApiGenerator {
                     }
                 }
             });
-            if (requestBodyParameter != null) {
-                writer.object("requestBody", () -> {
-                    writer.object("content", () -> {
-                        writer.object("application/json", () -> {
-                            writer.object("schema", () -> {
-                                generateType(requestBodyParameter.getType(), writer);
-                            });
+        }
+        if (requestBodyParameter != null) {
+            writer.object("requestBody", () -> {
+                writer.object("content", () -> {
+                    writer.object("application/json", () -> {
+                        writer.object("schema", () -> {
+                            generateType(requestBodyParameter.getType(), writer);
                         });
                     });
-                    if (!(requestBodyParameter.getType() instanceof NullableType)) {
-                        writer.prop("required", "true");
-                    }
-                    writer.description(
-                            Description.of(Doc.paramOf(operation.getDoc(), requestBodyParameter.getName()))
-                    );
                 });
-            }
+                if (!(requestBodyParameter.getType() instanceof NullableType)) {
+                    writer.prop("required", "true");
+                }
+                writer.description(
+                        Description.of(Doc.paramOf(operation.getDoc(), requestBodyParameter.getName()))
+                );
+            });
         }
         generateResponses(operation, writer);
     }
