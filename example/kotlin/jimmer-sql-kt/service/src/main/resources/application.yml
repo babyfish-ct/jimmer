@@ -40,6 +40,22 @@ jimmer:
   client:
     ts:
       path: /ts.zip
+    openapi:
+      path: /openapi.yml
+      ui-path: /openapi.html
+      properties:
+        info:
+          title: Jimmer REST Example(Java)
+          description: This is the OpenAPI UI of Jimmer REST Example(Java)
+          version: 0.8.62
+        securities:
+          - tenantHeader: [ ]
+        components:
+          securitySchemes:
+            tenantHeader:
+              type: apiKey
+              name: tenant
+              in: HEADER
 
 springdoc:
   swagger-ui:

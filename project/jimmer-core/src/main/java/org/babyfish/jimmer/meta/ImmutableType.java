@@ -3,6 +3,7 @@ package org.babyfish.jimmer.meta;
 import kotlin.reflect.KClass;
 import org.babyfish.jimmer.Draft;
 import org.babyfish.jimmer.JimmerVersion;
+import org.babyfish.jimmer.client.ApiIgnore;
 import org.babyfish.jimmer.meta.impl.Metadata;
 import org.babyfish.jimmer.runtime.DraftContext;
 import org.babyfish.jimmer.sql.meta.IdGenerator;

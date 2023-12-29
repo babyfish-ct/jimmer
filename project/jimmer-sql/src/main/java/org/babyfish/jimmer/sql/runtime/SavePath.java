@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.sql.runtime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TargetLevel;
@@ -41,12 +42,22 @@ public final class SavePath {
         return new SavePath(prop, this);
     }
 
+    @JsonIgnore
     public ImmutableType getType() {
         return type;
     }
 
+    @JsonIgnore
     public ImmutableProp getProp() {
         return prop;
+    }
+
+    public String getTypeName() {
+        return type.toString();
+    }
+
+    public String getPropName() {
+        return prop.getName();
     }
 
     public SavePath getParent() {

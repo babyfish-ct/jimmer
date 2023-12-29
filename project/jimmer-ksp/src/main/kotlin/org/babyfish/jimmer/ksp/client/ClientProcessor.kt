@@ -444,7 +444,9 @@ class ClientProcessor(
             for (funcDeclaration in declaration.getDeclaredFunctions()) {
                 if (!funcDeclaration.isConstructor() &&
                     funcDeclaration.isPublic() &&
-                    funcDeclaration.parameters.isEmpty()) {
+                    funcDeclaration.parameters.isEmpty() &&
+                    funcDeclaration.annotation(JsonIgnore::class) == null &&
+                    funcDeclaration.annotation(ApiIgnore::class) == null) {
                     val returnTypReference = funcDeclaration.returnType ?: continue
                     val returnTypeName = returnTypReference.realDeclaration.qualifiedName?.asString() ?: continue
                     if (returnTypeName == "kotlin.Unit") {

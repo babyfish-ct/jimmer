@@ -4,10 +4,7 @@ import org.babyfish.jimmer.client.meta.Doc;
 import org.babyfish.jimmer.client.meta.Prop;
 import org.babyfish.jimmer.client.meta.TypeDefinition;
 import org.babyfish.jimmer.client.meta.TypeName;
-import org.babyfish.jimmer.client.runtime.FetchByInfo;
-import org.babyfish.jimmer.client.runtime.ObjectType;
-import org.babyfish.jimmer.client.runtime.Property;
-import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,18 +26,28 @@ public class DynamicTypeImpl implements ObjectType {
     }
 
     void init(TypeName typeName, TypeContext ctx) {
-        TypeDefinition definition = ctx.definition(typeName);
-        this.doc = definition.getDoc();
-        Map<String, Property> properties = new LinkedHashMap<>((definition.getPropMap().size() * 4 + 2) / 3);
-        for (Prop prop : definition.getPropMap().values()) {
-            Property property = new PropertyImpl(
-                    prop.getName(),
-                    ctx.parseType(prop.getType()),
-                    prop.getDoc()
-            );
-            properties.put(property.getName(), property);
+        try {
+            TypeDefinition definition = ctx.definition(typeName);
+            this.doc = definition.getDoc();
+            Map<String, Property> properties = new LinkedHashMap<>((definition.getPropMap().size() * 4 + 2) / 3);
+            for (Prop prop : definition.getPropMap().values()) {
+                try {
+                    Property property = new PropertyImpl(
+                            prop.getName(),
+                            ctx.parseType(prop.getType()),
+                            prop.getDoc()
+                    );
+                    properties.put(property.getName(), property);
+                } catch (Throwable ex) {
+                    throw new TypeResolvingException(typeName, '@' + prop.getName(), ex);
+                }
+            }
+            this.properties = Collections.unmodifiableMap(properties);
+        } catch (TypeResolvingException ex) {
+            throw  ex;
+        } catch (Throwable ex) {
+            throw new TypeResolvingException(typeName, ex);
         }
-        this.properties = Collections.unmodifiableMap(properties);
     }
 
     @Override

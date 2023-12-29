@@ -54,60 +54,74 @@ public class FetchedTypeImpl extends Graph implements ObjectType {
 
     private void initProperties(Fetcher<?> fetcher, Prop parentRecursiveProp, TypeContext ctx) {
         TypeDefinition definition = ctx.definition(this.immutableType.getJavaClass());
-        this.doc = definition.getDoc();
-        ImmutableProp idProp = immutableType.getIdProp();
-        Prop idMetaProp = getProp(definition, idProp.getName(), ctx);
-        Map<String, Property> properties = new LinkedHashMap<>();
-        properties.put(
-                idProp.getName(),
-                new PropertyImpl(
+        try {
+            this.doc = definition.getDoc();
+            ImmutableProp idProp = immutableType.getIdProp();
+            Prop idMetaProp = getProp(definition, idProp.getName(), ctx);
+            Map<String, Property> properties = new LinkedHashMap<>();
+            try {
+                properties.put(
                         idProp.getName(),
-                        ctx.parseType(getProp(definition, idMetaProp.getName(), ctx).getType()),
-                        idMetaProp.getDoc()
-                )
-        );
-        for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
-            if (field.isImplicit()) {
-                continue;
+                        new PropertyImpl(
+                                idProp.getName(),
+                                ctx.parseType(getProp(definition, idMetaProp.getName(), ctx).getType()),
+                                idMetaProp.getDoc()
+                        )
+                );
+            } catch (Throwable ex) {
+                throw new TypeResolvingException(definition.getTypeName(), '@' + idProp.getName(), ex);
             }
-            ImmutableProp prop = field.getProp();
-            Prop metaProp = getProp(definition, field.getProp().getName(), ctx);
-            Type type;
-            if (prop.isAssociation(TargetLevel.ENTITY)) {
-                FetchedTypeImpl targetType = new FetchedTypeImpl(prop.getTargetType());
-                Fetcher<?> childFetcher = field.getChildFetcher();
-                assert childFetcher != null;
-                targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
-                if (prop.isReferenceList(TargetLevel.ENTITY)) {
-                    type = new ListTypeImpl(targetType);
-                } else {
-                    type = targetType;
-                    if (metaProp.getType().isNullable()) {
-                        type = NullableTypeImpl.of(type);
+            for (org.babyfish.jimmer.sql.fetcher.Field field : fetcher.getFieldMap().values()) {
+                try {
+                    if (field.isImplicit()) {
+                        continue;
                     }
+                    ImmutableProp prop = field.getProp();
+                    Prop metaProp = getProp(definition, field.getProp().getName(), ctx);
+                    Type type;
+                    if (prop.isAssociation(TargetLevel.ENTITY)) {
+                        FetchedTypeImpl targetType = new FetchedTypeImpl(prop.getTargetType());
+                        Fetcher<?> childFetcher = field.getChildFetcher();
+                        assert childFetcher != null;
+                        targetType.initProperties(childFetcher, field.getRecursionStrategy() != null ? metaProp : null, ctx);
+                        if (prop.isReferenceList(TargetLevel.ENTITY)) {
+                            type = new ListTypeImpl(targetType);
+                        } else {
+                            type = targetType;
+                            if (metaProp.getType().isNullable()) {
+                                type = NullableTypeImpl.of(type);
+                            }
+                        }
+                    } else {
+                        type = ctx.parseType(metaProp.getType());
+                    }
+                    properties.put(
+                            prop.getName(),
+                            new PropertyImpl(prop.getName(), type, metaProp.getDoc())
+                    );
+                } catch (Throwable ex) {
+                    throw new TypeResolvingException(definition.getTypeName(), '@' + field.getProp().getName(), ex);
                 }
-            } else {
-                type = ctx.parseType(metaProp.getType());
             }
-            properties.put(
-                    prop.getName(),
-                    new PropertyImpl(prop.getName(), type, metaProp.getDoc())
-            );
+            if (parentRecursiveProp != null) {
+                properties.put(
+                        parentRecursiveProp.getName(),
+                        new PropertyImpl(
+                                parentRecursiveProp.getName(),
+                                parentRecursiveProp.getType().getTypeName().toString().equals("java.util.List") ?
+                                        new ListTypeImpl(this) :
+                                        this,
+                                parentRecursiveProp.getDoc()
+                        )
+                );
+            }
+            this.isRecursiveFetchedType = parentRecursiveProp != null;
+            this.properties = Collections.unmodifiableMap(properties);
+        } catch (TypeResolvingException ex) {
+            throw  ex;
+        } catch (Throwable ex) {
+            throw new TypeResolvingException(definition.getTypeName(), ex);
         }
-        if (parentRecursiveProp != null) {
-            properties.put(
-                    parentRecursiveProp.getName(),
-                    new PropertyImpl(
-                            parentRecursiveProp.getName(),
-                            parentRecursiveProp.getType().getTypeName().toString().equals("java.util.List") ?
-                                new ListTypeImpl(this) :
-                                this,
-                            parentRecursiveProp.getDoc()
-                    )
-            );
-        }
-        this.isRecursiveFetchedType = parentRecursiveProp != null;
-        this.properties = Collections.unmodifiableMap(properties);
     }
 
     private Prop getProp(TypeDefinition definition, String name, TypeContext ctx) {

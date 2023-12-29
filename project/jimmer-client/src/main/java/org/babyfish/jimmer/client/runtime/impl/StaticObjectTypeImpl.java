@@ -1,10 +1,7 @@
 package org.babyfish.jimmer.client.runtime.impl;
 
 import org.babyfish.jimmer.client.meta.*;
-import org.babyfish.jimmer.client.runtime.FetchByInfo;
-import org.babyfish.jimmer.client.runtime.ObjectType;
-import org.babyfish.jimmer.client.runtime.Property;
-import org.babyfish.jimmer.client.runtime.Type;
+import org.babyfish.jimmer.client.runtime.*;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,62 +34,76 @@ public class StaticObjectTypeImpl extends Graph implements ObjectType {
     }
 
     void init(TypeName typeName, List<Type> arguments, TypeContext ctx) {
-        TypeDefinition definition = ctx.definition(typeName);
-        if (arguments.isEmpty() && javaType.getTypeParameters().length != 0) {
-            arguments = Arrays.stream(javaType.getTypeParameters())
-                    .map(it -> new TypeVariableImpl(typeName.typeVariable(it.getName())))
-                    .collect(Collectors.toList());
+        try {
+            TypeDefinition definition = ctx.definition(typeName);
+            if (arguments.isEmpty() && javaType.getTypeParameters().length != 0) {
+                arguments = Arrays.stream(javaType.getTypeParameters())
+                        .map(it -> new TypeVariableImpl(typeName.typeVariable(it.getName())))
+                        .collect(Collectors.toList());
+            }
+            this.arguments = arguments;
+            Map<String, Property> properties = new LinkedHashMap<>();
+            collectProperties(definition, ctx, properties);
+            this.doc = definition.getDoc();
+            this.error = definition.getError();
+            this.properties = Collections.unmodifiableMap(properties);
+        } catch (TypeResolvingException ex) {
+            throw ex;
+        } catch (Throwable ex) {
+            throw new TypeResolvingException(typeName, ex);
         }
-        this.arguments = arguments;
-        Map<String, Property> properties = new LinkedHashMap<>();
-        collectProperties(definition, ctx, properties);
-        this.doc = definition.getDoc();
-        this.error = definition.getError();
-        this.properties = Collections.unmodifiableMap(properties);
     }
 
     private void collectProperties(TypeDefinition definition, TypeContext ctx, Map<String, Property> properties) {
         for (Prop prop : definition.getPropMap().values()) {
             if (!properties.containsKey(prop.getName())) {
-                properties.put(
-                        prop.getName(),
-                        new PropertyImpl(
-                                prop.getName(),
-                                ctx.parseType(prop.getType()),
-                                prop.getDoc()
-                        )
-                );
+                try {
+                    properties.put(
+                            prop.getName(),
+                            new PropertyImpl(
+                                    prop.getName(),
+                                    ctx.parseType(prop.getType()),
+                                    prop.getDoc()
+                            )
+                    );
+                } catch (TypeResolvingException ex) {
+                    throw new TypeResolvingException(definition.getTypeName(), '@' + prop.getName(), ex);
+                }
             }
         }
         for (TypeRef superTypeRef : definition.getSuperTypes()) {
-            TypeDefinition superDefinition = ctx.definition(superTypeRef.getTypeName());
-            if (superDefinition == null || superDefinition.getPropMap().isEmpty()) {
-                continue;
-            }
-            List<Type> arguments;
-            if (superTypeRef.getArguments().isEmpty()) {
-                arguments = Collections.emptyList();
-            } else {
-                arguments = new ArrayList<>(superTypeRef.getArguments().size());
-                for (TypeRef arg : superTypeRef.getArguments()) {
-                    arguments.add(ctx.parseType(arg));
+            try {
+                TypeDefinition superDefinition = ctx.definition(superTypeRef.getTypeName());
+                if (superDefinition == null || superDefinition.getPropMap().isEmpty()) {
+                    continue;
                 }
-            }
-            ctx.generic(ctx.javaType(superDefinition.getTypeName()), arguments, () -> {
-                for (Prop superProp : superDefinition.getPropMap().values()) {
-                    if (properties.containsKey(superProp.getName())) {
-                        continue;
+                List<Type> arguments;
+                if (superTypeRef.getArguments().isEmpty()) {
+                    arguments = Collections.emptyList();
+                } else {
+                    arguments = new ArrayList<>(superTypeRef.getArguments().size());
+                    for (TypeRef arg : superTypeRef.getArguments()) {
+                        arguments.add(ctx.parseType(arg));
                     }
-                    properties.put(
-                            superProp.getName(),
-                            new PropertyImpl(
-                                    superProp.getName(),
-                                    ctx.parseType(superProp.getType()),
-                                    superProp.getDoc()
-                            )
-                    );
                 }
-            });
+                ctx.generic(ctx.javaType(superDefinition.getTypeName()), arguments, () -> {
+                    for (Prop superProp : superDefinition.getPropMap().values()) {
+                        if (properties.containsKey(superProp.getName())) {
+                            continue;
+                        }
+                        properties.put(
+                                superProp.getName(),
+                                new PropertyImpl(
+                                        superProp.getName(),
+                                        ctx.parseType(superProp.getType()),
+                                        superProp.getDoc()
+                                )
+                        );
+                    }
+                });
+            } catch (TypeResolvingException ex) {
+                throw new TypeResolvingException(definition.getTypeName(), ":super", ex);
+            }
         }
     }
 
