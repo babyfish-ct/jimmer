@@ -114,7 +114,7 @@ public class MetadataBuilder implements Metadata.Builder {
     }
 
     @SuppressWarnings("unchecked")
-    private Schema loadSchema(Set<String> groups) {
+    public static Schema loadSchema(Set<String> groups) {
         Map<TypeName, ApiServiceImpl<Void>> serviceMap = new LinkedHashMap<>();
         Map<TypeName, TypeDefinitionImpl<Void>> definitionMap = new LinkedHashMap<>();
         try {

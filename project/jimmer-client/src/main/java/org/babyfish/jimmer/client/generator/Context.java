@@ -125,13 +125,18 @@ public abstract class Context {
     }
 
     private void renderAll(ZipOutputStream zipOutputStream) throws IOException {
+
         init();
-        if (metadata.getServices().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "There no exported API to render client code, please " +
-                            "1. Used \"@" + EnableImplicitApi.class.getName() + "\" to decorate any class; " +
-                            "2. Used \"@" + Api.class.getName() + "\" to decorates all controllers and all operations. "
-            );
+
+        boolean hasOperation = false;
+        for (Service service : metadata.getServices()) {
+            if (!service.getOperations().isEmpty()) {
+                hasOperation = true;
+                break;
+            }
+        }
+        if (!hasOperation) {
+            throw new NoMetadataException();
         }
 
         Writer writer = new OutputStreamWriter(zipOutputStream, StandardCharsets.UTF_8);
