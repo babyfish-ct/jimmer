@@ -171,11 +171,15 @@ public class Metadatas {
         @Override
         public String defaultValue(Parameter javaParameter) {
             RequestHeader requestHeader = javaParameter.getAnnotation(RequestHeader.class);
-            if (requestHeader != null && !requestHeader.defaultValue().isEmpty()) {
+            if (requestHeader != null &&
+                    !requestHeader.defaultValue().isEmpty() &&
+                    !requestHeader.defaultValue().equals(ValueConstants.DEFAULT_NONE)) {
                 return requestHeader.defaultValue();
             }
             RequestParam requestParam = javaParameter.getAnnotation(RequestParam.class);
-            if (requestParam != null && !requestParam.defaultValue().isEmpty()) {
+            if (requestParam != null &&
+                    !requestParam.defaultValue().isEmpty() &&
+                    !requestParam.defaultValue().equals(ValueConstants.DEFAULT_NONE)) {
                 return requestParam.defaultValue();
             }
             return null;
