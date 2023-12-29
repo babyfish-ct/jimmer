@@ -15,7 +15,7 @@ export type BookDto = {
             readonly createdTime: string;
             readonly modifiedTime: string;
             readonly name: string;
-            readonly website?: string | null | undefined;
+            readonly website?: string | undefined;
             readonly avgPrice: number;
         } | null | undefined;
         readonly authors: ReadonlyArray<{

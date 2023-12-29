@@ -1,0 +1,11 @@
+export org.babyfish.jimmer.client.java.model.TreeNode
+    -> package org.babyfish.jimmer.client.java.model.dto
+
+/**
+ * The tree node input defined by DTO language
+ */
+SimpleTreeNodeView {
+    #allScalars(this)
+    id(parent)
+    id(childNodes) as childNodeIds
+}

@@ -11,5 +11,4 @@ export interface Page<T> {
     readonly first: boolean;
     readonly last: boolean;
     readonly pageable: Pageable;
-    readonly empty: boolean;
 }

@@ -87,6 +87,7 @@ public class IndexTest {
                         "export type {ExportedSavePath_Node} from './ExportedSavePath_Node';\n" +
                         "export type {FindBookArguments} from './FindBookArguments';\n" +
                         "export type {Page} from './Page';\n" +
+                        "export type {SimpleTreeNodeView} from './SimpleTreeNodeView';\n" +
                         "export type {Tree} from './Tree';\n" +
                         "export type {Tuple2} from './Tuple2';\n",
                 writer.toString()

@@ -849,7 +849,7 @@ public class SpringJavaTest extends AbstractTest {
                                 "info:\n" +
                                 "  title: BookSystem\n" +
                                 "  description: Use this system to access book system\n" +
-                                "  version: <`jimmer.client.openapi.properties.info.version` is unspecified>"
+                                "  version: '<`jimmer.client.openapi.properties.info.version` is unspecified>'\n"
                 )
         );
     }

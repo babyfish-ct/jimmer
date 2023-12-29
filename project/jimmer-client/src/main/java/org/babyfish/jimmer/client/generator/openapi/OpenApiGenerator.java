@@ -71,7 +71,7 @@ public class OpenApiGenerator {
                     writer.listItem(() -> {
                         for (Map.Entry<String, List<String>> e : map.entrySet()) {
                             if (e.getValue().isEmpty()) {
-                                writer.prop(e.getKey(), "[]");
+                                writer.code(e.getKey()).code(": []\n");
                             } else {
                                 writer.list(e.getKey(), () -> {
                                     for (String value : e.getValue()) {
@@ -203,7 +203,7 @@ public class OpenApiGenerator {
 
     private void generateType(Type type, YmlWriter writer) {
         if (type instanceof ObjectType) {
-            writer.prop("$ref", "'#/components/schemas/" + typeNameManager.get((ObjectType) type) + '\'');
+            writer.prop("$ref", "#/components/schemas/" + typeNameManager.get((ObjectType) type));
         } else if (type instanceof ListType) {
             writer
                     .prop("type", "array")
@@ -319,11 +319,11 @@ public class OpenApiGenerator {
                 if (type.getError() != null) {
                     writer.object("family", () -> {
                        writer.prop("type", "string");
-                       writer.prop("enum", '[' + type.getError().getFamily() + ']');
+                       writer.code("enum: [").code(type.getError().getFamily()).code("]\n");
                     });
                     writer.object("code", () -> {
                         writer.prop("type", "string");
-                        writer.prop("enum", '[' + type.getError().getCode() + ']');
+                        writer.code("enum: [").code(type.getError().getCode()).code("]\n");
                     });
                 }
                 for (Property property : type.getProperties().values()) {

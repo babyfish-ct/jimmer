@@ -61,6 +61,18 @@ public abstract class SchemaBuilder<S> {
         return (X) stack.peek();
     }
 
+    @SuppressWarnings("unchecked")
+    public <X extends AstNode<?>> X parent(Class<X> parentType) {
+        if (stack.size() < 2) {
+            return null;
+        }
+        AstNode<S> parent = stack.get(1);
+        if (parentType.isAssignableFrom(parent.getClass())) {
+            return (X) parent;
+        }
+        return null;
+    }
+
     public void api(S source, TypeName typeName, Consumer<ApiServiceImpl<S>> block) {
         run(new ApiServiceImpl<>(source, typeName), block);
     }

@@ -10,7 +10,7 @@ export class AuthorService {
     async deleteAuthor(options: AuthorServiceOptions['deleteAuthor']): Promise<void> {
         let _uri = '/author/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'}))
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<void>;
     }
     
     async findAuthors(options: AuthorServiceOptions['findAuthors']): Promise<
@@ -54,22 +54,22 @@ export class AuthorService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<AuthorDto['AuthorService/DEFAULT_FETCHER']>>;
     }
     
     async findComplexAuthor(options: AuthorServiceOptions['findComplexAuthor']): Promise<
-        AuthorDto['AuthorService/COMPLEX_FETCHER'] | null | undefined
+        AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined
     > {
         let _uri = '/author/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'GET'})) as AuthorDto['AuthorService/COMPLEX_FETCHER'] | null | undefined
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<AuthorDto['AuthorService/COMPLEX_FETCHER'] | undefined>;
     }
     
     async findSimpleAuthors(): Promise<
         ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
     > {
         let _uri = '/author/simpleList';
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<AuthorDto['AuthorService/SIMPLE_FETCHER']>>;
     }
     
     async saveAuthor(options: AuthorServiceOptions['saveAuthor']): Promise<
@@ -99,14 +99,14 @@ export class AuthorService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        return (await this.executor({uri: _uri, method: 'PUT'})) as Dynamic_Author
+        return (await this.executor({uri: _uri, method: 'PUT'})) as Promise<Dynamic_Author>;
     }
 }
 export type AuthorServiceOptions = {
     'findSimpleAuthors': {}, 
     'findAuthors': {
         readonly specification: AuthorSpecification, 
-        readonly sortCode?: string | null | undefined
+        readonly sortCode?: string | undefined
     }, 
     'findComplexAuthor': {
         readonly id: number

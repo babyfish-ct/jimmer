@@ -65,7 +65,7 @@ public class OpenApiGeneratorTest {
                         "security:\n" +
                         "  - tenantHeader: []\n" +
                         "servers:\n" +
-                        "  - url: http://localhost:8080\n" +
+                        "  - url: 'http://localhost:8080'\n" +
                         "paths:\n" +
                         "  /book:\n" +
                         "    post:\n" +
@@ -177,7 +177,7 @@ public class OpenApiGeneratorTest {
                         "  /books/complex:\n" +
                         "    get:\n" +
                         "      summary: Find Complex DTOs\n" +
-                        "      description: <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>\n" +
+                        "      description: '<p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>'\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
                         "      operationId: findComplexBooks\n" +
@@ -220,7 +220,7 @@ public class OpenApiGeneratorTest {
                         "  /books/complex2:\n" +
                         "    get:\n" +
                         "      summary: Find Complex DTOs\n" +
-                        "      description: <p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>\n" +
+                        "      description: '<p>The complex DTO only supports the scalar properties of book, and associations `store` and `authors`</p>'\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
                         "      operationId: findComplexBooksByArguments\n" +
@@ -260,7 +260,7 @@ public class OpenApiGeneratorTest {
                         "  /books/simple:\n" +
                         "    get:\n" +
                         "      summary: Find Simple DTOs\n" +
-                        "      description: <p>The simple DTO only supports `id`, `name` and `storeId`</p>\n" +
+                        "      description: '<p>The simple DTO only supports `id`, `name` and `storeId`</p>'\n" +
                         "      tags:\n" +
                         "        - BookService\n" +
                         "      operationId: findSimpleBooks\n" +
@@ -360,7 +360,7 @@ public class OpenApiGeneratorTest {
                         "            <p>Together with `edition`, this property forms the key of the book</p>\n" +
                         "          type: string\n" +
                         "        store:\n" +
-                        "          description: The many-to-one association from `Book` to `BookStore`\n" +
+                        "          description: 'The many-to-one association from `Book` to `BookStore`'\n" +
                         "          nullable: true\n" +
                         "          $ref: '#/components/schemas/Author_BookService_AUTHOR_FETCHER_books_store'\n" +
                         "    Author_BookService_AUTHOR_FETCHER_books_store:\n" +
@@ -390,11 +390,11 @@ public class OpenApiGeneratorTest {
                         "          description: The price of this book\n" +
                         "          type: number\n" +
                         "        storeId:\n" +
-                        "          description: The many-to-one association from `Book` to `BookStore`\n" +
+                        "          description: 'The many-to-one association from `Book` to `BookStore`'\n" +
                         "          nullable: true\n" +
                         "          type: string\n" +
                         "        authorIds:\n" +
-                        "          description: The many-to-many association from `Book` to `Author`\n" +
+                        "          description: 'The many-to-many association from `Book` to `Author`'\n" +
                         "          type: array\n" +
                         "          items:\n" +
                         "            type: string\n" +
@@ -422,11 +422,11 @@ public class OpenApiGeneratorTest {
                         "          description: The price of this book\n" +
                         "          type: number\n" +
                         "        store:\n" +
-                        "          description: The many-to-one association from `Book` to `BookStore`\n" +
+                        "          description: 'The many-to-one association from `Book` to `BookStore`'\n" +
                         "          nullable: true\n" +
                         "          $ref: '#/components/schemas/Book_BookService_COMPLEX_FETCHER_store'\n" +
                         "        authors:\n" +
-                        "          description: The many-to-many association from `Book` to `Author`\n" +
+                        "          description: 'The many-to-many association from `Book` to `Author`'\n" +
                         "          type: array\n" +
                         "          items:\n" +
                         "            $ref: '#/components/schemas/Book_BookService_COMPLEX_FETCHER_authors'\n" +
@@ -465,7 +465,7 @@ public class OpenApiGeneratorTest {
                         "            <p>Together with `edition`, this property forms the key of the book</p>\n" +
                         "          type: string\n" +
                         "        storeId:\n" +
-                        "          description: The id view of `Book.store`\n" +
+                        "          description: 'The id view of `Book.store`'\n" +
                         "          type: string\n" +
                         "    Dynamic_Author:\n" +
                         "      type: object\n" +
@@ -509,19 +509,19 @@ public class OpenApiGeneratorTest {
                         "          description: The price of this book\n" +
                         "          type: number\n" +
                         "        store:\n" +
-                        "          description: The many-to-one association from `Book` to `BookStore`\n" +
+                        "          description: 'The many-to-one association from `Book` to `BookStore`'\n" +
                         "          nullable: true\n" +
                         "          $ref: '#/components/schemas/Dynamic_BookStore'\n" +
                         "        authors:\n" +
-                        "          description: The many-to-many association from `Book` to `Author`\n" +
+                        "          description: 'The many-to-many association from `Book` to `Author`'\n" +
                         "          type: array\n" +
                         "          items:\n" +
                         "            $ref: '#/components/schemas/Dynamic_Author'\n" +
                         "        storeId:\n" +
-                        "          description: The id view of `Book.store`\n" +
+                        "          description: 'The id view of `Book.store`'\n" +
                         "          type: string\n" +
                         "        authorIds:\n" +
-                        "          description: The id view of `Book.authors`\n" +
+                        "          description: 'The id view of `Book.authors`'\n" +
                         "          type: array\n" +
                         "          items:\n" +
                         "            type: string\n" +
@@ -805,13 +805,13 @@ public class OpenApiGeneratorTest {
         Assertions.assertEquals(
                 "openapi: 3.0.1\n" +
                         "info:\n" +
-                        "  title: <No title>\n" +
-                        "  description: <No Description>\n" +
+                        "  title: '<No title>'\n" +
+                        "  description: '<No Description>'\n" +
                         "  version: 1.0.0\n" +
                         "paths:\n" +
                         "  /numberTree:\n" +
                         "    get:\n" +
-                        "      summary: Create a static object tree, the value of each node must be integer.\n" +
+                        "      summary: 'Create a static object tree, the value of each node must be integer.'\n" +
                         "      tags:\n" +
                         "        - TreeService\n" +
                         "      operationId: getNumberTree\n" +
@@ -837,7 +837,7 @@ public class OpenApiGeneratorTest {
                         "                $ref: '#/components/schemas/Tree_int'\n" +
                         "  /numberTree2:\n" +
                         "    get:\n" +
-                        "      summary: Create a static object tree, the value of each node must be integer.\n" +
+                        "      summary: 'Create a static object tree, the value of each node must be integer.'\n" +
                         "      tags:\n" +
                         "        - TreeService\n" +
                         "      operationId: getNumberTree_2\n" +
@@ -890,9 +890,23 @@ public class OpenApiGeneratorTest {
                         "            application/json:\n" +
                         "              schema:\n" +
                         "                $ref: '#/components/schemas/TreeNode_TreeService_RECURSIVE_FETCHER'\n" +
+                        "  /rootNode/simple:\n" +
+                        "    get:\n" +
+                        "      tags:\n" +
+                        "        - TreeService\n" +
+                        "      operationId: getSimpleRootNodes\n" +
+                        "      responses:\n" +
+                        "        200:\n" +
+                        "          description: OK\n" +
+                        "          content:\n" +
+                        "            application/json:\n" +
+                        "              schema:\n" +
+                        "                type: array\n" +
+                        "                items:\n" +
+                        "                  $ref: '#/components/schemas/SimpleTreeNodeView'\n" +
                         "  /stringTree:\n" +
                         "    get:\n" +
-                        "      summary: Create a static object tree, the value of each node must be string.\n" +
+                        "      summary: 'Create a static object tree, the value of each node must be string.'\n" +
                         "      tags:\n" +
                         "        - TreeService\n" +
                         "      operationId: getStringTree\n" +
@@ -918,6 +932,36 @@ public class OpenApiGeneratorTest {
                         "                $ref: '#/components/schemas/Tree_String'\n" +
                         "components:\n" +
                         "  schemas:\n" +
+                        "    SimpleTreeNodeView:\n" +
+                        "      type: object\n" +
+                        "      description: The tree node input defined by DTO language\n" +
+                        "      properties:\n" +
+                        "        id:\n" +
+                        "          description: |+\n" +
+                        "            The id of tree node.\n" +
+                        "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
+                        "        name:\n" +
+                        "          description: |+\n" +
+                        "            The name of current tree node\n" +
+                        "            <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "          type: string\n" +
+                        "        parentId:\n" +
+                        "          description: |+\n" +
+                        "            The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "            <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "          nullable: true\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
+                        "        childNodeIds:\n" +
+                        "          description: |+\n" +
+                        "            The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "            it is opposite mirror of `TreeNode.parent`\n" +
+                        "          type: array\n" +
+                        "          items:\n" +
+                        "            type: integer\n" +
+                        "            format: int64\n" +
                         "    TreeNode_TreeService_RECURSIVE_FETCHER:\n" +
                         "      type: object\n" +
                         "      description: The tree node entity\n" +
@@ -926,7 +970,8 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: string\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +
@@ -947,7 +992,8 @@ public class OpenApiGeneratorTest {
                         "          description: |+\n" +
                         "            The id of tree node.\n" +
                         "            <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
-                        "          type: string\n" +
+                        "          type: integer\n" +
+                        "          format: int64\n" +
                         "        name:\n" +
                         "          description: |+\n" +
                         "            The name of current tree node\n" +
@@ -978,7 +1024,6 @@ public class OpenApiGeneratorTest {
                         "      properties:\n" +
                         "        data:\n" +
                         "          description: The data of tree node\n" +
-                        "          nullable: true\n" +
                         "          type: integer\n" +
                         "          format: int32\n" +
                         "        children:\n" +

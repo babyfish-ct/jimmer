@@ -1,9 +1,9 @@
 import type {Gender} from '../enums/';
 
 export interface AuthorSpecification {
-    readonly firstName: string | null | undefined;
-    readonly lastName: string | null | undefined;
-    readonly gender: Gender | null | undefined;
-    readonly minCreatedTime: string | null | undefined;
-    readonly maxCreatedTime: string | null | undefined;
+    readonly firstName?: string | undefined;
+    readonly lastName?: string | undefined;
+    readonly gender?: Gender | undefined;
+    readonly minCreatedTime?: string | undefined;
+    readonly maxCreatedTime?: string | undefined;
 }

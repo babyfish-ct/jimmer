@@ -6,9 +6,12 @@ import org.babyfish.jimmer.client.java.model.Fetchers;
 import org.babyfish.jimmer.client.java.model.Tree;
 import org.babyfish.jimmer.client.java.model.TreeNode;
 import org.babyfish.jimmer.client.java.model.TreeNodeFetcher;
+import org.babyfish.jimmer.client.java.model.dto.SimpleTreeNodeView;
 import org.babyfish.jimmer.client.meta.Api;
 import org.babyfish.jimmer.client.common.RequestParam;
 import org.babyfish.jimmer.sql.fetcher.RecursiveListFieldConfig;
+
+import java.util.List;
 
 /**
  * This is the service to test,
@@ -73,6 +76,10 @@ public interface TreeService {
     @FetchBy("RECURSIVE_FETCHER") TreeNode getRootNode(
             @RequestParam(defaultVale = "X") String name
     );
+
+    @Api
+    @GetMapping("/rootNode/simple")
+    List<SimpleTreeNodeView> getSimpleRootNodes();
 
     /**
      * Recursive tree node, for business scenarios: A, B and C

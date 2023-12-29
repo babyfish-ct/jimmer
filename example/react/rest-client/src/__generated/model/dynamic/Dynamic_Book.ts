@@ -5,8 +5,8 @@ export interface Dynamic_Book {
     readonly name?: string;
     readonly edition?: number;
     readonly price?: number;
-    readonly store?: Dynamic_BookStore | null | undefined;
+    readonly store?: Dynamic_BookStore | undefined;
     readonly authors?: ReadonlyArray<Dynamic_Author>;
-    readonly storeId?: number | null | undefined;
-    readonly authorIds?: ReadonlyArray<number | null | undefined>;
+    readonly storeId?: number | undefined;
+    readonly authorIds?: ReadonlyArray<number | undefined>;
 }

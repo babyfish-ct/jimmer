@@ -10,7 +10,7 @@ export class TreeService {
     async deleteTree(options: TreeServiceOptions['deleteTree']): Promise<void> {
         let _uri = '/tree/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'}))
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<void>;
     }
     
     async findRootTrees(options: TreeServiceOptions['findRootTrees']): Promise<
@@ -26,7 +26,7 @@ export class TreeService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>>;
     }
     
     async flatNodes(options: TreeServiceOptions['flatNodes']): Promise<
@@ -42,25 +42,25 @@ export class TreeService {
             _uri += encodeURIComponent(_value);
             _separator = '&';
         }
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<FlatTreeNodeView>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<FlatTreeNodeView>>;
     }
     
     async saveTree(options: TreeServiceOptions['saveTree']): Promise<
         Dynamic_TreeNode
     > {
         let _uri = '/tree/root/recursive';
-        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_TreeNode
+        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_TreeNode>;
     }
 }
 export type TreeServiceOptions = {
     'flatNodes': {
-        readonly name?: string | null | undefined
+        readonly name?: string | undefined
     }, 
     'findRootTrees': {
-        readonly rootName?: string | null | undefined
+        readonly rootName?: string | undefined
     }, 
     'saveTree': {
-        readonly input: RecursiveTreeInput
+        readonly body: RecursiveTreeInput
     }, 
     'deleteTree': {
         readonly id: number

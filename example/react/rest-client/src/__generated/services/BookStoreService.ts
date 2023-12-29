@@ -10,53 +10,53 @@ export class BookStoreService {
     async deleteBookStore(options: BookStoreServiceOptions['deleteBookStore']): Promise<void> {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
-        return (await this.executor({uri: _uri, method: 'DELETE'})) as 
+        return (await this.executor({uri: _uri, method: 'DELETE'})) as Promise<void>;
     }
     
     async findComplexStoreWithAllBooks(options: BookStoreServiceOptions['findComplexStoreWithAllBooks']): Promise<
-        BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | null | undefined
+        BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | undefined
     > {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
         _uri += '/withAllBooks';
-        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | null | undefined
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER'] | undefined>;
     }
     
     async findComplexStoreWithNewestBooks(options: BookStoreServiceOptions['findComplexStoreWithNewestBooks']): Promise<
-        BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | null | undefined
+        BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined
     > {
         let _uri = '/bookStore/';
         _uri += encodeURIComponent(options.id);
         _uri += '/withNewestBooks';
-        return (await this.executor({uri: _uri, method: 'GET'})) as BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | null | undefined
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<BookStoreDto['BookStoreService/WITH_NEWEST_BOOKS_FETCHER'] | undefined>;
     }
     
     async findComplexStores(): Promise<
         ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>
     > {
         let _uri = '/bookStore/complexList';
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookStoreDto['BookStoreService/WITH_ALL_BOOKS_FETCHER']>>;
     }
     
     async findSimpleStores(): Promise<
         ReadonlyArray<BookStoreDto['BookStoreService/SIMPLE_FETCHER']>
     > {
         let _uri = '/bookStore/simpleList';
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/SIMPLE_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookStoreDto['BookStoreService/SIMPLE_FETCHER']>>;
     }
     
     async findStores(): Promise<
         ReadonlyArray<BookStoreDto['BookStoreService/DEFAULT_FETCHER']>
     > {
         let _uri = '/bookStore/list';
-        return (await this.executor({uri: _uri, method: 'GET'})) as ReadonlyArray<BookStoreDto['BookStoreService/DEFAULT_FETCHER']>
+        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<BookStoreDto['BookStoreService/DEFAULT_FETCHER']>>;
     }
     
     async saveBookStore(options: BookStoreServiceOptions['saveBookStore']): Promise<
         Dynamic_BookStore
     > {
         let _uri = '/bookStore/';
-        return (await this.executor({uri: _uri, method: 'PUT', body: options.input})) as Dynamic_BookStore
+        return (await this.executor({uri: _uri, method: 'PUT', body: options.body})) as Promise<Dynamic_BookStore>;
     }
 }
 export type BookStoreServiceOptions = {
@@ -70,7 +70,7 @@ export type BookStoreServiceOptions = {
         readonly id: number
     }, 
     'saveBookStore': {
-        readonly input: BookStoreInput
+        readonly body: BookStoreInput
     }, 
     'deleteBookStore': {
         readonly id: number

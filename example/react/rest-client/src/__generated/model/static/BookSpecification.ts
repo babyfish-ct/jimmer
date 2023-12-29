@@ -1,7 +1,7 @@
 export interface BookSpecification {
-    readonly name: string | null | undefined;
-    readonly minPrice: number | null | undefined;
-    readonly maxPrice: number | null | undefined;
-    readonly storeName: string | null | undefined;
-    readonly authorName: string | null | undefined;
+    readonly name?: string | undefined;
+    readonly minPrice?: number | undefined;
+    readonly maxPrice?: number | undefined;
+    readonly storeName?: string | undefined;
+    readonly authorName?: string | undefined;
 }

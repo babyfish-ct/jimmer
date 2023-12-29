@@ -1,8 +1,8 @@
 export interface BookInput {
-    readonly id?: number | null | undefined;
+    readonly id?: number | undefined;
     readonly name: string;
     readonly edition: number;
     readonly price: number;
-    readonly storeId?: number | null | undefined;
-    readonly authorIds?: ReadonlyArray<number> | null | undefined;
+    readonly storeId?: number | undefined;
+    readonly authorIds: ReadonlyArray<number>;
 }

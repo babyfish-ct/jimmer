@@ -55,7 +55,7 @@ public class TreeServiceTest {
         Assertions.assertEquals(
                 "import type {Executor} from '../';\n" +
                         "import type {TreeNodeDto} from '../model/dto/';\n" +
-                        "import type {Tree} from '../model/static/';\n" +
+                        "import type {SimpleTreeNodeView, Tree} from '../model/static/';\n" +
                         "\n" +
                         "/**\n" +
                         " * This is the service to test,\n" +
@@ -77,7 +77,7 @@ public class TreeServiceTest {
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
                         "    async getNumberTree(options: TreeServiceOptions['getNumberTree']): Promise<\n" +
-                        "        Tree<number | undefined>\n" +
+                        "        Tree<number>\n" +
                         "    > {\n" +
                         "        let _uri = '/numberTree';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
@@ -96,7 +96,7 @@ public class TreeServiceTest {
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number | undefined>>;\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -107,7 +107,7 @@ public class TreeServiceTest {
                         "     * @return The static object tree with integer values.\n" +
                         "     */\n" +
                         "    async getNumberTree_2(options: TreeServiceOptions['getNumberTree_2']): Promise<\n" +
-                        "        Tree<number | undefined>\n" +
+                        "        Tree<number>\n" +
                         "    > {\n" +
                         "        let _uri = '/numberTree2';\n" +
                         "        let _separator = _uri.indexOf('?') === -1 ? '?' : '&';\n" +
@@ -133,7 +133,7 @@ public class TreeServiceTest {
                         "            _uri += encodeURIComponent(_value);\n" +
                         "            _separator = '&';\n" +
                         "        }\n" +
-                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number | undefined>>;\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<Tree<number>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -155,6 +155,13 @@ public class TreeServiceTest {
                         "            _separator = '&';\n" +
                         "        }\n" +
                         "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<TreeNodeDto['TreeService/RECURSIVE_FETCHER']>;\n" +
+                        "    }\n" +
+                        "    \n" +
+                        "    async getSimpleRootNodes(): Promise<\n" +
+                        "        ReadonlyArray<SimpleTreeNodeView>\n" +
+                        "    > {\n" +
+                        "        let _uri = '/rootNode/simple';\n" +
+                        "        return (await this.executor({uri: _uri, method: 'GET'})) as Promise<ReadonlyArray<SimpleTreeNodeView>>;\n" +
                         "    }\n" +
                         "    \n" +
                         "    /**\n" +
@@ -226,7 +233,8 @@ public class TreeServiceTest {
                         "         * The optional string value to filter root nodes.\n" +
                         "         */\n" +
                         "        readonly name?: string | undefined\n" +
-                        "    }\n" +
+                        "    }, \n" +
+                        "    'getSimpleRootNodes': {}\n" +
                         "}\n",
                 writer.toString()
         );
@@ -273,7 +281,7 @@ public class TreeServiceTest {
                         "         * \n" +
                         "         * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "         */\n" +
-                        "        readonly id: string;\n" +
+                        "        readonly id: number;\n" +
                         "        /**\n" +
                         "         * The name of current tree node\n" +
                         "         * \n" +
@@ -293,7 +301,7 @@ public class TreeServiceTest {
                         "     * \n" +
                         "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
                         "     */\n" +
-                        "    readonly id: string;\n" +
+                        "    readonly id: number;\n" +
                         "    /**\n" +
                         "     * The name of current tree node\n" +
                         "     * \n" +
@@ -305,6 +313,45 @@ public class TreeServiceTest {
                         "     * it is opposite mirror of `TreeNode.parent`\n" +
                         "     */\n" +
                         "    readonly childNodes?: ReadonlyArray<RecursiveType_1> | null | undefined;\n" +
+                        "}\n",
+                writer.toString()
+        );
+    }
+
+    @Test
+    public void testSimpleTreeNodeView() {
+        Context ctx = new TypeScriptContext(METADATA);
+        Source treeNodeDtoSource = ctx.getRootSource("model/static/SimpleTreeNodeView");
+        StringWriter writer = new StringWriter();
+        ctx.render(treeNodeDtoSource, writer);
+        Assertions.assertEquals(
+                "/**\n" +
+                        " * The tree node input defined by DTO language\n" +
+                        " */\n" +
+                        "export interface SimpleTreeNodeView {\n" +
+                        "    /**\n" +
+                        "     * The id of tree node.\n" +
+                        "     * \n" +
+                        "     * <p>It doesn't make business sense, it's just auto-numbering.</p>\n" +
+                        "     */\n" +
+                        "    readonly id: number;\n" +
+                        "    /**\n" +
+                        "     * The name of current tree node\n" +
+                        "     * \n" +
+                        "     * <p>Together with `parent`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly name: string;\n" +
+                        "    /**\n" +
+                        "     * The many-to-on association from `TreeNode` to `TreeNode`\n" +
+                        "     * \n" +
+                        "     * <p>Together with `name`, this property forms the key of the book</p>\n" +
+                        "     */\n" +
+                        "    readonly parentId?: number | undefined;\n" +
+                        "    /**\n" +
+                        "     * The one-to-many association from `TreeNode` to `TreeNode`,\n" +
+                        "     * it is opposite mirror of `TreeNode.parent`\n" +
+                        "     */\n" +
+                        "    readonly childNodeIds: ReadonlyArray<number>;\n" +
                         "}\n",
                 writer.toString()
         );

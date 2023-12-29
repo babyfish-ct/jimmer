@@ -8,7 +8,7 @@ export type BookStoreDto = {
         readonly createdTime: string;
         readonly modifiedTime: string;
         readonly name: string;
-        readonly website?: string | null | undefined;
+        readonly website?: string | undefined;
     }
     /**
      */
@@ -23,7 +23,7 @@ export type BookStoreDto = {
         readonly createdTime: string;
         readonly modifiedTime: string;
         readonly name: string;
-        readonly website?: string | null | undefined;
+        readonly website?: string | undefined;
         readonly avgPrice: number;
         readonly books: ReadonlyArray<{
             readonly id: number;
@@ -49,7 +49,7 @@ export type BookStoreDto = {
         readonly createdTime: string;
         readonly modifiedTime: string;
         readonly name: string;
-        readonly website?: string | null | undefined;
+        readonly website?: string | undefined;
         readonly avgPrice: number;
         readonly newestBooks: ReadonlyArray<{
             readonly id: number;
