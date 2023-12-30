@@ -113,6 +113,8 @@ public class ClientProcessor {
 
     public void process(RoundEnvironment roundEnv) {
 
+        checkJdkVersion(roundEnv);
+
         for (Element element : roundEnv.getRootElements()) {
             handleService(element);
         }
@@ -129,6 +131,38 @@ public class ClientProcessor {
             Schemas.writeTo(schema, writer);
         } catch (IOException ex) {
             throw new GeneratorException("Cannot write \"" + jimmerClientFile + "\"", ex);
+        }
+    }
+
+    /**
+     * Find this problem on `zulu-1.8 jdk`,
+     * `TypeMirror.getAnnotationMirrors` always returns empty list if
+     * the current `TypeMirror` is not top type but generic argument.
+     */
+    private void checkJdkVersion(RoundEnvironment roundEnv) {
+        try {
+            String.class.getMethod("isBlank");
+            return;
+        } catch (NoSuchMethodException e) {
+            // Do nothing
+        }
+        boolean hasApiService = false;
+        for (Element element : roundEnv.getRootElements()) {
+            if (isApiService(element)) {
+                hasApiService = true;
+                break;
+            }
+        }
+        if (!hasApiService && delayedClientTypeNames != null) {
+            for (String typeName : delayedClientTypeNames) {
+                if (isApiService(context.getElements().getTypeElement(typeName))) {
+                    hasApiService = true;
+                    break;
+                }
+            }
+        }
+        if (hasApiService) {
+            throw new FetchByUnsupportedException();
         }
     }
 
@@ -510,7 +544,7 @@ public class ClientProcessor {
             throw new UnambiguousTypeException(
                     builder.ancestorSource(ApiOperationImpl.class, ApiParameterImpl.class),
                     builder.ancestorSource(),
-                    "Client API service must be top-level of static nested type"
+                    "Client API only accept top-level of static nested type"
             );
         }
         TypeName typeName = typeName(typeElement);

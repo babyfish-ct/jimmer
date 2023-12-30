@@ -40,7 +40,7 @@ class JimmerProcessor(
         environment.options["jimmer.dto.mutable"]?.trim() == "true"
 
     private val checkedException: Boolean =
-        environment.options["jimmer.checkedException"]?.trim() == "true"
+        environment.options["jimmer.client.checkedException"]?.trim() == "true"
 
     private var serverGenerated = false
 

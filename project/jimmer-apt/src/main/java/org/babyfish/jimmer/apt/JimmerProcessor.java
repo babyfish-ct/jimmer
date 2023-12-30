@@ -1,11 +1,13 @@
 package org.babyfish.jimmer.apt;
 
 import org.babyfish.jimmer.apt.client.ClientProcessor;
+import org.babyfish.jimmer.apt.client.FetchByUnsupportedException;
 import org.babyfish.jimmer.apt.dto.DtoProcessor;
 import org.babyfish.jimmer.apt.entry.EntryProcessor;
 import org.babyfish.jimmer.apt.error.ErrorProcessor;
 import org.babyfish.jimmer.apt.immutable.ImmutableProcessor;
 import org.babyfish.jimmer.client.EnableImplicitApi;
+import org.babyfish.jimmer.client.FetchBy;
 import org.babyfish.jimmer.dto.compiler.DtoAstException;
 import org.babyfish.jimmer.dto.compiler.DtoUtils;
 
@@ -85,7 +87,7 @@ public class JimmerProcessor extends AbstractProcessor {
         } else {
             this.dtoDirs = Collections.singletonList("src/main/dto");
         }
-        checkedException = "true".equals(processingEnv.getOptions().get("jimmer.checkedException"));
+        checkedException = "true".equals(processingEnv.getOptions().get("jimmer.client.checkedException"));
         context = new Context(
                 processingEnv.getElementUtils(),
                 processingEnv.getTypeUtils(),
@@ -136,6 +138,17 @@ public class JimmerProcessor extends AbstractProcessor {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage(), ex.getElement());
         } catch (DtoAstException ex) {
             messager.printMessage(Diagnostic.Kind.ERROR, ex.getMessage());
+        } catch (FetchByUnsupportedException ex) {
+            messager.printMessage(
+                    Diagnostic.Kind.ERROR,
+                            "In order to parse the `@" +
+                                    FetchBy.class.getName() +
+                                    "` annotations that decorate generic type parameters, " +
+                                    "please make sure the java compiler version is 11 or higher " +
+                                    "(`source.version` and `target.version` can still remain `1.8`). " +
+                                    "However, once compilation is complete, " +
+                                    "you can still use Java 8 to deploy and run the project."
+            );
         }
         return true;
     }

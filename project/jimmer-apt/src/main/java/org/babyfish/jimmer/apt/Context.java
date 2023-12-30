@@ -8,11 +8,12 @@ import org.babyfish.jimmer.sql.MappedSuperclass;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,8 +26,6 @@ public class Context {
     private final Elements elements;
 
     private final Types types;
-
-    private final TypeMirror collectionType;
 
     private final TypeMirror numberType;
 
@@ -48,11 +47,6 @@ public class Context {
         this.keepIsPrefix = keepIsPrefix;
         this.includes = includes;
         this.excludes = excludes;
-        collectionType = types.erasure(
-                elements
-                        .getTypeElement(Collection.class.getName())
-                        .asType()
-        );
         numberType = elements
                 .getTypeElement(Number.class.getName())
                 .asType();
@@ -121,7 +115,22 @@ public class Context {
     }
 
     public boolean isCollection(TypeMirror type) {
-        return types.isSubtype(types.erasure(type), collectionType);
+        if (type.getKind() == TypeKind.DECLARED) {
+            DeclaredType declaredType = (DeclaredType) type;
+            TypeElement element = (TypeElement) declaredType.asElement();
+            if (element.getQualifiedName().toString().equals("java.util.Collection")) {
+                return true;
+            }
+            if (element.getSuperclass() != null && isCollection(element.getSuperclass())) {
+                return true;
+            }
+            for (TypeMirror superItf : element.getInterfaces()) {
+                if (isCollection(superItf)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean isListStrictly(TypeMirror type) {

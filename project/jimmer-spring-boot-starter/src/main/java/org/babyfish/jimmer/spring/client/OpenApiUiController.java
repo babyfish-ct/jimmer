@@ -14,11 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 @Controller
 public class OpenApiUiController {
@@ -51,13 +47,15 @@ public class OpenApiUiController {
         if (hasMetadata()) {
             resource = path != null && !path.isEmpty() ?
                     "META-INF/jimmer/openapi/index.html.template" :
-                    "META-INF/jimmer/openapi/no-api.html.template";
+                    "META-INF/jimmer/openapi/no-api.html";
         } else {
-            resource = "META-INF/jimmer/openapi/no-metadata.html.template";
+            resource = "META-INF/jimmer/openapi/no-metadata.html";
         }
         StringBuilder builder = new StringBuilder();
         char[] buf = new char[1024];
-        try (Reader reader = new InputStreamReader(OpenApiController.class.getClassLoader().getResourceAsStream(resource))) {
+        InputStream inputStream = OpenApiController.class.getClassLoader().getResourceAsStream(resource);
+        assert inputStream != null;
+        try (Reader reader = new InputStreamReader(inputStream)) {
             int len;
             if ((len = reader.read(buf)) != -1) {
                 builder.append(buf, 0, len);
@@ -65,7 +63,8 @@ public class OpenApiUiController {
         } catch (IOException ex) {
             throw new AssertionError("Internal bug: Can read \"" + resource + "\"");
         }
-        if (path == null || path.isEmpty()) {
+        boolean isTemplate = resource.endsWith(".template");
+        if (!isTemplate) {
             return builder.toString();
         }
         if (groups != null && !groups.isEmpty()) {
