@@ -17,7 +17,6 @@ dependencies {
     annotationProcessor "org.babyfish.jimmer:jimmer-apt:${jimmerVersion}"
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springdoc:springdoc-openapi-ui:1.6.13'
 
     runtimeOnly 'com.h2database:h2:2.1.212'
     runtimeOnly 'mysql:mysql-connector-java:8.0.30'
