@@ -31,9 +31,10 @@ tasks.getByName<Test>("test") {
 }
 
 tasks.withType(JavaCompile::class) {
-    options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
     options.compilerArgs.add("-parameters")
+    options.compilerArgs.add("-Ajimmer.source.includes=org.babyfish.jimmer.client.java.")
     options.compilerArgs.add("-Ajimmer.dto.dirs=src/test/dto")
+    options.compilerArgs.add("-Ajimmer.client.checkedException=true")
 }
 
 ksp {

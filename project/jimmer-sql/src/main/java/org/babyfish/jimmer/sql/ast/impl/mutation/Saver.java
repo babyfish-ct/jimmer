@@ -385,13 +385,13 @@ class Saver {
             return ObjectType.NEW;
         }
 
-        DraftHandler<?, ?> handler = data.getSqlClient().getDraftHandlers(draftSpi.__type());
+        DraftInterceptor<?, ?> interceptor = data.getSqlClient().getDraftInterceptor(draftSpi.__type());
         PropId idPropId = draftSpi.__type().getIdProp().getId();
 
         if (trigger == null &&
                 data.getMode() == SaveMode.UPDATE_ONLY &&
                 draftSpi.__isLoaded(idPropId) &&
-                isKeyOnlyDraftHandler(handler, draftSpi.__type())) {
+                isKeyOnlyDraftHandler(interceptor, draftSpi.__type())) {
             update(draftSpi, ImmutableObjects.makeIdOnly(draftSpi.__type(), draftSpi.__get(idPropId)), false);
             return ObjectType.EXISTING;
         }
@@ -815,13 +815,13 @@ class Saver {
     @SuppressWarnings("unchecked")
     private void callInterceptor(DraftSpi draftSpi, ImmutableSpi original) {
         ImmutableType type = draftSpi.__type();
-        DraftHandler<?, ?> handlers = data.getSqlClient().getDraftHandlers(type);
-        if (handlers != null) {
+        DraftInterceptor<?, ?> interceptor = data.getSqlClient().getDraftInterceptor(type);
+        if (interceptor != null) {
             PropId idPropId = type.getIdProp().getId();
             Object id = draftSpi.__isLoaded(idPropId) ?
                     draftSpi.__get(type.getIdProp().getId()) :
                     null;
-            ((DraftHandler<Draft, ImmutableSpi>) handlers).beforeSave(draftSpi, original);
+            ((DraftInterceptor<ImmutableSpi, Draft>) interceptor).beforeSave(draftSpi, original);
             if (id != null) {
                 if (!draftSpi.__isLoaded(idPropId)) {
                     throw new IllegalStateException("Draft handlers cannot be used to unload id");
@@ -988,15 +988,18 @@ class Saver {
         spi.__set(idProp.getId(), convertedId);
     }
 
-    private boolean isKeyOnlyDraftHandler(DraftHandler<?, ?> handler, ImmutableType type) {
+    private boolean isKeyOnlyDraftHandler(DraftInterceptor<?, ?> handler, ImmutableType type) {
         if (handler == null) {
             return true;
         }
-        Collection<ImmutableProp> dependencies = handler.dependencies();
-        if (dependencies.isEmpty()) {
-            return true;
+        Set<ImmutableProp> keyProps = data.getKeyProps(type);
+        Collection<? extends TypedProp<?, ?>> dependencies = handler.dependencies();
+        for (TypedProp<?, ?> typedProp : dependencies) {
+            if (!keyProps.contains(typedProp.unwrap())) {
+                return false;
+            }
         }
-        return data.getKeyProps(type).containsAll(dependencies);
+        return true;
     }
 
     private static void increaseDraftVersion(DraftSpi spi) {

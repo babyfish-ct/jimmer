@@ -10,11 +10,13 @@ import static org.babyfish.jimmer.sql.common.Constants.*;
 import org.babyfish.jimmer.sql.model.*;
 import org.babyfish.jimmer.sql.model.inheritance.Administrator;
 import org.babyfish.jimmer.sql.model.inheritance.AdministratorMetadataDraft;
+import org.babyfish.jimmer.sql.model.inheritance.NamedEntity;
 import org.babyfish.jimmer.sql.model.inheritance.NamedEntityDraft;
 import org.babyfish.jimmer.sql.runtime.DbNull;
 import org.babyfish.jimmer.sql.runtime.SaveErrorCode;
 import org.babyfish.jimmer.sql.runtime.SaveException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -938,9 +940,9 @@ public class SaveTest extends AbstractMutationTest {
         executeAndExpectResult(
                 getSqlClient(cfg -> {
                     cfg.addDraftInterceptor(
-                            new DraftInterceptor<NamedEntityDraft>() {
+                            new DraftInterceptor<NamedEntity, NamedEntityDraft>() {
                                 @Override
-                                public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+                                public void beforeSave(@NotNull NamedEntityDraft draft, @Nullable NamedEntity original) {
                                     draft.setDeleted(false);
                                 }
                             }

@@ -3,7 +3,7 @@ package org.babyfish.jimmer.sql.runtime;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
 import org.babyfish.jimmer.meta.TypedProp;
-import org.babyfish.jimmer.sql.DraftHandler;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.TransientResolver;
 import org.babyfish.jimmer.sql.cache.CacheDisableConfig;
@@ -17,6 +17,7 @@ import org.babyfish.jimmer.sql.meta.IdGenerator;
 import org.babyfish.jimmer.sql.meta.MetadataStrategy;
 import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.UserIdGenerator;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -67,7 +68,8 @@ public interface JSqlClientImplementor extends JSqlClient, SqlContext {
 
     IdOnlyTargetCheckingLevel getIdOnlyTargetCheckingLevel();
 
-    DraftHandler<?, ?> getDraftHandlers(ImmutableType type);
+    @Nullable
+    DraftInterceptor<?, ?> getDraftInterceptor(ImmutableType type);
 
     Reader<?> getReader(Class<?> type);
 

@@ -40,6 +40,7 @@ import org.babyfish.jimmer.sql.dialect.DefaultDialect;
 import org.babyfish.jimmer.sql.dialect.Dialect;
 import org.babyfish.jimmer.sql.meta.*;
 import org.babyfish.jimmer.sql.runtime.*;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +104,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
     private final boolean saveCommandPessimisticLock;
 
-    private final DraftHandlerManager draftHandlerManager;
+    private final DraftInterceptorManager draftInterceptorManager;
 
     private final String microServiceName;
 
@@ -143,7 +144,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
             boolean defaultDissociationActionCheckable,
             IdOnlyTargetCheckingLevel idOnlyTargetCheckingLevel,
             boolean saveCommandPessimisticLock,
-            DraftHandlerManager draftHandlerManager,
+            DraftInterceptorManager draftInterceptorManager,
             String microServiceName,
             MicroServiceExchange microServiceExchange,
             SqlClientInitializer sqlClientInitializer
@@ -191,7 +192,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
         this.defaultDissociationActionCheckable = defaultDissociationActionCheckable;
         this.idOnlyTargetCheckingLevel = idOnlyTargetCheckingLevel;
         this.saveCommandPessimisticLock = saveCommandPessimisticLock;
-        this.draftHandlerManager = draftHandlerManager;
+        this.draftInterceptorManager = draftInterceptorManager;
         this.microServiceName = microServiceName;
         this.microServiceExchange = microServiceExchange;
         this.sqlClientInitializer = sqlClientInitializer;
@@ -470,7 +471,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftHandlerManager,
+                draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
                 sqlClientInitializer
@@ -513,7 +514,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftHandlerManager,
+                draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
                 sqlClientInitializer
@@ -551,7 +552,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftHandlerManager,
+                draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
                 sqlClientInitializer
@@ -592,7 +593,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                 defaultDissociationActionCheckable,
                 idOnlyTargetCheckingLevel,
                 saveCommandPessimisticLock,
-                draftHandlerManager,
+                draftInterceptorManager,
                 microServiceName,
                 microServiceExchange,
                 sqlClientInitializer
@@ -629,9 +630,10 @@ class JSqlClientImpl implements JSqlClientImplementor {
         return idOnlyTargetCheckingLevel;
     }
 
+    @Nullable
     @Override
-    public DraftHandler<?, ?> getDraftHandlers(ImmutableType type) {
-        return draftHandlerManager.get(type);
+    public DraftInterceptor<?, ?> getDraftInterceptor(ImmutableType type) {
+        return draftInterceptorManager.get(type);
     }
 
     @Override
@@ -733,7 +735,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
 
         private boolean saveCommandPessimisticLock = false;
 
-        private final List<DraftHandler<?, ?>> handlers = new ArrayList<>();
+        private final List<DraftInterceptor<?, ?>> interceptors = new ArrayList<>();
 
         private ObjectMapper binLogObjectMapper;
 
@@ -1151,20 +1153,20 @@ class JSqlClientImpl implements JSqlClientImplementor {
         }
 
         @Override
-        public Builder addDraftHandler(DraftHandler<?, ?> handler) {
-            return addDraftHandlers(Collections.singletonList(handler));
+        public Builder addDraftInterceptor(DraftInterceptor<?, ?> interceptor) {
+            return addDraftInterceptors(Collections.singletonList(interceptor));
         }
 
         @Override
-        public Builder addDraftHandlers(DraftHandler<?, ?>... handlers) {
-            return addDraftHandlers(Arrays.asList(handlers));
+        public Builder addDraftInterceptors(DraftInterceptor<?, ?>... interceptors) {
+            return addDraftInterceptors(Arrays.asList(interceptors));
         }
 
         @Override
-        public Builder addDraftHandlers(Collection<? extends DraftHandler<?, ?>> handlers) {
-            for (DraftHandler<?, ?> handler : handlers) {
-                if (handler != null) {
-                    this.handlers.add(handler);
+        public Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?, ?>> interceptors) {
+            for (DraftInterceptor<?, ?> interceptor : interceptors) {
+                if (interceptor != null) {
+                    this.interceptors.add(interceptor);
                 }
             }
             return this;
@@ -1410,7 +1412,7 @@ class JSqlClientImpl implements JSqlClientImplementor {
                     defaultDissociationActionCheckable,
                     idOnlyTargetCheckingLevel,
                     saveCommandPessimisticLock,
-                    new DraftHandlerManager(handlers),
+                    new DraftInterceptorManager(interceptors),
                     microServiceName,
                     microServiceExchange,
                     sqlClientInitializer

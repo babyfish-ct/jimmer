@@ -66,6 +66,8 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.withType<JavaCompile> {
     options.compilerArgs.add("-parameters")
     options.compilerArgs.add("-Ajimmer.dto.dirs=src/test/dto")
+    options.compilerArgs.add("-Xmaxerrs")
+    options.compilerArgs.add("2000")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

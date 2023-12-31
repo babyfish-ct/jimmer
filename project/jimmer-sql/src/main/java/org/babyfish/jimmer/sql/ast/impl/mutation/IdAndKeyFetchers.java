@@ -3,8 +3,9 @@ package org.babyfish.jimmer.sql.ast.impl.mutation;
 import org.babyfish.jimmer.impl.util.TypeCache;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.ImmutableType;
+import org.babyfish.jimmer.meta.TypedProp;
 import org.babyfish.jimmer.runtime.ImmutableSpi;
-import org.babyfish.jimmer.sql.DraftHandler;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.fetcher.Fetcher;
 import org.babyfish.jimmer.sql.fetcher.IdOnlyFetchType;
 import org.babyfish.jimmer.sql.fetcher.impl.FetcherImpl;
@@ -12,6 +13,8 @@ import org.babyfish.jimmer.sql.fetcher.impl.FetcherImplementor;
 import org.babyfish.jimmer.sql.meta.SqlContext;
 import org.babyfish.jimmer.sql.meta.impl.SqlContextCache;
 import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
+
+import java.util.Collection;
 
 public class IdAndKeyFetchers {
 
@@ -43,10 +46,13 @@ public class IdAndKeyFetchers {
         for (ImmutableProp keyProp : type.getKeyProps()) {
             fetcher = fetcher.add(keyProp.getName(), IdOnlyFetchType.RAW);
         }
-        DraftHandler<?, ?> handler = sqlClient.getDraftHandlers(type);
-        if (handler != null) {
-            for (ImmutableProp prop : handler.dependencies()) {
-                fetcher = fetcher.add(prop.getName(), IdOnlyFetchType.RAW);
+        DraftInterceptor<?, ?> interceptor = sqlClient.getDraftInterceptor(type);
+        if (interceptor != null) {
+            Collection<? extends TypedProp<?, ?>> typedProps = interceptor.dependencies();
+            if (typedProps != null) {
+                for (TypedProp<?, ?> typedProp : typedProps) {
+                    fetcher = fetcher.add(typedProp.unwrap().getName(), IdOnlyFetchType.RAW);
+                }
             }
         }
         return fetcher;

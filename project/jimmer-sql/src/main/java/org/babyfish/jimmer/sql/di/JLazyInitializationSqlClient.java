@@ -379,9 +379,10 @@ public abstract class JLazyInitializationSqlClient implements JSqlClientImplemen
         return sqlClient().getIdOnlyTargetCheckingLevel();
     }
 
+    @Nullable
     @Override
-    public DraftHandler<?, ?> getDraftHandlers(ImmutableType type) {
-        return sqlClient().getDraftHandlers(type);
+    public DraftInterceptor<?, ?> getDraftInterceptor(ImmutableType type) {
+        return sqlClient().getDraftInterceptor(type);
     }
 
     @Override

@@ -179,15 +179,15 @@ class InheritanceMutationTest : AbstractMutationTest() {
         private val MODIFIED_TIME = LocalDateTime.parse("2022-10-03 00:10:00", FORMATTER)
     }
 
-    private object NamedEntityDraftInterceptor : DraftInterceptor<NamedEntityDraft> {
-        override fun beforeSave(draft: NamedEntityDraft, isNew: Boolean) {
+    private object NamedEntityDraftInterceptor : DraftInterceptor<NamedEntity, NamedEntityDraft> {
+        override fun beforeSave(draft: NamedEntityDraft, original: NamedEntity?) {
             if (!isLoaded(draft, NamedEntity::deleted)) {
                 draft.deleted = false
             }
             if (!isLoaded(draft, NamedEntity::modifiedTime)) {
                 draft.modifiedTime = MODIFIED_TIME
             }
-            if (isNew && !isLoaded(draft, NamedEntity::createdTime)) {
+            if (original === null && !isLoaded(draft, NamedEntity::createdTime)) {
                 draft.createdTime = CREATED_TIME
             }
         }

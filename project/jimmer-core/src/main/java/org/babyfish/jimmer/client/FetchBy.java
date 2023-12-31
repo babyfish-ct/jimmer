@@ -3,7 +3,7 @@ package org.babyfish.jimmer.client;
 import java.lang.annotation.*;
 
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE_USE)
 public @interface FetchBy {
 

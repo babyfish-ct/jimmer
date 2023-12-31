@@ -24,17 +24,17 @@ public class InheritanceMutationWithTriggerTest extends AbstractTriggerTest {
     private static final LocalDateTime MODIFIED_TIME =
             LocalDateTime.parse("2022-10-03 00:10:00", FORMATTER);
 
-    private final static DraftInterceptor<NamedEntityDraft> INTERCEPTOR =
-            new DraftInterceptor<NamedEntityDraft>() {
+    private final static DraftInterceptor<NamedEntity, NamedEntityDraft> INTERCEPTOR =
+            new DraftInterceptor<NamedEntity, NamedEntityDraft>() {
                 @Override
-                public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+                public void beforeSave(@NotNull NamedEntityDraft draft, NamedEntity original) {
                     if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.MODIFIED_TIME)) {
                         draft.setModifiedTime(MODIFIED_TIME);
                     }
                     if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.DELETED)) {
                         draft.setDeleted(false);
                     }
-                    if (isNew && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
+                    if (original == null && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
                         draft.setCreatedTime(CREATED_TIME);
                     }
                 }

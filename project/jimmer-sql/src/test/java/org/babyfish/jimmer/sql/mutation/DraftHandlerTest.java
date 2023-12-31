@@ -1,8 +1,8 @@
 package org.babyfish.jimmer.sql.mutation;
 
 import org.babyfish.jimmer.ImmutableObjects;
-import org.babyfish.jimmer.meta.ImmutableProp;
-import org.babyfish.jimmer.sql.DraftHandler;
+import org.babyfish.jimmer.meta.TypedProp;
+import org.babyfish.jimmer.sql.DraftInterceptor;
 import org.babyfish.jimmer.sql.JSqlClient;
 import org.babyfish.jimmer.sql.ast.mutation.SaveMode;
 import org.babyfish.jimmer.sql.common.AbstractMutationTest;
@@ -21,8 +21,8 @@ import java.util.Collections;
 public class DraftHandlerTest extends AbstractMutationTest {
 
     private JSqlClient sqlClient1 = getSqlClient(it -> {
-        it.addDraftHandler(
-                new DraftHandler<BookDraft, Book>() {
+        it.addDraftInterceptor(
+                new DraftInterceptor<Book, BookDraft>() {
 
                     @Override
                     public void beforeSave(@NotNull BookDraft draft, @Nullable Book original) {
@@ -30,16 +30,16 @@ public class DraftHandlerTest extends AbstractMutationTest {
                     }
 
                     @Override
-                    public Collection<ImmutableProp> dependencies() {
-                        return Collections.singleton(BookProps.EDITION.unwrap());
+                    public Collection<TypedProp<Book, ?>> dependencies() {
+                        return Collections.singleton(BookProps.EDITION);
                     }
                 }
         );
     });
 
     private JSqlClient sqlClient2 = getSqlClient(it -> {
-        it.addDraftHandler(
-                new DraftHandler<BookDraft, Book>() {
+        it.addDraftInterceptor(
+                new DraftInterceptor<Book, BookDraft>() {
 
                     @Override
                     public void beforeSave(@NotNull BookDraft draft, @Nullable Book original) {
@@ -49,8 +49,8 @@ public class DraftHandlerTest extends AbstractMutationTest {
                     }
 
                     @Override
-                    public Collection<ImmutableProp> dependencies() {
-                        return Collections.singleton(BookProps.PRICE.unwrap());
+                    public Collection<TypedProp<Book, ?>> dependencies() {
+                        return Collections.singleton(BookProps.PRICE);
                     }
                 }
         );

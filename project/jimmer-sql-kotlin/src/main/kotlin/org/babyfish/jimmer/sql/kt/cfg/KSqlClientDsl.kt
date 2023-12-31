@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.babyfish.jimmer.kt.DslScope
 import org.babyfish.jimmer.kt.toImmutableProp
 import org.babyfish.jimmer.meta.ImmutableProp
-import org.babyfish.jimmer.sql.DraftHandler
 import org.babyfish.jimmer.sql.DraftInterceptor
 import org.babyfish.jimmer.sql.EnumType
 import org.babyfish.jimmer.sql.JSqlClient
@@ -214,27 +213,15 @@ class KSqlClientDsl internal constructor(
         javaBuilder.setSaveCommandPessimisticLock(lock)
     }
 
-    fun addDraftHandler(handler: DraftHandler<*, *>) {
-        javaBuilder.addDraftHandler(handler)
-    }
-
-    fun addDraftHandlers(vararg handlers: DraftHandler<*, *>) {
-        javaBuilder.addDraftHandlers(*handlers)
-    }
-
-    fun addDraftHandler(handlers: Collection<DraftHandler<*, *>>) {
-        javaBuilder.addDraftHandlers(handlers)
-    }
-
-    fun addDraftInterceptor(interceptor: DraftInterceptor<*>) {
+    fun addDraftInterceptor(interceptor: DraftInterceptor<*, *>) {
         javaBuilder.addDraftInterceptor(interceptor)
     }
 
-    fun addDraftInterceptors(vararg interceptors: DraftInterceptor<*>) {
+    fun addDraftInterceptors(vararg interceptors: DraftInterceptor<*, *>) {
         javaBuilder.addDraftInterceptors(*interceptors)
     }
 
-    fun addDraftInterceptors(interceptor: Collection<DraftInterceptor<*>>) {
+    fun addDraftInterceptors(interceptor: Collection<DraftInterceptor<*, *>>) {
         javaBuilder.addDraftInterceptors(interceptor)
     }
 

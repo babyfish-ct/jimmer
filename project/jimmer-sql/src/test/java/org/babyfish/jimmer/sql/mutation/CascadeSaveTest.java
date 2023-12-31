@@ -1112,21 +1112,21 @@ public class CascadeSaveTest extends AbstractMutationTest {
         );
     }
 
-    private static class Interceptor implements DraftInterceptor<NamedEntityDraft> {
+    private static class Interceptor implements DraftInterceptor<NamedEntity, NamedEntityDraft> {
 
         public static final LocalDateTime TIME = LocalDateTime.of(
                 2022, 10, 15, 16, 55
         );
 
         @Override
-        public void beforeSave(@NotNull NamedEntityDraft draft, boolean isNew) {
+        public void beforeSave(@NotNull NamedEntityDraft draft, NamedEntity original) {
             if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.DELETED)) {
                 draft.setDeleted(false);
             }
             if (!ImmutableObjects.isLoaded(draft, NamedEntityProps.MODIFIED_TIME)) {
                 draft.setModifiedTime(TIME);
             }
-            if (isNew && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
+            if (original == null && !ImmutableObjects.isLoaded(draft, NamedEntityProps.CREATED_TIME)) {
                 draft.setCreatedTime(TIME);
             }
         }

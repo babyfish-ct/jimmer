@@ -358,36 +358,13 @@ public interface JSqlClient extends SubQueryProvider {
         Builder setSaveCommandPessimisticLock(boolean lock);
 
         @OldChain
-        Builder addDraftHandler(DraftHandler<?, ?> handler);
+        Builder addDraftInterceptor(DraftInterceptor<?, ?> interceptor);
 
         @OldChain
-        Builder addDraftHandlers(DraftHandler<?, ?>... handlers);
+        Builder addDraftInterceptors(DraftInterceptor<?, ?>... interceptors);
 
         @OldChain
-        Builder addDraftHandlers(Collection<? extends DraftHandler<?, ?>> handlers);
-
-        @OldChain
-        default Builder addDraftInterceptor(DraftInterceptor<?> interceptor) {
-            return addDraftHandler(DraftInterceptor.wrap(interceptor));
-        }
-
-        @OldChain
-        default Builder addDraftInterceptors(DraftInterceptor<?>... interceptors) {
-            DraftHandler<?, ?>[] handlers = new DraftHandler[interceptors.length];
-            for (int i = interceptors.length - 1; i >= 0; --i) {
-                handlers[i] = DraftInterceptor.wrap(interceptors[i]);
-            }
-            return addDraftHandlers(handlers);
-        }
-
-        @OldChain
-        default Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?>> interceptors) {
-            List<DraftHandler<?, ?>> handlers = new ArrayList<>(interceptors.size());
-            for (DraftInterceptor<?> interceptor : interceptors) {
-                handlers.add(DraftInterceptor.wrap(interceptor));
-            }
-            return addDraftHandlers(handlers);
-        }
+        Builder addDraftInterceptors(Collection<? extends DraftInterceptor<?, ?>> interceptors);
 
         Builder setDefaultBinLogObjectMapper(ObjectMapper mapper);
 
