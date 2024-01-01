@@ -25,12 +25,12 @@ public class BaseEntityDraftInterceptor implements DraftInterceptor<BaseEntity, 
      */
 
     @Override
-    public void beforeSave(BaseEntityDraft draft, @Nullable BaseEntity original) { // ❷
-        if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.MODIFIED_TIME)) { // ❸
+    public void beforeSave(BaseEntityDraft draft, @Nullable BaseEntity original) {
+        if (!ImmutableObjects.isLoaded(draft, BaseEntityProps.MODIFIED_TIME)) {
             draft.setModifiedTime(LocalDateTime.now());
         }
         // `original == null` means INSERT
-        if (original == null && !ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATED_TIME)) { // ❹
+        if (original == null && !ImmutableObjects.isLoaded(draft, BaseEntityProps.CREATED_TIME)) {
             draft.setCreatedTime(LocalDateTime.now());
         }
     }
