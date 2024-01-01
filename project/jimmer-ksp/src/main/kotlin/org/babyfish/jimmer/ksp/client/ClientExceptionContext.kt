@@ -112,7 +112,9 @@ class ClientExceptionContext {
             )
         }
         code?.let {
-            nonAbstractDeclarationMap.put(Key(family, it), declaration)?.let { conflictDeclaration ->
+            nonAbstractDeclarationMap.put(Key(family, it), declaration)
+                ?.takeIf { conflictDeclaration -> conflictDeclaration.qualifiedName != declaration.qualifiedName }
+                ?.let { conflictDeclaration ->
                 throw MetaException(
                     declaration,
                     "Duplicated error family \"" +

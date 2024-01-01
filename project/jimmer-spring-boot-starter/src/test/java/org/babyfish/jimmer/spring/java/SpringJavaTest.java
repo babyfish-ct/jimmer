@@ -871,7 +871,7 @@ public class SpringJavaTest extends AbstractTest {
                         "    name=\"description\"\n" +
                         "    content=\"SwaggerUI\"\n" +
                         "  />\n" +
-                        "  <title>SwaggerUI</title>\n" +
+                        "  <title>Jimmer-SwaggerUI</title>\n" +
                         "  <link rel=\"stylesheet\" href=\"https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css\" />\n" +
                         "</head>\n" +
                         "<body>\n" +

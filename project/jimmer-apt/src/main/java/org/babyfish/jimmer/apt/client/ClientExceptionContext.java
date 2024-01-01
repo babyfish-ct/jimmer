@@ -141,7 +141,7 @@ public class ClientExceptionContext {
         }
         if (code != null) {
             TypeElement conflictElement = nonAbstractElementMap.put(new Key(family, code), typeElement);
-            if (conflictElement != null) {
+            if (conflictElement != null && !conflictElement.getQualifiedName().equals(typeElement.getQualifiedName())) {
                 throw new MetaException(
                         typeElement,
                         "Duplicated error family \"" +
