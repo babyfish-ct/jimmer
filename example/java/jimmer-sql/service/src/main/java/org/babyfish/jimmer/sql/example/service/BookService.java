@@ -98,9 +98,20 @@ public class BookService implements Fetchers {
         return bookRepository.findNullable(id, COMPLEX_FETCHER);
     }
 
+    /**
+     * Simple Book DTO that only contains `id` and `name`
+     */
     private static final Fetcher<Book> SIMPLE_FETCHER =
             BookFetcher.$.name().edition();
 
+    /**
+     * Default Book DTO that contains
+     * <ul>
+     *     <li>All scalar properties except `tenant` of current `Book` entity</li>
+     *     <li>`id` and `name` of the associated `BookStore` object provided by many-to-one association `store`</li>
+     *     <li>`id`, `firstName` and `lastName` of the associated `Author` objects provided by many-to-many association `authors`</li>
+     * </ul>
+     */
     private static final Fetcher<Book> DEFAULT_FETCHER =
             BookFetcher.$
                     .allScalarFields()
@@ -115,6 +126,14 @@ public class BookService implements Fetchers {
                                     .lastName()
                     );
 
+    /**
+     * Complex Book DTO that contains
+     * <ul>
+     *     <li>All scalar properties except `tenant` of current `Book` entity</li>
+     *     <li>`id`, `name` and the calculation property `avgPrice` of the associated `BookStore` object provided by many-to-one association `store`</li>
+     *     <li>all scalar properties of the associated `Author` objects provided by many-to-many association `authors`</li>
+     * </ul>
+     */
     private static final Fetcher<Book> COMPLEX_FETCHER =
             BOOK_FETCHER
                     .allScalarFields()

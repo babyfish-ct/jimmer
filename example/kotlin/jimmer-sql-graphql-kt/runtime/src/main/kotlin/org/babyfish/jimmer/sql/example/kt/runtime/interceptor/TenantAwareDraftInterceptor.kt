@@ -12,19 +12,11 @@ import org.springframework.stereotype.Component
 class TenantAwareDraftInterceptor(
     private val tenantProvider: TenantProvider,
     @Value("\${demo.default-tenant}") private val defaultTenant: String
-) : DraftInterceptor<TenantAwareDraft> { // ❶
+) : DraftInterceptor<TenantAware, TenantAwareDraft> {
 
-    override fun beforeSave(draft: TenantAwareDraft, isNew: Boolean) { // ❷
-        if (!isLoaded(draft, TenantAware::tenant)) { // ❸
+    override fun beforeSave(draft: TenantAwareDraft, original: TenantAware?) {
+        if (!isLoaded(draft, TenantAware::tenant)) {
             draft.tenant = tenantProvider.tenant ?: defaultTenant
         }
     }
 }
-
-/*----------------Documentation Links----------------
-❶ https://babyfish-ct.github.io/jimmer/docs/mutation/draft-interceptor
-❷ https://babyfish-ct.github.io/jimmer/docs/object/draft
-
-❸ https://babyfish-ct.github.io/jimmer/docs/object/tool#isloaded
-  https://babyfish-ct.github.io/jimmer/docs/object/dynamic
----------------------------------------------------*/

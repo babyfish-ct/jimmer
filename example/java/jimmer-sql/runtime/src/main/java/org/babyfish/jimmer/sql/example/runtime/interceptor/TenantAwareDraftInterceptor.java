@@ -2,15 +2,17 @@ package org.babyfish.jimmer.sql.example.runtime.interceptor;
 
 import org.babyfish.jimmer.ImmutableObjects;
 import org.babyfish.jimmer.sql.DraftInterceptor;
+import org.babyfish.jimmer.sql.example.model.common.TenantAware;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareDraft;
 import org.babyfish.jimmer.sql.example.model.common.TenantAwareProps;
 import org.babyfish.jimmer.sql.example.runtime.TenantProvider;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAwareDraft> { //
+public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware, TenantAwareDraft> { //
 
     private final TenantProvider tenantProvider;
 
@@ -25,8 +27,8 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
     }
 
     @Override
-    public void beforeSave(@NotNull TenantAwareDraft draft, boolean isNew) { // ❷
-        if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) { // ❸
+    public void beforeSave(@NotNull TenantAwareDraft draft, @Nullable TenantAware original) {
+        if (!ImmutableObjects.isLoaded(draft, TenantAwareProps.TENANT)) {
             String tenant = tenantProvider.get();
             if (tenant == null) {
                 tenant = defaultTenant;
@@ -35,11 +37,3 @@ public class TenantAwareDraftInterceptor implements DraftInterceptor<TenantAware
         }
     }
 }
-
-/*----------------Documentation Links----------------
-❶ https://babyfish-ct.github.io/jimmer/docs/mutation/draft-interceptor
-❷ https://babyfish-ct.github.io/jimmer/docs/object/draft
-
-❸ https://babyfish-ct.github.io/jimmer/docs/object/tool#isloaded
-  https://babyfish-ct.github.io/jimmer/docs/object/dynamic
----------------------------------------------------*/

@@ -33,7 +33,7 @@ public class BookStoreService implements Fetchers {
     }
 
     @GetMapping("/simpleList")
-    public List<@FetchBy("SIMPLE_FETCHER") BookStore> findSimpleStores() { // ❶
+    public List<@FetchBy("SIMPLE_FETCHER") BookStore> findSimpleStores() {
         return bookStoreRepository.findAll(
                 SIMPLE_FETCHER,
                 BookStoreProps.NAME
@@ -41,7 +41,7 @@ public class BookStoreService implements Fetchers {
     }
 
     @GetMapping("/list")
-    public List<@FetchBy("DEFAULT_FETCHER") BookStore> findStores() { // ❷
+    public List<@FetchBy("DEFAULT_FETCHER") BookStore> findStores() {
         return bookStoreRepository.findAll(
                 DEFAULT_FETCHER,
                 BookStoreProps.NAME
@@ -49,7 +49,7 @@ public class BookStoreService implements Fetchers {
     }
 
     @GetMapping("/complexList")
-    public List<@FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore> findComplexStores() { // ❸
+    public List<@FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore> findComplexStores() {
         return bookStoreRepository.findAll(
                 WITH_ALL_BOOKS_FETCHER,
                 BookStoreProps.NAME
@@ -58,7 +58,7 @@ public class BookStoreService implements Fetchers {
 
     @GetMapping("/{id}/withAllBooks")
     @Nullable
-    public @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore findComplexStoreWithAllBooks( // ❹
+    public @FetchBy("WITH_ALL_BOOKS_FETCHER") BookStore findComplexStoreWithAllBooks(
             @PathVariable("id") long id
     ) {
         return bookStoreRepository.findNullable(id, WITH_ALL_BOOKS_FETCHER);
@@ -66,18 +66,35 @@ public class BookStoreService implements Fetchers {
 
     @GetMapping("/{id}/withNewestBooks")
     @Nullable
-    public @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore findComplexStoreWithNewestBooks( // ❺
+    public @FetchBy("WITH_NEWEST_BOOKS_FETCHER") BookStore findComplexStoreWithNewestBooks(
             @PathVariable("id") long id
     ) {
         return bookStoreRepository.findNullable(id, WITH_NEWEST_BOOKS_FETCHER);
     }
 
+    /**
+     * Simple BookStore DTO that only contains `id` and `name`
+     */
     private static final Fetcher<BookStore> SIMPLE_FETCHER =
             BOOK_STORE_FETCHER.name();
 
+    /**
+     * Default BookStore DTO that contains all scalar properties
+     */
     private static final Fetcher<BookStore> DEFAULT_FETCHER =
             BOOK_STORE_FETCHER.allScalarFields();
 
+    /**
+     * BookStore DTO contains
+     * <ul>
+     *     <li>all scalar properties</li>
+     *     <li>The calculated-property `avgPrice`</li>
+     *     <li>
+     *         Associated `Book` objects provided by many-to-many property `books`,
+     *         each `Book` object contains deeper `Author` objects.
+     *     </li>
+     * </ul>
+     */
     private static final Fetcher<BookStore> WITH_ALL_BOOKS_FETCHER =
             BOOK_STORE_FETCHER
                     .allScalarFields()
@@ -92,6 +109,17 @@ public class BookStoreService implements Fetchers {
                                     )
                     );
 
+    /**
+     * BookStore DTO contains
+     * <ul>
+     *     <li>all scalar properties</li>
+     *     <li>The calculated-property `avgPrice`</li>
+     *     <li>
+     *         Associated `Book` objects provided by calculated association property `newestBooks`,
+     *         each `Book` object contains deeper `Author` objects.
+     *     </li>
+     * </ul>
+     */
     private static final Fetcher<BookStore> WITH_NEWEST_BOOKS_FETCHER =
             BOOK_STORE_FETCHER
                     .allScalarFields()
@@ -107,7 +135,7 @@ public class BookStoreService implements Fetchers {
                     );
 
     @PutMapping
-    public BookStore saveBookStore(@RequestBody BookStoreInput input) { // ❼
+    public BookStore saveBookStore(@RequestBody BookStoreInput input) {
         return bookStoreRepository.save(input);
     }
 
@@ -116,9 +144,3 @@ public class BookStoreService implements Fetchers {
         bookStoreRepository.deleteById(id);
     }
 }
-
-/*----------------Documentation Links----------------
-❶ ❷ ❸ ❹ ❺ https://babyfish-ct.github.io/jimmer/docs/spring/client/api#declare-fetchby
-❻ https://babyfish-ct.github.io/jimmer/docs/spring/client/error#allow-to-throw-all-exceptions-of-family
-❼ https://babyfish-ct.github.io/jimmer/docs/mutation/save-command/input-dto/
----------------------------------------------------*/
