@@ -16,6 +16,8 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
+import javax.tools.StandardLocation;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,6 +44,8 @@ public class JimmerProcessor extends AbstractProcessor {
 
     private Collection<String> dtoDirs;
 
+    private Collection<String> dtoTestDirs;
+
     private boolean checkedException;
 
     private boolean serverGenerated;
@@ -58,7 +62,6 @@ public class JimmerProcessor extends AbstractProcessor {
         messager = processingEnv.getMessager();
         String includes = processingEnv.getOptions().get("jimmer.source.includes");
         String excludes = processingEnv.getOptions().get("jimmer.source.excludes");
-        String dtoDirs = processingEnv.getOptions().get("jimmer.dto.dirs");
         String[] includeArr = null;
         String[] excludeArr = null;
         if (includes != null && !includes.isEmpty()) {
@@ -67,26 +70,18 @@ public class JimmerProcessor extends AbstractProcessor {
         if (excludes != null && !excludes.isEmpty()) {
             excludeArr = excludes.trim().split("\\s*,\\s*");
         }
-        if (dtoDirs != null && !dtoDirs.isEmpty()) {
-            Set<String> dirs = new LinkedHashSet<>();
-            for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
-                if (path.isEmpty() || path.equals("/")) {
-                    continue;
-                }
-                if (path.startsWith("/")) {
-                    path = path.substring(1);
-                }
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-                if (!path.isEmpty()) {
-                    dirs.add(path);
-                }
-            }
-            this.dtoDirs = DtoUtils.standardDtoDirs(dirs);
-        } else {
-            this.dtoDirs = Collections.singletonList("src/main/dto");
-        }
+        this.dtoDirs = dtoDirs(
+                processingEnv,
+                "jimmer.dto.dirs",
+                "src/main/",
+                Collections.singletonList("src/main/dto")
+        );
+        this.dtoTestDirs = dtoDirs(
+                processingEnv,
+                "jimmer.dto.testDirs",
+                "src/test/",
+                Collections.singletonList("src/test/dto")
+        );
         checkedException = "true".equals(processingEnv.getOptions().get("jimmer.client.checkedException"));
         context = new Context(
                 processingEnv.getElementUtils(),
@@ -118,7 +113,7 @@ public class JimmerProcessor extends AbstractProcessor {
                         new ImmutableProcessor(context, filer, messager).process(roundEnv).keySet();
                 new EntryProcessor(context, immutableTypeElements, filer).process();
                 boolean errorGenerated = new ErrorProcessor(context, checkedException, filer).process(roundEnv);
-                boolean dtoGenerated = new DtoProcessor(context, elements, filer, dtoDirs).process();
+                boolean dtoGenerated = new DtoProcessor(context, elements, filer, isTest() ? dtoTestDirs : dtoDirs).process();
                 if (!immutableTypeElements.isEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = roundEnv
                             .getRootElements()
@@ -151,5 +146,59 @@ public class JimmerProcessor extends AbstractProcessor {
             );
         }
         return true;
+    }
+
+    private boolean isTest() {
+        try {
+            String path = filer.getResource(
+                    StandardLocation.CLASS_OUTPUT,
+                    "",
+                    "dummy.txt"
+            ).toUri().getPath();
+            return path.endsWith("/test/dummy.txt");
+        } catch (IOException ex) {
+            throw new GeneratorException("Cannot get the class output dir", ex);
+        }
+    }
+
+    private static Collection<String> dtoDirs(
+            ProcessingEnvironment env,
+            String configurationName,
+            String prefix,
+            Collection<String> defaultDirs) {
+        String dtoDirs = env.getOptions().get(configurationName);
+        if (dtoDirs != null && !dtoDirs.isEmpty()) {
+            Set<String> dirs = new LinkedHashSet<>();
+            for (String path : dtoDirs.trim().split("\\*[,:;]\\s*")) {
+                if (path.isEmpty() || path.equals("/")) {
+                    continue;
+                }
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length() - 1);
+                }
+                if (!path.isEmpty()) {
+                    dirs.add(path);
+                }
+            }
+            for (String dir : dirs) {
+                if (!dir.startsWith(prefix)) {
+                    throw new GeneratorException(
+                            "Illegal annotation processor configuration \"" +
+                                    configurationName +
+                                    "\", it contains an illegal path \"" +
+                                    dir +
+                                    "\" which does not start with \"" +
+                                    prefix +
+                                    "\"",
+                            null
+                    );
+                }
+            }
+            return DtoUtils.standardDtoDirs(dirs);
+        }
+        return defaultDirs;
     }
 }

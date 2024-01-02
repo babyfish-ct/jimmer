@@ -49,7 +49,6 @@ java {
 }
 
 ksp {
-    arg("jimmer.dto.dirs", "src/test/dto")
     arg("jimmer.dto.mutable", "true")
 }
 

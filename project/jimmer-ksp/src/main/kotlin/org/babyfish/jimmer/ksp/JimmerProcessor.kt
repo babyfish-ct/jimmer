@@ -17,24 +17,10 @@ class JimmerProcessor(
 ) : SymbolProcessor {
 
     private val dtoDirs: Collection<String> =
-        environment.options["jimmer.dto.dirs"]
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { text ->
-                text.split("\\s*[,:;]\\s*")
-                    .map {
-                        when {
-                            it == "" || it == "/" -> null
-                            it.startsWith("/") -> it.substring(1)
-                            it.endsWith("/") -> it.substring(0, it.length - 1)
-                            else -> it.takeIf { it.isNotEmpty() }
-                        }
-                    }
-                    .filterNotNull()
-                    .toSet()
-            }
-            ?.let { DtoUtils.standardDtoDirs(it) }
-            ?: listOf("src/main/dto")
+        dtoDir("jimmer.dto.dirs", "src/main/") ?: listOf("src/main/dto")
+
+    private val dtoTestDirs: Collection<String> =
+        dtoDir("jimmer.dto.testDirs", "src/test/") ?: listOf("src/test/dto")
 
     private val dtoMutable: Boolean =
         environment.options["jimmer.dto.mutable"]?.trim() == "true"
@@ -66,7 +52,15 @@ class JimmerProcessor(
             if (!serverGenerated) {
                 processedDeclarations += ImmutableProcessor(ctx).process()
                 val errorGenerated = ErrorProcessor(ctx, checkedException).process()
-                val dtoGenerated = DtoProcessor(ctx, dtoDirs, dtoMutable).process()
+                val dtoGenerated = DtoProcessor(
+                    ctx,
+                    if (isTest(ctx.resolver.getAllFiles().first().filePath)) {
+                        dtoTestDirs
+                    } else {
+                        dtoDirs
+                    },
+                    dtoMutable
+                ).process()
                 serverGenerated = true
                 if (processedDeclarations.isNotEmpty() || errorGenerated || dtoGenerated) {
                     delayedClientTypeNames = resolver.getAllFiles().flatMap {  file ->
@@ -91,6 +85,49 @@ class JimmerProcessor(
         } catch (ex: DtoAstException) {
             environment.logger.error(ex.message!!)
             emptyList()
+        }
+    }
+
+    private fun dtoDir(configurationName: String, prefix: String) : Collection<String>? =
+        environment.options[configurationName]
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { text ->
+                text.split("\\s*[,:;]\\s*")
+                    .map {
+                        when {
+                            it == "" || it == "/" -> null
+                            it.startsWith("/") -> it.substring(1)
+                            it.endsWith("/") -> it.substring(0, it.length - 1)
+                            else -> it.takeIf { it.isNotEmpty() }
+                        }?.also { dir ->
+                            if (!dir.startsWith(prefix)) {
+                                throw GeneratorException(
+                                    "Illegal KSP configuration \"" +
+                                        configurationName +
+                                        "\", it contains an illegal path \"" +
+                                        dir +
+                                        "\" which does not start with \"" +
+                                        prefix +
+                                        "\""
+                                )
+                            }
+                        }
+                    }
+                    .filterNotNull()
+                    .toSet()
+            }
+            ?.let { DtoUtils.standardDtoDirs(it) }
+
+    companion object {
+
+        private fun isTest(path: String): Boolean {
+            val testIndex = path.indexOf("/src/test/")
+            if (testIndex == -1) {
+                return false
+            }
+            val mainIndex = path.indexOf("/src/main/")
+            return mainIndex == -1 || testIndex < mainIndex
         }
     }
 }
