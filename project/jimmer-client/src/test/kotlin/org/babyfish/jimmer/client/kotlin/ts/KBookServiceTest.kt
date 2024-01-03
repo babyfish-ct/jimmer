@@ -377,7 +377,7 @@ class KBookServiceTest {
                 " * The gender, which can only be `MALE` or `FEMALE`\n" +
                 " * \n" +
                 " */\n" +
-                "export type KGender = typeof KGender_CONSTANTS;\n",
+                "export type KGender = typeof KGender_CONSTANTS[number];\n",
             writer.toString()
         )
     }

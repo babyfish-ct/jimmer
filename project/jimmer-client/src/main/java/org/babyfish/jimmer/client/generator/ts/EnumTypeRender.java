@@ -33,6 +33,6 @@ public class EnumTypeRender implements Render {
         });
         writer.code(" as const;\n");
         writer.doc(enumType.getDoc());
-        writer.code("export type ").code(name).code(" = typeof ").code(name).code("_CONSTANTS;\n");
+        writer.code("export type ").code(name).code(" = typeof ").code(name).code("_CONSTANTS[number];\n");
     }
 }

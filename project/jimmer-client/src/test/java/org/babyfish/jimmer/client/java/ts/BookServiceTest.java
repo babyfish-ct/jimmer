@@ -479,7 +479,7 @@ public class BookServiceTest {
                         "/**\n" +
                         " * The gender, which can only be `MALE` or `FEMALE`\n" +
                         " */\n" +
-                        "export type Gender = typeof Gender_CONSTANTS;\n",
+                        "export type Gender = typeof Gender_CONSTANTS[number];\n",
                 writer.toString()
         );
     }
