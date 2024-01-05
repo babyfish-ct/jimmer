@@ -603,6 +603,7 @@ class TableImpl<E> extends AbstractDataManager<String, TableImplementor<?>> impl
         }
         TableUsedState usedState = builder.getAstContext().getTableUsedState(this);
         if (usedState != TableUsedState.NONE) {
+            builder.separator();
             renderSelf(builder, mode);
             if (mode == RenderMode.DEEPER_JOIN_ONLY) {
                 for (TableImplementor<?> childTable : this) {

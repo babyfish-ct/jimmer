@@ -21,8 +21,8 @@ class InSubQueryPredicate extends AbstractPredicate {
             TypedSubQuery<?> subQuery,
             boolean negative
     ) {
-        this.expression = expression;
-        this.subQuery = subQuery;
+        this.expression = Objects.requireNonNull(expression, "`expression` cannot be null");
+        this.subQuery = Objects.requireNonNull(subQuery, "`subQuery` cannot be null");
         this.negative = negative;
     }
 

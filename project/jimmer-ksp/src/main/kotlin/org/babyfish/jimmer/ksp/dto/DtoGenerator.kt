@@ -940,13 +940,7 @@ class DtoGenerator private constructor(
             LIST.parameterizedBy(elementTypeName)
         } else {
             elementTypeName
-        }.let {
-            if (prop.isNullable) {
-                it.copy(nullable = true)
-            } else {
-                it
-            }
-        }
+        }.copy(nullable = prop.isNullable)
     }
 
     private fun propElementName(prop: DtoProp<ImmutableType, ImmutableProp>): TypeName {
@@ -977,7 +971,7 @@ class DtoGenerator private constructor(
             baseProp.idViewBaseProp!!.targetType!!.idProp!!.clientClassName
         } else {
             tailProp.baseProp.clientClassName
-        }
+        }.copy(nullable = false)
     }
 
     private fun typeName(typeRef: TypeRef?): TypeName {

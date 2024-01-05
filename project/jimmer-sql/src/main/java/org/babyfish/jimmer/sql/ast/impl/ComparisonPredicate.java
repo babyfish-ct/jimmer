@@ -17,8 +17,8 @@ abstract class ComparisonPredicate extends AbstractPredicate {
             Expression<?> left,
             Expression<?> right
     ) {
-        this.left = left;
-        this.right = right;
+        this.left = Objects.requireNonNull(left, "`left` cannot be null");
+        this.right = Objects.requireNonNull(right, "`right` cannot be null");
         Literals.bind(left, right);
         Literals.bind(right, left);
     }

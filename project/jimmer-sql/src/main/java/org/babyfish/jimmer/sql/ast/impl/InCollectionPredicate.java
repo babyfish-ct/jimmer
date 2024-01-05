@@ -17,19 +17,19 @@ class InCollectionPredicate extends AbstractPredicate {
 
     private Expression<?> expression;
 
-    private Collection<?> values;
+    private final Collection<?> values;
 
     private Collection<?> convertedValues;
 
-    private boolean negative;
+    private final boolean negative;
 
     public InCollectionPredicate(
             Expression<?> expression,
             Collection<?> values,
             boolean negative
     ) {
-        this.expression = expression;
-        this.values = values;
+        this.expression = Objects.requireNonNull(expression, "`expression` cannot be null");
+        this.values = Objects.requireNonNull(values, "`values` cannot b null");
         this.negative = negative;
     }
 

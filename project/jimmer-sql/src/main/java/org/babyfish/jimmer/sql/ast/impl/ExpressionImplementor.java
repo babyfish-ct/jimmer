@@ -7,6 +7,8 @@ import org.babyfish.jimmer.sql.ast.query.NullOrderMode;
 import org.babyfish.jimmer.sql.ast.query.Order;
 import org.babyfish.jimmer.sql.ast.query.OrderMode;
 import org.babyfish.jimmer.sql.ast.query.TypedSubQuery;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,8 +19,9 @@ public interface ExpressionImplementor<T> extends Expression<T> {
 
     int precedence();
 
+    @NotNull
     @Override
-    default Predicate eq(Expression<T> other) {
+    default Predicate eq(@NotNull Expression<T> other) {
         if (other instanceof NullExpression<?>) {
             return isNull();
         } else if (this instanceof NullExpression<?>) {
@@ -27,16 +30,18 @@ public interface ExpressionImplementor<T> extends Expression<T> {
         return new ComparisonPredicate.Eq(this, other);
     }
 
+    @NotNull
     @Override
-    default Predicate eq(T other) {
+    default Predicate eq(@Nullable T other) {
         if (other == null) {
             return isNull();
         }
         return eq(Literals.any(other));
     }
 
+    @NotNull
     @Override
-    default Predicate ne(Expression<T> other) {
+    default Predicate ne(@NotNull Expression<T> other) {
         if (other instanceof NullExpression<?>) {
             return isNotNull();
         } else if (this instanceof NullExpression<?>) {
@@ -45,8 +50,9 @@ public interface ExpressionImplementor<T> extends Expression<T> {
         return new ComparisonPredicate.Ne(this, other);
     }
 
+    @NotNull
     @Override
-    default Predicate ne(T other) {
+    default Predicate ne(@Nullable T other) {
         if (other == null) {
             return isNotNull();
         }
@@ -54,42 +60,42 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     }
 
     @Override
-    default Predicate isNull() {
+    default @NotNull Predicate isNull() {
         return new NullityPredicate(this, false);
     }
 
     @Override
-    default Predicate isNotNull() {
+    default @NotNull Predicate isNotNull() {
         return new NullityPredicate(this, true);
     }
 
     @Override
-    default Predicate in(Collection<T> values) {
+    default @NotNull Predicate in(@NotNull Collection<T> values) {
         return new InCollectionPredicate(this, values, false);
     }
 
     @Override
-    default Predicate notIn(Collection<T> values) {
+    default @NotNull Predicate notIn(@NotNull Collection<T> values) {
         return new InCollectionPredicate(this, values, true);
     }
 
     @Override
-    default Predicate in(TypedSubQuery<T> subQuery) {
+    default @NotNull Predicate in(@NotNull TypedSubQuery<T> subQuery) {
         return new InSubQueryPredicate(this, subQuery, false);
     }
 
     @Override
-    default Predicate notIn(TypedSubQuery<T> subQuery) {
+    default @NotNull Predicate notIn(@NotNull TypedSubQuery<T> subQuery) {
         return new InSubQueryPredicate(this, subQuery, true);
     }
 
     @Override
-    default NumericExpression<Long> count() {
+    default @NotNull NumericExpression<Long> count() {
         return count(false);
     }
 
     @Override
-    default NumericExpression<Long> count(boolean distinct) {
+    default @NotNull NumericExpression<Long> count(boolean distinct) {
         if (distinct) {
             return new AggregationExpression.CountDistinct(this);
         }
@@ -97,27 +103,27 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     }
 
     @Override
-    default Expression<T> coalesce(T defaultValue) {
+    default @NotNull Expression<T> coalesce(T defaultValue) {
         return coalesceBuilder().or(defaultValue).build();
     }
 
     @Override
-    default Expression<T> coalesce(Expression<T> defaultExpr) {
+    default @NotNull Expression<T> coalesce(Expression<T> defaultExpr) {
         return coalesceBuilder().or(defaultExpr).build();
     }
 
     @Override
-    default CoalesceBuilder<T> coalesceBuilder() {
+    default @NotNull CoalesceBuilder<T> coalesceBuilder() {
         return new CoalesceBuilder<>(this);
     }
 
     @Override
-    default Order asc() {
+    default @NotNull Order asc() {
         return new Order(this, OrderMode.ASC, NullOrderMode.UNSPECIFIED);
     }
 
     @Override
-    default Order desc() {
+    default @NotNull Order desc() {
         return new Order(this, OrderMode.DESC, NullOrderMode.UNSPECIFIED);
     }
 }

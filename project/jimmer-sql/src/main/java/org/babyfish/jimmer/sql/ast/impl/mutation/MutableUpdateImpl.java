@@ -362,7 +362,6 @@ public class MutableUpdateImpl
                 case AS_JOIN:
                     builder.from().enter(",");
                     for (TableImplementor<?> child : table) {
-                        builder.separator();
                         child.renderJoinAsFrom(builder, TableImplementor.RenderMode.FROM_ONLY);
                     }
                     builder.leave();
@@ -415,7 +414,6 @@ public class MutableUpdateImpl
 
         if (hasTableCondition) {
             for (TableImplementor<?> child : table) {
-                builder.separator();
                 child.renderJoinAsFrom(builder, TableImplementor.RenderMode.WHERE_ONLY);
             }
         }

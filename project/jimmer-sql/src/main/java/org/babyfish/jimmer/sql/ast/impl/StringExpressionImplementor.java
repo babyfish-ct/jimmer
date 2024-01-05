@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.LikeMode;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.StringExpression;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -19,14 +20,12 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
     }
 
     @Override
-    @Nullable
-    default Predicate like(String pattern, LikeMode likeMode) {
+    default @NotNull Predicate like(@NotNull String pattern, @NotNull LikeMode likeMode) {
         return LikePredicate.of(this, pattern, false, likeMode);
     }
 
     @Override
-    @Nullable
-    default Predicate ilike(String pattern, LikeMode likeMode) {
+    default @NotNull Predicate ilike(@NotNull String pattern, @NotNull LikeMode likeMode) {
         return LikePredicate.of(this, pattern, true, likeMode);
     }
 
@@ -51,7 +50,7 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
     }
 
     @Override
-    default StringExpression concat(Expression<String>... others) {
+    default @NotNull StringExpression concat(Expression<String>... others) {
         List<Expression<String>> exprs =
                 Arrays.stream(others)
                         .filter(Objects::nonNull)
@@ -63,17 +62,17 @@ interface StringExpressionImplementor extends StringExpression, ComparableExpres
     }
 
     @Override
-    default StringExpression coalesce(String defaultValue) {
+    default @NotNull StringExpression coalesce(String defaultValue) {
         return coalesceBuilder().or(defaultValue).build();
     }
 
     @Override
-    default StringExpression coalesce(Expression<String> defaultExpr) {
+    default @NotNull StringExpression coalesce(Expression<String> defaultExpr) {
         return coalesceBuilder().or(defaultExpr).build();
     }
 
     @Override
-    default CoalesceBuilder.Str coalesceBuilder() {
+    default CoalesceBuilder.@NotNull Str coalesceBuilder() {
         return new CoalesceBuilder.Str(this);
     }
 }

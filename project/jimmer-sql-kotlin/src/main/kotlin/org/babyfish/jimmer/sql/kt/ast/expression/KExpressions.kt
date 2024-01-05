@@ -144,6 +144,11 @@ infix fun <T: Any> KExpression<T>.eq(right: KExpression<T>): KNonNullExpression<
 infix fun <T: Any> KExpression<T>.eq(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Eq(this, value(right))
 
+infix fun <T: Any> KExpression<T>.`eq?`(right: T?): KNonNullExpression<Boolean>? =
+    right?.let {
+        ComparisonPredicate.Eq(this, value(it))
+    }
+
 infix fun <T: Any> KExpression<T>.ne(right: KExpression<T>): KNonNullExpression<Boolean> =
     if (right is NullExpression<*>) {
         IsNotNullPredicate(this)
@@ -156,11 +161,21 @@ infix fun <T: Any> KExpression<T>.ne(right: KExpression<T>): KNonNullExpression<
 infix fun <T: Any> KExpression<T>.ne(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ne(this, value(right))
 
+infix fun <T: Any> KExpression<T>.`ne?`(right: T?): KNonNullExpression<Boolean>? =
+    right?.let {
+        ComparisonPredicate.Ne(this, value(it))
+    }
+
 infix fun <T: Comparable<*>> KExpression<T>.lt(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Lt(this, right)
 
 infix fun <T: Comparable<*>> KExpression<T>.lt(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Lt(this, value(right))
+
+infix fun <T: Comparable<*>> KExpression<T>.`lt?`(right: T?): KNonNullExpression<Boolean>? =
+    right?.let {
+        ComparisonPredicate.Lt(this, value(it))
+    }
 
 infix fun <T: Comparable<*>> KExpression<T>.le(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Le(this, right)
@@ -168,17 +183,32 @@ infix fun <T: Comparable<*>> KExpression<T>.le(right: KExpression<T>): KNonNullE
 infix fun <T: Comparable<*>> KExpression<T>.le(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Le(this, value(right))
 
+infix fun <T: Comparable<*>> KExpression<T>.`le?`(right: T?): KNonNullExpression<Boolean>? =
+    right?.let {
+        ComparisonPredicate.Le(this, value(it))
+    }
+
 infix fun <T: Comparable<*>> KExpression<T>.gt(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Gt(this, right)
 
 infix fun <T: Comparable<*>> KExpression<T>.gt(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Gt(this, value(right))
 
+infix fun <T: Comparable<*>> KExpression<T>.`gt?`(right: T?): KNonNullExpression<Boolean>? =
+    right?.let {
+        ComparisonPredicate.Gt(this, value(it))
+    }
+
 infix fun <T: Comparable<*>> KExpression<T>.ge(right: KExpression<T>): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ge(this, right)
 
 infix fun <T: Comparable<*>> KExpression<T>.ge(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ge(this, value(right))
+
+infix fun <T: Comparable<*>> KExpression<T>.`ge?`(right: T?): KNonNullExpression<Boolean>? =
+    right?.let {
+        ComparisonPredicate.Ge(this, value(it))
+    }
 
 fun <T: Comparable<*>> KExpression<T>.between(
     min: KNonNullExpression<T>,
@@ -192,6 +222,17 @@ fun <T: Comparable<*>> KExpression<T>.between(
 ): KNonNullExpression<Boolean> =
     BetweenPredicate(false, this, value(min), value(max))
 
+fun <T: Comparable<*>> KExpression<T>.`between?`(
+    min: T?,
+    max: T?
+): KNonNullExpression<Boolean>? =
+    when {
+        min === null && max === null -> null
+        min === null -> ComparisonPredicate.Le(this, value(max!!))
+        max === null -> ComparisonPredicate.Ge(this, value(min))
+        else -> BetweenPredicate(false, this, value(min), value(max))
+    }
+
 fun <T: Comparable<*>> KExpression<T>.notBetween(
     min: KNonNullExpression<T>,
     max: KNonNullExpression<T>
@@ -203,6 +244,17 @@ fun <T: Comparable<*>> KExpression<T>.notBetween(
     max: T
 ): KNonNullExpression<Boolean> =
     BetweenPredicate(true, this, value(min), value(max))
+
+fun <T: Comparable<*>> KExpression<T>.`notBetween?`(
+    min: T?,
+    max: T?
+): KNonNullExpression<Boolean>? =
+    when {
+        min === null && max === null -> null
+        min === null -> ComparisonPredicate.Gt(this, value(max!!))
+        max === null -> ComparisonPredicate.Lt(this, value(min))
+        else -> BetweenPredicate(true, this, value(min), value(max))
+    }
 
 
 
@@ -313,10 +365,24 @@ infix fun KExpression<String>.like(
 ): KNonNullExpression<Boolean> =
     LikePredicate(this, false, pattern, LikeMode.ANYWHERE)
 
+infix fun KExpression<String>.`like?`(
+    pattern: String?
+): KNonNullExpression<Boolean>? =
+    pattern?.takeIf { it.isNotEmpty() }?.let {
+        LikePredicate(this, false, it, LikeMode.ANYWHERE)
+    }
+
 infix fun KExpression<String>.ilike(
     pattern: String
 ): KNonNullExpression<Boolean> =
     LikePredicate(this, true, pattern, LikeMode.ANYWHERE)
+
+infix fun KExpression<String>.`ilike?`(
+    pattern: String?
+): KNonNullExpression<Boolean>? =
+    pattern?.takeIf { it.isNotEmpty() }?.let {
+        LikePredicate(this, true, it, LikeMode.ANYWHERE)
+    }
 
 fun KExpression<String>.like(
     pattern: String,
@@ -324,11 +390,27 @@ fun KExpression<String>.like(
 ): KNonNullExpression<Boolean> =
     LikePredicate(this, false, pattern, mode)
 
+fun KExpression<String>.`like?`(
+    pattern: String?,
+    mode: LikeMode
+): KNonNullExpression<Boolean>? =
+    pattern?.takeIf { it.isNotEmpty() || mode == LikeMode.EXACT }?.let {
+        LikePredicate(this, false, it, mode)
+    }
+
 fun KExpression<String>.ilike(
     pattern: String,
     mode: LikeMode
 ): KNonNullExpression<Boolean> =
     LikePredicate(this, true, pattern, mode)
+
+fun KExpression<String>.`ilike?`(
+    pattern: String?,
+    mode: LikeMode
+): KNonNullExpression<Boolean>? =
+    pattern?.takeIf { it.isNotEmpty() || mode == LikeMode.EXACT }?.let {
+        LikePredicate(this, true, it, mode)
+    }
 
 
 

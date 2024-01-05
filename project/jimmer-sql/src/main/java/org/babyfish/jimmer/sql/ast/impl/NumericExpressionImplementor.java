@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.NumericExpression;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 
@@ -59,62 +60,62 @@ interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends
     }
 
     @Override
-    default Predicate lt(Expression<N> other) {
+    default @NotNull Predicate lt(@NotNull Expression<N> other) {
         return new ComparisonPredicate.Lt(this, other);
     }
 
     @Override
-    default Predicate lt(N other) {
+    default @NotNull Predicate lt(@NotNull N other) {
         return lt(Literals.number(other));
     }
 
     @Override
-    default Predicate le(Expression<N> other) {
+    default @NotNull Predicate le(@NotNull Expression<N> other) {
         return new ComparisonPredicate.Le(this, other);
     }
 
     @Override
-    default Predicate le(N other) {
+    default @NotNull Predicate le(@NotNull N other) {
         return le(Literals.number(other));
     }
 
     @Override
-    default Predicate gt(Expression<N> other) {
+    default @NotNull Predicate gt(@NotNull Expression<N> other) {
         return new ComparisonPredicate.Gt(this, other);
     }
 
     @Override
-    default Predicate gt(N other) {
+    default @NotNull Predicate gt(@NotNull N other) {
         return gt(Literals.number(other));
     }
 
     @Override
-    default Predicate ge(Expression<N> other) {
+    default @NotNull Predicate ge(@NotNull Expression<N> other) {
         return new ComparisonPredicate.Ge(this, other);
     }
 
     @Override
-    default Predicate ge(N other) {
+    default @NotNull Predicate ge(@NotNull N other) {
         return ge(Literals.number(other));
     }
 
     @Override
-    default Predicate between(Expression<N> min, Expression<N> max) {
+    default @NotNull Predicate between(@NotNull Expression<N> min, @NotNull Expression<N> max) {
         return new BetweenPredicate(false, this, min, max);
     }
 
     @Override
-    default Predicate between(N min, N max) {
+    default @NotNull Predicate between(@NotNull N min, @NotNull N max) {
         return new BetweenPredicate(false, this, Literals.any(min), Literals.any(max));
     }
 
     @Override
-    default Predicate notBetween(Expression<N> min, Expression<N> max) {
+    default @NotNull Predicate notBetween(@NotNull Expression<N> min, @NotNull Expression<N> max) {
         return new BetweenPredicate(true, this, min, max);
     }
 
     @Override
-    default Predicate notBetween(N min, N max) {
+    default @NotNull Predicate notBetween(@NotNull N min, @NotNull N max) {
         return new BetweenPredicate(true, this, Literals.any(min), Literals.any(max));
     }
 
@@ -139,17 +140,17 @@ interface NumericExpressionImplementor<N extends Number & Comparable<N>> extends
     }
 
     @Override
-    default NumericExpression<N> coalesce(N defaultValue) {
+    default @NotNull NumericExpression<N> coalesce(N defaultValue) {
         return coalesceBuilder().or(defaultValue).build();
     }
 
     @Override
-    default NumericExpression<N> coalesce(Expression<N> defaultExpr) {
+    default @NotNull NumericExpression<N> coalesce(Expression<N> defaultExpr) {
         return coalesceBuilder().or(defaultExpr).build();
     }
 
     @Override
-    default CoalesceBuilder.Num<N> coalesceBuilder() {
+    default CoalesceBuilder.@NotNull Num<N> coalesceBuilder() {
         return new CoalesceBuilder.Num<>(this);
     }
 }

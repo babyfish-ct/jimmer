@@ -5,6 +5,14 @@ input BookStoreNullableInput {
     }
 }
 
+unsafe input BookStoreNonNullInput {
+    id!
+    website!
+    books? {
+        #allScalars
+    }
+}
+
 input BookStoreNullableIdInput {
     #allScalars
     id(books)? as bookIds

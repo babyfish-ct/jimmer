@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.kt.dto
 import org.babyfish.jimmer.sql.kt.common.assertContentEquals
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableIdInput
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookNullableInput
+import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNonNullInput
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNullableIdInput
 import org.babyfish.jimmer.sql.kt.model.classic.store.dto.BookStoreNullableInput
 import org.babyfish.jimmer.sql.kt.model.enumeration.Gender
@@ -10,8 +11,19 @@ import org.babyfish.jimmer.sql.kt.model.enumeration.dto.ArticleNullableIdInput
 import org.babyfish.jimmer.sql.kt.model.enumeration.dto.ArticleNullableInput
 import org.junit.Test
 import java.math.BigDecimal
+import kotlin.test.expect
 
 class NullityTest {
+
+    @Test
+    fun testStatic() {
+        expect(true) {
+            BookStoreNullableInput::website.returnType.isMarkedNullable
+        }
+        expect(false) {
+            BookStoreNonNullInput::website.returnType.isMarkedNullable
+        }
+    }
 
     @Test
     fun testBookWithNonNullStore() {

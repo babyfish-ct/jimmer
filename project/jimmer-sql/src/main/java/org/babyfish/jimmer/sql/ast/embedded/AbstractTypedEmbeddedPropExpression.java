@@ -33,59 +33,59 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
         return ((PropExpressionImpl.EmbeddedImpl<T>)raw).precedence();
     }
 
-    public Predicate eq(Expression<T> other) {
+    public @NotNull Predicate eq(@NotNull Expression<T> other) {
         return raw.eq(other);
     }
 
-    public Predicate eq(T other) {
+    public @NotNull Predicate eq(T other) {
         return raw.eq(other);
     }
 
-    public Predicate ne(Expression<T> other) {
+    public @NotNull Predicate ne(@NotNull Expression<T> other) {
         return raw.ne(other);
     }
 
-    public Predicate ne(T other) {
+    public @NotNull Predicate ne(T other) {
         return raw.ne(other);
     }
 
-    public Predicate isNull() {
+    public @NotNull Predicate isNull() {
         return raw.isNull();
     }
 
-    public Predicate isNotNull() {
+    public @NotNull Predicate isNotNull() {
         return raw.isNotNull();
     }
 
-    public Predicate in(Collection<T> values) {
+    public @NotNull Predicate in(@NotNull Collection<T> values) {
         return raw.in(values);
     }
 
-    public Predicate notIn(Collection<T> values) {
+    public @NotNull Predicate notIn(@NotNull Collection<T> values) {
         return raw.notIn(values);
     }
 
-    public Predicate in(TypedSubQuery<T> subQuery) {
+    public @NotNull Predicate in(@NotNull TypedSubQuery<T> subQuery) {
         return raw.in(subQuery);
     }
 
-    public Predicate notIn(TypedSubQuery<T> subQuery) {
+    public @NotNull Predicate notIn(@NotNull TypedSubQuery<T> subQuery) {
         return raw.notIn(subQuery);
     }
 
-    public NumericExpression<Long> count() {
+    public @NotNull NumericExpression<Long> count() {
         return raw.count();
     }
 
-    public NumericExpression<Long> count(boolean distinct) {
+    public @NotNull NumericExpression<Long> count(boolean distinct) {
         return raw.count(distinct);
     }
 
-    public Order asc() {
+    public @NotNull Order asc() {
         return raw.asc();
     }
 
-    public Order desc() {
+    public @NotNull Order desc() {
         return raw.desc();
     }
 
@@ -97,15 +97,15 @@ public abstract class AbstractTypedEmbeddedPropExpression<T> implements PropExpr
         return raw.get(prop);
     }
 
-    public Expression<T> coalesce(T defaultValue) {
+    public @NotNull Expression<T> coalesce(T defaultValue) {
         return raw.coalesce(defaultValue);
     }
 
-    public Expression<T> coalesce(Expression<T> defaultExpr) {
+    public @NotNull Expression<T> coalesce(Expression<T> defaultExpr) {
         return raw.coalesce(defaultExpr);
     }
 
-    public CoalesceBuilder<T> coalesceBuilder() {
+    public @NotNull CoalesceBuilder<T> coalesceBuilder() {
         return raw.coalesceBuilder();
     }
 

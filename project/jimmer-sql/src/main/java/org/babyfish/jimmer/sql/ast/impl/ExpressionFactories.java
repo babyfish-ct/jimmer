@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
 import org.babyfish.jimmer.sql.ast.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
@@ -34,42 +35,42 @@ public class ExpressionFactories {
         static final Str INSTANCE = new Str();
 
         @Override
-        public StringExpression value(String value) {
+        public @NotNull StringExpression value(String value) {
             return Literals.string(value);
         }
 
         @Override
-        public StringExpression sql(String sql) {
+        public @NotNull StringExpression sql(String sql) {
             return SqlExpressions.of(String.class, sql, null);
         }
 
         @Override
-        public StringExpression sql(String sql, Expression<?> expression, Object ... values) {
+        public @NotNull StringExpression sql(String sql, Expression<?> expression, Object ... values) {
             return SqlExpressions.of(String.class, sql, new Expression[] { expression }, values);
         }
 
         @Override
-        public StringExpression sql(String sql, Expression<?>[] expressions, Object ... values) {
+        public @NotNull StringExpression sql(String sql, Expression<?>[] expressions, Object ... values) {
             return SqlExpressions.of(String.class, sql, expressions, values);
         }
 
         @Override
-        public StringExpression sql(String sql, Consumer<SqlExpressionContext> block) {
+        public @NotNull StringExpression sql(String sql, Consumer<SqlExpressionContext> block) {
             return SqlExpressions.of(String.class, sql, block);
         }
 
         @Override
-        public <C> SimpleCaseBuilder.Str<C> caseBuilder(C value) {
+        public <C> SimpleCaseBuilder.@NotNull Str<C> caseBuilder(C value) {
             return caseBuilder(Literals.any(value));
         }
 
         @Override
-        public <C> SimpleCaseBuilder.Str<C> caseBuilder(Expression<C> expression) {
+        public <C> SimpleCaseBuilder.@NotNull Str<C> caseBuilder(Expression<C> expression) {
             return new SimpleCaseBuilder.Str<>(expression);
         }
 
         @Override
-        public CaseBuilder.Str caseBuilder() {
+        public CaseBuilder.@NotNull Str caseBuilder() {
             return new CaseBuilder.Str();
         }
     }
@@ -79,42 +80,42 @@ public class ExpressionFactories {
         static final Num INSTANCE = new Num();
 
         @Override
-        public <N extends Number & Comparable<N>> NumericExpression<N> value(N value) {
+        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> value(N value) {
             return Literals.number(value);
         }
 
         @Override
-        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql) {
+        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql) {
             return SqlExpressions.of(type, sql, null);
         }
 
         @Override
-        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Expression<?> expression, Object ... values) {
+        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql, Expression<?> expression, Object ... values) {
             return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
         }
 
         @Override
-        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Expression<?>[] expressions, Object ... values) {
+        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql, Expression<?>[] expressions, Object ... values) {
             return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override
-        public <N extends Number & Comparable<N>> NumericExpression<N> sql(Class<N> type, String sql, Consumer<SqlExpressionContext> block) {
+        public <N extends Number & Comparable<N>> @NotNull NumericExpression<N> sql(Class<N> type, String sql, Consumer<SqlExpressionContext> block) {
             return SqlExpressions.of(type, sql, block);
         }
 
         @Override
-        public <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, C value) {
+        public <C, N extends Number & Comparable<N>> SimpleCaseBuilder.@NotNull Num<C, N> caseBuilder(Class<N> type, C value) {
             return caseBuilder(type, Literals.any(value));
         }
 
         @Override
-        public <C, N extends Number & Comparable<N>> SimpleCaseBuilder.Num<C, N> caseBuilder(Class<N> type, Expression<C> expression) {
+        public <C, N extends Number & Comparable<N>> SimpleCaseBuilder.@NotNull Num<C, N> caseBuilder(Class<N> type, Expression<C> expression) {
             return new SimpleCaseBuilder.Num<>(type, expression);
         }
 
         @Override
-        public <N extends Number & Comparable<N>> CaseBuilder.Num<N> caseBuilder(Class<N> type) {
+        public <N extends Number & Comparable<N>> CaseBuilder.@NotNull Num<N> caseBuilder(Class<N> type) {
             return new CaseBuilder.Num<>(type);
         }
     }
@@ -124,42 +125,42 @@ public class ExpressionFactories {
         static final Cmp INSTANCE = new Cmp();
 
         @Override
-        public <T extends Comparable<?>> ComparableExpression<T> value(T value) {
+        public <T extends Comparable<?>> @NotNull ComparableExpression<T> value(T value) {
             return Literals.comparable(value);
         }
 
         @Override
-        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql) {
+        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql) {
             return SqlExpressions.of(type, sql, null);
         }
 
         @Override
-        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
+        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
             return SqlExpressions.of(type, sql, new Expression[] { expression }, values);
         }
 
         @Override
-        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
+        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
             return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override
-        public <T extends Comparable<?>> ComparableExpression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
+        public <T extends Comparable<?>> @NotNull ComparableExpression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
             return SqlExpressions.of(type, sql, block);
         }
 
         @Override
-        public <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, C value) {
+        public <C, T extends Comparable<?>> SimpleCaseBuilder.@NotNull Cmp<C, T> caseBuilder(Class<T> type, C value) {
             return caseBuilder(type, Literals.any(value));
         }
 
         @Override
-        public <C, T extends Comparable<?>> SimpleCaseBuilder.Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
+        public <C, T extends Comparable<?>> SimpleCaseBuilder.@NotNull Cmp<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
             return new SimpleCaseBuilder.Cmp<>(type, expression);
         }
 
         @Override
-        public <T extends Comparable<?>> CaseBuilder.Cmp<T> caseBuilder(Class<T> type) {
+        public <T extends Comparable<?>> CaseBuilder.@NotNull Cmp<T> caseBuilder(Class<T> type) {
             return new CaseBuilder.Cmp<>(type);
         }
     }
@@ -169,47 +170,47 @@ public class ExpressionFactories {
         static final Any INSTANCE = new Any();
 
         @Override
-        public <T> Expression<T> value(T value) {
+        public <T> @NotNull Expression<T> value(T value) {
             return Literals.any(value);
         }
 
         @Override
-        public <T> Expression<T> nullValue(Class<T> type) {
+        public <T> @NotNull Expression<T> nullValue(Class<T> type) {
             return new NullExpression<>(type);
         }
 
         @Override
-        public <T> Expression<T> sql(Class<T> type, String sql) {
+        public <T> @NotNull Expression<T> sql(Class<T> type, String sql) {
             return SqlExpressions.of(type, sql, null);
         }
 
         @Override
-        public <T> Expression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
+        public <T> @NotNull Expression<T> sql(Class<T> type, String sql, Expression<?> expression, Object ... values) {
             return SqlExpressions.of(type, sql, new Expression[]{expression}, values);
         }
 
         @Override
-        public <T> Expression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
+        public <T> @NotNull Expression<T> sql(Class<T> type, String sql, Expression<?>[] expressions, Object ... values) {
             return SqlExpressions.of(type, sql, expressions, values);
         }
 
         @Override
-        public <T> Expression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
+        public <T> @NotNull Expression<T> sql(Class<T> type, String sql, Consumer<SqlExpressionContext> block) {
             return SqlExpressions.of(type, sql, block);
         }
 
         @Override
-        public <C, T> SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, C value) {
+        public <C, T> @NotNull SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, C value) {
             return caseBuilder(type, Literals.any(value));
         }
 
         @Override
-        public <C, T> SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
+        public <C, T> @NotNull SimpleCaseBuilder<C, T> caseBuilder(Class<T> type, Expression<C> expression) {
             return new SimpleCaseBuilder<>(type, expression);
         }
 
         @Override
-        public <T> CaseBuilder<T> caseBuilder(Class<T> type) {
+        public <T> @NotNull CaseBuilder<T> caseBuilder(Class<T> type) {
             return new CaseBuilder<>(type);
         }
     }

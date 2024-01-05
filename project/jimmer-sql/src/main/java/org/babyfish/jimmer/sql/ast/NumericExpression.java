@@ -1,6 +1,7 @@
 package org.babyfish.jimmer.sql.ast;
 
 import org.babyfish.jimmer.sql.ast.impl.CoalesceBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 
@@ -26,29 +27,29 @@ public interface NumericExpression<N extends Number & Comparable<N>> extends Com
 
     NumericExpression<N> rem(N other);
 
-    Predicate lt(Expression<N> other);
+    @NotNull Predicate lt(@NotNull Expression<N> other);
 
-    Predicate lt(N other);
+    @NotNull Predicate lt(@NotNull N other);
 
-    Predicate le(Expression<N> other);
+    @NotNull Predicate le(@NotNull Expression<N> other);
 
-    Predicate le(N other);
+    @NotNull Predicate le(@NotNull N other);
 
-    Predicate gt(Expression<N> other);
+    @NotNull Predicate gt(@NotNull Expression<N> other);
 
-    Predicate gt(N other);
+    @NotNull Predicate gt(@NotNull N other);
 
-    Predicate ge(Expression<N> other);
+    @NotNull Predicate ge(@NotNull Expression<N> other);
 
-    Predicate ge(N other);
+    @NotNull Predicate ge(@NotNull N other);
 
-    Predicate between(Expression<N> min, Expression<N> max);
+    @NotNull Predicate between(@NotNull Expression<N> min, @NotNull Expression<N> max);
 
-    Predicate between(N min, N max);
+    @NotNull Predicate between(@NotNull N min, @NotNull N max);
 
-    Predicate notBetween(Expression<N> min, Expression<N> max);
+    @NotNull Predicate notBetween(@NotNull Expression<N> min, @NotNull Expression<N> max);
 
-    Predicate notBetween(N min, N max);
+    @NotNull Predicate notBetween(@NotNull N min, @NotNull N max);
 
     NumericExpression<N> sum();
 
@@ -59,11 +60,13 @@ public interface NumericExpression<N extends Number & Comparable<N>> extends Com
     NumericExpression<BigDecimal> avg();
 
     @Override
+    @NotNull
     NumericExpression<N> coalesce(N defaultValue);
 
     @Override
+    @NotNull
     NumericExpression<N> coalesce(Expression<N> defaultExpr);
 
     @Override
-    CoalesceBuilder.Num<N> coalesceBuilder();
+    CoalesceBuilder.@NotNull Num<N> coalesceBuilder();
 }

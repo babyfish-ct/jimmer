@@ -90,14 +90,20 @@ public class ImmutableSerializer extends StdSerializer<ImmutableSpi> {
                     gen.writeFieldName(propNameConverter.fieldName(prop));
                     JsonSerializer<?> serializer;
                     if (prop.getConverterMetadata() == null) {
-                        serializer = provider.findValueSerializer(
-                                JacksonUtils.getJacksonType(prop),
-                                BeanProps.get(provider.getTypeFactory(), prop)
-                        );
+                        if (prop.getGenericType() instanceof Class<?>) {
+                            serializer = provider.findValueSerializer(
+                                    prop.getReturnClass(),
+                                    BeanProps.get(provider.getTypeFactory(), prop)
+                            );
+                        } else {
+                            serializer = provider.findValueSerializer(
+                                    JacksonUtils.getJacksonType(prop),
+                                    BeanProps.get(provider.getTypeFactory(), prop)
+                            );
+                        }
                     } else {
-                        serializer = provider.findTypedValueSerializer(
+                        serializer = provider.findValueSerializer(
                                 prop.getConverterMetadata().getTargetJacksonType(),
-                                true,
                                 BeanProps.get(provider.getTypeFactory(), prop)
                         );
                     }

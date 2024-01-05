@@ -229,17 +229,17 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public StringExpression coalesce(String defaultValue) {
+        public @NotNull StringExpression coalesce(String defaultValue) {
             return StringExpressionImplementor.super.coalesce(defaultValue);
         }
 
         @Override
-        public StringExpression coalesce(Expression<String> defaultExpr) {
+        public @NotNull StringExpression coalesce(Expression<String> defaultExpr) {
             return StringExpressionImplementor.super.coalesce(defaultExpr);
         }
 
         @Override
-        public CoalesceBuilder.Str coalesceBuilder() {
+        public CoalesceBuilder.@NotNull Str coalesceBuilder() {
             return StringExpressionImplementor.super.coalesceBuilder();
         }
 
@@ -262,17 +262,17 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public NumericExpression<N> coalesce(N defaultValue) {
+        public @NotNull NumericExpression<N> coalesce(N defaultValue) {
             return NumericExpressionImplementor.super.coalesce(defaultValue);
         }
 
         @Override
-        public NumericExpression<N> coalesce(Expression<N> defaultExpr) {
+        public @NotNull NumericExpression<N> coalesce(Expression<N> defaultExpr) {
             return NumericExpressionImplementor.super.coalesce(defaultExpr);
         }
 
         @Override
-        public CoalesceBuilder.Num<N> coalesceBuilder() {
+        public CoalesceBuilder.@NotNull Num<N> coalesceBuilder() {
             return NumericExpressionImplementor.super.coalesceBuilder();
         }
     }
@@ -290,17 +290,17 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public ComparableExpression<T> coalesce(T defaultValue) {
+        public @NotNull ComparableExpression<T> coalesce(T defaultValue) {
             return ComparableExpressionImplementor.super.coalesce(defaultValue);
         }
 
         @Override
-        public ComparableExpression<T> coalesce(Expression<T> defaultExpr) {
+        public @NotNull ComparableExpression<T> coalesce(Expression<T> defaultExpr) {
             return ComparableExpressionImplementor.super.coalesce(defaultExpr);
         }
 
         @Override
-        public CoalesceBuilder.Cmp<T> coalesceBuilder() {
+        public CoalesceBuilder.@NotNull Cmp<T> coalesceBuilder() {
             return ComparableExpressionImplementor.super.coalesceBuilder();
         }
     }
@@ -340,17 +340,17 @@ public class PropExpressionImpl<T>
         }
 
         @Override
-        public final Expression<T> coalesce(T defaultValue) {
+        public final @NotNull Expression<T> coalesce(T defaultValue) {
             return Embedded.super.coalesce(defaultValue);
         }
 
         @Override
-        public final Expression<T> coalesce(Expression<T> defaultExpr) {
+        public final @NotNull Expression<T> coalesce(Expression<T> defaultExpr) {
             return Embedded.super.coalesce(defaultExpr);
         }
 
         @Override
-        public final CoalesceBuilder<T> coalesceBuilder() {
+        public final @NotNull CoalesceBuilder<T> coalesceBuilder() {
             return Embedded.super.coalesceBuilder();
         }
     }
