@@ -290,6 +290,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                     break;
                 case "null":
                 case "notNull":
+                    if (baseProp.isList() && baseProp.isAssociation(true)) {
+                        throw ctx.exception(
+                                prop.func.getLine(),
+                                prop.func.getCharPositionInLine(),
+                                "Cannot call the function \"" + funcName + "\" because the current prop \"" +
+                                        baseProp +
+                                        "\" is neither scalar nor single reference association"
+                        );
+                    }
                     break;
                 default:
                     throw ctx.exception(
@@ -563,6 +572,15 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
                                 "\", child body cannot be specified by it is id view property"
                 );
             }
+            if ("null".equals(funcName) || "notNull".equals(funcName)) {
+                throw ctx.exception(
+                        dtoBody.start.getLine(),
+                        dtoBody.start.getCharPositionInLine(),
+                        "Illegal property \"" +
+                                baseProp.getName() +
+                                "\", child body cannot be specified by it is nullity check property"
+                );
+            }
             targetTypeBuilder = new DtoTypeBuilder<>(
                     this,
                     ctx.getTargetType(baseProp),
@@ -582,7 +600,9 @@ class DtoPropBuilder<T extends BaseType, P extends BaseProp> implements DtoPropI
         } else if (baseProp.isAssociation(true) &&
                 !"id".equals(funcName) &&
                 !"associatedIdIn".equals(funcName) &&
-                !"associatedIdNotIn".equals(funcName)) {
+                !"associatedIdNotIn".equals(funcName) &&
+                !"null".equals(funcName) &&
+                !"notNull".equals(funcName)) {
             throw ctx.exception(
                     prop.stop.getLine(),
                     prop.stop.getCharPositionInLine(),

@@ -123,7 +123,11 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.table().get(props[i]).isNull();
+            if (props[i].isAssociation(TargetLevel.ENTITY)) {
+                predicates[i] = ctx.table().getAssociatedId(props[i]).isNull();
+            } else {
+                predicates[i] = ctx.table().get(props[i]).isNull();
+            }
         }
         ctx.statement().where(Predicate.or(predicates));
     }
@@ -135,7 +139,11 @@ public class PredicateApplier {
         Context ctx = this.context;
         Predicate[] predicates = new Predicate[props.length];
         for (int i = predicates.length - 1; i >= 0; --i) {
-            predicates[i] = ctx.table().get(props[i]).isNotNull();
+            if (props[i].isAssociation(TargetLevel.ENTITY)) {
+                predicates[i] = ctx.table().getAssociatedId(props[i]).isNotNull();
+            } else {
+                predicates[i] = ctx.table().get(props[i]).isNotNull();
+            }
         }
         ctx.statement().where(Predicate.or(predicates));
     }

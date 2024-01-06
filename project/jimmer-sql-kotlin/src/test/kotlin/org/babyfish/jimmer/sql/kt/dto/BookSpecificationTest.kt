@@ -3,13 +3,32 @@ package org.babyfish.jimmer.sql.kt.dto
 import org.babyfish.jimmer.sql.kt.common.AbstractQueryTest
 import org.babyfish.jimmer.sql.kt.model.classic.author.Gender
 import org.babyfish.jimmer.sql.kt.model.classic.book.Book
+import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification2
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification3
 import org.babyfish.jimmer.sql.kt.model.classic.book.dto.BookSpecification4
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 class BookSpecificationTest : AbstractQueryTest() {
+
+    @Test
+    fun testSpecificationWithNullity() {
+        val specification = BookSpecification(isStoreNotNull = true, tag7 = LocalDateTime.now(), tag8 = Any())
+        executeAndExpect(
+            sqlClient.createQuery(Book::class) {
+                where(specification)
+                select(table)
+            }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID 
+                    |from BOOK tb_1_ 
+                    |where tb_1_.STORE_ID is not null""".trimMargin()
+            )
+        }
+    }
 
     @Test
     fun testSpecification2WithoutValue() {

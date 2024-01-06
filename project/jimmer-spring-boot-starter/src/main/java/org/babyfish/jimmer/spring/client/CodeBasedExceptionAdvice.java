@@ -1,5 +1,6 @@
 package org.babyfish.jimmer.spring.client;
 
+import org.babyfish.jimmer.error.CodeBasedException;
 import org.babyfish.jimmer.error.CodeBasedRuntimeException;
 import org.babyfish.jimmer.spring.cfg.JimmerProperties;
 import org.slf4j.Logger;
@@ -25,6 +26,14 @@ public class CodeBasedExceptionAdvice {
     }
 
     @ExceptionHandler
+    public ResponseEntity<Map<String, Object>> handle(CodeBasedException ex) {
+        LOGGER.error("Auto handled HTTP Error(" + CodeBasedException.class.getName() + ")", ex);
+        return ResponseEntity
+                .status(errorTranslator.getHttpStatus())
+                .body(resultMap(ex));
+    }
+
+    @ExceptionHandler
     public ResponseEntity<Map<String, Object>> handle(CodeBasedRuntimeException ex) {
         LOGGER.error("Auto handled HTTP Error(" + CodeBasedRuntimeException.class.getName() + ")", ex);
         return ResponseEntity
@@ -42,6 +51,17 @@ public class CodeBasedExceptionAdvice {
                 "|                                              |\n" +
                 "------------------------------------------------\n";
         LOGGER.info(builder);
+    }
+
+    protected Map<String, Object> resultMap(CodeBasedException ex) {
+        Map<String, Object> resultMap = new LinkedHashMap<>();
+        resultMap.put("family", ex.getFamily());
+        resultMap.put("code", ex.getCode());
+        resultMap.putAll(ex.getFields());
+        if (errorTranslator.isDebugInfoSupported()) {
+            resultMap.put("debugInfo", debugInfoMap(ex));
+        }
+        return resultMap;
     }
 
     protected Map<String, Object> resultMap(CodeBasedRuntimeException ex) {

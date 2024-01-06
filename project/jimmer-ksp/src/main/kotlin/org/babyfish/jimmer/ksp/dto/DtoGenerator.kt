@@ -410,6 +410,15 @@ class DtoGenerator private constructor(
                         when {
                             prop.isNullable -> defaultValue("null")
                             prop.toTailProp().baseProp.isList -> defaultValue("emptyList()")
+                            // For specification, all properties must support value
+                            // because quarkus requires default constructor of batch HTTP get parameters
+                            dtoType.modifiers.contains(DtoTypeModifier.SPECIFICATION) ->
+                                when(propTypeName(prop).copy(nullable = false) as? ClassName) {
+                                    BOOLEAN -> defaultValue("false")
+                                    CHAR -> defaultValue("'\\0'")
+                                    BYTE, SHORT, INT, LONG, FLOAT, DOUBLE -> defaultValue("0")
+                                    STRING -> defaultValue("\"\"")
+                                }
                         }
                     }
                     .build()

@@ -145,7 +145,7 @@ infix fun <T: Any> KExpression<T>.eq(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Eq(this, value(right))
 
 infix fun <T: Any> KExpression<T>.`eq?`(right: T?): KNonNullExpression<Boolean>? =
-    right?.let {
+    right?.takeIf { it != "" }?.let {
         ComparisonPredicate.Eq(this, value(it))
     }
 
@@ -162,7 +162,7 @@ infix fun <T: Any> KExpression<T>.ne(right: T): KNonNullExpression<Boolean> =
     ComparisonPredicate.Ne(this, value(right))
 
 infix fun <T: Any> KExpression<T>.`ne?`(right: T?): KNonNullExpression<Boolean>? =
-    right?.let {
+    right?.takeIf { it != "" }?.let {
         ComparisonPredicate.Ne(this, value(it))
     }
 
@@ -173,7 +173,7 @@ infix fun <T: Comparable<*>> KExpression<T>.lt(right: T): KNonNullExpression<Boo
     ComparisonPredicate.Lt(this, value(right))
 
 infix fun <T: Comparable<*>> KExpression<T>.`lt?`(right: T?): KNonNullExpression<Boolean>? =
-    right?.let {
+    right?.takeIf { it != "" }?.let {
         ComparisonPredicate.Lt(this, value(it))
     }
 
@@ -184,7 +184,7 @@ infix fun <T: Comparable<*>> KExpression<T>.le(right: T): KNonNullExpression<Boo
     ComparisonPredicate.Le(this, value(right))
 
 infix fun <T: Comparable<*>> KExpression<T>.`le?`(right: T?): KNonNullExpression<Boolean>? =
-    right?.let {
+    right?.takeIf { it != "" }?.let {
         ComparisonPredicate.Le(this, value(it))
     }
 
@@ -195,7 +195,7 @@ infix fun <T: Comparable<*>> KExpression<T>.gt(right: T): KNonNullExpression<Boo
     ComparisonPredicate.Gt(this, value(right))
 
 infix fun <T: Comparable<*>> KExpression<T>.`gt?`(right: T?): KNonNullExpression<Boolean>? =
-    right?.let {
+    right?.takeIf { it != "" }?.let {
         ComparisonPredicate.Gt(this, value(it))
     }
 
@@ -206,7 +206,7 @@ infix fun <T: Comparable<*>> KExpression<T>.ge(right: T): KNonNullExpression<Boo
     ComparisonPredicate.Ge(this, value(right))
 
 infix fun <T: Comparable<*>> KExpression<T>.`ge?`(right: T?): KNonNullExpression<Boolean>? =
-    right?.let {
+    right?.takeIf { it != "" }?.let {
         ComparisonPredicate.Ge(this, value(it))
     }
 
@@ -225,13 +225,16 @@ fun <T: Comparable<*>> KExpression<T>.between(
 fun <T: Comparable<*>> KExpression<T>.`between?`(
     min: T?,
     max: T?
-): KNonNullExpression<Boolean>? =
-    when {
-        min === null && max === null -> null
-        min === null -> ComparisonPredicate.Le(this, value(max!!))
-        max === null -> ComparisonPredicate.Ge(this, value(min))
-        else -> BetweenPredicate(false, this, value(min), value(max))
+): KNonNullExpression<Boolean>? {
+    val finalMin = min?.takeIf { it != "" }
+    val finalMax = max?.takeIf { it != "" }
+    return when {
+        finalMin === null && finalMax === null -> null
+        finalMin === null -> ComparisonPredicate.Le(this, value(finalMax!!))
+        finalMax === null -> ComparisonPredicate.Ge(this, value(finalMin))
+        else -> BetweenPredicate(false, this, value(finalMin), value(finalMax))
     }
+}
 
 fun <T: Comparable<*>> KExpression<T>.notBetween(
     min: KNonNullExpression<T>,
@@ -248,13 +251,16 @@ fun <T: Comparable<*>> KExpression<T>.notBetween(
 fun <T: Comparable<*>> KExpression<T>.`notBetween?`(
     min: T?,
     max: T?
-): KNonNullExpression<Boolean>? =
-    when {
-        min === null && max === null -> null
-        min === null -> ComparisonPredicate.Gt(this, value(max!!))
-        max === null -> ComparisonPredicate.Lt(this, value(min))
-        else -> BetweenPredicate(true, this, value(min), value(max))
+): KNonNullExpression<Boolean>? {
+    val finalMin = min?.takeIf { it != "" }
+    val finalMax = max?.takeIf { it != "" }
+    return when {
+        finalMin === null && finalMax === null -> null
+        finalMin === null -> ComparisonPredicate.Gt(this, value(finalMax!!))
+        finalMax === null -> ComparisonPredicate.Lt(this, value(finalMin))
+        else -> BetweenPredicate(true, this, value(finalMin), value(finalMax))
     }
+}
 
 
 

@@ -41,13 +41,28 @@ public interface Expression<T> extends Selection<T> {
 
     /**
      * Create `equal` expression by condition
-     * @param condition If true, creates expression; otherwise, returns null
+     * @param condition If `condition` is true and `other` is neither null nor empty string, creates expression;
+     *                  otherwise returns null
      * @param other The right operand
      * @return A predicate or null
+     * @see #eqIf(Object)
      */
     @Nullable
-    default Predicate eq(boolean condition, @Nullable T other) {
-        return condition ? eq(other) : null;
+    default Predicate eqIf(boolean condition, @Nullable T other) {
+        return condition && other != null && !"".equals(other) ? eq(other) : null;
+    }
+
+    /**
+     * Create `equal` expression by condition
+     *
+     * <p>If `other` is neither null nor empty string, creates expression; otherwise returns null.</p>
+     * @param other The right operand
+     * @return A predicate or null
+     * @see #eqIf(boolean, Object)
+     */
+    @Nullable
+    default Predicate eqIf(@Nullable T other) {
+        return eqIf(true, other);
     }
 
     /**
@@ -81,10 +96,23 @@ public interface Expression<T> extends Selection<T> {
      * @param condition If true, creates expression; otherwise, returns null
      * @param other The right operand
      * @return A predicate or null
+     * @see #neIf(Object)
      */
     @Nullable
-    default Predicate ne(boolean condition, @Nullable T other) {
-        return condition ? ne(other) : null;
+    default Predicate neIf(boolean condition, @Nullable T other) {
+        return condition && other != null && !"".equals(other) ? ne(other) : null;
+    }
+
+    /**
+     * Create `not equal` expression by condition
+     * <p>If `other` is neither null nor empty string, creates expression; otherwise returns null.</p>
+     * @param other The right operand
+     * @return A predicate or null
+     * @see #neIf(boolean, Object)
+     */
+    @Nullable
+    default Predicate neIf(@Nullable T other) {
+        return neIf(true, other);
     }
 
     @NotNull
@@ -97,32 +125,52 @@ public interface Expression<T> extends Selection<T> {
     Predicate in(@NotNull Collection<T> values);
 
     @Nullable
-    default Predicate in(boolean condition, @Nullable Collection<T> values) {
+    default Predicate inIf(boolean condition, @Nullable Collection<T> values) {
         return condition && values != null ? in(values) : null;
+    }
+
+    @Nullable
+    default Predicate inIf(@Nullable Collection<T> values) {
+        return inIf(true, values);
     }
 
     @NotNull
     Predicate notIn(@NotNull Collection<T> values);
 
     @Nullable
-    default Predicate notIn(boolean condition, @Nullable Collection<T> values) {
+    default Predicate notInIf(boolean condition, @Nullable Collection<T> values) {
         return condition && values != null ? notIn(values) : null;
+    }
+
+    @Nullable
+    default Predicate notInIf(@Nullable Collection<T> values) {
+        return notInIf(true, values);
     }
 
     @NotNull
     Predicate in(@NotNull TypedSubQuery<T> subQuery);
 
     @Nullable
-    default Predicate in(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
+    default Predicate inIf(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
         return condition && subQuery != null ? in(subQuery) : null;
+    }
+
+    @Nullable
+    default Predicate inIf(@Nullable TypedSubQuery<T> subQuery) {
+        return inIf(true, subQuery);
     }
 
     @NotNull
     Predicate notIn(@NotNull TypedSubQuery<T> subQuery);
 
     @Nullable
-    default Predicate notIn(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
+    default Predicate notInIf(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
         return condition && subQuery != null ? notIn(subQuery) : null;
+    }
+
+    @Nullable
+    default Predicate notInIf(@Nullable TypedSubQuery<T> subQuery) {
+        return notInIf(true, subQuery);
     }
 
     @NotNull

@@ -4,6 +4,7 @@ import org.babyfish.jimmer.sql.common.AbstractQueryTest;
 import org.babyfish.jimmer.sql.common.Constants;
 import org.babyfish.jimmer.sql.model.BookTable;
 import org.babyfish.jimmer.sql.model.Gender;
+import org.babyfish.jimmer.sql.model.dto.BookSpecification;
 import org.babyfish.jimmer.sql.model.dto.BookSpecification2;
 import org.babyfish.jimmer.sql.model.dto.BookSpecification3;
 import org.babyfish.jimmer.sql.model.dto.BookSpecification4;
@@ -16,6 +17,25 @@ import java.util.UUID;
 public class BookSpecificationTest extends AbstractQueryTest {
 
     private static final BookTable table = BookTable.$;
+
+    @Test
+    public void testSpecificationWithoutNullity() {
+        BookSpecification specification = new BookSpecification();
+        specification.setStoreNotNull(true);
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(specification)
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.EDITION, tb_1_.PRICE, tb_1_.STORE_ID " +
+                                    "from BOOK tb_1_ " +
+                                    "where tb_1_.STORE_ID is not null"
+                    );
+                }
+        );
+    }
 
     @Test
     public void testSpecification2WithoutValues() {

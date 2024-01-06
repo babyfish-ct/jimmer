@@ -96,6 +96,8 @@ dynamic input DynamicBookInput2 {
 specification BookSpecification {
     #allScalars(Book)
 
+    notNull(store)
+
     @Job(value = [
         Task("Prepare environment", priority = Priority.HIGH, estimation = 4),
         Task("Install intellij", estimation = 1),

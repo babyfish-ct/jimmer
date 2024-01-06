@@ -105,6 +105,8 @@ specification BookSpecification {
         Task("Develop Service", estimation = 800),
         Task(value = "Develop UI", priority = Priority.LOW, estimation = 100)
     ])
+    notNull(store)
+    
     tag1: Int
     tag2: Int
     tag3: Map<String, Set<String>>

@@ -191,7 +191,7 @@ public class EntityManager {
             @Nullable Predicate<Class<?>> predicate
     ) {
         if (classLoader == null) {
-            classLoader = EntityManager.class.getClassLoader();
+            classLoader = Thread.currentThread().getContextClassLoader();
         }
 
         Set<Class<?>> classes = new LinkedHashSet<>();
