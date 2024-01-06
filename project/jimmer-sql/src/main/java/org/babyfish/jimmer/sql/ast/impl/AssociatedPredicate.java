@@ -3,6 +3,7 @@ package org.babyfish.jimmer.sql.ast.impl;
 import org.babyfish.jimmer.meta.ImmutableProp;
 import org.babyfish.jimmer.meta.TargetLevel;
 import org.babyfish.jimmer.sql.ast.Predicate;
+import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
 import org.babyfish.jimmer.sql.ast.impl.query.AbstractMutableQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.query.MutableSubQueryImpl;
 import org.babyfish.jimmer.sql.ast.impl.table.RootTableResolver;
@@ -117,18 +118,43 @@ public class AssociatedPredicate extends AbstractPredicate implements VirtualPre
             query = new MutableSubQueryImpl(parent, proxy);
             table = proxy;
         }
-        query.where(table.inverseGetAssociatedId(prop).eq(parenTable.getId()));
+        boolean hasUserPredicates = false;
+        List<Predicate> predicates;
         if (op == Op.AND) {
+            predicates = new ArrayList<>(virtualPredicates.size());
+            predicates.add(null);
             for (VirtualPredicate virtualPredicate : virtualPredicates) {
-                query.where(((AssociatedPredicate) virtualPredicate).block.apply(table));
+                Predicate predicate = ((AssociatedPredicate) virtualPredicate).block.apply(table);
+                if (predicate != null) {
+                    predicates.add(predicate);
+                    hasUserPredicates = true;
+                }
+            }
+            if (hasUserPredicates) {
+                predicates.set(0, table.inverseGetAssociatedId(prop).eq(parenTable.getId()));
             }
         } else {
-            List<Predicate> predicates = new ArrayList<>(virtualPredicates.size());
+            List<Predicate> orPredicates = new ArrayList<>(virtualPredicates.size());
             for (VirtualPredicate virtualPredicate : virtualPredicates) {
-                predicates.add(((AssociatedPredicate) virtualPredicate).block.apply(table));
+                Predicate predicate = ((AssociatedPredicate) virtualPredicate).block.apply(table);
+                if (predicate != null) {
+                    orPredicates.add(predicate);
+                    hasUserPredicates = true;
+                }
             }
-            query.where(Predicate.or(predicates.toArray(EMPTY_PREDICATES)));
+            if (hasUserPredicates) {
+                predicates = new ArrayList<>();
+                predicates.add(table.inverseGetAssociatedId(prop).eq(parenTable.getId()));
+                predicates.add(Predicate.or(orPredicates.toArray(EMPTY_PREDICATES)));
+            } else {
+                predicates = new ArrayList<>();
+                predicates.add(table.inverseGetAssociatedId(prop).eq(parenTable.getId()));
+            }
         }
+        if (!hasUserPredicates) {
+            return null;
+        }
+        query.where(predicates.toArray(EMPTY_PREDICATES));
         return query.exists();
     }
 }

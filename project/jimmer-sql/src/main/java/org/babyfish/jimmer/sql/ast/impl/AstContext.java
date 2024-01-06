@@ -1,6 +1,5 @@
 package org.babyfish.jimmer.sql.ast.impl;
 
-import org.babyfish.jimmer.sql.ast.Expression;
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicate;
 import org.babyfish.jimmer.sql.ast.impl.associated.VirtualPredicateMergedResult;
@@ -134,7 +133,6 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         if (!changed) {
             return expressions;
         }
-        VirtualPredicateFrame vpf = statementFrame.peekVpf();
         List<T> newExpressions = new ArrayList<>(expressions.size());
         for (T expression : expressions) {
             T newExpression = resolveVirtualPredicate(expression);
@@ -142,6 +140,7 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
                 newExpressions.add(newExpression);
             }
         }
+        VirtualPredicateMergedResult.removeEmptyResult(newExpressions);
         return newExpressions;
     }
 
@@ -156,7 +155,6 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
         if (!changed) {
             return predicates;
         }
-        VirtualPredicateFrame vpf = statementFrame.peekVpf();
         List<Predicate> newPredicates = new ArrayList<>(predicates.length);
         for (Predicate predicate : predicates) {
             Predicate newPredicate = resolveVirtualPredicate(predicate);
@@ -164,6 +162,7 @@ public class AstContext extends AbstractIdentityDataManager<TableImplementor<?>,
                 newPredicates.add(newPredicate);
             }
         }
+        VirtualPredicateMergedResult.removeEmptyResult(newPredicates);
         return newPredicates.toArray(PredicateImplementor.EMPTY_PREDICATES);
     }
 

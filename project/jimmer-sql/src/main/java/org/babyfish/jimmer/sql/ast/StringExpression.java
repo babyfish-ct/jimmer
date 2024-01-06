@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 public interface StringExpression extends ComparableExpression<String> {
     
     @NotNull
-    default Predicate like(@NotNull String pattern) {
+    default Predicate like(String pattern) {
         return like(pattern, LikeMode.ANYWHERE);
     }
 
@@ -39,7 +39,7 @@ public interface StringExpression extends ComparableExpression<String> {
     }
     
     @NotNull
-    Predicate like(@NotNull String pattern, @NotNull LikeMode likeMode);
+    Predicate like(String pattern, LikeMode likeMode);
 
     /**
      * Create `like` expression when the argument `condition` is true
@@ -53,7 +53,7 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return The `like` expression or null
      */
     @Nullable
-    default Predicate likeIf(boolean condition, @Nullable String pattern, @NotNull LikeMode likeMode) {
+    default Predicate likeIf(boolean condition, @Nullable String pattern, LikeMode likeMode) {
         return condition && pattern != null && !pattern.isEmpty() ?
                 like(pattern, likeMode) :
                 null;
@@ -68,12 +68,12 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return The `like` expression or null
      */
     @Nullable
-    default Predicate likeIf(@Nullable String pattern, @NotNull LikeMode likeMode) {
+    default Predicate likeIf(@Nullable String pattern, LikeMode likeMode) {
         return likeIf(true, pattern, likeMode);
     }
 
     @NotNull
-    default Predicate ilike(@NotNull String pattern) {
+    default Predicate ilike(String pattern) {
         return ilike(pattern, LikeMode.ANYWHERE);
     }
 
@@ -105,7 +105,7 @@ public interface StringExpression extends ComparableExpression<String> {
     }
 
     @NotNull
-    Predicate ilike(@NotNull String pattern, @NotNull LikeMode likeMode);
+    Predicate ilike(String pattern, LikeMode likeMode);
 
     /**
      * Create `insensitively like` expression when the argument `condition` is true
@@ -119,7 +119,7 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return The `insensitively like` expression or null
      */
     @Nullable
-    default Predicate ilikeIf(boolean condition, @Nullable String pattern, @NotNull LikeMode likeMode) {
+    default Predicate ilikeIf(boolean condition, @Nullable String pattern, LikeMode likeMode) {
         return condition && pattern != null && !pattern.isEmpty() ?
                 ilike(pattern, likeMode) :
                 null;
@@ -134,7 +134,7 @@ public interface StringExpression extends ComparableExpression<String> {
      * @return The `insensitively like` expression or null
      */
     @Nullable
-    default Predicate ilikeIf(@Nullable String pattern, @NotNull LikeMode likeMode) {
+    default Predicate ilikeIf(@Nullable String pattern, LikeMode likeMode) {
         return ilikeIf(true, pattern, likeMode);
     }
 

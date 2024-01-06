@@ -2,14 +2,42 @@ package org.babyfish.jimmer.sql.ast.impl.associated;
 
 import org.babyfish.jimmer.sql.ast.Predicate;
 import org.babyfish.jimmer.sql.ast.impl.*;
-import org.babyfish.jimmer.sql.runtime.JSqlClientImplementor;
 import org.babyfish.jimmer.sql.runtime.SqlBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class VirtualPredicateMergedResult extends AbstractPredicate {
+
+    private static final Predicate NIL_PREDICATE = new AbstractPredicate() {
+
+        @Override
+        protected boolean determineHasVirtualPredicate() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Ast onResolveVirtualPredicate(AstContext ctx) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void accept(@NotNull AstVisitor visitor) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void renderTo(@NotNull SqlBuilder builder) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int precedence() {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     private final AbstractMutableStatementImpl parent;
 
@@ -32,12 +60,20 @@ public class VirtualPredicateMergedResult extends AbstractPredicate {
 
     @Override
     public void accept(@NotNull AstVisitor visitor) {
-        ((Ast)predicate()).accept(visitor);
+        Ast ast = (Ast) predicate();
+        if (ast != null) {
+            ast.accept(visitor);
+        }
     }
 
     @Override
     public void renderTo(@NotNull SqlBuilder builder) {
-        ((Ast)predicate()).renderTo(builder);
+        Ast ast = (Ast) predicate();
+        if (ast != null) {
+            ast.renderTo(builder);
+        } else {
+            builder.sql("1 = 1");
+        }
     }
 
     @Override
@@ -48,9 +84,13 @@ public class VirtualPredicateMergedResult extends AbstractPredicate {
     private Predicate predicate() {
         Predicate predicate = finalPredicate;
         if (predicate == null) {
-            finalPredicate = predicate = virtualPredicates.get(0).toFinalPredicate(parent, virtualPredicates, op);
+            predicate = virtualPredicates.get(0).toFinalPredicate(parent, virtualPredicates, op);
+            if (predicate == null) {
+                predicate = NIL_PREDICATE;
+            }
+            finalPredicate = predicate;
         }
-        return predicate;
+        return predicate == NIL_PREDICATE ? null : predicate;
     }
 
     @Override
@@ -61,5 +101,16 @@ public class VirtualPredicateMergedResult extends AbstractPredicate {
     @Override
     protected Ast onResolveVirtualPredicate(AstContext ctx) {
         return (Ast) ctx.resolveVirtualPredicate(predicate());
+    }
+
+    public static void removeEmptyResult(List<?> expressions) {
+        Iterator<?> itr = expressions.iterator();
+        while (itr.hasNext()) {
+            Object expression = itr.next();
+            if (expression instanceof VirtualPredicateMergedResult &&
+                    ((VirtualPredicateMergedResult)expression).predicate() == null) {
+                itr.remove();
+            }
+        }
     }
 }

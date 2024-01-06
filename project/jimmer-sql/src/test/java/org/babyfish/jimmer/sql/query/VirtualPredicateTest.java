@@ -211,4 +211,23 @@ public class VirtualPredicateTest extends AbstractQueryTest {
                 }
         );
     }
+
+    @Test
+    public void testIgnoreEmpty() {
+        BookStoreTable table = BookStoreTable.$;
+        executeAndExpect(
+                getSqlClient()
+                        .createQuery(table)
+                        .where(
+                                table.books(book -> book.name().eqIf(null))
+                        )
+                        .select(table),
+                ctx -> {
+                    ctx.sql(
+                            "select tb_1_.ID, tb_1_.NAME, tb_1_.WEBSITE, tb_1_.VERSION " +
+                                    "from BOOK_STORE tb_1_"
+                    );
+                }
+        );
+    }
 }

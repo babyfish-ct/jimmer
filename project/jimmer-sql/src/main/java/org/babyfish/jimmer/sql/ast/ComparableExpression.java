@@ -26,7 +26,7 @@ public interface ComparableExpression<T extends Comparable<?>> extends Expressio
     Predicate le(@NotNull Expression<T> other);
 
     @NotNull
-    Predicate le(@NotNull T other);
+    Predicate le(T other);
 
     @Nullable
     default Predicate leIf(boolean condition, @Nullable T other) {
@@ -39,10 +39,10 @@ public interface ComparableExpression<T extends Comparable<?>> extends Expressio
     }
 
     @NotNull
-    Predicate gt(@NotNull Expression<T> other);
+    Predicate gt(Expression<T> other);
 
     @NotNull
-    Predicate gt(@NotNull T other);
+    Predicate gt(T other);
 
     @Nullable
     default Predicate gtIf(boolean condition, @Nullable T other) {
@@ -55,10 +55,10 @@ public interface ComparableExpression<T extends Comparable<?>> extends Expressio
     }
 
     @NotNull
-    Predicate ge(@NotNull Expression<T> other);
+    Predicate ge(Expression<T> other);
 
     @NotNull
-    Predicate ge(@NotNull T other);
+    Predicate ge(T other);
 
     @Nullable
     default Predicate geIf(boolean condition, @Nullable T other) {
@@ -71,10 +71,10 @@ public interface ComparableExpression<T extends Comparable<?>> extends Expressio
     }
 
     @NotNull
-    Predicate between(@NotNull Expression<T> min, @NotNull Expression<T> max);
+    Predicate between(Expression<T> min, Expression<T> max);
 
     @NotNull
-    Predicate between(@NotNull T min, @NotNull T max);
+    Predicate between(T min, T max);
 
     @Nullable
     default Predicate betweenIf(boolean condition, @Nullable T min, @Nullable T max) {
@@ -101,10 +101,10 @@ public interface ComparableExpression<T extends Comparable<?>> extends Expressio
     }
 
     @NotNull
-    Predicate notBetween(@NotNull Expression<T> min, @NotNull Expression<T> max);
+    Predicate notBetween(Expression<T> min, Expression<T> max);
 
     @NotNull
-    Predicate notBetween(@NotNull T min, @NotNull T max);
+    Predicate notBetween(T min, T max);
 
     @Nullable
     default Predicate notBetweenIf(boolean condition, @Nullable T min, @Nullable T max) {

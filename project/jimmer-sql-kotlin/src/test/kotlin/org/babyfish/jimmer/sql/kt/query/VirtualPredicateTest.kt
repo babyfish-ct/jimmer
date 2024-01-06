@@ -10,6 +10,7 @@ import org.babyfish.jimmer.sql.kt.model.classic.book.store
 import org.babyfish.jimmer.sql.kt.model.classic.store.BookStore
 import org.babyfish.jimmer.sql.kt.model.classic.store.books
 import org.babyfish.jimmer.sql.kt.model.classic.store.id
+import org.babyfish.jimmer.sql.kt.model.classic.store.name
 import kotlin.test.Test
 
 class VirtualPredicateTest : AbstractQueryTest() {
@@ -108,23 +109,23 @@ class VirtualPredicateTest : AbstractQueryTest() {
                     |where 
                     |--->exists(
                     |--->--->select 1 
-                    |--->--->from AUTHOR tb_2_ 
-                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
-                    |--->--->where 
-                    |--->--->--->tb_3_.BOOK_ID = tb_1_.ID 
-                    |--->--->and 
-                    |--->--->--->tb_2_.GENDER = ?
-                    |--->) 
-                    |and 
-                    |--->exists(
-                    |--->--->select 1 from AUTHOR tb_5_ 
+                    |--->--->from AUTHOR tb_5_ 
                     |--->--->inner join BOOK_AUTHOR_MAPPING tb_6_ on tb_5_.ID = tb_6_.AUTHOR_ID 
                     |--->--->where 
                     |--->--->--->tb_6_.BOOK_ID = tb_1_.ID 
+                    |--->--->and 
+                    |--->--->--->tb_5_.GENDER = ?
+                    |--->) 
+                    |and 
+                    |--->exists(
+                    |--->--->select 1 from AUTHOR tb_2_ 
+                    |--->--->inner join BOOK_AUTHOR_MAPPING tb_3_ on tb_2_.ID = tb_3_.AUTHOR_ID 
+                    |--->--->where 
+                    |--->--->--->tb_3_.BOOK_ID = tb_1_.ID 
                     |--->--->and (
-                    |--->--->--->--->lower(tb_5_.FIRST_NAME) like ? 
+                    |--->--->--->--->lower(tb_2_.FIRST_NAME) like ? 
                     |--->--->--->or 
-                    |--->--->--->--->lower(tb_5_.LAST_NAME) like ?
+                    |--->--->--->--->lower(tb_2_.LAST_NAME) like ?
                     |--->--->)
                     |--->)""".trimMargin()
             )
@@ -220,6 +221,22 @@ class VirtualPredicateTest : AbstractQueryTest() {
                     |--->--->--->--->)
                     |--->--->--->)
                     |--->)""".trimMargin()
+            )
+        }
+    }
+
+    @Test
+    fun testIgnoreEmpty() {
+        executeAndExpect(
+            sqlClient
+                .createQuery(BookStore::class) {
+                    where(table.books { table.name `eq?` null })
+                    select(table)
+                }
+        ) {
+            sql(
+                """select tb_1_.ID, tb_1_.NAME, tb_1_.VERSION, tb_1_.WEBSITE 
+                    |from BOOK_STORE tb_1_""".trimMargin()
             )
         }
     }

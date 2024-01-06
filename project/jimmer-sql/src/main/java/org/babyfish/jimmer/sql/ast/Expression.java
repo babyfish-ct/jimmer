@@ -25,7 +25,7 @@ public interface Expression<T> extends Selection<T> {
      * @return A predicate
      */
     @NotNull
-    Predicate eq(@NotNull Expression<T> other);
+    Predicate eq(Expression<T> other);
 
     /**
      * Check if two expressions are equal.
@@ -77,7 +77,7 @@ public interface Expression<T> extends Selection<T> {
      * @return A predicate
      */
     @NotNull
-    Predicate ne(@NotNull Expression<T> other);
+    Predicate ne(Expression<T> other);
 
     /**
      * Check if two expressions are not equal.
@@ -122,7 +122,7 @@ public interface Expression<T> extends Selection<T> {
     Predicate isNotNull();
 
     @NotNull
-    Predicate in(@NotNull Collection<T> values);
+    Predicate in(Collection<T> values);
 
     @Nullable
     default Predicate inIf(boolean condition, @Nullable Collection<T> values) {
@@ -135,7 +135,7 @@ public interface Expression<T> extends Selection<T> {
     }
 
     @NotNull
-    Predicate notIn(@NotNull Collection<T> values);
+    Predicate notIn(Collection<T> values);
 
     @Nullable
     default Predicate notInIf(boolean condition, @Nullable Collection<T> values) {
@@ -148,7 +148,7 @@ public interface Expression<T> extends Selection<T> {
     }
 
     @NotNull
-    Predicate in(@NotNull TypedSubQuery<T> subQuery);
+    Predicate in(TypedSubQuery<T> subQuery);
 
     @Nullable
     default Predicate inIf(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
@@ -161,7 +161,7 @@ public interface Expression<T> extends Selection<T> {
     }
 
     @NotNull
-    Predicate notIn(@NotNull TypedSubQuery<T> subQuery);
+    Predicate notIn(TypedSubQuery<T> subQuery);
 
     @Nullable
     default Predicate notInIf(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
