@@ -42,16 +42,9 @@ public interface BookRepository extends JRepository<Book, Long>, Tables {
                 .execute(
                         sql()
                                 .createQuery(table)
-                                .whereIf(
-                                        name != null && !name.isEmpty(),
-                                        table.name().ilike(name)
-                                )
-                                .whereIf(minPrice != null, () -> table.price().ge(minPrice))
-                                .whereIf(maxPrice != null, () -> table.price().le(maxPrice))
-                                .whereIf(
-                                        storeName != null && !storeName.isEmpty(),
-                                        table.store().name().ilike(storeName)
-                                )
+                                .where(table.name().ilikeIf(name))
+                                .where(table.price().betweenIf(minPrice, maxPrice))
+                                .where(table.store().name().ilikeIf(storeName))
                                 .whereIf(
                                         authorName != null && !authorName.isEmpty(),
                                         table.authors(author ->

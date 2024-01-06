@@ -11,27 +11,19 @@ import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
-public interface AuthorRepository extends JRepository<Author, Long>, Tables { // ❶
+public interface AuthorRepository extends JRepository<Author, Long>, Tables {
 
     AuthorTable table = AUTHOR_TABLE;
 
-    default List<Author> find( // ❷
+    default List<Author> find(
             JSpecification<?, AuthorTable> specification,
             Sort sort,
             Fetcher<Author> fetcher
     ) {
         return sql().createQuery(table)
-                .where(specification) // ❸
-                .orderBy(SpringOrders.toOrders(table, sort)) // ❻
-                .select(table.fetch(fetcher)) // ❼
+                .where(specification)
+                .orderBy(SpringOrders.toOrders(table, sort))
+                .select(table.fetch(fetcher))
                 .execute();
     }
 }
-
-/*----------------Documentation Links----------------
-❶ https://babyfish-ct.github.io/jimmer/docs/spring/repository/concept
-❷ https://babyfish-ct.github.io/jimmer/docs/spring/repository/default
-❸ https://babyfish-ct.github.io/jimmer/docs/query/qbe
-❻ https://babyfish-ct.github.io/jimmer/docs/query/dynamic-order
-❼ https://babyfish-ct.github.io/jimmer/docs/query/object-fetcher/
----------------------------------------------------*/

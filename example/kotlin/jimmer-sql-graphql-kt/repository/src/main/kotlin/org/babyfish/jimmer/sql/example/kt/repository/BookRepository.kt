@@ -25,18 +25,9 @@ interface BookRepository : KRepository<Book, Long> {
     ): List<Book> =
         sql
             .createQuery(Book::class) {
-                name?.takeIf { it.isNotEmpty() }?.let {
-                    where(table.name ilike it)
-                }
-                minPrice?.let {
-                    where(table.price ge it)
-                }
-                maxPrice?.let {
-                    where(table.price le it)
-                }
-                storeName?.takeIf { it.isNotEmpty() }?.let {
-                    where(table.store.name ilike it)
-                }
+                where(table.name `eq?` name)
+                where(table.price.`between?`(minPrice, maxPrice))
+                where(table.store.name `eq?` storeName)
                 authorName?.takeIf { it.isNotEmpty() }?.let {
                     where += table.authors {
                         or(
