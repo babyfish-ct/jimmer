@@ -45,12 +45,11 @@ public interface BookRepository extends JRepository<Book, Long>, Tables {
                                 .where(table.name().ilikeIf(name))
                                 .where(table.price().betweenIf(minPrice, maxPrice))
                                 .where(table.store().name().ilikeIf(storeName))
-                                .whereIf(
-                                        authorName != null && !authorName.isEmpty(),
+                                .where(
                                         table.authors(author ->
                                                 Predicate.or(
-                                                        author.firstName().ilike(authorName),
-                                                        author.lastName().ilike(authorName)
+                                                        author.firstName().ilikeIf(authorName),
+                                                        author.lastName().ilikeIf(authorName)
                                                 )
                                         )
                                 )

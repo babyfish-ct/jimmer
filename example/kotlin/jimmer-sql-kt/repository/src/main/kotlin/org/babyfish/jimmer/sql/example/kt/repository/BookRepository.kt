@@ -32,13 +32,11 @@ interface BookRepository : KRepository<Book, Long> {
                 where(table.name `eq?` name)
                 where(table.price.`between?`(minPrice, maxPrice))
                 where(table.store.name `eq?` storeName)
-                authorName?.takeIf { it.isNotEmpty() }?.let {
-                    where += table.authors {
-                        or(
-                            firstName ilike it,
-                            lastName ilike it
-                        )
-                    }
+                where += table.authors {
+                    or(
+                        firstName `ilike?` authorName,
+                        lastName `ilike?` authorName
+                    )
                 }
                 orderBy(pageable.sort)
                 select(table.fetch(fetcher))
