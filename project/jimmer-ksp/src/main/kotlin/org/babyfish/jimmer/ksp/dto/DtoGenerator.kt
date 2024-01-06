@@ -172,7 +172,7 @@ class DtoGenerator private constructor(
     }
 
     private fun addDoc() {
-        document.get()?.let {
+        document.value?.let {
             typeBuilder.addKdoc(it)
         }
     }
@@ -1189,12 +1189,20 @@ class DtoGenerator private constructor(
             baseTypeDoc = Doc.parse(dtoType.baseType.classDeclaration.docString)
         }
 
-        fun get(): String? {
-            return dtoTypeDoc?.toString() ?: baseTypeDoc?.toString()
+        val value: String? by lazy {
+            (dtoTypeDoc?.toString() ?: baseTypeDoc?.toString())?.let {
+                it.replace("%", "%%")
+            }
         }
 
         @Suppress("UNCHECKED_CAST")
         operator fun get(prop: AbstractProp): String? {
+            return getImpl(prop)?.let {
+                it.replace("%", "%%")
+            }
+        }
+
+        private fun getImpl(prop: AbstractProp): String? {
             val baseProp = (prop as? DtoProp<*, ImmutableProp?>)?.getBaseProp()
             if (prop.doc !== null) {
                 val doc = Doc.parse(prop.doc)

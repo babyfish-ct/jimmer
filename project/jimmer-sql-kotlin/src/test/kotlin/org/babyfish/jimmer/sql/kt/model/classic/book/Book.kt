@@ -9,7 +9,7 @@ import javax.validation.constraints.Positive
 import javax.validation.constraints.PositiveOrZero
 
 /**
- * The Book Entity
+ * The Book Entity, 100% immutable
  */
 @Entity
 interface Book {
@@ -22,43 +22,43 @@ interface Book {
     val id: Long
 
     /**
-     * The name property
+     * The name property, 100% immutable
      */
     @Key
     @get:NotEmpty(message = "The book name cannot be empty")
     val name: String
 
     /**
-     * The edition property
+     * The edition property, 100% immutable
      */
     @Key
     val edition: @PositiveOrZero Int
 
     /**
-     * The price property
+     * The price property, 100% immutable
      */
     val price: @Positive BigDecimal
 
     /**
-     * The store property
+     * The store property, 100% immutable
      */
     @ManyToOne
     val store: BookStore?
 
     /**
-     * The authors property
+     * The authors property, 100% immutable
      */
     @ManyToMany
     val authors: List<Author>
 
     /**
-     * The id view property of `store`
+     * The id view property of `store`, 100% immutable
      */
     @IdView
     val storeId: Long?
 
     /**
-     * The id view property of `authorIds`
+     * The id view property of `authorIds`, 100% immutable
      */
     @IdView("authors")
     val authorIds: List<Long>

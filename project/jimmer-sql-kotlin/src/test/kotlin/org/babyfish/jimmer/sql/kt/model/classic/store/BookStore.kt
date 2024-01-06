@@ -8,7 +8,7 @@ import java.math.BigDecimal
 import javax.validation.constraints.NotBlank
 
 /**
- * The BookStore property
+ * The BookStore property, 100% immutable
  */
 @Entity
 interface BookStore {

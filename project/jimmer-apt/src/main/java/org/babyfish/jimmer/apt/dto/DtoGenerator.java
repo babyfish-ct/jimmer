@@ -1414,6 +1414,8 @@ public class DtoGenerator {
 
         private final Doc baseTypeDoc;
 
+        private String result;
+
         public Document(Context ctx, DtoType<ImmutableType, ImmutableProp> dtoType) {
             this.ctx = ctx;
             dtoTypeDoc = Doc.parse(dtoType.getDoc());
@@ -1421,17 +1423,31 @@ public class DtoGenerator {
         }
 
         public String get() {
-            if (dtoTypeDoc != null) {
-                return dtoTypeDoc.toString();
+            String ret = result;
+            if (ret == null) {
+                if (dtoTypeDoc != null) {
+                    ret = dtoTypeDoc.toString();
+                } else if (baseTypeDoc != null) {
+                    ret = baseTypeDoc.toString();
+                } else {
+                    ret = "";
+                }
+                ret = ret.replace("$", "$$");
+                this.result = ret;
             }
-            if (baseTypeDoc != null) {
-                return baseTypeDoc.toString();
+            return ret.isEmpty() ? null : ret;
+        }
+
+        public String get(AbstractProp prop) {
+            String value = getImpl(prop);
+            if (value == null) {
+                return null;
             }
-            return null;
+            return value.replace("$", "$$");
         }
 
         @SuppressWarnings("unchecked")
-        public String get(AbstractProp prop) {
+        private String getImpl(AbstractProp prop) {
             ImmutableProp baseProp;
             if (prop instanceof DtoProp<?, ?>) {
                 baseProp = ((DtoProp<?, ImmutableProp>) prop).getBaseProp();

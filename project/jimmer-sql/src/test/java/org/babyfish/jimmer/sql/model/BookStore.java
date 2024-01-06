@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The BookStore entity
+ * The BookStore entity $:)$
  */
 @Entity
 public interface BookStore {

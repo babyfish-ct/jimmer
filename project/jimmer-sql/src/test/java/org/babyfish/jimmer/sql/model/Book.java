@@ -11,39 +11,39 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The Book Entity
+ * The Book Entity $:)$
  */
 @Entity
 public interface Book {
 
     /**
-     * Id
+     * Id $:)$
      */
     @Id
     @GeneratedValue(generatorType = UUIDIdGenerator.class)
     UUID id();
 
     /**
-     * Name
+     * Name $:)$
      */
     @Key
     @NotEmpty(message = "The book name cannot be empty")
     String name();
 
     /**
-     * Edition
+     * Edition $:)$
      */
     @Key
     int edition();
 
     /**
-     * Price
+     * Price $:)$
      */
     @Positive
     BigDecimal price();
 
     /**
-     * Store
+     * Store $:)$
      *
      * <p>Note: This property can be null</p>
      */
@@ -52,7 +52,7 @@ public interface Book {
     BookStore store();
 
     /**
-     * Authors
+     * Authors $:)$
      */
     @ManyToMany
     @JoinTable(
@@ -63,7 +63,7 @@ public interface Book {
     List<Author> authors();
 
     /**
-     * StoreId
+     * StoreId $:)$
      *
      * <p>Note: This property can be null</p>
      */
@@ -72,7 +72,7 @@ public interface Book {
     UUID storeId();
 
     /**
-     * AuthorIds
+     * AuthorIds $:)$
      */
     @IdView("authors")
     List<UUID> authorIds();
