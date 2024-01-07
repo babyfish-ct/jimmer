@@ -205,7 +205,7 @@ class ErrorGenerator(
                         }
                     }
                 }
-                .returns(exceptionClassName)
+                .returns(exceptionClassName.nestedClass(ktName(item, true)))
                 .apply {
                     addCode(
                         CodeBlock

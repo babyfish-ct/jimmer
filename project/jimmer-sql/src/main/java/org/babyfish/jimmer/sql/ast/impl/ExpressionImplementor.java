@@ -22,6 +22,7 @@ public interface ExpressionImplementor<T> extends Expression<T> {
     @NotNull
     @Override
     default Predicate eq(@NotNull Expression<T> other) {
+
         if (other instanceof NullExpression<?>) {
             return isNull();
         } else if (this instanceof NullExpression<?>) {
@@ -71,22 +72,38 @@ public interface ExpressionImplementor<T> extends Expression<T> {
 
     @Override
     default @NotNull Predicate in(@NotNull Collection<T> values) {
-        return new InCollectionPredicate(this, values, false);
+        return new InCollectionPredicate(
+                this,
+                ParameterUtils.validate("in", "values", values),
+                false
+        );
     }
 
     @Override
     default @NotNull Predicate notIn(@NotNull Collection<T> values) {
-        return new InCollectionPredicate(this, values, true);
+        return new InCollectionPredicate(
+                this,
+                ParameterUtils.validate("notIn", "values", values),
+                true
+        );
     }
 
     @Override
     default @NotNull Predicate in(@NotNull TypedSubQuery<T> subQuery) {
-        return new InSubQueryPredicate(this, subQuery, false);
+        return new InSubQueryPredicate(
+                this,
+                ParameterUtils.validate("in", "subQuery", subQuery),
+                false
+        );
     }
 
     @Override
     default @NotNull Predicate notIn(@NotNull TypedSubQuery<T> subQuery) {
-        return new InSubQueryPredicate(this, subQuery, true);
+        return new InSubQueryPredicate(
+                this,
+                ParameterUtils.validate("notIn", "subQuery", subQuery),
+                true
+        );
     }
 
     @Override

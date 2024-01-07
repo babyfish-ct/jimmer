@@ -176,7 +176,7 @@ public class ErrorGenerator {
         MethodSpec.Builder builder = MethodSpec
                 .methodBuilder(javaName(element, false))
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .returns(exceptionClassName)
+                .returns(exceptionClassName.nestedClass(javaName(element, true)))
                 .addParameter(
                         ParameterSpec
                                 .builder(Constants.STRING_CLASS_NAME, "message")

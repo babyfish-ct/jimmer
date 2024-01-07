@@ -14,36 +14,39 @@ import java.util.function.Consumer;
 public interface Expression<T> extends Selection<T> {
 
     /**
-     * Check if two expressions are equal.
+     * Create `equal` predicate or `is null` predicate.
      *
      * <ul>
      *     <li>If {@code this} is null literal, returns {@code other.isNull()}</li>
      *     <li>{@code other} is null literal, returns {@code this.isNull()}</li>
      * </ul>
      *
-     * @param other Right operand of expression
-     * @return A predicate
+     * @param other The right operand which cannot be null
+     * @return `equal` predicate or `is null` predicate
+     * @exception NullPointerException The argument `other` is null
      */
     @NotNull
     Predicate eq(Expression<T> other);
 
     /**
-     * Check if two expressions are equal.
+     * Create `equal` predicate or `is null` predicate.
      *
-     * <ul>
-     *     <li>If {@code other} is null, returns {@code this.isNull()}</li>
-     * </ul>
-     * @param other Right operand of expression
-     * @return A predicate
+     * <p>If {@code other} is null, creates an `is null` predicate</p>
+     *
+     * @param other The right operand which can be null
+     * @return `equal` predicate or `is null` predicate
      */
     @NotNull
     Predicate eq(@Nullable T other);
 
     /**
-     * Create `equal` expression by condition
-     * @param condition If `condition` is true and `other` is neither null nor empty string, creates expression;
-     *                  otherwise returns null
-     * @param other The right operand
+     * Create `equal` predicate when certain conditions are met.
+     * @param condition If this argument is true and the {@code other}
+     *                  is neither null nor empty string, creates predicate;
+     *                  otherwise, returns null
+     * @param other The right operand which can be null. If it is null or empty string,
+     *              returns null directly; otherwise, check if {@code condition}
+     *              is true to decide whether to create predicate
      * @return A predicate or null
      * @see #eqIf(Object)
      */
@@ -53,10 +56,10 @@ public interface Expression<T> extends Selection<T> {
     }
 
     /**
-     * Create `equal` expression by condition
+     * Create `equal` predicate when certain conditions are met.
      *
-     * <p>If `other` is neither null nor empty string, creates expression; otherwise returns null.</p>
-     * @param other The right operand
+     * @param other The right operand which can be null, if it is null or empty string,
+     *              returns null directly; otherwise, create predicate
      * @return A predicate or null
      * @see #eqIf(boolean, Object)
      */
@@ -66,36 +69,40 @@ public interface Expression<T> extends Selection<T> {
     }
 
     /**
-     * Check if two expressions are not equal.
+     * Create `not equal` predicate or `is not null` predicate.
      *
      * <ul>
      *     <li>If {@code this} is null literal, returns {@code other.isNotNull()}</li>
      *     <li>{@code other} is null literal, returns {@code this.isNotNull()}</li>
      * </ul>
      *
-     * @param other Right operand of expression
-     * @return A predicate
+     * @param other The right operand which cannot be null
+     * @return `not equal` predicate or `is not null` predicate
+     * @exception NullPointerException The argument `other` is null
      */
     @NotNull
     Predicate ne(Expression<T> other);
 
     /**
-     * Check if two expressions are not equal.
+     * Create `not equal` predicate or `is not null` predicate.
      *
-     * <ul>
-     *     <li>If {@code other} is null, returns {@code this.isNotNull()}</li>
-     * </ul>
-     * @param other Right operand of expression
-     * @return A predicate
+     * <p>If {@code other} is null, creates an `is not null` predicate</p>
+     *
+     * @param other The right operand which can be null
+     * @return `not equal` predicate or `is not null` predicate
      */
     @NotNull
     Predicate ne(@Nullable T other);
 
     /**
-     * Create `not equal` expression by condition
-     * @param condition If true, creates expression; otherwise, returns null
-     * @param other The right operand
-     * @return A predicate or null
+     * Create `not equal` predicate when certain conditions are met.
+     * @param condition If this argument is true and the {@code other}
+     *                  is neither null nor empty string, creates predicate;
+     *                  otherwise, returns null
+     * @param other The right operand which can be null. If it is null or empty string,
+     *              returns null directly; otherwise, check if {@code condition}
+     *              is true to decide whether to create predicate
+     * @return `not equal` predicate or null
      * @see #neIf(Object)
      */
     @Nullable
@@ -104,11 +111,12 @@ public interface Expression<T> extends Selection<T> {
     }
 
     /**
-     * Create `not equal` expression by condition
-     * <p>If `other` is neither null nor empty string, creates expression; otherwise returns null.</p>
-     * @param other The right operand
-     * @return A predicate or null
-     * @see #neIf(boolean, Object)
+     * Create `not equal` predicate when certain conditions are met.
+     *
+     * @param other The right operand which can be null, if it is null or empty string,
+     *              returns null directly; otherwise, create predicate
+     * @return `not equal` predicate or null
+     * @see #eqIf(boolean, Object)
      */
     @Nullable
     default Predicate neIf(@Nullable T other) {
@@ -121,53 +129,141 @@ public interface Expression<T> extends Selection<T> {
     @NotNull
     Predicate isNotNull();
 
+    /**
+     * Create `in` predicate
+     * 
+     * @param values A collection which cannot be null
+     * @return `in` predicate
+     * @exception NullPointerException The argument {@code values} is null
+     */
     @NotNull
     Predicate in(Collection<T> values);
 
+    /**
+     * Create `in` predicate when certain conditions are met.
+     * @param condition If this argument is true and the {@code other} is not null, creates predicate;
+     *                  otherwise, returns null
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, check if {@code condition}
+     *               is true to decide whether to create predicate
+     * @return `in` predicate or null
+     */
     @Nullable
     default Predicate inIf(boolean condition, @Nullable Collection<T> values) {
         return condition && values != null ? in(values) : null;
     }
 
+    /**
+     * Create `in` predicate when certain conditions are met.
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, creates predicate
+     * @return `in` predicate or null
+     */
     @Nullable
     default Predicate inIf(@Nullable Collection<T> values) {
         return inIf(true, values);
     }
 
+    /**
+     * Create `not in` predicate
+     *
+     * @param values A collection which cannot be null
+     * @return `not in` predicate
+     * @exception NullPointerException The argument {@code values} is null
+     */
     @NotNull
     Predicate notIn(Collection<T> values);
 
+    /**
+     * Create `not in` predicate when certain conditions are met.
+     * @param condition If this argument is true and the {@code values} is not null, creates predicate;
+     *                  otherwise, returns null
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, check if {@code condition}
+     *               is true to decide whether to create predicate
+     * @return `not in` predicate or null
+     */
     @Nullable
     default Predicate notInIf(boolean condition, @Nullable Collection<T> values) {
         return condition && values != null ? notIn(values) : null;
     }
 
+    /**
+     * Create `not in` predicate when certain conditions are met.
+     * @param values The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, creates predicate
+     * @return `not in` predicate or null
+     */
     @Nullable
     default Predicate notInIf(@Nullable Collection<T> values) {
         return notInIf(true, values);
     }
 
+    /**
+     * Create `in` predicate
+     *
+     * @param subQuery A sub query which cannot be null
+     * @return `in` predicate
+     * @exception NullPointerException The argument {@code subQuery} is null
+     */
     @NotNull
     Predicate in(TypedSubQuery<T> subQuery);
 
+    /**
+     * Create `in` predicate when certain conditions are met.
+     * @param condition If this argument is true and the {@code subQuery} is not null, creates predicate;
+     *                  otherwise, returns null
+     * @param subQuery The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, check if {@code condition}
+     *               is true to decide whether to create predicate
+     * @return `in` predicate or null
+     */
     @Nullable
     default Predicate inIf(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
         return condition && subQuery != null ? in(subQuery) : null;
     }
 
+    /**
+     * Create `in` predicate when certain conditions are met.
+     * @param subQuery The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, creates predicate
+     * @return `in` predicate or null
+     */
     @Nullable
     default Predicate inIf(@Nullable TypedSubQuery<T> subQuery) {
         return inIf(true, subQuery);
     }
 
+    /**
+     * Create `not in` predicate
+     *
+     * @param subQuery A sub query which cannot be null
+     * @return `not in` predicate
+     * @exception NullPointerException The argument {@code subQuery} is null
+     */
     @NotNull
     Predicate notIn(TypedSubQuery<T> subQuery);
 
+    /**
+     * Create `not in` predicate when certain conditions are met.
+     * @param condition If this argument is true and the {@code subQuery} is not null, creates predicate;
+     *                  otherwise, returns null
+     * @param subQuery The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, check if {@code condition}
+     *               is true to decide whether to create predicate
+     * @return `not in` predicate or null
+     */
     @Nullable
     default Predicate notInIf(boolean condition, @Nullable TypedSubQuery<T> subQuery) {
         return condition && subQuery != null ? notIn(subQuery) : null;
     }
 
+    /**
+     * Create `not in` predicate when certain conditions are met.
+     * @param subQuery The right operand which can be null. If it is null,
+     *               returns null directly; otherwise, creates predicate
+     * @return `not in` predicate or null
+     */
     @Nullable
     default Predicate notInIf(@Nullable TypedSubQuery<T> subQuery) {
         return notInIf(true, subQuery);

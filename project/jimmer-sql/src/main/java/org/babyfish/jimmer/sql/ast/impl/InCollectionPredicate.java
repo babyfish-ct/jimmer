@@ -28,8 +28,8 @@ class InCollectionPredicate extends AbstractPredicate {
             Collection<?> values,
             boolean negative
     ) {
-        this.expression = Objects.requireNonNull(expression, "`expression` cannot be null");
-        this.values = Objects.requireNonNull(values, "`values` cannot b null");
+        this.expression = expression;
+        this.values = values;
         this.negative = negative;
     }
 
